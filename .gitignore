@@ -27,3 +27,8 @@ Thumbs.db
 
 # LayeredMap: generated fixtures (`cargo xtask fixtures`), large; regenerate rather than commit.
 /fixtures/generated
+
+# LayeredMap: screenshot-test working files (approved images are *.png alone).
+**/tests/snapshots/*.new.png
+**/tests/snapshots/*.old.png
+**/tests/snapshots/*.diff.png

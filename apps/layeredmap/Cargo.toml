@@ -20,6 +20,9 @@ type_complexity = "allow"
 
 [dependencies]
 lm-ui = { path = "../../crates/lm-ui" }
-eframe = { workspace = true, features = ["default_fonts", "wgpu", "accesskit"] }
+lm-core = { path = "../../crates/lm-core" }
+eframe = { workspace = true, features = ["default_fonts", "wgpu", "accesskit", "persistence"] }
+rfd = { workspace = true }
+muda = { version = "0.21", default-features = false }
 egui = { workspace = true }
 log = { workspace = true }

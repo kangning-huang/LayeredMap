@@ -17,9 +17,9 @@ pub const ALLOWED: &[(&str, &[&str])] = &[
     ("lm-jobs", &["lm-core", "lm-analysis", "rustgis-engine", "rustgis-analysis"]),
     ("lm-analysis", &["rustgis-geom", "rustgis-data"]),
     ("lm-doc", &["lm-core", "rustgis-data"]),
-    ("lm-mapview", &["rustgis-map", "rustgis-tiles", "rustgis-render"]),
+    ("lm-mapview", &["rustgis-map", "rustgis-tiles", "rustgis-render", "rustgis-geom"]),
     ("lm-ui", &["lm-core", "lm-actions", "lm-jobs", "lm-doc", "lm-mapview"]),
-    ("layeredmap", &["lm-ui"]),
+    ("layeredmap", &["lm-ui", "lm-core"]),
 ];
 
 /// The crates that may depend on egui (and its companions).
