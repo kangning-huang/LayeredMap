@@ -299,6 +299,9 @@ impl App {
         }
     }
 
+    /// `Camera::pan_px` moves the map's content by the given offset, so drags, trackpad scrolls
+    /// (whose deltas are content motion on macOS) and inertia pass their deltas straight through.
+    ///
     /// User input: drag to pan (with inertia), trackpad scroll to pan, wheel and pinch to zoom,
     /// double-click to zoom in, keys. Returns whether the camera is moving.
     fn input(&mut self, ui: &mut egui::Ui, resp: &egui::Response, rect: Rect, t: f64, dt: f64) -> bool {
@@ -306,7 +309,7 @@ impl App {
         let mut moving = false;
         if resp.dragged() {
             let d = resp.drag_delta();
-            self.camera.pan_px(-f64::from(d.x), -f64::from(d.y));
+            self.camera.pan_px(f64::from(d.x), f64::from(d.y));
             if dt > 0.0 {
                 let v = d / dt as f32;
                 self.velocity = self.velocity * 0.6 + v * 0.4;
@@ -317,7 +320,7 @@ impl App {
             // keep velocity for inertia
         } else if self.velocity.length() > 5.0 {
             let d = self.velocity * dt as f32;
-            self.camera.pan_px(-f64::from(d.x), -f64::from(d.y));
+            self.camera.pan_px(f64::from(d.x), f64::from(d.y));
             // Exponential decay: from a fast flick to rest in roughly 0.4 s.
             self.velocity *= (-dt / 0.11).exp() as f32;
             moving = true;
@@ -336,7 +339,7 @@ impl App {
                         self.zoom_anim = Some((self.camera.res.log2(), cur - 0.5 * f64::from(delta.y.signum()), t, p));
                     } else {
                         // A trackpad two-finger scroll pans, as in Apple Maps.
-                        self.camera.pan_px(-f64::from(delta.x), -f64::from(delta.y));
+                        self.camera.pan_px(f64::from(delta.x), f64::from(delta.y));
                         self.velocity = egui::Vec2::ZERO;
                     }
                     moving = true;
@@ -371,16 +374,16 @@ impl App {
             let (l, r, u, d, zin, zout) = keys;
             let (qx, qy) = (w / 4.0, h / 4.0);
             if l {
-                self.camera.pan_px(-qx, 0.0);
-            }
-            if r {
                 self.camera.pan_px(qx, 0.0);
             }
+            if r {
+                self.camera.pan_px(-qx, 0.0);
+            }
             if u {
-                self.camera.pan_px(0.0, -qy);
+                self.camera.pan_px(0.0, qy);
             }
             if d {
-                self.camera.pan_px(0.0, qy);
+                self.camera.pan_px(0.0, -qy);
             }
             if zin || zout {
                 let cur = self.camera.res.log2();
