@@ -26,7 +26,13 @@ campus.
 
 ## 3. Owner validation
 
-Script: `gates/gate-0-validation.md` (45 minutes). Not yet done.
+Script: `gates/gate-0-validation.md` (45 minutes). In progress.
+
+- 2026-10-15, first session: owner reported the spike "feels very smooth". The pan direction was
+  reversed (drag, trackpad, inertia, arrow keys); fixed in `c84e239`. After the fix, the owner
+  compared B2 and C and found them **comparable in performance**.
+- Still to record: the 1–5 ratings (pan, pinch, wheel zoom, tiles, labels), the Pinyin input,
+  VoiceOver, the 4K external display and the throttled network.
 
 ## 4. Stress tests
 
@@ -43,7 +49,7 @@ Script: `gates/gate-0-validation.md` (45 minutes). Not yet done.
 | Criterion | Met? | Evidence |
 |---|---|---|
 | A strategy keeps p95 ≤ 33 ms on F1 at 2×, with no blank areas on a throttled network | frame time: yes (B, B2, C); throttled: pending | ADR-001 |
-| Your pan and zoom ratings ≥ 4 with that strategy | pending | your session |
+| Your pan and zoom ratings ≥ 4 with that strategy | pending (B2 and C felt comparable; ratings not yet recorded) | your session |
 | Pinyin input works (candidate window near the caret, committed text correct) | pending | probe panel (P) |
 | A basemap host reaches p95 tile latency ≤ 500 ms from campus | pending | `tools/lm/tile_latency.py`, `docs/lm/basemap-hosting.md` |
 | VoiceOver results recorded | pending | probe panel (P) |

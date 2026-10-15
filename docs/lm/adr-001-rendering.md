@@ -1,6 +1,8 @@
 # ADR-001: Rendering stack
 
-**Status:** proposed, 2026-10-15. Awaiting your feel test and approval at Gate 0.
+**Status:** proposed, 2026-10-15. Owner feel check, same day: B2 and C are comparable in
+performance, so the plan's rule (the cheapest stack that meets the limits) selects B2. Awaiting
+the owner's 1–5 ratings and approval at Gate 0.
 
 **Recommendation:** keep egui and RustGIS's CPU renderer, render off the UI thread into a cached
 texture that moves and scales during gestures (strategy **B2**). It is the cheapest stack that
