@@ -3,9 +3,7 @@
 Build: 0.2.0 · branch `phase-0` · 2026-10-15 (draft; not frozen)
 Reference machine: Mac mini (Mac16,10), Apple M4, 16 GB, macOS 26.6.2, 5K display at 2×
 
-**State:** the agent's part is done except where marked. The gate cannot pass yet: it needs your
-validation session, the Apple Developer enrollment (signed builds), and basemap latency from
-campus.
+**State:** closed — owner-approved with open items (see § 6).
 
 ## 1. Automated checks
 
@@ -55,7 +53,7 @@ Script: `gates/gate-0-validation.md` (45 minutes). In progress.
 | A basemap host reaches p95 tile latency ≤ 500 ms from campus | pending | `tools/lm/tile_latency.py`, `docs/lm/basemap-hosting.md` |
 | VoiceOver results recorded | pending | probe panel (P) |
 | ADR-001 estimates the remaining effort per stack; cheapest meeting 33 ms wins | yes | ADR-001: egui + B2 |
-| Signed, notarized CI builds open on a fresh Mac with no warning | pending | needs Apple Developer enrollment, `docs/lm/signing.md` |
+| Signed, notarized CI builds open on a fresh Mac with no warning | **waived by the owner** (2026-10-15): builds stay unsigned (ad-hoc) through Gate 4; signing is decided before the Gate 5 pilot | `docs/lm/decisions.md` |
 
 ## Not done in Phase 0 (carried as open items)
 
@@ -69,4 +67,14 @@ Script: `gates/gate-0-validation.md` (45 minutes). In progress.
 
 ## 6. Decision
 
-Pending.
+**Owner approved proceeding to Phase 1, 2026-10-15** ("skip the enrollment now, and then continue
+to work on the next phase"). Stack: egui + B2 (ADR-001). `phase-0` merged into `main`, tagged
+`gate-0-pass`.
+
+Carried open (not blocking Phase 1, which works on the pinned Protomaps build and the offline
+basemap):
+- basemap host and latency from campus (WP0.6) — needed before the Gate 5 pilot;
+- the repeatability criterion (ADR-001, options a–c) — owner to choose; Phase 1's harness
+  (WP1.6) records deterministic counters either way;
+- itemized 1–5 ratings, Pinyin, VoiceOver, 4K display and throttled-network notes;
+- the upstream discussion (draft ready).

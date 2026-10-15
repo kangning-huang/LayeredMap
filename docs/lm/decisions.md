@@ -4,6 +4,8 @@ Every choice made outside the build plan, one short entry each, newest first.
 
 | Date | Decision | Why | Revisit |
 |---|---|---|---|
+| 2026-10-15 | **Owner: skip Apple Developer enrollment for now.** Builds are ad-hoc signed; testers open them once via System Settings › Privacy & Security › Open Anyway. Signing (USD 99/yr) is decided before the Gate 5 pilot. LayeredMap stays open source (Apache-2.0, inherited from RustGIS) and cross-platform. | Owner decision; nothing before the pilot needs signing. CI already signs automatically if the secrets are added later. | Gate 5 |
+| 2026-10-15 | **Owner: proceed to Phase 1** with Gate 0 items carried open (gates/gate-0.md § 6). | Owner decision. | Gate 1 |
 | 2026-10-15 | Noto Sans SC **Medium** (500) is bundled as the bold-ish Chinese face; Inter SemiBold (600) stays for Latin. | Upstream noto-cjk ships no static SemiBold; Google Fonts has only the variable font. | If a true 600 is wanted: cut a static instance from the variable font with fontTools' instancer. |
 | 2026-10-15 | Generated fixtures are written to `$LM_FIXTURES_DIR` or `fixtures/generated` (git-ignored); on the reference Mac `fixtures/generated` is a symlink to `/Volumes/LaCie/layeredmap-fixtures`. | They total 7.1 GB (R4 2.9 GB, R5 4.3 GB); the internal disk has ~12 GB free. Generation is deterministic, so they are regenerated rather than hosted, until a pinned bucket exists (WP0.8). | When the pinned bucket is set up. |
 | 2026-10-15 | `cargo xtask fixtures` writes GeoJSON, CSV, ZIP and (Big)TIFF with hand-written encoders, independent of the RustGIS readers. | A fixture should not be produced by the code it tests. | — |
