@@ -1,0 +1,15 @@
+# Decision log
+
+Every choice made outside the build plan, one short entry each, newest first.
+
+| Date | Decision | Why | Revisit |
+|---|---|---|---|
+| 2026-10-15 | Noto Sans SC **Medium** (500) is bundled as the bold-ish Chinese face; Inter SemiBold (600) stays for Latin. | Upstream noto-cjk ships no static SemiBold; Google Fonts has only the variable font. | If a true 600 is wanted: cut a static instance from the variable font with fontTools' instancer. |
+| 2026-10-15 | Generated fixtures are written to `$LM_FIXTURES_DIR` or `fixtures/generated` (git-ignored); on the reference Mac `fixtures/generated` is a symlink to `/Volumes/LaCie/layeredmap-fixtures`. | They total 7.1 GB (R4 2.9 GB, R5 4.3 GB); the internal disk has ~12 GB free. Generation is deterministic, so they are regenerated rather than hosted, until a pinned bucket exists (WP0.8). | When the pinned bucket is set up. |
+| 2026-10-15 | `cargo xtask fixtures` writes GeoJSON, CSV, ZIP and (Big)TIFF with hand-written encoders, independent of the RustGIS readers. | A fixture should not be produced by the code it tests. | — |
+| 2026-10-15 | R4 is a 23,040² float32 COG (2.9 GB with overviews) rather than exactly 2 GB. | Whole 512-px tiles; "2 GB" is a size class. | Shrink to 19,456² (≈2.0 GB) if exactness matters. |
+| 2026-10-15 | The fork imports upstream history into this repository (`main` = upstream baseline) rather than being a GitHub fork. | The owner's repository already existed (empty). Remote `upstream` keeps merges possible. | If the maintainer welcomes a front end upstream (WP0.1). |
+| 2026-10-15 | `spikes/*` added to the root workspace members (not default members). | Spikes reuse the workspace's lockfile and build cache. | Remove with the spikes after Gate 0. |
+| 2026-10-15 | The spike's online basemap is a pinned Protomaps daily planet build (`build.protomaps.com/20261014.pmtiles`), read by byte ranges. | WP0.6's own host does not exist yet. That host is for downloads, not production serving. | Replace with the WP0.6 Shanghai extract on the chosen host. |
+| 2026-10-15 | `apps/layeredmap` uses its own lint table (`unsafe_code = "deny"`, not the workspace's `forbid`). | `forbid` cannot be relaxed in a module; the plan allows `unsafe` in the app's macOS module only. | — |
+| 2026-10-15 | `lm-*` crates use path dependencies on each other instead of entries in the root `[workspace.dependencies]`. | Keeps edits to upstream's root manifest to one line. | — |
