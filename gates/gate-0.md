@@ -31,8 +31,9 @@ Script: `gates/gate-0-validation.md` (45 minutes). In progress.
 - 2026-10-15, first session: owner reported the spike "feels very smooth". The pan direction was
   reversed (drag, trackpad, inertia, arrow keys); fixed in `c84e239`. After the fix, the owner
   compared B2 and C and found them **comparable in performance**.
-- Still to record: the 1–5 ratings (pan, pinch, wheel zoom, tiles, labels), the Pinyin input,
-  VoiceOver, the 4K external display and the throttled network.
+- Same day, the owner reported: "all the tests passed" (the validation script). The individual
+  1–5 ratings and notes (Pinyin, VoiceOver, 4K display, throttled network) were not itemized; add
+  them here for the record.
 
 ## 4. Stress tests
 
