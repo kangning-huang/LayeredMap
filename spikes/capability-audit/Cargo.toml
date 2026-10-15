@@ -1,0 +1,13 @@
+[package]
+name = "lm-capability-audit"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+description = "LayeredMap WP0.2: open every fixture with RustGIS's readers and record what happens. Throwaway."
+
+[lints]
+workspace = true
+
+[dependencies]
+rustgis-data = { workspace = true }
