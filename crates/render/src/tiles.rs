@@ -44,6 +44,8 @@ pub fn spec(t: &TileLayer) -> Spec {
         tms: t.tms,
         attribution: t.attribution.clone(),
         layers: t.layers.clone(),
+        variant: t.variant.clone(),
+        label_language: t.label_language.clone(),
     }
 }
 
@@ -66,8 +68,8 @@ pub(crate) fn draw(pm: &mut Pixmap, map: &Map, view: &View, place: Place, labels
             out.errors.push(format!("{name}: {e}"));
         }
         for l in d.labels {
-            // Styles often label in two scripts ("Syria\nسوريا"): only the lines the font can
-            // draw are kept, so a name never shows as boxes, and a label left with neither text
+            // Styles often label in two scripts ("Syria\nسوريا"): only the lines the fonts can
+            // draw (the interface font and its fallbacks, see `fonts`) are kept, so a name never shows as boxes, and a label left with neither text
             // nor an icon is left out.
             let lines: Vec<&str> = l.text.lines().map(str::trim).filter(|s| !s.is_empty() && crate::text::covers(s, l.bold)).collect();
             if lines.is_empty() && l.icon.is_none() {

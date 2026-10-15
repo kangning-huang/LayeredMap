@@ -43,12 +43,19 @@ pub struct Spec {
     /// The vector tiles' layer names, when the service says them (an OGC API collection's): drawn
     /// in colours of their own, as an archive's layers are.
     pub layers: Vec<String>,
+    /// Which built-in style draws vector tiles that come without one: `""` (the default),
+    /// `"light"` or `"dark"` (see [`builtin_style`]). Style documents ignore it.
+    pub variant: String,
+    /// The language the built-in style labels in: `""` (the default: English, else the local
+    /// name), `"local"`, or a BCP 47 tag such as `"zh-Hans"` (see [`label_field`]). Style
+    /// documents ignore it.
+    pub label_language: String,
 }
 
 impl Spec {
     fn key(&self) -> String {
         format!(
-            "{:?}|{}|{}|{}|{}|{}|{}|{}|{}",
+            "{:?}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}",
             self.kind,
             self.url,
             self.subdomains.join(","),
@@ -58,7 +65,9 @@ impl Spec {
             self.tms,
             self.attribution,
             // Each name with its length, so ["a,b"] and ["a", "b"] differ.
-            self.layers.iter().map(|l| format!("{}:{l}", l.len())).collect::<String>()
+            self.layers.iter().map(|l| format!("{}:{l}", l.len())).collect::<String>(),
+            self.variant,
+            self.label_language,
         )
     }
 }
@@ -96,6 +105,71 @@ pub(crate) fn forget() {
 /// Shortbread layer names, and draws water, land use, parks, buildings, roads, boundaries and
 /// place names from whichever of them the tiles have.
 pub const DEFAULT_STYLE: &str = include_str!("default_style.json");
+
+/// Paint overrides that make the muted variants of [`DEFAULT_STYLE`], by variant and layer id.
+/// They change paint properties only: the layers, their filters and their layout stay the same.
+const STYLE_VARIANTS: &str = include_str!("style_variants.json");
+
+/// The built-in style variants: the default palette, and muted light and dark ones that let the
+/// data drawn over them stand out.
+pub const BUILTIN_VARIANTS: [&str; 3] = ["default", "light", "dark"];
+
+/// The built-in style ([`DEFAULT_STYLE`]) in `variant` (one of [`BUILTIN_VARIANTS`]; `""` or an
+/// unknown name is the default), labelled in `label_language` (see [`label_field`]). `None` only
+/// if the built-in documents can't be read.
+pub fn builtin_style(variant: &str, label_language: &str) -> Option<Value> {
+    let mut doc: Value = serde_json::from_str(DEFAULT_STYLE).ok()?;
+    let overrides: Value = serde_json::from_str(STYLE_VARIANTS).ok()?;
+    let palette = overrides.get(variant.trim().to_ascii_lowercase()).and_then(Value::as_object);
+    let field = label_field(label_language);
+    for layer in doc.get_mut("layers")?.as_array_mut()?.iter_mut() {
+        let id = layer.get("id").and_then(Value::as_str).unwrap_or_default().to_string();
+        if let Some(paint) = palette.and_then(|p| p.get(&id)).and_then(Value::as_object)
+            && let Some(dst) = layer.get_mut("paint").and_then(Value::as_object_mut)
+        {
+            for (k, v) in paint {
+                dst.insert(k.clone(), v.clone());
+            }
+        }
+        if let Some(field) = &field
+            && let Some(layout) = layer.get_mut("layout").and_then(Value::as_object_mut)
+            && layout.contains_key("text-field")
+        {
+            layout.insert("text-field".into(), field.clone());
+        }
+    }
+    Some(doc)
+}
+
+/// The `text-field` expression for labels in `language`, or `None` to keep the built-in style's
+/// own (English where the tiles have it, else the local name). The language is
+/// - `""`: the built-in style's own choice (no change);
+/// - `"local"`: the name in the place's own language (`name`);
+/// - a BCP 47 tag (`"en"`, `"zh-Hans"`, `"pt-BR"`): the most specific translation the tiles have,
+///   then shorter forms of the tag, then the local name. Both spellings vector tile schemas use
+///   are tried: `name:zh-Hans` (OpenMapTiles, Protomaps) and `name_zh-Hans` (Shortbread). So
+///   `"zh-Hans"` is `name:zh-Hans`, `name_zh-Hans`, `name:zh`, `name_zh`, then `name`.
+///
+/// A tag that isn't letters, digits and hyphens (or is longer than 35 characters) keeps the
+/// built-in choice.
+pub fn label_field(language: &str) -> Option<Value> {
+    let language = language.trim();
+    if language.is_empty() || language.len() > 35 || !language.chars().all(|c| c.is_ascii_alphanumeric() || c == '-') {
+        return None;
+    }
+    if language.eq_ignore_ascii_case("local") {
+        return Some(json!(["get", "name"]));
+    }
+    let parts: Vec<&str> = language.split('-').filter(|p| !p.is_empty()).collect();
+    let mut keys = vec![json!("coalesce")];
+    for n in (1..=parts.len()).rev() {
+        let tag = parts.get(..n).unwrap_or_default().join("-");
+        keys.push(json!(["get", format!("name:{tag}")]));
+        keys.push(json!(["get", format!("name_{tag}")]));
+    }
+    keys.push(json!(["get", "name"]));
+    Some(Value::Array(keys))
+}
 
 /// The style to draw `spec` with, once the documents it needs have been fetched.
 pub fn resolve(spec: &Spec) -> Resolve {
@@ -371,7 +445,7 @@ fn archive_style(spec: &Spec, info: Archive) -> Option<Value> {
         "streets",
     ];
     if names.iter().filter(|n| known.contains(&n.as_str())).count() >= 3 {
-        let mut doc: Value = serde_json::from_str(DEFAULT_STYLE).ok()?;
+        let mut doc = builtin_style(&spec.variant, &spec.label_language)?;
         *doc.get_mut("sources")?.get_mut("vector")? = source;
         return Some(doc);
     }
@@ -406,7 +480,7 @@ fn vector_style(spec: &Spec) -> Option<Value> {
         let names: Vec<String> = spec.layers.iter().take(64).cloned().collect();
         return Some(named_layers_style(spec, source, &names));
     }
-    let mut doc: Value = serde_json::from_str(DEFAULT_STYLE).ok()?;
+    let mut doc = builtin_style(&spec.variant, &spec.label_language)?;
     let source = if spec.url.contains("{z}") {
         json!({"type": "vector", "tiles": templates(spec), "minzoom": spec.min_zoom, "maxzoom": spec.max_zoom})
     } else {
@@ -454,6 +528,8 @@ mod tests {
             tms: false,
             attribution: "&copy; <a href=\"x\">OSM</a>".into(),
             layers: Vec::new(),
+            variant: String::new(),
+            label_language: String::new(),
         }
     }
 
@@ -502,6 +578,87 @@ mod tests {
         assert!(matches!(resolve(&spec(Kind::Raster, "http://169.254.169.254/{z}/{x}/{y}.png")), Resolve::Failed(_)));
         // A self-hosted server the user names is fine.
         assert!(matches!(resolve(&spec(Kind::Raster, "http://localhost:8080/{z}/{x}/{y}.png")), Resolve::Ready(_)));
+    }
+
+    #[test]
+    fn muted_variants_change_only_paint() {
+        let default = builtin_style("", "").unwrap();
+        assert_eq!(default, serde_json::from_str::<Value>(DEFAULT_STYLE).unwrap(), "the default is the built-in style as it is");
+        let overrides: Value = serde_json::from_str(STYLE_VARIANTS).unwrap();
+        let layers = |doc: &Value| doc["layers"].as_array().unwrap().clone();
+        for variant in ["light", "dark"] {
+            // Every override names a layer of the built-in style.
+            for id in overrides[variant].as_object().unwrap().keys() {
+                assert!(layers(&default).iter().any(|l| l["id"] == id.as_str()), "{variant}: no layer {id}");
+            }
+            let doc = builtin_style(variant, "").unwrap();
+            assert!(Style::parse(&doc).is_ok(), "{variant} parses");
+            let (a, b) = (layers(&default), layers(&doc));
+            assert_eq!(a.len(), b.len());
+            let mut changed = 0;
+            for (x, y) in a.iter().zip(&b) {
+                let (mut x, mut y) = (x.clone(), y.clone());
+                if x["paint"] != y["paint"] {
+                    changed += 1;
+                }
+                x.as_object_mut().unwrap().remove("paint");
+                y.as_object_mut().unwrap().remove("paint");
+                assert_eq!(x, y, "{variant}: only paint differs");
+            }
+            assert!(changed > 20, "{variant}: {changed} layers restyled");
+        }
+        assert_ne!(builtin_style("light", ""), builtin_style("dark", ""));
+        // Names are case-blind; an unknown one is the default.
+        assert_eq!(builtin_style("Dark", ""), builtin_style("dark", ""));
+        assert_eq!(builtin_style("sepia", ""), Some(default));
+    }
+
+    #[test]
+    fn variants_and_languages_key_apart() {
+        let base = spec(Kind::Vector, "https://t.example.com/{z}/{x}/{y}.pbf");
+        let mut dark = base.clone();
+        dark.variant = "dark".into();
+        let mut local = base.clone();
+        local.label_language = "local".into();
+        assert_ne!(base.key(), dark.key());
+        assert_ne!(base.key(), local.key());
+        assert_ne!(dark.key(), local.key());
+    }
+
+    /// The `text-field` of the Protomaps `places` layer for a feature with these names.
+    fn place_label(language: &str, names: &[(&str, &str)]) -> Option<String> {
+        use crate::mvt::{GeomKind, Value as P};
+        use crate::style::FeatureCtx;
+        let style = Style::parse(&builtin_style("", language).unwrap()).unwrap();
+        let layer = style.layers.iter().find(|l| l.id == "places").unwrap();
+        let mut props: Vec<(String, P)> = names.iter().map(|(k, v)| (k.to_string(), P::String(v.to_string()))).collect();
+        props.push(("kind".into(), P::String("locality".into())));
+        layer.text_field(&FeatureCtx { zoom: 10.0, kind: GeomKind::Point, id: None, props: &props })
+    }
+
+    #[test]
+    fn labels_in_the_chosen_language() {
+        let shanghai = [("name", "上海市"), ("name:en", "Shanghai"), ("name:zh-Hans", "上海")];
+        // The default stays English first.
+        assert_eq!(place_label("", &shanghai).as_deref(), Some("Shanghai"));
+        assert_eq!(place_label("en", &shanghai).as_deref(), Some("Shanghai"));
+        assert_eq!(place_label("local", &shanghai).as_deref(), Some("上海市"));
+        assert_eq!(place_label("zh-Hans", &shanghai).as_deref(), Some("上海"));
+        // A shorter tag, then the local name, when the tiles lack the translation.
+        assert_eq!(place_label("zh-Hans-CN", &[("name", "上海市"), ("name:zh", "上海")]).as_deref(), Some("上海"));
+        assert_eq!(place_label("fr", &shanghai).as_deref(), Some("上海市"));
+        // Shortbread's spelling.
+        assert_eq!(place_label("de", &[("name", "München"), ("name_de", "München (de)")]).as_deref(), Some("München (de)"));
+        // Every label layer follows the setting.
+        let doc = builtin_style("dark", "local").unwrap();
+        for l in doc["layers"].as_array().unwrap() {
+            if let Some(f) = l["layout"].get("text-field") {
+                assert_eq!(f, &json!(["get", "name"]), "{}", l["id"]);
+            }
+        }
+        // Not a language tag: the built-in choice.
+        assert_eq!(label_field("en; drop"), None);
+        assert_eq!(label_field(""), None);
     }
 
     #[test]
