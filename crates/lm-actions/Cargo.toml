@@ -1,0 +1,14 @@
+[package]
+name = "lm-actions"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+description = "LayeredMap: action registry, eligibility and relevance ranking"
+
+[lints]
+workspace = true
+
+[dependencies]
+lm-core = { path = "../lm-core" }
+lm-profile = { path = "../lm-profile" }

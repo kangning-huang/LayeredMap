@@ -1,0 +1,18 @@
+[package]
+name = "lm-ui"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+description = "LayeredMap: the map-first shell"
+
+[lints]
+workspace = true
+
+[dependencies]
+lm-core = { path = "../lm-core" }
+lm-actions = { path = "../lm-actions" }
+lm-jobs = { path = "../lm-jobs" }
+lm-doc = { path = "../lm-doc" }
+lm-mapview = { path = "../lm-mapview" }
+egui = { workspace = true }

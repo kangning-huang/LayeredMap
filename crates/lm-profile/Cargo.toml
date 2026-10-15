@@ -1,0 +1,15 @@
+[package]
+name = "lm-profile"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+description = "LayeredMap: import-time profiling and assumption generation"
+
+[lints]
+workspace = true
+
+[dependencies]
+lm-core = { path = "../lm-core" }
+rustgis-data = { workspace = true }
+rustgis-geom = { workspace = true }

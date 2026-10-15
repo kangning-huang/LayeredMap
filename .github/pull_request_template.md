@@ -1,11 +1,19 @@
-## Summary
+## What changed (in plain words)
 
-<!-- What does this change and why? -->
+<!-- What does the app now do differently? Which task card / work package (e.g. WP2.3 · task 2)? -->
 
-## Testing
+## Demo
 
-<!-- How did you verify it? e.g. `cargo xtask ci`, new tests, a `ui_shot` screenshot, manual steps. -->
+<!-- A screen recording or screenshots (ui_shot for UI changes). -->
 
-## Related issue
+## Tests added
 
-<!-- e.g. Closes #123, or Part of #456. -->
+<!-- New tests; for a bug fix, the test that failed before the fix. `cargo xtask ci` green? -->
+
+## Fixtures touched
+
+<!-- IDs (V1, T2, …). Any change to an expected output needs a written reason here. -->
+
+## Risks
+
+<!-- What could this break? Does it touch lm-analysis, lm-jobs or lm-doc (second review required)? -->

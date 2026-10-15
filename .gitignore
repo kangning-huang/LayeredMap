@@ -24,3 +24,6 @@ __pycache__/
 *~
 .DS_Store
 Thumbs.db
+
+# LayeredMap: generated fixtures (`cargo xtask fixtures`), large; regenerate rather than commit.
+/fixtures/generated
