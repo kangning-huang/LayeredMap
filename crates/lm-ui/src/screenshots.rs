@@ -1,6 +1,8 @@
 //! Screenshot regression (WP1.7): chrome states rendered headlessly and compared with approved
 //! images in `tests/snapshots/`. The offline basemap keeps them free of network and timing.
-//! Approve changes with `UPDATE_SNAPSHOTS=1 cargo test -p lm-ui screenshots`.
+//! Approve changes with `UPDATE_SNAPSHOTS=1 cargo test -p lm-ui screenshots`. The approved images
+//! come from macOS (the reference platform); other platforms' GPUs and text rasterisers differ in
+//! small ways, so the comparisons run on macOS only.
 
 use egui_kittest::Harness;
 use lm_core::phase::Flags;
@@ -44,21 +46,25 @@ fn harness(dark: bool, view: (f64, f64, f64), setup: impl Fn(&mut Shell) + 'stat
 const WORLD: (f64, f64, f64) = (15.0, 30.0, 2.2);
 
 #[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
 fn first_launch_light() {
     harness(false, WORLD, |_| {}).snapshot("first_launch_light");
 }
 
 #[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
 fn first_launch_dark() {
     harness(true, WORLD, |_| {}).snapshot("first_launch_dark");
 }
 
 #[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
 fn basemap_chooser() {
     harness(false, (121.47, 31.23, 6.0), |s| s.basemap_open = true).snapshot("basemap_chooser");
 }
 
 #[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
 fn search_results() {
     let mut h = harness(false, (121.47, 31.23, 6.0), |s| {
         s.search.query = "Shang".into();

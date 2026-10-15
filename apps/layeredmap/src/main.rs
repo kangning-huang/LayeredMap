@@ -3,6 +3,7 @@
 //! map-first shell from `lm-ui`.
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
+mod feel;
 mod menu;
 
 use lm_core::phase::Flags;
@@ -12,6 +13,12 @@ struct App {
     shell: Shell,
     menu: Option<menu::MenuBar>,
     system: System,
+    /// The feel harness, when launched with `--feel`.
+    feel: Option<feel::Feel>,
+    /// `--launch-probe`: when the process started.
+    probe: Option<std::time::Instant>,
+    /// Harness runs don't touch the user's stored preferences.
+    ephemeral: bool,
 }
 
 /// The system's Reduce Motion setting (macOS), read once at launch.
@@ -58,6 +65,19 @@ fn load_prefs(storage: Option<&dyn eframe::Storage>) -> Prefs {
 impl eframe::App for App {
     fn logic(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         self.system.dark_mode = ctx.system_theme().map_or(self.system.dark_mode, |t| t == egui::Theme::Dark);
+        if let Some(f) = &mut self.feel {
+            let t = ctx.input(|i| i.time);
+            let busy = self.shell.is_loading();
+            if !busy && f.step(&mut self.shell, t) {
+                match f.write() {
+                    Ok(()) => println!("feel: done"),
+                    Err(e) => eprintln!("feel: {e}"),
+                }
+                self.feel = None;
+                ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+            }
+            ctx.request_repaint();
+        }
         if let Some(m) = &self.menu {
             for action in m.poll() {
                 match action {
@@ -76,9 +96,19 @@ impl eframe::App for App {
 
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         self.shell.ui(ui, self.system);
+        if let Some(start) = self.probe
+            && self.shell.map_view().renders > 0
+        {
+            println!("launch_ms={:.0}", start.elapsed().as_secs_f64() * 1000.0);
+            self.probe = None;
+            ui.ctx().send_viewport_cmd(egui::ViewportCommand::Close);
+        }
     }
 
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
+        if self.ephemeral {
+            return;
+        }
         let p = self.shell.prefs_to_save();
         storage.set_string(
             "lm.theme",
@@ -99,7 +129,14 @@ impl eframe::App for App {
 }
 
 fn main() -> eframe::Result {
+    let started = std::time::Instant::now();
     let args: Vec<String> = std::env::args().skip(1).collect();
+    let arg = |name: &str| args.iter().position(|a| a == name).and_then(|i| args.get(i + 1)).cloned();
+    let feel_out = arg("--feel").map(std::path::PathBuf::from);
+    let runs = arg("--runs").and_then(|v| v.parse::<usize>().ok()).unwrap_or(1);
+    let fixture = arg("--fixture").map(std::path::PathBuf::from);
+    let probe = args.iter().any(|a| a == "--launch-probe");
+    let ephemeral = feel_out.is_some() || probe;
     if args.iter().any(|a| a == "--version" || a == "-V") {
         println!("layeredmap {}", env!("CARGO_PKG_VERSION"));
         return Ok(());
@@ -113,29 +150,41 @@ fn main() -> eframe::Result {
     });
     let flags = Flags::from_env(std::env::var("LM_PHASE").ok().as_deref());
     let developer = cfg!(debug_assertions) || std::env::var_os("LM_DEV").is_some();
-    let options = eframe::NativeOptions {
+    let mut options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_title("LayeredMap")
             .with_app_id("app.layeredmap.desktop")
             .with_inner_size([1280.0, 800.0])
             .with_min_inner_size([1024.0, 640.0]),
         // The window's size and position are remembered between launches.
-        persist_window: true,
+        persist_window: !ephemeral,
         ..Default::default()
     };
+    if feel_out.is_some() {
+        // Frame time is the real cost, not the display's cadence.
+        options.wgpu_options.surface.present_mode = eframe::egui_wgpu::wgpu::PresentMode::AutoNoVsync;
+    }
     eframe::run_native(
         "LayeredMap",
         options,
         Box::new(move |cc| {
-            let mut prefs = load_prefs(cc.storage);
+            let mut prefs = if ephemeral { Prefs::default() } else { load_prefs(cc.storage) };
             // `--view lon,lat,zoom` starts there (scripts, screenshots, the feel harness).
             if let Some(v) = view {
                 prefs.view = Some(v);
             }
+            if feel_out.is_some() && prefs.view.is_none() {
+                // Shanghai at about zoom 11, as in the WP0.3 spike.
+                prefs.view = Some((121.47, 31.23, 11.0));
+            }
             let system = System { dark_mode: cc.egui_ctx.system_theme() == Some(egui::Theme::Dark), reduce_motion: reduce_motion() };
-            let shell = Shell::new(&cc.egui_ctx, flags, prefs, system);
+            let mut shell = Shell::new(&cc.egui_ctx, flags, prefs, system);
+            if let Some(dir) = fixture {
+                shell.command(&cc.egui_ctx, Command::LoadFixture(dir));
+            }
+            let feel = feel_out.map(|out| feel::Feel::new(out, runs, shell.map_view().camera()));
             let menu = menu::MenuBar::install(developer);
-            Ok(Box::new(App { shell, menu, system }))
+            Ok(Box::new(App { shell, menu, system, feel, probe: probe.then_some(started), ephemeral }))
         }),
     )
 }

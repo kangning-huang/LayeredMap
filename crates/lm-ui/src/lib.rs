@@ -14,6 +14,8 @@ use std::path::PathBuf;
 use std::sync::mpsc::Receiver;
 
 use lm_core::phase::Flags;
+/// The map widget, for the app's feel harness (camera scripts and counters).
+pub use lm_mapview as mapview;
 use lm_mapview::{MapView, ViewOptions};
 pub use theme::{Theme, ThemePref};
 
@@ -122,6 +124,11 @@ impl Shell {
 
     pub fn debug_overlay(&self) -> bool {
         self.debug_overlay
+    }
+
+    /// A fixture is being loaded.
+    pub fn is_loading(&self) -> bool {
+        self.loading.is_some()
     }
 
     pub fn map_view(&self) -> &MapView {

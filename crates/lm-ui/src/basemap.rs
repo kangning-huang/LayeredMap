@@ -42,7 +42,9 @@ pub fn apply(map: &mut Map, prefs: &Prefs, dark_ui: bool) {
     // The tile layer is the only web layer LayeredMap's chrome manages; others are kept.
     map.tiles.retain(|t| !t.id.starts_with("lm-basemap"));
     if p.source == Source::VectorArchive {
-        let mut t = TileLayer::new(p.name, TileKind::PmTiles, p.url_template);
+        // Developer override, for testing a host or simulating being offline (an unreachable address).
+        let url = std::env::var("LM_BASEMAP_URL").ok().filter(|u| !u.trim().is_empty()).unwrap_or_else(|| p.url_template.to_string());
+        let mut t = TileLayer::new(p.name, TileKind::PmTiles, url);
         t.id = format!("lm-basemap-{}", p.id);
         t.attribution = p.attribution.into();
         t.max_zoom = p.max_zoom;
