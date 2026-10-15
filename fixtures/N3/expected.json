@@ -1,0 +1,45 @@
+{
+  "fixture": "N3",
+  "files": [
+    "grid4x4.tif",
+    "polygon.geojson"
+  ],
+  "kind": "raster+vector",
+  "raster": {
+    "size": [
+      4,
+      4
+    ],
+    "dtype": "float32",
+    "nodata": -9999.0,
+    "bounds": [
+      10,
+      58,
+      14,
+      62
+    ],
+    "crs": {
+      "epsg": 4326,
+      "source": "declared"
+    },
+    "nodata_cells_row_col": [
+      [
+        1,
+        1
+      ],
+      [
+        2,
+        0
+      ]
+    ]
+  },
+  "hand_calculation": {
+    "mean": 11.2734518278,
+    "min": 5.0,
+    "max": 16.0,
+    "coverage": 0.836602898755,
+    "polygon_area_m2": 56782180605.3,
+    "unweighted_mean_for_contrast": 11.2
+  },
+  "assumptions": []
+}

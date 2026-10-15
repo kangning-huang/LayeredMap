@@ -1,0 +1,22 @@
+{"type": "FeatureCollection", "name": "points", "features": [
+{"type": "Feature", "properties": {"point_id": "P01"}, "geometry": {"type": "Point", "coordinates": [121.125, 31.125]}},
+{"type": "Feature", "properties": {"point_id": "P02"}, "geometry": {"type": "Point", "coordinates": [121.0625, 31.0625]}},
+{"type": "Feature", "properties": {"point_id": "P03"}, "geometry": {"type": "Point", "coordinates": [121.1875, 31.1875]}},
+{"type": "Feature", "properties": {"point_id": "P04"}, "geometry": {"type": "Point", "coordinates": [121.25, 31.125]}},
+{"type": "Feature", "properties": {"point_id": "P05"}, "geometry": {"type": "Point", "coordinates": [121.25, 31.0625]}},
+{"type": "Feature", "properties": {"point_id": "P06"}, "geometry": {"type": "Point", "coordinates": [121.25, 31.25]}},
+{"type": "Feature", "properties": {"point_id": "P07"}, "geometry": {"type": "Point", "coordinates": [121.3125, 31.0625]}},
+{"type": "Feature", "properties": {"point_id": "P08"}, "geometry": {"type": "Point", "coordinates": [121.3125, 31.1875]}},
+{"type": "Feature", "properties": {"point_id": "P09"}, "geometry": {"type": "Point", "coordinates": [121.4375, 31.1875]}},
+{"type": "Feature", "properties": {"point_id": "P10"}, "geometry": {"type": "Point", "coordinates": [121.46875, 31.15625]}},
+{"type": "Feature", "properties": {"point_id": "P11"}, "geometry": {"type": "Point", "coordinates": [121.4375, 31.0625]}},
+{"type": "Feature", "properties": {"point_id": "P12"}, "geometry": {"type": "Point", "coordinates": [121.5, 31.1875]}},
+{"type": "Feature", "properties": {"point_id": "P13"}, "geometry": {"type": "Point", "coordinates": [121.5625, 31.3125]}},
+{"type": "Feature", "properties": {"point_id": "P14"}, "geometry": {"type": "Point", "coordinates": [121.4375, 31.3125]}},
+{"type": "Feature", "properties": {"point_id": "P15"}, "geometry": {"type": "Point", "coordinates": [121.375, 31.25]}},
+{"type": "Feature", "properties": {"point_id": "P16"}, "geometry": {"type": "Point", "coordinates": [121.0, 31.125]}},
+{"type": "Feature", "properties": {"point_id": "P17"}, "geometry": {"type": "Point", "coordinates": [121.6875, 31.125]}},
+{"type": "Feature", "properties": {"point_id": "P18"}, "geometry": {"type": "Point", "coordinates": [121.125, 31.4375]}},
+{"type": "Feature", "properties": {"point_id": "P19"}, "geometry": {"type": "Point", "coordinates": [121.625, 31.375]}},
+{"type": "Feature", "properties": {"point_id": "P20"}, "geometry": {"type": "Point", "coordinates": [121.1, 31.2]}}
+]}

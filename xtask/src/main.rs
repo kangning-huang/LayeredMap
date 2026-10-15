@@ -7,6 +7,9 @@
 
 use std::process::{Command, ExitCode};
 
+mod fixtures;
+mod lm;
+
 const LAYERS: &[(&str, u8)] = &[
     ("geom", 0),
     ("data", 1),
@@ -142,13 +145,15 @@ fn web_pwa(dir: Option<String>) -> Result<(), String> {
 fn main() -> ExitCode {
     let task = std::env::args().nth(1).unwrap_or_default();
     let r = match task.as_str() {
-        "layers" => layers(),
+        "layers" => layers().and_then(|_| lm::layers(&root())),
         "ci" => cargo(&["fmt", "--all", "--check"])
             .and_then(|_| cargo(&["clippy", "--workspace", "--all-targets", "--", "-D", "warnings"]))
             .and_then(|_| cargo(&["test", "--workspace", "-q"]))
-            .and_then(|_| layers()),
+            .and_then(|_| layers())
+            .and_then(|_| lm::layers(&root())),
         "web-pwa" => web_pwa(std::env::args().nth(2)),
-        _ => Err("usage: cargo xtask ci | layers | web-pwa <dir>".into()),
+        "fixtures" => fixtures::run(&root(), &std::env::args().skip(2).collect::<Vec<_>>()),
+        _ => Err("usage: cargo xtask ci | layers | web-pwa <dir> | fixtures [--out DIR] [--only IDS] [--large]".into()),
     };
     match r {
         Ok(()) => ExitCode::SUCCESS,

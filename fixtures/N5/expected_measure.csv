@@ -1,0 +1,10 @@
+feature_id,geom_type,length_m,area_m2,perimeter_m
+pt_eq,Point,,,
+pt_60n,Point,,,
+pt_am,Point,,,
+line_eq,LineString,111319.490793,,
+line_60n,LineString,55799.4703933,,
+line_am,MultiLineString,109639.353578,,
+poly_eq,Polygon,,12308778361.5,443770.917248
+poly_60n,Polygon,,6122943163.07,332747.878985
+poly_am,MultiPolygon,,12108258313,

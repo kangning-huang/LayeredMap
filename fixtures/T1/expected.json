@@ -1,0 +1,50 @@
+{
+  "fixture": "T1",
+  "files": [
+    "schools.csv"
+  ],
+  "kind": "table",
+  "rows": 248,
+  "delimiter": ",",
+  "encoding": "UTF-8",
+  "header": true,
+  "coordinates": {
+    "x": "lon",
+    "y": "lat",
+    "crs_epsg": 4326
+  },
+  "fields": {
+    "name": "name",
+    "type": "category",
+    "students": "measure",
+    "lon": "longitude",
+    "lat": "latitude"
+  },
+  "categories": {
+    "type": [
+      "High",
+      "Middle",
+      "Primary"
+    ]
+  },
+  "import_report": {
+    "located": 242,
+    "excluded": 6,
+    "excluded_rows_1based_data": [
+      13,
+      58,
+      102,
+      151,
+      200,
+      241
+    ],
+    "excluded_reason": "blank coordinate"
+  },
+  "assumptions": [
+    {
+      "id": "crs_wgs84_assumed",
+      "text": "lon/lat columns in degrees assumed to be WGS 84",
+      "visible": true
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "fixture": "C1",
+  "files": [
+    "amap_pois.csv"
+  ],
+  "kind": "table",
+  "rows": 50,
+  "coordinates": {
+    "x": "lng",
+    "y": "lat"
+  },
+  "offset_question": {
+    "asked": true,
+    "suggested": "GCJ-02",
+    "hint": "file name contains 'amap'",
+    "alternatives": [
+      "WGS 84",
+      "BD-09"
+    ]
+  },
+  "after_conversion": "matches expected_wgs84.csv wgs84_lon/lat within ~1e-5° (rough inverse) or ~1e-7° (iterative inverse)",
+  "fields": {
+    "name": "name",
+    "category": "category",
+    "lng": "longitude",
+    "lat": "latitude"
+  },
+  "assumptions": [
+    {
+      "id": "offset_system_gcj02",
+      "visible": true
+    }
+  ]
+}

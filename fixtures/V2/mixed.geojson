@@ -1,0 +1,12 @@
+{"type": "FeatureCollection", "name": "mixed", "features": [
+{"type": "Feature", "properties": {"id": 1, "name": "Ferry pier", "kind": "point"}, "geometry": {"type": "Point", "coordinates": [121.49, 31.24]}},
+{"type": "Feature", "properties": {"id": 2, "name": "Riverside walk", "kind": "line"}, "geometry": {"type": "LineString", "coordinates": [[121.48, 31.22], [121.49, 31.235], [121.5, 31.25]]}},
+{"type": "Feature", "properties": {"id": 3, "name": "Park", "kind": "area"}, "geometry": {"type": "Polygon", "coordinates": [[[121.47, 31.2], [121.47, 31.215], [121.45, 31.215], [121.45, 31.2], [121.47, 31.2]]]}},
+{"type": "Feature", "properties": {"id": 4, "name": "Bus stop", "kind": "point"}, "geometry": {"type": "Point", "coordinates": [121.46, 31.23]}},
+{"type": "Feature", "properties": {"id": 5, "name": "Tram route", "kind": "line"}, "geometry": {"type": "MultiLineString", "coordinates": [[[121.4, 31.2], [121.42, 31.21]], [[121.43, 31.21], [121.45, 31.22]]]}},
+{"type": "Feature", "properties": {"id": 6, "name": "Campus", "kind": "area"}, "geometry": {"type": "MultiPolygon", "coordinates": [[[[121.51, 31.28], [121.51, 31.29], [121.5, 31.29], [121.5, 31.28], [121.51, 31.28]]], [[[121.53, 31.28], [121.53, 31.29], [121.52, 31.29], [121.52, 31.28], [121.53, 31.28]]]]}},
+{"type": "Feature", "properties": {"id": 7, "name": "Library", "kind": "point"}, "geometry": {"type": "Point", "coordinates": [121.475, 31.225]}},
+{"type": "Feature", "properties": {"id": 8, "name": "Canal", "kind": "line"}, "geometry": {"type": "LineString", "coordinates": [[121.41, 31.26], [121.44, 31.27]]}},
+{"type": "Feature", "properties": {"id": 9, "name": "Lake", "kind": "area"}, "geometry": {"type": "Polygon", "coordinates": [[[121.42, 31.3], [121.44, 31.3], [121.43, 31.32], [121.42, 31.3]]]}},
+{"type": "Feature", "properties": {"id": 10, "name": "Clinic", "kind": "point"}, "geometry": {"type": "Point", "coordinates": [121.51, 31.21]}}
+]}

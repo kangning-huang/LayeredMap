@@ -1,0 +1,16 @@
+[package]
+name = "lm-jobs"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+description = "LayeredMap: plans, previews, background jobs, atomic commit"
+
+[lints]
+workspace = true
+
+[dependencies]
+lm-core = { path = "../lm-core" }
+lm-analysis = { path = "../lm-analysis" }
+rustgis-engine = { workspace = true }
+rustgis-analysis = { workspace = true }

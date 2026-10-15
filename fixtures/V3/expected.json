@@ -1,0 +1,39 @@
+{
+  "fixture": "V3",
+  "files": [
+    "sites.shp",
+    "sites.shx",
+    "sites.dbf",
+    "sites.cpg"
+  ],
+  "kind": "vector",
+  "layers": [
+    {
+      "name": "sites",
+      "geometry": "point",
+      "count": 25
+    }
+  ],
+  "crs": {
+    "epsg": 4326,
+    "source": "assumed"
+  },
+  "extent_lonlat_within": [
+    121.25,
+    30.95,
+    121.75,
+    31.45
+  ],
+  "fields": {
+    "id": "id",
+    "name": "name",
+    "value": "measure"
+  },
+  "assumptions": [
+    {
+      "id": "crs_wgs84_assumed",
+      "text": "No .prj; coordinates fall in degree ranges, so WGS 84 is assumed",
+      "visible": true
+    }
+  ]
+}

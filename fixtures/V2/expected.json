@@ -1,0 +1,56 @@
+{
+  "fixture": "V2",
+  "files": [
+    "mixed.geojson"
+  ],
+  "kind": "vector",
+  "split_into_layers": 3,
+  "layers": [
+    {
+      "geometry": "point",
+      "count": 4,
+      "ids": [
+        1,
+        4,
+        7,
+        10
+      ]
+    },
+    {
+      "geometry": "line",
+      "count": 3,
+      "ids": [
+        2,
+        5,
+        8
+      ],
+      "geometry_types": {
+        "LineString": 2,
+        "MultiLineString": 1
+      }
+    },
+    {
+      "geometry": "area",
+      "count": 3,
+      "ids": [
+        3,
+        6,
+        9
+      ],
+      "geometry_types": {
+        "Polygon": 2,
+        "MultiPolygon": 1
+      }
+    }
+  ],
+  "crs": {
+    "epsg": 4326,
+    "source": "declared (GeoJSON RFC 7946 default)"
+  },
+  "fields": {
+    "id": "id",
+    "name": "name",
+    "kind": "category"
+  },
+  "assumptions": []
+}

@@ -1,0 +1,9 @@
+point_id,lon,lat,note
+p1,121.396484375,31.283203125,"interior cell centre (row 7, col 5)"
+p2,121.423828125,31.263671875,"interior cell centre (row 12, col 12)"
+p3,121.376953125,31.271484375,edge cell (col 0) -> raw -9999 -> NoData -> blank
+p4,121.416015625,31.220703125,edge cell (row 23) -> blank
+p5,121.40625,31.27734375,"exactly on the corner shared by rows 8-9, cols 7-8 -> rule picks row 9, col 8"
+p6,121.3984375,31.251953125,exactly on the edge between cols 5 and 6 -> col 6
+p7,121.3,31.25,outside the raster -> blank
+p8,121.455078125,31.298828125,"interior cell centre (row 3, col 20)"

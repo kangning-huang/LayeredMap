@@ -1,6 +1,7 @@
 [workspace]
 resolver = "3"
-members = ["crates/*", "apps/*", "xtask"]
+# LayeredMap: Phase 0 spikes (throwaway code; not default members).
+members = ["crates/*", "apps/*", "xtask", "spikes/*"]
 default-members = ["crates/*", "apps/rustgis", "apps/rustgis-cli", "xtask"]
 
 [workspace.package]

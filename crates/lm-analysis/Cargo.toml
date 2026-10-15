@@ -1,0 +1,14 @@
+[package]
+name = "lm-analysis"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+description = "LayeredMap: certified algorithms"
+
+[lints]
+workspace = true
+
+[dependencies]
+rustgis-geom = { workspace = true }
+rustgis-data = { workspace = true }

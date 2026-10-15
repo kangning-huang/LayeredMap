@@ -1,0 +1,93 @@
+# LayeredMap CI (build plan WP0.1): `cargo xtask ci` and a LayeredMap.app on macOS arm64 for every
+# push to a phase or task branch, and for pull requests. Signing and notarization run when the
+# Apple Developer secrets are present (docs/lm/signing.md); otherwise the app is ad-hoc signed.
+name: LayeredMap CI
+
+on:
+  push:
+    branches: [main, "phase-*", "wp/*"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: lm-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  ci:
+    name: xtask ci (macOS arm64)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: cargo xtask ci (fmt, clippy, tests, layering incl. lm-*)
+        run: cargo xtask ci
+
+  wasm:
+    name: lm crates build for wasm32
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - name: Build lm-* (except lm-ui, lm-mapview) for the browser
+        run: cargo build --locked --target wasm32-unknown-unknown -p lm-core -p lm-profile -p lm-actions -p lm-jobs -p lm-analysis -p lm-doc
+
+  app:
+    name: LayeredMap.app (macOS arm64)
+    runs-on: macos-latest
+    needs: ci
+    env:
+      HAS_CERT: ${{ secrets.LM_DEVELOPER_ID_P12_BASE64 != '' }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Import the Developer ID certificate
+        if: env.HAS_CERT == 'true'
+        env:
+          CERT: ${{ secrets.LM_DEVELOPER_ID_P12_BASE64 }}
+          CERT_PASSWORD: ${{ secrets.LM_DEVELOPER_ID_P12_PASSWORD }}
+        run: |
+          kc="$RUNNER_TEMP/lm.keychain-db"; kcpw="$(uuidgen)"
+          security create-keychain -p "$kcpw" "$kc"
+          security set-keychain-settings -lut 21600 "$kc"
+          security unlock-keychain -p "$kcpw" "$kc"
+          echo "$CERT" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security import "$RUNNER_TEMP/cert.p12" -P "$CERT_PASSWORD" -A -t cert -f pkcs12 -k "$kc"
+          security set-key-partition-list -S apple-tool:,apple: -k "$kcpw" "$kc"
+          security list-keychain -d user -s "$kc"
+      - name: Bundle (sign and notarize when configured)
+        env:
+          LM_BUILD_NUMBER: ${{ github.run_number }}
+          LM_SIGN_IDENTITY: ${{ secrets.LM_SIGN_IDENTITY }}
+          LM_NOTARY_APPLE_ID: ${{ secrets.LM_NOTARY_APPLE_ID }}
+          LM_NOTARY_TEAM_ID: ${{ secrets.LM_NOTARY_TEAM_ID }}
+          LM_NOTARY_PASSWORD: ${{ secrets.LM_NOTARY_PASSWORD }}
+        run: packaging/lm/bundle-macos.sh dist/lm
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LayeredMap-macos-arm64
+          path: dist/lm/*.zip
+
+  spike:
+    name: Rendering spike build (Phase 0)
+    runs-on: macos-latest
+    needs: ci
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo build --release --locked -p lm-render-spike
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lm-render-spike-macos-arm64
+          path: target/release/lm-render-spike

@@ -1,0 +1,16 @@
+[package]
+name = "lm-mapview"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+description = "LayeredMap: the map widget"
+
+[lints]
+workspace = true
+
+[dependencies]
+rustgis-map = { workspace = true }
+rustgis-tiles = { workspace = true }
+rustgis-render = { workspace = true }
+egui = { workspace = true }

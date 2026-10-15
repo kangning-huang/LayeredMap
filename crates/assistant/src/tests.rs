@@ -753,7 +753,10 @@ fn docs_pages_and_addresses() {
         for e in std::fs::read_dir(&d).unwrap().flatten() {
             let p = e.path();
             if p.is_dir() {
-                dirs.push(p);
+                // LayeredMap: docs/lm holds the fork's build docs, not RustGIS help pages.
+                if p != root.join("lm") {
+                    dirs.push(p);
+                }
             } else if p.extension().is_some_and(|x| x == "md") {
                 found.push(p.strip_prefix(&root).unwrap().to_string_lossy().replace('\\', "/"));
             }

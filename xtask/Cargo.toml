@@ -5,3 +5,9 @@ edition.workspace = true
 publish = false
 
 [dependencies]
+# LayeredMap: deflate for the generated ZIP fixtures (X1, X2).
+miniz_oxide = { workspace = true }
+
+[dev-dependencies]
+# LayeredMap: the generated GeoTIFFs are read back with an independent decoder.
+tiff = { workspace = true }
