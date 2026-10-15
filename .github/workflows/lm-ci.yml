@@ -73,7 +73,7 @@ jobs:
           LM_NOTARY_TEAM_ID: ${{ secrets.LM_NOTARY_TEAM_ID }}
           LM_NOTARY_PASSWORD: ${{ secrets.LM_NOTARY_PASSWORD }}
         run: packaging/lm/bundle-macos.sh dist/lm
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: LayeredMap-macos-arm64
           path: dist/lm/*.zip
@@ -87,7 +87,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - run: cargo build --release --locked -p lm-render-spike
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: lm-render-spike-macos-arm64
           path: target/release/lm-render-spike
