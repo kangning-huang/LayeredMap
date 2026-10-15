@@ -48,7 +48,9 @@ impl Script {
 
     /// The camera `t` seconds into the script.
     pub fn camera(self, home: Camera, t: f64) -> Camera {
-        let s = (t / self.duration()).clamp(0.0, 1.0);
+        // Hold the last camera once the script has ended.
+        let t = t.clamp(0.0, self.duration());
+        let s = t / self.duration();
         let z0 = zoom_of(home.res);
         match self {
             Script::Pan => Camera { center: Coord::new(home.center.x + 2000.0 * s * home.res, home.center.y), ..home },

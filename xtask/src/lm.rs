@@ -104,51 +104,6 @@ pub fn layers(root: &std::path::Path) -> Result<(), String> {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn deps(names: &[&str]) -> Vec<String> {
-        names.iter().map(|s| s.to_string()).collect()
-    }
-
-    #[test]
-    fn the_real_workspace_passes() {
-        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
-        layers(root).unwrap();
-    }
-
-    // Gate 0: "the layering check fails when a forbidden dependency is added on purpose".
-    #[test]
-    fn forbidden_dependencies_fail() {
-        assert!(!check("lm-core", &deps(&["egui"])).is_empty());
-        assert!(!check("lm-profile", &deps(&["eframe"])).is_empty());
-        assert!(!check("lm-mapview", &deps(&["rfd"])).is_empty());
-        assert!(!check("lm-ui", &deps(&["rustgis-data"])).is_empty());
-        assert!(!check("lm-ui", &deps(&["rustgis-analysis"])).is_empty());
-        assert!(!check("lm-actions", &deps(&["lm-jobs"])).is_empty());
-        assert!(!check("lm-core", &deps(&["rustgis-geom"])).is_empty());
-        assert!(!check("lm-unknown", &deps(&[])).is_empty());
-        assert!(check("lm-mapview", &deps(&["egui", "rustgis-map", "serde"])).is_empty());
-        assert!(check("layeredmap", &deps(&["lm-ui", "eframe", "egui"])).is_empty());
-    }
-
-    #[test]
-    fn reads_target_tables_and_skips_dev_dependencies() {
-        let toml = "[package]\nname = \"x\"\n\n[dependencies]\nserde = { workspace = true }\nlm-core = { path = \"../lm-core\" }\n\n\
-                    [target.'cfg(target_os = \"macos\")'.dependencies]\nobjc2 = \"0.6\"\n\n[dev-dependencies]\negui = \"1\"\n";
-        assert_eq!(dependencies(toml), ["serde", "lm-core", "objc2"]);
-    }
-
-    #[test]
-    fn a_forbidden_dependency_in_a_real_manifest_fails() {
-        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
-        let mut text = std::fs::read_to_string(root.join("crates/lm-core/Cargo.toml")).unwrap();
-        text.push_str("egui = { workspace = true }\n");
-        assert!(!check("lm-core", &dependencies(&text)).is_empty());
-    }
-}
-
 /// The app binary in the release target directory (honours `CARGO_TARGET_DIR`).
 fn app_binary(root: &std::path::Path) -> std::path::PathBuf {
     let target = std::env::var_os("CARGO_TARGET_DIR").map(std::path::PathBuf::from).unwrap_or_else(|| root.join("target"));
@@ -248,4 +203,49 @@ pub fn launch(root: &std::path::Path, args: &[String]) -> Result<(), String> {
         percentile(&mut ms, 0.5)
     );
     if p95 <= 2000.0 { Ok(()) } else { Err("cold launch p95 over 2 s".into()) }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn deps(names: &[&str]) -> Vec<String> {
+        names.iter().map(|s| s.to_string()).collect()
+    }
+
+    #[test]
+    fn the_real_workspace_passes() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
+        layers(root).unwrap();
+    }
+
+    // Gate 0: "the layering check fails when a forbidden dependency is added on purpose".
+    #[test]
+    fn forbidden_dependencies_fail() {
+        assert!(!check("lm-core", &deps(&["egui"])).is_empty());
+        assert!(!check("lm-profile", &deps(&["eframe"])).is_empty());
+        assert!(!check("lm-mapview", &deps(&["rfd"])).is_empty());
+        assert!(!check("lm-ui", &deps(&["rustgis-data"])).is_empty());
+        assert!(!check("lm-ui", &deps(&["rustgis-analysis"])).is_empty());
+        assert!(!check("lm-actions", &deps(&["lm-jobs"])).is_empty());
+        assert!(!check("lm-core", &deps(&["rustgis-geom"])).is_empty());
+        assert!(!check("lm-unknown", &deps(&[])).is_empty());
+        assert!(check("lm-mapview", &deps(&["egui", "rustgis-map", "serde"])).is_empty());
+        assert!(check("layeredmap", &deps(&["lm-ui", "eframe", "egui"])).is_empty());
+    }
+
+    #[test]
+    fn reads_target_tables_and_skips_dev_dependencies() {
+        let toml = "[package]\nname = \"x\"\n\n[dependencies]\nserde = { workspace = true }\nlm-core = { path = \"../lm-core\" }\n\n\
+                    [target.'cfg(target_os = \"macos\")'.dependencies]\nobjc2 = \"0.6\"\n\n[dev-dependencies]\negui = \"1\"\n";
+        assert_eq!(dependencies(toml), ["serde", "lm-core", "objc2"]);
+    }
+
+    #[test]
+    fn a_forbidden_dependency_in_a_real_manifest_fails() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
+        let mut text = std::fs::read_to_string(root.join("crates/lm-core/Cargo.toml")).unwrap();
+        text.push_str("egui = { workspace = true }\n");
+        assert!(!check("lm-core", &dependencies(&text)).is_empty());
+    }
 }
