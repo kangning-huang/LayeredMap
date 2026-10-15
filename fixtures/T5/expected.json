@@ -1,0 +1,46 @@
+{
+  "fixture": "T5",
+  "files": [
+    "survey.xlsx"
+  ],
+  "kind": "table",
+  "sheets": [
+    {
+      "name": "Summary",
+      "has_coordinates": false
+    },
+    {
+      "name": "Schools",
+      "has_coordinates": true,
+      "rows": 20,
+      "coordinates": {
+        "x": "longitude",
+        "y": "latitude",
+        "crs_epsg": 4326
+      }
+    },
+    {
+      "name": "Budget",
+      "has_coordinates": false
+    }
+  ],
+  "chosen_sheet": "Schools",
+  "sheet_choice": "Schools is the only sheet with coordinates; it is NOT the first sheet — the app should pick it (or ask), and say so",
+  "fields": {
+    "name": "name",
+    "type": "category",
+    "students": "measure",
+    "longitude": "longitude",
+    "latitude": "latitude"
+  },
+  "assumptions": [
+    {
+      "id": "sheet_chosen",
+      "visible": true
+    },
+    {
+      "id": "crs_wgs84_assumed",
+      "visible": true
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{"type": "FeatureCollection", "name": "cases", "features": [
+{"type": "Feature", "properties": {"feature_id": "pt_eq", "location": "equator"}, "geometry": {"type": "Point", "coordinates": [0.0, 0.0]}},
+{"type": "Feature", "properties": {"feature_id": "pt_60n", "location": "60N"}, "geometry": {"type": "Point", "coordinates": [10.0, 60.0]}},
+{"type": "Feature", "properties": {"feature_id": "pt_am", "location": "antimeridian"}, "geometry": {"type": "Point", "coordinates": [179.999, 10.0]}},
+{"type": "Feature", "properties": {"feature_id": "line_eq", "location": "equator"}, "geometry": {"type": "LineString", "coordinates": [[0.0, 0.0], [1.0, 0.0]]}},
+{"type": "Feature", "properties": {"feature_id": "line_60n", "location": "60N"}, "geometry": {"type": "LineString", "coordinates": [[10.0, 60.0], [11.0, 60.0]]}},
+{"type": "Feature", "properties": {"feature_id": "line_am", "location": "antimeridian"}, "geometry": {"type": "MultiLineString", "coordinates": [[[179.5, 10.0], [180.0, 10.0]], [[-180.0, 10.0], [-179.5, 10.0]]]}},
+{"type": "Feature", "properties": {"feature_id": "poly_eq", "location": "equator"}, "geometry": {"type": "Polygon", "coordinates": [[[1.0, 0.0], [1.0, 1.0], [0.0, 1.0], [0.0, 0.0], [1.0, 0.0]]]}},
+{"type": "Feature", "properties": {"feature_id": "poly_60n", "location": "60N"}, "geometry": {"type": "Polygon", "coordinates": [[[11.0, 60.0], [11.0, 61.0], [10.0, 61.0], [10.0, 60.0], [11.0, 60.0]]]}},
+{"type": "Feature", "properties": {"feature_id": "poly_am", "location": "antimeridian"}, "geometry": {"type": "MultiPolygon", "coordinates": [[[[180.0, 10.0], [180.0, 11.0], [179.5, 11.0], [179.5, 10.0], [180.0, 10.0]]], [[[-179.5, 10.0], [-179.5, 11.0], [-180.0, 11.0], [-180.0, 10.0], [-179.5, 10.0]]]]}}
+]}

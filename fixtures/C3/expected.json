@@ -1,0 +1,33 @@
+{
+  "fixture": "C3",
+  "files": [
+    "baidu_pois.csv"
+  ],
+  "kind": "table",
+  "rows": 30,
+  "coordinates": {
+    "x": "lng",
+    "y": "lat"
+  },
+  "offset_question": {
+    "asked": true,
+    "suggested": "BD-09",
+    "hint": "file name contains 'baidu'",
+    "alternatives": [
+      "WGS 84",
+      "GCJ-02"
+    ]
+  },
+  "fields": {
+    "name": "name",
+    "category": "category",
+    "lng": "longitude",
+    "lat": "latitude"
+  },
+  "assumptions": [
+    {
+      "id": "offset_system_bd09",
+      "visible": true
+    }
+  ]
+}

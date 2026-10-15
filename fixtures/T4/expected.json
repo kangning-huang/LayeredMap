@@ -1,0 +1,80 @@
+{
+  "fixture": "T4",
+  "files": [
+    "stations_gbk.csv"
+  ],
+  "kind": "table",
+  "rows": 10,
+  "encoding": {
+    "expected": "GBK",
+    "accept": [
+      "GBK",
+      "GB18030",
+      "CP936"
+    ]
+  },
+  "delimiter": ";",
+  "decimal_separator": ",",
+  "coordinates": {
+    "x": "经度",
+    "y": "纬度",
+    "crs_epsg": 4326
+  },
+  "fields": {
+    "编码": "code",
+    "名称": "name",
+    "经度": "longitude",
+    "纬度": "latitude",
+    "金额": "measure",
+    "日期": "date"
+  },
+  "raw_string_preservation": {
+    "编码": [
+      "001234",
+      "000056",
+      "120001",
+      "007700",
+      "000001",
+      "030303",
+      "100000",
+      "000999",
+      "045600",
+      "009000"
+    ],
+    "日期": [
+      "2024-03-05",
+      "2024-03-06",
+      "2024-11-30",
+      "2025-01-01",
+      "2025-02-28",
+      "2024-07-14",
+      "2024-12-31",
+      "2025-06-01",
+      "2024-02-29",
+      "2025-03-15"
+    ],
+    "rule": "codes keep leading zeros (text, never 1234); raw cell strings are kept verbatim alongside any parsed value; decimal-comma numbers parse as 1234,50 -> 1234.5"
+  },
+  "parsed_examples": {
+    "row1": {
+      "经度": 121.473701,
+      "纬度": 31.230416,
+      "金额": 1234.5,
+      "日期": "2024-03-05"
+    }
+  },
+  "assumptions": [
+    {
+      "id": "encoding_detected",
+      "visible": true
+    },
+    {
+      "id": "decimal_comma",
+      "visible": true
+    },
+    {
+      "id": "crs_wgs84_assumed",
+      "visible": true
+    }
+  ]
+}

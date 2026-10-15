@@ -1,0 +1,74 @@
+{
+  "fixture": "V10",
+  "files": [
+    "edge_cases.geojson"
+  ],
+  "kind": "vector",
+  "feature_count": 9,
+  "crs": {
+    "epsg": 4326,
+    "source": "declared (GeoJSON RFC 7946 default)"
+  },
+  "cases": [
+    {
+      "case": "control",
+      "valid": true,
+      "geodesic_area_m2_geod_edges": 105830589.202,
+      "expected": "imports and measures normally"
+    },
+    {
+      "case": "antimeridian_polygon",
+      "valid": true,
+      "geodesic_area_m2_geod_edges": 23631413768.4,
+      "expected": "treat as crossing 180° (small box ≈ 2.363e+10 m²), or warn honestly; must NOT draw/measure a 358°-wide polygon",
+      "naive_planar_wrong_width_deg": 358
+    },
+    {
+      "case": "antimeridian_line",
+      "valid": true,
+      "geodesic_length_m": 111319.490793,
+      "expected": "≈111 km geodesic length; must not report ≈39,900 km"
+    },
+    {
+      "case": "polar_polygon",
+      "valid": true,
+      "geodesic_area_m2_geod_edges": 974219761980.0,
+      "cap_area_north_of_85N_m2_exact": 979155200115.0,
+      "expected": "area of the polar cap (edges between 10°-spaced vertices are geodesics, so slightly less than the exact parallel-bounded cap); must contain the pole; must not be reported as ~0 or as the rest of the Earth"
+    },
+    {
+      "case": "zero_area_polygon",
+      "valid": false,
+      "invalid_reason": "Self-intersection[121 31.1]",
+      "geodesic_area_m2_geod_edges": 0.0,
+      "expected": "honest error/warning: zero-area (degenerate) polygon"
+    },
+    {
+      "case": "self_intersecting_polygon",
+      "valid": false,
+      "invalid_reason": "Self-intersection[121.05 31.05]",
+      "geodesic_area_m2_geod_edges": 0.0,
+      "expected": "honest error/warning: self-intersection; if repaired (make_valid) area = two triangles",
+      "make_valid_geodesic_area_m2": 52915302.6623
+    },
+    {
+      "case": "null_geometry",
+      "empty": true,
+      "valid": null,
+      "expected": "report as empty / no geometry; do not crash; keep attributes"
+    },
+    {
+      "case": "empty_polygon",
+      "empty": true,
+      "valid": null,
+      "expected": "report as empty / no geometry; do not crash; keep attributes"
+    },
+    {
+      "case": "empty_collection",
+      "empty": true,
+      "valid": null,
+      "expected": "report as empty / no geometry; do not crash; keep attributes"
+    }
+  ],
+  "notes": "Areas computed with pyproj.Geod (WGS84), polygon edges = geodesics between the given vertices. Validity from GEOS (shapely 2)."
+}

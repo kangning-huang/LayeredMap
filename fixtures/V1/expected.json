@@ -1,0 +1,67 @@
+{
+  "fixture": "V1",
+  "files": [
+    "districts.geojson"
+  ],
+  "kind": "vector",
+  "layers": [
+    {
+      "name": "districts",
+      "geometry": "area",
+      "count": 17,
+      "geometry_types": {
+        "Polygon": 16,
+        "MultiPolygon": 1
+      },
+      "polygons_with_holes": [
+        "D06"
+      ],
+      "multipolygons": [
+        "D04"
+      ]
+    }
+  ],
+  "crs": {
+    "epsg": 4326,
+    "source": "declared (GeoJSON RFC 7946 default)"
+  },
+  "extent_lonlat": [
+    121.2,
+    30.9,
+    121.8,
+    31.5
+  ],
+  "fields": {
+    "district_id": "id",
+    "name_zh": "name",
+    "name_en": "name",
+    "population": "measure",
+    "area_km2": "measure"
+  },
+  "field_types": {
+    "district_id": "text",
+    "name_zh": "text",
+    "name_en": "text",
+    "population": "integer",
+    "area_km2": "real"
+  },
+  "missing_values": {
+    "population": 1
+  },
+  "population": {
+    "n_with_values": 16,
+    "sum": 24772106,
+    "ties": [
+      [
+        "D15",
+        "D16"
+      ]
+    ],
+    "missing": [
+      "D08"
+    ]
+  },
+  "assumptions": [],
+  "encoding": "UTF-8",
+  "notes": "Insight expectations are in expected_insight.csv (rank_check.py)."
+}

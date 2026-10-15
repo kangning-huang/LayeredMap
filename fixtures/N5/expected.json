@@ -1,0 +1,22 @@
+{
+  "fixture": "N5",
+  "files": [
+    "cases.geojson"
+  ],
+  "kind": "vector",
+  "feature_count": 9,
+  "crs": {
+    "epsg": 4326,
+    "source": "declared (GeoJSON RFC 7946 default)"
+  },
+  "expected_files": [
+    "expected_measure.csv",
+    "expected_buffer.csv"
+  ],
+  "tolerance": {
+    "length_rel": 1e-09,
+    "area_rel": 1e-09,
+    "buffer_area_rel": 0.001
+  },
+  "assumptions": []
+}

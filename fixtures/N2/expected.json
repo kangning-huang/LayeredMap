@@ -1,0 +1,29 @@
+{
+  "fixture": "N2",
+  "files": [
+    "areas.geojson",
+    "points.geojson"
+  ],
+  "kind": "vector",
+  "layers": [
+    {
+      "name": "areas",
+      "geometry": "area",
+      "count": 3
+    },
+    {
+      "name": "points",
+      "geometry": "point",
+      "count": 12
+    }
+  ],
+  "crs": {
+    "epsg": 4326,
+    "source": "declared (GeoJSON RFC 7946 default)"
+  },
+  "count_rule": "a point on a boundary counts in every area it touches (intersects); overlapping areas each count their points; zero-count areas are listed with 0",
+  "expected_files": [
+    "expected_count_in_areas.csv"
+  ],
+  "assumptions": []
+}

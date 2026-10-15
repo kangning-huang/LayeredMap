@@ -1,0 +1,54 @@
+{
+  "fixture": "V9",
+  "files": [
+    "roads_bundle.zip",
+    "city_layers.gpkg"
+  ],
+  "kind": "vector",
+  "archives": {
+    "roads_bundle.zip": {
+      "shapefile_path": "export/2024/shanghai/transport/roads.shp",
+      "layers": [
+        {
+          "name": "roads",
+          "geometry": "line",
+          "count": 6
+        }
+      ],
+      "crs": {
+        "epsg": 4326,
+        "source": "declared (.prj)"
+      },
+      "other_members": [
+        "export/2024/readme.txt"
+      ]
+    }
+  },
+  "groups": {
+    "city_layers.gpkg": {
+      "layer_count": 3,
+      "layers": [
+        {
+          "name": "schools",
+          "geometry": "point",
+          "count": 8
+        },
+        {
+          "name": "roads",
+          "geometry": "line",
+          "count": 6
+        },
+        {
+          "name": "parks",
+          "geometry": "area",
+          "count": 3
+        }
+      ],
+      "crs": {
+        "epsg": 4326,
+        "source": "declared"
+      }
+    }
+  },
+  "assumptions": []
+}

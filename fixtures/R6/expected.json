@@ -1,0 +1,35 @@
+{
+  "fixture": "R6",
+  "files": [
+    "scaled.tif"
+  ],
+  "kind": "raster",
+  "size": [
+    24,
+    24
+  ],
+  "dtype": "int16",
+  "crs": {
+    "epsg": 4326,
+    "source": "declared"
+  },
+  "scale": 0.1,
+  "offset": -100.0,
+  "nodata_tag": null,
+  "decoded_value_rule": "value = raw * scale + offset",
+  "suspected_nodata_raw": -9999,
+  "suspected_nodata_where": "outer 2-pixel border only",
+  "valid_decoded_range": [
+    13.400000000000006,
+    136.5
+  ],
+  "assumptions": [
+    {
+      "id": "nodata_assumed",
+      "raw_value": -9999,
+      "visible": true,
+      "text": "No NoData tag; -9999 appears only along the edges, so it is treated as NoData"
+    }
+  ],
+  "notes": "Point sampling expectations in expected_raster_sample.csv (raster_sample.py)."
+}

@@ -1,0 +1,26 @@
+{
+  "fixture": "N8",
+  "files": [
+    "../R3/landcover.tif",
+    "../V1/districts.geojson"
+  ],
+  "kind": "raster+vector",
+  "action": "category shares per area",
+  "areas": {
+    "file": "../V1/districts.geojson",
+    "id": "district_id",
+    "count": 17
+  },
+  "raster": {
+    "file": "../R3/landcover.tif",
+    "value_role": "category"
+  },
+  "rule": "share = sum(frac * cell_area) per category / sum(frac * cell_area) over valid cells; never a mean of category codes",
+  "expected_files": [
+    "expected_category_shares.csv"
+  ],
+  "tolerance": {
+    "share_abs": 1e-06
+  },
+  "assumptions": []
+}

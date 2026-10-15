@@ -1,0 +1,59 @@
+{
+  "fixture": "V4",
+  "files": [
+    "districts_gk.shp",
+    "districts_gk.shx",
+    "districts_gk.dbf",
+    "districts_gk.cpg"
+  ],
+  "kind": "vector",
+  "layers": [
+    {
+      "name": "districts_gk",
+      "geometry": "area",
+      "count": 17
+    }
+  ],
+  "crs": {
+    "epsg": 4549,
+    "name": "CGCS2000 / 3-degree Gauss-Kruger CM 120E",
+    "source": "resolved (no .prj)"
+  },
+  "projected_bounds": [
+    614006.599,
+    3420504.505,
+    672100.28,
+    3487815.1
+  ],
+  "true_extent_lonlat": [
+    121.2,
+    30.9,
+    121.8,
+    31.5
+  ],
+  "resolver": {
+    "question": "Where should this data be?",
+    "expected_answer": "Shanghai, China",
+    "expected_top_candidate_epsg": 4549,
+    "equivalent_candidates_epsg": [
+      2385,
+      2436
+    ],
+    "equivalent_note": "Xian 1980 (2385) and Beijing 1954 (2436) 3-degree GK CM 120E use the same false easting; they place the data within ~100 m of EPSG:4549.",
+    "distinguishable_non_candidates": {
+      "4528": "zone-prefixed (false easting 40500000) — x would be ~40.6 million",
+      "4550": "CM 123E — would place the data ~3° east, in the East China Sea"
+    }
+  },
+  "fields": {
+    "dist_id": "id",
+    "name_en": "name"
+  },
+  "assumptions": [
+    {
+      "id": "crs_unknown_projected",
+      "text": "No .prj and coordinates are not degrees; user must confirm the place",
+      "visible": true
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "fixture": "R3",
+  "files": [
+    "landcover.tif"
+  ],
+  "kind": "raster",
+  "size": [
+    200,
+    200
+  ],
+  "bands": 1,
+  "dtype": "uint8",
+  "nodata": 0,
+  "crs": {
+    "epsg": 4326,
+    "source": "declared"
+  },
+  "bounds": [
+    121.2,
+    30.9,
+    121.8,
+    31.5
+  ],
+  "pixel_size_deg": 0.003,
+  "value_role": "category",
+  "categories_present": [
+    10,
+    20,
+    30,
+    40,
+    50,
+    60,
+    70,
+    80,
+    90
+  ],
+  "pixel_counts": {
+    "10": 3330,
+    "20": 1396,
+    "30": 3777,
+    "40": 7997,
+    "50": 13756,
+    "60": 905,
+    "70": 1672,
+    "80": 5840,
+    "90": 1327
+  },
+  "category_labels": {
+    "10": "Tree cover",
+    "20": "Shrubland",
+    "30": "Grassland",
+    "40": "Cropland",
+    "50": "Built-up",
+    "60": "Bare / sparse vegetation",
+    "70": "Snow and ice",
+    "80": "Permanent water bodies",
+    "90": "Herbaceous wetland",
+    "95": "Mangroves",
+    "100": "Moss and lichen"
+  },
+  "analysis_rule": "category shares, never means (see N8)",
+  "assumptions": []
+}

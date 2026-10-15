@@ -1,0 +1,27 @@
+# Reference environment for LayeredMap fixture expectations (WP0.8).
+# Versions pinned to what was actually installed (major.minor).
+# Create:  mamba env create -f reference/environment.yml
+# Then:    mamba run -n layeredmap-ref pip install --no-deps coord-convert==0.2.1
+#          (--no-deps: coord-convert declares fiona/tqdm for its CLI only; a pip
+#           fiona wheel would bundle a second GDAL into the env.)
+name: layeredmap-ref
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - geopandas=1.2
+  - shapely=2.2
+  - pyproj=3.8
+  - proj=9.9
+  - geos=3.14
+  - libgdal-core=3.13
+  - rasterio=1.5
+  - exactextract=0.3
+  - pyogrio=0.13
+  - pandas=3.0
+  - numpy=2.5
+  - openpyxl=3.1
+  - pip
+  - pip:
+      - prcoords==1.0.2        # CC0-1.0 / GPL-3.0-or-later
+      - eviltransform==0.1.1   # MIT

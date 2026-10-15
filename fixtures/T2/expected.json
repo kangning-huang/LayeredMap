@@ -1,0 +1,46 @@
+{
+  "fixture": "T2",
+  "files": [
+    "deliveries.csv"
+  ],
+  "kind": "table",
+  "rows": 30,
+  "question_card": {
+    "asked": true,
+    "question": "Which columns hold the location?",
+    "candidate_pairs": [
+      {
+        "x": "x",
+        "y": "y",
+        "label": "x / y"
+      },
+      {
+        "x": "lng2",
+        "y": "lat2",
+        "label": "lng2 / lat2"
+      }
+    ],
+    "no_silent_default": true
+  },
+  "swapped_rows": {
+    "x/y": [
+      5,
+      13,
+      21
+    ],
+    "lng2/lat2": [
+      9,
+      26
+    ],
+    "note": "1-based data rows whose values are lat-in-x / lon-in-lat2 etc.; app should flag them (values ~31 in the lon column, ~121 in the lat column)"
+  },
+  "fields": {
+    "id": "id",
+    "name": "name",
+    "x": "longitude?",
+    "y": "latitude?",
+    "lat2": "latitude?",
+    "lng2": "longitude?"
+  },
+  "assumptions": []
+}

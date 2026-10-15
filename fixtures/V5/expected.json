@@ -1,0 +1,51 @@
+{
+  "fixture": "V5",
+  "files": [
+    "places_gbk.shp",
+    "places_gbk.shx",
+    "places_gbk.dbf",
+    "places_gbk.prj"
+  ],
+  "kind": "vector",
+  "layers": [
+    {
+      "name": "places_gbk",
+      "geometry": "point",
+      "count": 12
+    }
+  ],
+  "crs": {
+    "epsg": 4326,
+    "source": "declared (.prj)"
+  },
+  "encoding": {
+    "expected": "GBK",
+    "accept": [
+      "GBK",
+      "GB18030",
+      "CP936"
+    ],
+    "cpg_present": false,
+    "dbf_language_driver_id": 0,
+    "source": "detected"
+  },
+  "fields": {
+    "id": "id",
+    "name": "name",
+    "district": "category",
+    "category": "category"
+  },
+  "first_row": {
+    "id": 1,
+    "name": "人民广场",
+    "district": "黄浦区",
+    "category": "广场"
+  },
+  "assumptions": [
+    {
+      "id": "encoding_detected",
+      "text": "Text encoding detected as GBK (no .cpg)",
+      "visible": true
+    }
+  ]
+}
