@@ -18,7 +18,7 @@ click › Open once).
 | Feel harness, `cargo xtask feel --runs 3` (F1 over the online basemap, vsync off) | **pass** — worst p95: pan 5.2 ms, zoom in 4.5, zoom out 4.5, pinch 4.6; 0 frames over 16.7 ms out of 20,223; 60 fps goal on **4 of 4** scripts. `docs/lm/feel/` |
 | Cold launch to the first map frame, `cargo xtask launch` (10 launches) | **pass** — p50 149 ms, p95 198 ms (limit 2 s) |
 | Place search: "Shanghai", "成都", "Lisbon" find their cities first | pass — `search::tests::gate_1_searches_find_their_cities`; ~0.7 ms per query over 34,163 cities |
-| CI on GitHub | see the `phase-1` run |
+| CI on GitHub (macOS arm64: fmt, clippy, all workspace tests incl. the screenshot tests; wasm32 build; app bundle) | **pass** — run 38720728077 on a67b96e |
 | The feel harness in CI with deterministic counters against the base commit | **not built** — the harness records renders and frames per script; the CI comparison is open |
 
 ## 2. Debug pass
