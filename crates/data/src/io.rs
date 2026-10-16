@@ -1800,8 +1800,11 @@ mod tests {
             let t = std::time::Instant::now();
             let (read, rep) = read_shapefile_parts_with(parts, "pts", ShapefileOptions::default()).unwrap();
             assert!(t.elapsed().as_secs() < 5, "with .dbf: {with_dbf}");
-            assert_eq!(read.features.len(), 2, "with .dbf: {with_dbf}");
+            // The damaged shape is kept as a row without a shape, and reported.
+            assert_eq!(read.features.len(), 3, "with .dbf: {with_dbf}");
             assert_eq!(rep.skipped, 1);
+            assert_eq!(rep.unreadable, vec![2]);
+            assert!(read.features[2].geometry.is_none());
         }
         // With the index, a shape that can't be read keeps the next record with the next shape.
         let mut shp = get("shp");
@@ -1810,9 +1813,11 @@ mod tests {
         let parts = ShapefileParts { shp, shx: Some(get("shx")), dbf: Some(get("dbf")), prj: None };
         let (read, rep) = read_shapefile_parts_with(parts, "pts", ShapefileOptions::default()).unwrap();
         assert_eq!(rep.skipped, 1);
-        assert_eq!(read.features.len(), 2);
+        assert_eq!(rep.unreadable, vec![1]);
+        assert_eq!(read.features.len(), 3);
+        assert!(read.features[1].geometry.is_none());
         let n = read.field_index("n").unwrap();
-        assert_eq!(read.value(1, n), &Value::Int(2), "the third shape keeps the third record");
+        assert_eq!(read.value(2, n), &Value::Int(2), "the third shape keeps the third record");
     }
 
     /// A shape whose point count claims far more than its record holds is skipped without
@@ -1856,8 +1861,9 @@ mod tests {
         let parts = ShapefileParts { shp, shx: Some(shx), dbf: Some(get("dbf")), prj: None };
         let (read, rep) = read_shapefile_parts_with(parts, "lines", ShapefileOptions::default()).unwrap();
         assert_eq!(rep.skipped, 1);
-        assert_eq!(read.features.len(), 2);
-        assert_eq!(read.value(1, read.field_index("n").unwrap()), &Value::Int(2));
+        assert_eq!(rep.unreadable, vec![1]);
+        assert_eq!(read.features.len(), 3);
+        assert_eq!(read.value(2, read.field_index("n").unwrap()), &Value::Int(2));
     }
 
     /// A GBK `.dbf` read as GBK gives its Chinese text (LayeredMap fixture V5, when present).
