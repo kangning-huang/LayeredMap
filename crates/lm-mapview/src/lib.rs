@@ -358,7 +358,10 @@ impl MapView {
             // A drag that ends at rest doesn't glide.
             self.velocity = egui::Vec2::ZERO;
         }
-        let hover = ui.input(|i| i.pointer.hover_pos()).filter(|p| rect.contains(*p));
+        // Only when the map itself is under the pointer: a panel floating over it (the layer list,
+        // the inspector) takes its own scrolling and pinching.
+        let map_layer = ui.layer_id();
+        let hover = ui.input(|i| i.pointer.hover_pos()).filter(|p| rect.contains(*p) && ui.ctx().layer_id_at(*p).is_none_or(|l| l == map_layer));
         if let Some(p) = hover {
             let local = p - rect.min;
             for e in ui.input(|i| i.events.clone()) {

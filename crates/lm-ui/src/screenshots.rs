@@ -115,3 +115,36 @@ fn phase2_layers() {
     assert_eq!(n, 2);
     h.snapshot("phase2_layers");
 }
+
+/// Scrolling over the layer list scrolls the list, never the map (owner's bug report, 2026-10-16).
+#[test]
+fn scrolling_over_the_layer_list_does_not_zoom_the_map() {
+    let mut h = harness_phase(2, false, (121.47, 31.23, 9.0), |s| {
+        let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../fixtures");
+        for (i, f) in ["V1/districts.geojson", "T1/schools.csv", "V2/mixed.geojson"].iter().enumerate() {
+            let layers = lm_jobs::import::import_path(&dir.join(f), &lm_jobs::import::Ctx::detached(Default::default())).unwrap_or_default();
+            s.ws.add_imported(layers, 200 + i as u64);
+        }
+        s.ws.selected = None;
+    });
+    h.run_steps(10);
+    let zoom = |h: &Harness<'static, Option<Shell>>| h.state().as_ref().map_or(0.0, |s| s.map_view().zoom());
+    let over_shelf = egui::pos2(120.0, 140.0);
+    let over_map = egui::pos2(700.0, 450.0);
+    for (pos, should_zoom) in [(over_shelf, false), (over_map, true)] {
+        let start = zoom(&h);
+        for _ in 0..5 {
+            h.input_mut().events.push(egui::Event::PointerMoved(pos));
+            h.input_mut().events.push(egui::Event::MouseWheel {
+                unit: egui::MouseWheelUnit::Line,
+                delta: egui::vec2(0.0, 1.0),
+                modifiers: egui::Modifiers::NONE,
+                phase: egui::TouchPhase::Move,
+            });
+            h.step();
+        }
+        h.run_steps(30);
+        let moved = (zoom(&h) - start).abs() > 0.01;
+        assert_eq!(moved, should_zoom, "at {pos:?}: zoom went from {start} to {}", zoom(&h));
+    }
+}
