@@ -1236,20 +1236,30 @@ pub fn read_shapefile_parts_with(parts: ShapefileParts, name: &str, opts: Shapef
             (f.name().to_string(), ty)
         })
         .collect();
-    let shapes = match parts.shx {
+    // Without an index the shapes are read in order, and a damaged shape stops the reading: the
+    // reader can't tell where the next one starts, and would return the same error forever.
+    let sequential = parts.shx.is_none();
+    let mut shapes = match parts.shx {
         Some(shx) => shapefile::ShapeReader::with_shx(Cursor::new(parts.shp), Cursor::new(shx)),
         None => shapefile::ShapeReader::new(Cursor::new(parts.shp)),
     }
     .map_err(fmt)?;
-    let mut reader = shapefile::Reader::new(shapes, dbf);
+    let mut dbf = dbf;
+    let mut records = dbf.iter_records();
     let fields: Vec<Field> = order.iter().map(|(n, t)| Field::new(n.clone(), *t)).collect();
     let mut ds = Dataset::new(name, GeometryType::None, fields);
     let to_lonlat = if opts.raw_coordinates { None } else { shapefile_crs(parts.prj.as_deref(), &mut report) };
     let (mut converted, mut unconverted) = (0usize, 0usize);
     let pt = |x: f64, y: f64| Coord::new(x, y);
-    for item in reader.iter_shapes_and_records() {
-        let Ok((shape, record)) = item else {
+    for item in shapes.iter_shapes() {
+        // One record per shape, also for a shape that can't be read, so the attributes of the
+        // shapes after it stay with their own shapes.
+        let record = records.next();
+        let (Ok(shape), Some(Ok(record))) = (item, record) else {
             report.skipped += 1;
+            if sequential {
+                break;
+            }
             continue;
         };
         let geom = match shape {
@@ -1333,6 +1343,7 @@ fn read_shapes_only(
 ) -> Result<(Dataset, ReadReport)> {
     use std::io::Cursor;
     let fmt = |e: shapefile::Error| DataError::Format(format!("Shapefile: {e}"));
+    let sequential = shx.is_none();
     let mut reader = match shx {
         Some(shx) => shapefile::ShapeReader::with_shx(Cursor::new(shp), Cursor::new(shx)),
         None => shapefile::ShapeReader::new(Cursor::new(shp)),
@@ -1342,6 +1353,11 @@ fn read_shapes_only(
     let to_lonlat = if opts.raw_coordinates { None } else { shapefile_crs(prj.as_deref(), &mut report) };
     let mut ds = Dataset::new(name, GeometryType::None, Vec::new());
     for shape in reader.iter_shapes() {
+        // Read in order without an index, a damaged shape stops the reading (see above).
+        if shape.is_err() && sequential {
+            report.skipped += 1;
+            break;
+        }
         match shape.ok().and_then(shape_geometry) {
             Some(g) => {
                 let g = match &to_lonlat {
@@ -1667,6 +1683,41 @@ mod tests {
         assert_eq!(read.features.len(), 3);
         assert!(read.fields.is_empty());
         assert!(rep.messages.iter().any(|m| m.contains(".dbf")), "{:?}", rep.messages);
+    }
+
+    /// A `.shp` whose header promises more than the file holds, read without its `.shx`, stops at
+    /// the damaged shape instead of returning the same error forever (found by fuzzing).
+    #[test]
+    fn a_truncated_shapefile_without_its_index_stops() {
+        let mut ds = Dataset::new("pts", GeometryType::Point, vec![Field::new("n", FieldType::Integer)]);
+        for i in 0..3 {
+            ds.push(Some(Geometry::Point(Coord::new(f64::from(i), 1.0))), vec![Value::Int(i64::from(i))]);
+        }
+        let (files, _) = shapefile_parts(&ds).unwrap();
+        let get = |e: &str| files.iter().find(|(x, _)| *x == e).map(|(_, b)| b.clone()).unwrap();
+        let mut shp = get("shp");
+        // File length (16-bit words, big-endian) far past the end, and the last shape cut short.
+        shp[24..28].copy_from_slice(&1_000_000u32.to_be_bytes());
+        shp.truncate(shp.len() - 6);
+        for dbf in [None, Some(get("dbf"))] {
+            let with_dbf = dbf.is_some();
+            let parts = ShapefileParts { shp: shp.clone(), shx: None, dbf, prj: None };
+            let t = std::time::Instant::now();
+            let (read, rep) = read_shapefile_parts_with(parts, "pts", ShapefileOptions::default()).unwrap();
+            assert!(t.elapsed().as_secs() < 5, "with .dbf: {with_dbf}");
+            assert_eq!(read.features.len(), 2, "with .dbf: {with_dbf}");
+            assert_eq!(rep.skipped, 1);
+        }
+        // With the index, a shape that can't be read keeps the next record with the next shape.
+        let mut shp = get("shp");
+        // The second point record (header 100 bytes, records of 8 + 20) gets an unknown shape type.
+        shp[136..140].copy_from_slice(&99i32.to_le_bytes());
+        let parts = ShapefileParts { shp, shx: Some(get("shx")), dbf: Some(get("dbf")), prj: None };
+        let (read, rep) = read_shapefile_parts_with(parts, "pts", ShapefileOptions::default()).unwrap();
+        assert_eq!(rep.skipped, 1);
+        assert_eq!(read.features.len(), 2);
+        let n = read.field_index("n").unwrap();
+        assert_eq!(read.value(1, n), &Value::Int(2), "the third shape keeps the third record");
     }
 
     /// A GBK `.dbf` read as GBK gives its Chinese text (LayeredMap fixture V5, when present).
