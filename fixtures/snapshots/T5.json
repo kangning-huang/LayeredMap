@@ -1,11 +1,55 @@
 {
   "files": [
     {
-      "error": {
-        "kind": "Unsupported",
-        "message": "survey.xlsx holds no Shapefile. LayeredMap opens zipped Shapefiles; open other files directly (it holds docProps/app.xml, docProps/core.xml, xl/theme/theme1.xml, xl/worksheets/sheet1.xml, xl/worksheets/sheet2.xml)."
-      },
-      "file": "survey.xlsx"
+      "file": "survey.xlsx",
+      "layers": [
+        {
+          "assumptions": [
+            {
+              "chosen": "sheet:Schools",
+              "kind": "ExcelSheet",
+              "line": "Opened sheet 'Schools'.",
+              "treatment": "Visible"
+            },
+            {
+              "chosen": "columns:longitude,latitude",
+              "kind": "CsvCoordinateColumns",
+              "line": "Located using longitude and latitude as GPS coordinates (WGS 84).",
+              "treatment": "Visible"
+            },
+            {
+              "chosen": "wgs84",
+              "kind": "ChinaOffsetPossible",
+              "line": "If these came from a Chinese map app (Amap, Tencent or Baidu), they may sit a few hundred meters off.",
+              "treatment": "Visible"
+            }
+          ],
+          "count": 20,
+          "crs": "Wgs84",
+          "crs_confidence": "Likely",
+          "encoding": null,
+          "exclusions": 0,
+          "extent": [
+            121.30048,
+            31.007407,
+            121.689674,
+            31.39967
+          ],
+          "fields": {
+            "latitude": "Coordinate (Likely)",
+            "longitude": "Coordinate (Likely)",
+            "name": "Name (Likely)",
+            "students": "Measure(Count) (Likely)",
+            "type": "Category (Likely)"
+          },
+          "format": "Excel",
+          "kind": "Points",
+          "member": "Schools",
+          "name": "survey",
+          "notices": [],
+          "status": "Complete"
+        }
+      ]
     }
   ],
   "fixture": "T5"

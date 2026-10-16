@@ -32,7 +32,8 @@ T3's and R4's snapshots are written by the stress run:
 
 ## Initial snapshots: where they disagree with `expected.json`
 
-The first snapshots (2026-10-16) record what the importer does now; they are **not yet approved
+The first snapshots (2026-10-16) record what the importer does now (T5 and V9 were rewritten after
+the rebase onto `phase-2`, which merged the GeoPackage and Excel adapters; no other snapshot changed); they are **not yet approved
 by the owner**. The fixtures' hand-written `expected.json` files were not edited. Every place
 where the two disagree is listed here for the owner's decision at Gate 2: either the behaviour
 is fixed (and the snapshot rewritten), or the expectation is changed with a note.
@@ -42,7 +43,7 @@ Recurring across fixtures (not repeated below):
 - **Extra China line.** Every WGS 84-assumed layer inside mainland China (V1, V2, V3, T1, T2, T4,
   R6 points, X5) gets the visible line *"If these came from a Chinese map app (Amap, Tencent or
   Baidu), they may sit a few hundred meters off."* (`ChinaOffsetPossible`); no `expected.json`
-  lists it.
+  lists it. T5 has it too.
 - **Extra silent ID / category lines.** `IdentifierField` ("Treated as an ID.") and
   `FewValuesCategorical` ("Colored as categories.") appear, silently, where `expected.json`
   lists no assumptions (V1, V2, V3, V4, V5, V9, T2, T4, R6, C2).
@@ -59,12 +60,12 @@ Recurring across fixtures (not repeated below):
 | V3 | `crs_wgs84_assumed`, visible | matches (`NoCrsLonLat`, visible); plus the recurring lines |
 | V4 | `crs_unknown_projected`, *visible* | `NoCrsProjected` as a **question** ("Where should this data be?"), status Needs a decision. The expectation's text ("user must confirm the place") reads like a question too. |
 | V5 | `encoding_detected` "Text encoding detected as GBK (no .cpg)", **visible** | `ShapefileGbk` "Read text as Chinese (GBK).", **silent**. Encoding GBK and the first row match. |
-| V9 | GeoPackage `city_layers.gpkg` opens as a group of 3 layers | refused: "LayeredMap can't open .gpkg files yet." (GeoPackage is P1). The zipped Shapefile matches: 6 lines, from the `.prj`. |
+| V9 | GeoPackage `city_layers.gpkg` opens as a group of 3 layers (schools 8 points, roads 6 lines, parks 3 areas, declared EPSG:4326), `assumptions: []` | matches since the GeoPackage adapter (WP2.2 P1) was merged: 3 layers, members named after their tables, CRS WGS 84 *Certain*; the roads layer carries the recurring silent ID and category lines. The zipped Shapefile matches too: 6 lines, from the `.prj`. |
 | V10 | 9 features, one layer; the antimeridian polygon *"must NOT draw/measure a 358°-wide polygon"*; empty geometries reported | split into 2 layers (3 lines, 6 areas, counting the features without geometry; 2 exclusions are reported, for 3 empty cases), silent `MixedGeometrySplit` and visible `NoCrsLonLat`. The areas layer's extent is −180…180 and the lines layer's −179.5…179.5: the antimeridian cases are read naively. |
 | T1 | `crs_wgs84_assumed` visible | matches (`CsvCoordinateColumns` visible, "Located using lon and lat as GPS coordinates (WGS 84)."), 248 rows, 6 excluded |
 | T2 | question **"Which columns hold the location?"**, candidates x/y and lng2/lat2, no silent default | question worded **"Which columns locate these records?"**, recommended (preselected and drawn) lng2/lat2; 2 rows excluded under that pair |
 | T4 | three visible assumptions: `encoding_detected`, `decimal_comma`, `crs_wgs84_assumed` | only `CsvCoordinateColumns` (visible). The encoding is recorded (GBK) but has **no line**, and there is **no decimal-comma line**: the assumption catalog has no row for either in a CSV. Raw strings (leading zeros, dates) are kept (unit test). |
-| T5 | sheet "Schools" chosen, `sheet_chosen` visible | refused (Excel is P1), and the message is **wrong**: "survey.xlsx holds no Shapefile. LayeredMap opens zipped Shapefiles; …" because an .xlsx is a ZIP and the zipped-Shapefile adapter claims it. Honest wording would be "LayeredMap can't open .xlsx files yet." |
+| T5 | sheet "Schools" chosen (not the first sheet), `sheet_chosen` visible, `crs_wgs84_assumed` visible | matches since the Excel adapter (WP2.2 P1) was merged: visible `ExcelSheet` "Opened sheet 'Schools'.", visible `CsvCoordinateColumns` on longitude/latitude, 20 points; plus the recurring China line. (The earlier misleading "holds no Shapefile" refusal is gone: the zip adapter no longer claims .xlsx.) |
 | C1 | `offset_system_gcj02`, **visible** (and `offset_question.asked: true`) | `ChinaOffsetNamed` as a **question**: "These look like Amap (GCJ-02) coordinates. Convert to GPS coordinates?", preselected gcj02; status Needs a decision |
 | C2 | (no `expected.json`; `vectors.csv` holds conversion test vectors, not an import case) | opens as 58 points with an ambiguous-columns question (13 coordinate-like columns). `landmarks_TODO.csv` is owner-supplied and skipped. |
 | C3 | `offset_system_bd09`, **visible** | `ChinaOffsetNamed` as a **question** ("These look like Baidu (BD-09) coordinates. …"), preselected bd09 |
