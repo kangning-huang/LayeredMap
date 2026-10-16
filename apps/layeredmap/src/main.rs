@@ -105,7 +105,7 @@ impl eframe::App for App {
                 match action {
                     menu::Action::Quit => ctx.send_viewport_cmd(egui::ViewportCommand::Close),
                     menu::Action::LoadFixture => {
-                        if let Some(dir) = rfd::FileDialog::new().set_title("Load fixture (a folder or a GeoJSON/CSV file)").pick_folder() {
+                        if let Some(dir) = rfd::FileDialog::new().set_title("Load fixture (a folder of GeoJSON/CSV files)").pick_folder() {
                             self.shell.command(ctx, Command::LoadFixture(dir));
                         }
                     }

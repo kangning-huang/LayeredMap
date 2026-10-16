@@ -10,4 +10,5 @@ description = "LayeredMap: state model and data contracts. No UI, no file or net
 workspace = true
 
 [dependencies]
+serde = { workspace = true }
 

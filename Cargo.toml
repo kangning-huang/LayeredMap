@@ -37,6 +37,7 @@ web-time = "1"
 # geo / formats / rendering
 geo = "0.33"
 shapefile = "0.9"
+encoding_rs = "0.8"
 csv = "1"
 tiny-skia = "0.12"
 image = { version = "0.25", default-features = false, features = ["png"] }

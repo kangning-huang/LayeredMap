@@ -1039,6 +1039,8 @@ checksum = "abde818b4b82df61e01348c2b4610c221bcecb97cb7f567da086edf295d8d126"
 dependencies = [
  "bufrw",
  "byteorder",
+ "codepage",
+ "encoding_rs",
  "time",
 ]
 
@@ -2620,6 +2622,9 @@ dependencies = [
 [[package]]
 name = "lm-core"
 version = "0.2.0"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "lm-doc"
@@ -2627,17 +2632,28 @@ version = "0.2.0"
 dependencies = [
  "lm-core",
  "rustgis-data",
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror 2.0.21",
 ]
 
 [[package]]
 name = "lm-jobs"
 version = "0.2.0"
 dependencies = [
+ "csv",
+ "encoding_rs",
  "lm-analysis",
  "lm-core",
+ "lm-profile",
  "log",
  "rustgis-analysis",
  "rustgis-engine",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tiff",
 ]
 
 [[package]]
@@ -2657,9 +2673,11 @@ dependencies = [
 name = "lm-profile"
 version = "0.2.0"
 dependencies = [
+ "encoding_rs",
  "lm-core",
  "rustgis-data",
  "rustgis-geom",
+ "serde_json",
 ]
 
 [[package]]
@@ -3996,6 +4014,7 @@ dependencies = [
  "calamine",
  "crs-definitions",
  "csv",
+ "encoding_rs",
  "flatgeobuf",
  "geozero",
  "image",

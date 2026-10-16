@@ -288,12 +288,18 @@ pub fn nice(max: f64) -> f64 {
     [5.0, 2.0, 1.0].into_iter().map(|m| m * p).find(|v| *v <= max).unwrap_or(p)
 }
 
+/// A nice scale value as text: whole numbers with thousands separators ("5,000"), fractions as
+/// written ("0.5").
+fn nice_text(v: f64) -> String {
+    if v >= 1.0 && v.fract() == 0.0 { lm_core::model::group_thousands(v as u64) } else { format!("{v}") }
+}
+
 /// The scale bar's length in points and its label, for `m_per_pt` metres per point.
 pub fn scale(m_per_pt: f64, units: Units, max_pt: f64) -> (f64, String) {
     match units {
         Units::Metric => {
             let m = nice(m_per_pt * max_pt);
-            let label = if m >= 1000.0 { format!("{} km", m / 1000.0) } else { format!("{m} m") };
+            let label = if m >= 1000.0 { format!("{} km", nice_text(m / 1000.0)) } else { format!("{} m", nice_text(m)) };
             (m / m_per_pt, label)
         }
         Units::Imperial => {
@@ -301,10 +307,10 @@ pub fn scale(m_per_pt: f64, units: Units, max_pt: f64) -> (f64, String) {
             let ft_max = ft_per_pt * max_pt;
             if ft_max >= 5280.0 {
                 let mi = nice(ft_max / 5280.0);
-                (mi * 5280.0 / ft_per_pt, format!("{mi} mi"))
+                (mi * 5280.0 / ft_per_pt, format!("{} mi", nice_text(mi)))
             } else {
                 let ft = nice(ft_max);
-                (ft / ft_per_pt, format!("{ft} ft"))
+                (ft / ft_per_pt, format!("{} ft", nice_text(ft)))
             }
         }
     }
