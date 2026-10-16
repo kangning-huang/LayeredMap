@@ -4,10 +4,12 @@
 //!
 //! Drawing follows ADR-001 (strategy B2): RustGIS's CPU renderer runs on a worker thread and
 //! always renders the newest camera; meanwhile the last frame is moved and scaled so every
-//! gesture answers within one frame. A new frame crossfades in over 150 ms, labels with it.
+//! gesture answers within one frame. A new frame crossfades in over 150 ms; labels fade one by one
+//! (only those that appear or disappear, see `labels`).
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
 pub mod camera;
+mod labels;
 pub mod script;
 pub mod stats;
 mod worker;
@@ -62,7 +64,6 @@ struct Shown {
     tex: egui::TextureHandle,
     camera: Camera,
     size: (f64, f64),
-    labels: Vec<PlacedLabel>,
     /// When it started fading in (seconds).
     since: f64,
 }
@@ -74,6 +75,7 @@ pub struct MapView {
     camera: Camera,
     current: Option<Shown>,
     previous: Option<Shown>,
+    labels: labels::Labels,
     /// A spare texture handle to upload into, so frames don't allocate textures.
     spare: Option<egui::TextureHandle>,
     anim: Option<Animation>,
@@ -103,6 +105,7 @@ impl MapView {
             camera,
             current: None,
             previous: None,
+            labels: labels::Labels::default(),
             spare: None,
             anim: None,
             velocity: egui::Vec2::ZERO,
@@ -226,13 +229,19 @@ impl MapView {
         let ppp = ui.ctx().pixels_per_point();
         let view = View { width: w, height: h, pixels_per_point: f64::from(ppp), camera: self.camera, dark: false };
         self.worker.request(view, rustgis_tiles::cache::generation());
-        if let Some(f) = self.worker.poll() {
+        // While a crossfade runs, a newer frame waits for it to finish (at most 150 ms) unless the
+        // camera is moving: swapping mid-fade would drop the half-faded frame and pop.
+        let fading = self.current.as_ref().is_some_and(|c| t - c.since < self.fade_s);
+        if (!fading || out.moving)
+            && let Some(f) = self.worker.poll()
+        {
             self.take(ui.ctx(), f, t);
         }
+        let labels_fading = self.labels.step(dt, self.fade_s);
 
         self.paint(ui, rect, t, opts);
         let fading = self.current.as_ref().is_some_and(|c| t - c.since < self.fade_s);
-        if out.moving || fading || self.anim.is_some() || self.velocity.length() > 0.0 || self.worker.in_flight {
+        if out.moving || fading || labels_fading || self.anim.is_some() || self.velocity.length() > 0.0 || self.worker.in_flight {
             ui.ctx().request_repaint();
         }
         if !fading {
@@ -256,7 +265,8 @@ impl MapView {
             }
             None => ctx.load_texture("lm-map", img, egui::TextureOptions::LINEAR),
         };
-        let shown = Shown { tex, camera: f.camera, size: f.size, labels: f.labels, since: t };
+        self.labels.update(f.labels, &f.camera, f.size, self.current.is_none());
+        let shown = Shown { tex, camera: f.camera, size: f.size, since: t };
         // The frame on screen fades out under the new one; the one before it is recycled.
         if let Some(old) = self.current.replace(shown)
             && let Some(prev) = self.previous.replace(old)
@@ -288,26 +298,17 @@ impl MapView {
             let alpha = if self.previous.is_some() { a } else { 1.0 };
             painter.image(c.tex.id(), self.placed(rect, &c.camera, c.size), uv, Color32::WHITE.gamma_multiply(alpha));
         }
-        // Labels move with their frame (positions scale, text doesn't), so they never vanish
-        // mid-gesture; new placements fade in as the old fade out.
-        if let Some(p) = &self.previous {
-            self.paint_labels(&painter, rect, p, 1.0 - a);
-        }
-        if let Some(c) = &self.current {
-            self.paint_labels(&painter, rect, c, if self.previous.is_some() { a } else { 1.0 });
-        }
-    }
-
-    fn paint_labels(&self, painter: &egui::Painter, rect: Rect, s: &Shown, alpha: f32) {
-        if alpha <= 0.01 {
-            return;
-        }
-        let r = self.placed(rect, &s.camera, s.size);
-        let (sx, sy) = (r.width() / s.size.0 as f32, r.height() / s.size.1 as f32);
-        for l in &s.labels {
-            let at = pos2(r.min.x + l.x * sx, r.min.y + l.y * sy);
+        // Labels are anchored to the map (positions follow the camera, text doesn't scale), so
+        // they never vanish mid-gesture.
+        let (w, h) = (f64::from(rect.width()), f64::from(rect.height()));
+        for l in &self.labels.live {
+            if l.alpha <= 0.01 {
+                continue;
+            }
+            let (sx, sy) = self.camera.to_screen(l.at, w, h);
+            let at = pos2(rect.min.x + sx as f32, rect.min.y + sy as f32);
             if rect.expand(200.0).contains(at) {
-                draw_label(painter, l, at, alpha);
+                draw_label(&painter, &l.label, at, l.alpha);
             }
         }
     }

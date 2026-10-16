@@ -42,6 +42,8 @@ pub enum Command {
     SetBasemap(String),
     /// Developer only: load a fixture (a file or a folder of GeoJSON/CSV) as map layers.
     LoadFixture(PathBuf),
+    /// Fly to longitude, latitude, zoom, as choosing a search result does (scripts and tests).
+    FlyTo(f64, f64, f64),
 }
 
 /// What the shell remembers between launches (the app stores it).
@@ -163,6 +165,9 @@ impl Shell {
             Command::SetBasemap(id) => {
                 self.prefs.basemap = id;
                 self.basemap_changed();
+            }
+            Command::FlyTo(lon, lat, zoom) => {
+                self.map.fly_to(lm_mapview::Coord::new(lon, lat), zoom, t, self.last_map_size, self.reduce_motion);
             }
             Command::LoadFixture(path) => {
                 self.notice = Some((format!("Loading {}…", path.display()), t));

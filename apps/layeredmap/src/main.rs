@@ -19,6 +19,10 @@ struct App {
     probe: Option<std::time::Instant>,
     /// Harness runs don't touch the user's stored preferences.
     ephemeral: bool,
+    /// `--tour "lon,lat,zoom;…"`: flies to each place in turn, 6 s apart, then quits (checking
+    /// what a search jump looks like without driving the keyboard).
+    tour: Vec<(f64, f64, f64)>,
+    tour_next: Option<f64>,
 }
 
 /// The system's Reduce Motion setting (macOS), read once at launch.
@@ -82,6 +86,20 @@ impl eframe::App for App {
             }
             ctx.request_repaint();
         }
+        if self.shell.map_view().renders > 0 && (!self.tour.is_empty() || self.tour_next.is_some()) {
+            let t = ctx.input(|i| i.time);
+            let next = *self.tour_next.get_or_insert(t + 2.0);
+            if t >= next {
+                if self.tour.is_empty() {
+                    ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+                } else {
+                    let (lon, lat, z) = self.tour.remove(0);
+                    self.shell.command(ctx, Command::FlyTo(lon, lat, z));
+                }
+                self.tour_next = Some(t + 6.0);
+            }
+            ctx.request_repaint_after(std::time::Duration::from_millis(100));
+        }
         if let Some(m) = &self.menu {
             for action in m.poll() {
                 match action {
@@ -140,7 +158,20 @@ fn main() -> eframe::Result {
     let runs = arg("--runs").and_then(|v| v.parse::<usize>().ok()).unwrap_or(1);
     let fixture = arg("--fixture").map(std::path::PathBuf::from);
     let probe = args.iter().any(|a| a == "--launch-probe");
-    let ephemeral = feel_out.is_some() || probe;
+    let tour: Vec<(f64, f64, f64)> = arg("--tour")
+        .map(|v| {
+            v.split(';')
+                .filter_map(|p| {
+                    let n: Vec<f64> = p.split(',').filter_map(|x| x.trim().parse().ok()).collect();
+                    match n.as_slice() {
+                        [lon, lat, z] => Some((*lon, *lat, *z)),
+                        _ => None,
+                    }
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+    let ephemeral = feel_out.is_some() || probe || !tour.is_empty();
     if args.iter().any(|a| a == "--version" || a == "-V") {
         println!("layeredmap {}", env!("CARGO_PKG_VERSION"));
         return Ok(());
@@ -188,7 +219,7 @@ fn main() -> eframe::Result {
             }
             let feel = feel_out.map(|out| feel::Feel::new(out, runs, shell.map_view().camera()));
             let menu = menu::MenuBar::install(developer, &cc.egui_ctx);
-            Ok(Box::new(App { shell, menu, system, feel, probe: probe.then_some(started), ephemeral }))
+            Ok(Box::new(App { shell, menu, system, feel, probe: probe.then_some(started), ephemeral, tour, tour_next: None }))
         }),
     )
 }
