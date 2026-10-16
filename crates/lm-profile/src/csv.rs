@@ -270,7 +270,7 @@ enum Axis {
     Y,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 enum Family {
     /// lon/lng/longitude/经度 with lat/latitude/纬度.
     LonLat,
@@ -338,12 +338,18 @@ fn named_pairs(headers: &[String]) -> Vec<(usize, usize, Family)> {
     let names: Vec<CoordName> = headers.iter().enumerate().filter_map(|(i, h)| coord_name(i, h)).collect();
     let mut pairs = Vec::new();
     let mut used = vec![false; names.len()];
+    // The y columns by family and key, in header order: each x takes the first one still free
+    // (looked up, not searched for: a header of thousands of coordinate-like names was
+    // quadratic).
+    let mut ys: std::collections::HashMap<(Family, &str), std::collections::VecDeque<usize>> = std::collections::HashMap::new();
+    for (j, b) in names.iter().enumerate().filter(|(_, b)| b.axis == Axis::Y) {
+        ys.entry((b.family, b.key.as_str())).or_default().push_back(j);
+    }
     for (i, a) in names.iter().enumerate() {
         if a.axis != Axis::X {
             continue;
         }
-        if let Some(j) = names.iter().enumerate().position(|(j, b)| !used[j] && b.axis == Axis::Y && b.family == a.family && b.key == a.key)
-        {
+        if let Some(j) = ys.get_mut(&(a.family, a.key.as_str())).and_then(std::collections::VecDeque::pop_front) {
             used[i] = true;
             used[j] = true;
             if let Some(b) = names.get(j) {

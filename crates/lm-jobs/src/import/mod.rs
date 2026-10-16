@@ -676,6 +676,18 @@ pub fn reapply_choices(fresh: ImportedLayer, saved: &LayerProfile) -> Result<Imp
         };
         let (converted, _) = convert_offset(ds, note.contains("BD-09"))?;
         layer.data = LayerData::Vector(Arc::new(converted));
+        // A converted copy stays converted: its recipe, its coordinate system, and no offer to
+        // convert again.
+        if !layer.profile.notices.contains(note) {
+            layer.profile.notices.push(note.clone());
+        }
+        layer.profile.crs = saved.crs.clone();
+        layer.profile.assumptions.retain(|a| {
+            !matches!(a.kind, K::ChinaOffsetPossible | K::ChinaOffsetNamed) || saved.assumptions.iter().any(|s| s.kind == a.kind)
+        });
+        if let LayerData::Vector(ds) = &layer.data {
+            layer.profile.extent_wgs84 = extent_of(ds);
+        }
     }
     // Answers that don't change data: keep the saved choice and line.
     for a in &saved.assumptions {

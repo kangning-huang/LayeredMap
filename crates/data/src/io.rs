@@ -1296,6 +1296,54 @@ fn rebuild_index(shp: &[u8]) -> Vec<u8> {
     shx
 }
 
+/// The shapes of a `.shp`, found through its `.shx` as the `shapefile` crate's own iterator finds
+/// them (the same entries, stopping at the same place), but each read from a copy of its own
+/// record's bytes only. The crate reads on from wherever the previous shape left it whenever that
+/// is where it expects the next record, and a damaged shape can stop short of its record's end (a
+/// polygon whose first part doesn't start at point 0 reads fewer points than it counts), or fail
+/// half way: the next shape was then read from bytes nobody checked, whose counts could ask for
+/// gigabytes (fuzz finding `shapefile/oom-29470410`: 7.8 GB). Read alone, a shape can't reach
+/// past its record, whose counts [`defuse_shapes`] has checked against the record's size.
+/// `file_length` is the `.shp` header's length in bytes (`usize::MAX` when it is negative).
+fn record_shapes<'a>(
+    shp: &'a [u8],
+    shx: &'a [u8],
+    file_length: usize,
+) -> impl Iterator<Item = std::result::Result<shapefile::Shape, shapefile::Error>> + 'a {
+    use shapefile::ReadableShape;
+    let be = |b: &[u8], at: usize| b.get(at..at + 4).map(|x| i32::from_be_bytes([x[0], x[1], x[2], x[3]]));
+    // As the crate's index reader: the entries the `.shx` header's length counts.
+    let entries = be(shx, 24).and_then(|w| w.checked_mul(2)).and_then(|n| usize::try_from(n - 100).ok()).unwrap_or(0) / 8;
+    let mut offsets = (0..entries).map(move |i| be(shx, 100 + 8 * i));
+    let mut pos = 100usize;
+    std::iter::from_fn(move || {
+        if pos >= file_length {
+            return None;
+        }
+        let start = match offsets.next()?.and_then(|o| o.checked_mul(2)).and_then(|o| usize::try_from(o).ok()) {
+            Some(start) => start,
+            None => return Some(Err(shapefile::Error::InvalidShapeRecordSize)),
+        };
+        pos = start;
+        let Some(size) = be(shp, start + 4).and_then(|w| w.checked_mul(2)) else {
+            return Some(Err(shapefile::Error::InvalidShapeRecordSize));
+        };
+        let end = usize::try_from(size).map_or(start + 8, |n| start.saturating_add(8).saturating_add(n)).min(shp.len());
+        let record = shp.get(start + 8..end).unwrap_or(&[]);
+        let shape = shapefile::Shape::read_from(&mut std::io::Cursor::new(record), size);
+        if shape.is_ok() {
+            // As the crate: the next record is expected right after this one's declared size.
+            pos = start.saturating_add(8).saturating_add(usize::try_from(size).unwrap_or(usize::MAX));
+        }
+        Some(shape)
+    })
+}
+
+/// The `.shp` header's file length in bytes, as [`record_shapes`] takes it.
+fn shp_file_length<T: std::io::Read>(reader: &shapefile::ShapeReader<T>) -> usize {
+    usize::try_from(reader.header().file_length).map_or(usize::MAX, |words| words.saturating_mul(2))
+}
+
 /// Reads a Shapefile from its files in memory, with a `.dbf` text encoding and without the `.prj`
 /// conversion if asked. With no `.dbf` the shapes have no fields (said in the report); with no
 /// `.shx` one is rebuilt from the record headers.
@@ -1307,9 +1355,8 @@ pub fn read_shapefile_parts_with(parts: ShapefileParts, name: &str, opts: Shapef
     let mut parts = parts;
     let shx = parts.shx.take().unwrap_or_else(|| rebuild_index(&parts.shp));
     defuse_shapes(&mut parts.shp, &shx);
-    parts.shx = Some(shx);
     let Some(dbf_bytes) = parts.dbf else {
-        return read_shapes_only(parts.shp, parts.shx, parts.prj, name, opts);
+        return read_shapes_only(parts.shp, shx, parts.prj, name, opts);
     };
     let builder = shapefile::dbase::ReaderBuilder::new();
     let builder = match opts.encoding {
@@ -1333,11 +1380,8 @@ pub fn read_shapefile_parts_with(parts: ShapefileParts, name: &str, opts: Shapef
             (f.name().to_string(), ty)
         })
         .collect();
-    let mut shapes = match parts.shx {
-        Some(shx) => shapefile::ShapeReader::with_shx(Cursor::new(parts.shp), Cursor::new(shx)),
-        None => shapefile::ShapeReader::new(Cursor::new(parts.shp)),
-    }
-    .map_err(fmt)?;
+    // The crate checks the headers and the index; the shapes are read by `record_shapes`.
+    let file_length = shp_file_length(&shapefile::ShapeReader::with_shx(Cursor::new(&parts.shp[..]), Cursor::new(&shx[..])).map_err(fmt)?);
     let mut dbf = dbf;
     let mut records = dbf.iter_records();
     let fields: Vec<Field> = order.iter().map(|(n, t)| Field::new(n.clone(), *t)).collect();
@@ -1345,7 +1389,7 @@ pub fn read_shapefile_parts_with(parts: ShapefileParts, name: &str, opts: Shapef
     let to_lonlat = if opts.raw_coordinates { None } else { shapefile_crs(parts.prj.as_deref(), &mut report) };
     let (mut converted, mut unconverted) = (0usize, 0usize);
     let pt = |x: f64, y: f64| Coord::new(x, y);
-    for item in shapes.iter_shapes() {
+    for item in record_shapes(&parts.shp, &shx, file_length) {
         // One record per shape, also for a shape that can't be read, so the attributes of the
         // shapes after it stay with their own shapes.
         let record = records.next();
@@ -1439,24 +1483,15 @@ fn dbf_value(v: Option<&shapefile::dbase::FieldValue>) -> Value {
 }
 
 /// A Shapefile without its `.dbf`: the shapes, with no fields.
-fn read_shapes_only(
-    shp: Vec<u8>,
-    shx: Option<Vec<u8>>,
-    prj: Option<String>,
-    name: &str,
-    opts: ShapefileOptions,
-) -> Result<(Dataset, ReadReport)> {
+fn read_shapes_only(shp: Vec<u8>, shx: Vec<u8>, prj: Option<String>, name: &str, opts: ShapefileOptions) -> Result<(Dataset, ReadReport)> {
     use std::io::Cursor;
     let fmt = |e: shapefile::Error| DataError::Format(format!("Shapefile: {e}"));
-    let mut reader = match shx {
-        Some(shx) => shapefile::ShapeReader::with_shx(Cursor::new(shp), Cursor::new(shx)),
-        None => shapefile::ShapeReader::new(Cursor::new(shp)),
-    }
-    .map_err(fmt)?;
+    // The crate checks the headers and the index; the shapes are read by `record_shapes`.
+    let file_length = shp_file_length(&shapefile::ShapeReader::with_shx(Cursor::new(&shp[..]), Cursor::new(&shx[..])).map_err(fmt)?);
     let mut report = ReadReport::default();
     let to_lonlat = if opts.raw_coordinates { None } else { shapefile_crs(prj.as_deref(), &mut report) };
     let mut ds = Dataset::new(name, GeometryType::None, Vec::new());
-    for shape in reader.iter_shapes() {
+    for shape in record_shapes(&shp, &shx, file_length) {
         match shape.ok().and_then(shape_geometry) {
             Some(g) => {
                 let g = match &to_lonlat {
@@ -1872,6 +1907,42 @@ mod tests {
         assert_eq!(rep.unreadable, vec![1]);
         assert_eq!(read.features.len(), 3);
         assert_eq!(read.value(2, read.field_index("n").unwrap()), &Value::Int(2));
+    }
+
+    /// Fuzz finding (Gate 2, `shapefile/oom-29470410`): a line whose only part starts at point 1
+    /// is read one point short, and the `shapefile` crate went on reading the next record 16
+    /// bytes early, from bytes nobody had checked: counts there asked for 7.8 GB. Each shape is
+    /// now read from its own record's bytes, so the next record reads as written.
+    #[test]
+    fn a_shape_read_short_does_not_shift_the_next_one() {
+        let mut ds = Dataset::new("lines", GeometryType::Polyline, vec![Field::new("n", FieldType::Integer)]);
+        for i in 0..3 {
+            let x = f64::from(i);
+            ds.push(Some(Geometry::Line(vec![vec![Coord::new(x, 0.0), Coord::new(x, 1.0)]])), vec![Value::Int(i64::from(i))]);
+        }
+        let (files, _) = shapefile_parts(&ds).unwrap();
+        let get = |e: &str| files.iter().find(|(x, _)| *x == e).map(|(_, b)| b.clone()).unwrap();
+        let shx = get("shx");
+        let record = |i: usize| 2 * usize::try_from(u32::from_be_bytes(shx[100 + 8 * i..104 + 8 * i].try_into().unwrap())).unwrap();
+        let (first, second) = (record(0), record(1));
+        let mut shp = get("shp");
+        // The first line's part starts at point 1 (in order and within its 2 points: allowed).
+        shp[first + 52..first + 56].copy_from_slice(&1i32.to_le_bytes());
+        // Read 16 bytes early, the next "record" would be its last point: shape type 3 there,
+        // and part and point counts (64 M each) where the second line's bounding box is.
+        shp[second - 8..second - 4].copy_from_slice(&3i32.to_le_bytes());
+        shp[second + 28..second + 32].copy_from_slice(&0x0400_0000i32.to_le_bytes());
+        shp[second + 32..second + 36].copy_from_slice(&0x0400_0000i32.to_le_bytes());
+        for dbf in [None, Some(get("dbf"))] {
+            let parts = ShapefileParts { shp: shp.clone(), shx: Some(shx.clone()), dbf, prj: None };
+            let (read, rep) = read_shapefile_parts_with(parts, "lines", ShapefileOptions::default()).unwrap();
+            assert_eq!((read.features.len(), rep.skipped), (3, 0), "{:?}", rep.unreadable);
+            // The second and third lines are read as written.
+            for i in [1, 2] {
+                let x = f64::from(i as i32);
+                assert_eq!(read.features[i].geometry, Some(Geometry::Line(vec![vec![Coord::new(x, 0.0), Coord::new(x, 1.0)]])), "line {i}");
+            }
+        }
     }
 
     /// A GBK `.dbf` read as GBK gives its Chinese text (LayeredMap fixture V5, when present).
