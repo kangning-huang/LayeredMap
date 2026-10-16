@@ -36,6 +36,75 @@ cat > "$app/Contents/Info.plist" <<PLIST
   <key>LSMinimumSystemVersion</key><string>13.0</string>
   <key>NSHighResolutionCapable</key><true/>
   <key>LSApplicationCategoryType</key><string>public.app-category.education</string>
+  <!-- Open With (WP2.1): LayeredMap can open these, but never claims to be their default app
+       (LSHandlerRank Alternate) and only views them (role Viewer). -->
+  <key>CFBundleDocumentTypes</key>
+  <array>
+    <dict>
+      <key>CFBundleTypeName</key><string>CSV or TSV table</string>
+      <key>CFBundleTypeRole</key><string>Viewer</string>
+      <key>LSHandlerRank</key><string>Alternate</string>
+      <key>LSItemContentTypes</key><array><string>public.comma-separated-values-text</string><string>public.tab-separated-values-text</string></array>
+      <key>CFBundleTypeExtensions</key><array><string>csv</string><string>tsv</string></array>
+    </dict>
+    <dict>
+      <key>CFBundleTypeName</key><string>GeoJSON</string>
+      <key>CFBundleTypeRole</key><string>Viewer</string>
+      <key>LSHandlerRank</key><string>Alternate</string>
+      <key>LSItemContentTypes</key><array><string>org.geojson.geojson</string><string>public.json</string></array>
+      <key>CFBundleTypeExtensions</key><array><string>geojson</string><string>json</string></array>
+    </dict>
+    <dict>
+      <key>CFBundleTypeName</key><string>Shapefile</string>
+      <key>CFBundleTypeRole</key><string>Viewer</string>
+      <key>LSHandlerRank</key><string>Alternate</string>
+      <key>LSItemContentTypes</key><array><string>org.esri.shapefile</string><string>public.zip-archive</string></array>
+      <key>CFBundleTypeExtensions</key><array><string>shp</string><string>zip</string></array>
+    </dict>
+    <dict>
+      <key>CFBundleTypeName</key><string>GeoTIFF</string>
+      <key>CFBundleTypeRole</key><string>Viewer</string>
+      <key>LSHandlerRank</key><string>Alternate</string>
+      <key>LSItemContentTypes</key><array><string>public.tiff</string></array>
+      <key>CFBundleTypeExtensions</key><array><string>tif</string><string>tiff</string></array>
+    </dict>
+    <dict>
+      <key>CFBundleTypeName</key><string>GeoPackage</string>
+      <key>CFBundleTypeRole</key><string>Viewer</string>
+      <key>LSHandlerRank</key><string>Alternate</string>
+      <key>LSItemContentTypes</key><array><string>org.opengeospatial.geopackage</string></array>
+      <key>CFBundleTypeExtensions</key><array><string>gpkg</string></array>
+    </dict>
+    <dict>
+      <key>CFBundleTypeName</key><string>Excel workbook</string>
+      <key>CFBundleTypeRole</key><string>Viewer</string>
+      <key>LSHandlerRank</key><string>Alternate</string>
+      <key>LSItemContentTypes</key><array><string>org.openxmlformats.spreadsheetml.sheet</string></array>
+      <key>CFBundleTypeExtensions</key><array><string>xlsx</string></array>
+    </dict>
+  </array>
+  <!-- Types macOS has no system UTI for. Imported, not exported: LayeredMap does not own them. -->
+  <key>UTImportedTypeDeclarations</key>
+  <array>
+    <dict>
+      <key>UTTypeIdentifier</key><string>org.geojson.geojson</string>
+      <key>UTTypeDescription</key><string>GeoJSON</string>
+      <key>UTTypeConformsTo</key><array><string>public.json</string></array>
+      <key>UTTypeTagSpecification</key><dict><key>public.filename-extension</key><array><string>geojson</string></array><key>public.mime-type</key><string>application/geo+json</string></dict>
+    </dict>
+    <dict>
+      <key>UTTypeIdentifier</key><string>org.esri.shapefile</string>
+      <key>UTTypeDescription</key><string>Esri Shapefile</string>
+      <key>UTTypeConformsTo</key><array><string>public.data</string></array>
+      <key>UTTypeTagSpecification</key><dict><key>public.filename-extension</key><array><string>shp</string></array></dict>
+    </dict>
+    <dict>
+      <key>UTTypeIdentifier</key><string>org.opengeospatial.geopackage</string>
+      <key>UTTypeDescription</key><string>GeoPackage</string>
+      <key>UTTypeConformsTo</key><array><string>public.database</string><string>public.data</string></array>
+      <key>UTTypeTagSpecification</key><dict><key>public.filename-extension</key><array><string>gpkg</string></array><key>public.mime-type</key><string>application/geopackage+sqlite3</string></dict>
+    </dict>
+  </array>
 </dict>
 </plist>
 PLIST
