@@ -31,6 +31,8 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.10"
 log = "0.4"
+# The action rules file (lm-actions/rules.toml).
+toml = { version = "1", default-features = false, features = ["parse", "serde", "std"] }
 # std::time that also works in the browser (std panics on wasm32-unknown-unknown).
 web-time = "1"
 
@@ -79,6 +81,10 @@ egui_extras = { version = "0.36", default-features = false }
 eframe = { version = "0.36", default-features = false }
 egui_kittest = "0.36"
 rfd = "0.17"
+
+# lm-analysis: geodesic length/area on WGS 84 (GeographicLib port, MIT) and property tests.
+geographiclib-rs = { version = "0.2.7", default-features = false }
+proptest = { version = "1", default-features = false, features = ["std"] }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

@@ -119,6 +119,16 @@ fn search_field(shell: &mut Shell, ui: &mut Ui, rect: Rect) {
         shell.search.open = !shell.search.query.trim().is_empty();
     }
     shell.search.update();
+    // "Your data" (WP3.9): layer names, and values in each layer's first five text fields.
+    let key = format!(
+        "{}|{:?}",
+        shell.search.query,
+        shell.ws.doc.layers.iter().map(|l| (l.id.0, l.profile.data_rev, l.display_name.len())).collect::<Vec<_>>()
+    );
+    if shell.data_search.0 != key {
+        shell.data_search = (key, your_data(shell));
+    }
+    let data_rows = shell.data_search.1.clone();
     let has_focus = resp.has_focus() || ui.memory(|m| m.has_focus(id));
     let (down, up, enter, esc) = ui.input(|i| {
         (
@@ -128,7 +138,8 @@ fn search_field(shell: &mut Shell, ui: &mut Ui, rect: Rect) {
             i.key_pressed(egui::Key::Escape),
         )
     });
-    let n = shell.search.rows.len();
+    let nd = data_rows.len();
+    let n = nd + shell.search.rows.len();
     if has_focus && n > 0 {
         if down {
             shell.search.selected = (shell.search.selected + 1).min(n - 1);
@@ -137,10 +148,13 @@ fn search_field(shell: &mut Shell, ui: &mut Ui, rect: Rect) {
             shell.search.selected = shell.search.selected.saturating_sub(1);
         }
     }
-    let mut chosen = None;
+    let pick_at = |shell: &Shell, i: usize| -> Option<Pick> {
+        if i < nd { data_rows.get(i).map(|d| d.pick.clone()) } else { shell.search.rows.get(i - nd).map(|r| Pick::Place(r.choice.clone())) }
+    };
+    let mut chosen: Option<Pick> = None;
     // Return in the field (egui moves focus away on Enter, so check `lost_focus` too).
     if (has_focus || resp.lost_focus()) && enter && n > 0 {
-        chosen = shell.search.rows.get(shell.search.selected).map(|r| r.choice.clone());
+        chosen = pick_at(shell, shell.search.selected);
     }
     if esc {
         shell.search.clear();
@@ -148,52 +162,116 @@ fn search_field(shell: &mut Shell, ui: &mut Ui, rect: Rect) {
     }
     if shell.search.open && !shell.search.query.trim().is_empty() {
         let list = Rect::from_min_size(rect.left_bottom() + vec2(0.0, 6.0), vec2(rect.width(), 0.0));
+        let selected = shell.search.selected;
         egui::Area::new(egui::Id::new("lm-search-results")).order(egui::Order::Foreground).fixed_pos(list.min).show(ui.ctx(), |ui| {
             panel_frame(&t).inner_margin(egui::Margin::same(8)).corner_radius(CornerRadius::same(RADIUS_CARD)).show(ui, |ui| {
                 ui.set_width(rect.width() - 16.0);
+                let result_row = |ui: &mut Ui, i: usize, title: &str, detail: &str| -> bool {
+                    let (r, resp) = ui.allocate_exact_size(vec2(ui.available_width(), 40.0), Sense::click());
+                    if i == selected || resp.hovered() {
+                        ui.painter().rect_filled(r, CornerRadius::same(RADIUS_CONTROL), t.accent_weak);
+                    }
+                    ui.painter().text(r.left_top() + vec2(8.0, 4.0), Align2::LEFT_TOP, title, regular(theme::BODY), t.text_primary);
+                    ui.painter().text(r.left_bottom() + vec2(8.0, -4.0), Align2::LEFT_BOTTOM, detail, regular(CAPTION), t.text_secondary);
+                    resp.clicked()
+                };
+                if nd > 0 {
+                    ui.label(egui::RichText::new("Your data").font(semibold(CAPTION)).color(t.text_secondary));
+                    for (i, d) in data_rows.iter().enumerate() {
+                        if result_row(ui, i, &d.title, &d.detail) {
+                            chosen = Some(d.pick.clone());
+                        }
+                    }
+                }
                 if !shell.search.ready() {
                     ui.label(egui::RichText::new("Loading places…").color(t.text_secondary).size(CAPTION));
                     ui.ctx().request_repaint_after(std::time::Duration::from_millis(50));
                 } else if shell.search.rows.is_empty() {
-                    ui.label(egui::RichText::new("No places match").color(t.text_secondary).size(CAPTION));
+                    if nd == 0 {
+                        ui.label(egui::RichText::new("No places match").color(t.text_secondary).size(CAPTION));
+                    }
                 } else {
                     ui.label(egui::RichText::new("Places").font(semibold(CAPTION)).color(t.text_secondary));
-                    for (i, row) in shell.search.rows.iter().enumerate() {
-                        let (r, resp) = ui.allocate_exact_size(vec2(ui.available_width(), 40.0), Sense::click());
-                        if i == shell.search.selected || resp.hovered() {
-                            ui.painter().rect_filled(r, CornerRadius::same(RADIUS_CONTROL), t.accent_weak);
-                        }
-                        ui.painter().text(
-                            r.left_top() + vec2(8.0, 4.0),
-                            Align2::LEFT_TOP,
-                            &row.title,
-                            regular(theme::BODY),
-                            t.text_primary,
-                        );
-                        ui.painter().text(
-                            r.left_bottom() + vec2(8.0, -4.0),
-                            Align2::LEFT_BOTTOM,
-                            &row.detail,
-                            regular(CAPTION),
-                            t.text_secondary,
-                        );
-                        if resp.clicked() {
-                            chosen = Some(row.choice.clone());
+                    for (k, row) in shell.search.rows.iter().enumerate() {
+                        if result_row(ui, nd + k, &row.title, &row.detail) {
+                            chosen = Some(Pick::Place(row.choice.clone()));
                         }
                     }
                 }
             });
         });
     }
-    if let Some(c) = chosen {
-        let tnow = ui.input(|i| i.time);
-        let size = shell.last_map_size;
-        let reduce = shell.reduce_motion;
-        shell.map_view_mut().fly_to(lm_mapview::Coord::new(c.lon, c.lat), c.zoom, tnow, size, reduce);
-        shell.search.query = c.label;
-        shell.search.open = false;
-        ui.memory_mut(|m| m.surrender_focus(id));
+    match chosen {
+        Some(Pick::Place(c)) => {
+            let tnow = ui.input(|i| i.time);
+            let size = shell.last_map_size;
+            let reduce = shell.reduce_motion;
+            shell.map_view_mut().fly_to(lm_mapview::Coord::new(c.lon, c.lat), c.zoom, tnow, size, reduce);
+            shell.search.query = c.label;
+            shell.search.open = false;
+            ui.memory_mut(|m| m.surrender_focus(id));
+        }
+        Some(Pick::Layer(lid)) => {
+            shell.ws.select_layer(lid);
+            shell.zoom_to = shell.ws.extent(lid);
+            shell.search.open = false;
+            ui.memory_mut(|m| m.surrender_focus(id));
+        }
+        Some(Pick::Object(f)) => {
+            // Choosing a value selects its object and opens its card.
+            shell.ws.selection = lm_core::selection::SelectionContext::object(f);
+            if let Some(ds) = crate::inspect::dataset(shell, f.layer) {
+                shell.zoom_to = lm_jobs::inspect::row_extent(&ds, f.row);
+            }
+            shell.search.open = false;
+            ui.memory_mut(|m| m.surrender_focus(id));
+        }
+        None => {}
     }
+}
+
+/// What choosing a search result does.
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) enum Pick {
+    Place(crate::search::Choice),
+    Layer(lm_core::model::LayerId),
+    Object(lm_core::selection::FeatureRef),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) struct DataRow {
+    title: String,
+    detail: String,
+    pick: Pick,
+}
+
+/// Matches in the user's layers: layer names first, then values (at most five rows).
+fn your_data(shell: &Shell) -> Vec<DataRow> {
+    let q = shell.search.query.trim().to_lowercase();
+    if q.is_empty() {
+        return Vec::new();
+    }
+    let mut out = Vec::new();
+    for l in shell.ws.doc.layers.iter().rev() {
+        if l.display_name.to_lowercase().contains(&q) {
+            out.push(DataRow { title: l.display_name.clone(), detail: l.profile.subtitle(), pick: Pick::Layer(l.id) });
+        }
+    }
+    for l in shell.ws.doc.layers.iter().rev() {
+        if out.len() >= 5 {
+            break;
+        }
+        let Some(ds) = crate::inspect::dataset(shell, l.id) else { continue };
+        for h in lm_jobs::inspect::search_values(l, &ds, &q, 5 - out.len()) {
+            out.push(DataRow {
+                title: h.text,
+                detail: format!("{} · {}", l.display_name, h.field),
+                pick: Pick::Object(lm_core::selection::FeatureRef { layer: l.id, row: h.row }),
+            });
+        }
+    }
+    out.truncate(5);
+    out
 }
 
 /// Everything drawn over the map.

@@ -6,14 +6,14 @@ use std::sync::mpsc::{Receiver, Sender, channel};
 
 use rustgis_map::Map;
 use rustgis_map::camera::Camera;
-use rustgis_render::{PlacedLabel, View};
+use rustgis_render::{PlacedLabel, SelectionStyle, View};
 
 /// An edit applied to the render thread's copy of the map, the same as on the UI's.
 pub type Edit = Box<dyn FnOnce(&mut Map) + Send>;
 
 enum Msg {
     Edit(Edit),
-    Render { seq: u64, view: View },
+    Render { seq: u64, view: View, selection: SelectionStyle },
 }
 
 /// What the render thread sends back: a frame, or word that a render produced nothing (so the
@@ -43,7 +43,7 @@ pub struct Worker {
     rx: Receiver<Out>,
     seq: u64,
     map_rev: u64,
-    last: Option<(Camera, [u32; 2], u64, u64)>,
+    last: Option<(Camera, [u32; 2], u64, u64, SelectionStyle)>,
     pub in_flight: bool,
     /// The render thread has stopped (it panicked); the view restarts it.
     pub dead: bool,
@@ -61,12 +61,12 @@ impl Worker {
                 for msg in std::iter::once(first).chain(std::iter::from_fn(|| req.try_recv().ok())) {
                     match msg {
                         Msg::Edit(f) => f(&mut map),
-                        Msg::Render { seq, view } => render = Some((seq, view)),
+                        Msg::Render { seq, view, selection } => render = Some((seq, view, selection)),
                     }
                 }
-                let Some((seq, view)) = render else { continue };
+                let Some((seq, view, selection)) = render else { continue };
                 let t = web_time::Instant::now();
-                let Some(r) = rustgis_render::render(&mut map, &view) else {
+                let Some(r) = rustgis_render::render_styled(&mut map, &view, selection) else {
                     if out.send(Out::Nothing(seq)).is_err() {
                         return;
                     }
@@ -109,17 +109,18 @@ impl Worker {
         }
     }
 
-    /// Asks for `view` unless it was the last thing asked for (same map and tile generation).
-    pub fn request(&mut self, view: View, tiles_gen: u64) {
+    /// Asks for `view` unless it was the last thing asked for (same map, tile generation and
+    /// selection style).
+    pub fn request(&mut self, view: View, selection: SelectionStyle, tiles_gen: u64) {
         let (pw, ph) = view.pixel_size();
-        let key = (view.camera, [pw, ph], tiles_gen, self.map_rev);
+        let key = (view.camera, [pw, ph], tiles_gen, self.map_rev, selection);
         if self.last == Some(key) {
             return;
         }
         self.seq += 1;
         self.last = Some(key);
         self.in_flight = true;
-        if self.tx.send(Msg::Render { seq: self.seq, view }).is_err() {
+        if self.tx.send(Msg::Render { seq: self.seq, view, selection }).is_err() {
             self.dead = true;
             self.in_flight = false;
         }

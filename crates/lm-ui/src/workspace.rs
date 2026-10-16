@@ -84,6 +84,7 @@ struct ReadyLayer {
     id: LayerId,
     rev: u32,
     map_id: u32,
+    hit: Option<Arc<lm_mapview::hit::HitIndex>>,
     for_view: lm_mapview::map::Layer,
     for_render: lm_mapview::map::Layer,
 }
@@ -119,7 +120,10 @@ pub struct Workspace {
     pub undo: UndoStack,
     data: HashMap<(LayerId, u32), Arc<ImportedLayer>>,
     pub imports: Vec<ImportRow>,
-    pub selected: Option<LayerId>,
+    /// What is selected (interaction state: never saved, never an undo step).
+    pub selection: lm_core::selection::SelectionContext,
+    /// An object highlighted from the overlap chooser.
+    pub hover: Option<lm_core::selection::FeatureRef>,
     synced: Vec<Synced>,
     /// The order, visibility and styles last sent to the map.
     order_key: String,
@@ -150,9 +154,51 @@ pub struct Workspace {
     /// Wakes the interface when background work finishes (set by the shell).
     pub wake: Option<Arc<dyn Fn() + Send + Sync>>,
     compare_synced: Option<(LayerId, bool)>,
+    /// Per-layer results worked out from the data for drawing (colour and size by value, the
+    /// filter's row mask), with the key they were made for.
+    derived: HashMap<LayerId, Derived>,
+    /// Keys being worked out.
+    deriving: HashMap<LayerId, String>,
+    /// The map's view in WGS 84, set by the shell when the camera settles ("Fit range to view").
+    pub view_extent: Option<Extent>,
+    /// Insight indexes per layer, with the key they were built for (data, filter, roles).
+    indexes: HashMap<LayerId, (String, Arc<lm_jobs::inspect::LayerIndex>)>,
+    /// Hit-testing indexes per layer and data revision.
+    hits: HashMap<(LayerId, u32), Arc<lm_mapview::hit::HitIndex>>,
+    indexing: HashMap<LayerId, String>,
+}
+
+/// Drawing state derived from a layer's data (WP3.5, WP3.7).
+#[derive(Clone, Default)]
+pub struct Derived {
+    pub key: String,
+    pub classes: Option<Arc<lm_jobs::inspect::RowClasses>>,
+    pub mask: Option<Arc<Vec<bool>>>,
+    /// Records the filter keeps (all when unfiltered).
+    pub shown: usize,
+    symbols: Option<Arc<lm_mapview::map::RowSymbols>>,
 }
 
 impl Workspace {
+    /// Whether no background work is running (tests wait for this).
+    pub fn idle(&self) -> bool {
+        self.jobs.is_empty() && self.building.is_empty() && self.pending.is_empty() && self.ready.is_empty()
+    }
+
+    /// The layer the inspector shows (the selection's layer).
+    pub fn selected(&self) -> Option<LayerId> {
+        self.selection.active_layer
+    }
+
+    /// Selects a whole layer (shelf click).
+    pub fn select_layer(&mut self, id: LayerId) {
+        self.selection = lm_core::selection::SelectionContext::layer(id);
+    }
+
+    pub fn clear_selection(&mut self) {
+        self.selection = lm_core::selection::SelectionContext::default();
+    }
+
     /// A workspace whose background work repaints `ctx` when it finishes.
     pub fn with_waker(ctx: &egui::Context) -> Self {
         let c = ctx.clone();
@@ -304,8 +350,10 @@ impl Workspace {
                 self.new_data = Some(e);
             }
         }
-        if self.selected.is_none() {
-            self.selected = added.first().map(|(id, _)| *id);
+        if self.selected().is_none()
+            && let Some((id, _)) = added.first()
+        {
+            self.select_layer(*id);
         }
         true
     }
@@ -315,6 +363,18 @@ impl Workspace {
             Some(tx) => self.undo.commit(&mut self.doc, tx).is_ok(),
             None => false,
         }
+    }
+
+    /// Commits one moment of a slider drag; the whole drag is one undo step (WP3.8).
+    pub fn commit_gesture(&mut self, tx: Option<Transaction>, key: &str) -> bool {
+        match tx {
+            Some(tx) => self.undo.commit_gesture(&mut self.doc, tx, key).is_ok(),
+            None => false,
+        }
+    }
+
+    pub fn end_gesture(&mut self) {
+        self.undo.end_gesture();
     }
 
     /// Whether a layer is being read again (undo and redo wait for it).
@@ -673,7 +733,7 @@ impl Workspace {
         }
         let tx = Transaction::new(format!("Convert {} to GPS coordinates", orig.display_name), ops);
         if self.commit(Some(tx)) {
-            self.selected = Some(new_id);
+            self.select_layer(new_id);
         } else {
             self.notice = Some("The converted layer couldn't be added.".into());
         }
@@ -811,7 +871,7 @@ impl Workspace {
         self.next_rev = doc.layers.iter().map(|l| l.profile.data_rev).max().unwrap_or(0);
         self.doc = doc;
         self.undo = UndoStack::new();
-        self.selected = None;
+        self.clear_selection();
         for (path, layers) in by_path {
             let Some(first) = layers.first().map(|l| l.id) else { continue };
             self.spawn_job(Some(first), Box::new(|_| {}), move || {
@@ -876,6 +936,9 @@ impl Workspace {
     /// Brings the map's layers in line with the document: adds and removes only what changed,
     /// then sets order, visibility and style in one cheap edit.
     pub fn sync_map(&mut self, view: &mut lm_mapview::MapView) {
+        self.derive_layers();
+        self.index_layers();
+        self.prune_data();
         let wanted: Vec<(LayerId, u32)> = self
             .doc
             .layers
@@ -904,9 +967,15 @@ impl Workspace {
             self.spawn_job(None, Box::new(move |w: &mut Workspace| w.building.retain(|b| *b != (id, rev))), move || {
                 let for_view = map_layer(map_id, &data);
                 let for_render = for_view.clone();
+                // The hit-testing index (WP3.1), built here with the map layer, off the
+                // interface thread.
+                let hit = match &data.data {
+                    LayerData::Vector(ds) => Some(Arc::new(lm_mapview::hit::HitIndex::build(ds))),
+                    LayerData::Raster(_) => None,
+                };
                 Box::new(move |w: &mut Workspace| {
                     w.building.retain(|b| *b != (id, rev));
-                    w.ready.push(ReadyLayer { id, rev, map_id, for_view, for_render });
+                    w.ready.push(ReadyLayer { id, rev, map_id, hit, for_view, for_render });
                 })
             });
         }
@@ -915,6 +984,10 @@ impl Workspace {
                 continue;
             }
             view.add_layer_pair(r.for_view, r.for_render);
+            if let Some(h) = r.hit {
+                self.hits.retain(|(id, _), _| *id != r.id);
+                self.hits.insert((r.id, r.rev), h);
+            }
             self.synced.push(Synced { id: r.id, map_id: r.map_id, rev: r.rev });
             self.order_key.clear();
         }
@@ -940,9 +1013,42 @@ impl Workspace {
             .rev()
             .filter_map(|l| self.synced.iter().find(|s| s.id == l.id).map(|s| (s.map_id, l.visible, l.style.clone(), l.profile.kind)))
             .collect();
-        let key = format!("{order:?}");
+        // What each map layer takes from derived state and the selection.
+        let extras: Vec<(u32, String, Vec<usize>)> = self
+            .doc
+            .layers
+            .iter()
+            .filter_map(|l| {
+                let s = self.synced.iter().find(|s| s.id == l.id)?;
+                let key = self.derived.get(&l.id).map(|d| d.key.clone()).unwrap_or_default();
+                Some((s.map_id, key, self.highlighted(l.id)))
+            })
+            .collect();
+        let key = format!("{order:?}{extras:?}");
         if self.order_key != key {
             self.order_key = key;
+            let per_layer: Vec<(
+                u32,
+                Option<Arc<lm_mapview::map::RowSymbols>>,
+                Option<Arc<Vec<bool>>>,
+                Vec<usize>,
+                Option<lm_core::document::LabelStyle>,
+            )> = self
+                .doc
+                .layers
+                .iter()
+                .filter_map(|l| {
+                    let s = self.synced.iter().find(|s| s.id == l.id)?;
+                    let d = self.derived.get(&l.id);
+                    Some((
+                        s.map_id,
+                        d.and_then(|d| d.symbols.clone()),
+                        d.and_then(|d| d.mask.clone()),
+                        self.highlighted(l.id),
+                        l.style.labels.clone(),
+                    ))
+                })
+                .collect();
             view.edit_map(move |m: &mut Map| {
                 let mut compare = None;
                 let mut ours: Vec<lm_mapview::map::Layer> = Vec::new();
@@ -966,11 +1072,216 @@ impl Workspace {
                         let mut l = ours.swap_remove(pos);
                         l.visible = *visible;
                         apply_style(&mut l, style, *kind);
+                        if let Some((_, symbols, mask, rows, labels)) = per_layer.iter().find(|p| p.0 == *map_id) {
+                            l.row_symbols = symbols.clone();
+                            l.row_mask = mask.clone();
+                            l.selection = rows.clone();
+                            match labels {
+                                Some(ls) => {
+                                    l.labels.enabled = true;
+                                    l.labels.field = ls.field.clone();
+                                    l.labels.size = ls.size;
+                                }
+                                None => l.labels.enabled = false,
+                            }
+                        }
                         m.layers.push(l);
                     }
                 }
                 m.layers.extend(others);
             });
+        }
+    }
+
+    /// What was derived for a layer's drawing (legend, filter mask), once worked out.
+    pub fn derived(&self, id: LayerId) -> Option<&Derived> {
+        self.derived.get(&id)
+    }
+
+    /// The key of what a layer's drawing needs from its data: a change means work it out again.
+    fn derive_key(&self, l: &lm_core::document::DocLayer) -> String {
+        let fit = l.style.color_by.as_ref().is_some_and(|c| c.fit_to_view);
+        let view = if fit { format!("{:?}", self.view_extent) } else { String::new() };
+        format!(
+            "{}|{:?}|{:?}|{:?}|{:?}|{:?}|{:?}|{:?}|{view}",
+            l.profile.data_rev, l.style.color_by, l.style.size_by, l.filter, l.roles, l.style.fill, l.style.stroke, l.style.point_size
+        )
+    }
+
+    /// Rows drawn highlighted in a layer: the selection, plus a chooser row being hovered.
+    fn highlighted(&self, id: LayerId) -> Vec<usize> {
+        let mut rows = self.selection.rows_in(id);
+        if let Some(h) = self.hover.filter(|h| h.layer == id && !rows.contains(&h.row)) {
+            rows.push(h.row);
+        }
+        rows
+    }
+
+    /// The objects under a click, topmost layer first (visible vector layers; rows the filter
+    /// hides are not hit).
+    pub fn hit_test(&self, view: &lm_mapview::MapView, lonlat: lm_mapview::Coord) -> Vec<lm_core::selection::FeatureRef> {
+        use lm_mapview::hit::{HitLayer, HitSymbol};
+        let mut held = Vec::new();
+        for l in self.doc.layers.iter().rev().filter(|l| l.visible && drawable(&l.profile) && l.profile.kind != LayerKind::Raster) {
+            let rev = l.profile.data_rev;
+            let (Some(index), Some(data)) = (self.hits.get(&(l.id, rev)), self.data.get(&(l.id, rev))) else { continue };
+            let LayerData::Vector(ds) = &data.data else { continue };
+            let point_size = match &l.style.size_by {
+                Some(sb) => sb.max_size,
+                None => l.style.point_size,
+            };
+            let symbol = HitSymbol { point_size: f64::from(point_size), line_width: f64::from(l.style.line_width) };
+            held.push((l.id, index.clone(), ds.clone(), symbol));
+        }
+        let layers: Vec<HitLayer<'_>> = held
+            .iter()
+            .enumerate()
+            .map(|(k, (_, index, ds, symbol))| HitLayer { id: k as u32, index, data: ds, symbol: *symbol })
+            .collect();
+        view.hit_test(&layers, lonlat)
+            .into_iter()
+            .filter_map(|h| {
+                let id = held.get(h.layer as usize)?.0;
+                let shown = self.derived.get(&id).and_then(|d| d.mask.as_ref()).is_none_or(|m| m.get(h.row).copied().unwrap_or(true));
+                shown.then_some(lm_core::selection::FeatureRef { layer: id, row: h.row })
+            })
+            .collect()
+    }
+
+    /// The topmost visible raster with a value under a click: its layer and the shown band's
+    /// value (None for NoData).
+    pub fn raster_pick(&self, lonlat: lm_mapview::Coord) -> Option<(LayerId, Option<f64>)> {
+        for l in self.doc.layers.iter().rev().filter(|l| l.visible && l.profile.kind == LayerKind::Raster) {
+            let Some(data) = self.data.get(&(l.id, l.profile.data_rev)) else { continue };
+            let LayerData::Raster(r) = &data.data else { continue };
+            if let Some(v) = lm_jobs::inspect::raster_value_at(r, lm_jobs::inspect::style_band(r, &l.style), lonlat.x, lonlat.y) {
+                return Some((l.id, v));
+            }
+        }
+        None
+    }
+
+    /// A layer's insight index, once built for its current data, filter and roles.
+    pub fn layer_index(&self, id: LayerId) -> Option<Arc<lm_jobs::inspect::LayerIndex>> {
+        let l = self.doc.layer(id)?;
+        let (key, ix) = self.indexes.get(&id)?;
+        (*key == Self::index_key(l)).then(|| ix.clone())
+    }
+
+    fn index_key(l: &lm_core::document::DocLayer) -> String {
+        format!("{}|{:?}|{:?}", l.profile.data_rev, l.filter, l.roles)
+    }
+
+    /// Builds insight indexes in the background for layers whose data, filter or roles changed.
+    fn index_layers(&mut self) {
+        let wanted: Vec<(LayerId, String, lm_core::document::DocLayer)> =
+            self.doc.layers.iter().filter(|l| l.profile.kind != LayerKind::Raster).map(|l| (l.id, Self::index_key(l), l.clone())).collect();
+        self.indexes.retain(|id, _| wanted.iter().any(|(w, _, _)| w == id));
+        for (id, key, layer) in wanted {
+            if self.indexes.get(&id).is_some_and(|(k, _)| *k == key) || self.indexing.get(&id) == Some(&key) {
+                continue;
+            }
+            let Some(data) = self.data.get(&(id, layer.profile.data_rev)).cloned() else { continue };
+            let LayerData::Vector(ds) = &data.data else { continue };
+            let ds = ds.clone();
+            self.indexing.insert(id, key.clone());
+            let fail_key = key.clone();
+            self.spawn_job(
+                None,
+                Box::new(move |w: &mut Workspace| {
+                    if w.indexing.get(&id) == Some(&fail_key) {
+                        w.indexing.remove(&id);
+                    }
+                }),
+                move || {
+                    let mask = lm_jobs::inspect::filter_mask(&ds, layer.filter.as_ref());
+                    let ix = Arc::new(lm_jobs::inspect::build_index(&layer, &ds, mask.as_deref()));
+                    Box::new(move |w: &mut Workspace| {
+                        if w.indexing.get(&id) == Some(&key) {
+                            w.indexing.remove(&id);
+                        }
+                        w.indexes.insert(id, (key, ix));
+                    })
+                },
+            );
+        }
+    }
+
+    /// Keeps layer data only for revisions the document or the undo stack can still reach, so
+    /// undo memory stays bounded (WP3.8). Rasters are shared, never copied, either way.
+    fn prune_data(&mut self) {
+        // Nothing to prune while each layer holds one revision.
+        if self.data.len() <= self.doc.layers.len() {
+            return;
+        }
+        let mut keep: std::collections::HashSet<(LayerId, u32)> = self.doc.layers.iter().map(|l| (l.id, l.profile.data_rev)).collect();
+        for tx in self.undo.transactions() {
+            for op in &tx.ops {
+                match op {
+                    Op::AddLayer { layer, .. } | Op::RemoveLayer { layer, .. } => {
+                        keep.insert((layer.id, layer.profile.data_rev));
+                    }
+                    Op::SetProfile { id, from, to } => {
+                        keep.insert((*id, from.data_rev));
+                        keep.insert((*id, to.data_rev));
+                    }
+                    _ => {}
+                }
+            }
+        }
+        // Revisions still being prepared (a re-read about to commit) stay too.
+        for p in &self.pending {
+            keep.insert((p.id, p.rev));
+            keep.insert((p.id, p.base_rev));
+        }
+        self.data.retain(|k, _| keep.contains(k));
+    }
+
+    /// Starts working out colour classes and filter masks for layers whose key changed.
+    fn derive_layers(&mut self) {
+        let wanted: Vec<(LayerId, String, lm_core::document::DocLayer)> =
+            self.doc.layers.iter().filter(|l| l.profile.kind != LayerKind::Raster).map(|l| (l.id, self.derive_key(l), l.clone())).collect();
+        self.derived.retain(|id, _| wanted.iter().any(|(w, _, _)| w == id));
+        for (id, key, layer) in wanted {
+            if self.derived.get(&id).is_some_and(|d| d.key == key) || self.deriving.get(&id) == Some(&key) {
+                continue;
+            }
+            let Some(data) = self.data.get(&(id, layer.profile.data_rev)).cloned() else { continue };
+            let LayerData::Vector(ds) = &data.data else { continue };
+            let ds = ds.clone();
+            self.deriving.insert(id, key.clone());
+            let view = self.view_extent;
+            let fail_key = key.clone();
+            self.spawn_job(
+                None,
+                Box::new(move |w: &mut Workspace| {
+                    if w.deriving.get(&id) == Some(&fail_key) {
+                        w.deriving.remove(&id);
+                    }
+                }),
+                move || {
+                    let mask = lm_jobs::inspect::filter_mask(&ds, layer.filter.as_ref());
+                    let fit = layer.style.color_by.as_ref().is_some_and(|c| c.fit_to_view);
+                    let in_view = view.filter(|_| fit);
+                    let classes = lm_jobs::inspect::classes_for(&layer, &ds, mask.as_deref(), in_view.as_ref());
+                    let symbols = classes.as_ref().map(|c| Arc::new(row_symbols(c, &layer.style, layer.profile.kind)));
+                    // Placed records the filter keeps (rows without a location aren't on the map).
+                    let shown = ds
+                        .features
+                        .iter()
+                        .enumerate()
+                        .filter(|(r, f)| f.geometry.is_some() && mask.as_ref().is_none_or(|m| m.get(*r).copied().unwrap_or(true)))
+                        .count();
+                    let d = Derived { key: key.clone(), classes: classes.map(Arc::new), mask: mask.map(Arc::new), shown, symbols };
+                    Box::new(move |w: &mut Workspace| {
+                        if w.deriving.get(&id) == Some(&key) {
+                            w.deriving.remove(&id);
+                        }
+                        w.derived.insert(id, d);
+                        w.order_key.clear();
+                    })
+                },
+            );
         }
     }
 
@@ -1056,22 +1367,55 @@ fn map_layer(map_id: u32, data: &ImportedLayer) -> lm_mapview::map::Layer {
     }
 }
 
+/// Per-row symbols from worked-out classes, in the style's symbol (area fill opacity, outlines).
+fn row_symbols(c: &lm_jobs::inspect::RowClasses, s: &Style, kind: LayerKind) -> lm_mapview::map::RowSymbols {
+    use lm_mapview::map::Symbol;
+    let symbols = c
+        .combos
+        .iter()
+        .map(|(color, size)| {
+            let (fill, stroke) = match kind {
+                LayerKind::Areas => {
+                    let mut f = *color;
+                    f[3] = (f32::from(f[3]) * s.fill_opacity.clamp(0.0, 1.0)).round() as u8;
+                    (f, lm_core::document::darker(*color))
+                }
+                LayerKind::Lines => (*color, *color),
+                _ => (*color, s.stroke),
+            };
+            let (size, stroke_width) = match kind {
+                LayerKind::Points => (if *size > 0.0 { *size } else { s.point_size }, s.stroke_width),
+                LayerKind::Lines => (0.0, s.line_width),
+                _ => (0.0, s.stroke_width.max(1.0)),
+            };
+            Symbol { fill: rgba(fill), stroke: rgba(stroke), stroke_width, size, marker: Default::default() }
+        })
+        .collect();
+    lm_mapview::map::RowSymbols { index: c.index.clone(), symbols }
+}
+
 /// Applies a document style to a map layer (Default symbols).
 fn apply_style(l: &mut lm_mapview::map::Layer, s: &Style, kind: LayerKind) {
     use lm_mapview::map::{Renderer, Symbol};
     l.transparency = ((1.0 - s.opacity.clamp(0.0, 1.0)) * 100.0).round();
     if let Some(r) = l.raster.as_mut() {
-        // A single band stretched through a ramp takes the document's ramp (Data palettes:
-        // viridis by default for measures). Category, colour-table and RGB rasters keep their own.
-        if let lm_mapview::map::RasterRenderer::Stretch { ramp, invert, .. } = &mut r.style.renderer {
-            *ramp = match s.ramp.as_str() {
-                "heat" => lm_mapview::map::Ramp::Thermal,
-                "blues" => lm_mapview::map::Ramp::Lagoon,
-                "greys" => lm_mapview::map::Ramp::Greys,
-                // viridis, cividis: Aurora is the engine's perceptually even indigo–teal–yellow ramp.
-                _ => lm_mapview::map::Ramp::Aurora,
-            };
-            *invert = false;
+        // A single band stretched through a ramp takes the document's palette, band, range and
+        // display thresholds, as stops worked out from the band's statistics the same way the
+        // renderer stretches (so the legend matches). Category, colour-table and RGB rasters
+        // keep their own colours.
+        let data = r.data.clone();
+        if let lm_mapview::map::RasterRenderer::Stretch { band, ramp, invert } = &mut r.style.renderer
+            && let Some(data) = data
+            && let Some((stretch, stops)) = lm_jobs::inspect::raster_ramp(&data, s)
+        {
+            use lm_mapview::map::color::{CustomRamp, RampKind};
+            let stops = stops.into_iter().map(|(x, c)| (Some(x), rgba(c))).collect();
+            if let Ok(custom) = CustomRamp::new("LayeredMap", RampKind::Sequential, stops) {
+                *band = lm_jobs::inspect::style_band(&data, s);
+                *ramp = lm_mapview::map::Ramp::Custom(Box::new(custom));
+                *invert = false;
+                r.style.stretch = stretch;
+            }
         }
         return;
     }

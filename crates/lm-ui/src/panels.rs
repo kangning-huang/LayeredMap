@@ -162,7 +162,7 @@ fn layer_rows(shell: &mut Shell, ui: &mut Ui, t: &Theme) {
     let mut rects: Vec<Rect> = Vec::with_capacity(n);
     for (d, id) in ids.iter().enumerate() {
         let Some(l) = shell.ws.doc.layer(*id).cloned() else { continue };
-        let selected = shell.ws.selected == Some(*id);
+        let selected = shell.ws.selected() == Some(*id);
         let (r, resp) = ui.allocate_exact_size(vec2(ui.available_width(), ROW_HEIGHT), Sense::click_and_drag());
         rects.push(r);
         let p = ui.painter();
@@ -269,8 +269,21 @@ fn layer_rows(shell: &mut Shell, ui: &mut Ui, t: &Theme) {
             Badge::None
         };
         paint_badge(ui, pos2(r.right() - 12.0, r.center().y), &badge, t);
+        // A filtered layer shows a funnel (WP3.7).
+        if l.filter.as_ref().is_some_and(|f| !f.is_empty()) {
+            ui.painter().text(pos2(r.right() - 30.0, r.center().y), Align2::CENTER_CENTER, icon::FUNNEL, theme::icon_font(14.0), t.accent);
+        }
         if resp.clicked() {
-            shell.ws.selected = Some(*id);
+            // ⌘-click adds the layer to the selection as a companion (the expert path).
+            let cmd = ui.input(|i| i.modifiers.command);
+            match shell.ws.selected() {
+                Some(active) if cmd && active != *id => {
+                    if !shell.ws.selection.layers.contains(id) {
+                        shell.ws.selection.layers.push(*id);
+                    }
+                }
+                _ => shell.ws.select_layer(*id),
+            }
         }
         // Double-click zooms to the layer (owner's choice: done far more often than renaming).
         if resp.double_clicked() {
@@ -282,6 +295,15 @@ fn layer_rows(shell: &mut Shell, ui: &mut Ui, t: &Theme) {
             shell.drag_from = Some(d);
         }
         resp.context_menu(|ui| {
+            if l.profile.kind != LayerKind::Raster && ui.button("View data").clicked() {
+                shell.table_for = Some(*id);
+                ui.close();
+            }
+            if ui.button("Style…").clicked() {
+                shell.ws.select_layer(*id);
+                shell.inspector_tab = 1;
+                ui.close();
+            }
             if ui.button("Zoom to layer").clicked() {
                 shell.zoom_to = shell.ws.extent(*id);
                 ui.close();
@@ -297,8 +319,8 @@ fn layer_rows(shell: &mut Shell, ui: &mut Ui, t: &Theme) {
                     x
                 });
                 shell.ws.commit(tx);
-                if shell.ws.selected == Some(*id) {
-                    shell.ws.selected = None;
+                if shell.ws.selected() == Some(*id) {
+                    shell.ws.clear_selection();
                 }
                 ui.close();
             }
@@ -306,7 +328,7 @@ fn layer_rows(shell: &mut Shell, ui: &mut Ui, t: &Theme) {
         // A question card attaches to its row; the map stays usable. While the layer's overview
         // is open it shows the card there instead, and the row just says so.
         if let Some(q) = l.profile.open_questions().next().cloned() {
-            if shell.ws.selected == Some(*id) {
+            if shell.ws.selected() == Some(*id) {
                 ui.label(RichText::new("Needs a decision: see the layer's panel").size(CAPTION).color(t.warning));
             } else {
                 question_card(shell, ui, t, *id, &q);
@@ -457,21 +479,31 @@ fn question_card(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, q: &Ass
 /// The inspector: the selected layer's overview (Overview · Details).
 pub fn inspector(shell: &mut Shell, ui: &mut Ui, map: Rect) {
     let t = *shell.theme();
-    let Some(id) = shell.ws.selected else { return };
+    let Some(id) = shell.ws.selected() else { return };
     let Some(l) = shell.ws.doc.layer(id).cloned() else {
-        shell.ws.selected = None;
+        shell.ws.clear_selection();
         return;
     };
     let pos = pos2(map.right() - PANEL_MARGIN - INSPECTOR_WIDTH, map.top() + PANEL_MARGIN);
     let max_h = map.height() - 2.0 * PANEL_MARGIN - 64.0;
     let mut close = false;
+    // What the card shows: one object, several, a raster cell, or the layer.
+    let rows = shell.ws.selection.rows_in(id);
+    let pixel = shell.ws.selection.pixel.clone();
+    let (title, subtitle) = match (rows.as_slice(), &pixel) {
+        ([row], _) => crate::inspect::object_header(shell, &l, *row),
+        ([], Some(p)) => (format!("{:.4}°, {:.4}°", p.lat, p.lon), format!("{} · cell", l.display_name)),
+        ([], None) => (l.display_name.clone(), l.profile.subtitle()),
+        (many, _) => (format!("{} selected", group_thousands(many.len() as u64)), l.display_name.clone()),
+    };
     egui::Area::new(egui::Id::new("lm-inspector")).order(egui::Order::Middle).fixed_pos(pos).show(ui.ctx(), |ui| {
         frame(&t).show(ui, |ui| {
             ui.set_width(INSPECTOR_WIDTH - 2.0 * theme::PANEL_PADDING);
             ui.horizontal(|ui| {
                 ui.vertical(|ui| {
-                    ui.label(RichText::new(&l.display_name).font(semibold(theme::HEADLINE)));
-                    ui.label(RichText::new(l.profile.subtitle()).size(CAPTION).color(t.text_secondary));
+                    ui.set_width(INSPECTOR_WIDTH - 2.0 * theme::PANEL_PADDING - 40.0);
+                    ui.add(egui::Label::new(RichText::new(&title).font(semibold(theme::HEADLINE))).wrap());
+                    ui.label(RichText::new(&subtitle).size(CAPTION).color(t.text_secondary));
                 });
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
                     if ui
@@ -483,31 +515,197 @@ pub fn inspector(shell: &mut Shell, ui: &mut Ui, map: Rect) {
                     }
                 });
             });
-            ui.add_space(4.0);
-            ui.horizontal(|ui| {
-                for (tab, name) in [(0u8, "Overview"), (1, "Details")] {
-                    if ui.selectable_label(shell.inspector_tab == tab, name).clicked() {
-                        shell.inspector_tab = tab;
+            let object_view = !rows.is_empty() || pixel.is_some();
+            if !object_view {
+                ui.add_space(4.0);
+                ui.horizontal(|ui| {
+                    let tabs: &[(u8, &str)] = if shell.flags.shows(3) {
+                        &[(0, "Overview"), (1, "Style"), (2, "Details")]
+                    } else {
+                        &[(0, "Overview"), (2, "Details")]
+                    };
+                    for &(tab, name) in tabs {
+                        if ui.selectable_label(shell.inspector_tab == tab, name).clicked() {
+                            shell.inspector_tab = tab;
+                        }
                     }
-                }
-            });
+                });
+            } else if rows.len() > 1 {
+                // The selection chip: "3 selected · Clear".
+                ui.horizontal(|ui| {
+                    ui.label(RichText::new(format!("{} selected", group_thousands(rows.len() as u64))).size(CAPTION));
+                    if ui.link("Clear").clicked() {
+                        shell.ws.selection.features.clear();
+                    }
+                });
+            }
             ui.separator();
             egui::ScrollArea::vertical()
                 .max_height(max_h - 90.0)
                 .min_scrolled_height((max_h - 90.0).min(560.0))
                 .auto_shrink([false, true])
                 .show(ui, |ui| {
-                    if shell.inspector_tab == 0 {
-                        overview(shell, ui, &t, id, &l);
+                    if let Some((cid, field)) = shell.compare_peers.clone().filter(|(c, _)| *c == id) {
+                        ranking(shell, ui, &t, &l, field.as_deref(), rows.first().copied());
+                        if ui.link("Back").clicked() {
+                            shell.compare_peers = None;
+                        }
+                        let _ = cid;
+                    } else if let [row] = rows.as_slice() {
+                        crate::inspect::object_body(shell, ui, &t, &l, *row);
+                    } else if let Some(p) = &pixel {
+                        pixel_body(shell, ui, &t, &l, p);
+                    } else if !rows.is_empty() {
+                        crate::insight::actions(shell, ui, &t, &l, None);
                     } else {
-                        details(shell, ui, &t, id, &l);
+                        match shell.inspector_tab {
+                            0 => overview(shell, ui, &t, id, &l),
+                            1 => crate::inspect::style_tab(shell, ui, &t, &l),
+                            _ => details(shell, ui, &t, id, &l),
+                        }
                     }
                 });
         });
     });
-    if close || ui.input(|i| i.key_pressed(egui::Key::Escape)) && shell.change_for.is_none() {
-        shell.ws.selected = None;
+    // The Esc ladder (Keyboard): popovers first, then the object selection, then the inspector.
+    let esc = ui.input(|i| i.key_pressed(egui::Key::Escape));
+    if close {
+        shell.ws.clear_selection();
+        shell.compare_peers = None;
+    } else if esc && shell.change_for.is_none() && shell.chooser.is_none() && shell.filter_draft.is_none() {
+        if shell.compare_peers.is_some() {
+            shell.compare_peers = None;
+        } else {
+            shell.ws.selection.step_back();
+        }
     }
+}
+
+/// A raster cell's card: its value with the unit, how it compares, and the cell's actions.
+fn pixel_body(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &lm_core::document::DocLayer, p: &lm_core::selection::PixelPick) {
+    let Some(lm_jobs::import::LayerData::Raster(r)) = shell.ws.data(l.id).map(|d| d.data.clone()) else { return };
+    let band = lm_jobs::inspect::style_band(&r, &l.style);
+    let unit = l.profile.bands.get(band).and_then(|b| b.unit.value.clone());
+    match p.value {
+        Some(v) => {
+            let (value, phrase) = lm_jobs::inspect::pixel_insight(&r, band, v, unit.as_deref());
+            ui.label(RichText::new(value).font(semibold(theme::TITLE)));
+            ui.label(RichText::new(format!("Band {}", band + 1)).size(CAPTION).color(t.text_secondary));
+            if let Some(ph) = phrase {
+                ui.label(ph);
+            }
+        }
+        None => {
+            ui.label(RichText::new("No value").font(semibold(theme::TITLE)).color(t.text_secondary));
+            ui.label(RichText::new("This cell has no data.").color(t.text_secondary));
+        }
+    }
+    crate::insight::actions(shell, ui, t, l, None);
+}
+
+/// "Compare with other [Districts]": every object ranked by one field, the selected one marked.
+fn ranking(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &lm_core::document::DocLayer, field: Option<&str>, row: Option<usize>) {
+    let Some(ds) = crate::inspect::dataset(shell, l.id) else { return };
+    let measures: Vec<String> = l
+        .profile
+        .fields
+        .iter()
+        .filter(|f| matches!(l.role(f).value, lm_core::model::FieldRole::Measure(_)))
+        .map(|f| f.name.clone())
+        .collect();
+    let Some(mut field) = field.map(String::from).or_else(|| measures.first().cloned()) else {
+        ui.label(RichText::new("This layer has no values to compare.").color(t.text_secondary));
+        return;
+    };
+    ui.horizontal(|ui| {
+        ui.label("Compare by");
+        egui::ComboBox::from_id_salt(("lm-rank-field", l.id.0)).selected_text(&field).show_ui(ui, |ui| {
+            for m in &measures {
+                ui.selectable_value(&mut field, m.clone(), m);
+            }
+        });
+    });
+    shell.compare_peers = Some((l.id, Some(field.clone())));
+    let mask = shell.ws.derived(l.id).and_then(|d| d.mask.clone());
+    let ranked = lm_jobs::inspect::ranking(l, &ds, &field, mask.as_deref().map(|m| m.as_slice()));
+    let Some(max) = ranked.iter().map(|r| r.3.abs()).fold(None, |m: Option<f64>, v| Some(m.map_or(v, |m| m.max(v)))) else { return };
+    ui.label(
+        RichText::new(format!("{} {}, highest first", group_thousands(ranked.len() as u64), lm_jobs::inspect::noun_plural(l)))
+            .size(CAPTION)
+            .color(t.text_secondary),
+    );
+    let w = ui.available_width();
+    egui::ScrollArea::vertical().id_salt(("lm-rank", l.id.0)).max_height(420.0).show_rows(ui, 22.0, ranked.len(), |ui, range| {
+        for i in range {
+            let Some((r, name, value, v)) = ranked.get(i) else { continue };
+            let me = Some(*r) == row;
+            let (rr, resp) = ui.allocate_exact_size(vec2(w, 22.0), Sense::click());
+            let p = ui.painter();
+            let frac = if max > 0.0 { (v.abs() / max) as f32 } else { 0.0 };
+            let bar = egui::Rect::from_min_size(rr.min + vec2(0.0, 3.0), vec2((w * 0.45) * frac, 16.0));
+            p.rect_filled(bar, 3.0, if me { t.accent } else { t.accent_weak });
+            p.text(
+                rr.left_center() + vec2(w * 0.47, 0.0),
+                Align2::LEFT_CENTER,
+                middle_truncate(name, 18),
+                theme::regular(CAPTION),
+                if me { t.accent } else { t.text_primary },
+            );
+            p.text(rr.right_center(), Align2::RIGHT_CENTER, value, theme::regular(CAPTION), t.text_secondary);
+            if resp.clicked() {
+                shell.ws.selection = lm_core::selection::SelectionContext::object(lm_core::selection::FeatureRef { layer: l.id, row: *r });
+            }
+        }
+    });
+}
+
+/// The overlap chooser (Inspector: object card): "3 objects here", topmost first; hovering a
+/// row highlights its object, clicking selects it.
+pub fn chooser(shell: &mut Shell, ui: &mut Ui) {
+    let Some((at, hits)) = shell.chooser.clone() else { return };
+    let t = *shell.theme();
+    let mut pick = None;
+    let mut hover = None;
+    let resp =
+        egui::Area::new(egui::Id::new("lm-chooser")).order(egui::Order::Foreground).fixed_pos(at + vec2(8.0, 8.0)).show(ui.ctx(), |ui| {
+            egui::Frame::popup(ui.style()).show(ui, |ui| {
+                ui.set_max_width(280.0);
+                // Hit testing keeps the nearest 100 per layer; more than that reads "100+".
+                let many = if hits.len() >= lm_mapview::hit::MAX_HITS_PER_LAYER { "+" } else { "" };
+                ui.label(RichText::new(format!("{}{many} objects here", group_thousands(hits.len() as u64))).font(semibold(BODY)));
+                for f in hits.iter().take(20) {
+                    let Some(l) = shell.ws.doc.layer(f.layer) else { continue };
+                    let (title, _) = crate::inspect::object_header(shell, l, f.row);
+                    let r = ui.horizontal(|ui| {
+                        crate::inspect::swatch(ui, l.profile.kind, l.style.key_color(l.profile.kind), 7.0);
+                        ui.add(
+                            egui::Button::new(format!("{} · {}", middle_truncate(&title, 22), middle_truncate(&l.display_name, 14)))
+                                .frame(false),
+                        )
+                    });
+                    if r.inner.hovered() {
+                        hover = Some(*f);
+                    }
+                    if r.inner.clicked() {
+                        pick = Some(*f);
+                    }
+                }
+                if hits.len() > 20 {
+                    ui.label(RichText::new(format!("and {} more", hits.len() - 20)).size(CAPTION).color(t.text_secondary));
+                }
+            });
+        });
+    shell.chooser_hover = hover;
+    shell.ws.hover = hover;
+    if let Some(f) = pick {
+        shell.ws.selection = lm_core::selection::SelectionContext::object(f);
+        shell.chooser = None;
+        shell.chooser_hover = None;
+    } else if ui.input(|i| i.key_pressed(egui::Key::Escape)) {
+        shell.chooser = None;
+        shell.chooser_hover = None;
+    }
+    let _ = resp;
 }
 
 fn status_lines(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, l: &lm_core::document::DocLayer) {
@@ -650,33 +848,47 @@ fn overview(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, l: &lm_core:
     for n in &l.profile.notices {
         ui.label(RichText::new(n).size(CAPTION).color(t.text_secondary));
     }
-    // Legend.
+    // Legend, generated from the style.
     ui.add_space(8.0);
-    ui.label(RichText::new("Legend").font(semibold(BODY)));
     ui.horizontal(|ui| {
-        let (r, _) = ui.allocate_exact_size(vec2(16.0, 16.0), Sense::hover());
-        let c = color(l.style.key_color(l.profile.kind));
-        ui.painter().rect(
-            r,
-            CornerRadius::same(3),
-            c.gamma_multiply(if l.profile.kind == LayerKind::Areas { 0.5 } else { 1.0 }),
-            Stroke::new(1.0, c),
-            egui::StrokeKind::Inside,
-        );
-        let (_, many) = l.profile.kind.nouns();
-        ui.label(format!("{} {many}", group_thousands(l.profile.count)));
+        ui.label(RichText::new("Legend").font(semibold(BODY)));
+        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            if ui.small_button("Style…").clicked() {
+                shell.inspector_tab = 1;
+            }
+        });
     });
-    // Field summary: up to five measures with their range.
-    let measures: Vec<&lm_core::model::FieldProfile> =
-        l.profile.fields.iter().filter(|f| matches!(f.role.value, lm_core::model::FieldRole::Measure(_))).take(5).collect();
-    if !measures.is_empty() {
-        ui.add_space(8.0);
-        ui.label(RichText::new("Values").font(semibold(BODY)));
-        for f in measures {
-            if let Some(s) = &f.stats
-                && let (Some(lo), Some(hi)) = (s.min, s.max)
-            {
-                ui.label(format!("{}: {} to {}", f.name, fmt_num(lo), fmt_num(hi)));
+    crate::inspect::legend(shell, ui, t, l);
+    if let Some(f) = &l.filter {
+        ui.horizontal_wrapped(|ui| {
+            ui.label(RichText::new(icon::FUNNEL).font(theme::icon_font(14.0)).color(t.accent));
+            ui.label(RichText::new("Filtered:").color(t.accent));
+            ui.label(f.conditions.iter().map(|c| c.chip()).collect::<Vec<_>>().join("; "));
+            if ui.link("Clear").clicked() {
+                let tx = shell.ws.doc.set_filter_tx(id, None);
+                shell.ws.commit(tx);
+            }
+        });
+    }
+    // Field summary: up to five measures, each with its range and a 20-bin histogram.
+    if let Some(index) = shell.ws.layer_index(id) {
+        let measures: Vec<&lm_core::model::FieldProfile> =
+            l.profile.fields.iter().filter(|f| index.measures.contains_key(&f.name)).take(5).collect();
+        if !measures.is_empty() {
+            ui.add_space(8.0);
+            ui.label(RichText::new("Values").font(semibold(BODY)));
+            for f in measures {
+                let unit = f.unit.value.clone();
+                if let Some((range, counts)) = lm_jobs::inspect::field_summary(&index, &f.name, unit.as_deref()) {
+                    ui.horizontal(|ui| {
+                        ui.vertical(|ui| {
+                            ui.set_width(ui.available_width() - 70.0);
+                            ui.label(&f.name);
+                            ui.label(RichText::new(range).size(CAPTION).color(t.text_secondary));
+                        });
+                        histogram(ui, t, &counts);
+                    });
+                }
             }
         }
     }
@@ -690,6 +902,22 @@ fn overview(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, l: &lm_core:
             };
             ui.label(format!("Band {}{name}: {} to {}{unit}", b.index, fmt_num(lo), fmt_num(hi)));
         }
+    }
+    crate::insight::actions(shell, ui, t, l, None);
+}
+
+/// A 60 px histogram of 20 bins.
+fn histogram(ui: &mut Ui, t: &Theme, counts: &[u64]) {
+    let (r, _) = ui.allocate_exact_size(vec2(60.0, 24.0), Sense::hover());
+    let max = counts.iter().copied().max().unwrap_or(0).max(1) as f32;
+    let w = r.width() / counts.len().max(1) as f32;
+    for (k, c) in counts.iter().enumerate() {
+        let h = (*c as f32 / max) * r.height();
+        let bar = egui::Rect::from_min_max(
+            pos2(r.left() + k as f32 * w, r.bottom() - h),
+            pos2(r.left() + (k as f32 + 1.0) * w - 0.5, r.bottom()),
+        );
+        ui.painter().rect_filled(bar, 0.0, t.accent.gamma_multiply(0.7));
     }
 }
 
@@ -741,16 +969,58 @@ fn details(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, l: &lm_core::
     if !p.fields.is_empty() {
         ui.add_space(6.0);
         ui.label(RichText::new("Fields").font(semibold(BODY)));
-        egui::Grid::new(("lm-fields", id.0)).striped(true).num_columns(3).show(ui, |ui| {
+        let mut role_change: Option<(String, Option<lm_core::model::FieldRole>)> = None;
+        let mut star: Option<(String, bool)> = None;
+        egui::Grid::new(("lm-fields", id.0)).striped(true).num_columns(4).show(ui, |ui| {
             for f in &p.fields {
+                let known = l.role(f);
+                let starred = l.starred.contains(&f.name);
+                let is_measure = matches!(known.value, lm_core::model::FieldRole::Measure(_) | lm_core::model::FieldRole::Category);
+                let star_icon = if starred { icon::STAR_FOUR } else { icon::STAR };
+                if is_measure {
+                    if ui
+                        .add(
+                            egui::Button::new(RichText::new(star_icon).color(if starred { t.accent } else { t.text_secondary }))
+                                .frame(false),
+                        )
+                        .on_hover_text(if starred { "Remove from insight" } else { "Show in insight" })
+                        .clicked()
+                    {
+                        star = Some((f.name.clone(), !starred));
+                    }
+                } else {
+                    ui.label("");
+                }
                 ui.label(&f.name);
-                ui.label(
-                    RichText::new(format!("{:?}", f.role.value).replace("Measure(", "Measure (").to_lowercase()).color(t.text_secondary),
-                );
-                ui.label(RichText::new(&f.role.evidence.0).size(CAPTION).color(t.text_secondary));
+                // The role chip, with Change.
+                let chip = egui::Button::new(RichText::new(role_name(known.value)).size(CAPTION))
+                    .fill(t.accent_weak)
+                    .corner_radius(egui::CornerRadius::same(10));
+                egui::containers::menu::MenuButton::from_button(chip).ui(ui, |ui| {
+                    ui.label(RichText::new("Treat this field as").size(CAPTION).color(t.text_secondary));
+                    for r in ROLE_CHOICES {
+                        if ui.selectable_label(known.value == r, role_name(r)).clicked() {
+                            role_change = Some((f.name.clone(), Some(r)));
+                            ui.close();
+                        }
+                    }
+                    if l.roles.contains_key(&f.name) && ui.button("Back to the detected role").clicked() {
+                        role_change = Some((f.name.clone(), None));
+                        ui.close();
+                    }
+                });
+                ui.label(RichText::new(&known.evidence.0).size(CAPTION).color(t.text_secondary));
                 ui.end_row();
             }
         });
+        if let Some((field, to)) = role_change {
+            let tx = shell.ws.doc.set_role_tx(id, &field, to);
+            shell.ws.commit(tx);
+        }
+        if let Some((field, to)) = star {
+            let tx = shell.ws.doc.set_starred_tx(id, &field, to);
+            shell.ws.commit(tx);
+        }
     }
     if !p.assumptions.is_empty() {
         ui.add_space(6.0);
@@ -773,6 +1043,33 @@ fn details(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, l: &lm_core::
                 }
             });
         }
+    }
+}
+
+/// Roles a user can give a field (WP3.3).
+const ROLE_CHOICES: [lm_core::model::FieldRole; 6] = [
+    lm_core::model::FieldRole::Measure(lm_core::model::MeasureKind::Unknown),
+    lm_core::model::FieldRole::Measure(lm_core::model::MeasureKind::Count),
+    lm_core::model::FieldRole::Category,
+    lm_core::model::FieldRole::Identifier,
+    lm_core::model::FieldRole::Name,
+    lm_core::model::FieldRole::Text,
+];
+
+/// A role in words for chips.
+fn role_name(r: lm_core::model::FieldRole) -> &'static str {
+    use lm_core::model::{FieldRole, MeasureKind};
+    match r {
+        FieldRole::Measure(MeasureKind::Count) => "Count",
+        FieldRole::Measure(MeasureKind::Density) => "Density",
+        FieldRole::Measure(_) => "Value",
+        FieldRole::Identifier => "ID",
+        FieldRole::Name => "Name",
+        FieldRole::Category => "Category",
+        FieldRole::Text => "Text",
+        FieldRole::Date => "Date",
+        FieldRole::Coordinate => "Coordinate",
+        FieldRole::Unknown => "Unknown",
     }
 }
 

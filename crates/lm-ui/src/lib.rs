@@ -7,10 +7,13 @@
 pub mod basemap;
 mod chrome;
 pub mod examples;
+pub mod insight;
+pub mod inspect;
 pub mod panels;
 #[cfg(test)]
 mod screenshots;
 pub mod search;
+pub mod table;
 pub mod theme;
 pub mod workspace;
 
@@ -66,6 +69,19 @@ pub enum Command {
     RequestSaveDocument,
     /// Developer: ask the app for a document folder to open.
     RequestOpenDocument,
+    /// Scripts: a click on the map at longitude, latitude (⇧ held when true), as a pointer
+    /// click there would be.
+    Click(f64, f64, bool),
+    /// Scripts: select the shelf's n-th layer from the top.
+    SelectLayerAt(usize),
+    /// Scripts: show an inspector tab (0 Overview, 1 Style, 2 Details).
+    InspectorTab(u8),
+    /// Scripts and ⌘T: open or close the table drawer.
+    ToggleTable,
+    /// Scripts: apply the selected layer's n-th style preset.
+    ApplyPreset(usize),
+    /// Scripts: press Esc (one step of the Esc ladder).
+    Escape,
 }
 
 /// A file dialog the shell asks the app to show (the shell itself never opens dialogs).
@@ -141,6 +157,18 @@ pub struct Shell {
     file_requests: Vec<FileRequest>,
     /// Where answered question cards are logged (set by the app).
     question_log: Option<PathBuf>,
+    /// Phase 3: the layer whose table drawer is open, its view, and a filter being written.
+    pub(crate) table_for: Option<lm_core::model::LayerId>,
+    pub(crate) table: table::TableView,
+    pub(crate) filter_draft: Option<table::FilterDraft>,
+    /// "Compare with other [Districts]": the ranking chart open for a layer and field.
+    pub(crate) compare_peers: Option<(lm_core::model::LayerId, Option<String>)>,
+    /// The overlap chooser: where the click was and what it hit, topmost first.
+    pub(crate) chooser: Option<(egui::Pos2, Vec<lm_core::selection::FeatureRef>)>,
+    /// A chooser row being hovered: its object is highlighted.
+    pub(crate) chooser_hover: Option<lm_core::selection::FeatureRef>,
+    /// "Your data" search results, with the query and layers they were found for.
+    pub(crate) data_search: (String, Vec<chrome::DataRow>),
 }
 
 impl Shell {
@@ -181,6 +209,13 @@ impl Shell {
             welcome_closed: false,
             file_requests: Vec::new(),
             question_log: None,
+            table_for: None,
+            table: Default::default(),
+            filter_draft: None,
+            compare_peers: None,
+            chooser: None,
+            chooser_hover: None,
+            data_search: Default::default(),
             prefs,
         }
     }
@@ -230,6 +265,37 @@ impl Shell {
             Command::SetBasemap(id) => {
                 self.prefs.basemap = id;
                 self.basemap_changed();
+            }
+            Command::Click(lon, lat, shift) => {
+                let at = self.map.lonlat_to_screen(lm_mapview::Coord::new(lon, lat)).unwrap_or_default();
+                self.map_click(lm_mapview::Coord::new(lon, lat), at, shift);
+            }
+            Command::SelectLayerAt(n) => {
+                if let Some(id) = self.ws.doc.layers.iter().rev().nth(n).map(|l| l.id) {
+                    self.ws.select_layer(id);
+                }
+            }
+            Command::InspectorTab(tab) => self.inspector_tab = tab,
+            Command::ToggleTable => {
+                self.table_for = match self.table_for {
+                    Some(_) => None,
+                    None => self.ws.selected().or_else(|| {
+                        self.ws.doc.layers.iter().rev().find(|l| l.profile.kind != lm_core::model::LayerKind::Raster).map(|l| l.id)
+                    }),
+                };
+            }
+            Command::ApplyPreset(n) => {
+                if let Some(l) = self.ws.selected().and_then(|id| self.ws.doc.layer(id)).cloned()
+                    && let Some((_, s)) = lm_jobs::inspect::presets(&l).into_iter().nth(n)
+                {
+                    let tx = self.ws.doc.set_style_tx(l.id, s);
+                    self.ws.commit(tx);
+                }
+            }
+            Command::Escape => {
+                if self.chooser.take().is_none() && self.compare_peers.take().is_none() {
+                    self.ws.selection.step_back();
+                }
             }
             Command::FlyTo(lon, lat, zoom) => {
                 self.map.fly_to(lm_mapview::Coord::new(lon, lat), zoom, t, self.last_map_size, self.reduce_motion);
@@ -328,6 +394,66 @@ impl Shell {
         self.notice.as_ref().map_or(0.0, |(_, t)| *t).max(self.map.last_time())
     }
 
+    /// Asks the app to show the Open dialog.
+    pub(crate) fn request_open(&mut self) {
+        self.file_requests.push(FileRequest::Open);
+    }
+
+    /// Opens the bundled examples.
+    pub(crate) fn open_examples(&mut self) {
+        let wake = self.ws.wake.clone();
+        self.ws.open(examples::paths(), move || {
+            if let Some(w) = &wake {
+                w();
+            }
+        });
+    }
+
+    /// The value range a raster layer's colours spread over (its style's, or 2–98% of cells).
+    pub(crate) fn raster_range(&self, id: lm_core::model::LayerId) -> Option<(f64, f64)> {
+        let l = self.ws.doc.layer(id)?;
+        match &self.ws.data(id)?.data {
+            lm_jobs::import::LayerData::Raster(r) => lm_jobs::inspect::raster_window(r, &l.style),
+            lm_jobs::import::LayerData::Vector(_) => None,
+        }
+    }
+
+    /// A raster band's whole range.
+    pub(crate) fn raster_full_range(&self, id: lm_core::model::LayerId) -> Option<(f64, f64)> {
+        let l = self.ws.doc.layer(id)?;
+        match &self.ws.data(id)?.data {
+            lm_jobs::import::LayerData::Raster(r) => lm_jobs::inspect::raster_full_range(r, lm_jobs::inspect::style_band(r, &l.style)),
+            lm_jobs::import::LayerData::Vector(_) => None,
+        }
+    }
+
+    /// A click on the map (WP3.1): the object under it, the overlap chooser when several are, a
+    /// raster cell, or — on empty map — clearing the object selection (the layer stays).
+    fn map_click(&mut self, lonlat: lm_mapview::Coord, screen: egui::Pos2, shift: bool) {
+        use lm_core::selection::{FeatureRef, PixelPick, SelectionContext};
+        self.chooser = None;
+        let hits = self.ws.hit_test(&self.map, lonlat);
+        match hits.len() {
+            0 => {
+                if let Some(p) = self.ws.raster_pick(lonlat) {
+                    self.ws.selection = SelectionContext::pixel(PixelPick { layer: p.0, lon: lonlat.x, lat: lonlat.y, value: p.1 });
+                } else {
+                    self.ws.selection.features.clear();
+                    self.ws.selection.pixel = None;
+                }
+            }
+            1 => {
+                let f: FeatureRef = hits[0];
+                if shift {
+                    self.ws.selection.toggle(f);
+                } else {
+                    self.ws.selection = SelectionContext::object(f);
+                }
+            }
+            _ => self.chooser = Some((screen, hits)),
+        }
+    }
+
     fn fly_to_extent(&mut self, e: lm_core::model::Extent) {
         let e = lm_mapview::Extent { min_x: e.min_x, min_y: e.min_y, max_x: e.max_x, max_y: e.max_y };
         self.map.zoom_to_extent(&e, self.last_map_size);
@@ -401,6 +527,13 @@ impl Shell {
         if self.theme_applied != Some(self.theme) {
             theme::apply(&ctx, &self.theme);
             self.theme_applied = Some(self.theme);
+            // Selected: a 3 px accent outline with a 2 px halo, white in light, black in dark.
+            let a = self.theme.accent;
+            let halo = if self.theme.dark { [0, 0, 0, 255] } else { [255, 255, 255, 255] };
+            self.map.set_selection_style(lm_mapview::SelectionStyle::Outline {
+                accent: lm_mapview::map::Rgba([a.r(), a.g(), a.b(), 255]),
+                halo: lm_mapview::map::Rgba(halo),
+            });
         }
         self.shortcuts(&ctx);
         self.poll_loading(&ctx);
@@ -415,9 +548,23 @@ impl Shell {
         // The map first, so the chrome draws over it.
         let keyboard = ctx.memory(|m| m.focused().is_none());
         let out = self.map.show(ui, map_rect, ViewOptions { backdrop: self.backdrop, reduce_motion: system.reduce_motion, keyboard });
-        let _ = out;
+        if let Some(lonlat) = out.clicked.filter(|_| self.flags.shows(3)) {
+            let (pos, shift) = ctx.input(|i| (i.pointer.interact_pos(), i.modifiers.shift));
+            self.map_click(lonlat, pos.unwrap_or(map_rect.center()), shift);
+        }
+        // "Fit range to view" follows the view once the camera settles.
+        if !out.moving {
+            let tl = self.map.screen_to_lonlat(map_rect.left_top());
+            let br = self.map.screen_to_lonlat(map_rect.right_bottom());
+            if let (Some(a), Some(b)) = (tl, br) {
+                let e = lm_core::model::Extent { min_x: a.x.min(b.x), min_y: a.y.min(b.y), max_x: a.x.max(b.x), max_y: a.y.max(b.y) };
+                if self.ws.view_extent != Some(e) {
+                    self.ws.view_extent = Some(e);
+                }
+            }
+        }
         // The controls move left of the inspector when it is open (Layout).
-        let overlay_rect = if self.ws.selected.is_some() {
+        let overlay_rect = if self.ws.selected().is_some() {
             egui::Rect::from_min_max(
                 map_rect.min,
                 egui::pos2(map_rect.max.x - panels::INSPECTOR_WIDTH - theme::PANEL_MARGIN, map_rect.max.y),
@@ -437,6 +584,12 @@ impl Shell {
         chrome::notices_in(self, ui, notice_rect);
         panels::shelf(self, ui, map_rect);
         panels::inspector(self, ui, map_rect);
+        {
+            let left = if self.shelf_open && !self.ws.doc.layers.is_empty() { panels::SHELF_WIDTH + theme::PANEL_MARGIN } else { 0.0 };
+            let right = if self.ws.selected().is_some() { panels::INSPECTOR_WIDTH + theme::PANEL_MARGIN } else { 0.0 };
+            table::drawer(self, ui, map_rect, left, right);
+        }
+        panels::chooser(self, ui);
         panels::change_popover(self, ui);
         panels::review(self, &ctx);
         panels::compare_banner(self, ui, overlay_rect);
@@ -448,15 +601,19 @@ impl Shell {
     }
 
     fn shortcuts(&mut self, ctx: &egui::Context) {
-        let (find, zero, debug, open, layers) = ctx.input_mut(|i| {
+        let (find, zero, debug, open, layers, table_key) = ctx.input_mut(|i| {
             (
                 i.consume_key(egui::Modifiers::COMMAND, egui::Key::F),
                 i.consume_key(egui::Modifiers::COMMAND, egui::Key::Num0),
                 i.consume_key(egui::Modifiers::COMMAND | egui::Modifiers::ALT, egui::Key::F),
                 i.consume_key(egui::Modifiers::COMMAND, egui::Key::O),
                 i.consume_key(egui::Modifiers::COMMAND, egui::Key::L),
+                i.consume_key(egui::Modifiers::COMMAND, egui::Key::T),
             )
         });
+        if table_key && self.flags.shows(3) {
+            self.command(ctx, Command::ToggleTable);
+        }
         if open {
             self.file_requests.push(FileRequest::Open);
         }

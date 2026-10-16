@@ -7,8 +7,12 @@
 
 pub mod basemap;
 pub mod document;
+pub mod filter;
+pub mod format;
 pub mod model;
+pub mod palette;
 pub mod phase;
 pub mod places;
 pub mod question;
+pub mod selection;
 pub mod undo;

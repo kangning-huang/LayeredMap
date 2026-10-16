@@ -17,3 +17,5 @@ rustgis-render = { workspace = true }
 egui = { workspace = true }
 web-time = { workspace = true }
 log = { workspace = true }
+# The per-layer hit-test index (R-tree; MIT/Apache-2.0). Already in the build through `geo`.
+rstar = { version = "0.12", default-features = false }

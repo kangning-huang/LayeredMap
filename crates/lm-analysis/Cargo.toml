@@ -12,3 +12,8 @@ workspace = true
 [dependencies]
 rustgis-geom = { workspace = true }
 rustgis-data = { workspace = true }
+geographiclib-rs = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
+serde_json = { workspace = true }

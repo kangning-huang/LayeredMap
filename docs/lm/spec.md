@@ -85,7 +85,7 @@ LayeredMap ships in two tiers (owner decision, 2026-10-16): Free, an open-source
 | Who | People with no GIS training who need to examine map data (the first audience) | The same people, when they need answers the map alone doesn't give |
 | Code | This repository, Apache-2.0 | A closed module built into the official app; open-source builds have no assistant |
 | Phases | 0–3, 5, 6 | Phase 7, on top of the Phase 4 tool library |
-| Analysis | None exposed: no tool menus, composer or suggested-action buttons | Through the Ask box only; the model calls Phase 4's vetted actions |
+| Analysis | None exposed: no tool menus, composer or analysis buttons. Display-only suggestions (Color by a value, Filter, Compare, Change colors) stay on cards | Through the Ask box only; the model calls Phase 4's vetted actions |
 | Model | None | Hosted by LayeredMap behind its assistant service; no bring-your-own key for now |
 
 Rules that follow from the tiers:
