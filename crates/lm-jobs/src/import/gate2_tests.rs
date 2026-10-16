@@ -6,6 +6,7 @@
 //! changed snapshot in the gate report).
 
 use std::path::{Path, PathBuf};
+use std::time::{Duration, Instant};
 
 use super::tests::{fixtures, generated, generated_file, sha, stress_line};
 use super::*;
@@ -194,3 +195,118 @@ fn the_snapshot_diff_shows_only_what_changed() {
     assert!(!d.contains("  a\n"), "far context is elided: {d}");
 }
 
+/// What the simulated interface loop measured.
+struct LoopStats {
+    worst_gap: Duration,
+    worst_poll: Duration,
+    over_50: usize,
+    frames: usize,
+    results: Vec<(PathBuf, Result<Vec<ImportedLayer>, ImportError>)>,
+}
+
+/// Starts every import with [`start`] and runs an interface loop beside them: every 16 ms it polls
+/// each job and reads its progress (the per-frame work), recording the longest gap between frames.
+/// Gaps over 50 ms are logged.
+fn ui_loop(paths: &[PathBuf], limit: Duration) -> LoopStats {
+    let t0 = Instant::now();
+    let jobs: Vec<ImportJob> = paths.iter().map(|p| start(p.clone(), || {})).collect();
+    let started = t0.elapsed();
+    let mut stats = LoopStats { worst_gap: started, worst_poll: Duration::ZERO, over_50: 0, frames: 0, results: Vec::new() };
+    let mut done = vec![false; jobs.len()];
+    let frame = Duration::from_millis(16);
+    let mut last = Instant::now();
+    while done.iter().any(|d| !d) && t0.elapsed() < limit {
+        let now = Instant::now();
+        let gap = now - last;
+        last = now;
+        stats.frames += 1;
+        if gap > Duration::from_millis(50) {
+            stats.over_50 += 1;
+            log::warn!("interface stall: {} ms between frames during imports", gap.as_millis());
+            eprintln!("stall over 50 ms: {} ms (frame {})", gap.as_millis(), stats.frames);
+        }
+        stats.worst_gap = stats.worst_gap.max(gap);
+        let p0 = Instant::now();
+        for (i, job) in jobs.iter().enumerate() {
+            let _progress = job.ticket.bytes();
+            for e in job.poll() {
+                if let ImportEvent::Done(r) = e {
+                    done[i] = true;
+                    // The document takes the layers: a move, never a copy.
+                    stats.results.push((job.path.clone(), r));
+                }
+            }
+        }
+        stats.worst_poll = stats.worst_poll.max(p0.elapsed());
+        if let Some(rest) = frame.checked_sub(now.elapsed()) {
+            std::thread::sleep(rest);
+        }
+    }
+    assert!(done.iter().all(|d| *d), "imports did not finish within {limit:?}");
+    stats
+}
+
+/// Gate 2: "No UI stall over 100 ms occurs during fixture imports; stalls over 50 ms are logged."
+/// The hand-made fixtures, all at once.
+#[test]
+fn hand_made_imports_never_stall_the_interface_loop() {
+    let mut paths = Vec::new();
+    for id in ["V1", "V2", "V3", "V4", "V5", "V9", "V10", "T1", "T2", "T4", "C1", "C3", "R3", "R6"] {
+        paths.extend(inputs(&fixtures().join(id)));
+    }
+    let s = ui_loop(&paths, Duration::from_secs(120));
+    eprintln!(
+        "{} imports, {} frames: worst gap {} ms, worst poll {} µs, {} gaps over 50 ms",
+        paths.len(),
+        s.frames,
+        s.worst_gap.as_millis(),
+        s.worst_poll.as_micros(),
+        s.over_50
+    );
+    assert_eq!(s.results.len(), paths.len());
+    assert!(s.worst_gap <= Duration::from_millis(100), "the interface loop stalled {} ms", s.worst_gap.as_millis());
+}
+
+/// The stall check with the large generated fixtures (T3's million rows among them):
+/// `cargo xtask stress`, or `cargo test -p lm-jobs --release ui_stall_during_large_imports -- --ignored --nocapture`.
+#[test]
+#[ignore = "needs the generated fixtures; run by cargo xtask stress"]
+fn ui_stall_during_large_imports() {
+    assert!(generated().is_some(), "no generated fixtures: set LM_FIXTURES_DIR");
+    let mut paths: Vec<PathBuf> =
+        [("T3", "csv"), ("V7", "geojson"), ("V8", "geojson"), ("F2", "csv"), ("R7", "tif"), ("R4", "tif"), ("X1", "zip"), ("X5", "csv")]
+            .iter()
+            .filter_map(|(id, ext)| generated_file(id, ext))
+            .collect();
+    paths.extend(generated().map(|d| inputs(&d.join("X3"))).unwrap_or_default());
+    for id in ["V1", "T1", "R6"] {
+        paths.extend(inputs(&fixtures().join(id)));
+    }
+    let s = ui_loop(&paths, Duration::from_secs(600));
+    let worst = s.worst_gap.as_millis();
+    let ok = stress_line(
+        "UI stall",
+        &format!(
+            "worst gap {worst} ms over {} frames, {} over 50 ms, worst poll {} µs, {} imports",
+            s.frames,
+            s.over_50,
+            s.worst_poll.as_micros(),
+            paths.len()
+        ),
+        "<= 100 ms (log > 50 ms)",
+        worst <= 100,
+    );
+    assert_eq!(s.results.len(), paths.len());
+    // For the record, not a gate threshold: how long answering a CSV's location question
+    // (`relocate_csv`) takes on T3's million rows. The interface runs it on a background thread
+    // (with a working badge), so this is how long the row shows it, not a stall.
+    if let Some(t3) = s.results.iter().find(|(p, _)| p.extension().is_some_and(|e| e == "csv") && p.to_string_lossy().contains("t3_"))
+        && let Ok(layers) = &t3.1
+        && let Some(layer) = layers.first()
+    {
+        let t = Instant::now();
+        let r = relocate_csv(layer, &lm_core::model::Choice::not_sure());
+        println!("STRESS\tT3 relocate_csv (background re-read)\t{} ms, ok: {}\tinformation only\tinfo", t.elapsed().as_millis(), r.is_ok());
+    }
+    assert!(ok, "the interface loop stalled {worst} ms");
+}

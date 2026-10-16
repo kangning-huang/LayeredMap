@@ -612,3 +612,29 @@ fn geojson_states_no_assumed_gps_line() {
     assert!(!has(&l, AssumptionKind::NoCrsLonLat), "{:?}", l.profile.assumptions);
     assert_eq!(l.profile.crs.value, lm_core::model::Crs::Wgs84);
 }
+
+/// Fuzzing (Gate 2) found a `.shp` alone whose header promises more than the file holds: the
+/// reader returned the same error forever and the import never finished.
+#[test]
+fn a_truncated_shapefile_without_its_index_finishes() {
+    let dir = std::env::temp_dir().join(format!("lm-import-trunc-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let mut shp = std::fs::read(fixtures().join("V3/sites.shp")).unwrap();
+    shp[24..28].copy_from_slice(&1_000_000u32.to_be_bytes());
+    shp.truncate(shp.len() - 6);
+    let p = dir.join("cut.shp");
+    std::fs::write(&p, &shp).unwrap();
+    let job = start(p, || {});
+    let t = std::time::Instant::now();
+    let result = loop {
+        if let Some(ImportEvent::Done(r)) = job.poll().into_iter().find(|e| matches!(e, ImportEvent::Done(_))) {
+            break r;
+        }
+        assert!(t.elapsed().as_secs() < 10, "the import never finished");
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    };
+    let l = result.unwrap().remove(0);
+    assert_eq!(l.profile.count, 24, "the shapes before the cut");
+    assert!(l.profile.notices.iter().any(|n| n.contains("couldn't be read")), "{:?}", l.profile.notices);
+    let _ = std::fs::remove_dir_all(dir);
+}
