@@ -170,16 +170,23 @@ fn detect_encoding(head: &[u8]) -> (&'static encoding_rs::Encoding, usize) {
 
 /// Blank or repeated header names get a number, so every field can be told apart.
 pub(super) fn dedupe_headers(h: Vec<String>) -> Vec<String> {
+    use std::collections::{HashMap, HashSet};
     let mut out: Vec<String> = Vec::with_capacity(h.len());
+    // Names taken so far, and for each base name the next number to try: names are only ever
+    // added, so the numbers below it are taken. (Searching `out` for every candidate was cubic
+    // in a header of repeated names; fuzz finding `csv/timeout-5530a57f`.)
+    let mut taken: HashSet<String> = HashSet::with_capacity(h.len());
+    let mut next: HashMap<String, usize> = HashMap::new();
     for (i, name) in h.into_iter().enumerate() {
         let base = name.trim().trim_start_matches('\u{feff}').to_string();
         let base = if base.is_empty() { format!("column {}", i + 1) } else { base };
         let mut n = base.clone();
-        let mut k = 2;
-        while out.contains(&n) {
+        let k = next.entry(base.clone()).or_insert(2);
+        while taken.contains(&n) {
             n = format!("{base} {k}");
-            k += 1;
+            *k += 1;
         }
+        taken.insert(n.clone());
         out.push(n);
     }
     out
@@ -483,5 +490,18 @@ mod tests {
     #[test]
     fn repeated_and_blank_headers_are_numbered() {
         assert_eq!(dedupe_headers(vec!["a".into(), "".into(), "a".into()]), vec!["a", "column 2", "a 2"]);
+        // A name already taken by a numbered one is skipped over, as before.
+        let h = ["a", "a 2", "a", "a", " a 3 "].map(String::from).to_vec();
+        assert_eq!(dedupe_headers(h), vec!["a", "a 2", "a 3", "a 4", "a 3 2"]);
+    }
+
+    /// Fuzz finding (Gate 2, `csv/timeout-5530a57f`): thousands of columns. Numbering a header
+    /// of repeated names searched every name taken for every candidate (cubic).
+    #[test]
+    fn thousands_of_repeated_headers_are_numbered_quickly() {
+        let t = std::time::Instant::now();
+        let out = dedupe_headers(vec!["x".to_string(); 20_000]);
+        assert!(t.elapsed().as_secs_f64() < 1.0, "{:?}", t.elapsed());
+        assert_eq!((out[0].as_str(), out[1].as_str(), out[19_999].as_str()), ("x", "x 2", "x 20000"));
     }
 }

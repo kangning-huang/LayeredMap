@@ -8,7 +8,7 @@ use lm_core::model::{
     Subject, Treatment,
 };
 use rustgis_data::{Dataset, FieldType, Value};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 /// At most this many distinct numeric values are colored as categories.
 const FEW_VALUES: usize = 12;
@@ -354,12 +354,18 @@ fn profile_columns(cols: &[Column], coords: &[CoordinateColumn]) -> (Vec<FieldPr
 ///
 /// Returns the field profiles in dataset order and the assumptions (silent ones, for Details).
 pub fn profile_fields(ds: &Dataset, raw: Option<RawTable>, coordinates: &[CoordinateColumn]) -> (Vec<FieldProfile>, Vec<Assumption>) {
+    // Each raw header's first column, looked up by name: searching the headers for every field
+    // was quadratic in the columns (fuzz finding `csv/timeout-5530a57f`: 6,247 columns).
+    let mut header_index: HashMap<&str, usize> = HashMap::new();
+    for (j, h) in raw.map_or(&[][..], |r| r.headers).iter().enumerate() {
+        header_index.entry(h.trim()).or_insert(j);
+    }
     let cols: Vec<Column> = ds
         .fields
         .iter()
         .enumerate()
         .map(|(i, f)| {
-            let raw_col = raw.and_then(|r| r.headers.iter().position(|h| h.trim() == f.name.trim()).map(|j| (r, j)));
+            let raw_col = raw.and_then(|r| header_index.get(f.name.trim()).map(|j| (r, *j)));
             let (cells, note) = match raw_col {
                 Some((r, j)) => raw_cells(r.rows, j, r.delimiter),
                 None => ((0..ds.features.len()).map(|row| cell_from_value(ds.value(row, i), f.ty)).collect(), None),
@@ -556,6 +562,32 @@ mod tests {
         let (f, _) = profile_raw_table(RawTable { headers: &h, rows: &r, delimiter: None }, &[]);
         let s = f[0].stats.clone().unwrap();
         assert_eq!((s.min, s.max), (Some(0.75), Some(12.5)));
+    }
+
+    /// Fuzz finding (Gate 2, `csv/timeout-5530a57f`): a CSV row of 6,247 cells. Each field's raw
+    /// column was found by searching the headers (quadratic); it is looked up, and still the
+    /// first header with the field's name (trimmed).
+    #[test]
+    fn many_columns_are_profiled_quickly() {
+        let n = 30_000;
+        let headers: Vec<String> = (0..n).map(|j| format!("column {}", j + 1)).collect();
+        let rows: Vec<Vec<String>> =
+            (0..3).map(|i| (0..n).map(|j| if j % 7 == 0 { format!("{}", i + j) } else { String::new() }).collect()).collect();
+        let fields: Vec<(String, FieldType)> = headers.iter().map(|h| (h.clone(), FieldType::Text)).collect();
+        let field_refs: Vec<(&str, FieldType)> = fields.iter().map(|(h, t)| (h.as_str(), *t)).collect();
+        let d = ds(&field_refs, (0..3).map(|_| vec![Value::Null; n]).collect());
+        let t = std::time::Instant::now();
+        let (f, _) = profile_fields(&d, Some(RawTable { headers: &headers, rows: &rows, delimiter: Some(',') }), &[]);
+        assert!(t.elapsed().as_secs_f64() < 2.0, "{:?}", t.elapsed());
+        assert_eq!(f.len(), n);
+        // Judged on the raw strings (the typed values are all blank).
+        assert_eq!((f[7].dtype, f[1].dtype), (DataType::Integer, DataType::Text));
+        // A repeated header: both fields read the first column with that (trimmed) name.
+        let headers = vec![" a ".to_string(), "a".to_string()];
+        let rows = vec![vec!["1".to_string(), "x".to_string()], vec!["2".to_string(), "y".to_string()]];
+        let d = ds(&[("a", FieldType::Text), ("a ", FieldType::Text)], vec![vec![Value::Null, Value::Null]; 2]);
+        let (f, _) = profile_fields(&d, Some(RawTable { headers: &headers, rows: &rows, delimiter: Some(',') }), &[]);
+        assert_eq!((f[0].dtype, f[1].dtype), (DataType::Integer, DataType::Integer));
     }
 
     #[test]

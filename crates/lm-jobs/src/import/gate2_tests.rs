@@ -311,3 +311,59 @@ fn ui_stall_during_large_imports() {
     }
     assert!(ok, "the interface loop stalled {worst} ms");
 }
+
+/// Gate 2 fuzz findings (`fuzz/regressions/<target>/`, copied from `fuzz/artifacts/`) open
+/// through the pipeline as the fuzz targets open them (`fuzz/src/lib.rs`, `fuzz/fuzz_targets/`),
+/// each in well under the fuzzer's 10-second hang limit: a CSV with thousands of columns (field
+/// profiling was quadratic in them), a Shapefile whose reader went on from a short polygon into
+/// unchecked bytes (7.8 GB asked for), and a 3 KB GeoTIFF declaring 200 × 200 pixels of 48,897
+/// samples (a 122 MB buffer made and filled for data the file can't hold).
+#[test]
+fn fuzz_findings_open_quickly() {
+    let root = fixtures().join("..");
+    let v3 = |ext: &str| std::fs::read(fixtures().join(format!("V3/sites.{ext}"))).unwrap();
+    let mut failures = Vec::new();
+    let mut seen = 0;
+    for target in ["csv", "shapefile", "geotiff_header"] {
+        let mut files: Vec<PathBuf> = std::fs::read_dir(root.join("fuzz/regressions").join(target))
+            .map(|rd| rd.flatten().map(|e| e.path()).collect())
+            .unwrap_or_default();
+        files.retain(|f| f.is_file() && !file_name_of(f).starts_with('.'));
+        files.sort();
+        for f in files {
+            let data = std::fs::read(&f).unwrap();
+            let mut inputs: Vec<(&str, Vec<u8>)> = Vec::new();
+            match target {
+                "csv" => inputs.push(("f.csv", data)),
+                "geotiff_header" => inputs.push(("f.tif", data)),
+                // The first byte picks the companions, as in fuzz_targets/shapefile.rs.
+                _ => {
+                    let Some((mode, rest)) = data.split_first() else { continue };
+                    match mode % 4 {
+                        0 => inputs.push(("f.shp", rest.to_vec())),
+                        1 => inputs.extend([("f.shp", rest.to_vec()), ("f.shx", v3("shx")), ("f.dbf", v3("dbf"))]),
+                        2 => inputs.extend([("f.shp", rest.to_vec()), ("f.dbf", v3("dbf"))]),
+                        _ => inputs.push(("f.zip", rest.to_vec())),
+                    }
+                }
+            }
+            let dir = std::env::temp_dir().join(format!("lm-fuzz-regression-{}-{seen}", std::process::id()));
+            let _ = std::fs::remove_dir_all(&dir);
+            std::fs::create_dir_all(&dir).unwrap();
+            for (name, bytes) in &inputs {
+                std::fs::write(dir.join(name), bytes).unwrap();
+            }
+            let t = Instant::now();
+            let _ = import_path(&dir.join(inputs[0].0), &Ctx::detached(Ticket::default()));
+            let secs = t.elapsed().as_secs_f64();
+            eprintln!("{target}/{}: {secs:.3} s", file_name_of(&f));
+            if secs > 2.0 {
+                failures.push(format!("{target}/{}: {secs:.2} s", file_name_of(&f)));
+            }
+            let _ = std::fs::remove_dir_all(&dir);
+            seen += 1;
+        }
+    }
+    assert!(seen >= 3, "the fuzz regressions are missing");
+    assert!(failures.is_empty(), "slow: {failures:?}");
+}

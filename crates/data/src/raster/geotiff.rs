@@ -449,6 +449,51 @@ fn decimate<R: Read + Seek>(
     Ok((bands, data_type))
 }
 
+/// At most how many bytes one stored byte of `compression` decodes to (a little over each
+/// method's real limit): Deflate about 1032, LZW about 2730, PackBits 64. Others (JPEG, Zstandard,
+/// anything newer) get a loose 65536, as their limits are high or unknown.
+fn max_expansion(compression: Option<u16>) -> u64 {
+    match compression {
+        None | Some(1) => 1,
+        Some(32773) => 64,
+        Some(8 | 32946) => 1100,
+        Some(5) => 4096,
+        _ => 1 << 16,
+    }
+}
+
+/// Refuses an image of `w` × `h` pixels whose data can't be in a file of `file_len` bytes: its
+/// strips or tiles, counting only the bytes that lie inside the file, at most as expanded as their
+/// compression allows, must hold the image's packed samples. A tiny file whose header declares a
+/// big image (a fuzzed or cut-short file) is refused here, before its pixel buffers are made and
+/// filled (fuzz finding `geotiff_header/timeout-29ae7643`: 3 KB declaring 200 × 200 pixels of
+/// 48,897 samples each). Tags that don't add up are left to the decoder to report.
+fn check_data_fits<R: Read + Seek>(dec: &mut Decoder<R>, file_len: u64, w: u32, h: u32) -> Result<()> {
+    let tiled = dec.find_tag_unsigned::<u32>(Tag::TileWidth).ok().flatten().is_some();
+    let (offsets_tag, counts_tag) = if tiled { (Tag::TileOffsets, Tag::TileByteCounts) } else { (Tag::StripOffsets, Tag::StripByteCounts) };
+    let offsets = dec.find_tag_unsigned_vec::<u64>(offsets_tag).ok().flatten().unwrap_or_default();
+    let counts = dec.find_tag_unsigned_vec::<u64>(counts_tag).ok().flatten().unwrap_or_default();
+    if offsets.is_empty() || offsets.len() != counts.len() {
+        return Ok(());
+    }
+    let stored: u64 = offsets
+        .iter()
+        .zip(&counts)
+        .filter(|(at, _)| **at < file_len)
+        .map(|(at, n)| (*n).min(file_len - at))
+        .fold(0u64, u64::saturating_add);
+    let compression = dec.find_tag_unsigned::<u16>(Tag::Compression).ok().flatten();
+    let capacity = stored.saturating_mul(max_expansion(compression));
+    // The fewest bytes the samples pack into (rows padded to whole bytes only add to this).
+    let bits = dec.find_tag_unsigned_vec::<u16>(Tag::BitsPerSample).ok().flatten().and_then(|v| v.into_iter().min()).unwrap_or(1);
+    let row_bits = u64::from(w).saturating_mul(samples(dec) as u64).saturating_mul(u64::from(bits.max(1)));
+    let needed = (row_bits / 8).saturating_mul(u64::from(h));
+    if needed > capacity {
+        return Err(err(format!("the file is too small to hold its {w} × {h} pixel image; it may be damaged or cut short")));
+    }
+    Ok(())
+}
+
 /// Reads a GeoTIFF. Images too large for [`MAX_SAMPLES`] are read from their largest overview that
 /// fits, when the file has overviews; otherwise an overview is made as the image is read, a strip
 /// or tile at a time (a regular, not cloud-optimised, file).
@@ -457,8 +502,10 @@ pub fn read<R: Read + Seek>(r: R, name: &str) -> Result<Raster> {
 }
 
 /// [`read`], holding at most `max` samples (the tests' small limit exercises the overviews).
-fn read_limited(r: Reader<'_>, name: &str, max: usize) -> Result<Raster> {
+fn read_limited(mut r: Reader<'_>, name: &str, max: usize) -> Result<Raster> {
     let palette = !r.patches.is_empty();
+    let file_len = r.seek(std::io::SeekFrom::End(0)).ok();
+    r.seek(std::io::SeekFrom::Start(0)).map_err(err)?;
     let limits = {
         let mut l = Limits::default();
         l.decoding_buffer_size = MAX_SAMPLES.saturating_mul(4);
@@ -563,8 +610,11 @@ fn read_limited(r: Reader<'_>, name: &str, max: usize) -> Result<Raster> {
     // the image: past its edge, over the start of the next row (issue #162). Such tiled images
     // are read a tile at a time, as their chunks come back only as wide as the image.
     let extra_samples = !planar && samples(&mut dec) > nbands && dec.find_tag_unsigned::<u32>(Tag::TileWidth).ok().flatten().is_some();
+    let (iw, ih) = if decimate_by > 1 { (full_w, full_h) } else { (w, h) };
+    if let Some(len) = file_len {
+        check_data_fits(&mut dec, len, iw, ih)?;
+    }
     let (values, data_type) = if decimate_by > 1 || extra_samples {
-        let (iw, ih) = if decimate_by > 1 { (full_w, full_h) } else { (w, h) };
         let (bands, dt) = decimate(&mut dec, iw, ih, nbands, planar, decimate_by)?;
         // Already one vector per band: laid out planar.
         (bands.into_iter().flatten().collect::<Vec<f32>>(), dt)
@@ -928,6 +978,49 @@ mod tests {
         for (x, y) in [(0i64, 0i64), (1, 1), (75, 50), (74, 49), (30, 7)] {
             assert_eq!(r.value(0, x, y), full.value(0, x * 4, y * 4), "{x},{y}");
         }
+    }
+
+    /// Sets a classic little-endian TIFF tag's inline SHORT or LONG value.
+    fn set_tag(b: &mut [u8], tag: u16, value: u32) {
+        let ifd = u32::from_le_bytes(b[4..8].try_into().unwrap()) as usize;
+        let n = u16::from_le_bytes(b[ifd..ifd + 2].try_into().unwrap()) as usize;
+        let e = (0..n).map(|i| ifd + 2 + i * 12).find(|&e| u16::from_le_bytes(b[e..e + 2].try_into().unwrap()) == tag).unwrap();
+        match u16::from_le_bytes(b[e + 2..e + 4].try_into().unwrap()) {
+            3 => b[e + 8..e + 10].copy_from_slice(&u16::try_from(value).unwrap().to_le_bytes()),
+            _ => b[e + 8..e + 12].copy_from_slice(&value.to_le_bytes()),
+        }
+    }
+
+    /// Fuzz finding (Gate 2, `geotiff_header/timeout-29ae7643`): a tiny file whose header declares
+    /// a big image made and filled pixel buffers of up to the sample limit for data the file can't
+    /// hold. Such a file is refused at once; a file that does hold its data still reads.
+    #[test]
+    fn a_tiny_file_declaring_a_big_image_is_refused_quickly() {
+        let data: Vec<u8> = (0..16u32).map(|i| i as u8).collect();
+        let good = grey8(4, 4, &data, None);
+        // 60,000 × 60,000 pixels (over the sample limit: read every 8th pixel, 56 M samples).
+        let mut big = good.clone();
+        set_tag(&mut big, 256, 60_000);
+        set_tag(&mut big, 257, 60_000);
+        set_tag(&mut big, 278, 60_000); // one strip, as the tags give
+        let t = std::time::Instant::now();
+        let e = read(std::io::Cursor::new(&big), "big").unwrap_err();
+        assert!(e.to_string().contains("too small to hold"), "{e}");
+        assert!(t.elapsed().as_millis() < 500, "{:?}", t.elapsed());
+        // 4 × 400 pixels in 16 bytes (within the sample limit, read whole): refused too.
+        let mut tall = good.clone();
+        set_tag(&mut tall, 257, 400);
+        set_tag(&mut tall, 278, 400);
+        assert!(read(std::io::Cursor::new(&tall), "tall").unwrap_err().to_string().contains("too small to hold"));
+        // Cut short inside its pixels.
+        assert!(read(std::io::Cursor::new(&good[..good.len() - 4]), "cut").is_err());
+        // Compressed data is allowed its expansion (Zstandard here), and the sound file reads.
+        let (w, h) = (64u32, 64u32);
+        let mut zeros = grey8(w, h, &vec![0u8; (w * h) as usize], None);
+        #[cfg(not(target_arch = "wasm32"))]
+        zstd_strips(&mut zeros);
+        assert_eq!(read(std::io::Cursor::new(&zeros), "zeros").unwrap().width, 64);
+        assert_eq!(read(std::io::Cursor::new(&good), "good").unwrap().value(0, 3, 3), Some(15.0));
     }
 
     /// A tiled, uncompressed RGB GeoTIFF with a fourth, undefined sample (an RGBI orthophoto's
