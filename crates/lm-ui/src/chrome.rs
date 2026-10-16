@@ -209,6 +209,7 @@ pub fn map_overlays(shell: &mut Shell, ui: &mut Ui, map: Rect, system: System) {
     if shell.flags.shows(WELCOME_PHASE) && WELCOME_PHASE <= lm_core::phase::BUILD_PHASE && empty && !shell.welcome_closed {
         match welcome(&t, ui, map) {
             Some(Welcome::Open) => shell.command(ui.ctx(), crate::Command::RequestOpen),
+            Some(Welcome::Example) => shell.command(ui.ctx(), crate::Command::OpenExamples),
             Some(Welcome::Close) => shell.welcome_closed = true,
             None => {}
         }
@@ -458,10 +459,11 @@ fn debug_overlay(shell: &Shell, ui: &Ui, map: Rect) {
 /// First launch (Screen states): "Open a file to see your data on the map." Phase 2 onwards.
 enum Welcome {
     Open,
+    Example,
     Close,
 }
 
-/// The first-launch card (Screen states › First launch). "Try an example" arrives with WP2.9.
+/// The first-launch card (Screen states › First launch). "Try an example" opens the WP2.9 data.
 fn welcome(t: &theme::Theme, ui: &mut Ui, map: Rect) -> Option<Welcome> {
     let pos = pos2(map.center().x, map.bottom() - 48.0);
     let mut out = None;
@@ -481,7 +483,9 @@ fn welcome(t: &theme::Theme, ui: &mut Ui, map: Rect) -> Option<Welcome> {
                 if ui.add(egui::Button::new(egui::RichText::new("Open file…").color(t.on_accent)).fill(t.accent)).clicked() {
                     out = Some(Welcome::Open);
                 }
-                ui.add_enabled(false, egui::Button::new("Try an example")).on_disabled_hover_text("Example data arrives later in Phase 2");
+                if ui.button("Try an example").on_hover_text("World cities, countries and elevation").clicked() {
+                    out = Some(Welcome::Example);
+                }
             });
         });
     });

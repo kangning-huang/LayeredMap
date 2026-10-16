@@ -6,6 +6,7 @@
 
 pub mod basemap;
 mod chrome;
+pub mod examples;
 pub mod panels;
 #[cfg(test)]
 mod screenshots;
@@ -51,6 +52,8 @@ pub enum Command {
     Open(Vec<PathBuf>),
     /// Ask the app for the Open dialog (⌘O, the Open button).
     RequestOpen,
+    /// Open the three example files (Try an example, File › Open example data).
+    OpenExamples,
     Undo,
     Redo,
     /// Show or hide the layer shelf (⌘L, the Layers button).
@@ -233,6 +236,10 @@ impl Shell {
                 self.ws.open(paths, move || waker.request_repaint());
             }
             Command::RequestOpen => self.file_requests.push(FileRequest::Open),
+            Command::OpenExamples => {
+                let waker = ctx.clone();
+                self.ws.open(examples::paths(), move || waker.request_repaint());
+            }
             Command::RequestSaveDocument => self.file_requests.push(FileRequest::SaveDocument),
             Command::RequestOpenDocument => self.file_requests.push(FileRequest::OpenDocument),
             Command::Undo => {

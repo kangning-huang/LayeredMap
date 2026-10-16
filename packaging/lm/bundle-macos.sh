@@ -21,6 +21,10 @@ app="$out/LayeredMap.app"
 rm -rf "$app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 cp "$target_dir/release/layeredmap" "$app/Contents/MacOS/layeredmap"
+# Try an example (WP2.9): the app looks in Contents/Resources/examples.
+mkdir -p "$app/Contents/Resources/examples"
+cp "$root/assets/examples/populated_places.geojson" "$root/assets/examples/countries.geojson" \
+  "$root/assets/examples/elevation.tif" "$root/assets/examples/README.md" "$app/Contents/Resources/examples/"
 cat > "$app/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
