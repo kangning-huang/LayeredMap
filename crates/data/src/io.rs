@@ -1054,7 +1054,7 @@ fn read_shapefile(path: &Path, name: &str) -> Result<(Dataset, ReadReport)> {
     let parts = ShapefileParts {
         shp: std::fs::read(path)?,
         shx: if shx.is_file() { Some(std::fs::read(shx)?) } else { None },
-        dbf: std::fs::read(dbf)?,
+        dbf: Some(std::fs::read(dbf)?),
         prj: crate::raster::read_prj(path),
     };
     read_shapefile_parts(parts, name)
@@ -1107,7 +1107,7 @@ pub fn read_zip(file_name: &str, bytes: &[u8]) -> Result<Vec<(Dataset, ReadRepor
             skipped.push(format!("{n} (no .dbf beside it)"));
             continue;
         };
-        match read_shapefile_parts(ShapefileParts { shp, shx, dbf, prj }, &name) {
+        match read_shapefile_parts(ShapefileParts { shp, shx, dbf: Some(dbf), prj }, &name) {
             Ok(mut read) => {
                 read.0.source = Some(format!("{file_name}/{n}"));
                 out.push(read);
@@ -1164,19 +1164,62 @@ pub fn read_zip(file_name: &str, bytes: &[u8]) -> Result<Vec<(Dataset, ReadRepor
 }
 
 /// The files of a Shapefile, read into memory.
-struct ShapefileParts {
-    shp: Vec<u8>,
-    shx: Option<Vec<u8>>,
-    dbf: Vec<u8>,
-    prj: Option<String>,
+pub struct ShapefileParts {
+    pub shp: Vec<u8>,
+    /// The index; rebuilt by reading the shapes in order when missing.
+    pub shx: Option<Vec<u8>>,
+    /// The attributes; without them the shapes are read with no fields.
+    pub dbf: Option<Vec<u8>>,
+    pub prj: Option<String>,
+}
+
+/// How [`read_shapefile_parts_with`] reads a Shapefile.
+#[derive(Clone, Copy, Default)]
+pub struct ShapefileOptions {
+    /// The text encoding of the `.dbf` (from its `.cpg`, or detected): UTF-8 when `None`.
+    pub encoding: Option<&'static encoding_rs::Encoding>,
+    /// Keep the coordinates as stored, ignoring the `.prj` (the caller converts them).
+    pub raw_coordinates: bool,
+}
+
+/// A `.cpg` file's encoding name ("UTF-8", "GBK", "936", "CP1252"…) as an encoding, if known.
+pub fn cpg_encoding(cpg: &str) -> Option<&'static encoding_rs::Encoding> {
+    let label = cpg.trim().trim_start_matches('\u{feff}');
+    let digits = label.trim_start_matches(|c: char| c.is_ascii_alphabetic() || c == '-' || c == '_');
+    let by_code_page = match digits {
+        "936" => Some("gbk"),
+        "65001" => Some("utf-8"),
+        "1252" => Some("windows-1252"),
+        "950" => Some("big5"),
+        "932" => Some("shift_jis"),
+        "949" => Some("euc-kr"),
+        _ => None,
+    };
+    encoding_rs::Encoding::for_label(by_code_page.unwrap_or(label).as_bytes())
 }
 
 fn read_shapefile_parts(parts: ShapefileParts, name: &str) -> Result<(Dataset, ReadReport)> {
+    read_shapefile_parts_with(parts, name, ShapefileOptions::default())
+}
+
+/// Reads a Shapefile from its files in memory, with a `.dbf` text encoding and without the `.prj`
+/// conversion if asked. With no `.dbf` the shapes have no fields (said in the report); with no
+/// `.shx` the shapes are read in order.
+pub fn read_shapefile_parts_with(parts: ShapefileParts, name: &str, opts: ShapefileOptions) -> Result<(Dataset, ReadReport)> {
     use shapefile::Shape;
     use shapefile::dbase::FieldValue;
     use std::io::Cursor;
     let fmt = |e: shapefile::Error| DataError::Format(format!("Shapefile: {e}"));
-    let dbf = shapefile::dbase::Reader::new(Cursor::new(parts.dbf)).map_err(|e| DataError::Format(format!("Shapefile: the .dbf: {e}")))?;
+    let mut report = ReadReport::default();
+    let Some(dbf_bytes) = parts.dbf else {
+        return read_shapes_only(parts.shp, parts.shx, parts.prj, name, opts);
+    };
+    let builder = shapefile::dbase::ReaderBuilder::new();
+    let builder = match opts.encoding {
+        Some(e) => builder.with_encoding(shapefile::dbase::encoding::EncodingRs::from(e)),
+        None => builder,
+    };
+    let dbf = builder.build(Cursor::new(dbf_bytes)).map_err(|e| DataError::Format(format!("Shapefile: the .dbf: {e}")))?;
     // Field order comes from the .dbf header (records are unordered maps).
     let order: Vec<(String, FieldType)> = dbf
         .fields()
@@ -1201,8 +1244,7 @@ fn read_shapefile_parts(parts: ShapefileParts, name: &str) -> Result<(Dataset, R
     let mut reader = shapefile::Reader::new(shapes, dbf);
     let fields: Vec<Field> = order.iter().map(|(n, t)| Field::new(n.clone(), *t)).collect();
     let mut ds = Dataset::new(name, GeometryType::None, fields);
-    let mut report = ReadReport::default();
-    let to_lonlat = shapefile_crs(parts.prj.as_deref(), &mut report);
+    let to_lonlat = if opts.raw_coordinates { None } else { shapefile_crs(parts.prj.as_deref(), &mut report) };
     let (mut converted, mut unconverted) = (0usize, 0usize);
     let pt = |x: f64, y: f64| Coord::new(x, y);
     for item in reader.iter_shapes_and_records() {
@@ -1279,6 +1321,68 @@ fn read_shapefile_parts(parts: ShapefileParts, name: &str) -> Result<(Dataset, R
         report.messages.push(format!("{unconverted} shapes couldn't be converted to longitude/latitude and have no geometry"));
     }
     Ok((ds, report))
+}
+
+/// A Shapefile without its `.dbf`: the shapes, with no fields.
+fn read_shapes_only(
+    shp: Vec<u8>,
+    shx: Option<Vec<u8>>,
+    prj: Option<String>,
+    name: &str,
+    opts: ShapefileOptions,
+) -> Result<(Dataset, ReadReport)> {
+    use std::io::Cursor;
+    let fmt = |e: shapefile::Error| DataError::Format(format!("Shapefile: {e}"));
+    let mut reader = match shx {
+        Some(shx) => shapefile::ShapeReader::with_shx(Cursor::new(shp), Cursor::new(shx)),
+        None => shapefile::ShapeReader::new(Cursor::new(shp)),
+    }
+    .map_err(fmt)?;
+    let mut report = ReadReport::default();
+    let to_lonlat = if opts.raw_coordinates { None } else { shapefile_crs(prj.as_deref(), &mut report) };
+    let mut ds = Dataset::new(name, GeometryType::None, Vec::new());
+    for shape in reader.iter_shapes() {
+        match shape.ok().and_then(shape_geometry) {
+            Some(g) => {
+                let g = match &to_lonlat {
+                    Some(t) => g.map_coords(&|c| t.to_lonlat(c).unwrap_or(Coord::new(f64::NAN, f64::NAN))),
+                    None => g,
+                };
+                ds.push_next(Some(g), Vec::new());
+            }
+            None => report.skipped += 1,
+        }
+    }
+    ds.geometry_type = dominant_type(&ds);
+    report.messages.push("no .dbf file: the shapes were read without attributes".into());
+    Ok((ds, report))
+}
+
+/// A shape as a geometry (`None` for a null shape or a multipatch).
+fn shape_geometry(shape: shapefile::Shape) -> Option<Geometry> {
+    use shapefile::Shape;
+    let pt = |x: f64, y: f64| Coord::new(x, y);
+    match shape {
+        Shape::NullShape | Shape::Multipatch(_) => None,
+        Shape::Point(p) => Some(Geometry::Point(pt(p.x, p.y))),
+        Shape::PointM(p) => Some(Geometry::Point(pt(p.x, p.y))),
+        Shape::PointZ(p) => Some(Geometry::Point(pt(p.x, p.y))),
+        Shape::Multipoint(m) => Some(Geometry::MultiPoint(m.points().iter().map(|p| pt(p.x, p.y)).collect())),
+        Shape::MultipointM(m) => Some(Geometry::MultiPoint(m.points().iter().map(|p| pt(p.x, p.y)).collect())),
+        Shape::MultipointZ(m) => Some(Geometry::MultiPoint(m.points().iter().map(|p| pt(p.x, p.y)).collect())),
+        Shape::Polyline(l) => Some(Geometry::Line(l.parts().iter().map(|p| p.iter().map(|q| pt(q.x, q.y)).collect()).collect())),
+        Shape::PolylineM(l) => Some(Geometry::Line(l.parts().iter().map(|p| p.iter().map(|q| pt(q.x, q.y)).collect()).collect())),
+        Shape::PolylineZ(l) => Some(Geometry::Line(l.parts().iter().map(|p| p.iter().map(|q| pt(q.x, q.y)).collect()).collect())),
+        Shape::Polygon(p) => {
+            Some(group_rings(p.rings().iter().map(|r| (r.points().iter().map(|q| pt(q.x, q.y)).collect(), is_outer(r))).collect()))
+        }
+        Shape::PolygonM(p) => {
+            Some(group_rings(p.rings().iter().map(|r| (r.points().iter().map(|q| pt(q.x, q.y)).collect(), is_outer(r))).collect()))
+        }
+        Shape::PolygonZ(p) => {
+            Some(group_rings(p.rings().iter().map(|r| (r.points().iter().map(|q| pt(q.x, q.y)).collect(), is_outer(r))).collect()))
+        }
+    }
 }
 
 /// Converts a Shapefile's coordinates to longitude/latitude, from the coordinate system in its
@@ -1539,6 +1643,47 @@ fn group_rings(rings: Vec<(Vec<Coord>, bool)>) -> Geometry {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn cpg_names_map_to_encodings() {
+        assert_eq!(cpg_encoding("UTF-8"), Some(encoding_rs::UTF_8));
+        assert_eq!(cpg_encoding("GBK\n"), Some(encoding_rs::GBK));
+        assert_eq!(cpg_encoding("936"), Some(encoding_rs::GBK));
+        assert_eq!(cpg_encoding("CP936"), Some(encoding_rs::GBK));
+        assert_eq!(cpg_encoding("1252"), Some(encoding_rs::WINDOWS_1252));
+        assert_eq!(cpg_encoding("nonsense"), None);
+    }
+
+    /// A Shapefile without its `.dbf` opens with its shapes and no fields, and says so.
+    #[test]
+    fn shapefile_without_dbf_reads_shapes_only() {
+        let mut ds = Dataset::new("pts", GeometryType::Point, vec![Field::new("n", FieldType::Integer)]);
+        for i in 0..3 {
+            ds.push(Some(Geometry::Point(Coord::new(f64::from(i), 1.0))), vec![Value::Int(i64::from(i))]);
+        }
+        let (files, _) = shapefile_parts(&ds).unwrap();
+        let get = |e: &str| files.iter().find(|(x, _)| *x == e).map(|(_, b)| b.clone());
+        let parts = ShapefileParts { shp: get("shp").unwrap(), shx: None, dbf: None, prj: None };
+        let (read, rep) = read_shapefile_parts_with(parts, "pts", ShapefileOptions::default()).unwrap();
+        assert_eq!(read.features.len(), 3);
+        assert!(read.fields.is_empty());
+        assert!(rep.messages.iter().any(|m| m.contains(".dbf")), "{:?}", rep.messages);
+    }
+
+    /// A GBK `.dbf` read as GBK gives its Chinese text (LayeredMap fixture V5, when present).
+    #[test]
+    fn shapefile_text_in_a_given_encoding() {
+        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/V5");
+        let Ok(shp) = std::fs::read(dir.join("places_gbk.shp")) else { return };
+        let dbf = std::fs::read(dir.join("places_gbk.dbf")).unwrap();
+        let parts = || ShapefileParts { shp: shp.clone(), shx: None, dbf: Some(dbf.clone()), prj: None };
+        let gbk = ShapefileOptions { encoding: Some(encoding_rs::GBK), raw_coordinates: false };
+        let (ds, _) = read_shapefile_parts_with(parts(), "places", gbk).unwrap();
+        let name = ds.field_index("name").unwrap();
+        assert_eq!(ds.value(0, name), &Value::Text("人民广场".into()));
+        let (utf8, _) = read_shapefile_parts_with(parts(), "places", ShapefileOptions::default()).unwrap();
+        assert_ne!(utf8.value(0, name), &Value::Text("人民广场".into()));
+    }
+
     use super::*;
 
     #[test]

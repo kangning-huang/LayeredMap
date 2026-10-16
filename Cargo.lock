@@ -1039,6 +1039,8 @@ checksum = "abde818b4b82df61e01348c2b4610c221bcecb97cb7f567da086edf295d8d126"
 dependencies = [
  "bufrw",
  "byteorder",
+ "codepage",
+ "encoding_rs",
  "time",
 ]
 
@@ -3999,6 +4001,7 @@ dependencies = [
  "calamine",
  "crs-definitions",
  "csv",
+ "encoding_rs",
  "flatgeobuf",
  "geozero",
  "image",
