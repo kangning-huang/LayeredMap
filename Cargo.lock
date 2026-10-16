@@ -2620,6 +2620,9 @@ dependencies = [
 [[package]]
 name = "lm-core"
 version = "0.2.0"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "lm-doc"
