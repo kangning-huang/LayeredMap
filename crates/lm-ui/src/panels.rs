@@ -288,9 +288,14 @@ fn layer_rows(shell: &mut Shell, ui: &mut Ui, t: &Theme) {
                 ui.close();
             }
         });
-        // A question card attaches to its row; the map stays usable.
+        // A question card attaches to its row; the map stays usable. While the layer's overview
+        // is open it shows the card there instead, and the row just says so.
         if let Some(q) = l.profile.open_questions().next().cloned() {
-            question_card(shell, ui, t, *id, &q);
+            if shell.ws.selected == Some(*id) {
+                ui.label(RichText::new("Needs a decision: see the layer's panel").size(CAPTION).color(t.warning));
+            } else {
+                question_card(shell, ui, t, *id, &q);
+            }
         }
     }
     // The insertion line while dragging; drop on release.
@@ -316,10 +321,69 @@ fn layer_rows(shell: &mut Shell, ui: &mut Ui, t: &Theme) {
     }
 }
 
+/// "Where should this data be?" (WP2.4): name a place (or use the map's centre); the coordinate
+/// systems that put the data near it are listed nearest first; Open as a table is the Not sure.
+fn place_card(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, shown: f64, now: f64) {
+    let key = egui::Id::new(("lm-place", id.0));
+    let mut query: String = ui.data(|d| d.get_temp::<String>(key)).unwrap_or_default();
+    let place_key = egui::Id::new(("lm-place-at", id.0));
+    let mut place: Option<(f64, f64, String)> = ui.data(|d| d.get_temp(place_key));
+    egui::Frame::new().fill(t.surface_raised).stroke(Stroke::new(1.0, t.warning.gamma_multiply(0.6))).corner_radius(CornerRadius::same(theme::RADIUS_CARD)).inner_margin(10.0).show(ui, |ui| {
+        ui.set_width(ui.available_width());
+        ui.horizontal_wrapped(|ui| {
+            ui.label(RichText::new(icon::WARNING).font(theme::icon_font(14.0)).color(t.warning));
+            ui.label(RichText::new("Where should this data be?").font(semibold(BODY)));
+        });
+        ui.label(RichText::new("This file doesn't say where on Earth its coordinates are. Name a place it covers.").size(CAPTION).color(t.text_secondary));
+        let te = ui.add(egui::TextEdit::singleline(&mut query).hint_text("A city or town, e.g. Shanghai"));
+        let _ = te;
+        for r in shell.search.lookup(&query, 4) {
+            if ui.selectable_label(false, format!("{}  ·  {}", r.title, r.detail)).clicked() {
+                place = Some((r.choice.lon, r.choice.lat, r.title.clone()));
+                query = r.title.clone();
+            }
+        }
+        if ui.link("Use the middle of the map").clicked() {
+            let c = shell.map.center_lonlat();
+            place = Some((c.x, c.y, "the middle of the map".into()));
+        }
+        if let Some((lon, lat, name)) = &place {
+            let cands = shell.ws.place_candidates(id, (*lon, *lat));
+            ui.add_space(4.0);
+            if cands.is_empty() {
+                ui.label(RichText::new(format!("No coordinate system puts this data near {name}. Try another place, or open it as a table.")).color(t.text_secondary));
+            }
+            for c in cands {
+                ui.horizontal_wrapped(|ui| {
+                    ui.label(format!("{} — lands {} km from {name}", c.name, if c.distance_km < 10.0 { format!("{:.1}", c.distance_km) } else { format!("{:.0}", c.distance_km) }));
+                    if ui.add(egui::Button::new(RichText::new("Use this").color(t.on_accent)).fill(t.accent)).clicked()
+                        && let Err(e) = shell.ws.place_layer(id, c.epsg, Some(now - shown))
+                    {
+                        shell.set_notice(e, now);
+                    }
+                });
+            }
+        }
+        if ui.link("Open as a table").clicked() {
+            let _ = shell.ws.change_assumption(id, AssumptionKind::NoCrsProjected, Subject::Layer, Choice::not_sure(), Some(now - shown));
+        }
+    });
+    ui.data_mut(|d| {
+        d.insert_temp(key, query);
+        if let Some(p) = place {
+            d.insert_temp(place_key, p);
+        }
+    });
+}
+
 /// A question card: the question, the recommended answer preselected, Not sure, and Use this.
 fn question_card(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, q: &Assumption) {
     let now = ui.input(|i| i.time);
     let shown = *shell.question_seen.entry((id.0, q.kind as u8)).or_insert(now);
+    if q.kind == AssumptionKind::NoCrsProjected {
+        place_card(shell, ui, t, id, shown, now);
+        return;
+    }
     egui::Frame::new()
         .fill(t.surface_raised)
         .stroke(Stroke::new(1.0, t.warning.gamma_multiply(0.6)))

@@ -23,6 +23,7 @@ use lm_core::model::{Assumption, Choice, Crs, Exclusion, Extent, ImportStatus, K
 use rustgis_engine::data::Dataset;
 use rustgis_engine::data::raster::Raster;
 
+pub use lm_profile::PlaceCandidate;
 pub use progress::Ticket;
 
 /// Why an import didn't produce layers. The message is shown as written (Error and status copy).
@@ -473,6 +474,21 @@ pub fn relocate_csv(layer: &ImportedLayer, choice: &Choice) -> Result<ImportedLa
     csv::relocate(layer, raw, choice)
 }
 
+/// "Where should this data be?" (WP2.4): the coordinate systems that put a layer read with raw
+/// coordinates near `place` (longitude, latitude), nearest first.
+pub fn place_candidates(layer: &ImportedLayer, place: (f64, f64)) -> Vec<lm_profile::PlaceCandidate> {
+    let LayerData::Vector(ds) = &layer.data else { return Vec::new() };
+    let e = ds.extent();
+    if !e.min_x.is_finite() {
+        return Vec::new();
+    }
+    let center = ((e.min_x + e.max_x) / 2.0, (e.min_y + e.max_y) / 2.0);
+    lm_profile::place_candidates(center, place, |code, (x, y)| {
+        let t = rustgis_engine::data::raster::Crs::Epsg(code).transformer().ok()?;
+        t.to_lonlat(rustgis_engine::geom::Coord::new(x, y)).map(|c| (c.x, c.y))
+    })
+}
+
 /// Reprojects a layer read with raw coordinates from the coordinate system the user chose
 /// ("Where should this data be?"), as a new layer; the source file is untouched.
 pub fn reproject(layer: &ImportedLayer, epsg: u32) -> Result<ImportedLayer, ImportError> {
@@ -495,8 +511,23 @@ pub fn reproject(layer: &ImportedLayer, epsg: u32) -> Result<ImportedLayer, Impo
         }
     }
     let mut profile = layer.profile.clone();
-    profile.crs = Known::certain(Crs::Epsg(epsg), format!("Chosen by you: EPSG:{epsg}."));
+    let name = lm_profile::crs_candidates::CANDIDATES.iter().find(|(c, _, _)| u32::from(*c) == epsg).map_or_else(|| format!("EPSG:{epsg}"), |(_, n, _)| (*n).to_string());
+    profile.crs = Known::certain(Crs::Epsg(epsg), format!("Chosen by you: {name} (EPSG:{epsg})."));
     profile.extent_wgs84 = extent_of(&out);
+    profile.kind = kind_of(&out);
+    // The choice becomes a visible assumption that names the system (WP2.4 step 5).
+    for a in profile.assumptions.iter_mut().filter(|a| a.kind == lm_core::model::AssumptionKind::NoCrsProjected) {
+        let choice = Choice::new(format!("epsg:{epsg}"), name.clone());
+        if !a.alternatives.contains(&choice) {
+            a.alternatives.insert(0, choice.clone());
+        }
+        a.chosen = choice;
+        a.confirmed_by_user = true;
+        a.treatment = lm_core::model::Treatment::Visible;
+        a.line = format!(
+            "Placed using {name} (EPSG:{epsg}), which you chose. The datum can't be checked from the file, so positions may be off by up to about 100 m."
+        );
+    }
     Ok(ImportedLayer { data: LayerData::Vector(Arc::new(out)), status: status_of(&profile), profile, ..layer.clone() })
 }
 

@@ -107,10 +107,10 @@ pub struct System {
 pub struct Shell {
     pub flags: Flags,
     pub prefs: Prefs,
-    map: MapView,
+    pub(crate) map: MapView,
     theme: Theme,
     theme_applied: Option<Theme>,
-    search: search::Search,
+    pub(crate) search: search::Search,
     debug_overlay: bool,
     credits_open: bool,
     basemap_open: bool,

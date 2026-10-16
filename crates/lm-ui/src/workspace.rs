@@ -380,6 +380,37 @@ impl Workspace {
         }
     }
 
+    /// "Where should this data be?": the candidates near a place (longitude, latitude).
+    pub fn place_candidates(&self, id: LayerId, place: (f64, f64)) -> Vec<lm_jobs::import::PlaceCandidate> {
+        self.data(id).map(|d| lm_jobs::import::place_candidates(d, place)).unwrap_or_default()
+    }
+
+    /// Places a layer read with raw coordinates using the coordinate system the user picked:
+    /// re-reads nothing, converts the coordinates, keeps the style; one undo step.
+    pub fn place_layer(&mut self, id: LayerId, epsg: u16, seconds: Option<f64>) -> Result<(), String> {
+        let data = self.data(id).cloned().ok_or("This layer's data isn't loaded.")?;
+        let Some(layer) = self.doc.layer(id).cloned() else { return Err("That layer is gone.".into()) };
+        let mut new = lm_jobs::import::reproject(&data, u32::from(epsg)).map_err(|e| e.to_string())?;
+        new.profile.data_rev = layer.profile.data_rev + 1;
+        if let Some(secs) = seconds
+            && let Some(a) = new.profile.assumptions.iter().find(|a| a.kind == AssumptionKind::NoCrsProjected)
+        {
+            self.answers.push(QuestionAnswer { kind: a.kind, answer: a.chosen.clone(), seconds: secs });
+        }
+        self.data.insert((id, new.profile.data_rev), Arc::new(new.clone()));
+        let fit = new.profile.extent_wgs84;
+        let tx = self.doc.set_profile_tx(id, new.profile).map(|mut t| {
+            t.label = format!("Place {}", layer.display_name);
+            t
+        });
+        if self.commit(tx) {
+            self.fit = fit;
+            Ok(())
+        } else {
+            Err("The layer couldn't be placed.".into())
+        }
+    }
+
     /// Starts comparing a layer's points with the same points converted from GCJ-02 (or BD-09).
     pub fn start_compare(&mut self, id: LayerId, from_bd09: bool) -> Result<(), String> {
         let data = self.data(id).cloned().ok_or("This layer's data isn't loaded.")?;

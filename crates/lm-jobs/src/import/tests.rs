@@ -262,3 +262,22 @@ fn the_problem_list_holds_each_excluded_row_and_defuses_formulas() {
     x5.raw = None;
     assert!(problem_list_csv(&x5).contains("\"'=HYPERLINK(\"\"x\"\")\""));
 }
+
+#[test]
+fn v4_where_should_this_data_be_finds_its_zone_near_shanghai() {
+    let l = open("V4/districts_gk.shp").unwrap().remove(0);
+    let c = place_candidates(&l, (121.47, 31.23));
+    assert!(!c.is_empty(), "no candidates");
+    assert!(c.len() <= 6);
+    eprintln!("{:?}", c.iter().map(|x| (x.epsg, x.name.clone(), x.distance_km.round())).collect::<Vec<_>>());
+    let best = &c[0];
+    assert_eq!(best.epsg, 4549, "V4 expected.json: expected_top_candidate_epsg");
+    assert!(best.distance_km < 30.0, "{best:?}");
+    let placed = reproject(&l, u32::from(best.epsg)).unwrap();
+    assert_eq!(placed.profile.kind, LayerKind::Areas);
+    let e = placed.profile.extent_wgs84.unwrap();
+    assert!((120.8..122.2).contains(&e.min_x) && (30.6..31.9).contains(&e.min_y), "{e:?}");
+    let a = placed.profile.assumptions.iter().find(|a| a.kind == AssumptionKind::NoCrsProjected).unwrap();
+    assert!(a.confirmed_by_user && a.line.contains("100 m"), "{}", a.line);
+    assert_ne!(placed.status, ImportStatus::NeedsDecision);
+}
