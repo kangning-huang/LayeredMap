@@ -1,0 +1,878 @@
+//! Phase 2 panels: the layer shelf (Interaction specification › Layer shelf), the minimal layer
+//! overview with its assumption lines and Details tab (› Inspector: layer overview), question
+//! cards attached to shelf rows (never modal), the import report's Review list, and the drop
+//! overlay.
+
+use egui::{Align2, Color32, CornerRadius, Rect, RichText, Sense, Stroke, Ui, pos2, vec2};
+use egui_phosphor::regular as icon;
+
+use lm_core::model::{Assumption, AssumptionKind, Choice, ImportStatus, LayerId, LayerKind, Subject, Treatment, group_thousands};
+
+use crate::theme::{self, BODY, CAPTION, PANEL_MARGIN, ROW_HEIGHT, Theme};
+use crate::{FileRequest, Shell};
+
+/// Shelf and inspector widths (Layout).
+pub const SHELF_WIDTH: f32 = 280.0;
+pub const INSPECTOR_WIDTH: f32 = 360.0;
+
+fn frame(t: &Theme) -> egui::Frame {
+    crate::chrome::panel_frame(t)
+}
+
+fn semibold(size: f32) -> egui::FontId {
+    egui::FontId::new(size, egui::FontFamily::Name("semibold".into()))
+}
+
+/// The middle of a long name gives way first ("district_bou…_2026.shp").
+fn middle_truncate(s: &str, max: usize) -> String {
+    let n = s.chars().count();
+    if n <= max {
+        return s.to_string();
+    }
+    let keep = max.saturating_sub(1);
+    let head: String = s.chars().take(keep / 2 + keep % 2).collect();
+    let tail: String = s.chars().skip(n - keep / 2).collect();
+    format!("{head}…{tail}")
+}
+
+fn color(c: [u8; 4]) -> Color32 {
+    Color32::from_rgba_unmultiplied(c[0], c[1], c[2], c[3])
+}
+
+/// A row's badge (Layer shelf › Badges).
+enum Badge {
+    None,
+    Assumption,
+    Decision,
+    Working,
+    Failed,
+}
+
+fn paint_badge(ui: &Ui, at: egui::Pos2, b: &Badge, t: &Theme) {
+    let p = ui.painter();
+    match b {
+        Badge::None => {}
+        Badge::Assumption => {
+            p.circle_filled(at, 4.0, t.assumption);
+        }
+        Badge::Decision => {
+            p.text(at, Align2::CENTER_CENTER, icon::WARNING, theme::icon_font(16.0), t.warning);
+        }
+        Badge::Working => {
+            let r = Rect::from_center_size(at, vec2(14.0, 14.0));
+            egui::Spinner::new().size(14.0).color(t.text_secondary).paint_at(ui, r);
+        }
+        Badge::Failed => {
+            p.text(at, Align2::CENTER_CENTER, icon::WARNING_CIRCLE, theme::icon_font(16.0), t.critical);
+        }
+    }
+}
+
+/// The layer shelf: a floating panel at the left, rows top to bottom (the top row draws on top).
+pub fn shelf(shell: &mut Shell, ui: &mut Ui, map: Rect) {
+    let t = *shell.theme();
+    if !shell.shelf_open || (shell.ws.doc.layers.is_empty() && shell.ws.imports.is_empty()) {
+        return;
+    }
+    let pos = pos2(map.left() + PANEL_MARGIN, map.top() + PANEL_MARGIN);
+    let max_h = (map.height() - 2.0 * PANEL_MARGIN - 40.0).max(120.0);
+    egui::Area::new(egui::Id::new("lm-shelf")).order(egui::Order::Middle).fixed_pos(pos).show(ui.ctx(), |ui| {
+        frame(&t).show(ui, |ui| {
+            ui.set_width(SHELF_WIDTH - 2.0 * theme::PANEL_PADDING);
+            ui.horizontal(|ui| {
+                ui.label(RichText::new("Layers").font(semibold(theme::HEADLINE)));
+            });
+            ui.add_space(4.0);
+            egui::ScrollArea::vertical()
+                .max_height(max_h - 60.0)
+                .min_scrolled_height((max_h - 60.0).min(420.0))
+                .auto_shrink([false, true])
+                .show(ui, |ui| {
+                    import_rows(shell, ui, &t);
+                    layer_rows(shell, ui, &t);
+                    let r = ui.allocate_exact_size(vec2(ui.available_width(), ROW_HEIGHT), Sense::click());
+                    let col = if r.1.hovered() { t.accent } else { t.text_secondary };
+                    ui.painter().text(
+                        r.0.left_center() + vec2(4.0, 0.0),
+                        Align2::LEFT_CENTER,
+                        format!("{}  Open file", icon::PLUS),
+                        egui::FontId::proportional(BODY),
+                        col,
+                    );
+                    if r.1.clicked() {
+                        shell.file_requests.push(FileRequest::Open);
+                    }
+                });
+        });
+    });
+}
+
+fn import_rows(shell: &mut Shell, ui: &mut Ui, t: &Theme) {
+    let mut cancel = None;
+    for row in &shell.ws.imports {
+        let (r, resp) = ui.allocate_exact_size(vec2(ui.available_width(), ROW_HEIGHT + 14.0), Sense::hover());
+        let p = ui.painter();
+        p.text(
+            r.left_top() + vec2(28.0, 8.0),
+            Align2::LEFT_TOP,
+            middle_truncate(&row.name(), 30),
+            egui::FontId::proportional(BODY),
+            t.text_primary,
+        );
+        let (sub, badge) = match &row.error {
+            Some(e) => (e.to_string(), Badge::Failed),
+            None => (row.progress(), Badge::Working),
+        };
+        p.text(
+            r.left_top() + vec2(28.0, 26.0),
+            Align2::LEFT_TOP,
+            middle_truncate(&sub, 46),
+            egui::FontId::proportional(CAPTION),
+            if row.error.is_some() { t.critical } else { t.text_secondary },
+        );
+        paint_badge(ui, r.left_top() + vec2(12.0, 16.0), &badge, t);
+        if let Some(e) = &row.error {
+            resp.clone().on_hover_text(format!("{e}\n\nDetails: {}", e.details()));
+        }
+        // × on hover cancels (or dismisses a failed row).
+        if resp.hovered() || row.error.is_some() {
+            let x = Rect::from_center_size(pos2(r.right() - 12.0, r.top() + 16.0), vec2(22.0, 22.0));
+            let xr = ui.interact(x, egui::Id::new(("lm-cancel", row.key)), Sense::click());
+            ui.painter().text(
+                x.center(),
+                Align2::CENTER_CENTER,
+                icon::X,
+                theme::icon_font(14.0),
+                if xr.hovered() { t.text_primary } else { t.text_secondary },
+            );
+            if xr.clicked() {
+                cancel = Some(row.key);
+            }
+            xr.on_hover_text(if row.error.is_some() { "Dismiss" } else { "Cancel" });
+        }
+    }
+    if let Some(k) = cancel {
+        shell.ws.cancel(k);
+    }
+}
+
+fn layer_rows(shell: &mut Shell, ui: &mut Ui, t: &Theme) {
+    let n = shell.ws.doc.layers.len();
+    let ids: Vec<LayerId> = shell.ws.doc.layers.iter().rev().map(|l| l.id).collect();
+    let mut rects: Vec<Rect> = Vec::with_capacity(n);
+    for (d, id) in ids.iter().enumerate() {
+        let Some(l) = shell.ws.doc.layer(*id).cloned() else { continue };
+        let selected = shell.ws.selected == Some(*id);
+        let (r, resp) = ui.allocate_exact_size(vec2(ui.available_width(), ROW_HEIGHT), Sense::click_and_drag());
+        rects.push(r);
+        let p = ui.painter();
+        if selected {
+            p.rect_filled(r, CornerRadius::same(theme::RADIUS_CONTROL), t.accent_weak);
+        } else if resp.hovered() {
+            p.rect_filled(r, CornerRadius::same(theme::RADIUS_CONTROL), t.surface_raised);
+        }
+        // Eye: visibility only.
+        let eye = Rect::from_center_size(r.left_center() + vec2(12.0, 0.0), vec2(24.0, 24.0));
+        let eye_r = ui.interact(eye, egui::Id::new(("lm-eye", id.0)), Sense::click());
+        ui.painter().text(
+            eye.center(),
+            Align2::CENTER_CENTER,
+            if l.visible { icon::EYE } else { icon::EYE_SLASH },
+            theme::icon_font(16.0),
+            if l.visible { t.text_primary } else { t.text_secondary },
+        );
+        if eye_r.clicked() {
+            let tx = shell.ws.doc.set_visible_tx(*id, !l.visible).map(|mut x| {
+                x.label = format!("{} {}", if l.visible { "Hide" } else { "Show" }, l.display_name);
+                x
+            });
+            shell.ws.commit(tx);
+        }
+        // Swatch.
+        let sw = Rect::from_center_size(r.left_center() + vec2(36.0, 0.0), vec2(14.0, 14.0));
+        let key = color(l.style.key_color(l.profile.kind));
+        match l.profile.kind {
+            LayerKind::Points => {
+                ui.painter().circle(sw.center(), 5.0, key, Stroke::new(1.0, Color32::WHITE));
+            }
+            LayerKind::Lines => {
+                ui.painter().line_segment([sw.left_bottom(), sw.right_top()], Stroke::new(2.0, key));
+            }
+            LayerKind::Raster => {
+                for i in 0..4 {
+                    let c = [
+                        Color32::from_rgb(0x44, 0x01, 0x54),
+                        Color32::from_rgb(0x3B, 0x52, 0x8B),
+                        Color32::from_rgb(0x21, 0x91, 0x8C),
+                        Color32::from_rgb(0xFD, 0xE7, 0x25),
+                    ][i];
+                    let x0 = sw.left() + sw.width() * i as f32 / 4.0;
+                    ui.painter().rect_filled(Rect::from_min_max(pos2(x0, sw.top()), pos2(x0 + sw.width() / 4.0, sw.bottom())), 0.0, c);
+                }
+            }
+            LayerKind::Table => {
+                ui.painter().text(sw.center(), Align2::CENTER_CENTER, icon::TABLE, theme::icon_font(14.0), t.text_secondary);
+            }
+            LayerKind::Areas => {
+                ui.painter().rect(sw, CornerRadius::same(3), key.gamma_multiply(0.5), Stroke::new(1.0, key), egui::StrokeKind::Inside);
+            }
+        }
+        // Name, or the rename field.
+        let name_rect = Rect::from_min_max(pos2(r.left() + 50.0, r.top()), pos2(r.right() - 26.0, r.bottom()));
+        if shell.rename.as_ref().is_some_and(|(rid, _)| rid == id) {
+            let mut done = false;
+            if let Some((_, text)) = shell.rename.as_mut() {
+                let te = ui.put(name_rect.shrink2(vec2(0.0, 4.0)), egui::TextEdit::singleline(text).font(egui::FontId::proportional(BODY)));
+                te.request_focus();
+                done = te.lost_focus();
+            }
+            if done && let Some((rid, text)) = shell.rename.take() {
+                {
+                    let name = text.trim().to_string();
+                    if !name.is_empty() && name != l.display_name {
+                        let tx = shell.ws.doc.rename_tx(rid, name.clone()).map(|mut x| {
+                            x.label = format!("Rename {}", l.display_name);
+                            x
+                        });
+                        shell.ws.commit(tx);
+                    }
+                }
+            }
+        } else {
+            ui.painter().text(
+                name_rect.left_center(),
+                Align2::LEFT_CENTER,
+                middle_truncate(&l.display_name, 26),
+                egui::FontId::proportional(BODY),
+                if l.visible { t.text_primary } else { t.text_secondary },
+            );
+        }
+        // Badge.
+        let badge = if l.profile.open_questions().next().is_some() {
+            Badge::Decision
+        } else if l.profile.visible_assumptions().next().is_some() {
+            Badge::Assumption
+        } else {
+            Badge::None
+        };
+        paint_badge(ui, pos2(r.right() - 12.0, r.center().y), &badge, t);
+        if resp.clicked() {
+            shell.ws.selected = Some(*id);
+        }
+        if resp.double_clicked() {
+            shell.rename = Some((*id, l.display_name.clone()));
+        }
+        resp.clone().on_hover_text(l.profile.subtitle());
+        // Drag to reorder.
+        if resp.drag_started() {
+            shell.drag_from = Some(d);
+        }
+        resp.context_menu(|ui| {
+            if ui.button("Zoom to layer").clicked() {
+                shell.zoom_to = shell.ws.extent(*id);
+                ui.close();
+            }
+            if ui.button("Rename").clicked() {
+                shell.rename = Some((*id, l.display_name.clone()));
+                ui.close();
+            }
+            if ui.button("Remove from map").clicked() {
+                let tx = shell.ws.doc.remove_layer_tx(*id).map(|mut x| {
+                    x.label = format!("Remove {}", l.display_name);
+                    x
+                });
+                shell.ws.commit(tx);
+                if shell.ws.selected == Some(*id) {
+                    shell.ws.selected = None;
+                }
+                ui.close();
+            }
+        });
+        // A question card attaches to its row; the map stays usable. While the layer's overview
+        // is open it shows the card there instead, and the row just says so.
+        if let Some(q) = l.profile.open_questions().next().cloned() {
+            if shell.ws.selected == Some(*id) {
+                ui.label(RichText::new("Needs a decision: see the layer's panel").size(CAPTION).color(t.warning));
+            } else {
+                question_card(shell, ui, t, *id, &q);
+            }
+        }
+    }
+    // The insertion line while dragging; drop on release.
+    if let Some(from) = shell.drag_from {
+        let y = ui.input(|i| i.pointer.interact_pos()).map_or(0.0, |p| p.y);
+        let to = rects.iter().position(|r| y < r.center().y).unwrap_or(rects.len());
+        let line_y = rects.get(to).map_or_else(|| rects.last().map_or(0.0, |r| r.bottom()), |r| r.top());
+        if let (Some(first), true) = (rects.first(), to != from && to != from + 1) {
+            ui.painter().line_segment([pos2(first.left(), line_y), pos2(first.right(), line_y)], Stroke::new(2.0, t.accent));
+        }
+        if ui.input(|i| i.pointer.any_released()) {
+            shell.drag_from = None;
+            let target = if to > from { to - 1 } else { to };
+            if target != from && n > 0 {
+                // Display order is top to bottom; the document lists bottom to top.
+                let tx = shell.ws.doc.move_tx(n - 1 - from, n - 1 - target).map(|mut x| {
+                    x.label = "Reorder layers".into();
+                    x
+                });
+                shell.ws.commit(tx);
+            }
+        }
+    }
+}
+
+/// "Where should this data be?" (WP2.4): name a place (or use the map's centre); the coordinate
+/// systems that put the data near it are listed nearest first; Open as a table is the Not sure.
+fn place_card(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, shown: f64, now: f64) {
+    let key = egui::Id::new(("lm-place", id.0));
+    let mut query: String = ui.data(|d| d.get_temp::<String>(key)).unwrap_or_default();
+    let place_key = egui::Id::new(("lm-place-at", id.0));
+    let mut place: Option<(f64, f64, String)> = ui.data(|d| d.get_temp(place_key));
+    egui::Frame::new()
+        .fill(t.surface_raised)
+        .stroke(Stroke::new(1.0, t.warning.gamma_multiply(0.6)))
+        .corner_radius(CornerRadius::same(theme::RADIUS_CARD))
+        .inner_margin(10.0)
+        .show(ui, |ui| {
+            ui.set_width(ui.available_width());
+            ui.horizontal_wrapped(|ui| {
+                ui.label(RichText::new(icon::WARNING).font(theme::icon_font(14.0)).color(t.warning));
+                ui.label(RichText::new("Where should this data be?").font(semibold(BODY)));
+            });
+            ui.label(
+                RichText::new("This file doesn't say where on Earth its coordinates are. Name a place it covers.")
+                    .size(CAPTION)
+                    .color(t.text_secondary),
+            );
+            let te = ui.add(egui::TextEdit::singleline(&mut query).hint_text("A city or town, e.g. Shanghai"));
+            let _ = te;
+            for r in shell.search.lookup(&query, 4) {
+                if ui.selectable_label(false, format!("{}  ·  {}", r.title, r.detail)).clicked() {
+                    place = Some((r.choice.lon, r.choice.lat, r.title.clone()));
+                    query = r.title.clone();
+                }
+            }
+            if ui.link("Use the middle of the map").clicked() {
+                let c = shell.map.center_lonlat();
+                place = Some((c.x, c.y, "the middle of the map".into()));
+            }
+            if let Some((lon, lat, name)) = &place {
+                let cands = shell.ws.place_candidates(id, (*lon, *lat));
+                ui.add_space(4.0);
+                if cands.is_empty() {
+                    ui.label(
+                        RichText::new(format!(
+                            "No coordinate system puts this data near {name}. Try another place, or open it as a table."
+                        ))
+                        .color(t.text_secondary),
+                    );
+                }
+                for c in cands {
+                    ui.horizontal_wrapped(|ui| {
+                        ui.label(format!(
+                            "{} — lands {} km from {name}",
+                            c.name,
+                            if c.distance_km < 10.0 { format!("{:.1}", c.distance_km) } else { format!("{:.0}", c.distance_km) }
+                        ));
+                        if ui.add(egui::Button::new(RichText::new("Use this").color(t.on_accent)).fill(t.accent)).clicked()
+                            && let Err(e) = shell.ws.place_layer(id, c.epsg, Some(now - shown))
+                        {
+                            shell.set_notice(e, now);
+                        }
+                    });
+                }
+            }
+            if ui.link("Open as a table").clicked() {
+                let _ =
+                    shell.ws.change_assumption(id, AssumptionKind::NoCrsProjected, Subject::Layer, Choice::not_sure(), Some(now - shown));
+            }
+        });
+    ui.data_mut(|d| {
+        d.insert_temp(key, query);
+        if let Some(p) = place {
+            d.insert_temp(place_key, p);
+        }
+    });
+}
+
+/// A question card: the question, the recommended answer preselected, Not sure, and Use this.
+fn question_card(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, q: &Assumption) {
+    let now = ui.input(|i| i.time);
+    let shown = *shell.question_seen.entry((id.0, q.kind as u8)).or_insert(now);
+    if q.kind == AssumptionKind::NoCrsProjected {
+        place_card(shell, ui, t, id, shown, now);
+        return;
+    }
+    egui::Frame::new()
+        .fill(t.surface_raised)
+        .stroke(Stroke::new(1.0, t.warning.gamma_multiply(0.6)))
+        .corner_radius(CornerRadius::same(theme::RADIUS_CARD))
+        .inner_margin(10.0)
+        .show(ui, |ui| {
+            ui.set_width(ui.available_width());
+            ui.horizontal_wrapped(|ui| {
+                ui.label(RichText::new(icon::WARNING).font(theme::icon_font(14.0)).color(t.warning));
+                ui.label(RichText::new(&q.line).font(semibold(BODY)));
+            });
+            // Radio buttons show their circles (resting controls have no outline elsewhere).
+            ui.visuals_mut().widgets.inactive.bg_stroke = Stroke::new(1.0, t.text_secondary);
+            let key = egui::Id::new(("lm-q", id.0, q.kind as u8));
+            let mut pick: String = ui.data(|d| d.get_temp::<String>(key)).unwrap_or_else(|| q.chosen.id.clone());
+            for c in &q.alternatives {
+                let label = if c.id == q.chosen.id && c.id != "not_sure" { format!("{} (recommended)", c.label) } else { c.label.clone() };
+                ui.radio_value(&mut pick, c.id.clone(), label);
+            }
+            if !q.alternatives.iter().any(|c| c.id == "not_sure") {
+                ui.radio_value(&mut pick, "not_sure".to_string(), "Not sure");
+            }
+            ui.data_mut(|d| d.insert_temp(key, pick.clone()));
+            if q.kind == AssumptionKind::ChinaOffsetNamed && ui.link("Compare on the map first").clicked() {
+                shell.begin_compare(id, q.chosen.id == "bd09");
+            }
+            if ui.add(egui::Button::new(RichText::new("Use this").color(t.on_accent)).fill(t.accent)).clicked() {
+                let choice = q.alternatives.iter().find(|c| c.id == pick).cloned().unwrap_or_else(Choice::not_sure);
+                let result = shell.ws.change_assumption(id, q.kind, q.subject.clone(), choice, Some(now - shown));
+                if let Err(e) = result {
+                    shell.set_notice(e, now);
+                }
+            }
+        });
+}
+
+/// The inspector: the selected layer's overview (Overview · Details).
+pub fn inspector(shell: &mut Shell, ui: &mut Ui, map: Rect) {
+    let t = *shell.theme();
+    let Some(id) = shell.ws.selected else { return };
+    let Some(l) = shell.ws.doc.layer(id).cloned() else {
+        shell.ws.selected = None;
+        return;
+    };
+    let pos = pos2(map.right() - PANEL_MARGIN - INSPECTOR_WIDTH, map.top() + PANEL_MARGIN);
+    let max_h = map.height() - 2.0 * PANEL_MARGIN - 64.0;
+    let mut close = false;
+    egui::Area::new(egui::Id::new("lm-inspector")).order(egui::Order::Middle).fixed_pos(pos).show(ui.ctx(), |ui| {
+        frame(&t).show(ui, |ui| {
+            ui.set_width(INSPECTOR_WIDTH - 2.0 * theme::PANEL_PADDING);
+            ui.horizontal(|ui| {
+                ui.vertical(|ui| {
+                    ui.label(RichText::new(&l.display_name).font(semibold(theme::HEADLINE)));
+                    ui.label(RichText::new(l.profile.subtitle()).size(CAPTION).color(t.text_secondary));
+                });
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
+                    if ui
+                        .add(egui::Button::new(RichText::new(icon::X).font(theme::icon_font(14.0))).frame(false))
+                        .on_hover_text("Close")
+                        .clicked()
+                    {
+                        close = true;
+                    }
+                });
+            });
+            ui.add_space(4.0);
+            ui.horizontal(|ui| {
+                for (tab, name) in [(0u8, "Overview"), (1, "Details")] {
+                    if ui.selectable_label(shell.inspector_tab == tab, name).clicked() {
+                        shell.inspector_tab = tab;
+                    }
+                }
+            });
+            ui.separator();
+            egui::ScrollArea::vertical()
+                .max_height(max_h - 90.0)
+                .min_scrolled_height((max_h - 90.0).min(560.0))
+                .auto_shrink([false, true])
+                .show(ui, |ui| {
+                    if shell.inspector_tab == 0 {
+                        overview(shell, ui, &t, id, &l);
+                    } else {
+                        details(shell, ui, &t, id, &l);
+                    }
+                });
+        });
+    });
+    if close || ui.input(|i| i.key_pressed(egui::Key::Escape)) && shell.change_for.is_none() {
+        shell.ws.selected = None;
+    }
+}
+
+fn status_lines(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, l: &lm_core::document::DocLayer) {
+    let p = &l.profile;
+    let opened = p.count.saturating_sub(p.exclusions.len() as u64);
+    if !p.exclusions.is_empty() {
+        let (one, many) = p.kind.nouns();
+        let _ = one;
+        let rec = if p.kind == LayerKind::Table { many } else { "records" };
+        ui.label(format!(
+            "{} {rec} opened; {} {} no usable location.",
+            group_thousands(opened),
+            group_thousands(p.exclusions.len() as u64),
+            if p.exclusions.len() == 1 { "has" } else { "have" }
+        ));
+        ui.horizontal(|ui| {
+            if ui.link(format!("Review {}", group_thousands(p.exclusions.len() as u64))).clicked() {
+                shell.review_for = Some(id);
+            }
+            if ui.link("Export problem list").clicked() {
+                shell.export_problems(id);
+            }
+        });
+    }
+    if p.kind == LayerKind::Table && p.extent_wgs84.is_none() {
+        ui.label(RichText::new("Opened as a table: there is nothing to place on the map yet.").color(t.text_secondary));
+    }
+}
+
+fn assumption_line(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, a: &Assumption) {
+    ui.horizontal_wrapped(|ui| {
+        let (r, _) = ui.allocate_exact_size(vec2(10.0, 14.0), Sense::hover());
+        ui.painter().circle_filled(r.center(), 4.0, t.assumption);
+        ui.label(&a.line);
+        let link = match a.kind {
+            AssumptionKind::ChinaOffsetPossible => "Compare",
+            AssumptionKind::RasterNoUnit => "Add unit",
+            _ => "Change",
+        };
+        let resp = ui.link(link);
+        if resp.clicked() {
+            if a.kind == AssumptionKind::ChinaOffsetPossible {
+                shell.begin_compare(id, false);
+            } else {
+                shell.change_for = Some((id, a.kind, a.subject.clone(), resp.rect));
+            }
+        }
+    });
+}
+
+/// The Compare banner (WP2.5): a pill 12 px below the toolbar while the Compare view is open.
+pub fn compare_banner(shell: &mut Shell, ui: &mut Ui, map: Rect) {
+    let t = *shell.theme();
+    let Some((name, bd09)) =
+        shell.ws.compare.as_ref().and_then(|c| shell.ws.doc.layer(c.layer).map(|l| (l.display_name.clone(), c.from_bd09)))
+    else {
+        return;
+    };
+    let mut action: Option<Option<bool>> = None;
+    let mut switch = false;
+    egui::Area::new(egui::Id::new("lm-compare"))
+        .order(egui::Order::Foreground)
+        .pivot(Align2::CENTER_TOP)
+        .fixed_pos(pos2(map.center().x, map.top() + PANEL_MARGIN))
+        .show(ui.ctx(), |ui| {
+            frame(&t).show(ui, |ui| {
+                ui.set_max_width(560.0);
+                ui.label(RichText::new(format!("Compare {name}")).font(semibold(BODY)));
+                ui.horizontal_wrapped(|ui| {
+                    let dot = |ui: &mut Ui, c: Color32| {
+                        let (r, _) = ui.allocate_exact_size(vec2(12.0, 12.0), Sense::hover());
+                        ui.painter().circle(r.center(), 5.0, c, Stroke::new(1.5, Color32::WHITE));
+                    };
+                    let key = shell
+                        .ws
+                        .doc
+                        .layer(shell.ws.compare.as_ref().map_or(LayerId(0), |c| c.layer))
+                        .map_or(t.accent, |l| color(l.style.key_color(l.profile.kind)));
+                    dot(ui, key);
+                    ui.label("as in the file");
+                    dot(ui, Color32::from_rgb(0xD5, 0x5E, 0x00));
+                    ui.label(if bd09 { "converted from Baidu (BD-09)" } else { "converted from Amap/Tencent (GCJ-02)" });
+                });
+                ui.label(RichText::new("Keep the set that sits on the streets.").size(CAPTION).color(t.text_secondary));
+                ui.horizontal(|ui| {
+                    if ui.add(egui::Button::new(RichText::new("Keep converted").color(t.on_accent)).fill(t.accent)).clicked() {
+                        action = Some(Some(true));
+                    }
+                    if ui.button("Keep as in the file").clicked() {
+                        action = Some(Some(false));
+                    }
+                    if ui.link(if bd09 { "Try Amap/Tencent instead" } else { "Try Baidu instead" }).clicked() {
+                        switch = true;
+                    }
+                    if ui.link("Close").clicked() {
+                        action = Some(None);
+                    }
+                });
+            });
+        });
+    if switch && let Some(c) = shell.ws.compare.as_ref().map(|c| c.layer) {
+        shell.begin_compare(c, !bd09);
+    }
+    if ui.input(|i| i.key_pressed(egui::Key::Escape)) {
+        action = Some(None);
+    }
+    if let Some(keep) = action {
+        let now = ui.input(|i| i.time);
+        if let Err(e) = shell.ws.end_compare(keep) {
+            shell.set_notice(e, now);
+        }
+    }
+}
+
+fn overview(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, l: &lm_core::document::DocLayer) {
+    if let Some(q) = l.profile.open_questions().next().cloned() {
+        question_card(shell, ui, t, id, &q);
+        ui.add_space(8.0);
+    }
+    status_lines(shell, ui, t, id, l);
+    let visible: Vec<Assumption> = l.profile.visible_assumptions().cloned().collect();
+    if !visible.is_empty() {
+        ui.add_space(6.0);
+        let expanded_key = egui::Id::new(("lm-more", id.0));
+        let expanded = ui.data(|d| d.get_temp::<bool>(expanded_key)).unwrap_or(false);
+        for a in visible.iter().take(if expanded { usize::MAX } else { 2 }) {
+            assumption_line(shell, ui, t, id, a);
+        }
+        if visible.len() > 2 && !expanded && ui.link(format!("+{} more", visible.len() - 2)).clicked() {
+            ui.data_mut(|d| d.insert_temp(expanded_key, true));
+        }
+    }
+    for n in &l.profile.notices {
+        ui.label(RichText::new(n).size(CAPTION).color(t.text_secondary));
+    }
+    // Legend.
+    ui.add_space(8.0);
+    ui.label(RichText::new("Legend").font(semibold(BODY)));
+    ui.horizontal(|ui| {
+        let (r, _) = ui.allocate_exact_size(vec2(16.0, 16.0), Sense::hover());
+        let c = color(l.style.key_color(l.profile.kind));
+        ui.painter().rect(
+            r,
+            CornerRadius::same(3),
+            c.gamma_multiply(if l.profile.kind == LayerKind::Areas { 0.5 } else { 1.0 }),
+            Stroke::new(1.0, c),
+            egui::StrokeKind::Inside,
+        );
+        let (_, many) = l.profile.kind.nouns();
+        ui.label(format!("{} {many}", group_thousands(l.profile.count)));
+    });
+    // Field summary: up to five measures with their range.
+    let measures: Vec<&lm_core::model::FieldProfile> =
+        l.profile.fields.iter().filter(|f| matches!(f.role.value, lm_core::model::FieldRole::Measure(_))).take(5).collect();
+    if !measures.is_empty() {
+        ui.add_space(8.0);
+        ui.label(RichText::new("Values").font(semibold(BODY)));
+        for f in measures {
+            if let Some(s) = &f.stats
+                && let (Some(lo), Some(hi)) = (s.min, s.max)
+            {
+                ui.label(format!("{}: {} to {}", f.name, fmt_num(lo), fmt_num(hi)));
+            }
+        }
+    }
+    for b in &l.profile.bands {
+        if let (Some(lo), Some(hi)) = (b.min, b.max) {
+            let unit = b.unit.value.clone().map(|u| format!(" {u}")).unwrap_or_default();
+            let name = if b.name.is_empty() || b.name.eq_ignore_ascii_case(&format!("band {}", b.index)) {
+                String::new()
+            } else {
+                format!(" ({})", b.name)
+            };
+            ui.label(format!("Band {}{name}: {} to {}{unit}", b.index, fmt_num(lo), fmt_num(hi)));
+        }
+    }
+}
+
+fn fmt_num(v: f64) -> String {
+    if v.fract() == 0.0 && v.abs() < 1e15 {
+        let s = group_thousands(v.abs() as u64);
+        if v < 0.0 { format!("−{s}") } else { s }
+    } else {
+        let s = format!("{v:.2}");
+        if v < 0.0 { s.replacen('-', "−", 1) } else { s }
+    }
+}
+
+fn details(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, l: &lm_core::document::DocLayer) {
+    let p = &l.profile;
+    let row = |ui: &mut Ui, k: &str, v: String| {
+        ui.horizontal_wrapped(|ui| {
+            ui.label(RichText::new(k).color(t.text_secondary));
+            ui.label(v);
+        });
+    };
+    row(
+        ui,
+        "Source",
+        match &p.source.member {
+            Some(m) => format!("{} › {m}", p.source.path),
+            None => p.source.path.clone(),
+        },
+    );
+    row(ui, "Format", p.format.clone());
+    if let Some(e) = &p.encoding {
+        row(ui, "Text encoding", e.clone());
+    }
+    row(ui, "Coordinate system", format!("{} — {}", p.crs.value.label(), p.crs.evidence.0));
+    if let Some(e) = p.extent_wgs84 {
+        row(ui, "Extent", format!("{:.4}° to {:.4}° E, {:.4}° to {:.4}° N", e.min_x, e.max_x, e.min_y, e.max_y));
+    }
+    let status = match shell.ws.data(id).map(|d| d.status.clone()) {
+        Some(ImportStatus::Complete) => "Complete".to_string(),
+        Some(ImportStatus::CompleteWithExclusions) => {
+            format!("Complete, with {} records excluded", group_thousands(p.exclusions.len() as u64))
+        }
+        Some(ImportStatus::NeedsDecision) => "Needs a decision".into(),
+        Some(ImportStatus::Canceled) => "Canceled".into(),
+        Some(ImportStatus::Failed(m)) => format!("Failed: {m}"),
+        None => "Not loaded (the source is read again when the document opens)".into(),
+    };
+    row(ui, "Import", status);
+    if !p.fields.is_empty() {
+        ui.add_space(6.0);
+        ui.label(RichText::new("Fields").font(semibold(BODY)));
+        egui::Grid::new(("lm-fields", id.0)).striped(true).num_columns(3).show(ui, |ui| {
+            for f in &p.fields {
+                ui.label(&f.name);
+                ui.label(
+                    RichText::new(format!("{:?}", f.role.value).replace("Measure(", "Measure (").to_lowercase()).color(t.text_secondary),
+                );
+                ui.label(RichText::new(&f.role.evidence.0).size(CAPTION).color(t.text_secondary));
+                ui.end_row();
+            }
+        });
+    }
+    if !p.assumptions.is_empty() {
+        ui.add_space(6.0);
+        ui.label(RichText::new("Assumptions").font(semibold(BODY)));
+        for a in p.assumptions.clone() {
+            let how = match a.treatment {
+                Treatment::Silent => "applied quietly",
+                Treatment::Visible => "shown",
+                Treatment::Question if a.confirmed_by_user => "answered",
+                Treatment::Question => "needs a decision",
+                Treatment::Block => "blocks actions",
+            };
+            ui.horizontal_wrapped(|ui| {
+                ui.label(format!("{} ({how}; chosen: {})", a.line, a.chosen.label));
+                if a.alternatives.len() > 1 {
+                    let resp = ui.link("Change");
+                    if resp.clicked() {
+                        shell.change_for = Some((id, a.kind, a.subject.clone(), resp.rect));
+                    }
+                }
+            });
+        }
+    }
+}
+
+/// The Change popover for an assumption: its alternatives, Not sure last.
+pub fn change_popover(shell: &mut Shell, ui: &mut Ui) {
+    let t = *shell.theme();
+    let Some((id, kind, subject, anchor)) = shell.change_for.clone() else { return };
+    let Some(a) =
+        shell.ws.doc.layer(id).and_then(|l| l.profile.assumptions.iter().find(|a| a.kind == kind && a.subject == subject).cloned())
+    else {
+        shell.change_for = None;
+        return;
+    };
+    let mut close = false;
+    let area = egui::Area::new(egui::Id::new("lm-change"))
+        .order(egui::Order::Foreground)
+        .fixed_pos(anchor.left_bottom() + vec2(0.0, 4.0))
+        .show(ui.ctx(), |ui| {
+            frame(&t).show(ui, |ui| {
+                ui.set_max_width(300.0);
+                ui.label(RichText::new(&a.line).size(CAPTION).color(t.text_secondary));
+                ui.add_space(4.0);
+                let mut alts = a.alternatives.clone();
+                if !alts.iter().any(|c| c.id == "not_sure")
+                    && matches!(subject, Subject::Layer)
+                    && a.consequence != lm_core::model::Consequence::DisplayOnly
+                {
+                    alts.push(Choice::not_sure());
+                }
+                for c in alts {
+                    let selected = c.id == a.chosen.id;
+                    if ui.selectable_label(selected, &c.label).clicked() {
+                        if !selected {
+                            let now = ui.input(|i| i.time);
+                            if let Err(e) = shell.ws.change_assumption(id, kind, subject.clone(), c, None) {
+                                shell.set_notice(e, now);
+                            }
+                        }
+                        close = true;
+                    }
+                }
+            });
+        });
+    let clicked_out = ui.input(|i| i.pointer.any_click())
+        && !area.response.hovered()
+        && !anchor.contains(ui.input(|i| i.pointer.interact_pos()).unwrap_or_default());
+    if close || clicked_out || ui.input(|i| i.key_pressed(egui::Key::Escape)) {
+        shell.change_for = None;
+    }
+}
+
+/// The import report's Review list: the excluded records with a Reason column (read-only).
+pub fn review(shell: &mut Shell, ctx: &egui::Context) {
+    let Some(id) = shell.review_for else { return };
+    let Some(l) = shell.ws.doc.layer(id).cloned() else {
+        shell.review_for = None;
+        return;
+    };
+    let mut open = true;
+    let mut export = false;
+    egui::Window::new(format!("Excluded records — {}", l.display_name))
+        .open(&mut open)
+        .collapsible(false)
+        .default_width(460.0)
+        .default_height(360.0)
+        .show(ctx, |ui| {
+            ui.label(format!(
+                "{} records were left out of the map. Your file has not been changed.",
+                group_thousands(l.profile.exclusions.len() as u64)
+            ));
+            if ui.button("Export problem list…").clicked() {
+                export = true;
+            }
+            ui.separator();
+            egui::ScrollArea::vertical().show(ui, |ui| {
+                egui::Grid::new(("lm-review", id.0)).striped(true).num_columns(2).show(ui, |ui| {
+                    ui.label(RichText::new("Row").strong());
+                    ui.label(RichText::new("Reason").strong());
+                    ui.end_row();
+                    for e in &l.profile.exclusions {
+                        ui.label(group_thousands(e.row));
+                        ui.label(&e.reason);
+                        ui.end_row();
+                    }
+                });
+            });
+        });
+    if export {
+        shell.export_problems(id);
+    }
+    if !open {
+        shell.review_for = None;
+    }
+}
+
+/// While files are dragged over the window: "Drop to add to the map".
+pub fn drop_overlay(shell: &Shell, ui: &Ui, full: Rect) {
+    let t = shell.theme();
+    if ui.input(|i| i.raw.hovered_files.is_empty()) {
+        return;
+    }
+    let p = ui.ctx().layer_painter(egui::LayerId::new(egui::Order::Foreground, egui::Id::new("lm-drop")));
+    p.rect_filled(full, 0.0, t.surface.gamma_multiply(0.85));
+    p.rect_stroke(full.shrink(12.0), CornerRadius::same(theme::RADIUS_PANEL), Stroke::new(2.0, t.accent), egui::StrokeKind::Inside);
+    p.text(
+        full.center(),
+        Align2::CENTER_CENTER,
+        "Drop to add to the map",
+        egui::FontId::new(theme::TITLE, egui::FontFamily::Name("semibold".into())),
+        t.text_primary,
+    );
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn long_names_lose_their_middle() {
+        assert_eq!(middle_truncate("schools", 26), "schools");
+        let s = middle_truncate("district_boundaries_shanghai_2026_final", 20);
+        assert_eq!(s.chars().count(), 20);
+        assert!(s.starts_with("district_b") && s.ends_with("26_final"), "{s}");
+    }
+}

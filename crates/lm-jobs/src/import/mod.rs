@@ -4,12 +4,14 @@
 //! row. A canceled import leaves nothing behind; source files are only ever read.
 //!
 //! Formats sit behind [`FormatAdapter`] (WP2.2): GeoJSON, Shapefile (also zipped), CSV/TSV and
-//! GeoTIFF/COG, wrapping the upstream `rustgis-data` readers where they fit and streaming where
+//! GeoTIFF/COG (P0), GeoPackage and Excel (P1, behind [`P1_FORMATS`]), wrapping the upstream `rustgis-data` readers where they fit and streaming where
 //! they don't (large GeoJSON and CSV are scanned as streams, never read whole to learn a name or
 //! bounds).
 
 mod csv;
+mod excel;
 mod geojson;
+mod gpkg;
 pub mod limits;
 pub mod progress;
 mod raster;
@@ -23,6 +25,7 @@ use lm_core::model::{Assumption, Choice, Crs, Exclusion, Extent, ImportStatus, K
 use rustgis_engine::data::Dataset;
 use rustgis_engine::data::raster::Raster;
 
+pub use lm_profile::PlaceCandidate;
 pub use progress::Ticket;
 
 /// Why an import didn't produce layers. The message is shown as written (Error and status copy).
@@ -289,9 +292,39 @@ pub struct Metadata {
     pub has_overviews: bool,
 }
 
-/// Every adapter, in sniffing order.
-fn adapters() -> [&'static dyn FormatAdapter; 5] {
-    [&geojson::GeoJson, &csv::Delimited, &shapefile::Shapefile, &shapefile::ZippedShapefile, &raster::GeoTiff]
+/// The P1 formats of WP2.2 (GeoPackage, Excel) are on. Cutting rule (plan, Phase 2 › Rollback):
+/// a P1 format that fails at the gate is switched off here and moved to Phase 6 (WP6.7); that
+/// does not fail the gate. Off, its files are refused as any unsupported format is ("LayeredMap
+/// can't open .gpkg files yet.").
+pub const P1_FORMATS: bool = true;
+
+/// File extensions of the P1 formats.
+const P1_EXTENSIONS: &[&str] = &["gpkg", "xlsx", "xlsm", "xls"];
+
+/// Every adapter, in sniffing order (the P1 ones only when `p1`). GeoPackage and Excel come
+/// before the zipped Shapefile, which claims anything starting like a ZIP (as an `.xlsx` does).
+fn adapters(p1: bool) -> Vec<&'static dyn FormatAdapter> {
+    let mut v: Vec<&'static dyn FormatAdapter> = vec![&geojson::GeoJson, &csv::Delimited, &shapefile::Shapefile];
+    if p1 {
+        v.push(&gpkg::GeoPackage);
+        v.push(&excel::Excel);
+    }
+    v.push(&shapefile::ZippedShapefile);
+    v.push(&raster::GeoTiff);
+    v
+}
+
+/// The adapter that reads `path`, or why there is none.
+fn pick_adapter(path: &Path, head: &[u8], p1: bool) -> Result<&'static dyn FormatAdapter, ImportError> {
+    let ext = extension(path);
+    let switched_off = !p1 && P1_EXTENSIONS.contains(&ext.as_str());
+    match adapters(p1).into_iter().find(|a| a.sniff(path, head)).filter(|_| !switched_off) {
+        Some(a) => Ok(a),
+        None if ext.is_empty() => {
+            Err(ImportError::Unsupported(format!("LayeredMap can't open {}: it isn't a format it reads yet.", file_name(path))))
+        }
+        None => Err(ImportError::Unsupported(format!("LayeredMap can't open .{ext} files yet."))),
+    }
 }
 
 /// Imports one file synchronously (the job thread, tests and the fixture snapshots call this).
@@ -316,14 +349,7 @@ pub fn import_path(path: &Path, ctx: &Ctx) -> Result<Vec<ImportedLayer>, ImportE
         f.read(&mut head).map_err(|e| ImportError::read(&name, e))?
     };
     head.truncate(n);
-    let Some(adapter) = adapters().into_iter().find(|a| a.sniff(path, &head)) else {
-        let ext = extension(path);
-        return Err(ImportError::Unsupported(if ext.is_empty() {
-            format!("LayeredMap can't open {name}: it isn't a format it reads yet.")
-        } else {
-            format!("LayeredMap can't open .{ext} files yet.")
-        }));
-    };
+    let adapter = pick_adapter(path, &head, P1_FORMATS)?;
     ctx.stage(Stage::Metadata)?;
     let m = adapter.open_metadata(path, ctx)?;
     let layers = if adapter.is_raster() { adapter.read_window(path, &m, ctx)? } else { adapter.stream_features(path, &m, ctx)? };
@@ -424,6 +450,7 @@ fn vector_profile(
         exclusions,
         encoding,
         notices,
+        data_rev: 0,
     }
 }
 
@@ -472,6 +499,27 @@ pub fn relocate_csv(layer: &ImportedLayer, choice: &Choice) -> Result<ImportedLa
     csv::relocate(layer, raw, choice)
 }
 
+/// "Where should this data be?" (WP2.4): the coordinate systems that put a layer read with raw
+/// coordinates near `place` (longitude, latitude), nearest first.
+pub fn place_candidates(layer: &ImportedLayer, place: (f64, f64)) -> Vec<lm_profile::PlaceCandidate> {
+    let LayerData::Vector(ds) = &layer.data else { return Vec::new() };
+    let e = ds.extent();
+    if !e.min_x.is_finite() {
+        return Vec::new();
+    }
+    let center = ((e.min_x + e.max_x) / 2.0, (e.min_y + e.max_y) / 2.0);
+    lm_profile::place_candidates(center, place, |code, (x, y)| {
+        let t = rustgis_engine::data::raster::Crs::Epsg(code).transformer().ok()?;
+        t.to_lonlat(rustgis_engine::geom::Coord::new(x, y)).map(|c| (c.x, c.y))
+    })
+}
+
+/// Opens another sheet of an Excel layer's workbook (the ExcelSheet assumption's Change:
+/// `sheet:<name>`), keeping the layer's name; the workbook is read again, never written.
+pub fn choose_sheet(layer: &ImportedLayer, choice: &Choice) -> Result<ImportedLayer, ImportError> {
+    excel::choose_sheet(layer, choice)
+}
+
 /// Reprojects a layer read with raw coordinates from the coordinate system the user chose
 /// ("Where should this data be?"), as a new layer; the source file is untouched.
 pub fn reproject(layer: &ImportedLayer, epsg: u32) -> Result<ImportedLayer, ImportError> {
@@ -494,9 +542,65 @@ pub fn reproject(layer: &ImportedLayer, epsg: u32) -> Result<ImportedLayer, Impo
         }
     }
     let mut profile = layer.profile.clone();
-    profile.crs = Known::certain(Crs::Epsg(epsg), format!("Chosen by you: EPSG:{epsg}."));
+    let name = lm_profile::crs_candidates::CANDIDATES
+        .iter()
+        .find(|(c, _, _)| u32::from(*c) == epsg)
+        .map_or_else(|| format!("EPSG:{epsg}"), |(_, n, _)| (*n).to_string());
+    profile.crs = Known::certain(Crs::Epsg(epsg), format!("Chosen by you: {name} (EPSG:{epsg})."));
     profile.extent_wgs84 = extent_of(&out);
+    profile.kind = kind_of(&out);
+    // The choice becomes a visible assumption that names the system (WP2.4 step 5).
+    for a in profile.assumptions.iter_mut().filter(|a| a.kind == lm_core::model::AssumptionKind::NoCrsProjected) {
+        let choice = Choice::new(format!("epsg:{epsg}"), name.clone());
+        if !a.alternatives.contains(&choice) {
+            a.alternatives.insert(0, choice.clone());
+        }
+        a.chosen = choice;
+        a.confirmed_by_user = true;
+        a.treatment = lm_core::model::Treatment::Visible;
+        a.line = format!(
+            "Placed using {name} (EPSG:{epsg}), which you chose. The datum can't be checked from the file, so positions may be off by up to about 100 m."
+        );
+    }
     Ok(ImportedLayer { data: LayerData::Vector(Arc::new(out)), status: status_of(&profile), profile, ..layer.clone() })
+}
+
+/// The excluded records of a layer as CSV (WP2.6 "Export problem list"): row, reason, then the
+/// record's own cells when the source is a CSV. Cells that a spreadsheet would run as a formula
+/// (starting with =, +, - or @) are prefixed with an apostrophe (fixture X5).
+pub fn problem_list_csv(layer: &ImportedLayer) -> String {
+    fn cell(s: &str) -> String {
+        let s = if s.starts_with(['=', '+', '-', '@', '\t', '\r']) { format!("'{s}") } else { s.to_string() };
+        if s.contains([',', '"', '\n', '\r']) { format!("\"{}\"", s.replace('"', "\"\"")) } else { s }
+    }
+    let mut out = String::new();
+    let mut header = vec!["row".to_string(), "reason".to_string()];
+    if let Some(raw) = &layer.raw {
+        header.extend(raw.headers.iter().cloned());
+    }
+    out.push_str(&header.iter().map(|h| cell(h)).collect::<Vec<_>>().join(","));
+    out.push('\n');
+    for e in &layer.profile.exclusions {
+        let mut cells = vec![e.row.to_string(), e.reason.clone()];
+        if let Some(r) = layer.raw.as_ref().and_then(|raw| raw.rows.get(e.row.saturating_sub(1) as usize)) {
+            cells.extend(r.iter().cloned());
+        }
+        out.push_str(&cells.iter().map(|c| cell(c)).collect::<Vec<_>>().join(","));
+        out.push('\n');
+    }
+    out
+}
+
+/// Converts a dataset's coordinates from GCJ-02 (or BD-09) to WGS 84 as a new dataset, with its
+/// recipe ("Converted from GCJ-02 to WGS 84"). The source is never modified (WP2.5).
+pub fn convert_offset(ds: &Dataset, from_bd09: bool) -> Result<(Dataset, String), ImportError> {
+    use lm_analysis::china::{OffsetSystem, convert_dataset};
+    let from = if from_bd09 { OffsetSystem::Bd09 } else { OffsetSystem::Gcj02 };
+    let c = convert_dataset(ds, from, OffsetSystem::Wgs84).map_err(|e| ImportError::Failed {
+        message: "The points couldn't be converted. Nothing was changed.".into(),
+        details: format!("{e:?}"),
+    })?;
+    Ok((c.dataset, c.recipe))
 }
 
 #[cfg(test)]

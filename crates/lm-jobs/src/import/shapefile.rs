@@ -15,6 +15,12 @@ use super::{Ctx, FormatAdapter, ImportError, ImportedLayer, LayerData, Metadata,
 pub struct Shapefile;
 pub struct ZippedShapefile;
 
+/// Formats that are ZIP archives inside but never a zipped Shapefile (office documents, KMZ,
+/// e-books, Java and Android packages): the ZIP magic alone doesn't claim them, so they get the
+/// plain "can't open .docx files yet" (or their own adapter, as an .xlsx does).
+const NOT_SHAPEFILE_ZIPS: &[&str] =
+    &["xlsx", "xlsm", "xltx", "docx", "docm", "dotx", "pptx", "pptm", "potx", "ods", "odt", "odp", "kmz", "epub", "jar", "apk", "ipa"];
+
 /// The sibling of `path` with extension `ext`, matched without regard to case.
 fn sibling(path: &Path, ext: &str) -> Option<std::path::PathBuf> {
     let stem = path.file_stem()?.to_str()?.to_lowercase();
@@ -145,7 +151,8 @@ impl FormatAdapter for ZippedShapefile {
     }
 
     fn sniff(&self, path: &Path, head: &[u8]) -> bool {
-        extension(path) == "zip" || head.starts_with(b"PK\x03\x04")
+        let ext = extension(path);
+        ext == "zip" || (head.starts_with(b"PK\x03\x04") && !NOT_SHAPEFILE_ZIPS.contains(&ext.as_str()))
     }
 
     fn open_metadata(&self, path: &Path, _ctx: &Ctx) -> Result<Metadata, ImportError> {

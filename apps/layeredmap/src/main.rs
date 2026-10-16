@@ -4,10 +4,26 @@
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
 mod feel;
+// The spec's one exception to "no unsafe" (Architecture › Rules enforced in CI): native macOS
+// hooks live in the app's macOS module, with a SAFETY comment on each block and a second review.
+#[cfg(target_os = "macos")]
+#[allow(unsafe_code)]
+mod macos;
 mod menu;
 
 use lm_core::phase::Flags;
-use lm_ui::{Command, Prefs, Shell, System, ThemePref, Units};
+use lm_ui::{Command, FileRequest, Prefs, Shell, System, ThemePref, Units};
+
+/// Where answered question cards are logged: the app's support folder (never data values or
+/// file names; Assumptions and questions › Question budget instrumentation).
+fn question_log_path() -> std::path::PathBuf {
+    let home = std::env::var_os("HOME").map(std::path::PathBuf::from).unwrap_or_default();
+    home.join("Library/Application Support/LayeredMap/question-log.jsonl")
+}
+
+fn lm_doc_export(log: &std::path::Path, out: &std::path::Path) -> Result<usize, String> {
+    lm_ui::export_question_log(log, out)
+}
 
 struct App {
     shell: Shell,
@@ -110,9 +126,56 @@ impl eframe::App for App {
                         }
                     }
                     menu::Action::Shell(cmd) => self.shell.command(ctx, cmd),
+                    menu::Action::SaveDocument => self.shell.command(ctx, Command::RequestSaveDocument),
+                    menu::Action::OpenDocument => self.shell.command(ctx, Command::RequestOpenDocument),
+                    menu::Action::ExportQuestionLog => {
+                        let log = question_log_path();
+                        if let Some(out) =
+                            rfd::FileDialog::new().set_title("Export question log").set_file_name("question log.csv").save_file()
+                        {
+                            match lm_doc_export(&log, &out) {
+                                Ok(n) => log::info!("exported {n} question-log rows"),
+                                Err(e) => log::warn!("question log export: {e}"),
+                            }
+                        }
+                    }
                 }
             }
             m.sync(&self.shell);
+        }
+        // Files from Finder's Open With and drops on the Dock icon: the same pipeline as Open.
+        #[cfg(target_os = "macos")]
+        {
+            let opened = macos::take_opened();
+            if !opened.is_empty() {
+                self.shell.command(ctx, Command::Open(opened));
+            }
+        }
+        for req in self.shell.take_file_requests() {
+            match req {
+                FileRequest::Open => {
+                    if let Some(paths) = rfd::FileDialog::new().set_title("Open").pick_files() {
+                        self.shell.command(ctx, Command::Open(paths));
+                    }
+                }
+                FileRequest::SaveText { title, suggested_name, contents } => {
+                    if let Some(path) = rfd::FileDialog::new().set_title(title).set_file_name(suggested_name).save_file()
+                        && let Err(e) = std::fs::write(&path, contents)
+                    {
+                        log::warn!("could not write {}: {e}", path.display());
+                    }
+                }
+                FileRequest::SaveDocument => {
+                    if let Some(dir) = rfd::FileDialog::new().set_title("Save document into a folder").pick_folder() {
+                        self.shell.command(ctx, Command::SaveDocument(dir));
+                    }
+                }
+                FileRequest::OpenDocument => {
+                    if let Some(dir) = rfd::FileDialog::new().set_title("Open a document folder").pick_folder() {
+                        self.shell.command(ctx, Command::OpenDocument(dir));
+                    }
+                }
+            }
         }
     }
 
@@ -190,7 +253,9 @@ fn main() -> eframe::Result {
             .with_title("LayeredMap")
             .with_app_id("app.layeredmap.desktop")
             .with_inner_size([1280.0, 800.0])
-            .with_min_inner_size([1024.0, 640.0]),
+            .with_min_inner_size([1024.0, 640.0])
+            // The Strata logo, for runs outside the app bundle (the bundle has AppIcon.icns).
+            .with_icon(eframe::icon_data::from_png_bytes(include_bytes!("../../../assets/icon/icon-256.png")).unwrap_or_default()),
         // The window's size and position are remembered between launches.
         persist_window: !ephemeral,
         ..Default::default()
@@ -199,6 +264,8 @@ fn main() -> eframe::Result {
         // Frame time is the real cost, not the display's cadence.
         options.wgpu_options.surface.present_mode = eframe::egui_wgpu::wgpu::PresentMode::AutoNoVsync;
     }
+    #[cfg(target_os = "macos")]
+    macos::install_open_handler();
     eframe::run_native(
         "LayeredMap",
         options,
@@ -214,10 +281,21 @@ fn main() -> eframe::Result {
             }
             let system = System { dark_mode: cc.egui_ctx.system_theme() == Some(egui::Theme::Dark), reduce_motion: reduce_motion() };
             let mut shell = Shell::new(&cc.egui_ctx, flags, prefs, system);
+            if !ephemeral {
+                shell.set_question_log(question_log_path());
+            }
+            // Files passed on the command line (and, through macOS, Open With) are opened.
+            let files: Vec<std::path::PathBuf> =
+                std::env::args().skip(1).filter(|a| !a.starts_with('-')).map(std::path::PathBuf::from).filter(|p| p.is_file()).collect();
+            if !files.is_empty() {
+                shell.command(&cc.egui_ctx, Command::Open(files));
+            }
             if let Some(dir) = fixture {
                 shell.command(&cc.egui_ctx, Command::LoadFixture(dir));
             }
             let feel = feel_out.map(|out| feel::Feel::new(out, runs, shell.map_view().camera()));
+            #[cfg(target_os = "macos")]
+            macos::set_context(&cc.egui_ctx);
             let menu = menu::MenuBar::install(developer, &cc.egui_ctx);
             Ok(Box::new(App { shell, menu, system, feel, probe: probe.then_some(started), ephemeral, tour, tour_next: None }))
         }),

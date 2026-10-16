@@ -11,6 +11,9 @@ pub enum Action {
     Shell(Command),
     Quit,
     LoadFixture,
+    SaveDocument,
+    OpenDocument,
+    ExportQuestionLog,
 }
 
 pub struct MenuBar {
@@ -74,12 +77,29 @@ impl MenuBar {
             ],
         )?;
         let file = Submenu::new("File", true);
+        file.append(&MenuItem::with_id("open", "Open…", true, cmd(Code::KeyO)))?;
+        file.append(&MenuItem::with_id("open-examples", "Open example data", true, None))?;
+        file.append(&PredefinedMenuItem::separator())?;
         if developer {
             file.append(&MenuItem::with_id("load-fixture", "Load fixture…", true, None))?;
+            file.append(&MenuItem::with_id("save-document", "Save document (developer)…", true, None))?;
+            file.append(&MenuItem::with_id("open-document", "Open document (developer)…", true, None))?;
+            file.append(&MenuItem::with_id("export-questions", "Export question log…", true, None))?;
             file.append(&PredefinedMenuItem::separator())?;
         }
         file.append(&MenuItem::with_id("close", "Close Window", true, cmd(Code::KeyW)))?;
-        let edit = Submenu::with_items("Edit", true, &[&MenuItem::with_id("find", "Find…", true, cmd(Code::KeyF))])?;
+        // Undo and Redo carry no menu accelerators: ⌘Z must still reach a text field being
+        // edited. The shell handles ⌘Z and ⇧⌘Z when no text field has the keyboard.
+        let edit = Submenu::with_items(
+            "Edit",
+            true,
+            &[
+                &MenuItem::with_id("undo", "Undo (⌘Z)", true, None),
+                &MenuItem::with_id("redo", "Redo (⇧⌘Z)", true, None),
+                &PredefinedMenuItem::separator(),
+                &MenuItem::with_id("find", "Find…", true, cmd(Code::KeyF)),
+            ],
+        )?;
         let theme = [
             CheckMenuItem::with_id("theme-system", "Use System Appearance", true, true, None),
             CheckMenuItem::with_id("theme-light", "Light", true, false, None),
@@ -147,6 +167,13 @@ impl MenuBar {
             let a = match e.id().0.as_str() {
                 "quit" | "close" => Action::Quit,
                 "load-fixture" => Action::LoadFixture,
+                "open" => Action::Shell(Command::RequestOpen),
+                "open-examples" => Action::Shell(Command::OpenExamples),
+                "undo" => Action::Shell(Command::Undo),
+                "redo" => Action::Shell(Command::Redo),
+                "save-document" => Action::SaveDocument,
+                "open-document" => Action::OpenDocument,
+                "export-questions" => Action::ExportQuestionLog,
                 "find" => Action::Shell(Command::FocusSearch),
                 "zoom-in" => Action::Shell(Command::ZoomIn),
                 "zoom-out" => Action::Shell(Command::ZoomOut),

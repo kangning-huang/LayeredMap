@@ -22,6 +22,25 @@ the renderer drops Chinese basemap labels.
 | 11 | `read_path` refuses `.xlsx` (T5: "unsupported file type") although calamine is in the tree. | Excel needs its own path. | Phase 2 (P1). |
 | 12 | Map view: `ui-egui/src/mapview.rs` (1,500 lines) is tied to `RustGisApp`, `Session` and 19 engine commands. A clean core of ~450 lines (texture cache, labels, camera, scale bar) extracts easily; ~300 lines of interaction go behind a host trait; ~750 lines are cut. | Extraction ≈ 3–4 days; the spike's ~900 lines already cover the core. | Phase 1 WP1.2. |
 
+## Finder Open With and Dock-icon drops (spike carried from WP0.4, done in WP2.1)
+
+**Works (2026-10-16).** winit 0.30.13 owns the application delegate and offers no opened-files
+API. `apps/layeredmap/src/macos.rs` adds `application:openURLs:` to winit's delegate class when
+`NSApplicationWillFinishLaunchingNotification` fires, queues the paths, and the app opens them
+through `Command::Open` (the Open button's pipeline). `packaging/lm/bundle-macos.sh` registers
+CSV/TSV, GeoJSON/JSON, Shapefile (.shp, .zip), GeoTIFF, GeoPackage and .xlsx as a Viewer with
+`LSHandlerRank` Alternate (never the default app).
+
+Verified on the bundled app with `open -a LayeredMap.app <files>` (the same Apple event as a Dock
+drop or Open With), looking at window screenshots:
+- not running: `T1/schools.csv` launches the app and "schools" (248 points) is in the Layers panel;
+- running: `V1/districts.geojson` + `T5/survey.xlsx` in one event both arrive (districts draws;
+  the workbook is misread as a zipped Shapefile by the importer, a separate bug), and a second
+  `schools.csv` adds a second "schools" layer.
+
+Not checked by hand: an actual mouse drop on the Dock icon or the Finder menu (not driven, to keep
+input away from other apps).
+
 ## Analysis inventory
 
 | Needed | Upstream | ID / function | Meets the definition? |

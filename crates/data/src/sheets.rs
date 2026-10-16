@@ -52,14 +52,21 @@ pub fn columns(bytes: &[u8], sheet: Option<&str>) -> Result<Columns> {
 }
 
 /// A sheet as text: the workbook's sheets, the one picked, its column names and its rows.
-struct Grid {
-    names: Vec<String>,
-    pick: String,
-    headers: Vec<String>,
-    rows: Vec<Vec<String>>,
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Grid {
+    /// The workbook's sheets, in order.
+    pub names: Vec<String>,
+    /// The sheet read.
+    pub pick: String,
+    /// Its column names: the first row with anything in it (blank headings named by their letter).
+    pub headers: Vec<String>,
+    /// Its other rows with anything in them, each cell as text (see [`read`]).
+    pub rows: Vec<Vec<String>>,
 }
 
-fn grid(bytes: &[u8], sheet: Option<&str>) -> Result<Grid> {
+/// One sheet of a workbook (`sheet` as [`read`] takes it) as text cells, before any column is
+/// typed or located: for callers that keep the cells as written.
+pub fn grid(bytes: &[u8], sheet: Option<&str>) -> Result<Grid> {
     check_expansion(bytes)?;
     let mut wb = open_workbook_auto_from_rs(Cursor::new(bytes)).map_err(|e| DataError::Format(format!("spreadsheet: {e}")))?;
     let names = wb.sheet_names();

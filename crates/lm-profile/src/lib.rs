@@ -43,10 +43,12 @@
 mod china;
 mod china_boundary;
 mod crs;
+pub mod crs_candidates;
 mod csv;
 mod encoding;
 mod fields;
 mod layout;
+mod place;
 mod raster;
 
 pub use china::{china_offset, in_mainland_china, mainland_china_share};
@@ -55,6 +57,7 @@ pub use csv::{CoordinatePair, CsvLocation, csv_locate, parse_number};
 pub use encoding::{TextEncoding, shapefile_encoding};
 pub use fields::{CoordinateColumn, RawTable, profile_fields, profile_raw_table};
 pub use layout::{SheetChoice, SheetSample, excel_sheet, geometry_kinds, mixed_geometry_split};
+pub use place::{PlaceCandidate, place_candidates};
 pub use raster::{
     BandSample, LANDSAT_C2_ST_OFFSET, LANDSAT_C2_ST_SCALE, landsat_scale, profile_band, raster_cell_meaning, raster_kelvin, raster_nodata,
     raster_unit,

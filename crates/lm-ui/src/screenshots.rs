@@ -12,6 +12,10 @@ use crate::{Prefs, Shell, System, ThemePref};
 const SIZE: egui::Vec2 = egui::vec2(1280.0, 800.0);
 
 fn harness(dark: bool, view: (f64, f64, f64), setup: impl Fn(&mut Shell) + 'static) -> Harness<'static, Option<Shell>> {
+    harness_phase(1, dark, view, setup)
+}
+
+fn harness_phase(phase: u8, dark: bool, view: (f64, f64, f64), setup: impl Fn(&mut Shell) + 'static) -> Harness<'static, Option<Shell>> {
     let prefs = Prefs {
         theme: if dark { ThemePref::Dark } else { ThemePref::Light },
         basemap: "offline".into(),
@@ -22,7 +26,7 @@ fn harness(dark: bool, view: (f64, f64, f64), setup: impl Fn(&mut Shell) + 'stat
     let mut h = Harness::builder().with_size(SIZE).with_pixels_per_point(1.0).wgpu().build_ui_state(
         move |ui, state: &mut Option<Shell>| {
             let shell = state.get_or_insert_with(|| {
-                let mut s = Shell::new(ui.ctx(), Flags::up_to(1), prefs.clone(), system);
+                let mut s = Shell::new(ui.ctx(), Flags::up_to(phase), prefs.clone(), system);
                 setup(&mut s);
                 s
             });
@@ -75,4 +79,73 @@ fn search_results() {
     let first = h.state().as_ref().and_then(|s| s.search.rows.first().map(|r| r.title.clone())).unwrap_or_default();
     assert!(first.starts_with("Shanghai"), "{first}");
     h.snapshot("search_results");
+}
+
+/// Phase 2: the first-launch welcome card.
+#[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+fn phase2_first_launch() {
+    harness_phase(2, false, WORLD, |_| {}).snapshot("phase2_first_launch");
+}
+
+/// Phase 2: two files opened (points with a visible assumption and exclusions, and areas), the
+/// points layer selected: the shelf and the layer overview.
+#[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+fn phase2_layers() {
+    let mut h = harness_phase(2, false, (121.47, 31.23, 9.0), |s| {
+        let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../fixtures");
+        for (i, f) in ["V1/districts.geojson", "T1/schools.csv"].iter().enumerate() {
+            let layers =
+                lm_jobs::import::import_path(&dir.join(f), &lm_jobs::import::Ctx::detached(Default::default())).unwrap_or_default();
+            s.ws.add_imported(layers, 100 + i as u64);
+        }
+        s.ws.selected = s.ws.doc.layers.last().map(|l| l.id);
+        s.ws.new_data = None;
+    });
+    for _ in 0..200 {
+        h.step();
+        if h.state().as_ref().is_some_and(|s| !s.map_view().tiles_pending()) {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+    h.run_steps(20);
+    let n = h.state().as_ref().map_or(0, |s| s.ws.doc.layers.len());
+    assert_eq!(n, 2);
+    h.snapshot("phase2_layers");
+}
+
+/// Scrolling over the layer list scrolls the list, never the map (owner's bug report, 2026-10-16).
+#[test]
+fn scrolling_over_the_layer_list_does_not_zoom_the_map() {
+    let mut h = harness_phase(2, false, (121.47, 31.23, 9.0), |s| {
+        let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../fixtures");
+        for (i, f) in ["V1/districts.geojson", "T1/schools.csv", "V2/mixed.geojson"].iter().enumerate() {
+            let layers =
+                lm_jobs::import::import_path(&dir.join(f), &lm_jobs::import::Ctx::detached(Default::default())).unwrap_or_default();
+            s.ws.add_imported(layers, 200 + i as u64);
+        }
+        s.ws.selected = None;
+    });
+    h.run_steps(10);
+    let zoom = |h: &Harness<'static, Option<Shell>>| h.state().as_ref().map_or(0.0, |s| s.map_view().zoom());
+    let over_shelf = egui::pos2(120.0, 140.0);
+    let over_map = egui::pos2(700.0, 450.0);
+    for (pos, should_zoom) in [(over_shelf, false), (over_map, true)] {
+        let start = zoom(&h);
+        for _ in 0..5 {
+            h.input_mut().events.push(egui::Event::PointerMoved(pos));
+            h.input_mut().events.push(egui::Event::MouseWheel {
+                unit: egui::MouseWheelUnit::Line,
+                delta: egui::vec2(0.0, 1.0),
+                modifiers: egui::Modifiers::NONE,
+                phase: egui::TouchPhase::Move,
+            });
+            h.step();
+        }
+        h.run_steps(30);
+        let moved = (zoom(&h) - start).abs() > 0.01;
+        assert_eq!(moved, should_zoom, "at {pos:?}: zoom went from {start} to {}", zoom(&h));
+    }
 }

@@ -87,6 +87,15 @@ impl Search {
         };
     }
 
+    /// Places matching `query`, without touching the search field's own state.
+    pub fn lookup(&mut self, query: &str, limit: usize) -> Vec<Row> {
+        self.poll();
+        match &self.index {
+            Some(ix) if !query.trim().is_empty() => ix.search(query, limit).into_iter().map(|h| row(h.place)).collect(),
+            _ => Vec::new(),
+        }
+    }
+
     pub fn clear(&mut self) {
         self.query.clear();
         self.rows.clear();
