@@ -6,12 +6,6 @@
         {
           "assumptions": [
             {
-              "chosen": "wgs84",
-              "kind": "NoCrsLonLat",
-              "line": "Assumed GPS coordinates (WGS 84), because the file doesn't say.",
-              "treatment": "Visible"
-            },
-            {
               "chosen": "id",
               "kind": "IdentifierField",
               "line": "Treated as an ID.",

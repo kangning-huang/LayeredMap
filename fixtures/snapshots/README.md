@@ -32,8 +32,10 @@ T3's and R4's snapshots are written by the stress run:
 
 ## Initial snapshots: where they disagree with `expected.json`
 
-The first snapshots (2026-10-16) record what the importer does now (T5 and V9 were rewritten after
-the rebase onto `phase-2`, which merged the GeoPackage and Excel adapters; no other snapshot changed); they are **not yet approved
+The first snapshots (2026-10-16) record what the importer does now. After rebasing onto `phase-2`,
+T5 and V9 were rewritten for the merged GeoPackage and Excel adapters, and R6, V1, V2, V10, V7 and
+V8 for its Gate 2 fixes (raster scale/offset applied; no assumed-GPS line for GeoJSON); no other
+snapshot changed. They are **not yet approved
 by the owner**. The fixtures' hand-written `expected.json` files were not edited. Every place
 where the two disagree is listed here for the owner's decision at Gate 2: either the behaviour
 is fixed (and the snapshot rewritten), or the expectation is changed with a note.
@@ -55,13 +57,13 @@ Recurring across fixtures (not repeated below):
 
 | Fixture | `expected.json` says | The snapshot has |
 |---|---|---|
-| V1 | CRS *declared* (GeoJSON default), `assumptions: []` | visible `NoCrsLonLat` "Assumed GPS coordinates (WGS 84), because the file doesn't say.", confidence Likely. The same for V2, V10 and every generated GeoJSON (V7, V8). RFC 7946 makes WGS 84 the GeoJSON default, so this line may be one the owner wants silent. |
+| V1 | CRS *declared* (GeoJSON default), `assumptions: []` | matches since the Gate 2 fix on `phase-2` (GeoJSON needs no assumed-GPS line): no CRS line, CRS WGS 84 (confidence Likely, not Certain); only the recurring China and ID lines. The same for V2, V10, V7 and V8. |
 | V2 | `assumptions: []` | silent `MixedGeometrySplit` "Split into 3 layers: points, lines, areas" on each of the 3 layers (the split itself matches: 4 points, 3 lines, 3 areas) |
 | V3 | `crs_wgs84_assumed`, visible | matches (`NoCrsLonLat`, visible); plus the recurring lines |
 | V4 | `crs_unknown_projected`, *visible* | `NoCrsProjected` as a **question** ("Where should this data be?"), status Needs a decision. The expectation's text ("user must confirm the place") reads like a question too. |
 | V5 | `encoding_detected` "Text encoding detected as GBK (no .cpg)", **visible** | `ShapefileGbk` "Read text as Chinese (GBK).", **silent**. Encoding GBK and the first row match. |
 | V9 | GeoPackage `city_layers.gpkg` opens as a group of 3 layers (schools 8 points, roads 6 lines, parks 3 areas, declared EPSG:4326), `assumptions: []` | matches since the GeoPackage adapter (WP2.2 P1) was merged: 3 layers, members named after their tables, CRS WGS 84 *Certain*; the roads layer carries the recurring silent ID and category lines. The zipped Shapefile matches too: 6 lines, from the `.prj`. |
-| V10 | 9 features, one layer; the antimeridian polygon *"must NOT draw/measure a 358°-wide polygon"*; empty geometries reported | split into 2 layers (3 lines, 6 areas, counting the features without geometry; 2 exclusions are reported, for 3 empty cases), silent `MixedGeometrySplit` and visible `NoCrsLonLat`. The areas layer's extent is −180…180 and the lines layer's −179.5…179.5: the antimeridian cases are read naively. |
+| V10 | 9 features, one layer; the antimeridian polygon *"must NOT draw/measure a 358°-wide polygon"*; empty geometries reported | split into 2 layers (3 lines, 6 areas, counting the features without geometry; 2 exclusions are reported, for 3 empty cases), silent `MixedGeometrySplit`. The areas layer's extent is −180…180 and the lines layer's −179.5…179.5: the antimeridian cases are read naively. |
 | T1 | `crs_wgs84_assumed` visible | matches (`CsvCoordinateColumns` visible, "Located using lon and lat as GPS coordinates (WGS 84)."), 248 rows, 6 excluded |
 | T2 | question **"Which columns hold the location?"**, candidates x/y and lng2/lat2, no silent default | question worded **"Which columns locate these records?"**, recommended (preselected and drawn) lng2/lat2; 2 rows excluded under that pair |
 | T4 | three visible assumptions: `encoding_detected`, `decimal_comma`, `crs_wgs84_assumed` | only `CsvCoordinateColumns` (visible). The encoding is recorded (GBK) but has **no line**, and there is **no decimal-comma line**: the assumption catalog has no row for either in a CSV. Raw strings (leading zeros, dates) are kept (unit test). |
@@ -70,7 +72,7 @@ Recurring across fixtures (not repeated below):
 | C2 | (no `expected.json`; `vectors.csv` holds conversion test vectors, not an import case) | opens as 58 points with an ambiguous-columns question (13 coordinate-like columns). `landmarks_TODO.csv` is owner-supplied and skipped. |
 | C3 | `offset_system_bd09`, **visible** | `ChinaOffsetNamed` as a **question** ("These look like Baidu (BD-09) coordinates. …"), preselected bd09 |
 | R3 | `assumptions: []`, NoData 0 | NoData 0 matches; plus visible `RasterCellMeaning` "Treated as categories (shares, not averages)." and the unit line |
-| R6 | scale 0.1, offset −100 (`value = raw * scale + offset`); `nodata_assumed` −9999 visible | the NoData line matches ("Treated −9999 as No data."), but **scale and offset are not read** (`scale: null, offset: null`): the importer passes none to the profiler and the upstream GeoTIFF reader doesn't expose them, so values would be shown raw. Cell meaning is a silent deferred question (measured). `points.csv` (the sampling points) opens as 8 points. |
+| R6 | scale 0.1, offset −100 (`value = raw * scale + offset`); `nodata_assumed` −9999 visible | matches since the Gate 2 fix on `phase-2` (scale and offset applied): band scale 0.1, offset −100; the NoData line matches ("Treated −9999 as No data."). Cell meaning is now a visible line, "Treated as measured values (averaged, not summed).", confidence Likely; plus the unit line. `points.csv` (the sampling points) opens as 8 points. |
 
 The X fixtures have no `expected.json`; their snapshots hold the messages shown:
 

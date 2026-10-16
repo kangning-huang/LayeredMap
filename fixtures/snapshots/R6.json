@@ -71,16 +71,16 @@
               "chosen": "measured",
               "kind": "RasterCellMeaning",
               "line": "Treated as measured values (averaged, not summed).",
-              "treatment": "Silent"
+              "treatment": "Visible"
             }
           ],
           "bands": [
             {
-              "cell_meaning": "Measured (Possible)",
+              "cell_meaning": "Measured (Likely)",
               "index": 1,
               "nodata": -9999.0,
-              "offset": null,
-              "scale": null,
+              "offset": -100.0,
+              "scale": 0.1,
               "unit": null
             }
           ],

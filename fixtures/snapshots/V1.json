@@ -7,12 +7,6 @@
           "assumptions": [
             {
               "chosen": "wgs84",
-              "kind": "NoCrsLonLat",
-              "line": "Assumed GPS coordinates (WGS 84), because the file doesn't say.",
-              "treatment": "Visible"
-            },
-            {
-              "chosen": "wgs84",
               "kind": "ChinaOffsetPossible",
               "line": "If these came from a Chinese map app (Amap, Tencent or Baidu), they may sit a few hundred meters off.",
               "treatment": "Visible"
