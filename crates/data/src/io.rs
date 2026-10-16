@@ -1351,7 +1351,11 @@ pub fn read_shapefile_parts_with(parts: ShapefileParts, name: &str, opts: Shapef
         // shapes after it stay with their own shapes.
         let record = records.next();
         let (Ok(shape), Some(Ok(record))) = (item, record) else {
+            // Kept as a row without a shape (its attributes too, when they could be read), so it
+            // is reported, not lost.
             report.skipped += 1;
+            report.unreadable.push(ds.features.len());
+            ds.push_next(None, Vec::new());
             continue;
         };
         let geom = match shape {
@@ -1376,7 +1380,8 @@ pub fn read_shapefile_parts_with(parts: ShapefileParts, name: &str, opts: Shapef
             }
             Shape::Multipatch(_) => {
                 report.skipped += 1;
-                continue;
+                report.unreadable.push(ds.features.len());
+                None
             }
         };
         let geom = match (&to_lonlat, geom) {
@@ -1452,7 +1457,11 @@ fn read_shapes_only(
                 };
                 ds.push_next(Some(g), Vec::new());
             }
-            None => report.skipped += 1,
+            None => {
+                report.skipped += 1;
+                report.unreadable.push(ds.features.len());
+                ds.push_next(None, Vec::new());
+            }
         }
     }
     ds.geometry_type = dominant_type(&ds);
