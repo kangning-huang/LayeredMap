@@ -74,6 +74,11 @@ Recurring across fixtures (not repeated below):
 | R3 | `assumptions: []`, NoData 0 | NoData 0 matches; plus visible `RasterCellMeaning` "Treated as categories (shares, not averages)." and the unit line |
 | R6 | scale 0.1, offset −100 (`value = raw * scale + offset`); `nodata_assumed` −9999 visible | matches since the Gate 2 fix on `phase-2` (scale and offset applied): band scale 0.1, offset −100; the NoData line matches ("Treated −9999 as No data."). Cell meaning is now a visible line, "Treated as measured values (averaged, not summed).", confidence Likely; plus the unit line. `points.csv` (the sampling points) opens as 8 points. |
 
+T3 and R4 (generated, no `expected.json`) got their first snapshots from the first full
+`cargo xtask stress` run: T3 opens as 1,000,000 points with a visible coordinate-columns line
+(no China line, though its points are around Shanghai); R4 opens from its overview with the
+preview notice.
+
 The X fixtures have no `expected.json`; their snapshots hold the messages shown:
 
 | Fixture | Result |

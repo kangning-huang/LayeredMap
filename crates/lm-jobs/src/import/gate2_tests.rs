@@ -133,7 +133,8 @@ pub(super) fn check_generated_snapshot(id: &str, results: &[(String, Result<Vec<
         None => stress_line(&format!("{id} snapshot"), "matches", "approved snapshot", true),
         Some(d) => {
             eprintln!("{d}");
-            stress_line(&format!("{id} snapshot"), "differs", "approved snapshot", false)
+            let what = if snapshots().join(format!("{id}.json")).is_file() { "differs" } else { "no approved snapshot yet" };
+            stress_line(&format!("{id} snapshot"), what, "approved snapshot", false)
         }
     }
 }
