@@ -11,7 +11,16 @@ workspace = true
 
 [dependencies]
 lm-core = { path = "../lm-core" }
+lm-profile = { path = "../lm-profile" }
 lm-analysis = { path = "../lm-analysis" }
 rustgis-engine = { workspace = true }
 rustgis-analysis = { workspace = true }
 log = { workspace = true }
+encoding_rs = { workspace = true }
+csv = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tiff = { workspace = true }
+
+[dev-dependencies]
+sha2 = { workspace = true }

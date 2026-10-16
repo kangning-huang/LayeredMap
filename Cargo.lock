@@ -2642,11 +2642,18 @@ dependencies = [
 name = "lm-jobs"
 version = "0.2.0"
 dependencies = [
+ "csv",
+ "encoding_rs",
  "lm-analysis",
  "lm-core",
+ "lm-profile",
  "log",
  "rustgis-analysis",
  "rustgis-engine",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tiff",
 ]
 
 [[package]]

@@ -26,7 +26,8 @@ impl TextEncoding {
         }
     }
 
-    fn encoding(&self) -> &'static encoding_rs::Encoding {
+    /// The `encoding_rs` encoding to decode with.
+    pub fn encoding(&self) -> &'static encoding_rs::Encoding {
         match self {
             TextEncoding::Utf8 => encoding_rs::UTF_8,
             TextEncoding::Gbk => encoding_rs::GB18030,
