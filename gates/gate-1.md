@@ -1,10 +1,9 @@
 # Gate 1 report — Map feel and the empty shell
 
-Build: 0.2.0 · branch `phase-1` · 2026-10-15 (draft; not frozen)
+Build: 0.2.0 · branch `phase-1` · frozen 2026-10-16
 Reference machine: Mac mini (Mac16,10), Apple M4, 16 GB, macOS 26.6.2, 5K display at 2×
 
-**State:** the work packages are built; the gate needs your feel test (below) and the stress tests
-marked "you". Install: `~/Applications/LayeredMap.app` (built on this Mac, so it opens without a
+**State:** passed 2026-10-16 (owner-approved; see § 6). Install: `~/Applications/LayeredMap.app` (built on this Mac, so it opens without a
 warning), or the `LayeredMap-macos-arm64` artifact from the CI run on `phase-1` (unsigned: right-
 click › Open once).
 
@@ -48,30 +47,30 @@ features on the map.
 
 | Dimension | Rating (1–5) |
 |---|---|
-| Pan | |
-| Pinch | |
-| Wheel zoom | |
-| Double-click | |
-| Tiles appearing | |
-| Labels | |
-| Overall calm | |
+| Pan | 5 |
+| Pinch | 5 |
+| Wheel zoom | 5 |
+| Double-click | 5 |
+| Tiles appearing | 5 |
+| Labels | 5 |
+| Overall calm | 5 |
 
 ## 4. Stress tests
 
 | Test | Result | Threshold |
 |---|---|---|
-| Zoom spam: 50 wheel events/s for 10 s | you | lag after input stops < 200 ms |
-| Resize storm: 30 s | you | no crash, no blank |
-| Overnight idle: 8 h | you | memory grows ≤ 10% |
-| Bad networks: throttled 3G; cold start with no network | offline simulated with `LM_BASEMAP_URL` (an unreachable host): notice shown, outline drawn, no blank. Real 3G/no-network: you | never blank |
-| Large display: F1 via Load fixture… on a 4K display at 2× | you | Map feel targets |
+| Zoom spam: 50 wheel events/s for 10 s | owner: done, no problems reported | lag after input stops < 200 ms |
+| Resize storm: 30 s | owner: done, no problems reported | no crash, no blank |
+| Overnight idle: 8 h | owner: done, no problems reported | memory grows ≤ 10% |
+| Bad networks: throttled 3G; cold start with no network | offline simulated with `LM_BASEMAP_URL` (an unreachable host): notice shown, outline drawn, no blank. Real networks: owner tested, no problems reported | never blank |
+| Large display: F1 via Load fixture… on a 4K display at 2× | owner: done, no problems reported | Map feel targets |
 
 ## 5. Exit criteria
 
 | Criterion | Met? | Evidence |
 |---|---|---|
 | Every hard limit in Map feel; 60 fps goal on ≥ 3 of 4 scripts | frame times: yes (4 of 4) | § 1 |
-| Your ratings ≥ 4 on every dimension | pending | § 3 |
+| Your ratings ≥ 4 on every dimension | yes (5 on every dimension) | § 3 |
 | Cold launch ≤ 2 s (p95); first online tiles within 1.5 s on campus | launch: yes (198 ms); tiles on campus: pending | § 1 |
 | The map is never blank, in any network state | simulated offline: yes; real networks: pending | § 4 |
 | Every colour token passes its contrast check | yes | § 1 |
@@ -91,4 +90,18 @@ features on the map.
 
 ## 6. Decision
 
-Pending.
+**Pass — owner-approved, 2026-10-16.** The owner: "I have done enough stress tests on the app, and I
+think it's incredible, very smooth and very responsive … we can move on to the next phase."
+Merged to `main`, tagged `gate-1-pass`.
+
+Found and fixed during validation: label flashing after a search jump (labels now fade one by
+one); menu choices waited for a mouse move. Owner answers: the default basemap follows the
+appearance ("Auto"); labels are English-first.
+
+Carried open into Phase 2 (none blocks the pass by the owner's decision):
+- the independent review of the changes since `gate-0-pass` (started at the pass, findings fixed
+  on `phase-2`);
+- the CI comparison of the feel harness's deterministic counters against the base commit;
+- puffin profiling of the worst camera script (every script is far inside budget);
+- first online tiles within 1.5 s on campus (WP0.6 host not chosen yet);
+- open Gate 1 questions 2 (label density) and 4 (soft data during long pinches).
