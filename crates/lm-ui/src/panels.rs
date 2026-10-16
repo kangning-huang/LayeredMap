@@ -248,7 +248,9 @@ fn layer_rows(shell: &mut Shell, ui: &mut Ui, t: &Theme) {
             );
         }
         // Badge.
-        let badge = if l.profile.open_questions().next().is_some() {
+        let badge = if shell.ws.is_busy(*id) {
+            Badge::Working
+        } else if l.profile.open_questions().next().is_some() {
             Badge::Decision
         } else if l.profile.visible_assumptions().next().is_some() {
             Badge::Assumption

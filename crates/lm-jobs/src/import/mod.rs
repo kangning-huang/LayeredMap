@@ -520,6 +520,15 @@ pub fn choose_sheet(layer: &ImportedLayer, choice: &Choice) -> Result<ImportedLa
     excel::choose_sheet(layer, choice)
 }
 
+/// The name of a coordinate system in the candidate table ("CGCS2000 / 3-degree Gauss-Kruger CM
+/// 120E"), or "EPSG:n".
+pub fn crs_name(epsg: u16) -> String {
+    lm_profile::crs_candidates::CANDIDATES
+        .iter()
+        .find(|(c, _, _)| *c == epsg)
+        .map_or_else(|| format!("EPSG:{epsg}"), |(_, n, _)| (*n).to_string())
+}
+
 /// Reprojects a layer read with raw coordinates from the coordinate system the user chose
 /// ("Where should this data be?"), as a new layer; the source file is untouched.
 pub fn reproject(layer: &ImportedLayer, epsg: u32) -> Result<ImportedLayer, ImportError> {

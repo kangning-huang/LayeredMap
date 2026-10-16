@@ -513,3 +513,22 @@ fn zip_based_documents_are_not_taken_for_zipped_shapefiles() {
     // A ZIP without a telling name is still tried as a zipped Shapefile.
     assert_eq!(pick_adapter(std::path::Path::new("download"), b"PK\x03\x04", true).map(|a| a.name()).ok(), Some("Zipped Shapefile"));
 }
+
+/// R6: scale 0.1 and offset −100 come from the GDAL metadata, so the values shown are decoded
+/// (about 0–160), never the raw integers (a wrong number would be an S1).
+#[test]
+fn r6_scale_and_offset_are_applied() {
+    let l = open("R6/scaled.tif").unwrap().remove(0);
+    let b = &l.profile.bands[0];
+    assert_eq!(b.scale, Some(0.1), "{b:?}");
+    assert_eq!(b.offset, Some(-100.0));
+    let (lo, hi) = (b.min.unwrap(), b.max.unwrap());
+    assert!(lo >= -1.0 && hi <= 161.0 && hi > 50.0, "decoded range {lo}..{hi}");
+}
+
+#[test]
+fn geojson_states_no_assumed_gps_line() {
+    let l = open("V1/districts.geojson").unwrap().remove(0);
+    assert!(!has(&l, AssumptionKind::NoCrsLonLat), "{:?}", l.profile.assumptions);
+    assert_eq!(l.profile.crs.value, lm_core::model::Crs::Wgs84);
+}

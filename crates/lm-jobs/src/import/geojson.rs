@@ -72,7 +72,14 @@ impl FormatAdapter for GeoJson {
             let excl = if i == 0 { exclusions.clone() } else { Vec::new() };
             let member = multi.then(|| part.name.clone());
             let field_names: Vec<String> = part.fields.iter().map(|f| f.name.clone()).collect();
-            let profile = vector_profile(path, member, "GeoJSON", &part, None, assumptions, excl, None, Vec::new(), &field_names);
+            let mut profile = vector_profile(path, member, "GeoJSON", &part, None, assumptions, excl, None, Vec::new(), &field_names);
+            // GeoJSON is GPS coordinates (WGS 84) by definition (RFC 7946): when the values are
+            // degrees, that is the format's rule, not a guess, so no "Assumed…" line. The China
+            // offset notice still applies (Chinese map apps export offset GeoJSON too).
+            if profile.crs.value == lm_core::model::Crs::Wgs84 {
+                profile.assumptions.retain(|a| a.kind != lm_core::model::AssumptionKind::NoCrsLonLat);
+                profile.crs.evidence = lm_core::model::Evidence("GeoJSON coordinates are GPS coordinates (WGS 84) by definition.".into());
+            }
             out.push(ImportedLayer {
                 name: part.name.clone(),
                 status: status_of(&profile),

@@ -62,6 +62,16 @@ pub struct QuestionAnswer {
     pub seconds: f64,
 }
 
+/// A re-read running off the interface thread (other coordinate columns, another sheet, a chosen
+/// coordinate system). Its result replaces the layer's data in one undo step.
+struct PendingEdit {
+    id: LayerId,
+    label: String,
+    rev: u32,
+    fit: bool,
+    rx: std::sync::mpsc::Receiver<Result<ImportedLayer, String>>,
+}
+
 /// What the map currently holds for a layer.
 #[derive(Clone, PartialEq)]
 struct Synced {
@@ -110,10 +120,19 @@ pub struct Workspace {
     /// Answers to question cards, for the question log (taken by the shell).
     pub answers: Vec<QuestionAnswer>,
     pub compare: Option<Compare>,
+    pending: Vec<PendingEdit>,
+    /// Wakes the interface when background work finishes (set by the shell).
+    pub wake: Option<Arc<dyn Fn() + Send + Sync>>,
     compare_synced: Option<(LayerId, bool)>,
 }
 
 impl Workspace {
+    /// A workspace whose background work repaints `ctx` when it finishes.
+    pub fn with_waker(ctx: &egui::Context) -> Self {
+        let c = ctx.clone();
+        Workspace { wake: Some(Arc::new(move || c.request_repaint())), ..Workspace::default() }
+    }
+
     /// Starts importing files (Open, a drop, Open With): one batch.
     pub fn open(&mut self, paths: Vec<PathBuf>, wake: impl Fn() + Send + Sync + Clone + 'static) {
         if paths.is_empty() {
@@ -154,6 +173,10 @@ impl Workspace {
     /// Takes news from running imports. Returns whether the document changed.
     pub fn poll(&mut self) -> bool {
         let mut changed = false;
+        for e in self.poll_pending() {
+            self.notice = Some(e);
+            changed = true;
+        }
         let mut finished: Vec<(usize, Result<Vec<ImportedLayer>, ImportError>)> = Vec::new();
         for (i, row) in self.imports.iter_mut().enumerate() {
             let Some(job) = &row.job else { continue };
@@ -304,14 +327,8 @@ impl Workspace {
                 if data.raw.is_none() {
                     return self.record(id, kind, subject, choice, label);
                 }
-                let mut new = lm_jobs::import::relocate_csv(&data, &choice).map_err(|e| e.to_string())?;
-                new.profile.data_rev = layer.profile.data_rev + 1;
-                self.data.insert((id, new.profile.data_rev), Arc::new(new.clone()));
-                let tx = self.doc.set_profile_tx(id, new.profile).map(|mut t| {
-                    t.label = label;
-                    t
-                });
-                self.commit(tx);
+                let wake = self.wake.clone();
+                self.spawn_edit(id, label, false, wake, move || lm_jobs::import::relocate_csv(&data, &choice).map_err(|e| e.to_string()));
                 Ok(())
             }
             AssumptionKind::ChinaOffsetPossible | AssumptionKind::ChinaOffsetNamed if matches!(choice.id.as_str(), "gcj02" | "bd09") => {
@@ -319,17 +336,84 @@ impl Workspace {
             }
             AssumptionKind::ExcelSheet if choice.id.starts_with("sheet:") => {
                 let data = self.data(id).cloned().ok_or("This layer's data isn't loaded.")?;
-                let mut new = lm_jobs::import::choose_sheet(&data, &choice).map_err(|e| e.to_string())?;
-                new.profile.data_rev = layer.profile.data_rev + 1;
-                self.data.insert((id, new.profile.data_rev), Arc::new(new.clone()));
-                let tx = self.doc.set_profile_tx(id, new.profile).map(|mut t| {
-                    t.label = format!("Open another sheet of {}", layer.display_name);
-                    t
+                let wake = self.wake.clone();
+                self.spawn_edit(id, format!("Open another sheet of {}", layer.display_name), true, wake, move || {
+                    lm_jobs::import::choose_sheet(&data, &choice).map_err(|e| e.to_string())
                 });
-                self.commit(tx);
                 Ok(())
             }
             _ => self.record(id, kind, subject, choice, label),
+        }
+    }
+
+    /// Runs a re-read of a layer's data on its own thread; `poll` commits the result.
+    fn spawn_edit(
+        &mut self,
+        id: LayerId,
+        label: String,
+        fit: bool,
+        wake: Option<Arc<dyn Fn() + Send + Sync>>,
+        work: impl FnOnce() -> Result<ImportedLayer, String> + Send + 'static,
+    ) {
+        let rev = self.doc.layer(id).map_or(0, |l| l.profile.data_rev) + 1;
+        let (tx, rx) = std::sync::mpsc::channel();
+        let spawned = std::thread::Builder::new().name("lm-reread".into()).spawn(move || {
+            let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(work))
+                .unwrap_or_else(|_| Err("The layer couldn't be read again.".into()));
+            let _ = tx.send(r);
+            if let Some(w) = wake {
+                w();
+            }
+        });
+        if spawned.is_ok() {
+            self.pending.push(PendingEdit { id, label, rev, fit, rx });
+        }
+    }
+
+    /// Whether a layer is being re-read (its row shows the working badge).
+    pub fn is_busy(&self, id: LayerId) -> bool {
+        self.pending.iter().any(|p| p.id == id)
+    }
+
+    /// Commits re-reads that have finished. Returns errors to show.
+    fn poll_pending(&mut self) -> Vec<String> {
+        let mut errors = Vec::new();
+        let mut done = Vec::new();
+        for (i, p) in self.pending.iter().enumerate() {
+            match p.rx.try_recv() {
+                Ok(r) => done.push((i, r)),
+                Err(std::sync::mpsc::TryRecvError::Empty) => {}
+                Err(std::sync::mpsc::TryRecvError::Disconnected) => done.push((i, Err("The layer couldn't be read again.".into()))),
+            }
+        }
+        for (i, r) in done.into_iter().rev() {
+            let p = self.pending.remove(i);
+            match r {
+                Ok(mut new) => {
+                    new.profile.data_rev = p.rev;
+                    let fit = new.profile.extent_wgs84.filter(|_| p.fit);
+                    self.data.insert((p.id, p.rev), Arc::new(new.clone()));
+                    let tx = self.doc.set_profile_tx(p.id, new.profile).map(|mut t| {
+                        t.label = p.label.clone();
+                        t
+                    });
+                    if self.commit(tx) && fit.is_some() {
+                        self.fit = fit;
+                    }
+                }
+                Err(e) => errors.push(e),
+            }
+        }
+        errors
+    }
+
+    /// Blocks until every re-read has finished (tests, and before saving).
+    pub fn wait_pending(&mut self) {
+        while !self.pending.is_empty() {
+            for e in self.poll_pending() {
+                self.notice = Some(e);
+            }
+            std::thread::sleep(std::time::Duration::from_millis(2));
         }
     }
 
@@ -402,25 +486,19 @@ impl Workspace {
     pub fn place_layer(&mut self, id: LayerId, epsg: u16, seconds: Option<f64>) -> Result<(), String> {
         let data = self.data(id).cloned().ok_or("This layer's data isn't loaded.")?;
         let Some(layer) = self.doc.layer(id).cloned() else { return Err("That layer is gone.".into()) };
-        let mut new = lm_jobs::import::reproject(&data, u32::from(epsg)).map_err(|e| e.to_string())?;
-        new.profile.data_rev = layer.profile.data_rev + 1;
-        if let Some(secs) = seconds
-            && let Some(a) = new.profile.assumptions.iter().find(|a| a.kind == AssumptionKind::NoCrsProjected)
-        {
-            self.answers.push(QuestionAnswer { kind: a.kind, answer: a.chosen.clone(), seconds: secs });
+        if let Some(secs) = seconds {
+            let name = lm_jobs::import::crs_name(epsg);
+            self.answers.push(QuestionAnswer {
+                kind: AssumptionKind::NoCrsProjected,
+                answer: Choice::new(format!("epsg:{epsg}"), name),
+                seconds: secs,
+            });
         }
-        self.data.insert((id, new.profile.data_rev), Arc::new(new.clone()));
-        let fit = new.profile.extent_wgs84;
-        let tx = self.doc.set_profile_tx(id, new.profile).map(|mut t| {
-            t.label = format!("Place {}", layer.display_name);
-            t
+        let wake = self.wake.clone();
+        self.spawn_edit(id, format!("Place {}", layer.display_name), true, wake, move || {
+            lm_jobs::import::reproject(&data, u32::from(epsg)).map_err(|e| e.to_string())
         });
-        if self.commit(tx) {
-            self.fit = fit;
-            Ok(())
-        } else {
-            Err("The layer couldn't be placed.".into())
-        }
+        Ok(())
     }
 
     /// Starts comparing a layer's points with the same points converted from GCJ-02 (or BD-09).
@@ -689,6 +767,7 @@ mod tests {
         let q = w.doc.layers[0].profile.open_questions().next().unwrap().clone();
         let pick = q.alternatives.iter().find(|c| c.id.starts_with("columns:")).unwrap().clone();
         w.change_assumption(id, q.kind, q.subject.clone(), pick, Some(3.0)).unwrap();
+        w.wait_pending();
         assert!(w.doc.layers[0].profile.open_questions().next().is_none());
         assert_eq!(w.answers.len(), 1, "logged for the question budget");
         assert_eq!(w.data(id).unwrap().profile.data_rev, 1);
@@ -753,6 +832,7 @@ mod sheet_tests {
         let a = sheet(&w);
         let other = a.alternatives.iter().find(|c| c.id.starts_with("sheet:") && c.id != a.chosen.id).unwrap().clone();
         w.change_assumption(id, a.kind, a.subject.clone(), other.clone(), None).unwrap();
+        w.wait_pending();
         assert_eq!(sheet(&w).chosen.id, other.id);
         w.undo();
         assert_eq!(sheet(&w).chosen.id, a.chosen.id);
