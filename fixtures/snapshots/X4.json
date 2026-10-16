@@ -1,0 +1,12 @@
+{
+  "files": [
+    {
+      "error": {
+        "kind": "Refused",
+        "message": "x4_billion.tif says it is 1,000,000,000 × 1,000,000,000 pixels, more than the 200,000 pixels per side LayeredMap opens. Your file has not been changed."
+      },
+      "file": "x4_billion.tif"
+    }
+  ],
+  "fixture": "X4"
+}

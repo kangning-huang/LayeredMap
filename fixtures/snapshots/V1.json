@@ -1,0 +1,50 @@
+{
+  "files": [
+    {
+      "file": "districts.geojson",
+      "layers": [
+        {
+          "assumptions": [
+            {
+              "chosen": "wgs84",
+              "kind": "ChinaOffsetPossible",
+              "line": "If these came from a Chinese map app (Amap, Tencent or Baidu), they may sit a few hundred meters off.",
+              "treatment": "Visible"
+            },
+            {
+              "chosen": "id",
+              "kind": "IdentifierField",
+              "line": "Treated as an ID.",
+              "treatment": "Silent"
+            }
+          ],
+          "count": 17,
+          "crs": "Wgs84",
+          "crs_confidence": "Likely",
+          "encoding": null,
+          "exclusions": 0,
+          "extent": [
+            121.2,
+            30.9,
+            121.8,
+            31.5
+          ],
+          "fields": {
+            "area_km2": "Measure(Unknown) (Likely)",
+            "district_id": "Identifier (Likely)",
+            "name_en": "Name (Likely)",
+            "name_zh": "Name (Likely)",
+            "population": "Measure(Count) (Likely)"
+          },
+          "format": "GeoJSON",
+          "kind": "Areas",
+          "member": null,
+          "name": "districts",
+          "notices": [],
+          "status": "Complete"
+        }
+      ]
+    }
+  ],
+  "fixture": "V1"
+}

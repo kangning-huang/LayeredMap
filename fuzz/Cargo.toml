@@ -1,0 +1,58 @@
+# LayeredMap: Gate 2 fuzzing (`cargo xtask fuzz`, or `cargo +nightly fuzz run <target>` from the
+# repository root). Kept out of the main workspace, as cargo-fuzz expects: it needs a nightly
+# toolchain and the sanitizer runtime.
+[package]
+name = "lm-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+license = "Apache-2.0"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+lm-jobs = { path = "../crates/lm-jobs" }
+
+[[bin]]
+name = "csv"
+path = "fuzz_targets/csv.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "geojson"
+path = "fuzz_targets/geojson.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "shapefile"
+path = "fuzz_targets/shapefile.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "dbf"
+path = "fuzz_targets/dbf.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "geotiff_header"
+path = "fuzz_targets/geotiff_header.rs"
+test = false
+doc = false
+bench = false
+
+# Not part of the LayeredMap workspace.
+[workspace]
+members = ["."]
+
+[profile.release]
+debug = 1

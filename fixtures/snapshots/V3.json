@@ -1,0 +1,54 @@
+{
+  "files": [
+    {
+      "file": "sites.shp",
+      "layers": [
+        {
+          "assumptions": [
+            {
+              "chosen": "wgs84",
+              "kind": "NoCrsLonLat",
+              "line": "Assumed GPS coordinates (WGS 84), because the file doesn't say.",
+              "treatment": "Visible"
+            },
+            {
+              "chosen": "wgs84",
+              "kind": "ChinaOffsetPossible",
+              "line": "If these came from a Chinese map app (Amap, Tencent or Baidu), they may sit a few hundred meters off.",
+              "treatment": "Visible"
+            },
+            {
+              "chosen": "id",
+              "kind": "IdentifierField",
+              "line": "Treated as an ID.",
+              "treatment": "Silent"
+            }
+          ],
+          "count": 25,
+          "crs": "Wgs84",
+          "crs_confidence": "Likely",
+          "encoding": "UTF-8",
+          "exclusions": 0,
+          "extent": [
+            121.250745,
+            30.995426,
+            121.695856,
+            31.43673
+          ],
+          "fields": {
+            "id": "Identifier (Likely)",
+            "name": "Name (Likely)",
+            "value": "Measure(Unknown) (Likely)"
+          },
+          "format": "Shapefile",
+          "kind": "Points",
+          "member": null,
+          "name": "sites",
+          "notices": [],
+          "status": "Complete"
+        }
+      ]
+    }
+  ],
+  "fixture": "V3"
+}

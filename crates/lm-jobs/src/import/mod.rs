@@ -16,6 +16,7 @@ pub mod limits;
 pub mod progress;
 mod raster;
 mod shapefile;
+pub mod snapshot;
 
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{Receiver, Sender, channel};
@@ -633,5 +634,7 @@ pub fn convert_offset(ds: &Dataset, from_bd09: bool) -> Result<(Dataset, String)
     Ok((c.dataset, c.recipe))
 }
 
+#[cfg(test)]
+mod gate2_tests;
 #[cfg(test)]
 mod tests;

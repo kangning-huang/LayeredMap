@@ -4,8 +4,24 @@ use lm_core::model::{AssumptionKind, ImportStatus, LayerKind, Treatment};
 
 use super::*;
 
-fn fixtures() -> PathBuf {
+pub(super) fn fixtures() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../fixtures")
+}
+
+/// The generated fixtures (`cargo xtask fixtures`): `$LM_FIXTURES_DIR`, else `fixtures/generated`,
+/// when the folder exists.
+pub(super) fn generated() -> Option<PathBuf> {
+    let dir = std::env::var_os("LM_FIXTURES_DIR").map(PathBuf::from).unwrap_or_else(|| fixtures().join("generated"));
+    dir.is_dir().then_some(dir)
+}
+
+/// The data file with extension `ext` in a generated fixture's folder (`T3` → `t3_rows.csv`).
+pub(super) fn generated_file(id: &str, ext: &str) -> Option<PathBuf> {
+    std::fs::read_dir(generated()?.join(id))
+        .ok()?
+        .flatten()
+        .map(|e| e.path())
+        .find(|p| p.extension().is_some_and(|e| e == ext) && !p.file_name().and_then(|n| n.to_str()).unwrap_or("").starts_with('.'))
 }
 
 fn open(rel: &str) -> Result<Vec<ImportedLayer>, ImportError> {
@@ -16,7 +32,7 @@ fn has(l: &ImportedLayer, k: AssumptionKind) -> bool {
     l.profile.assumptions.iter().any(|a| a.kind == k)
 }
 
-fn sha(path: &std::path::Path) -> Vec<u8> {
+pub(super) fn sha(path: &std::path::Path) -> Vec<u8> {
     use sha2::Digest;
     sha2::Sha256::digest(std::fs::read(path).unwrap()).to_vec()
 }
@@ -151,7 +167,10 @@ fn every_hand_made_fixture_opens_and_stays_byte_identical() {
 
 #[test]
 fn unsafe_archives_and_huge_rasters_are_refused_quickly() {
-    let generated = fixtures().join("generated");
+    let Some(generated) = generated() else {
+        eprintln!("skipped: no generated fixtures (set LM_FIXTURES_DIR or run cargo xtask fixtures)");
+        return;
+    };
     for (f, word) in [("X1/x1_bomb.zip", "archives inside"), ("X2/x2_traversal.zip", "outside"), ("X4/x4_billion.tif", "pixels")] {
         let p = generated.join(f);
         if !p.exists() {
@@ -205,52 +224,113 @@ fn the_job_thread_reports_stages_and_finishes() {
     }
 }
 
+/// One stress result for the gate report (Stress tests: fixture ID · measured value · threshold ·
+/// pass/fail), printed as a `STRESS` line that `cargo xtask stress` collects.
+pub(super) fn stress_line(fixture: &str, measured: &str, threshold: &str, pass: bool) -> bool {
+    println!("STRESS\t{fixture}\t{measured}\t{threshold}\t{}", if pass { "pass" } else { "FAIL" });
+    pass
+}
+
+/// Imports a generated file and checks that it, and every file beside it, is byte-identical
+/// afterwards (Gate 2: the source-unchanged hash check). Returns the result, the seconds the
+/// import alone took, and whether the files are unchanged.
+fn import_unchanged(id: &str, p: &std::path::Path) -> (Result<Vec<ImportedLayer>, ImportError>, f64, bool) {
+    let siblings: Vec<PathBuf> = p.parent().and_then(|d| std::fs::read_dir(d).ok()).map_or_else(Vec::new, |rd| {
+        rd.flatten()
+            .map(|e| e.path())
+            .filter(|p| p.is_file() && !p.file_name().and_then(|n| n.to_str()).unwrap_or("").starts_with('.'))
+            .collect()
+    });
+    let before: Vec<Vec<u8>> = siblings.iter().map(|p| sha(p)).collect();
+    let t = std::time::Instant::now();
+    let r = import_path(p, &Ctx::detached(Ticket::default()));
+    let secs = t.elapsed().as_secs_f64();
+    let after: Vec<Vec<u8>> = siblings.iter().map(|p| sha(p)).collect();
+    let same = before == after;
+    stress_line(&format!("{id} hash"), if same { "unchanged" } else { "CHANGED" }, "byte-identical", same);
+    (r, secs, same)
+}
+
 /// The large stress fixtures (Gate 2): run with
-/// `cargo test -p lm-jobs --release large_fixtures -- --ignored --nocapture`.
+/// `cargo test -p lm-jobs --release large_fixtures -- --ignored --nocapture`, or `cargo xtask stress`.
+/// Every check runs and prints its line before the test fails on any of them.
 #[test]
 #[ignore = "needs the generated fixtures (several GB); run by hand or by cargo xtask stress"]
 fn large_fixtures() {
-    let generated = fixtures().join("generated");
-    let find = |dir: &str, ext: &str| {
-        std::fs::read_dir(generated.join(dir))
-            .ok()?
-            .flatten()
-            .map(|e| e.path())
-            .find(|p| p.extension().is_some_and(|e| e == ext) && !p.file_name().and_then(|n| n.to_str()).unwrap_or("").starts_with('.'))
+    let Some(_) = generated() else {
+        panic!("no generated fixtures: set LM_FIXTURES_DIR or run cargo xtask fixtures --large");
     };
+    let mut ok = true;
+    let mut missing = Vec::new();
+    // X1: a ZIP bomb is rejected in under 1 second.
+    match generated_file("X1", "zip") {
+        Some(p) => {
+            let (r, secs, same) = import_unchanged("X1", &p);
+            let refused = matches!(r, Err(ImportError::Refused(_)));
+            ok &= same & stress_line("X1", &format!("{secs:.3} s, refused: {refused}"), "refused in < 1 s", refused && secs < 1.0);
+        }
+        None => missing.push("X1"),
+    }
     // T3: a 1,000,000-row CSV opens.
-    if let Some(p) = find("T3", "csv") {
-        let t = std::time::Instant::now();
-        let l = import_path(&p, &Ctx::detached(Ticket::default())).unwrap().remove(0);
-        eprintln!("T3: {} rows, {:?}, {:?}", l.profile.count, l.profile.kind, t.elapsed());
-        assert!(l.profile.count >= 1_000_000);
+    match generated_file("T3", "csv") {
+        Some(p) => {
+            let (r, secs, same) = import_unchanged("T3", &p);
+            let count = r.as_ref().ok().and_then(|l| l.first()).map_or(0, |l| l.profile.count);
+            ok &= same & stress_line("T3", &format!("{count} rows in {secs:.2} s"), "opens, >= 1,000,000 rows", count >= 1_000_000);
+            ok &= super::gate2_tests::check_generated_snapshot("T3", &[("t3_rows.csv".to_string(), r)]);
+        }
+        None => missing.push("T3"),
     }
     // R4: the 2 GB COG previews within 3 seconds.
-    if let Some(p) = find("R4", "tif") {
-        let t = std::time::Instant::now();
-        let l = import_path(&p, &Ctx::detached(Ticket::default())).unwrap().remove(0);
-        let secs = t.elapsed().as_secs_f64();
-        eprintln!("R4: {:.2} s, notices {:?}", secs, l.profile.notices);
-        assert!(secs < 3.0, "R4 took {secs:.2} s");
-    }
-    // R5: the 4 GB TIFF without overviews can be canceled during preparation.
-    if let Some(p) = find("R5", "tif") {
-        let job = start(p, || {});
-        std::thread::sleep(std::time::Duration::from_millis(1500));
-        let read = job.ticket.bytes();
-        let t = std::time::Instant::now();
-        job.cancel();
-        loop {
-            if let Some(ImportEvent::Done(r)) = job.poll().into_iter().find(|e| matches!(e, ImportEvent::Done(_))) {
-                eprintln!("R5: canceled after {} of {} bytes; stopped {:?} after cancel", read.0, read.1, t.elapsed());
-                assert_eq!(r.err(), Some(ImportError::Canceled));
-                assert!(t.elapsed().as_secs_f64() < 2.0);
-                break;
-            }
-            assert!(t.elapsed().as_secs() < 10, "R5 did not stop after cancel");
-            std::thread::sleep(std::time::Duration::from_millis(10));
+    match generated_file("R4", "tif") {
+        Some(p) => {
+            // Timed first, before hashing reads the whole file into the system's cache.
+            let t = std::time::Instant::now();
+            let r = import_path(&p, &Ctx::detached(Ticket::default()));
+            let secs = t.elapsed().as_secs_f64();
+            let opened = r.is_ok();
+            ok &= stress_line("R4", &format!("{secs:.2} s, opened: {opened}"), "preview < 3 s", opened && secs < 3.0);
+            ok &= import_unchanged("R4", &p).2;
+            ok &= super::gate2_tests::check_generated_snapshot("R4", &[("r4_cog.tif".to_string(), r)]);
         }
+        None => missing.push("R4"),
     }
+    // R5: the preparation step for the 4 GB TIFF without overviews can be canceled.
+    match generated_file("R5", "tif") {
+        Some(p) => {
+            let before = sha(&p);
+            let job = start(p.clone(), || {});
+            std::thread::sleep(std::time::Duration::from_millis(1500));
+            let read = job.ticket.bytes();
+            let t = std::time::Instant::now();
+            job.cancel();
+            let mut result = None;
+            while t.elapsed().as_secs() < 10 {
+                if let Some(ImportEvent::Done(r)) = job.poll().into_iter().find(|e| matches!(e, ImportEvent::Done(_))) {
+                    result = Some(r);
+                    break;
+                }
+                std::thread::sleep(std::time::Duration::from_millis(10));
+            }
+            let stopped = t.elapsed().as_secs_f64();
+            let canceled = matches!(result, Some(Err(ImportError::Canceled)));
+            ok &= stress_line(
+                "R5",
+                &format!("canceled after {} of {} bytes; stopped {stopped:.2} s after cancel", read.0, read.1),
+                "canceled, stops < 2 s",
+                canceled && stopped < 2.0,
+            );
+            let same = sha(&p) == before;
+            ok &= stress_line("R5 hash", if same { "unchanged" } else { "CHANGED" }, "byte-identical", same);
+        }
+        None => missing.push("R5"),
+    }
+    println!("STRESS\tV6\tnot run: the 500 MB OpenStreetMap extract is not in the fixtures yet\topens, map stays interactive\tn/a");
+    if !missing.is_empty() {
+        eprintln!("missing generated fixtures: {} (cargo xtask fixtures --large)", missing.join(", "));
+    }
+    assert!(ok, "a stress check failed (see the STRESS lines)");
+    assert!(missing.is_empty(), "missing generated fixtures: {missing:?}");
 }
 
 #[test]
@@ -643,5 +723,31 @@ fn gbk_after_an_ascii_head_is_read_as_gbk() {
     assert_eq!(l.profile.encoding.as_deref(), Some("GBK"));
     let LayerData::Vector(ds) = &l.data else { panic!() };
     assert_eq!(ds.value(4000, 0), &rustgis_engine::data::Value::Text("人民广场".into()));
+    let _ = std::fs::remove_dir_all(dir);
+}
+
+/// Fuzzing (Gate 2) found a `.shp` alone whose header promises more than the file holds: the
+/// reader returned the same error forever and the import never finished.
+#[test]
+fn a_truncated_shapefile_without_its_index_finishes() {
+    let dir = std::env::temp_dir().join(format!("lm-import-trunc-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let mut shp = std::fs::read(fixtures().join("V3/sites.shp")).unwrap();
+    shp[24..28].copy_from_slice(&1_000_000u32.to_be_bytes());
+    shp.truncate(shp.len() - 6);
+    let p = dir.join("cut.shp");
+    std::fs::write(&p, &shp).unwrap();
+    let job = start(p, || {});
+    let t = std::time::Instant::now();
+    let result = loop {
+        if let Some(ImportEvent::Done(r)) = job.poll().into_iter().find(|e| matches!(e, ImportEvent::Done(_))) {
+            break r;
+        }
+        assert!(t.elapsed().as_secs() < 10, "the import never finished");
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    };
+    let l = result.unwrap().remove(0);
+    assert_eq!(l.profile.count, 24, "the shapes before the cut");
+    assert!(l.profile.notices.iter().any(|n| n.contains("couldn't be read")), "{:?}", l.profile.notices);
     let _ = std::fs::remove_dir_all(dir);
 }

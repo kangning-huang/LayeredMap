@@ -1,0 +1,58 @@
+{
+  "files": [
+    {
+      "file": "vectors.csv",
+      "layers": [
+        {
+          "assumptions": [
+            {
+              "chosen": "columns:wgs84_lon,wgs84_lat",
+              "kind": "CsvAmbiguousColumns",
+              "line": "Which columns locate these records?",
+              "treatment": "Question"
+            },
+            {
+              "chosen": "id",
+              "kind": "IdentifierField",
+              "line": "Treated as an ID.",
+              "treatment": "Silent"
+            }
+          ],
+          "count": 58,
+          "crs": "Wgs84",
+          "crs_confidence": "Likely",
+          "encoding": "UTF-8",
+          "exclusions": 0,
+          "extent": [
+            -157.858333,
+            -33.924869,
+            151.209296,
+            64.126521
+          ],
+          "fields": {
+            "bd09_lat_coordconvert": "Coordinate (Possible)",
+            "bd09_lat_prcoords": "Coordinate (Possible)",
+            "bd09_lon_coordconvert": "Coordinate (Possible)",
+            "bd09_lon_prcoords": "Coordinate (Possible)",
+            "gcj02_lat_coordconvert": "Coordinate (Possible)",
+            "gcj02_lat_prcoords": "Coordinate (Possible)",
+            "gcj02_lon_coordconvert": "Coordinate (Possible)",
+            "gcj02_lon_prcoords": "Coordinate (Possible)",
+            "id": "Identifier (Likely)",
+            "name": "Name (Likely)",
+            "region": "Category (Likely)",
+            "wgs84_lat": "Coordinate (Possible)",
+            "wgs84_lon": "Coordinate (Possible)"
+          },
+          "format": "CSV",
+          "kind": "Points",
+          "member": null,
+          "name": "vectors",
+          "notices": [],
+          "status": "NeedsDecision"
+        }
+      ]
+    }
+  ],
+  "fixture": "C2"
+}

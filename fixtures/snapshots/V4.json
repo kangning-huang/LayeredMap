@@ -1,0 +1,42 @@
+{
+  "files": [
+    {
+      "file": "districts_gk.shp",
+      "layers": [
+        {
+          "assumptions": [
+            {
+              "chosen": "find_place",
+              "kind": "NoCrsProjected",
+              "line": "Where should this data be?",
+              "treatment": "Question"
+            },
+            {
+              "chosen": "id",
+              "kind": "IdentifierField",
+              "line": "Treated as an ID.",
+              "treatment": "Silent"
+            }
+          ],
+          "count": 17,
+          "crs": "Unknown",
+          "crs_confidence": "Unknown",
+          "encoding": "UTF-8",
+          "exclusions": 0,
+          "extent": null,
+          "fields": {
+            "dist_id": "Identifier (Likely)",
+            "name_en": "Name (Likely)"
+          },
+          "format": "Shapefile",
+          "kind": "Areas",
+          "member": null,
+          "name": "districts_gk",
+          "notices": [],
+          "status": "NeedsDecision"
+        }
+      ]
+    }
+  ],
+  "fixture": "V4"
+}

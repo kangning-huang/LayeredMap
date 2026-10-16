@@ -1,0 +1,49 @@
+{
+  "files": [
+    {
+      "file": "amap_pois.csv",
+      "layers": [
+        {
+          "assumptions": [
+            {
+              "chosen": "columns:lng,lat",
+              "kind": "CsvCoordinateColumns",
+              "line": "Located using lng and lat as GPS coordinates (WGS 84).",
+              "treatment": "Visible"
+            },
+            {
+              "chosen": "gcj02",
+              "kind": "ChinaOffsetNamed",
+              "line": "These look like Amap (GCJ-02) coordinates. Convert to GPS coordinates?",
+              "treatment": "Question"
+            }
+          ],
+          "count": 50,
+          "crs": "Wgs84",
+          "crs_confidence": "Likely",
+          "encoding": "UTF-8",
+          "exclusions": 0,
+          "extent": [
+            121.363859,
+            31.104098,
+            121.652174,
+            31.342984
+          ],
+          "fields": {
+            "category": "Category (Likely)",
+            "lat": "Coordinate (Likely)",
+            "lng": "Coordinate (Likely)",
+            "name": "Name (Likely)"
+          },
+          "format": "CSV",
+          "kind": "Points",
+          "member": null,
+          "name": "amap_pois",
+          "notices": [],
+          "status": "NeedsDecision"
+        }
+      ]
+    }
+  ],
+  "fixture": "C1"
+}

@@ -1,0 +1,49 @@
+{
+  "files": [
+    {
+      "file": "v7_polygons.geojson",
+      "layers": [
+        {
+          "assumptions": [
+            {
+              "chosen": "id",
+              "kind": "IdentifierField",
+              "line": "Treated as an ID.",
+              "treatment": "Silent"
+            },
+            {
+              "chosen": "id",
+              "kind": "IdentifierField",
+              "line": "Treated as an ID.",
+              "treatment": "Silent"
+            }
+          ],
+          "count": 100000,
+          "crs": "Wgs84",
+          "crs_confidence": "Likely",
+          "encoding": null,
+          "exclusions": 0,
+          "extent": [
+            120.849772,
+            30.649616,
+            122.00023,
+            31.850863
+          ],
+          "fields": {
+            "category": "Category (Likely)",
+            "code": "Identifier (Likely)",
+            "id": "Identifier (Likely)",
+            "value": "Measure(Unknown) (Likely)"
+          },
+          "format": "GeoJSON",
+          "kind": "Areas",
+          "member": null,
+          "name": "v7_polygons",
+          "notices": [],
+          "status": "Complete"
+        }
+      ]
+    }
+  ],
+  "fixture": "V7"
+}

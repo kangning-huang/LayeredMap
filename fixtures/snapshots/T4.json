@@ -1,0 +1,57 @@
+{
+  "files": [
+    {
+      "file": "stations_gbk.csv",
+      "layers": [
+        {
+          "assumptions": [
+            {
+              "chosen": "columns:经度,纬度",
+              "kind": "CsvCoordinateColumns",
+              "line": "Located using 经度 and 纬度 as GPS coordinates (WGS 84).",
+              "treatment": "Visible"
+            },
+            {
+              "chosen": "id",
+              "kind": "IdentifierField",
+              "line": "Treated as an ID.",
+              "treatment": "Silent"
+            },
+            {
+              "chosen": "wgs84",
+              "kind": "ChinaOffsetPossible",
+              "line": "If these came from a Chinese map app (Amap, Tencent or Baidu), they may sit a few hundred meters off.",
+              "treatment": "Visible"
+            }
+          ],
+          "count": 10,
+          "crs": "Wgs84",
+          "crs_confidence": "Likely",
+          "encoding": "GBK",
+          "exclusions": 0,
+          "extent": [
+            121.32025,
+            31.194065,
+            121.557379,
+            31.249478
+          ],
+          "fields": {
+            "名称": "Name (Likely)",
+            "日期": "Date (Likely)",
+            "纬度": "Coordinate (Likely)",
+            "经度": "Coordinate (Likely)",
+            "编码": "Identifier (Likely)",
+            "金额": "Measure(Unknown) (Likely)"
+          },
+          "format": "CSV",
+          "kind": "Points",
+          "member": null,
+          "name": "stations_gbk",
+          "notices": [],
+          "status": "Complete"
+        }
+      ]
+    }
+  ],
+  "fixture": "T4"
+}
