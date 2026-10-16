@@ -14,3 +14,4 @@ lm-core = { path = "../lm-core" }
 lm-analysis = { path = "../lm-analysis" }
 rustgis-engine = { workspace = true }
 rustgis-analysis = { workspace = true }
+log = { workspace = true }

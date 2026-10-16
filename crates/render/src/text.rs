@@ -2,50 +2,105 @@
 
 use std::sync::OnceLock;
 
-use ab_glyph::{Font, FontRef, PxScale, ScaleFont};
+use ab_glyph::{Font, FontArc, FontRef, GlyphId, PxScale, ScaleFont};
 use tiny_skia::{Paint, Pixmap, Rect, Transform};
 
 use crate::{PlacedLabel, View};
 use rustgis_map::Rgba;
 
-fn font(bold: bool) -> Option<&'static FontRef<'static>> {
-    static R: OnceLock<Option<FontRef<'static>>> = OnceLock::new();
-    static B: OnceLock<Option<FontRef<'static>>> = OnceLock::new();
+/// The interface font (`bold` or regular).
+fn primary(bold: bool) -> Option<&'static FontArc> {
+    static R: OnceLock<Option<FontArc>> = OnceLock::new();
+    static B: OnceLock<Option<FontArc>> = OnceLock::new();
     let f = crate::fonts::ui_fonts();
-    if bold {
-        B.get_or_init(|| FontRef::try_from_slice(&f.semibold).ok()).as_ref()
-    } else {
-        R.get_or_init(|| FontRef::try_from_slice(&f.regular).ok()).as_ref()
+    let load = |bytes: &'static [u8]| FontRef::try_from_slice(bytes).ok().map(FontArc::new);
+    if bold { B.get_or_init(|| load(&f.semibold)).as_ref() } else { R.get_or_init(|| load(&f.regular)).as_ref() }
+}
+
+/// The fonts text is drawn with, in the order a character is looked for (see [`crate::fonts`]).
+struct Chain {
+    /// The interface font, then the registered fallbacks.
+    fonts: Vec<FontArc>,
+    /// Whether the installed CJK font comes last (looked up only when a character needs it).
+    system: bool,
+}
+
+impl Chain {
+    fn new(bold: bool) -> Chain {
+        let mut fonts: Vec<FontArc> = primary(bold).into_iter().cloned().collect();
+        fonts.extend(crate::fonts::fallbacks());
+        Chain { fonts, system: true }
+    }
+
+    /// The first font with a glyph for `c`: its place in the chain, the font and the glyph.
+    fn find(&self, c: char) -> Option<(usize, &FontArc, GlyphId)> {
+        let system = std::iter::once_with(|| if self.system { crate::fonts::system_cjk() } else { None }).flatten();
+        self.fonts.iter().chain(system).enumerate().find_map(|(i, f)| {
+            let g = f.glyph_id(c);
+            (g.0 != 0).then_some((i, f, g))
+        })
+    }
+
+    /// The glyph to draw `c` with: from the first font that has it, else the first font's
+    /// missing-glyph box. `None` without any font.
+    fn pick(&self, c: char) -> Option<(usize, &FontArc, GlyphId)> {
+        let first = self.fonts.first()?;
+        Some(self.find(c).unwrap_or((0, first, GlyphId(0))))
+    }
+
+    /// The scale that gives `font` the same em size as the first font has at `px` (fonts differ
+    /// in how tall their ascent and descent are for the same em).
+    fn scale(&self, font: &FontArc, px: f32) -> PxScale {
+        let em = |f: &FontArc| {
+            let h = f.height_unscaled();
+            let r = f.units_per_em().unwrap_or(h) / h;
+            if r.is_finite() && r > 0.0 { r } else { 1.0 }
+        };
+        match self.fonts.first() {
+            Some(first) => PxScale::from(px * em(first) / em(font)),
+            None => PxScale::from(px),
+        }
+    }
+
+    fn covers(&self, text: &str) -> bool {
+        if self.fonts.is_empty() {
+            return true;
+        }
+        let invisible = |c: char| {
+            c.is_whitespace()
+                || c.is_control()
+                || matches!(c, '\u{AD}' | '\u{200B}'..='\u{200F}' | '\u{2060}'..='\u{2064}' | '\u{FE00}'..='\u{FE0F}' | '\u{FEFF}')
+        };
+        text.chars().all(|c| invisible(c) || self.find(c).is_some())
+    }
+
+    /// Width in pixels at `px`, kerning pairs from the same font.
+    fn width(&self, text: &str, px: f32, kern: bool) -> Option<f32> {
+        let mut w = 0.0;
+        let mut prev: Option<(usize, GlyphId)> = None;
+        for ch in text.chars().take(500) {
+            let (i, f, id) = self.pick(ch)?;
+            let sf = f.as_scaled(self.scale(f, px));
+            if kern && let Some((_, p)) = prev.filter(|(pi, _)| *pi == i) {
+                w += sf.kern(p, id);
+            }
+            w += sf.h_advance(id);
+            prev = Some((i, id));
+        }
+        Some(w)
     }
 }
 
-/// Whether the label font (`bold` or regular) has a glyph for every character of `text`, spaces
-/// and invisible characters (zero-width joiners, variation selectors, soft hyphens) aside.
+/// Whether the label fonts (`bold` or regular, with their fallbacks) have a glyph for every
+/// character of `text`, spaces and invisible characters (zero-width joiners, variation selectors,
+/// soft hyphens) aside.
 pub fn covers(text: &str, bold: bool) -> bool {
-    let Some(f) = font(bold) else { return true };
-    let invisible = |c: char| {
-        c.is_whitespace()
-            || c.is_control()
-            || matches!(c, '\u{AD}' | '\u{200B}'..='\u{200F}' | '\u{2060}'..='\u{2064}' | '\u{FE00}'..='\u{FE0F}' | '\u{FEFF}')
-    };
-    text.chars().all(|c| invisible(c) || f.glyph_id(c).0 != 0)
+    Chain::new(bold).covers(text)
 }
 
 /// Text width in points at `size` (font px ≈ size × 1.33 for point sizes).
 pub fn measure(text: &str, size: f32, bold: bool) -> f32 {
-    let Some(f) = font(bold) else { return text.chars().count() as f32 * size * 0.6 };
-    let sf = f.as_scaled(PxScale::from(size * 1.33));
-    let mut w = 0.0;
-    let mut prev = None;
-    for ch in text.chars().take(500) {
-        let id = f.glyph_id(ch);
-        if let Some(p) = prev {
-            w += sf.kern(p, id);
-        }
-        w += sf.h_advance(id);
-        prev = Some(id);
-    }
-    w
+    Chain::new(bold).width(text, size * 1.33, true).unwrap_or(text.chars().count() as f32 * size * 0.6)
 }
 
 fn blend(pm: &mut Pixmap, x: i32, y: i32, c: Rgba, cov: f32) {
@@ -68,21 +123,18 @@ fn blend(pm: &mut Pixmap, x: i32, y: i32, c: Rgba, cov: f32) {
 }
 
 fn draw_text(pm: &mut Pixmap, text: &str, cx: f32, cy: f32, px_size: f32, color: Rgba, bold: bool, offset: (f32, f32)) {
-    let Some(f) = font(bold) else { return };
-    let sf = f.as_scaled(PxScale::from(px_size));
-    let width = {
-        let mut w = 0.0;
-        for ch in text.chars().take(500) {
-            w += sf.h_advance(f.glyph_id(ch));
-        }
-        w
-    };
+    let chain = Chain::new(bold);
+    let Some(first) = chain.fonts.first() else { return };
+    let Some(width) = chain.width(text, px_size, false) else { return };
+    // The line sits on the interface font's metrics, whichever fonts its characters come from.
+    let sf = first.as_scaled(PxScale::from(px_size));
     let mut x = cx - width / 2.0 + offset.0;
     let base = cy + (sf.ascent() + sf.descent()) / 2.0 + offset.1;
     for ch in text.chars().take(500) {
-        let id = f.glyph_id(ch);
-        let g = id.with_scale_and_position(sf.scale(), ab_glyph::point(x, base));
-        x += sf.h_advance(id);
+        let Some((_, f, id)) = chain.pick(ch) else { return };
+        let scale = chain.scale(f, px_size);
+        let g = id.with_scale_and_position(scale, ab_glyph::point(x, base));
+        x += f.as_scaled(scale).h_advance(id);
         if let Some(og) = f.outline_glyph(g) {
             let bb = og.px_bounds();
             og.draw(|gx, gy, cov| blend(pm, bb.min.x as i32 + gx as i32, bb.min.y as i32 + gy as i32, color, cov));
@@ -184,5 +236,56 @@ mod coverage_tests {
             // Invisible characters don't need a glyph.
             assert!(super::covers("Syria\u{200B}\u{FE0F}", bold));
         }
+    }
+
+    use ab_glyph::{Font, FontArc, FontRef};
+
+    use super::Chain;
+
+    static NOTO_SC: &[u8] = include_bytes!("../../../assets/fonts/NotoSansSC-Regular.otf");
+
+    fn ubuntu() -> FontArc {
+        FontArc::new(FontRef::try_from_slice(epaint_default_fonts::UBUNTU_LIGHT).unwrap())
+    }
+
+    fn noto_sc() -> FontArc {
+        FontArc::new(FontRef::try_from_slice(NOTO_SC).unwrap())
+    }
+
+    #[test]
+    fn falls_back_on_a_cjk_font() {
+        // Without a CJK font, a Chinese-only name is not drawable (labels drop it).
+        let latin = Chain { fonts: vec![ubuntu()], system: false };
+        assert!(latin.covers("Shanghai"));
+        assert!(!latin.covers("上海市"));
+        assert!(!latin.covers("Shanghai 上海市"));
+        // With one after the Latin font, both scripts are, each from its own font.
+        let both = Chain { fonts: vec![ubuntu(), noto_sc()], system: false };
+        assert!(both.covers("上海市") && both.covers("Shanghai 上海市"));
+        assert_eq!(both.find('S').map(|(i, ..)| i), Some(0));
+        assert_eq!(both.find('上').map(|(i, ..)| i), Some(1));
+        assert!(!both.covers("上海 \u{10FFFD}"));
+        // Chinese characters are about one em wide at the Latin font's em size, not missing-glyph
+        // boxes.
+        let w = both.width("上海市", 20.0, true).unwrap();
+        let u = ubuntu();
+        let em = 20.0 * u.units_per_em().unwrap() / u.height_unscaled();
+        assert!((w - 3.0 * em).abs() < 0.2 * em, "{w} vs 3 × {em}");
+    }
+
+    #[test]
+    fn registered_fallbacks_draw_cjk() {
+        assert!(!crate::fonts::add_fallback(b"not a font".to_vec(), 0));
+        assert!(!crate::fonts::add_fallback(NOTO_SC.to_vec(), 7), "no such face");
+        assert!(crate::fonts::add_fallback(NOTO_SC.to_vec(), 0));
+        for bold in [false, true] {
+            assert!(super::covers("上海市", bold));
+            assert!(super::covers("Syria", bold) && !super::covers("Syria \u{10FFFD}", bold));
+        }
+        // And it is drawn: ink where the text is.
+        let mut pm = tiny_skia::Pixmap::new(120, 40).unwrap();
+        super::text_at(&mut pm, "上海市", 60.0, 20.0, 24.0, rustgis_map::Rgba::rgb(0, 0, 0), false, super::Align::Center, false);
+        let ink = pm.pixels().iter().filter(|p| p.alpha() > 128).count();
+        assert!(ink > 100, "{ink} pixels inked");
     }
 }

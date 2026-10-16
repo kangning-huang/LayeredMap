@@ -1,8 +1,21 @@
 //! Font discovery: a good installed sans-serif when there is one (Segoe UI, SF, Inter, Noto Sans,
 //! Open Sans, DejaVu Sans), else the Ubuntu Light face that ships with egui. Fonts are read at
 //! run time and never bundled.
+//!
+//! Text the renderer draws (labels, legends, exported images and PDF pages) takes each character
+//! from the first of these fonts that has it:
+//! 1. the interface font ([`ui_fonts`]);
+//! 2. fonts the embedding app registered with [`add_fallback`], in the order it added them;
+//! 3. on the desktop, an installed CJK font ([`cjk_font`]: Simplified Chinese, else Japanese,
+//!    else Korean), read only once a character needs it — not on the web, nor with
+//!    `RUSTGIS_BUILTIN_FONTS` set.
+//!
+//! A character none of them has is drawn as the interface font's missing-glyph box, and map labels
+//! drop the lines that have one ([`crate::text::covers`]).
 
-use std::sync::OnceLock;
+use std::sync::{OnceLock, RwLock};
+
+use ab_glyph::{FontArc, FontRef, FontVec};
 
 /// Candidate files for (regular, semibold), in order of preference.
 const CANDIDATES: &[(&str, &str)] = &[
@@ -55,6 +68,50 @@ pub fn ui_fonts() -> &'static UiFonts {
         let b = epaint_default_fonts::UBUNTU_LIGHT.to_vec();
         UiFonts { regular: b.clone(), semibold: b, source: "built-in".into() }
     })
+}
+
+/// The most fallback fonts [`add_fallback`] keeps.
+pub const MAX_FALLBACKS: usize = 8;
+
+static FALLBACKS: RwLock<Vec<FontArc>> = RwLock::new(Vec::new());
+
+/// Registers a fallback font for the text the renderer draws: face `index` of `bytes` (a TrueType
+/// or OpenType font, CFF outlines included, or a collection). It is tried after the interface font
+/// and the fallbacks added before it, before any installed CJK font (see the module notes). Call it
+/// before rendering — an app bundling a CJK face, or the web app once it has downloaded one.
+///
+/// Returns `false`, keeping nothing, when the font can't be read or [`MAX_FALLBACKS`] are already
+/// registered.
+pub fn add_fallback(bytes: Vec<u8>, index: u32) -> bool {
+    let Ok(font) = FontVec::try_from_vec_and_index(bytes, index) else { return false };
+    let mut all = FALLBACKS.write().unwrap_or_else(|e| e.into_inner());
+    if all.len() >= MAX_FALLBACKS {
+        return false;
+    }
+    all.push(FontArc::new(font));
+    true
+}
+
+/// The registered fallback fonts, in order.
+pub(crate) fn fallbacks() -> Vec<FontArc> {
+    FALLBACKS.read().unwrap_or_else(|e| e.into_inner()).clone()
+}
+
+/// The installed CJK font text falls back on last, found once: `None` on the web, with
+/// `RUSTGIS_BUILTIN_FONTS` set, or when none is installed.
+pub(crate) fn system_cjk() -> Option<&'static FontArc> {
+    static F: OnceLock<Option<FontArc>> = OnceLock::new();
+    F.get_or_init(|| {
+        if cfg!(target_arch = "wasm32") || std::env::var_os("RUSTGIS_BUILTIN_FONTS").is_some() {
+            return None;
+        }
+        [CjkRegion::SimplifiedChinese, CjkRegion::Japanese, CjkRegion::Korean]
+            .into_iter()
+            .filter_map(cjk_font)
+            .find_map(|(bytes, index)| FontRef::try_from_slice_and_index(bytes, *index).ok())
+            .map(FontArc::new)
+    })
+    .as_ref()
 }
 
 /// Regional CJK glyph styles (the same code point is drawn differently by region).

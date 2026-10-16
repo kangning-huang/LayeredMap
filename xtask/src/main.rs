@@ -153,7 +153,9 @@ fn main() -> ExitCode {
             .and_then(|_| lm::layers(&root())),
         "web-pwa" => web_pwa(std::env::args().nth(2)),
         "fixtures" => fixtures::run(&root(), &std::env::args().skip(2).collect::<Vec<_>>()),
-        _ => Err("usage: cargo xtask ci | layers | web-pwa <dir> | fixtures [--out DIR] [--only IDS] [--large]".into()),
+        "feel" => lm::feel(&root(), &std::env::args().skip(2).collect::<Vec<_>>()),
+        "launch" => lm::launch(&root(), &std::env::args().skip(2).collect::<Vec<_>>()),
+        _ => Err("usage: cargo xtask ci | layers | web-pwa <dir> | fixtures [--out DIR] [--only IDS] [--large] | feel [--runs N] [--out DIR] | launch [--n N]".into()),
     };
     match r {
         Ok(()) => ExitCode::SUCCESS,

@@ -126,6 +126,14 @@ pub struct TileLayer {
     /// Vector tiles' layer names, when the service gave them (each drawn in a colour of its own).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub layers: Vec<String>,
+    /// The built-in style vector tiles without a style of their own are drawn in: `""` for the
+    /// default, `"light"` or `"dark"` for the muted ones.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub variant: String,
+    /// The language the built-in style labels in: `""` for its own choice (English, else the
+    /// local name), `"local"` for each place's own name, or a BCP 47 tag such as `"zh-Hans"`.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub label_language: String,
 }
 
 fn max_zoom() -> u8 {
@@ -164,6 +172,8 @@ impl TileLayer {
             overlay: false,
             id: String::new(),
             layers: Vec::new(),
+            variant: String::new(),
+            label_language: String::new(),
         }
     }
 
@@ -205,6 +215,15 @@ impl TileLayer {
         self.subdomains.truncate(16);
         self.attribution = self.attribution.chars().take(500).collect();
         self.id = self.id.chars().filter(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.')).take(80).collect();
+        // A style variant is a short lowercase name; a label language is a BCP 47 tag or "local".
+        self.variant = self.variant.trim().to_ascii_lowercase();
+        if self.variant.len() > 32 || !self.variant.chars().all(|c| c.is_ascii_alphanumeric() || c == '-') {
+            self.variant.clear();
+        }
+        self.label_language = self.label_language.trim().to_string();
+        if self.label_language.len() > 35 || !self.label_language.chars().all(|c| c.is_ascii_alphanumeric() || c == '-') {
+            self.label_language.clear();
+        }
         Ok(())
     }
 }

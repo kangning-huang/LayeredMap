@@ -747,6 +747,8 @@ mod tests {
             tms: false,
             attribution: String::new(),
             layers: Vec::new(),
+            variant: String::new(),
+            label_language: String::new(),
         };
         let mut resolved = crate::source::resolve(&spec);
         for _ in 0..200 {

@@ -17,9 +17,9 @@ pub const ALLOWED: &[(&str, &[&str])] = &[
     ("lm-jobs", &["lm-core", "lm-analysis", "rustgis-engine", "rustgis-analysis"]),
     ("lm-analysis", &["rustgis-geom", "rustgis-data"]),
     ("lm-doc", &["lm-core", "rustgis-data"]),
-    ("lm-mapview", &["rustgis-map", "rustgis-tiles", "rustgis-render"]),
+    ("lm-mapview", &["rustgis-map", "rustgis-tiles", "rustgis-render", "rustgis-geom"]),
     ("lm-ui", &["lm-core", "lm-actions", "lm-jobs", "lm-doc", "lm-mapview"]),
-    ("layeredmap", &["lm-ui"]),
+    ("layeredmap", &["lm-ui", "lm-core"]),
 ];
 
 /// The crates that may depend on egui (and its companions).
@@ -102,6 +102,107 @@ pub fn layers(root: &std::path::Path) -> Result<(), String> {
     } else {
         Err(errs.join("\n"))
     }
+}
+
+/// The app binary in the release target directory (honours `CARGO_TARGET_DIR`).
+fn app_binary(root: &std::path::Path) -> std::path::PathBuf {
+    let target = std::env::var_os("CARGO_TARGET_DIR").map(std::path::PathBuf::from).unwrap_or_else(|| root.join("target"));
+    target.join("release").join(if cfg!(windows) { "layeredmap.exe" } else { "layeredmap" })
+}
+
+fn build_app(root: &std::path::Path) -> Result<(), String> {
+    let st = std::process::Command::new(env!("CARGO"))
+        .args(["build", "--release", "-p", "layeredmap"])
+        .current_dir(root)
+        .status()
+        .map_err(|e| e.to_string())?;
+    if st.success() { Ok(()) } else { Err("cargo build -p layeredmap failed".into()) }
+}
+
+/// p50/p95/p99 over a script's frames, from the app's summary.csv rows.
+fn percentile(v: &mut [f64], q: f64) -> f64 {
+    v.sort_by(f64::total_cmp);
+    v.get(((v.len().saturating_sub(1)) as f64 * q).round() as usize).copied().unwrap_or(0.0)
+}
+
+/// `cargo xtask feel [--runs N] [--out DIR]`: the Map feel harness (WP1.6) on F1 over the online
+/// basemap. Fails when a script's 95th-percentile frame time misses the 33 ms hard limit; reports
+/// whether the 60 fps goal (p95 ≤ 16.7 ms) holds on at least 3 of the 4 scripts.
+pub fn feel(root: &std::path::Path, args: &[String]) -> Result<(), String> {
+    let mut runs = "3".to_string();
+    let mut out = root.join("docs/lm/feel");
+    let mut it = args.iter();
+    while let Some(a) = it.next() {
+        match a.as_str() {
+            "--runs" => runs = it.next().ok_or("--runs N")?.clone(),
+            "--out" => out = std::path::PathBuf::from(it.next().ok_or("--out DIR")?),
+            other => return Err(format!("feel: unknown argument {other}")),
+        }
+    }
+    let fixtures = std::env::var_os("LM_FIXTURES_DIR").map(std::path::PathBuf::from).unwrap_or_else(|| root.join("fixtures/generated"));
+    if !fixtures.join("F1/f1_points.geojson").is_file() {
+        crate::fixtures::run(root, &["--only".into(), "F1".into(), "--out".into(), fixtures.display().to_string()])?;
+    }
+    build_app(root)?;
+    let st = std::process::Command::new(app_binary(root))
+        .args(["--feel", &out.display().to_string(), "--runs", &runs, "--fixture", &fixtures.join("F1").display().to_string()])
+        .status()
+        .map_err(|e| e.to_string())?;
+    if !st.success() {
+        return Err("the feel run failed".into());
+    }
+    let text = std::fs::read_to_string(out.join("summary.csv")).map_err(|e| e.to_string())?;
+    let mut by_script: std::collections::BTreeMap<String, Vec<f64>> = Default::default();
+    for line in text.lines().skip(1) {
+        let cols: Vec<&str> = line.split(',').collect();
+        if let (Some(s), Some(p95)) = (cols.first(), cols.get(4).and_then(|v| v.parse::<f64>().ok())) {
+            by_script.entry(s.to_string()).or_default().push(p95);
+        }
+    }
+    let mut goal_met = 0;
+    let mut hard_fail = Vec::new();
+    println!("script      worst p95 (ms)   median p95 (ms)");
+    for (s, mut v) in by_script.clone() {
+        let worst = v.iter().copied().fold(0.0, f64::max);
+        let median = percentile(&mut v, 0.5);
+        println!("{s:<11} {worst:>14.2} {median:>17.2}");
+        if worst <= 16.7 {
+            goal_met += 1;
+        }
+        if worst > 33.0 {
+            hard_fail.push(s);
+        }
+    }
+    println!("60 fps goal met on {goal_met} of {} scripts (Gate 1 needs 3); results in {}", by_script.len(), out.display());
+    if hard_fail.is_empty() { Ok(()) } else { Err(format!("hard limit (p95 ≤ 33 ms) missed: {}", hard_fail.join(", "))) }
+}
+
+/// `cargo xtask launch [--n 10]`: cold launch to the first map frame, 95th percentile over n
+/// launches (Gate 1: ≤ 2 s).
+pub fn launch(root: &std::path::Path, args: &[String]) -> Result<(), String> {
+    let n: usize = match args {
+        [flag, v] if flag == "--n" => v.parse().map_err(|_| "--n N")?,
+        [] => 10,
+        _ => return Err("usage: cargo xtask launch [--n N]".into()),
+    };
+    build_app(root)?;
+    let mut ms = Vec::new();
+    for _ in 0..n {
+        let out = std::process::Command::new(app_binary(root)).arg("--launch-probe").output().map_err(|e| e.to_string())?;
+        let text = String::from_utf8_lossy(&out.stdout);
+        if let Some(v) = text.lines().find_map(|l| l.strip_prefix("launch_ms=")).and_then(|v| v.trim().parse::<f64>().ok()) {
+            ms.push(v);
+        }
+    }
+    if ms.len() < n {
+        return Err(format!("only {} of {n} launches reported a time", ms.len()));
+    }
+    let p95 = percentile(&mut ms, 0.95);
+    println!(
+        "cold launch to the first map frame over {n} launches: p50 {:.0} ms, p95 {p95:.0} ms (limit 2000 ms)",
+        percentile(&mut ms, 0.5)
+    );
+    if p95 <= 2000.0 { Ok(()) } else { Err("cold launch p95 over 2 s".into()) }
 }
 
 #[cfg(test)]
