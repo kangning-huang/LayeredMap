@@ -796,6 +796,16 @@ pub fn change_popover(shell: &mut Shell, ui: &mut Ui) {
                 ui.label(RichText::new(&a.line).size(CAPTION).color(t.text_secondary));
                 ui.add_space(4.0);
                 let mut alts = a.alternatives.clone();
+                // "Add unit": the common units for cell values, to pick from.
+                if kind == AssumptionKind::RasterNoUnit {
+                    alts = std::iter::once(Choice::new("unknown", "Unknown"))
+                        .chain(
+                            ["°C", "K", "m", "mm", "%", "people", "people per km²", "kg/ha"]
+                                .iter()
+                                .map(|u| Choice::new(format!("unit:{u}"), *u)),
+                        )
+                        .collect();
+                }
                 if !alts.iter().any(|c| c.id == "not_sure")
                     && matches!(subject, Subject::Layer)
                     && a.consequence != lm_core::model::Consequence::DisplayOnly

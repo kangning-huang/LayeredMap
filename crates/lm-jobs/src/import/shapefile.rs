@@ -27,6 +27,17 @@ fn cpg_or_override(cpg: Option<String>) -> Option<String> {
 /// Reads a Shapefile layer again in the encoding the user chose (`gbk`, `utf8`, `windows1252`):
 /// the same file and member, nothing else changed. The choice is recorded as confirmed.
 pub fn reread_encoding(layer: &ImportedLayer, choice: &lm_core::model::Choice) -> Result<ImportedLayer, ImportError> {
+    let new = read_in_encoding(&layer.profile.source, choice)?;
+    // Every other choice the layer had (placement, answers) is applied again.
+    let mut others = layer.profile.clone();
+    others.assumptions.retain(|a| a.kind != lm_core::model::AssumptionKind::ShapefileGbk);
+    let mut new = super::reapply_choices(new, &others)?;
+    new.name = layer.name.clone();
+    Ok(new)
+}
+
+/// The source read again in the chosen encoding, with the encoding line stating the choice.
+pub fn read_in_encoding(source: &lm_core::model::SourceRef, choice: &lm_core::model::Choice) -> Result<ImportedLayer, ImportError> {
     let label = match choice.id.as_str() {
         "gbk" => "GBK",
         "utf8" => "UTF-8",
@@ -34,26 +45,43 @@ pub fn reread_encoding(layer: &ImportedLayer, choice: &lm_core::model::Choice) -
         other => return Err(ImportError::Refused(format!("Unknown text encoding: {other}"))),
     };
     ENCODING_OVERRIDE.with(|o| *o.borrow_mut() = Some(label.to_string()));
-    let read = super::import_path(Path::new(&layer.profile.source.path), &super::Ctx::detached(Default::default()));
+    let read = super::fresh_read(source);
     ENCODING_OVERRIDE.with(|o| *o.borrow_mut() = None);
-    let mut layers = read?;
-    let pos = layers.iter().position(|l| l.profile.source.member == layer.profile.source.member).unwrap_or(0);
-    if layers.is_empty() {
-        return Err(ImportError::Refused("The file holds nothing any more.".into()));
+    let mut new = read?;
+    let kind = lm_core::model::AssumptionKind::ShapefileGbk;
+    match new.profile.assumptions.iter_mut().find(|a| a.kind == kind) {
+        Some(a) => {
+            a.chosen = choice.clone();
+            a.confirmed_by_user = true;
+            a.line = format!("Read text as {}.", choice.label);
+            if !a.alternatives.contains(choice) {
+                a.alternatives.insert(0, choice.clone());
+            }
+        }
+        None => new.profile.assumptions.push(lm_core::model::Assumption {
+            kind,
+            subject: lm_core::model::Subject::Layer,
+            chosen: choice.clone(),
+            alternatives: vec![
+                lm_core::model::Choice::new("gbk", "Chinese (GBK)"),
+                lm_core::model::Choice::new("utf8", "Unicode (UTF-8)"),
+                lm_core::model::Choice::new("windows1252", "Western (Windows-1252)"),
+            ],
+            confidence: lm_core::model::Confidence::Certain,
+            consequence: lm_core::model::Consequence::DisplayOnly,
+            treatment: lm_core::model::Treatment::Visible,
+            line: format!("Read text as {}.", choice.label),
+            confirmed_by_user: true,
+        }),
     }
-    let mut new = layers.swap_remove(pos);
-    new.name = layer.name.clone();
-    // The encoding line now states the choice, confirmed, with every alternative kept.
-    let old = layer.profile.assumptions.iter().find(|a| a.kind == lm_core::model::AssumptionKind::ShapefileGbk).cloned();
-    new.profile.assumptions.retain(|a| a.kind != lm_core::model::AssumptionKind::ShapefileGbk);
-    if let Some(mut a) = old {
-        a.chosen = choice.clone();
-        a.confirmed_by_user = true;
-        a.line = format!("Read text as {}.", choice.label);
-        new.profile.assumptions.push(a);
-    }
+    new.profile.encoding = Some(match choice.id.as_str() {
+        "gbk" => "GBK".into(),
+        "utf8" => "UTF-8".into(),
+        _ => "Windows-1252".into(),
+    });
     Ok(new)
 }
+
 pub struct ZippedShapefile;
 
 /// Formats that are ZIP archives inside but never a zipped Shapefile (office documents, KMZ,

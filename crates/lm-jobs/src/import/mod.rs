@@ -27,7 +27,7 @@ use rustgis_engine::data::raster::Raster;
 
 pub use lm_profile::PlaceCandidate;
 pub use progress::Ticket;
-pub use rustgis_engine::data::Dataset;
+pub use rustgis_engine::data::{Dataset, Value};
 
 /// Why an import didn't produce layers. The message is shown as written (Error and status copy).
 #[derive(Clone, Debug, PartialEq)]
@@ -531,7 +531,7 @@ pub fn choose_sheet(layer: &ImportedLayer, choice: &Choice) -> Result<ImportedLa
 }
 
 pub use raster::rechoose_raster;
-pub use shapefile::reread_encoding;
+pub use shapefile::{read_in_encoding, reread_encoding};
 
 /// The name of a coordinate system in the candidate table ("CGCS2000 / 3-degree Gauss-Kruger CM
 /// 120E"), or "EPSG:n".
@@ -580,6 +580,7 @@ pub fn reproject(layer: &ImportedLayer, epsg: u32) -> Result<ImportedLayer, Impo
         .exclusions
         .extend(rows.into_iter().map(|row| Exclusion { row, reason: "Couldn't be placed with the chosen coordinate system".into() }));
     profile.kind = kind_of(&out);
+    profile.count = located_count(&out, profile.kind);
     // The choice becomes a visible assumption that names the system (WP2.4 step 5).
     for a in profile.assumptions.iter_mut().filter(|a| a.kind == lm_core::model::AssumptionKind::NoCrsProjected) {
         let choice = Choice::new(format!("epsg:{epsg}"), name.clone());
@@ -620,6 +621,75 @@ pub fn problem_list_csv(layer: &ImportedLayer) -> String {
         out.push('\n');
     }
     out
+}
+
+/// Reads a layer's source again, as it is on disk now, without any choices applied: the same
+/// part (member) of the file. An error when that part is no longer in the file.
+pub fn fresh_read(source: &lm_core::model::SourceRef) -> Result<ImportedLayer, ImportError> {
+    let mut read = import_path(Path::new(&source.path), &Ctx::detached(Ticket::default()))?;
+    let pos = match &source.member {
+        Some(m) => read.iter().position(|l| l.profile.source.member.as_ref() == Some(m)),
+        None => (read.len() == 1).then_some(0),
+    };
+    match pos {
+        Some(i) => Ok(read.swap_remove(i)),
+        None => Err(ImportError::Refused(format!(
+            "{} no longer holds {}.",
+            source.file_name(),
+            source.member.clone().unwrap_or_else(|| "the same layers".into())
+        ))),
+    }
+}
+
+/// Applies every confirmed choice of `saved` to `fresh` (a new read of the same source), in the
+/// order they depend on each other: the sheet, the coordinate columns, the chosen coordinate
+/// system, raster choices (NoData, Landsat scale, kelvin, unit), and a GCJ-02/BD-09 conversion.
+/// Answers that change no data (cell meaning, ID fields…) are carried over with their lines.
+/// The text encoding is not applied here: it needs a re-read (`read_in_encoding`).
+pub fn reapply_choices(fresh: ImportedLayer, saved: &LayerProfile) -> Result<ImportedLayer, ImportError> {
+    use lm_core::model::AssumptionKind as K;
+    let confirmed = |k: K| saved.assumptions.iter().find(|a| a.kind == k && a.confirmed_by_user).map(|a| a.chosen.clone());
+    let mut layer = fresh;
+    if let Some(c) = confirmed(K::ExcelSheet).filter(|c| c.id.starts_with("sheet:")) {
+        layer = choose_sheet(&layer, &c)?;
+    }
+    for k in [K::CsvCoordinateColumns, K::CsvAmbiguousColumns] {
+        if let Some(c) = confirmed(k).filter(|c| layer.raw.is_some() && (c.id.starts_with("columns:") || c.id == "not_sure")) {
+            layer = relocate_csv(&layer, &c)?;
+        }
+    }
+    if let Some(epsg) = confirmed(K::NoCrsProjected).and_then(|c| c.id.strip_prefix("epsg:").and_then(|n| n.parse::<u32>().ok())) {
+        layer = reproject(&layer, epsg)?;
+    }
+    for a in saved
+        .assumptions
+        .iter()
+        .filter(|a| a.confirmed_by_user && matches!(a.kind, K::RasterNoData | K::RasterKelvin | K::LandsatScale | K::RasterNoUnit))
+    {
+        if layer.profile.assumptions.iter().any(|x| x.kind == a.kind && x.subject == a.subject) {
+            layer = rechoose_raster(&layer, a.kind, &a.subject, &a.chosen)?;
+        }
+    }
+    if let Some(note) = saved.notices.iter().find(|n| n.starts_with("Converted from ")) {
+        let LayerData::Vector(ds) = &layer.data else {
+            return Err(ImportError::Refused("Only points, lines and areas can be converted.".into()));
+        };
+        let (converted, _) = convert_offset(ds, note.contains("BD-09"))?;
+        layer.data = LayerData::Vector(Arc::new(converted));
+    }
+    // Answers that don't change data: keep the saved choice and line.
+    for a in &saved.assumptions {
+        if !a.confirmed_by_user {
+            continue;
+        }
+        if let Some(x) = layer.profile.assumptions.iter_mut().find(|x| x.kind == a.kind && x.subject == a.subject && !x.confirmed_by_user) {
+            x.chosen = a.chosen.clone();
+            x.confirmed_by_user = true;
+            x.line = a.line.clone();
+            x.treatment = a.treatment;
+        }
+    }
+    Ok(layer)
 }
 
 /// Converts a dataset's coordinates from GCJ-02 (or BD-09) to WGS 84 as a new dataset, with its

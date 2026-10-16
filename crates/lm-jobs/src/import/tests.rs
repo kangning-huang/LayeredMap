@@ -773,5 +773,47 @@ fn an_unreadable_shape_is_listed_not_dropped() {
     assert_eq!(b.features.len(), g.features.len(), "no row dropped");
     assert!(bad.profile.exclusions.iter().any(|e| e.row == 2 && e.reason.contains("couldn't be read")), "{:?}", bad.profile.exclusions);
     assert_eq!(b.features[2].attrs, g.features[2].attrs, "the next row keeps its own attributes");
+    assert_eq!(b.features[1].attrs, g.features[1].attrs, "the unreadable row keeps its attributes");
     let _ = std::fs::remove_dir_all(dir);
+}
+
+/// Second review (N1): applying raster choices again never shifts the numbers again. Kelvin on,
+/// off and on again gives the same °C range; a NoData change in between doesn't double it.
+#[test]
+fn kelvin_choices_are_idempotent() {
+    let mut l = open("R6/scaled.tif").unwrap().remove(0);
+    let kelvin = lm_core::model::Choice::new("kelvin", "Kelvin, shown in °C");
+    let stored = lm_core::model::Choice::new("as_stored", "The values as stored");
+    l.profile.assumptions.push(lm_core::model::Assumption {
+        kind: AssumptionKind::RasterKelvin,
+        subject: lm_core::model::Subject::Band(1),
+        chosen: kelvin.clone(),
+        alternatives: vec![kelvin.clone(), stored.clone()],
+        confidence: lm_core::model::Confidence::Likely,
+        consequence: lm_core::model::Consequence::ChangesNumbers,
+        treatment: lm_core::model::Treatment::Visible,
+        line: String::new(),
+        confirmed_by_user: false,
+    });
+    let s = lm_core::model::Subject::Band(1);
+    let on = rechoose_raster(&l, AssumptionKind::RasterKelvin, &s, &kelvin).unwrap();
+    let off = rechoose_raster(&on, AssumptionKind::RasterKelvin, &s, &stored).unwrap();
+    let on2 = rechoose_raster(&off, AssumptionKind::RasterKelvin, &s, &kelvin).unwrap();
+    let nd = on2.profile.assumptions.iter().find(|a| a.kind == AssumptionKind::RasterNoData).unwrap().clone();
+    let on3 = rechoose_raster(&on2, nd.kind, &nd.subject, &nd.chosen).unwrap();
+    let range = |x: &ImportedLayer| (x.profile.bands[0].min.unwrap(), x.profile.bands[0].max.unwrap());
+    let (a, b) = (range(&on), range(&off));
+    assert!((a.0 - (b.0 - 273.15)).abs() < 1e-6, "{a:?} vs {b:?}");
+    assert_eq!(range(&on2), a);
+    assert_eq!(range(&on3), a);
+    assert_eq!(off.profile.bands[0].unit.value.as_deref(), Some("K"));
+    assert_eq!(on2.profile.bands[0].unit.value.as_deref(), Some("°C"));
+}
+
+/// Second review (N5): placing counts the shapes that were placed.
+#[test]
+fn placing_recounts() {
+    let l = open("V4/districts_gk.shp").unwrap().remove(0);
+    let placed = reproject(&l, 4549).unwrap();
+    assert_eq!(placed.profile.count + placed.profile.exclusions.len() as u64, 17);
 }
