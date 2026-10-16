@@ -1202,6 +1202,60 @@ fn read_shapefile_parts(parts: ShapefileParts, name: &str) -> Result<(Dataset, R
     read_shapefile_parts_with(parts, name, ShapefileOptions::default())
 }
 
+/// Marks every shape whose part or point counts claim more bytes than its record holds as
+/// unreadable (an unknown shape type, in this copy of the `.shp`), so the reader never reserves
+/// memory for points the file doesn't contain: a few bytes could otherwise ask for gigabytes.
+/// Shapes are found through the `.shx` when there is one, else in order.
+fn defuse_shapes(shp: &mut [u8], shx: Option<&[u8]>) {
+    let be = |b: &[u8], at: usize| b.get(at..at + 4).map(|x| i64::from(i32::from_be_bytes([x[0], x[1], x[2], x[3]])));
+    let le = |b: &[u8], at: usize| b.get(at..at + 4).map(|x| i64::from(i32::from_le_bytes([x[0], x[1], x[2], x[3]])));
+    let check = |shp: &mut [u8], pos: usize| -> Option<usize> {
+        let content = be(shp, pos + 4)?.checked_mul(2).filter(|n| *n >= 0)?;
+        let start = pos + 8;
+        let avail = i64::try_from(shp.len().saturating_sub(start)).ok()?.min(content);
+        let ty = le(shp, start)?;
+        // (offset of the first count, bytes before the counted data, bytes per part, per point)
+        let layout = match ty {
+            3 | 5 | 13 | 15 | 23 | 25 => Some((36, 44, 4, 16)),
+            8 | 18 | 28 => Some((36, 40, 0, 16)),
+            31 => Some((36, 44, 8, 16)),
+            _ => None,
+        };
+        if let Some((at, fixed, per_part, per_point)) = layout {
+            let (parts, points) = if per_part == 0 {
+                (0, le(shp, start + at).unwrap_or(-1))
+            } else {
+                (le(shp, start + at).unwrap_or(-1), le(shp, start + at + 4).unwrap_or(-1))
+            };
+            let need = fixed + per_part * parts.max(0) + per_point * points.max(0);
+            if (parts < 0 || points < 0 || need > avail)
+                && let Some(t) = shp.get_mut(start..start + 4)
+            {
+                t.copy_from_slice(&99i32.to_le_bytes());
+            }
+        }
+        usize::try_from(content).ok().map(|c| start + c)
+    };
+    match shx {
+        Some(shx) => {
+            for i in 0..shx.len().saturating_sub(100) / 8 {
+                if let Some(off) = be(shx, 100 + 8 * i).and_then(|o| usize::try_from(o.checked_mul(2)?).ok()) {
+                    check(shp, off);
+                }
+            }
+        }
+        None => {
+            let mut pos = 100;
+            while pos + 12 <= shp.len() {
+                match check(shp, pos) {
+                    Some(next) if next > pos => pos = next,
+                    _ => break,
+                }
+            }
+        }
+    }
+}
+
 /// Reads a Shapefile from its files in memory, with a `.dbf` text encoding and without the `.prj`
 /// conversion if asked. With no `.dbf` the shapes have no fields (said in the report); with no
 /// `.shx` the shapes are read in order.
@@ -1211,6 +1265,8 @@ pub fn read_shapefile_parts_with(parts: ShapefileParts, name: &str, opts: Shapef
     use std::io::Cursor;
     let fmt = |e: shapefile::Error| DataError::Format(format!("Shapefile: {e}"));
     let mut report = ReadReport::default();
+    let mut parts = parts;
+    defuse_shapes(&mut parts.shp, parts.shx.as_deref());
     let Some(dbf_bytes) = parts.dbf else {
         return read_shapes_only(parts.shp, parts.shx, parts.prj, name, opts);
     };
@@ -1718,6 +1774,36 @@ mod tests {
         assert_eq!(read.features.len(), 2);
         let n = read.field_index("n").unwrap();
         assert_eq!(read.value(1, n), &Value::Int(2), "the third shape keeps the third record");
+    }
+
+    /// A shape whose point count claims far more than its record holds is skipped without
+    /// reserving memory for it (found by fuzzing: 13 KB asked for 4 GB).
+    #[test]
+    fn a_shape_claiming_too_many_points_is_skipped() {
+        let mut ds = Dataset::new("lines", GeometryType::Polyline, vec![Field::new("n", FieldType::Integer)]);
+        for i in 0..3 {
+            let x = f64::from(i);
+            ds.push(Some(Geometry::Line(vec![vec![Coord::new(x, 0.0), Coord::new(x, 1.0)]])), vec![Value::Int(i64::from(i))]);
+        }
+        let (files, _) = shapefile_parts(&ds).unwrap();
+        let get = |e: &str| files.iter().find(|(x, _)| *x == e).map(|(_, b)| b.clone()).unwrap();
+        let shx = get("shx");
+        let second = 2 * usize::try_from(u32::from_be_bytes(shx[108..112].try_into().unwrap())).unwrap();
+        let mut shp = get("shp");
+        // num_parts (record start + 8 header + 36) and num_points of the second line.
+        shp[second + 44..second + 48].copy_from_slice(&0x3FFF_FFFFi32.to_le_bytes());
+        shp[second + 48..second + 52].copy_from_slice(&0x0FFF_FFFFi32.to_le_bytes());
+        let mut copy = shp.clone();
+        defuse_shapes(&mut copy, Some(&shx));
+        assert_eq!(&copy[second + 8..second + 12], &99i32.to_le_bytes(), "marked unreadable");
+        let mut seq = shp.clone();
+        defuse_shapes(&mut seq, None);
+        assert_eq!(copy, seq, "found the same way in order");
+        let parts = ShapefileParts { shp, shx: Some(shx), dbf: Some(get("dbf")), prj: None };
+        let (read, rep) = read_shapefile_parts_with(parts, "lines", ShapefileOptions::default()).unwrap();
+        assert_eq!(rep.skipped, 1);
+        assert_eq!(read.features.len(), 2);
+        assert_eq!(read.value(1, read.field_index("n").unwrap()), &Value::Int(2));
     }
 
     /// A GBK `.dbf` read as GBK gives its Chinese text (LayeredMap fixture V5, when present).
