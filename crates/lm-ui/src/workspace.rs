@@ -427,7 +427,13 @@ impl Workspace {
         let focus = focus.ok_or("This layer has nothing to compare.")?;
         let mut profile = data.profile.clone();
         profile.notices = vec![recipe];
-        let preview = ImportedLayer { name: format!("{} (converted)", data.name), profile, data: LayerData::Vector(Arc::new(converted)), status: ImportStatus::Complete, raw: None };
+        let preview = ImportedLayer {
+            name: format!("{} (converted)", data.name),
+            profile,
+            data: LayerData::Vector(Arc::new(converted)),
+            status: ImportStatus::Complete,
+            raw: None,
+        };
         self.compare = Some(Compare { layer: id, from_bd09, data: Arc::new(preview), focus });
         Ok(())
     }
@@ -436,16 +442,32 @@ impl Workspace {
     /// they are (the assumption is confirmed), or just close it.
     pub fn end_compare(&mut self, keep: Option<bool>) -> Result<(), String> {
         let Some(c) = self.compare.take() else { return Ok(()) };
-        let Some(a) = self.doc.layer(c.layer).and_then(|l| l.profile.assumptions.iter().find(|a| matches!(a.kind, AssumptionKind::ChinaOffsetPossible | AssumptionKind::ChinaOffsetNamed)).cloned()) else {
+        let Some(a) = self.doc.layer(c.layer).and_then(|l| {
+            l.profile
+                .assumptions
+                .iter()
+                .find(|a| matches!(a.kind, AssumptionKind::ChinaOffsetPossible | AssumptionKind::ChinaOffsetNamed))
+                .cloned()
+        }) else {
             return Ok(());
         };
         match keep {
             Some(true) => {
-                let choice = a.alternatives.iter().find(|x| x.id == if c.from_bd09 { "bd09" } else { "gcj02" }).cloned().unwrap_or_else(|| Choice::new("gcj02", "Amap/Tencent coordinates (GCJ-02): convert"));
+                let choice = a
+                    .alternatives
+                    .iter()
+                    .find(|x| x.id == if c.from_bd09 { "bd09" } else { "gcj02" })
+                    .cloned()
+                    .unwrap_or_else(|| Choice::new("gcj02", "Amap/Tencent coordinates (GCJ-02): convert"));
                 self.change_assumption(c.layer, a.kind, a.subject, choice, None)
             }
             Some(false) => {
-                let choice = a.alternatives.iter().find(|x| x.id == "wgs84").cloned().unwrap_or_else(|| Choice::new("wgs84", "GPS coordinates (WGS 84): keep where they are"));
+                let choice = a
+                    .alternatives
+                    .iter()
+                    .find(|x| x.id == "wgs84")
+                    .cloned()
+                    .unwrap_or_else(|| Choice::new("wgs84", "GPS coordinates (WGS 84): keep where they are"));
                 self.change_assumption(c.layer, a.kind, a.subject, choice, None)
             }
             None => Ok(()),

@@ -122,7 +122,8 @@ fn scrolling_over_the_layer_list_does_not_zoom_the_map() {
     let mut h = harness_phase(2, false, (121.47, 31.23, 9.0), |s| {
         let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../fixtures");
         for (i, f) in ["V1/districts.geojson", "T1/schools.csv", "V2/mixed.geojson"].iter().enumerate() {
-            let layers = lm_jobs::import::import_path(&dir.join(f), &lm_jobs::import::Ctx::detached(Default::default())).unwrap_or_default();
+            let layers =
+                lm_jobs::import::import_path(&dir.join(f), &lm_jobs::import::Ctx::detached(Default::default())).unwrap_or_default();
             s.ws.add_imported(layers, 200 + i as u64);
         }
         s.ws.selected = None;

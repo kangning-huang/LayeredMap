@@ -328,46 +328,65 @@ fn place_card(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, shown: f64
     let mut query: String = ui.data(|d| d.get_temp::<String>(key)).unwrap_or_default();
     let place_key = egui::Id::new(("lm-place-at", id.0));
     let mut place: Option<(f64, f64, String)> = ui.data(|d| d.get_temp(place_key));
-    egui::Frame::new().fill(t.surface_raised).stroke(Stroke::new(1.0, t.warning.gamma_multiply(0.6))).corner_radius(CornerRadius::same(theme::RADIUS_CARD)).inner_margin(10.0).show(ui, |ui| {
-        ui.set_width(ui.available_width());
-        ui.horizontal_wrapped(|ui| {
-            ui.label(RichText::new(icon::WARNING).font(theme::icon_font(14.0)).color(t.warning));
-            ui.label(RichText::new("Where should this data be?").font(semibold(BODY)));
+    egui::Frame::new()
+        .fill(t.surface_raised)
+        .stroke(Stroke::new(1.0, t.warning.gamma_multiply(0.6)))
+        .corner_radius(CornerRadius::same(theme::RADIUS_CARD))
+        .inner_margin(10.0)
+        .show(ui, |ui| {
+            ui.set_width(ui.available_width());
+            ui.horizontal_wrapped(|ui| {
+                ui.label(RichText::new(icon::WARNING).font(theme::icon_font(14.0)).color(t.warning));
+                ui.label(RichText::new("Where should this data be?").font(semibold(BODY)));
+            });
+            ui.label(
+                RichText::new("This file doesn't say where on Earth its coordinates are. Name a place it covers.")
+                    .size(CAPTION)
+                    .color(t.text_secondary),
+            );
+            let te = ui.add(egui::TextEdit::singleline(&mut query).hint_text("A city or town, e.g. Shanghai"));
+            let _ = te;
+            for r in shell.search.lookup(&query, 4) {
+                if ui.selectable_label(false, format!("{}  ·  {}", r.title, r.detail)).clicked() {
+                    place = Some((r.choice.lon, r.choice.lat, r.title.clone()));
+                    query = r.title.clone();
+                }
+            }
+            if ui.link("Use the middle of the map").clicked() {
+                let c = shell.map.center_lonlat();
+                place = Some((c.x, c.y, "the middle of the map".into()));
+            }
+            if let Some((lon, lat, name)) = &place {
+                let cands = shell.ws.place_candidates(id, (*lon, *lat));
+                ui.add_space(4.0);
+                if cands.is_empty() {
+                    ui.label(
+                        RichText::new(format!(
+                            "No coordinate system puts this data near {name}. Try another place, or open it as a table."
+                        ))
+                        .color(t.text_secondary),
+                    );
+                }
+                for c in cands {
+                    ui.horizontal_wrapped(|ui| {
+                        ui.label(format!(
+                            "{} — lands {} km from {name}",
+                            c.name,
+                            if c.distance_km < 10.0 { format!("{:.1}", c.distance_km) } else { format!("{:.0}", c.distance_km) }
+                        ));
+                        if ui.add(egui::Button::new(RichText::new("Use this").color(t.on_accent)).fill(t.accent)).clicked()
+                            && let Err(e) = shell.ws.place_layer(id, c.epsg, Some(now - shown))
+                        {
+                            shell.set_notice(e, now);
+                        }
+                    });
+                }
+            }
+            if ui.link("Open as a table").clicked() {
+                let _ =
+                    shell.ws.change_assumption(id, AssumptionKind::NoCrsProjected, Subject::Layer, Choice::not_sure(), Some(now - shown));
+            }
         });
-        ui.label(RichText::new("This file doesn't say where on Earth its coordinates are. Name a place it covers.").size(CAPTION).color(t.text_secondary));
-        let te = ui.add(egui::TextEdit::singleline(&mut query).hint_text("A city or town, e.g. Shanghai"));
-        let _ = te;
-        for r in shell.search.lookup(&query, 4) {
-            if ui.selectable_label(false, format!("{}  ·  {}", r.title, r.detail)).clicked() {
-                place = Some((r.choice.lon, r.choice.lat, r.title.clone()));
-                query = r.title.clone();
-            }
-        }
-        if ui.link("Use the middle of the map").clicked() {
-            let c = shell.map.center_lonlat();
-            place = Some((c.x, c.y, "the middle of the map".into()));
-        }
-        if let Some((lon, lat, name)) = &place {
-            let cands = shell.ws.place_candidates(id, (*lon, *lat));
-            ui.add_space(4.0);
-            if cands.is_empty() {
-                ui.label(RichText::new(format!("No coordinate system puts this data near {name}. Try another place, or open it as a table.")).color(t.text_secondary));
-            }
-            for c in cands {
-                ui.horizontal_wrapped(|ui| {
-                    ui.label(format!("{} — lands {} km from {name}", c.name, if c.distance_km < 10.0 { format!("{:.1}", c.distance_km) } else { format!("{:.0}", c.distance_km) }));
-                    if ui.add(egui::Button::new(RichText::new("Use this").color(t.on_accent)).fill(t.accent)).clicked()
-                        && let Err(e) = shell.ws.place_layer(id, c.epsg, Some(now - shown))
-                    {
-                        shell.set_notice(e, now);
-                    }
-                });
-            }
-        }
-        if ui.link("Open as a table").clicked() {
-            let _ = shell.ws.change_assumption(id, AssumptionKind::NoCrsProjected, Subject::Layer, Choice::not_sure(), Some(now - shown));
-        }
-    });
     ui.data_mut(|d| {
         d.insert_temp(key, query);
         if let Some(p) = place {
@@ -396,8 +415,8 @@ fn question_card(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, q: &Ass
                 ui.label(RichText::new(&q.line).font(semibold(BODY)));
             });
             // Radio buttons show their circles (resting controls have no outline elsewhere).
-        ui.visuals_mut().widgets.inactive.bg_stroke = Stroke::new(1.0, t.text_secondary);
-        let key = egui::Id::new(("lm-q", id.0, q.kind as u8));
+            ui.visuals_mut().widgets.inactive.bg_stroke = Stroke::new(1.0, t.text_secondary);
+            let key = egui::Id::new(("lm-q", id.0, q.kind as u8));
             let mut pick: String = ui.data(|d| d.get_temp::<String>(key)).unwrap_or_else(|| q.chosen.id.clone());
             for c in &q.alternatives {
                 let label = if c.id == q.chosen.id && c.id != "not_sure" { format!("{} (recommended)", c.label) } else { c.label.clone() };
@@ -408,9 +427,9 @@ fn question_card(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, q: &Ass
             }
             ui.data_mut(|d| d.insert_temp(key, pick.clone()));
             if q.kind == AssumptionKind::ChinaOffsetNamed && ui.link("Compare on the map first").clicked() {
-            shell.begin_compare(id, q.chosen.id == "bd09");
-        }
-        if ui.add(egui::Button::new(RichText::new("Use this").color(t.on_accent)).fill(t.accent)).clicked() {
+                shell.begin_compare(id, q.chosen.id == "bd09");
+            }
+            if ui.add(egui::Button::new(RichText::new("Use this").color(t.on_accent)).fill(t.accent)).clicked() {
                 let choice = q.alternatives.iter().find(|c| c.id == pick).cloned().unwrap_or_else(Choice::not_sure);
                 let result = shell.ws.change_assumption(id, q.kind, q.subject.clone(), choice, Some(now - shown));
                 if let Err(e) = result {
@@ -527,41 +546,53 @@ fn assumption_line(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, a: &A
 /// The Compare banner (WP2.5): a pill 12 px below the toolbar while the Compare view is open.
 pub fn compare_banner(shell: &mut Shell, ui: &mut Ui, map: Rect) {
     let t = *shell.theme();
-    let Some((name, bd09)) = shell.ws.compare.as_ref().and_then(|c| shell.ws.doc.layer(c.layer).map(|l| (l.display_name.clone(), c.from_bd09))) else { return };
+    let Some((name, bd09)) =
+        shell.ws.compare.as_ref().and_then(|c| shell.ws.doc.layer(c.layer).map(|l| (l.display_name.clone(), c.from_bd09)))
+    else {
+        return;
+    };
     let mut action: Option<Option<bool>> = None;
     let mut switch = false;
-    egui::Area::new(egui::Id::new("lm-compare")).order(egui::Order::Foreground).pivot(Align2::CENTER_TOP).fixed_pos(pos2(map.center().x, map.top() + PANEL_MARGIN)).show(ui.ctx(), |ui| {
-        frame(&t).show(ui, |ui| {
-            ui.set_max_width(560.0);
-            ui.label(RichText::new(format!("Compare {name}")).font(semibold(BODY)));
-            ui.horizontal_wrapped(|ui| {
-                let dot = |ui: &mut Ui, c: Color32| {
-                    let (r, _) = ui.allocate_exact_size(vec2(12.0, 12.0), Sense::hover());
-                    ui.painter().circle(r.center(), 5.0, c, Stroke::new(1.5, Color32::WHITE));
-                };
-                let key = shell.ws.doc.layer(shell.ws.compare.as_ref().map_or(LayerId(0), |c| c.layer)).map_or(t.accent, |l| color(l.style.key_color(l.profile.kind)));
-                dot(ui, key);
-                ui.label("as in the file");
-                dot(ui, Color32::from_rgb(0xD5, 0x5E, 0x00));
-                ui.label(if bd09 { "converted from Baidu (BD-09)" } else { "converted from Amap/Tencent (GCJ-02)" });
-            });
-            ui.label(RichText::new("Keep the set that sits on the streets.").size(CAPTION).color(t.text_secondary));
-            ui.horizontal(|ui| {
-                if ui.add(egui::Button::new(RichText::new("Keep converted").color(t.on_accent)).fill(t.accent)).clicked() {
-                    action = Some(Some(true));
-                }
-                if ui.button("Keep as in the file").clicked() {
-                    action = Some(Some(false));
-                }
-                if ui.link(if bd09 { "Try Amap/Tencent instead" } else { "Try Baidu instead" }).clicked() {
-                    switch = true;
-                }
-                if ui.link("Close").clicked() {
-                    action = Some(None);
-                }
+    egui::Area::new(egui::Id::new("lm-compare"))
+        .order(egui::Order::Foreground)
+        .pivot(Align2::CENTER_TOP)
+        .fixed_pos(pos2(map.center().x, map.top() + PANEL_MARGIN))
+        .show(ui.ctx(), |ui| {
+            frame(&t).show(ui, |ui| {
+                ui.set_max_width(560.0);
+                ui.label(RichText::new(format!("Compare {name}")).font(semibold(BODY)));
+                ui.horizontal_wrapped(|ui| {
+                    let dot = |ui: &mut Ui, c: Color32| {
+                        let (r, _) = ui.allocate_exact_size(vec2(12.0, 12.0), Sense::hover());
+                        ui.painter().circle(r.center(), 5.0, c, Stroke::new(1.5, Color32::WHITE));
+                    };
+                    let key = shell
+                        .ws
+                        .doc
+                        .layer(shell.ws.compare.as_ref().map_or(LayerId(0), |c| c.layer))
+                        .map_or(t.accent, |l| color(l.style.key_color(l.profile.kind)));
+                    dot(ui, key);
+                    ui.label("as in the file");
+                    dot(ui, Color32::from_rgb(0xD5, 0x5E, 0x00));
+                    ui.label(if bd09 { "converted from Baidu (BD-09)" } else { "converted from Amap/Tencent (GCJ-02)" });
+                });
+                ui.label(RichText::new("Keep the set that sits on the streets.").size(CAPTION).color(t.text_secondary));
+                ui.horizontal(|ui| {
+                    if ui.add(egui::Button::new(RichText::new("Keep converted").color(t.on_accent)).fill(t.accent)).clicked() {
+                        action = Some(Some(true));
+                    }
+                    if ui.button("Keep as in the file").clicked() {
+                        action = Some(Some(false));
+                    }
+                    if ui.link(if bd09 { "Try Amap/Tencent instead" } else { "Try Baidu instead" }).clicked() {
+                        switch = true;
+                    }
+                    if ui.link("Close").clicked() {
+                        action = Some(None);
+                    }
+                });
             });
         });
-    });
     if switch && let Some(c) = shell.ws.compare.as_ref().map(|c| c.layer) {
         shell.begin_compare(c, !bd09);
     }
