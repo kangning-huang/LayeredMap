@@ -1210,8 +1210,15 @@ fn defuse_shapes(shp: &mut [u8], shx: Option<&[u8]>) {
     let be = |b: &[u8], at: usize| b.get(at..at + 4).map(|x| i64::from(i32::from_be_bytes([x[0], x[1], x[2], x[3]])));
     let le = |b: &[u8], at: usize| b.get(at..at + 4).map(|x| i64::from(i32::from_le_bytes([x[0], x[1], x[2], x[3]])));
     let check = |shp: &mut [u8], pos: usize| -> Option<usize> {
-        let content = be(shp, pos + 4)?.checked_mul(2).filter(|n| *n >= 0)?;
+        let content = be(shp, pos + 4)?.checked_mul(2)?;
         let start = pos + 8;
+        if content < 0 {
+            // A negative record size: nothing in this record can be trusted.
+            if let Some(t) = shp.get_mut(start..start + 4) {
+                t.copy_from_slice(&99i32.to_le_bytes());
+            }
+            return None;
+        }
         let avail = i64::try_from(shp.len().saturating_sub(start)).ok()?.min(content);
         let ty = le(shp, start)?;
         // (offset of the first count, bytes before the counted data, bytes per part, per point)
@@ -1799,6 +1806,11 @@ mod tests {
         let mut seq = shp.clone();
         defuse_shapes(&mut seq, None);
         assert_eq!(copy, seq, "found the same way in order");
+        // A negative record size is distrusted whatever the counts say (also found by fuzzing).
+        let mut negative = get("shp");
+        negative[second + 4..second + 8].copy_from_slice(&(-11i32).to_be_bytes());
+        defuse_shapes(&mut negative, None);
+        assert_eq!(&negative[second + 8..second + 12], &99i32.to_le_bytes());
         let parts = ShapefileParts { shp, shx: Some(shx), dbf: Some(get("dbf")), prj: None };
         let (read, rep) = read_shapefile_parts_with(parts, "lines", ShapefileOptions::default()).unwrap();
         assert_eq!(rep.skipped, 1);
