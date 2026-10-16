@@ -32,7 +32,11 @@ pub fn distance_km(a: (f64, f64), b: (f64, f64)) -> f64 {
 /// The candidates for data whose raw (unknown-system) centre is `raw_center`, near `place`
 /// (longitude, latitude). `to_lonlat(epsg, xy)` converts a point from a system (the caller has
 /// the projection code). Nearest first, at most [`MAX_CANDIDATES`].
-pub fn place_candidates(raw_center: (f64, f64), place: (f64, f64), to_lonlat: impl Fn(u16, (f64, f64)) -> Option<(f64, f64)>) -> Vec<PlaceCandidate> {
+pub fn place_candidates(
+    raw_center: (f64, f64),
+    place: (f64, f64),
+    to_lonlat: impl Fn(u16, (f64, f64)) -> Option<(f64, f64)>,
+) -> Vec<PlaceCandidate> {
     let mut out: Vec<PlaceCandidate> = CANDIDATES
         .iter()
         .filter(|(_, _, [w, s, e, n])| place.0 >= w - 0.5 && place.0 <= e + 0.5 && place.1 >= s - 0.5 && place.1 <= n + 0.5)
