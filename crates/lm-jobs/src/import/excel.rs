@@ -99,7 +99,7 @@ fn read_bytes(path: &Path, size: u64, ctx: &Ctx) -> Result<Vec<u8>, ImportError>
 /// listed first among its assumptions.
 fn open_sheet(path: &Path, grid: sheets::Grid, sheet_choice: Option<Assumption>) -> Result<ImportedLayer, ImportError> {
     let sheets::Grid { pick, headers, rows, .. } = grid;
-    let raw = RawRows { headers, rows };
+    let raw = RawRows { headers, rows, delimiter: None };
     let location = lm_profile::csv_locate(&raw.headers, &raw.rows, &pick);
     let origin = TableOrigin {
         path,

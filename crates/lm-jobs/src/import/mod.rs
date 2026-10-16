@@ -85,6 +85,9 @@ pub enum LayerData {
 pub struct RawRows {
     pub headers: Vec<String>,
     pub rows: Vec<Vec<String>>,
+    /// The delimiter of a delimited file (decides what `12,500` means with
+    /// `lm_profile::number_style`); `None` for a sheet.
+    pub delimiter: Option<char>,
 }
 
 /// What a finished import hands to the document.

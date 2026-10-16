@@ -121,13 +121,24 @@ fn points(ds: &Dataset) -> Vec<(f64, f64)> {
 
 fn csv_points(loc: &CsvLocation, rows: &[Vec<String>]) -> Vec<(f64, f64)> {
     let CsvLocation::Located { pair, .. } = loc else { return vec![] };
-    rows.iter().filter_map(|r| parse_number(r.get(pair.x_index)?).zip(parse_number(r.get(pair.y_index)?))).collect()
+    let style = |i: usize| number_style(rows.iter().map(|r| r.get(i).map(String::as_str).unwrap_or("")), None).value;
+    let (sx, sy) = (style(pair.x_index), style(pair.y_index));
+    rows.iter().filter_map(|r| parse_number_with(r.get(pair.x_index)?, sx).zip(parse_number_with(r.get(pair.y_index)?, sy))).collect()
 }
 
 /// Everything a CSV import produces: location, field profiles and assumptions.
 fn profile_csv(file: &str, headers: &[String], rows: &[Vec<String>]) -> (CsvLocation, Vec<FieldProfile>, Vec<Assumption>) {
-    let loc = csv_locate(headers, rows, file);
-    let (fields, mut a) = profile_raw_table(RawTable { headers, rows }, &loc.coordinate_columns());
+    profile_delimited(file, None, headers, rows)
+}
+
+fn profile_delimited(
+    file: &str,
+    delimiter: Option<char>,
+    headers: &[String],
+    rows: &[Vec<String>],
+) -> (CsvLocation, Vec<FieldProfile>, Vec<Assumption>) {
+    let loc = csv_locate_delimited(headers, rows, file, delimiter);
+    let (fields, mut a) = profile_raw_table(RawTable { headers, rows, delimiter }, &loc.coordinate_columns());
     let mut all: Vec<Assumption> = loc.assumption().cloned().into_iter().collect();
     if matches!(loc, CsvLocation::Located { .. }) {
         let crs = Known::likely(Crs::Wgs84, "lon/lat columns");
@@ -316,7 +327,7 @@ fn t4_gbk_semicolons_decimal_commas_codes_and_dates() {
     let (text, _, errors) = encoding_rs::GBK.decode(&bytes);
     assert!(!errors);
     let (h, rows) = split_csv(&text, ';');
-    let (loc, fields, a) = profile_csv("stations_gbk.csv", &h, &rows);
+    let (loc, fields, a) = profile_delimited("stations_gbk.csv", Some(';'), &h, &rows);
     let CsvLocation::Located { pair, .. } = &loc else { panic!("{loc:?}") };
     assert_eq!((pair.x.as_str(), pair.y.as_str()), ("经度", "纬度"));
     assert!(shown(&a).contains(&AssumptionKind::CsvCoordinateColumns));
@@ -326,6 +337,14 @@ fn t4_gbk_semicolons_decimal_commas_codes_and_dates() {
     let amount = fields.iter().find(|f| f.name == "金额").unwrap();
     assert_eq!(amount.stats.as_ref().map(|s| (s.min, s.max)), Some((Some(0.5), Some(999_999.99))));
     assert!(rows.iter().any(|r| r[4] == "1234,50") && csv_points(&loc, &rows).first() == Some(&(121.473701, 31.230416)));
+    // Every numeric column is decimal-comma by its own cells, with or without the delimiter.
+    for col in [2, 3, 4] {
+        for delimiter in [None, Some(';')] {
+            let style = number_style(rows.iter().map(|r| r[col].as_str()), delimiter);
+            assert_eq!(style.value, NumberStyle::DecimalComma, "column {col}");
+        }
+    }
+    assert!(matches!(profile_csv("stations_gbk.csv", &h, &rows).0, CsvLocation::Located { .. }));
 }
 
 #[test]

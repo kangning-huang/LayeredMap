@@ -565,3 +565,38 @@ fn v5_text_encoding_can_be_changed() {
     let LayerData::Vector(ds) = &back.data else { panic!() };
     assert_eq!(ds.value(0, name), &rustgis_engine::data::Value::Text("人民广场".into()));
 }
+
+/// Writes `text` to a fresh temporary CSV and imports it.
+fn import_text(file: &str, text: &str) -> ImportedLayer {
+    let dir = std::env::temp_dir().join(format!("lm-numstyle-{}-{file}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join(file);
+    std::fs::write(&path, text).unwrap();
+    let l = import_path(&path, &Ctx::detached(Ticket::default())).unwrap().remove(0);
+    let _ = std::fs::remove_dir_all(dir);
+    l
+}
+
+fn column(l: &ImportedLayer, name: &str) -> Vec<rustgis_engine::data::Value> {
+    let LayerData::Vector(ds) = &l.data else { panic!() };
+    let i = ds.field_index(name).unwrap();
+    (0..ds.features.len()).map(|r| ds.value(r, i).clone()).collect()
+}
+
+#[test]
+fn csv_thousands_separators_are_read_as_thousands() {
+    // Regression (S1): "12,500" was read as 12.5.
+    use rustgis_engine::data::Value;
+    let l = import_text(
+        "towns.csv",
+        "name,population,lon,lat\nA,\"12,500\",121.40,31.20\nB,\"3,400\",121.41,31.21\nC,\"1,250,000\",121.42,31.22\nD,980,121.43,31.23\n",
+    );
+    assert_eq!(column(&l, "population"), vec![Value::Int(12_500), Value::Int(3_400), Value::Int(1_250_000), Value::Int(980)]);
+    // Only d,ddd values and a comma delimiter: not guessed, kept as written.
+    let l = import_text("towns2.csv", "name,population,lon,lat\nA,\"12,500\",121.40,31.20\nB,\"3,400\",121.41,31.21\n");
+    assert_eq!(column(&l, "population"), vec![Value::Text("12,500".into()), Value::Text("3,400".into())]);
+    // With semicolons, decimal commas.
+    let l = import_text("werte.csv", "name;wert;lon;lat\nA;12,500;121,40;31,20\nB;3,400;121,41;31,21\n");
+    assert_eq!(column(&l, "wert"), vec![Value::Float(12.5), Value::Float(3.4)]);
+    assert_eq!(l.profile.kind, LayerKind::Points);
+}
