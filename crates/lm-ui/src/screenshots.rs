@@ -149,3 +149,75 @@ fn scrolling_over_the_layer_list_does_not_zoom_the_map() {
         assert_eq!(moved, should_zoom, "at {pos:?}: zoom went from {start} to {}", zoom(&h));
     }
 }
+
+fn two_layers() -> Harness<'static, Option<Shell>> {
+    let mut h = harness_phase(2, false, (15.0, 30.0, 2.2), |s| {
+        let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../fixtures");
+        for (i, f) in ["V1/districts.geojson", "T1/schools.csv"].iter().enumerate() {
+            let layers =
+                lm_jobs::import::import_path(&dir.join(f), &lm_jobs::import::Ctx::detached(Default::default())).unwrap_or_default();
+            s.ws.add_imported(layers, 300 + i as u64);
+        }
+        s.ws.selected = None;
+    });
+    h.run_steps(10);
+    h
+}
+
+/// Owner's bug report: Rename (right-click) must finish with Return; Esc keeps the old name.
+#[test]
+fn renaming_finishes_with_return_and_esc_cancels() {
+    let mut h = two_layers();
+    let top = h.state().as_ref().and_then(|s| s.ws.doc.layers.last().map(|l| l.id)).unwrap();
+    for (key, typed, expect) in [(egui::Key::Enter, "My schools", "My schools"), (egui::Key::Escape, "Nope", "My schools")] {
+        if let Some(s) = h.state_mut().as_mut() {
+            let name = s.ws.doc.layer(top).map(|l| l.display_name.clone()).unwrap_or_default();
+            s.rename = Some((top, name));
+            s.rename_started = true;
+        }
+        h.run_steps(2);
+        if let Some(s) = h.state_mut().as_mut()
+            && let Some((_, text)) = s.rename.as_mut()
+        {
+            *text = typed.to_string();
+        }
+        h.run_steps(1);
+        h.input_mut().events.push(egui::Event::Key {
+            key,
+            physical_key: None,
+            pressed: true,
+            repeat: false,
+            modifiers: egui::Modifiers::NONE,
+        });
+        h.run_steps(3);
+        let s = h.state().as_ref().unwrap();
+        assert!(s.rename.is_none(), "{key:?} ends renaming");
+        assert_eq!(s.ws.doc.layer(top).unwrap().display_name, expect, "after {key:?}");
+    }
+}
+
+/// Owner's request: double-clicking a layer row zooms the map to that layer.
+#[test]
+fn double_clicking_a_layer_zooms_to_it() {
+    let mut h = two_layers();
+    let before = h.state().as_ref().map_or(0.0, |s| s.map_view().zoom());
+    let row = egui::pos2(150.0, 141.0);
+    h.input_mut().events.push(egui::Event::PointerMoved(row));
+    h.run_steps(1);
+    // Each press and release in one frame, two frames apart: well inside the double-click time.
+    for _ in 0..2 {
+        for pressed in [true, false] {
+            h.input_mut().events.push(egui::Event::PointerButton {
+                pos: row,
+                button: egui::PointerButton::Primary,
+                pressed,
+                modifiers: egui::Modifiers::NONE,
+            });
+        }
+        h.step();
+    }
+    h.run_steps(60);
+    let s = h.state().as_ref().unwrap();
+    assert!(s.rename.is_none(), "double-click doesn't start renaming");
+    assert!(s.map_view().zoom() > before + 3.0, "zoomed from {before} to {}", s.map_view().zoom());
+}
