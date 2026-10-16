@@ -1205,8 +1205,8 @@ fn read_shapefile_parts(parts: ShapefileParts, name: &str) -> Result<(Dataset, R
 /// Marks every shape whose part or point counts claim more bytes than its record holds as
 /// unreadable (an unknown shape type, in this copy of the `.shp`), so the reader never reserves
 /// memory for points the file doesn't contain: a few bytes could otherwise ask for gigabytes.
-/// Shapes are found through the `.shx` when there is one, else in order.
-fn defuse_shapes(shp: &mut [u8], shx: Option<&[u8]>) {
+/// Shapes are found through the `.shx` (rebuilt by [`rebuild_index`] when missing).
+fn defuse_shapes(shp: &mut [u8], shx: &[u8]) {
     let be = |b: &[u8], at: usize| b.get(at..at + 4).map(|x| i64::from(i32::from_be_bytes([x[0], x[1], x[2], x[3]])));
     let le = |b: &[u8], at: usize| b.get(at..at + 4).map(|x| i64::from(i32::from_le_bytes([x[0], x[1], x[2], x[3]])));
     let check = |shp: &mut [u8], pos: usize| -> Option<usize> {
@@ -1251,29 +1251,45 @@ fn defuse_shapes(shp: &mut [u8], shx: Option<&[u8]>) {
         }
         usize::try_from(content).ok().map(|c| start + c)
     };
-    match shx {
-        Some(shx) => {
-            for i in 0..shx.len().saturating_sub(100) / 8 {
-                if let Some(off) = be(shx, 100 + 8 * i).and_then(|o| usize::try_from(o.checked_mul(2)?).ok()) {
-                    check(shp, off);
-                }
-            }
-        }
-        None => {
-            let mut pos = 100;
-            while pos + 12 <= shp.len() {
-                match check(shp, pos) {
-                    Some(next) if next > pos => pos = next,
-                    _ => break,
-                }
-            }
+    for i in 0..shx.len().saturating_sub(100) / 8 {
+        if let Some(off) = be(shx, 100 + 8 * i).and_then(|o| usize::try_from(o.checked_mul(2)?).ok()) {
+            check(shp, off);
         }
     }
 }
 
+/// An index (`.shx`) for a `.shp` that has none, from the record headers read in order up to the
+/// first one that can't be right (a negative size, or one that doesn't move forward). Reading
+/// through an index keeps the reader at the records that were checked: read in order, a shape
+/// that takes more bytes than its record declares would leave it reading from a place nobody
+/// checked, and a damaged shape would make it return the same error forever (found by fuzzing).
+fn rebuild_index(shp: &[u8]) -> Vec<u8> {
+    let be = |at: usize| shp.get(at..at + 4).map(|x| i64::from(i32::from_be_bytes([x[0], x[1], x[2], x[3]])));
+    let mut entries = Vec::new();
+    let mut pos = 100usize;
+    while pos + 12 <= shp.len() {
+        let Some(content) = be(pos + 4).and_then(|w| w.checked_mul(2)).filter(|c| *c >= 0) else { break };
+        let Ok(content) = usize::try_from(content) else { break };
+        entries.push((pos, content));
+        match pos.checked_add(8 + content) {
+            Some(next) if next > pos => pos = next,
+            _ => break,
+        }
+    }
+    let mut shx = shp.get(..100).map(<[u8]>::to_vec).unwrap_or_else(|| vec![0; 100]);
+    shx.resize(100, 0);
+    let words = |n: usize| i32::try_from(n / 2).unwrap_or(i32::MAX).to_be_bytes();
+    shx[24..28].copy_from_slice(&words(100 + 8 * entries.len()));
+    for (off, content) in entries {
+        shx.extend_from_slice(&words(off));
+        shx.extend_from_slice(&words(content));
+    }
+    shx
+}
+
 /// Reads a Shapefile from its files in memory, with a `.dbf` text encoding and without the `.prj`
 /// conversion if asked. With no `.dbf` the shapes have no fields (said in the report); with no
-/// `.shx` the shapes are read in order.
+/// `.shx` one is rebuilt from the record headers.
 pub fn read_shapefile_parts_with(parts: ShapefileParts, name: &str, opts: ShapefileOptions) -> Result<(Dataset, ReadReport)> {
     use shapefile::Shape;
     use shapefile::dbase::FieldValue;
@@ -1281,7 +1297,9 @@ pub fn read_shapefile_parts_with(parts: ShapefileParts, name: &str, opts: Shapef
     let fmt = |e: shapefile::Error| DataError::Format(format!("Shapefile: {e}"));
     let mut report = ReadReport::default();
     let mut parts = parts;
-    defuse_shapes(&mut parts.shp, parts.shx.as_deref());
+    let shx = parts.shx.take().unwrap_or_else(|| rebuild_index(&parts.shp));
+    defuse_shapes(&mut parts.shp, &shx);
+    parts.shx = Some(shx);
     let Some(dbf_bytes) = parts.dbf else {
         return read_shapes_only(parts.shp, parts.shx, parts.prj, name, opts);
     };
@@ -1307,9 +1325,6 @@ pub fn read_shapefile_parts_with(parts: ShapefileParts, name: &str, opts: Shapef
             (f.name().to_string(), ty)
         })
         .collect();
-    // Without an index the shapes are read in order, and a damaged shape stops the reading: the
-    // reader can't tell where the next one starts, and would return the same error forever.
-    let sequential = parts.shx.is_none();
     let mut shapes = match parts.shx {
         Some(shx) => shapefile::ShapeReader::with_shx(Cursor::new(parts.shp), Cursor::new(shx)),
         None => shapefile::ShapeReader::new(Cursor::new(parts.shp)),
@@ -1328,9 +1343,6 @@ pub fn read_shapefile_parts_with(parts: ShapefileParts, name: &str, opts: Shapef
         let record = records.next();
         let (Ok(shape), Some(Ok(record))) = (item, record) else {
             report.skipped += 1;
-            if sequential {
-                break;
-            }
             continue;
         };
         let geom = match shape {
@@ -1414,7 +1426,6 @@ fn read_shapes_only(
 ) -> Result<(Dataset, ReadReport)> {
     use std::io::Cursor;
     let fmt = |e: shapefile::Error| DataError::Format(format!("Shapefile: {e}"));
-    let sequential = shx.is_none();
     let mut reader = match shx {
         Some(shx) => shapefile::ShapeReader::with_shx(Cursor::new(shp), Cursor::new(shx)),
         None => shapefile::ShapeReader::new(Cursor::new(shp)),
@@ -1424,11 +1435,6 @@ fn read_shapes_only(
     let to_lonlat = if opts.raw_coordinates { None } else { shapefile_crs(prj.as_deref(), &mut report) };
     let mut ds = Dataset::new(name, GeometryType::None, Vec::new());
     for shape in reader.iter_shapes() {
-        // Read in order without an index, a damaged shape stops the reading (see above).
-        if shape.is_err() && sequential {
-            report.skipped += 1;
-            break;
-        }
         match shape.ok().and_then(shape_geometry) {
             Some(g) => {
                 let g = match &to_lonlat {
@@ -1809,20 +1815,18 @@ mod tests {
         shp[second + 44..second + 48].copy_from_slice(&0x3FFF_FFFFi32.to_le_bytes());
         shp[second + 48..second + 52].copy_from_slice(&0x0FFF_FFFFi32.to_le_bytes());
         let mut copy = shp.clone();
-        defuse_shapes(&mut copy, Some(&shx));
+        defuse_shapes(&mut copy, &shx);
         assert_eq!(&copy[second + 8..second + 12], &99i32.to_le_bytes(), "marked unreadable");
-        let mut seq = shp.clone();
-        defuse_shapes(&mut seq, None);
-        assert_eq!(copy, seq, "found the same way in order");
+        assert_eq!(rebuild_index(&shp), shx, "the rebuilt index is the written one");
         // A part index outside the points (fuzzing: a negative first index asked for 6 GB).
         let mut bad_index = get("shp");
         bad_index[second + 52..second + 56].copy_from_slice(&(-384_827_392i32).to_le_bytes());
-        defuse_shapes(&mut bad_index, Some(&shx));
+        defuse_shapes(&mut bad_index, &shx);
         assert_eq!(&bad_index[second + 8..second + 12], &99i32.to_le_bytes());
         // A negative record size is distrusted whatever the counts say (also found by fuzzing).
         let mut negative = get("shp");
         negative[second + 4..second + 8].copy_from_slice(&(-11i32).to_be_bytes());
-        defuse_shapes(&mut negative, None);
+        defuse_shapes(&mut negative, &shx);
         assert_eq!(&negative[second + 8..second + 12], &99i32.to_le_bytes());
         let parts = ShapefileParts { shp, shx: Some(shx), dbf: Some(get("dbf")), prj: None };
         let (read, rep) = read_shapefile_parts_with(parts, "lines", ShapefileOptions::default()).unwrap();
