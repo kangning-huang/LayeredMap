@@ -1235,7 +1235,15 @@ fn defuse_shapes(shp: &mut [u8], shx: Option<&[u8]>) {
                 (le(shp, start + at).unwrap_or(-1), le(shp, start + at + 4).unwrap_or(-1))
             };
             let need = fixed + per_part * parts.max(0) + per_point * points.max(0);
-            if (parts < 0 || points < 0 || need > avail)
+            // Each part starts at a point index, in order, within the points: the reader sizes
+            // each part from these, so one bad index is as dangerous as a bad count.
+            let bad_parts = per_part > 0
+                && need <= avail
+                && (0..usize::try_from(parts).unwrap_or(0))
+                    .map(|k| le(shp, start + 44 + 4 * k).unwrap_or(-1))
+                    .try_fold(0i64, |prev, p| (p >= prev && p <= points).then_some(p))
+                    .is_none();
+            if (parts < 0 || points < 0 || need > avail || bad_parts)
                 && let Some(t) = shp.get_mut(start..start + 4)
             {
                 t.copy_from_slice(&99i32.to_le_bytes());
@@ -1806,6 +1814,11 @@ mod tests {
         let mut seq = shp.clone();
         defuse_shapes(&mut seq, None);
         assert_eq!(copy, seq, "found the same way in order");
+        // A part index outside the points (fuzzing: a negative first index asked for 6 GB).
+        let mut bad_index = get("shp");
+        bad_index[second + 52..second + 56].copy_from_slice(&(-384_827_392i32).to_le_bytes());
+        defuse_shapes(&mut bad_index, Some(&shx));
+        assert_eq!(&bad_index[second + 8..second + 12], &99i32.to_le_bytes());
         // A negative record size is distrusted whatever the counts say (also found by fuzzing).
         let mut negative = get("shp");
         negative[second + 4..second + 8].copy_from_slice(&(-11i32).to_be_bytes());
