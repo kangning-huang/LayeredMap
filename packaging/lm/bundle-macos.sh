@@ -25,6 +25,8 @@ cp "$target_dir/release/layeredmap" "$app/Contents/MacOS/layeredmap"
 mkdir -p "$app/Contents/Resources/examples"
 cp "$root/assets/examples/populated_places.geojson" "$root/assets/examples/countries.geojson" \
   "$root/assets/examples/elevation.tif" "$root/assets/examples/README.md" "$app/Contents/Resources/examples/"
+# The app icon (the Strata logo; tools/lm/make_app_icon.py builds it from design/logo).
+cp "$root/packaging/lm/AppIcon.icns" "$app/Contents/Resources/AppIcon.icns"
 cat > "$app/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -34,6 +36,7 @@ cat > "$app/Contents/Info.plist" <<PLIST
   <key>CFBundleDisplayName</key><string>LayeredMap</string>
   <key>CFBundleIdentifier</key><string>app.layeredmap.desktop</string>
   <key>CFBundleExecutable</key><string>layeredmap</string>
+  <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>${version}</string>
   <key>CFBundleVersion</key><string>${build}</string>

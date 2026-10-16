@@ -253,7 +253,9 @@ fn main() -> eframe::Result {
             .with_title("LayeredMap")
             .with_app_id("app.layeredmap.desktop")
             .with_inner_size([1280.0, 800.0])
-            .with_min_inner_size([1024.0, 640.0]),
+            .with_min_inner_size([1024.0, 640.0])
+            // The Strata logo, for runs outside the app bundle (the bundle has AppIcon.icns).
+            .with_icon(eframe::icon_data::from_png_bytes(include_bytes!("../../../assets/icon/icon-256.png")).unwrap_or_default()),
         // The window's size and position are remembered between launches.
         persist_window: !ephemeral,
         ..Default::default()
