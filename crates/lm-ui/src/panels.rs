@@ -331,7 +331,9 @@ fn question_card(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, q: &Ass
                 ui.label(RichText::new(icon::WARNING).font(theme::icon_font(14.0)).color(t.warning));
                 ui.label(RichText::new(&q.line).font(semibold(BODY)));
             });
-            let key = egui::Id::new(("lm-q", id.0, q.kind as u8));
+            // Radio buttons show their circles (resting controls have no outline elsewhere).
+        ui.visuals_mut().widgets.inactive.bg_stroke = Stroke::new(1.0, t.text_secondary);
+        let key = egui::Id::new(("lm-q", id.0, q.kind as u8));
             let mut pick: String = ui.data(|d| d.get_temp::<String>(key)).unwrap_or_else(|| q.chosen.id.clone());
             for c in &q.alternatives {
                 let label = if c.id == q.chosen.id && c.id != "not_sure" { format!("{} (recommended)", c.label) } else { c.label.clone() };
@@ -341,7 +343,10 @@ fn question_card(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, q: &Ass
                 ui.radio_value(&mut pick, "not_sure".to_string(), "Not sure");
             }
             ui.data_mut(|d| d.insert_temp(key, pick.clone()));
-            if ui.add(egui::Button::new(RichText::new("Use this").color(t.on_accent)).fill(t.accent)).clicked() {
+            if q.kind == AssumptionKind::ChinaOffsetNamed && ui.link("Compare on the map first").clicked() {
+            shell.begin_compare(id, q.chosen.id == "bd09");
+        }
+        if ui.add(egui::Button::new(RichText::new("Use this").color(t.on_accent)).fill(t.accent)).clicked() {
                 let choice = q.alternatives.iter().find(|c| c.id == pick).cloned().unwrap_or_else(Choice::not_sure);
                 let result = shell.ws.change_assumption(id, q.kind, q.subject.clone(), choice, Some(now - shown));
                 if let Err(e) = result {
@@ -446,9 +451,65 @@ fn assumption_line(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, a: &A
         };
         let resp = ui.link(link);
         if resp.clicked() {
-            shell.change_for = Some((id, a.kind, a.subject.clone(), resp.rect));
+            if a.kind == AssumptionKind::ChinaOffsetPossible {
+                shell.begin_compare(id, false);
+            } else {
+                shell.change_for = Some((id, a.kind, a.subject.clone(), resp.rect));
+            }
         }
     });
+}
+
+/// The Compare banner (WP2.5): a pill 12 px below the toolbar while the Compare view is open.
+pub fn compare_banner(shell: &mut Shell, ui: &mut Ui, map: Rect) {
+    let t = *shell.theme();
+    let Some((name, bd09)) = shell.ws.compare.as_ref().and_then(|c| shell.ws.doc.layer(c.layer).map(|l| (l.display_name.clone(), c.from_bd09))) else { return };
+    let mut action: Option<Option<bool>> = None;
+    let mut switch = false;
+    egui::Area::new(egui::Id::new("lm-compare")).order(egui::Order::Foreground).pivot(Align2::CENTER_TOP).fixed_pos(pos2(map.center().x, map.top() + PANEL_MARGIN)).show(ui.ctx(), |ui| {
+        frame(&t).show(ui, |ui| {
+            ui.set_max_width(560.0);
+            ui.label(RichText::new(format!("Compare {name}")).font(semibold(BODY)));
+            ui.horizontal_wrapped(|ui| {
+                let dot = |ui: &mut Ui, c: Color32| {
+                    let (r, _) = ui.allocate_exact_size(vec2(12.0, 12.0), Sense::hover());
+                    ui.painter().circle(r.center(), 5.0, c, Stroke::new(1.5, Color32::WHITE));
+                };
+                let key = shell.ws.doc.layer(shell.ws.compare.as_ref().map_or(LayerId(0), |c| c.layer)).map_or(t.accent, |l| color(l.style.key_color(l.profile.kind)));
+                dot(ui, key);
+                ui.label("as in the file");
+                dot(ui, Color32::from_rgb(0xD5, 0x5E, 0x00));
+                ui.label(if bd09 { "converted from Baidu (BD-09)" } else { "converted from Amap/Tencent (GCJ-02)" });
+            });
+            ui.label(RichText::new("Keep the set that sits on the streets.").size(CAPTION).color(t.text_secondary));
+            ui.horizontal(|ui| {
+                if ui.add(egui::Button::new(RichText::new("Keep converted").color(t.on_accent)).fill(t.accent)).clicked() {
+                    action = Some(Some(true));
+                }
+                if ui.button("Keep as in the file").clicked() {
+                    action = Some(Some(false));
+                }
+                if ui.link(if bd09 { "Try Amap/Tencent instead" } else { "Try Baidu instead" }).clicked() {
+                    switch = true;
+                }
+                if ui.link("Close").clicked() {
+                    action = Some(None);
+                }
+            });
+        });
+    });
+    if switch && let Some(c) = shell.ws.compare.as_ref().map(|c| c.layer) {
+        shell.begin_compare(c, !bd09);
+    }
+    if ui.input(|i| i.key_pressed(egui::Key::Escape)) {
+        action = Some(None);
+    }
+    if let Some(keep) = action {
+        let now = ui.input(|i| i.time);
+        if let Err(e) = shell.ws.end_compare(keep) {
+            shell.set_notice(e, now);
+        }
+    }
 }
 
 fn overview(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, l: &lm_core::document::DocLayer) {

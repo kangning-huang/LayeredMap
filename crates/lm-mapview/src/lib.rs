@@ -135,6 +135,11 @@ impl MapView {
         self.worker.edit(Box::new(f));
     }
 
+    /// The time of the last frame shown (seconds, egui's clock).
+    pub fn last_time(&self) -> f64 {
+        self.last_t.unwrap_or(0.0)
+    }
+
     pub fn camera(&self) -> Camera {
         self.camera
     }

@@ -70,6 +70,19 @@ struct Synced {
     rev: u32,
 }
 
+/// The Compare view for China offsets (WP2.5): a layer's points as in the file, and the same
+/// points converted, shown together over the street map until one set is kept.
+pub struct Compare {
+    pub layer: LayerId,
+    pub from_bd09: bool,
+    data: Arc<ImportedLayer>,
+    /// Where to look: a point of the layer, at street level.
+    pub focus: (f64, f64),
+}
+
+/// The map id of the Compare view's converted points.
+const COMPARE_MAP_ID: u32 = MAP_ID_BASE - 1;
+
 /// Map layer ids for LayeredMap's layers start here, clear of anything the map assigns itself.
 const MAP_ID_BASE: u32 = 1_000_000;
 
@@ -96,6 +109,8 @@ pub struct Workspace {
     pub new_data: Option<Extent>,
     /// Answers to question cards, for the question log (taken by the shell).
     pub answers: Vec<QuestionAnswer>,
+    pub compare: Option<Compare>,
+    compare_synced: Option<(LayerId, bool)>,
 }
 
 impl Workspace {
@@ -365,6 +380,47 @@ impl Workspace {
         }
     }
 
+    /// Starts comparing a layer's points with the same points converted from GCJ-02 (or BD-09).
+    pub fn start_compare(&mut self, id: LayerId, from_bd09: bool) -> Result<(), String> {
+        let data = self.data(id).cloned().ok_or("This layer's data isn't loaded.")?;
+        let LayerData::Vector(ds) = &data.data else { return Err("Only points, lines and areas can be compared.".into()) };
+        let (converted, recipe) = lm_jobs::import::convert_offset(ds, from_bd09).map_err(|e| e.to_string())?;
+        let mut focus = None;
+        if let Some(g) = ds.features.iter().find_map(|f| f.geometry.as_ref()) {
+            g.for_each_coord(|c| {
+                if focus.is_none() {
+                    focus = Some((c.x, c.y));
+                }
+            });
+        }
+        let focus = focus.ok_or("This layer has nothing to compare.")?;
+        let mut profile = data.profile.clone();
+        profile.notices = vec![recipe];
+        let preview = ImportedLayer { name: format!("{} (converted)", data.name), profile, data: LayerData::Vector(Arc::new(converted)), status: ImportStatus::Complete, raw: None };
+        self.compare = Some(Compare { layer: id, from_bd09, data: Arc::new(preview), focus });
+        Ok(())
+    }
+
+    /// Ends the Compare view: keep the converted points (a new GPS layer), keep the points as
+    /// they are (the assumption is confirmed), or just close it.
+    pub fn end_compare(&mut self, keep: Option<bool>) -> Result<(), String> {
+        let Some(c) = self.compare.take() else { return Ok(()) };
+        let Some(a) = self.doc.layer(c.layer).and_then(|l| l.profile.assumptions.iter().find(|a| matches!(a.kind, AssumptionKind::ChinaOffsetPossible | AssumptionKind::ChinaOffsetNamed)).cloned()) else {
+            return Ok(());
+        };
+        match keep {
+            Some(true) => {
+                let choice = a.alternatives.iter().find(|x| x.id == if c.from_bd09 { "bd09" } else { "gcj02" }).cloned().unwrap_or_else(|| Choice::new("gcj02", "Amap/Tencent coordinates (GCJ-02): convert"));
+                self.change_assumption(c.layer, a.kind, a.subject, choice, None)
+            }
+            Some(false) => {
+                let choice = a.alternatives.iter().find(|x| x.id == "wgs84").cloned().unwrap_or_else(|| Choice::new("wgs84", "GPS coordinates (WGS 84): keep where they are"));
+                self.change_assumption(c.layer, a.kind, a.subject, choice, None)
+            }
+            None => Ok(()),
+        }
+    }
+
     /// Brings the map's layers in line with the document: adds and removes only what changed,
     /// then sets order, visibility and style in one cheap edit.
     pub fn sync_map(&mut self, view: &mut lm_mapview::MapView) {
@@ -396,6 +452,19 @@ impl Workspace {
             });
             self.synced.push(Synced { id: *id, map_id, rev: *rev });
         }
+        // The Compare view's converted points.
+        let want_compare = self.compare.as_ref().map(|c| (c.layer, c.from_bd09));
+        if want_compare != self.compare_synced {
+            let layer = self.compare.as_ref().map(|c| map_layer(COMPARE_MAP_ID, &c.data));
+            view.edit_map(move |m: &mut Map| {
+                m.layers.retain(|l| l.id != COMPARE_MAP_ID);
+                if let Some(l) = &layer {
+                    m.layers.insert(0, l.clone());
+                }
+            });
+            self.compare_synced = want_compare;
+            self.order_key.clear();
+        }
         // Order (the map draws index 0 on top; the document lists bottom to top), visibility, style.
         let order: Vec<(u32, bool, Style, LayerKind)> = self
             .doc
@@ -408,10 +477,22 @@ impl Workspace {
         if self.order_key != key {
             self.order_key = key;
             view.edit_map(move |m: &mut Map| {
+                let mut compare = None;
                 let mut ours: Vec<lm_mapview::map::Layer> = Vec::new();
                 let mut others = Vec::new();
                 for l in m.layers.drain(..) {
-                    if l.id >= MAP_ID_BASE { ours.push(l) } else { others.push(l) }
+                    if l.id == COMPARE_MAP_ID {
+                        compare = Some(l);
+                    } else if l.id >= MAP_ID_BASE {
+                        ours.push(l);
+                    } else {
+                        others.push(l);
+                    }
+                }
+                // The Compare view's converted points draw above everything.
+                if let Some(mut c) = compare {
+                    apply_style(&mut c, &compare_style(), LayerKind::Points);
+                    m.layers.push(c);
                 }
                 for (map_id, visible, style, kind) in &order {
                     if let Some(pos) = ours.iter().position(|l| l.id == *map_id) {
@@ -435,6 +516,13 @@ impl Workspace {
     pub fn needs_decision(&self) -> bool {
         self.doc.layers.iter().any(|l| l.profile.open_questions().next().is_some())
     }
+}
+
+/// The Compare view's converted points: vermillion (Okabe–Ito), larger, with a white edge.
+fn compare_style() -> Style {
+    let mut s = Style::for_kind(LayerKind::Points, [0xD5, 0x5E, 0x00, 0xFF], 0);
+    s.point_size = 9.0;
+    s
 }
 
 /// Whether a layer can be drawn: located in GPS coordinates (or a raster with an extent).
@@ -546,5 +634,28 @@ mod tests {
         w.undo();
         assert_eq!(w.doc.layers.len(), 1);
         assert!(w.doc.layer(id).unwrap().visible);
+    }
+}
+
+#[cfg(test)]
+mod compare_tests {
+    use super::*;
+
+    #[test]
+    fn compare_then_keep_converted_or_as_is() {
+        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/T1/schools.csv");
+        let layers = lm_jobs::import::import_path(&path, &lm_jobs::import::Ctx::detached(Default::default())).unwrap();
+        let mut w = Workspace::default();
+        w.add_imported(layers, 1);
+        let id = w.doc.layers[0].id;
+        w.start_compare(id, false).unwrap();
+        assert!(w.compare.is_some());
+        w.end_compare(Some(false)).unwrap();
+        assert_eq!(w.doc.layers.len(), 1, "kept as is");
+        let a = w.doc.layers[0].profile.assumptions.iter().find(|a| a.kind == AssumptionKind::ChinaOffsetPossible).unwrap();
+        assert!(a.confirmed_by_user);
+        w.start_compare(id, false).unwrap();
+        w.end_compare(Some(true)).unwrap();
+        assert_eq!(w.doc.layers.len(), 2, "a converted GPS layer");
     }
 }

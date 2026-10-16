@@ -299,6 +299,23 @@ impl Shell {
         });
     }
 
+    /// Opens the Compare view and flies to street level at one of the layer's points.
+    pub(crate) fn begin_compare(&mut self, id: lm_core::model::LayerId, from_bd09: bool) {
+        match self.ws.start_compare(id, from_bd09) {
+            Ok(()) => {
+                if let Some((lon, lat)) = self.ws.compare.as_ref().map(|c| c.focus) {
+                    let size = self.last_map_size;
+                    self.map.fly_to(lm_mapview::Coord::new(lon, lat), 16.0, self.last_t(), size, self.reduce_motion);
+                }
+            }
+            Err(e) => self.notice = Some((e, self.last_t())),
+        }
+    }
+
+    fn last_t(&self) -> f64 {
+        self.notice.as_ref().map_or(0.0, |(_, t)| *t).max(self.map.last_time())
+    }
+
     fn fly_to_extent(&mut self, e: lm_core::model::Extent) {
         let e = lm_mapview::Extent { min_x: e.min_x, min_y: e.min_y, max_x: e.max_x, max_y: e.max_y };
         self.map.zoom_to_extent(&e, self.last_map_size);
@@ -407,6 +424,7 @@ impl Shell {
         panels::inspector(self, ui, map_rect);
         panels::change_popover(self, ui);
         panels::review(self, &ctx);
+        panels::compare_banner(self, ui, overlay_rect);
         chrome::toolbar(self, ui, toolbar, system);
         if self.credits_open {
             chrome::credits(self, &ctx);
