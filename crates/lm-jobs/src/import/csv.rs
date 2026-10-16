@@ -6,7 +6,7 @@ use std::io::Read;
 use std::path::Path;
 use std::sync::Arc;
 
-use lm_core::model::{Choice, Crs, Exclusion, Known, LayerKind, LayerProfile};
+use lm_core::model::{Assumption, AssumptionKind, Choice, Crs, Exclusion, Known, LayerKind, LayerProfile};
 use lm_profile::{CoordinatePair, CsvLocation, RawTable};
 use rustgis_engine::data::geometry::Geometry;
 use rustgis_engine::data::{Dataset, Field, FieldType, GeometryType, Value};
@@ -91,7 +91,16 @@ impl FormatAdapter for Delimited {
         let enc_label = if encoding == encoding_rs::GB18030 { "GBK".to_string() } else { encoding.name().to_string() };
         let location = lm_profile::csv_locate(&raw.headers, &raw.rows, &name);
         ctx.stage(Stage::Profile)?;
-        let layer = build(path, None, &raw, location, Some(enc_label), notices)?;
+        let origin = TableOrigin {
+            path,
+            member: None,
+            name: path.file_stem().and_then(|s| s.to_str()).unwrap_or("layer").to_string(),
+            format: "CSV".into(),
+            encoding: Some(enc_label),
+            notices,
+            assumptions: Vec::new(),
+        };
+        let layer = build(origin, &raw, location)?;
         Ok(vec![ImportedLayer { raw: Some(Arc::new(raw)), ..layer }])
     }
 }
@@ -203,16 +212,23 @@ fn locate_row(row: &[String], pair: &CoordinatePair, check_range: bool) -> Resul
     Ok(Coord::new(x, y))
 }
 
-/// Builds the layer from raw cells and a location decision. `pair` is used for the geometry;
-/// `None` opens the rows as a table.
-fn build(
-    path: &Path,
-    member: Option<String>,
-    raw: &RawRows,
-    location: CsvLocation,
-    encoding: Option<String>,
-    notices: Vec<String>,
-) -> Result<ImportedLayer, ImportError> {
+/// Where a table of raw cells came from: a CSV file, or one sheet of a workbook.
+pub(super) struct TableOrigin<'a> {
+    pub path: &'a Path,
+    /// The sheet of a workbook.
+    pub member: Option<String>,
+    /// The layer's display name.
+    pub name: String,
+    /// "CSV" or "Excel".
+    pub format: String,
+    pub encoding: Option<String>,
+    pub notices: Vec<String>,
+    /// Assumptions made before the records were located (which sheet), listed first.
+    pub assumptions: Vec<Assumption>,
+}
+
+/// Builds the layer from raw cells and a location decision (CSV and Excel share it).
+pub(super) fn build(origin: TableOrigin, raw: &RawRows, location: CsvLocation) -> Result<ImportedLayer, ImportError> {
     let (pair, lonlat) = match &location {
         CsvLocation::Located { pair, .. } => (Some(pair.clone()), true),
         CsvLocation::Ambiguous { candidates, recommended, .. } => (candidates.get(*recommended).cloned(), true),
@@ -220,21 +236,19 @@ fn build(
         CsvLocation::Projected { pair, .. } => (Some(pair.clone()), false),
         CsvLocation::Table { .. } => (None, false),
     };
-    build_with(path, member, raw, location, pair, lonlat, encoding, notices)
+    build_with(origin, raw, location, pair, lonlat)
 }
 
-#[allow(clippy::too_many_arguments)]
+/// [`build`] with the coordinate pair given: `pair` is used for the geometry (`None` opens the
+/// rows as a table); `lonlat` says whether its values are degrees.
 fn build_with(
-    path: &Path,
-    member: Option<String>,
+    origin: TableOrigin,
     raw: &RawRows,
     location: CsvLocation,
     pair: Option<CoordinatePair>,
     lonlat: bool,
-    encoding: Option<String>,
-    notices: Vec<String>,
 ) -> Result<ImportedLayer, ImportError> {
-    let name = path.file_stem().and_then(|s| s.to_str()).unwrap_or("layer").to_string();
+    let TableOrigin { path, member, name, format, encoding, notices, assumptions: before } = origin;
     let types: Vec<FieldType> = (0..raw.headers.len()).map(|i| infer_type(raw, i)).collect();
     let fields: Vec<Field> = raw.headers.iter().zip(&types).map(|(h, t)| Field::new(h.clone(), *t)).collect();
     let mut ds = Dataset::new(name.clone(), if pair.is_some() { GeometryType::Point } else { GeometryType::None }, fields);
@@ -254,7 +268,8 @@ fn build_with(
         };
         ds.push_next(geom, attrs);
     }
-    let mut assumptions: Vec<lm_core::model::Assumption> = location.assumption().into_iter().cloned().collect();
+    let mut assumptions: Vec<Assumption> = before;
+    assumptions.extend(location.assumption().into_iter().cloned());
     let raw_table = RawTable { headers: &raw.headers, rows: &raw.rows };
     let (field_profiles, field_assumptions) = lm_profile::profile_fields(&ds, Some(raw_table), &location.coordinate_columns());
     assumptions.extend(field_assumptions);
@@ -271,7 +286,11 @@ fn build_with(
         Known::likely(Crs::Wgs84, "Coordinate columns with values within ±180 / ±90.")
     };
     if lonlat && pair.is_some() {
-        let file = member.clone().unwrap_or_else(|| file_name(path));
+        // A sheet's name hints at the source as much as its file's.
+        let file = match &member {
+            Some(sheet) => format!("{} {sheet}", file_name(path)),
+            None => file_name(path),
+        };
         if let Some(a) = lm_profile::china_offset(&super::sample_points(&ds, 2000), &crs, &file, &raw.headers) {
             assumptions.push(a);
         }
@@ -282,7 +301,7 @@ fn build_with(
     }
     let profile = LayerProfile {
         source: source_ref(path, member),
-        format: "CSV".into(),
+        format,
         kind,
         count: ds.features.len() as u64,
         extent_wgs84: if kind == LayerKind::Points { extent } else { None },
@@ -299,7 +318,8 @@ fn build_with(
     Ok(ImportedLayer { name, status: status_of(&profile), profile, data: LayerData::Vector(Arc::new(ds)), raw: None })
 }
 
-/// Rebuilds a CSV layer with the columns the user chose (`columns:x,y`), or as a table (Not sure).
+/// Rebuilds a CSV (or Excel sheet) layer with the columns the user chose (`columns:x,y`), or as a
+/// table (Not sure). Its format, sheet and sheet choice are kept.
 pub fn relocate(layer: &ImportedLayer, raw: &Arc<RawRows>, choice: &Choice) -> Result<ImportedLayer, ImportError> {
     let path = Path::new(&layer.profile.source.path);
     let mut location = lm_profile::csv_locate(&raw.headers, &raw.rows, layer.profile.source.file_name());
@@ -342,9 +362,16 @@ pub fn relocate(layer: &ImportedLayer, raw: &Arc<RawRows>, choice: &Choice) -> R
             a.alternatives.insert(0, choice.clone());
         }
     }
-    let mut out =
-        build_with(path, layer.profile.source.member.clone(), raw, location, pair, lonlat, layer.profile.encoding.clone(), Vec::new())?;
-    out.name = layer.name.clone();
+    let origin = TableOrigin {
+        path,
+        member: layer.profile.source.member.clone(),
+        name: layer.name.clone(),
+        format: layer.profile.format.clone(),
+        encoding: layer.profile.encoding.clone(),
+        notices: Vec::new(),
+        assumptions: layer.profile.assumptions.iter().filter(|a| a.kind == AssumptionKind::ExcelSheet).cloned().collect(),
+    };
+    let mut out = build_with(origin, raw, location, pair, lonlat)?;
     out.raw = Some(raw.clone());
     Ok(out)
 }

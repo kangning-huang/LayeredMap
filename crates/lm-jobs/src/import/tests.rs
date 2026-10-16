@@ -125,7 +125,7 @@ fn every_hand_made_fixture_opens_and_stays_byte_identical() {
                 || n.starts_with("expected")
                 || n.contains("TODO")
                 || n == "vectors.csv"
-                || !matches!(ext.as_str(), "csv" | "geojson" | "shp" | "zip" | "tif")
+                || !matches!(ext.as_str(), "csv" | "geojson" | "shp" | "zip" | "tif" | "gpkg" | "xlsx")
             {
                 continue;
             }
@@ -134,6 +134,8 @@ fn every_hand_made_fixture_opens_and_stays_byte_identical() {
             let r = import_path(&f, &Ctx::detached(Ticket::default()));
             let after: Vec<Vec<u8>> = siblings.iter().map(|p| sha(p)).collect();
             assert_eq!(before, after, "{} changed a source file", f.display());
+            let now: Vec<PathBuf> = std::fs::read_dir(&dir).unwrap().flatten().map(|e| e.path()).filter(|p| p.is_file()).collect();
+            assert_eq!(siblings.len(), now.len(), "{} left a file beside it", f.display());
             match r {
                 Ok(layers) => {
                     assert!(!layers.is_empty(), "{}", f.display());
@@ -261,4 +263,234 @@ fn the_problem_list_holds_each_excluded_row_and_defuses_formulas() {
     x5.profile.exclusions = vec![lm_core::model::Exclusion { row: 1, reason: "=HYPERLINK(\"x\")".into() }];
     x5.raw = None;
     assert!(problem_list_csv(&x5).contains("\"'=HYPERLINK(\"\"x\"\")\""));
+}
+
+fn expected(id: &str) -> serde_json::Value {
+    serde_json::from_str(&std::fs::read_to_string(fixtures().join(id).join("expected.json")).unwrap()).unwrap()
+}
+
+fn kind_word(k: LayerKind) -> &'static str {
+    match k {
+        LayerKind::Points => "point",
+        LayerKind::Lines => "line",
+        LayerKind::Areas => "area",
+        _ => "other",
+    }
+}
+
+#[test]
+fn v9_geopackage_opens_as_one_group_of_three_layers() {
+    let layers = open("V9/city_layers.gpkg").unwrap();
+    let exp = &expected("V9")["groups"]["city_layers.gpkg"];
+    assert_eq!(layers.len() as u64, exp["layer_count"].as_u64().unwrap());
+    // One group: the same source file, each layer a member named after its table.
+    let path = &layers[0].profile.source.path;
+    assert!(path.ends_with("city_layers.gpkg"), "{path}");
+    for l in &layers {
+        assert_eq!(&l.profile.source.path, path);
+        assert_eq!(l.profile.source.member.as_deref(), Some(l.name.as_str()));
+        assert_eq!(l.profile.format, "GeoPackage");
+        assert_eq!(l.profile.crs.value, lm_core::model::Crs::Wgs84, "{}", l.name);
+        assert_eq!(l.profile.crs.confidence, lm_core::model::Confidence::Certain, "declared, not assumed");
+        assert!(l.profile.crs.evidence.0.contains("EPSG:4326"), "{}", l.profile.crs.evidence.0);
+        assert!(l.profile.exclusions.is_empty(), "{:?}", l.profile.exclusions);
+        assert_eq!(l.status, ImportStatus::Complete, "{}: {:?}", l.name, l.profile.assumptions);
+        assert!(l.profile.extent_wgs84.is_some());
+    }
+    for e in exp["layers"].as_array().unwrap() {
+        let name = e["name"].as_str().unwrap();
+        let l = layers.iter().find(|l| l.name == name).unwrap_or_else(|| panic!("no layer {name}"));
+        assert_eq!(kind_word(l.profile.kind), e["geometry"].as_str().unwrap(), "{name}");
+        assert_eq!(l.profile.count, e["count"].as_u64().unwrap(), "{name}");
+    }
+    // expected.json lists no assumptions for V9: nothing shown about the file (silent field roles
+    // aside); a China offset notice may be added by the catalog.
+    for l in &layers {
+        assert!(
+            l.profile.assumptions.iter().all(|a| a.treatment == Treatment::Silent || a.kind == AssumptionKind::ChinaOffsetPossible),
+            "{}: {:?}",
+            l.name,
+            l.profile.assumptions
+        );
+    }
+}
+
+#[test]
+fn v9_zipped_shapefile_in_nested_folders_still_opens() {
+    let layers = open("V9/roads_bundle.zip").unwrap();
+    let exp = &expected("V9")["archives"]["roads_bundle.zip"];
+    assert_eq!(layers.len(), 1);
+    let l = &layers[0];
+    let e = &exp["layers"][0];
+    assert_eq!(l.name, e["name"].as_str().unwrap());
+    assert_eq!(kind_word(l.profile.kind), e["geometry"].as_str().unwrap());
+    assert_eq!(l.profile.count, e["count"].as_u64().unwrap());
+    assert_eq!(l.profile.source.member.as_deref(), exp["shapefile_path"].as_str());
+    assert_eq!(l.profile.crs.value, lm_core::model::Crs::Wgs84);
+}
+
+/// The .gpkg and every SQLite sidecar beside it (present or not), hashed.
+fn gpkg_state(gpkg: &std::path::Path) -> Vec<(String, Option<Vec<u8>>)> {
+    ["", "-wal", "-shm", "-journal"]
+        .into_iter()
+        .map(|s| {
+            let p = gpkg::sidecar(gpkg, s);
+            (s.to_string(), p.exists().then(|| sha(&p)))
+        })
+        .collect()
+}
+
+#[test]
+fn a_geopackage_and_its_sidecars_stay_byte_identical() {
+    let gpkg = fixtures().join("V9/city_layers.gpkg");
+    let before = gpkg_state(&gpkg);
+    assert!(before.iter().skip(1).all(|(_, h)| h.is_none()), "the fixture has no sidecars to begin with");
+    open("V9/city_layers.gpkg").unwrap();
+    assert_eq!(before, gpkg_state(&gpkg), "the GeoPackage or a sidecar changed or appeared");
+}
+
+/// A GeoPackage another program has open in WAL mode, with a change still in its -wal: the change
+/// is read (from a settled copy), and the file, its -wal and -shm stay exactly as they were.
+#[test]
+fn a_geopackage_with_changes_in_its_wal_is_read_whole_and_left_alone() {
+    let dir = std::env::temp_dir().join(format!("lm-gpkg-wal-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    let gpkg = dir.join("city.gpkg");
+    std::fs::copy(fixtures().join("V9/city_layers.gpkg"), &gpkg).unwrap();
+    let writer = rusqlite::Connection::open(&gpkg).unwrap();
+    writer.query_row("PRAGMA journal_mode = WAL", [], |r| r.get::<_, String>(0)).unwrap();
+    writer.execute_batch("PRAGMA wal_autocheckpoint = 0;").unwrap();
+    // The R-tree triggers call GeoPackage SQL functions plain SQLite lacks.
+    let triggers: Vec<String> = {
+        let mut st = writer.prepare("SELECT name FROM sqlite_master WHERE type = 'trigger'").unwrap();
+        st.query_map([], |r| r.get(0)).unwrap().map(Result::unwrap).collect()
+    };
+    for t in triggers {
+        writer.execute_batch(&format!("DROP TRIGGER \"{t}\";")).unwrap();
+    }
+    let cols: Vec<String> = {
+        let mut st = writer.prepare("SELECT name FROM pragma_table_info('schools') WHERE pk = 0").unwrap();
+        st.query_map([], |r| r.get(0)).unwrap().map(Result::unwrap).collect()
+    };
+    let cols = cols.iter().map(|c| format!("\"{c}\"")).collect::<Vec<_>>().join(", ");
+    writer.execute_batch(&format!("INSERT INTO schools ({cols}) SELECT {cols} FROM schools LIMIT 1;")).unwrap();
+    let before = gpkg_state(&gpkg);
+    assert!(before[1].1.is_some() && before[2].1.is_some(), "the writer keeps a -wal and -shm");
+    let files_before = std::fs::read_dir(&dir).unwrap().count();
+    let layers = import_path(&gpkg, &Ctx::detached(Ticket::default())).unwrap();
+    assert_eq!(before, gpkg_state(&gpkg), "the GeoPackage or a sidecar changed");
+    assert_eq!(files_before, std::fs::read_dir(&dir).unwrap().count());
+    let schools = layers.iter().find(|l| l.name == "schools").unwrap();
+    assert_eq!(schools.profile.count, 9, "the row still in the -wal is read");
+    drop(writer);
+    let _ = std::fs::remove_dir_all(dir);
+}
+
+#[test]
+fn t5_excel_opens_the_only_sheet_with_coordinates() {
+    let l = open("T5/survey.xlsx").unwrap().remove(0);
+    let exp = expected("T5");
+    let want = exp["chosen_sheet"].as_str().unwrap();
+    let sheet = exp["sheets"].as_array().unwrap().iter().find(|s| s["name"] == want).unwrap();
+    assert_eq!(l.profile.format, "Excel");
+    assert_eq!(l.profile.source.member.as_deref(), Some(want));
+    assert_eq!(l.profile.kind, LayerKind::Points);
+    assert_eq!(l.profile.count, sheet["rows"].as_u64().unwrap());
+    assert!(l.profile.exclusions.is_empty(), "{:?}", l.profile.exclusions);
+    assert_eq!(l.status, ImportStatus::Complete);
+    let a = l.profile.assumptions.iter().find(|a| a.kind == AssumptionKind::ExcelSheet).unwrap();
+    assert_eq!(a.treatment, Treatment::Visible);
+    assert_eq!(a.line, format!("Opened sheet '{want}'."));
+    let names: Vec<&str> = exp["sheets"].as_array().unwrap().iter().map(|s| s["name"].as_str().unwrap()).collect();
+    assert_eq!(a.alternatives.iter().map(|c| c.label.as_str()).collect::<Vec<_>>(), names, "the other sheets are the alternatives");
+    // crs_wgs84_assumed: for tables, the coordinate-columns line says "as GPS coordinates (WGS 84)".
+    let c = l.profile.assumptions.iter().find(|a| a.kind == AssumptionKind::CsvCoordinateColumns).unwrap();
+    assert_eq!(c.treatment, Treatment::Visible);
+    let coords = &sheet["coordinates"];
+    assert_eq!(c.line, lm_profile::lines::csv_located(coords["x"].as_str().unwrap(), coords["y"].as_str().unwrap()));
+    // The cells are kept as written, for relocation and the problem list.
+    assert_eq!(l.raw.as_ref().map(|r| r.rows.len()), Some(20));
+    let LayerData::Vector(ds) = &l.data else { panic!() };
+    for (field, _) in exp["fields"].as_object().unwrap() {
+        assert!(ds.field_index(field).is_some(), "no field {field}");
+    }
+}
+
+#[test]
+fn t5_another_sheet_can_be_chosen_and_columns_changed_without_losing_the_sheet() {
+    let l = open("T5/survey.xlsx").unwrap().remove(0);
+    let summary = lm_core::model::Choice::new("sheet:Summary", "Summary");
+    let s = choose_sheet(&l, &summary).unwrap();
+    assert_eq!(s.name, l.name);
+    assert_eq!(s.profile.source.member.as_deref(), Some("Summary"));
+    assert_eq!(s.profile.kind, LayerKind::Table);
+    let a = s.profile.assumptions.iter().find(|a| a.kind == AssumptionKind::ExcelSheet).unwrap();
+    assert_eq!((a.chosen.id.as_str(), a.confirmed_by_user), ("sheet:Summary", true));
+    assert_eq!(a.line, "Opened sheet 'Summary'.");
+    assert!(choose_sheet(&l, &lm_core::model::Choice::not_sure()).is_err());
+    // Changing the coordinate columns keeps the format, the sheet and the sheet choice.
+    let t = relocate_csv(&l, &lm_core::model::Choice::not_sure()).unwrap();
+    assert_eq!(t.profile.kind, LayerKind::Table);
+    assert_eq!(t.profile.format, "Excel");
+    assert_eq!(t.profile.source.member.as_deref(), Some("Schools"));
+    assert!(has(&t, AssumptionKind::ExcelSheet));
+}
+
+#[test]
+fn excel_sources_stay_byte_identical() {
+    let x = fixtures().join("T5/survey.xlsx");
+    let before = sha(&x);
+    open("T5/survey.xlsx").unwrap();
+    assert_eq!(before, sha(&x));
+}
+
+#[test]
+fn switched_off_p1_formats_are_refused_plainly() {
+    let gpkg = fixtures().join("V9/city_layers.gpkg");
+    let xlsx = fixtures().join("T5/survey.xlsx");
+    let msg = |p: &std::path::Path, head: &[u8]| pick_adapter(p, head, false).err().map(|e| e.to_string());
+    assert_eq!(msg(&gpkg, b"SQLite format 3\0"), Some("LayeredMap can't open .gpkg files yet.".into()));
+    // An .xlsx starts like a ZIP: it must not reach the zipped-Shapefile reader.
+    assert_eq!(msg(&xlsx, b"PK\x03\x04"), Some("LayeredMap can't open .xlsx files yet.".into()));
+    assert_eq!(pick_adapter(&gpkg, b"SQLite format 3\0", true).map(|a| a.name()).ok(), Some("GeoPackage"));
+    assert_eq!(pick_adapter(&xlsx, b"PK\x03\x04", true).map(|a| a.name()).ok(), Some("Excel"));
+    assert_eq!(
+        pick_adapter(&fixtures().join("V9/roads_bundle.zip"), b"PK\x03\x04", false).map(|a| a.name()).ok(),
+        Some("Zipped Shapefile")
+    );
+}
+
+#[test]
+fn canceled_p1_imports_return_nothing() {
+    for f in ["V9/city_layers.gpkg", "T5/survey.xlsx"] {
+        let t = Ticket::default();
+        t.cancel();
+        assert_eq!(import_path(&fixtures().join(f), &Ctx::detached(t)).err(), Some(ImportError::Canceled), "{f}");
+        // Canceled after detection: each reader checks the ticket while reading.
+        let t = Ticket::default();
+        let ctx = Ctx::detached(t.clone());
+        let p = fixtures().join(f);
+        let a = pick_adapter(&p, b"", true).unwrap();
+        let m = a.open_metadata(&p, &ctx).unwrap();
+        t.cancel();
+        assert_eq!(a.stream_features(&p, &m, &ctx).err(), Some(ImportError::Canceled), "{f}");
+    }
+}
+
+#[test]
+fn zip_based_documents_are_not_taken_for_zipped_shapefiles() {
+    // survey.xlsx-style input goes to Excel, by extension, before the ZIP magic is looked at.
+    let xlsx = fixtures().join("T5/survey.xlsx");
+    let head = std::fs::read(&xlsx).unwrap();
+    assert!(head.starts_with(b"PK\x03\x04"));
+    assert_eq!(pick_adapter(&xlsx, &head, true).map(|a| a.name()).ok(), Some("Excel"));
+    assert_eq!(pick_adapter(std::path::Path::new("Survey.XLSX"), b"PK\x03\x04", true).map(|a| a.name()).ok(), Some("Excel"));
+    for f in ["report.docx", "places.kmz", "slides.pptx", "sheet.ods"] {
+        let ext = f.rsplit('.').next().unwrap();
+        let e = pick_adapter(std::path::Path::new(f), b"PK\x03\x04", true).err().map(|e| e.to_string());
+        assert_eq!(e, Some(format!("LayeredMap can't open .{ext} files yet.")), "{f}");
+    }
+    // A ZIP without a telling name is still tried as a zipped Shapefile.
+    assert_eq!(pick_adapter(std::path::Path::new("download"), b"PK\x03\x04", true).map(|a| a.name()).ok(), Some("Zipped Shapefile"));
 }

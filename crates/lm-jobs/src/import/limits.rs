@@ -11,6 +11,10 @@ pub const ZIP_MAX_RATIO: u64 = 100;
 pub const ZIP_MAX_ENTRIES: usize = 10_000;
 /// A GeoJSON larger than this is refused with a suggestion to convert it.
 pub const GEOJSON_MAX_BYTES: u64 = 2 << 30;
+/// A GeoPackage larger than this is refused: it is read into memory to be opened without SQLite.
+pub const GEOPACKAGE_MAX_BYTES: u64 = 2 << 30;
+/// A workbook larger than this is refused: the spreadsheet reader holds it in memory.
+pub const WORKBOOK_MAX_BYTES: u64 = 1 << 30;
 /// A raster side longer than this, without overviews, goes through the preparation step.
 pub const RASTER_PREPARE_SIDE: u64 = 8192;
 /// A raster side longer than this is refused.
