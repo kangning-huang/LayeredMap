@@ -78,6 +78,7 @@ impl MenuBar {
         )?;
         let file = Submenu::new("File", true);
         file.append(&MenuItem::with_id("open", "Open…", true, cmd(Code::KeyO)))?;
+        file.append(&MenuItem::with_id("open-examples", "Open example data", true, None))?;
         file.append(&PredefinedMenuItem::separator())?;
         if developer {
             file.append(&MenuItem::with_id("load-fixture", "Load fixture…", true, None))?;
@@ -167,6 +168,7 @@ impl MenuBar {
                 "quit" | "close" => Action::Quit,
                 "load-fixture" => Action::LoadFixture,
                 "open" => Action::Shell(Command::RequestOpen),
+                "open-examples" => Action::Shell(Command::OpenExamples),
                 "undo" => Action::Shell(Command::Undo),
                 "redo" => Action::Shell(Command::Redo),
                 "save-document" => Action::SaveDocument,
