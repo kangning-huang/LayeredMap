@@ -6,7 +6,8 @@
 use std::path::Path;
 use std::sync::Arc;
 
-use lm_core::model::{Crs, Extent, Known, LayerKind, LayerProfile};
+use lm_core::model::{AssumptionKind, Crs, Extent, Known, LayerKind, LayerProfile, Subject};
+use rustgis_engine::data::raster::Raster;
 
 use super::limits::{RASTER_MAX_SIDE, RASTER_PREPARE_SIDE};
 use super::progress::Counting;
@@ -156,7 +157,13 @@ impl FormatAdapter for GeoTiff {
                 lm_core::model::group_thousands(u64::from(fh))
             ));
         }
-        let profile = LayerProfile {
+        // EPSG 0 means a projection the file defines itself, not an EPSG code.
+        let crs = if crs.value == Crs::Epsg(0) {
+            Known::certain(Crs::Wkt(String::new()), "From the GeoTIFF's own projection parameters; shown in GPS coordinates.")
+        } else {
+            crs
+        };
+        let mut profile = LayerProfile {
             source: source_ref(path, None),
             format: "GeoTIFF".into(),
             kind: LayerKind::Raster,
@@ -171,8 +178,121 @@ impl FormatAdapter for GeoTiff {
             notices,
             data_rev: 0,
         };
+        // The choices (NoData, Landsat scale, kelvin) are applied to the data and the numbers.
+        let r = apply_raster_choices(&r, &mut profile, &metas)?;
         Ok(vec![ImportedLayer { name: stem, status: status_of(&profile), profile, data: LayerData::Raster(Arc::new(r)), raw: None }])
     }
+}
+
+fn chosen(profile: &LayerProfile, kind: AssumptionKind, band: u32) -> Option<&str> {
+    profile.assumptions.iter().find(|a| a.kind == kind && a.subject == Subject::Band(band)).map(|a| a.chosen.id.as_str())
+}
+
+/// Applies a raster layer's current choices to its data and band numbers: the NoData value (cells
+/// that are No data are left out of every number and drawn clear), the Landsat Collection 2
+/// scale and offset, and kelvin shown in °C. The stored cell values are never altered, so every
+/// choice can be changed back. Each assumption line says what is in effect.
+pub fn apply_raster_choices(raw: &Raster, profile: &mut LayerProfile, metas: &[BandMeta]) -> Result<Raster, ImportError> {
+    let mut nodata = raw.nodata;
+    for (i, band) in profile.bands.clone().iter().enumerate() {
+        let n = band.index;
+        let meta = metas.get(i).cloned().unwrap_or_default();
+        // NoData: the detected value, or the values as stored.
+        let nd = match chosen(profile, AssumptionKind::RasterNoData, n) {
+            Some(id) if id.starts_with("nodata:") => id.trim_start_matches("nodata:").parse::<f64>().ok(),
+            // The NoData assumption exists only when the file declares none.
+            Some(_) => None,
+            None => band.nodata.value,
+        };
+        if i == 0 {
+            nodata = nd;
+        }
+        // Scale and offset: the Landsat rule, or the file's own (none: the stored numbers).
+        let (mut scale, mut offset) = match chosen(profile, AssumptionKind::LandsatScale, n) {
+            Some("landsat_c2_st") => (Some(lm_profile::LANDSAT_C2_ST_SCALE), Some(lm_profile::LANDSAT_C2_ST_OFFSET)),
+            Some(_) => (meta.scale, meta.offset),
+            None => (band.scale.or(meta.scale), band.offset.or(meta.offset)),
+        };
+        // Kelvin shown in °C: the display offset moves by −273.15.
+        let kelvin = chosen(profile, AssumptionKind::RasterKelvin, n);
+        let unit = match kelvin {
+            Some("kelvin") => {
+                offset = Some(offset.unwrap_or(0.0) - 273.15);
+                scale = scale.or(Some(1.0));
+                Some("°C".to_string())
+            }
+            Some(_) => Some("K".to_string()),
+            None => band.unit.value.clone(),
+        };
+        let values = raw.bands.get(i).map(|b| b.data.as_slice()).unwrap_or_default();
+        let nd32 = nd.map(|v| v as f32);
+        let (sc, off) = (scale.unwrap_or(1.0), offset.unwrap_or(0.0));
+        let (mut lo, mut hi) = (f64::INFINITY, f64::NEG_INFINITY);
+        for &v in values {
+            if v.is_finite() && nd32.is_none_or(|d| v != d) {
+                let x = f64::from(v) * sc + off;
+                lo = lo.min(x);
+                hi = hi.max(x);
+            }
+        }
+        if let Some(b) = profile.bands.get_mut(i) {
+            b.nodata.value = nd;
+            b.scale = scale;
+            b.offset = offset;
+            b.unit.value = unit;
+            b.min = lo.is_finite().then_some(lo);
+            b.max = hi.is_finite().then_some(hi);
+        }
+        // Each line says what is in effect.
+        for a in profile.assumptions.iter_mut().filter(|a| a.subject == Subject::Band(n)) {
+            a.line = match (a.kind, a.chosen.id.as_str()) {
+                (AssumptionKind::RasterNoData, id) if id.starts_with("nodata:") => lm_profile::lines::raster_nodata(nd.unwrap_or_default()),
+                (AssumptionKind::RasterNoData, _) => "Every cell value is a real value (nothing treated as No data).".into(),
+                (AssumptionKind::RasterKelvin, "kelvin") => lm_profile::lines::RASTER_KELVIN.into(),
+                (AssumptionKind::RasterKelvin, _) => "Values shown as stored (kelvin).".into(),
+                (AssumptionKind::LandsatScale, "landsat_c2_st") => a.line.clone(),
+                (AssumptionKind::LandsatScale, _) => "Values shown as the stored numbers (no scale or offset applied).".into(),
+                _ => a.line.clone(),
+            };
+        }
+    }
+    let names: Vec<String> = raw.bands.iter().map(|b| b.name.clone()).collect();
+    let mut r = Raster::new(
+        raw.name.clone(),
+        raw.width,
+        raw.height,
+        raw.bands.iter().map(|b| b.data.clone()).collect(),
+        raw.transform,
+        raw.crs,
+        nodata,
+        raw.color.clone(),
+        raw.data_type.clone(),
+    )
+    .map_err(|e| ImportError::read(&raw.name, e))?;
+    for (b, n) in r.bands.iter_mut().zip(names) {
+        b.name = n;
+    }
+    r.source = raw.source.clone();
+    r.overview = raw.overview;
+    Ok(r)
+}
+
+/// Changes a raster assumption (NoData, Landsat scale, kelvin) and applies it to the data.
+pub fn rechoose_raster(
+    layer: &ImportedLayer,
+    kind: AssumptionKind,
+    subject: &Subject,
+    choice: &lm_core::model::Choice,
+) -> Result<ImportedLayer, ImportError> {
+    let LayerData::Raster(r) = &layer.data else { return Err(ImportError::Refused("This layer has no cells.".into())) };
+    let mut profile = layer.profile.clone();
+    for a in profile.assumptions.iter_mut().filter(|a| a.kind == kind && &a.subject == subject) {
+        a.chosen = choice.clone();
+        a.confirmed_by_user = true;
+    }
+    let metas = read_gdal_metadata(Path::new(&profile.source.path), r.bands.len());
+    let data = apply_raster_choices(r, &mut profile, &metas)?;
+    Ok(ImportedLayer { profile, data: LayerData::Raster(Arc::new(data)), ..layer.clone() })
 }
 
 #[cfg(test)]

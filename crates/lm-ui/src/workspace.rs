@@ -373,6 +373,37 @@ impl Workspace {
                 });
                 Ok(())
             }
+            AssumptionKind::RasterNoData | AssumptionKind::RasterKelvin | AssumptionKind::LandsatScale => {
+                let data = self.data(id).cloned().ok_or("This layer's data isn't loaded.")?;
+                let wake = self.wake.clone();
+                self.spawn_edit(id, label, false, wake, move || {
+                    lm_jobs::import::rechoose_raster(&data, kind, &subject, &choice).map_err(|e| e.to_string())
+                });
+                Ok(())
+            }
+            AssumptionKind::ShapefileGbk if matches!(choice.id.as_str(), "gbk" | "utf8" | "windows1252") => {
+                let data = self.data(id).cloned().ok_or("This layer's data isn't loaded.")?;
+                let wake = self.wake.clone();
+                self.spawn_edit(id, label, false, wake, move || {
+                    lm_jobs::import::reread_encoding(&data, &choice).map_err(|e| e.to_string())
+                });
+                Ok(())
+            }
+            // "Choose where it should be…": the question card comes back.
+            AssumptionKind::NoCrsProjected if choice.id == "find_place" => {
+                let mut profile = layer.profile.clone();
+                for a in profile.assumptions.iter_mut().filter(|a| a.kind == kind) {
+                    a.treatment = lm_core::model::Treatment::Question;
+                    a.confirmed_by_user = false;
+                    a.line = "Where should this data be?".into();
+                }
+                let tx = self.doc.set_profile_tx(id, profile).map(|mut t| {
+                    t.label = format!("Place {} again", layer.display_name);
+                    t
+                });
+                self.commit(tx);
+                Ok(())
+            }
             _ => self.record(id, kind, subject, choice, label),
         }
     }
@@ -496,7 +527,20 @@ impl Workspace {
 
     /// Records a changed choice (and marks it confirmed) without re-reading data.
     fn record(&mut self, id: LayerId, kind: AssumptionKind, subject: Subject, choice: Choice, label: String) -> Result<(), String> {
-        let tx = self.doc.set_assumption_tx(id, kind, subject, choice).map(|mut t| {
+        let Some(layer) = self.doc.layer(id).cloned() else { return Err("That layer is gone.".into()) };
+        // The line must say what is now in effect.
+        let mut profile = layer.profile.clone();
+        let mut found = false;
+        for a in profile.assumptions.iter_mut().filter(|a| a.kind == kind && a.subject == subject) {
+            a.line = line_for(kind, &choice).unwrap_or_else(|| a.line.clone());
+            a.chosen = choice.clone();
+            a.confirmed_by_user = true;
+            found = true;
+        }
+        if !found {
+            return Err("That assumption couldn't be changed.".into());
+        }
+        let tx = self.doc.set_profile_tx(id, profile).map(|mut t| {
             t.label = label;
             t
         });
@@ -880,6 +924,27 @@ fn compare_style() -> Style {
     let mut s = Style::for_kind(LayerKind::Points, [0xD5, 0x5E, 0x00, 0xFF], 0);
     s.point_size = 9.0;
     s
+}
+
+/// The line for a choice that changes how values are read but not the data itself.
+fn line_for(kind: AssumptionKind, choice: &Choice) -> Option<String> {
+    Some(match (kind, choice.id.as_str()) {
+        (AssumptionKind::RasterCellMeaning, "measured") => "Treated as measured values (averaged, not summed).".into(),
+        (AssumptionKind::RasterCellMeaning, "total") => "Treated as totals per cell (summed).".into(),
+        (AssumptionKind::RasterCellMeaning, "category") => "Treated as categories (shares, not averages).".into(),
+        (AssumptionKind::RasterCellMeaning, "not_sure") => {
+            "Treated as measured values because the meaning is unconfirmed. Totals are hidden.".into()
+        }
+        (AssumptionKind::ChinaOffsetPossible | AssumptionKind::ChinaOffsetNamed, "wgs84") => {
+            "Kept as GPS coordinates (WGS 84), as you chose.".into()
+        }
+        (AssumptionKind::ChinaOffsetPossible | AssumptionKind::ChinaOffsetNamed, "not_sure") => {
+            "Points left where they are; they may sit a few hundred meters off if they came from a Chinese map app.".into()
+        }
+        (AssumptionKind::RasterNoUnit, _) => format!("Unit: {}.", choice.label),
+        (_, "not_sure") => format!("Left as it is: {}.", choice.label.to_lowercase()),
+        _ => format!("{}.", choice.label.trim_end_matches('.')),
+    })
 }
 
 /// A saved layer's data derived again from a fresh read of its source, by the choices the

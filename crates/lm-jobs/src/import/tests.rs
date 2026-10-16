@@ -532,3 +532,36 @@ fn geojson_states_no_assumed_gps_line() {
     assert!(!has(&l, AssumptionKind::NoCrsLonLat), "{:?}", l.profile.assumptions);
     assert_eq!(l.profile.crs.value, lm_core::model::Crs::Wgs84);
 }
+
+/// Review finding (S1): the NoData line must be true. R6's −9999 border is left out of the band's
+/// numbers and drawn clear; choosing "a real value" puts it back, and the line says so.
+#[test]
+fn r6_detected_nodata_is_applied_and_can_be_changed() {
+    let l = open("R6/scaled.tif").unwrap().remove(0);
+    let LayerData::Raster(r) = &l.data else { panic!() };
+    assert_eq!(r.nodata, Some(-9999.0));
+    let b = &l.profile.bands[0];
+    assert!(b.min.unwrap() > -1.0, "the −9999 border is out of the range: {:?}", b.min);
+    let a = l.profile.assumptions.iter().find(|a| a.kind == AssumptionKind::RasterNoData).unwrap().clone();
+    let real = a.alternatives.iter().find(|c| c.id == "value").unwrap().clone();
+    let changed = rechoose_raster(&l, a.kind, &a.subject, &real).unwrap();
+    let LayerData::Raster(r2) = &changed.data else { panic!() };
+    assert_eq!(r2.nodata, None);
+    assert!(changed.profile.bands[0].min.unwrap() < -1000.0, "now −9999 × 0.1 − 100 is in the range");
+    let line = &changed.profile.assumptions.iter().find(|x| x.kind == AssumptionKind::RasterNoData).unwrap().line;
+    assert!(line.contains("real value"), "{line}");
+}
+
+/// Review finding (S1): changing the text encoding re-reads the file in that encoding.
+#[test]
+fn v5_text_encoding_can_be_changed() {
+    let l = open("V5/places_gbk.shp").unwrap().remove(0);
+    let utf8 = lm_core::model::Choice::new("utf8", "Unicode (UTF-8)");
+    let changed = reread_encoding(&l, &utf8).unwrap();
+    let LayerData::Vector(ds) = &changed.data else { panic!() };
+    let name = ds.field_index("name").unwrap();
+    assert_ne!(ds.value(0, name), &rustgis_engine::data::Value::Text("人民广场".into()));
+    let back = reread_encoding(&changed, &lm_core::model::Choice::new("gbk", "Chinese (GBK)")).unwrap();
+    let LayerData::Vector(ds) = &back.data else { panic!() };
+    assert_eq!(ds.value(0, name), &rustgis_engine::data::Value::Text("人民广场".into()));
+}

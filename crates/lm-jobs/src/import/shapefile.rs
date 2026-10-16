@@ -13,6 +13,47 @@ use super::limits::{check_zip, zip_entries};
 use super::{Ctx, FormatAdapter, ImportError, ImportedLayer, LayerData, Metadata, Stage, extension, file_name, status_of, vector_profile};
 
 pub struct Shapefile;
+
+thread_local! {
+    /// A text encoding chosen by the user (Change on the encoding line), used instead of the
+    /// `.cpg` or detection while the file is read again on this thread.
+    static ENCODING_OVERRIDE: std::cell::RefCell<Option<String>> = const { std::cell::RefCell::new(None) };
+}
+
+fn cpg_or_override(cpg: Option<String>) -> Option<String> {
+    ENCODING_OVERRIDE.with(|o| o.borrow().clone()).or(cpg)
+}
+
+/// Reads a Shapefile layer again in the encoding the user chose (`gbk`, `utf8`, `windows1252`):
+/// the same file and member, nothing else changed. The choice is recorded as confirmed.
+pub fn reread_encoding(layer: &ImportedLayer, choice: &lm_core::model::Choice) -> Result<ImportedLayer, ImportError> {
+    let label = match choice.id.as_str() {
+        "gbk" => "GBK",
+        "utf8" => "UTF-8",
+        "windows1252" => "1252",
+        other => return Err(ImportError::Refused(format!("Unknown text encoding: {other}"))),
+    };
+    ENCODING_OVERRIDE.with(|o| *o.borrow_mut() = Some(label.to_string()));
+    let read = super::import_path(Path::new(&layer.profile.source.path), &super::Ctx::detached(Default::default()));
+    ENCODING_OVERRIDE.with(|o| *o.borrow_mut() = None);
+    let mut layers = read?;
+    let pos = layers.iter().position(|l| l.profile.source.member == layer.profile.source.member).unwrap_or(0);
+    if layers.is_empty() {
+        return Err(ImportError::Refused("The file holds nothing any more.".into()));
+    }
+    let mut new = layers.swap_remove(pos);
+    new.name = layer.name.clone();
+    // The encoding line now states the choice, confirmed, with every alternative kept.
+    let old = layer.profile.assumptions.iter().find(|a| a.kind == lm_core::model::AssumptionKind::ShapefileGbk).cloned();
+    new.profile.assumptions.retain(|a| a.kind != lm_core::model::AssumptionKind::ShapefileGbk);
+    if let Some(mut a) = old {
+        a.chosen = choice.clone();
+        a.confirmed_by_user = true;
+        a.line = format!("Read text as {}.", choice.label);
+        new.profile.assumptions.push(a);
+    }
+    Ok(new)
+}
 pub struct ZippedShapefile;
 
 /// Formats that are ZIP archives inside but never a zipped Shapefile (office documents, KMZ,
@@ -138,7 +179,7 @@ impl FormatAdapter for Shapefile {
         let dbf = read(sibling(path, "dbf"))?;
         let text = |b: Option<Vec<u8>>| b.map(|b| String::from_utf8_lossy(&b).into_owned());
         let prj = text(read(sibling(path, "prj"))?);
-        let cpg = text(read(sibling(path, "cpg"))?);
+        let cpg = cpg_or_override(text(read(sibling(path, "cpg"))?));
         ctx.stage(Stage::Extent)?;
         let stem = path.file_stem().and_then(|s| s.to_str()).unwrap_or("layer");
         Ok(vec![read_parts(path, None, stem, shp, shx, dbf, prj, cpg, ctx)?])
@@ -198,7 +239,7 @@ impl FormatAdapter for ZippedShapefile {
                 get(&stem, "shx"),
                 get(&stem, "dbf"),
                 text(get(&stem, "prj")),
-                text(get(&stem, "cpg")),
+                cpg_or_override(text(get(&stem, "cpg"))),
                 ctx,
             )?;
             out.push(ImportedLayer {

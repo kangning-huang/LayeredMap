@@ -520,6 +520,9 @@ pub fn choose_sheet(layer: &ImportedLayer, choice: &Choice) -> Result<ImportedLa
     excel::choose_sheet(layer, choice)
 }
 
+pub use raster::rechoose_raster;
+pub use shapefile::reread_encoding;
+
 /// The name of a coordinate system in the candidate table ("CGCS2000 / 3-degree Gauss-Kruger CM
 /// 120E"), or "EPSG:n".
 pub fn crs_name(epsg: u16) -> String {
