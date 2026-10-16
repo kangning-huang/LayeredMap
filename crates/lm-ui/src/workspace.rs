@@ -366,8 +366,10 @@ impl Workspace {
         }
         let label = format!("Change how {} is read", layer.display_name);
         match kind {
+            // Not sure on "Where should this data be?" goes to the re-read branch below (it may
+            // be placed data with no raw cells).
             AssumptionKind::CsvCoordinateColumns | AssumptionKind::CsvAmbiguousColumns | AssumptionKind::NoCrsProjected
-                if choice.id.starts_with("columns:") || choice.id == "not_sure" =>
+                if choice.id.starts_with("columns:") || (choice.id == "not_sure" && kind != AssumptionKind::NoCrsProjected) =>
             {
                 let data = self.data(id).cloned().ok_or("This layer's data isn't loaded.")?;
                 if data.raw.is_none() {
@@ -1370,5 +1372,65 @@ mod second_review_tests {
         let orig =
             w.doc.layer(id).unwrap().profile.assumptions.iter().find(|a| a.kind == AssumptionKind::ChinaOffsetNamed).unwrap().clone();
         assert!(orig.line.starts_with("Converted to GPS coordinates"), "{}", orig.line);
+    }
+}
+
+#[cfg(test)]
+mod third_review_tests {
+    use super::*;
+
+    fn open(rel: &str) -> Vec<ImportedLayer> {
+        let p = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../fixtures").join(rel);
+        lm_jobs::import::import_path(&p, &lm_jobs::import::Ctx::detached(Default::default())).unwrap()
+    }
+
+    /// Not sure on a placed layer opens it as a table (not drawn).
+    #[test]
+    fn not_sure_on_a_placed_layer_opens_it_as_a_table() {
+        let mut w = Workspace::default();
+        w.add_imported(open("V4/districts_gk.shp"), 1);
+        let id = w.doc.layers[0].id;
+        w.place_layer(id, 4549, None).unwrap();
+        w.wait_pending();
+        w.change_assumption(id, AssumptionKind::NoCrsProjected, Subject::Layer, Choice::not_sure(), None).unwrap();
+        w.wait_pending();
+        let l = w.doc.layer(id).unwrap();
+        assert_eq!(l.profile.kind, LayerKind::Table);
+        assert!(!drawable(&l.profile));
+    }
+
+    /// A converted GPS copy stays converted after its text encoding is changed.
+    #[test]
+    fn a_gps_copy_stays_converted_after_an_encoding_change() {
+        let dir = std::env::temp_dir().join(format!("lm-amap-shp-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let src = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/V5");
+        for ext in ["shp", "shx", "dbf"] {
+            std::fs::copy(src.join(format!("places_gbk.{ext}")), dir.join(format!("amap_places.{ext}"))).unwrap();
+        }
+        let layers =
+            lm_jobs::import::import_path(&dir.join("amap_places.shp"), &lm_jobs::import::Ctx::detached(Default::default())).unwrap();
+        let mut w = Workspace::default();
+        w.add_imported(layers, 1);
+        let id = w.doc.layers[0].id;
+        let a = w.doc.layers[0]
+            .profile
+            .assumptions
+            .iter()
+            .find(|a| a.kind == AssumptionKind::ChinaOffsetNamed)
+            .cloned()
+            .expect("the amap name hint asks");
+        w.change_assumption(id, a.kind, a.subject, Choice::new("gcj02", "Amap"), None).unwrap();
+        w.wait_pending();
+        let gps = w.doc.layers.iter().find(|l| l.id != id).unwrap().id;
+        let before = w.doc.layer(gps).unwrap().profile.extent_wgs84.unwrap();
+        w.change_assumption(gps, AssumptionKind::ShapefileGbk, Subject::Layer, Choice::new("utf8", "Unicode (UTF-8)"), None).unwrap();
+        w.wait_pending();
+        let p = &w.doc.layer(gps).unwrap().profile;
+        assert!(p.notices.iter().any(|n| n.starts_with("Converted from")), "{:?}", p.notices);
+        assert!(p.open_questions().next().is_none());
+        let after = p.extent_wgs84.unwrap();
+        assert!((before.min_x - after.min_x).abs() < 1e-9, "still converted: {before:?} vs {after:?}");
+        let _ = std::fs::remove_dir_all(dir);
     }
 }

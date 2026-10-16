@@ -325,7 +325,43 @@ fn large_fixtures() {
         }
         None => missing.push("R5"),
     }
-    println!("STRESS\tV6\tnot run: the 500 MB OpenStreetMap extract is not in the fixtures yet\topens, map stays interactive\tn/a");
+    // V6: a 500 MB GeoJSON opens while a 60 fps interface loop keeps polling (the plan's file is
+    // an OpenStreetMap extract; a synthetic stand-in of the same size and shape is used until then).
+    match generated_file("V6", "geojson") {
+        Some(p) => {
+            let before = sha(&p);
+            let t = std::time::Instant::now();
+            let job = start(p.clone(), || {});
+            let (mut worst, mut last) = (0.0f64, std::time::Instant::now());
+            let result = loop {
+                let polled = job.poll();
+                if let Some(ImportEvent::Done(r)) = polled.into_iter().find(|e| matches!(e, ImportEvent::Done(_))) {
+                    break r;
+                }
+                std::thread::sleep(std::time::Duration::from_millis(16));
+                worst = worst.max(last.elapsed().as_secs_f64() * 1000.0);
+                last = std::time::Instant::now();
+                if t.elapsed().as_secs() > 300 {
+                    break Err(ImportError::Canceled);
+                }
+            };
+            let secs = t.elapsed().as_secs_f64();
+            let n = result.as_ref().map(|l| l.iter().map(|x| x.profile.count).sum::<u64>()).unwrap_or(0);
+            let name = p.file_name().and_then(|n| n.to_str()).unwrap_or("").to_string();
+            ok &= stress_line(
+                "V6",
+                &format!(
+                    "{name}: {} features in {secs:.1} s; interface loop's worst gap {worst:.0} ms",
+                    lm_core::model::group_thousands(n)
+                ),
+                "opens, map stays interactive (gap ≤ 100 ms)",
+                result.is_ok() && worst <= 100.0,
+            );
+            let same = sha(&p) == before;
+            ok &= stress_line("V6 hash", if same { "unchanged" } else { "CHANGED" }, "byte-identical", same);
+        }
+        None => println!("STRESS\tV6\tnot run: no V6 GeoJSON in the generated fixtures\topens, map stays interactive\tn/a"),
+    }
     if !missing.is_empty() {
         eprintln!("missing generated fixtures: {} (cargo xtask fixtures --large)", missing.join(", "));
     }

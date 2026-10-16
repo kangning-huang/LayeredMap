@@ -360,6 +360,7 @@ fn read_table(path: &Path, bytes: &Arc<Vec<u8>>, catalog: &Catalog, table: &str,
         Placement::Raw { .. } => None,
     };
     let parts = super::split_by_kind(ds);
+    let multi = parts.len() > 1;
     let kinds: Vec<_> = parts.iter().map(|(k, _)| *k).collect();
     let split = lm_profile::mixed_geometry_split(&kinds);
     let mut out = Vec::new();
@@ -368,9 +369,15 @@ fn read_table(path: &Path, bytes: &Arc<Vec<u8>>, catalog: &Catalog, table: &str,
         // Excluded records are reported once, on the first layer.
         let excl = if i == 0 { exclusions.clone() } else { Vec::new() };
         let field_names: Vec<String> = part.fields.iter().map(|f| f.name.clone()).collect();
+        // Split parts of one table need their own member, so each can be found again.
+        let member = if multi {
+            format!("{table} ({})", part.name.rsplit('(').next().unwrap_or("").trim_end_matches(')'))
+        } else {
+            table.to_string()
+        };
         let mut profile: LayerProfile = vector_profile(
             path,
-            Some(table.to_string()),
+            Some(member),
             "GeoPackage",
             &part,
             declared_crs.clone(),

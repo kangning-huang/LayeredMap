@@ -226,7 +226,8 @@ pub fn apply_raster_choices(raw: &Raster, profile: &mut LayerProfile, metas: &[B
             // A unit the user gave (RasterNoUnit) or the file's.
             None => match chosen(profile, AssumptionKind::RasterNoUnit, n).and_then(|id| id.strip_prefix("unit:")) {
                 Some(u) => Some(u.to_string()),
-                None => meta.unit.clone().or_else(|| band.unit.value.clone()),
+                // The file's own unit (a unit chosen before and then cleared doesn't linger).
+                None => meta.unit.clone(),
             },
         };
         let values = raw.bands.get(i).map(|b| b.data.as_slice()).unwrap_or_default();
