@@ -45,36 +45,21 @@ impl FormatAdapter for Delimited {
         let open = || std::fs::File::open(path).map_err(|e| ImportError::read(&name, e));
         let mut head = Vec::with_capacity(HEAD);
         open()?.take(HEAD as u64).read_to_end(&mut head).map_err(|e| ImportError::read(&name, e))?;
-        let (encoding, bom) = detect_encoding(&head);
+        let (mut encoding, bom) = detect_encoding(&head);
         let head_text = encoding.decode_without_bom_handling(head.get(bom..).unwrap_or_default()).0;
         let delimiter =
             if matches!(extension(path).as_str(), "tsv" | "tab") { b'\t' } else { rustgis_engine::data::io::sniff_delimiter(&head_text) };
-        ctx.ticket.set_total(meta.size);
-        let mut file = Counting::new(std::io::BufReader::new(open()?), ctx.ticket.clone());
-        let mut skip = vec![0u8; bom];
-        file.read_exact(&mut skip).map_err(|e| ImportError::read(&name, e))?;
-        let reader: Box<dyn Read> = if encoding == encoding_rs::UTF_8 { Box::new(file) } else { Box::new(Decoding::new(file, encoding)) };
-        let mut csv = ::csv::ReaderBuilder::new().delimiter(delimiter).flexible(true).has_headers(false).from_reader(reader);
-        let mut headers: Option<Vec<String>> = None;
-        let mut rows: Vec<Vec<String>> = Vec::new();
-        let mut record = ::csv::StringRecord::new();
-        loop {
-            match csv.read_record(&mut record) {
-                Ok(false) => break,
-                Ok(true) => {
-                    let cells: Vec<String> = record.iter().map(str::to_string).collect();
-                    match &headers {
-                        None => headers = Some(cells),
-                        Some(_) if cells.iter().all(|c| c.trim().is_empty()) => {}
-                        Some(_) => rows.push(cells),
-                    }
-                    if rows.len().is_multiple_of(50_000) {
-                        ctx.ticket.check()?;
-                    }
-                }
-                Err(e) => return Err(ImportError::read(&name, e)),
+        // A file that looked like UTF-8 in its first 64 KiB but isn't further on is read again
+        // as Chinese (GBK) rather than failing or losing characters.
+        let (headers, rows) = match read_rows(path, &name, encoding, bom, delimiter, meta.size, ctx) {
+            Err(ImportError::Failed { details, .. })
+                if encoding == encoding_rs::UTF_8 && details.to_ascii_lowercase().contains("utf-8") =>
+            {
+                encoding = encoding_rs::GB18030;
+                read_rows(path, &name, encoding, bom, delimiter, meta.size, ctx)?
             }
-        }
+            other => other?,
+        };
         // Rows longer than the header keep their extra cells, in numbered columns.
         let mut headers = headers.unwrap_or_default();
         let widest = rows.iter().map(Vec::len).max().unwrap_or(0);
@@ -111,6 +96,46 @@ impl FormatAdapter for Delimited {
     }
 }
 
+/// Reads every row of a delimited file as raw cells: the header row, then the data rows.
+fn read_rows(
+    path: &Path,
+    name: &str,
+    encoding: &'static encoding_rs::Encoding,
+    bom: usize,
+    delimiter: u8,
+    size: u64,
+    ctx: &Ctx,
+) -> Result<(Option<Vec<String>>, Vec<Vec<String>>), ImportError> {
+    ctx.ticket.set_total(size);
+    let f = std::fs::File::open(path).map_err(|e| ImportError::read(name, e))?;
+    let mut file = Counting::new(std::io::BufReader::new(f), ctx.ticket.clone());
+    let mut skip = vec![0u8; bom];
+    file.read_exact(&mut skip).map_err(|e| ImportError::read(name, e))?;
+    let reader: Box<dyn Read> = if encoding == encoding_rs::UTF_8 { Box::new(file) } else { Box::new(Decoding::new(file, encoding)) };
+    let mut csv = ::csv::ReaderBuilder::new().delimiter(delimiter).flexible(true).has_headers(false).from_reader(reader);
+    let mut headers: Option<Vec<String>> = None;
+    let mut rows: Vec<Vec<String>> = Vec::new();
+    let mut record = ::csv::StringRecord::new();
+    loop {
+        match csv.read_record(&mut record) {
+            Ok(false) => break,
+            Ok(true) => {
+                let cells: Vec<String> = record.iter().map(str::to_string).collect();
+                match &headers {
+                    None => headers = Some(cells),
+                    Some(_) if cells.iter().all(|c| c.trim().is_empty()) => {}
+                    Some(_) => rows.push(cells),
+                }
+                if rows.len().is_multiple_of(50_000) {
+                    ctx.ticket.check()?;
+                }
+            }
+            Err(e) => return Err(ImportError::read(name, e)),
+        }
+    }
+    Ok((headers, rows))
+}
+
 /// GBK text a byte sniffer would miss (it isn't UTF-8): two lines split alike by a separator.
 fn looks_delimited_gbk(head: &[u8]) -> bool {
     let (text, errors) = encoding_rs::GBK.decode_without_bom_handling(head);
@@ -144,7 +169,7 @@ fn detect_encoding(head: &[u8]) -> (&'static encoding_rs::Encoding, usize) {
 }
 
 /// Blank or repeated header names get a number, so every field can be told apart.
-fn dedupe_headers(h: Vec<String>) -> Vec<String> {
+pub(super) fn dedupe_headers(h: Vec<String>) -> Vec<String> {
     let mut out: Vec<String> = Vec::with_capacity(h.len());
     for (i, name) in h.into_iter().enumerate() {
         let base = name.trim().trim_start_matches('\u{feff}').to_string();
@@ -394,10 +419,13 @@ pub fn relocate(layer: &ImportedLayer, raw: &Arc<RawRows>, choice: &Choice) -> R
         name: layer.name.clone(),
         format: layer.profile.format.clone(),
         encoding: layer.profile.encoding.clone(),
-        notices: Vec::new(),
+        // The import's notices stay (encoding, preview size…).
+        notices: layer.profile.notices.clone(),
         assumptions: layer.profile.assumptions.iter().filter(|a| a.kind == AssumptionKind::ExcelSheet).cloned().collect(),
     };
     let mut out = build_with(origin, raw, location, pair, lonlat)?;
+    let mut seen = std::collections::HashSet::new();
+    out.profile.notices.retain(|n| seen.insert(n.clone()));
     out.raw = Some(raw.clone());
     Ok(out)
 }

@@ -203,6 +203,13 @@ impl FormatAdapter for ZippedShapefile {
 
     fn stream_features(&self, path: &Path, _meta: &Metadata, ctx: &Ctx) -> Result<Vec<ImportedLayer>, ImportError> {
         let name = file_name(path);
+        // The archive is read into memory to list and expand it: cap it first.
+        let size = std::fs::metadata(path).map_err(|e| ImportError::read(&name, e))?.len();
+        if size > super::limits::ZIP_MAX_EXPANDED {
+            return Err(ImportError::Refused(format!(
+                "{name} is larger than 2 GB, the most LayeredMap reads as a zipped Shapefile. Unzip it and open the .shp. Your file has not been changed."
+            )));
+        }
         let bytes = std::fs::read(path).map_err(|e| ImportError::read(&name, e))?;
         // The limits are checked from the central directory before anything is expanded.
         let entries = zip_entries(&bytes)?;

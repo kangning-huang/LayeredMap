@@ -625,3 +625,23 @@ fn ragged_rows_and_feature_ids_are_kept() {
     assert_eq!(ds.value(0, i), &rustgis_engine::data::Value::Text("a1".into()));
     let _ = std::fs::remove_dir_all(dir);
 }
+
+/// Review finding (S3): a CSV whose first 64 KiB are ASCII but which is GBK further on.
+#[test]
+fn gbk_after_an_ascii_head_is_read_as_gbk() {
+    let mut text = String::from("name,lon,lat\n");
+    for i in 0..4000 {
+        text.push_str(&format!("site{i},121.4,31.2\n"));
+    }
+    text.push_str("人民广场,121.47,31.23\n");
+    let (bytes, _, _) = encoding_rs::GBK.encode(&text);
+    let dir = std::env::temp_dir().join(format!("lm-gbk-tail-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let p = dir.join("tail.csv");
+    std::fs::write(&p, &bytes).unwrap();
+    let l = import_path(&p, &Ctx::detached(Ticket::default())).unwrap().remove(0);
+    assert_eq!(l.profile.encoding.as_deref(), Some("GBK"));
+    let LayerData::Vector(ds) = &l.data else { panic!() };
+    assert_eq!(ds.value(4000, 0), &rustgis_engine::data::Value::Text("人民广场".into()));
+    let _ = std::fs::remove_dir_all(dir);
+}
