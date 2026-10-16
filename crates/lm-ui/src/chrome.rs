@@ -17,7 +17,7 @@ const SHARE_PHASE: u8 = 5;
 /// The welcome card appears once Open file and Try an example work.
 const WELCOME_PHASE: u8 = 2;
 
-fn panel_frame(t: &theme::Theme) -> egui::Frame {
+pub(crate) fn panel_frame(t: &theme::Theme) -> egui::Frame {
     egui::Frame::new()
         .fill(t.surface)
         .stroke(Stroke::new(1.0, t.border))
@@ -51,7 +51,8 @@ pub fn toolbar(shell: &mut Shell, ui: &mut Ui, rect: Rect, _system: System) {
         (icon::STACK, "Layers", LAYERS_PHASE),
         (icon::FOLDER_OPEN, "Open", OPEN_PHASE),
     ] {
-        let enabled = flags.shows(phase) && phase <= lm_core::phase::BUILD_PHASE;
+        let built = flags.shows(phase) && phase <= lm_core::phase::BUILD_PHASE;
+        let enabled = built && (label != "Undo" || shell.ws.undo.can_undo());
         let color = if enabled { t.text_primary } else { t.text_secondary.gamma_multiply(0.7) };
         let text = painter.layout_no_wrap(label.to_string(), regular(theme::BODY), color);
         let w = 18.0 + 6.0 + text.size().x + 20.0;
@@ -63,9 +64,34 @@ pub fn toolbar(shell: &mut Shell, ui: &mut Ui, rect: Rect, _system: System) {
         }
         painter.text(pos2(r.left() + 10.0, r.center().y), Align2::LEFT_CENTER, glyph, theme::icon_font(18.0), color);
         painter.galley(pos2(r.left() + 34.0, r.center().y - text.size().y / 2.0), text, color);
-        if !enabled {
+        if !built {
             resp.on_hover_text(format!("{label} arrives in a later phase"));
+            continue;
         }
+        let tip = match label {
+            "Undo" => shell.ws.undo.undo_label().map_or_else(|| "Nothing to undo".to_string(), |l| format!("Undo {}", lower_first(l))),
+            "Open" => "Open files (⌘O)".to_string(),
+            "Layers" => "Show or hide the layer list (⌘L)".to_string(),
+            other => other.to_string(),
+        };
+        let clicked = resp.clicked();
+        resp.on_hover_text(tip);
+        if clicked {
+            match label {
+                "Open" => shell.command(ui.ctx(), crate::Command::RequestOpen),
+                "Layers" => shell.command(ui.ctx(), crate::Command::ToggleLayers),
+                "Undo" => shell.command(ui.ctx(), crate::Command::Undo),
+                _ => {}
+            }
+        }
+    }
+}
+
+fn lower_first(s: &str) -> String {
+    let mut c = s.chars();
+    match c.next() {
+        Some(f) => f.to_lowercase().collect::<String>() + c.as_str(),
+        None => String::new(),
     }
 }
 
@@ -176,12 +202,16 @@ pub fn map_overlays(shell: &mut Shell, ui: &mut Ui, map: Rect, system: System) {
     controls(shell, ui, map);
     scale_bar(shell, ui, map);
     attribution(shell, ui, map);
-    notices(shell, ui, map);
     if shell.debug_overlay() {
         debug_overlay(shell, ui, map);
     }
-    if shell.flags.shows(WELCOME_PHASE) && WELCOME_PHASE <= lm_core::phase::BUILD_PHASE {
-        welcome(&t, ui, map);
+    let empty = shell.ws.doc.layers.is_empty() && shell.ws.imports.is_empty();
+    if shell.flags.shows(WELCOME_PHASE) && WELCOME_PHASE <= lm_core::phase::BUILD_PHASE && empty && !shell.welcome_closed {
+        match welcome(&t, ui, map) {
+            Some(Welcome::Open) => shell.command(ui.ctx(), crate::Command::RequestOpen),
+            Some(Welcome::Close) => shell.welcome_closed = true,
+            None => {}
+        }
     }
     let _ = system;
 }
@@ -378,7 +408,11 @@ pub fn credits(shell: &mut Shell, ctx: &egui::Context) {
     shell.credits_open = open;
 }
 
-/// One notice at a time, as a pill 12 px below the toolbar.
+/// One notice at a time, as a pill 12 px below the toolbar, centred in the free part of the map.
+pub(crate) fn notices_in(shell: &mut Shell, ui: &Ui, map: Rect) {
+    notices(shell, ui, map);
+}
+
 fn notices(shell: &mut Shell, ui: &Ui, map: Rect) {
     let t = *shell.theme();
     let now = ui.input(|i| i.time);
@@ -422,17 +456,36 @@ fn debug_overlay(shell: &Shell, ui: &Ui, map: Rect) {
 }
 
 /// First launch (Screen states): "Open a file to see your data on the map." Phase 2 onwards.
-fn welcome(t: &theme::Theme, ui: &mut Ui, map: Rect) {
+enum Welcome {
+    Open,
+    Close,
+}
+
+/// The first-launch card (Screen states › First launch). "Try an example" arrives with WP2.9.
+fn welcome(t: &theme::Theme, ui: &mut Ui, map: Rect) -> Option<Welcome> {
     let pos = pos2(map.center().x, map.bottom() - 48.0);
+    let mut out = None;
     egui::Area::new(egui::Id::new("lm-welcome")).pivot(Align2::CENTER_BOTTOM).fixed_pos(pos).show(ui.ctx(), |ui| {
         panel_frame(t).show(ui, |ui| {
-            ui.label(egui::RichText::new("Open a file to see your data on the map.").size(theme::BODY));
             ui.horizontal(|ui| {
-                let _ = ui.button("Open file…");
-                let _ = ui.button("Try an example");
+                ui.label(egui::RichText::new("Open a file to see your data on the map.").size(theme::BODY));
+                if ui
+                    .add(egui::Button::new(egui::RichText::new(icon::X).font(theme::icon_font(12.0))).frame(false))
+                    .on_hover_text("Close")
+                    .clicked()
+                {
+                    out = Some(Welcome::Close);
+                }
+            });
+            ui.horizontal(|ui| {
+                if ui.add(egui::Button::new(egui::RichText::new("Open file…").color(t.on_accent)).fill(t.accent)).clicked() {
+                    out = Some(Welcome::Open);
+                }
+                ui.add_enabled(false, egui::Button::new("Try an example")).on_disabled_hover_text("Example data arrives later in Phase 2");
             });
         });
     });
+    out
 }
 
 #[cfg(test)]

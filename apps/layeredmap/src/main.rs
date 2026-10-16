@@ -7,7 +7,18 @@ mod feel;
 mod menu;
 
 use lm_core::phase::Flags;
-use lm_ui::{Command, Prefs, Shell, System, ThemePref, Units};
+use lm_ui::{Command, FileRequest, Prefs, Shell, System, ThemePref, Units};
+
+/// Where answered question cards are logged: the app's support folder (never data values or
+/// file names; Assumptions and questions › Question budget instrumentation).
+fn question_log_path() -> std::path::PathBuf {
+    let home = std::env::var_os("HOME").map(std::path::PathBuf::from).unwrap_or_default();
+    home.join("Library/Application Support/LayeredMap/question-log.jsonl")
+}
+
+fn lm_doc_export(log: &std::path::Path, out: &std::path::Path) -> Result<usize, String> {
+    lm_ui::export_question_log(log, out)
+}
 
 struct App {
     shell: Shell,
@@ -110,9 +121,48 @@ impl eframe::App for App {
                         }
                     }
                     menu::Action::Shell(cmd) => self.shell.command(ctx, cmd),
+                    menu::Action::SaveDocument => self.shell.command(ctx, Command::RequestSaveDocument),
+                    menu::Action::OpenDocument => self.shell.command(ctx, Command::RequestOpenDocument),
+                    menu::Action::ExportQuestionLog => {
+                        let log = question_log_path();
+                        if let Some(out) =
+                            rfd::FileDialog::new().set_title("Export question log").set_file_name("question log.csv").save_file()
+                        {
+                            match lm_doc_export(&log, &out) {
+                                Ok(n) => log::info!("exported {n} question-log rows"),
+                                Err(e) => log::warn!("question log export: {e}"),
+                            }
+                        }
+                    }
                 }
             }
             m.sync(&self.shell);
+        }
+        for req in self.shell.take_file_requests() {
+            match req {
+                FileRequest::Open => {
+                    if let Some(paths) = rfd::FileDialog::new().set_title("Open").pick_files() {
+                        self.shell.command(ctx, Command::Open(paths));
+                    }
+                }
+                FileRequest::SaveText { title, suggested_name, contents } => {
+                    if let Some(path) = rfd::FileDialog::new().set_title(title).set_file_name(suggested_name).save_file()
+                        && let Err(e) = std::fs::write(&path, contents)
+                    {
+                        log::warn!("could not write {}: {e}", path.display());
+                    }
+                }
+                FileRequest::SaveDocument => {
+                    if let Some(dir) = rfd::FileDialog::new().set_title("Save document into a folder").pick_folder() {
+                        self.shell.command(ctx, Command::SaveDocument(dir));
+                    }
+                }
+                FileRequest::OpenDocument => {
+                    if let Some(dir) = rfd::FileDialog::new().set_title("Open a document folder").pick_folder() {
+                        self.shell.command(ctx, Command::OpenDocument(dir));
+                    }
+                }
+            }
         }
     }
 
@@ -214,6 +264,15 @@ fn main() -> eframe::Result {
             }
             let system = System { dark_mode: cc.egui_ctx.system_theme() == Some(egui::Theme::Dark), reduce_motion: reduce_motion() };
             let mut shell = Shell::new(&cc.egui_ctx, flags, prefs, system);
+            if !ephemeral {
+                shell.set_question_log(question_log_path());
+            }
+            // Files passed on the command line (and, through macOS, Open With) are opened.
+            let files: Vec<std::path::PathBuf> =
+                std::env::args().skip(1).filter(|a| !a.starts_with('-')).map(std::path::PathBuf::from).filter(|p| p.is_file()).collect();
+            if !files.is_empty() {
+                shell.command(&cc.egui_ctx, Command::Open(files));
+            }
             if let Some(dir) = fixture {
                 shell.command(&cc.egui_ctx, Command::LoadFixture(dir));
             }

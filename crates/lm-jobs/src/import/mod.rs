@@ -424,6 +424,7 @@ fn vector_profile(
         exclusions,
         encoding,
         notices,
+        data_rev: 0,
     }
 }
 
@@ -497,6 +498,44 @@ pub fn reproject(layer: &ImportedLayer, epsg: u32) -> Result<ImportedLayer, Impo
     profile.crs = Known::certain(Crs::Epsg(epsg), format!("Chosen by you: EPSG:{epsg}."));
     profile.extent_wgs84 = extent_of(&out);
     Ok(ImportedLayer { data: LayerData::Vector(Arc::new(out)), status: status_of(&profile), profile, ..layer.clone() })
+}
+
+/// The excluded records of a layer as CSV (WP2.6 "Export problem list"): row, reason, then the
+/// record's own cells when the source is a CSV. Cells that a spreadsheet would run as a formula
+/// (starting with =, +, - or @) are prefixed with an apostrophe (fixture X5).
+pub fn problem_list_csv(layer: &ImportedLayer) -> String {
+    fn cell(s: &str) -> String {
+        let s = if s.starts_with(['=', '+', '-', '@', '\t', '\r']) { format!("'{s}") } else { s.to_string() };
+        if s.contains([',', '"', '\n', '\r']) { format!("\"{}\"", s.replace('"', "\"\"")) } else { s }
+    }
+    let mut out = String::new();
+    let mut header = vec!["row".to_string(), "reason".to_string()];
+    if let Some(raw) = &layer.raw {
+        header.extend(raw.headers.iter().cloned());
+    }
+    out.push_str(&header.iter().map(|h| cell(h)).collect::<Vec<_>>().join(","));
+    out.push('\n');
+    for e in &layer.profile.exclusions {
+        let mut cells = vec![e.row.to_string(), e.reason.clone()];
+        if let Some(r) = layer.raw.as_ref().and_then(|raw| raw.rows.get(e.row.saturating_sub(1) as usize)) {
+            cells.extend(r.iter().cloned());
+        }
+        out.push_str(&cells.iter().map(|c| cell(c)).collect::<Vec<_>>().join(","));
+        out.push('\n');
+    }
+    out
+}
+
+/// Converts a dataset's coordinates from GCJ-02 (or BD-09) to WGS 84 as a new dataset, with its
+/// recipe ("Converted from GCJ-02 to WGS 84"). The source is never modified (WP2.5).
+pub fn convert_offset(ds: &Dataset, from_bd09: bool) -> Result<(Dataset, String), ImportError> {
+    use lm_analysis::china::{OffsetSystem, convert_dataset};
+    let from = if from_bd09 { OffsetSystem::Bd09 } else { OffsetSystem::Gcj02 };
+    let c = convert_dataset(ds, from, OffsetSystem::Wgs84).map_err(|e| ImportError::Failed {
+        message: "The points couldn't be converted. Nothing was changed.".into(),
+        details: format!("{e:?}"),
+    })?;
+    Ok((c.dataset, c.recipe))
 }
 
 #[cfg(test)]

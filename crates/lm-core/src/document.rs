@@ -510,6 +510,7 @@ pub(crate) mod tests {
             exclusions: vec![],
             encoding: None,
             notices: vec![],
+            data_rev: 0,
         }
     }
 

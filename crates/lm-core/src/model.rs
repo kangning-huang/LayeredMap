@@ -356,6 +356,10 @@ pub struct LayerProfile {
     /// Notices from the reader in plain words ("No .dbf file: shapes only.").
     #[serde(default)]
     pub notices: Vec<String>,
+    /// Which reading of the source the layer shows: bumped when a changed assumption re-reads it
+    /// (other coordinate columns), so undo can return to the matching data.
+    #[serde(default)]
+    pub data_rev: u32,
 }
 
 impl LayerProfile {
@@ -417,6 +421,7 @@ mod tests {
             exclusions: vec![],
             encoding: None,
             notices: vec![],
+            data_rev: 0,
         };
         assert_eq!(p.subtitle(), "248 points · schools.csv");
     }

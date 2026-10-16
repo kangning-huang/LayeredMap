@@ -108,6 +108,7 @@ mod tests {
             exclusions: vec![Exclusion { row: 7, reason: "No coordinates".into() }],
             encoding: Some("UTF-8".into()),
             notices: vec![],
+            data_rev: 0,
         }
     }
 

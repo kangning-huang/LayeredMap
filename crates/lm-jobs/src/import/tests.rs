@@ -250,3 +250,15 @@ fn large_fixtures() {
         }
     }
 }
+
+#[test]
+fn the_problem_list_holds_each_excluded_row_and_defuses_formulas() {
+    let l = open("T1/schools.csv").unwrap().remove(0);
+    let csv = problem_list_csv(&l);
+    assert_eq!(csv.lines().count(), 1 + 6, "{csv}");
+    assert!(csv.lines().next().unwrap().starts_with("row,reason,"));
+    let mut x5 = l.clone();
+    x5.profile.exclusions = vec![lm_core::model::Exclusion { row: 1, reason: "=HYPERLINK(\"x\")".into() }];
+    x5.raw = None;
+    assert!(problem_list_csv(&x5).contains("\"'=HYPERLINK(\"\"x\"\")\""));
+}

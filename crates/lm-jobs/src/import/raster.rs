@@ -113,6 +113,7 @@ impl FormatAdapter for GeoTiff {
             exclusions: Vec::new(),
             encoding: None,
             notices,
+            data_rev: 0,
         };
         Ok(vec![ImportedLayer { name: stem, status: status_of(&profile), profile, data: LayerData::Raster(Arc::new(r)), raw: None }])
     }

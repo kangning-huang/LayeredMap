@@ -294,6 +294,7 @@ fn build_with(
         exclusions: if kind == LayerKind::Table && pair.is_none() { Vec::new() } else { exclusions },
         encoding,
         notices,
+        data_rev: 0,
     };
     Ok(ImportedLayer { name, status: status_of(&profile), profile, data: LayerData::Vector(Arc::new(ds)), raw: None })
 }

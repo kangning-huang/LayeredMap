@@ -1,14 +1,17 @@
 //! The map-first shell: top bar, map controls, basemap chooser, scale bar, attribution (Phase 1);
-//! layer shelf, inspector, composer, result cards, table drawer (later phases). Never calls
+//! opening files, the layer shelf, the layer overview and undo (Phase 2); composer, result cards,
+//! table drawer (later phases). Never calls
 //! `rustgis-data` or `rustgis-analysis`: all work goes through `lm-jobs`.
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
 pub mod basemap;
 mod chrome;
+pub mod panels;
 #[cfg(test)]
 mod screenshots;
 pub mod search;
 pub mod theme;
+pub mod workspace;
 
 use std::path::PathBuf;
 use std::sync::mpsc::Receiver;
@@ -44,6 +47,35 @@ pub enum Command {
     LoadFixture(PathBuf),
     /// Fly to longitude, latitude, zoom, as choosing a search result does (scripts and tests).
     FlyTo(f64, f64, f64),
+    /// Open files (the Open dialog's result, a drop, Open With).
+    Open(Vec<PathBuf>),
+    /// Ask the app for the Open dialog (⌘O, the Open button).
+    RequestOpen,
+    Undo,
+    Redo,
+    /// Show or hide the layer shelf (⌘L, the Layers button).
+    ToggleLayers,
+    /// Developer: save the document (manifest.json) into a folder.
+    SaveDocument(PathBuf),
+    /// Developer: open a document folder.
+    OpenDocument(PathBuf),
+    /// Developer: ask the app for a folder to save the document into.
+    RequestSaveDocument,
+    /// Developer: ask the app for a document folder to open.
+    RequestOpenDocument,
+}
+
+/// A file dialog the shell asks the app to show (the shell itself never opens dialogs).
+#[derive(Clone, Debug, PartialEq)]
+pub enum FileRequest {
+    /// Choose files to open.
+    Open,
+    /// Save text to a file the user picks.
+    SaveText { title: String, suggested_name: String, contents: String },
+    /// Developer: pick a folder to save the document into.
+    SaveDocument,
+    /// Developer: pick a document folder to open.
+    OpenDocument,
 }
 
 /// What the shell remembers between launches (the app stores it).
@@ -89,6 +121,21 @@ pub struct Shell {
     reduce_motion: bool,
     notice: Option<(String, f64)>,
     last_map_size: egui::Vec2,
+    /// Phase 2: the document, imports and their layers.
+    pub ws: workspace::Workspace,
+    pub(crate) shelf_open: bool,
+    pub(crate) inspector_tab: u8,
+    pub(crate) change_for: Option<(lm_core::model::LayerId, lm_core::model::AssumptionKind, lm_core::model::Subject, egui::Rect)>,
+    pub(crate) review_for: Option<lm_core::model::LayerId>,
+    pub(crate) rename: Option<(lm_core::model::LayerId, String)>,
+    /// When each question card was first shown (for seconds-to-answer in the question log).
+    pub(crate) question_seen: std::collections::HashMap<(u64, u8), f64>,
+    pub(crate) drag_from: Option<usize>,
+    pub(crate) zoom_to: Option<lm_core::model::Extent>,
+    pub(crate) welcome_closed: bool,
+    file_requests: Vec<FileRequest>,
+    /// Where answered question cards are logged (set by the app).
+    question_log: Option<PathBuf>,
 }
 
 impl Shell {
@@ -116,6 +163,18 @@ impl Shell {
             reduce_motion: system.reduce_motion,
             notice: None,
             last_map_size: egui::vec2(1280.0, 748.0),
+            ws: workspace::Workspace::default(),
+            shelf_open: true,
+            inspector_tab: 0,
+            change_for: None,
+            review_for: None,
+            rename: None,
+            question_seen: Default::default(),
+            drag_from: None,
+            zoom_to: None,
+            welcome_closed: false,
+            file_requests: Vec::new(),
+            question_log: None,
             prefs,
         }
     }
@@ -169,10 +228,117 @@ impl Shell {
             Command::FlyTo(lon, lat, zoom) => {
                 self.map.fly_to(lm_mapview::Coord::new(lon, lat), zoom, t, self.last_map_size, self.reduce_motion);
             }
+            Command::Open(paths) => {
+                let waker = ctx.clone();
+                self.ws.open(paths, move || waker.request_repaint());
+            }
+            Command::RequestOpen => self.file_requests.push(FileRequest::Open),
+            Command::RequestSaveDocument => self.file_requests.push(FileRequest::SaveDocument),
+            Command::RequestOpenDocument => self.file_requests.push(FileRequest::OpenDocument),
+            Command::Undo => {
+                if let Some(label) = self.ws.undo() {
+                    self.notice = Some((format!("Undid {}", lower_first(&label)), t));
+                }
+            }
+            Command::Redo => {
+                if let Some(label) = self.ws.redo() {
+                    self.notice = Some((format!("Redid {}", lower_first(&label)), t));
+                }
+            }
+            Command::ToggleLayers => self.shelf_open = !self.shelf_open,
+            Command::SaveDocument(dir) => {
+                self.ws.doc.view = {
+                    let c = self.map.center_lonlat();
+                    Some((c.x, c.y, self.map.zoom()))
+                };
+                let msg = match lm_doc::save(&self.ws.doc, &dir) {
+                    Ok(()) => format!("Saved the document in {}", dir.display()),
+                    Err(e) => e.to_string(),
+                };
+                self.notice = Some((msg, t));
+            }
+            Command::OpenDocument(dir) => match lm_doc::load(&dir) {
+                Ok(doc) => {
+                    let paths: Vec<PathBuf> = doc.layers.iter().map(|l| PathBuf::from(&l.profile.source.path)).collect();
+                    self.notice = Some((format!("Opened a document with {} layers; reading their files again.", doc.layers.len()), t));
+                    let waker = ctx.clone();
+                    self.ws = workspace::Workspace::default();
+                    self.ws.open(paths, move || waker.request_repaint());
+                }
+                Err(e) => self.notice = Some((e.to_string(), t)),
+            },
             Command::LoadFixture(path) => {
                 self.notice = Some((format!("Loading {}…", path.display()), t));
                 self.loading = Some(lm_jobs::load_fixture(path));
             }
+        }
+    }
+
+    /// File dialogs the app should show, oldest first.
+    pub fn take_file_requests(&mut self) -> Vec<FileRequest> {
+        std::mem::take(&mut self.file_requests)
+    }
+
+    /// Where answered question cards are logged (the app's support folder).
+    pub fn set_question_log(&mut self, path: PathBuf) {
+        self.question_log = Some(path);
+    }
+
+    pub(crate) fn set_notice(&mut self, text: String, t: f64) {
+        self.notice = Some((text, t));
+    }
+
+    /// Asks the app to save a layer's problem list (WP2.6).
+    pub(crate) fn export_problems(&mut self, id: lm_core::model::LayerId) {
+        let Some(data) = self.ws.data(id) else { return };
+        let name = self.ws.doc.layer(id).map_or_else(|| "layer".to_string(), |l| l.display_name.clone());
+        self.file_requests.push(FileRequest::SaveText {
+            title: "Export problem list".into(),
+            suggested_name: format!("{name} problems.csv"),
+            contents: lm_jobs::import::problem_list_csv(data),
+        });
+    }
+
+    fn fly_to_extent(&mut self, e: lm_core::model::Extent) {
+        let e = lm_mapview::Extent { min_x: e.min_x, min_y: e.min_y, max_x: e.max_x, max_y: e.max_y };
+        self.map.zoom_to_extent(&e, self.last_map_size);
+    }
+
+    /// Phase 2 bookkeeping each frame: imports, the map's layers, fitting new data, the log.
+    fn update_workspace(&mut self, ctx: &egui::Context) {
+        let t = ctx.input(|i| i.time);
+        // Files dropped on the window (Open With and the Dock icon arrive through the app).
+        let dropped: Vec<PathBuf> =
+            ctx.input(|i| i.raw.dropped_files.iter().map(|f| f.path().to_path_buf()).filter(|p| !p.as_os_str().is_empty()).collect());
+        if !dropped.is_empty() {
+            self.command(ctx, Command::Open(dropped));
+        }
+        self.ws.poll();
+        self.ws.sync_map(&mut self.map);
+        if let Some(e) = self.ws.fit.take() {
+            self.fly_to_extent(e);
+        }
+        if let Some(e) = self.zoom_to.take() {
+            self.fly_to_extent(e);
+        }
+        if self.ws.new_data.is_some() && self.notice.as_ref().is_none_or(|(_, at)| t - at > 4.0) {
+            self.notice = Some(("New data added outside the view. Zoom to new data with ⌘0.".into(), t));
+            self.ws.new_data = None;
+        }
+        if !self.ws.answers.is_empty() {
+            let answers = std::mem::take(&mut self.ws.answers);
+            if let Some(path) = &self.question_log {
+                let log = lm_doc::QuestionLog::new(path.clone());
+                let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_millis() as i64);
+                for a in answers {
+                    if let Err(e) = log.append(&lm_core::question::QuestionEvent::new(now, a.kind, &a.answer, a.seconds)) {
+                        log::warn!("question log: {e}");
+                    }
+                }
+            }
+        }
+        if !self.ws.imports.is_empty() {
+            ctx.request_repaint_after(std::time::Duration::from_millis(200));
         }
     }
 
@@ -206,6 +372,7 @@ impl Shell {
         }
         self.shortcuts(&ctx);
         self.poll_loading(&ctx);
+        self.update_workspace(&ctx);
 
         // Full-bleed: the whole window, whatever margins the host's panel has.
         let full = ctx.content_rect();
@@ -217,21 +384,66 @@ impl Shell {
         let keyboard = ctx.memory(|m| m.focused().is_none());
         let out = self.map.show(ui, map_rect, ViewOptions { backdrop: self.backdrop, reduce_motion: system.reduce_motion, keyboard });
         let _ = out;
-        chrome::map_overlays(self, ui, map_rect, system);
+        // The controls move left of the inspector when it is open (Layout).
+        let overlay_rect = if self.ws.selected.is_some() {
+            egui::Rect::from_min_max(
+                map_rect.min,
+                egui::pos2(map_rect.max.x - panels::INSPECTOR_WIDTH - theme::PANEL_MARGIN, map_rect.max.y),
+            )
+        } else {
+            map_rect
+        };
+        chrome::map_overlays(self, ui, overlay_rect, system);
+        let notice_rect = if self.shelf_open && !(self.ws.doc.layers.is_empty() && self.ws.imports.is_empty()) {
+            egui::Rect::from_min_max(
+                egui::pos2(map_rect.min.x + panels::SHELF_WIDTH + theme::PANEL_MARGIN, map_rect.min.y),
+                overlay_rect.max,
+            )
+        } else {
+            overlay_rect
+        };
+        chrome::notices_in(self, ui, notice_rect);
+        panels::shelf(self, ui, map_rect);
+        panels::inspector(self, ui, map_rect);
+        panels::change_popover(self, ui);
+        panels::review(self, &ctx);
         chrome::toolbar(self, ui, toolbar, system);
         if self.credits_open {
             chrome::credits(self, &ctx);
         }
+        panels::drop_overlay(self, ui, full);
     }
 
     fn shortcuts(&mut self, ctx: &egui::Context) {
-        let (find, zero, debug) = ctx.input_mut(|i| {
+        let (find, zero, debug, open, layers) = ctx.input_mut(|i| {
             (
                 i.consume_key(egui::Modifiers::COMMAND, egui::Key::F),
                 i.consume_key(egui::Modifiers::COMMAND, egui::Key::Num0),
                 i.consume_key(egui::Modifiers::COMMAND | egui::Modifiers::ALT, egui::Key::F),
+                i.consume_key(egui::Modifiers::COMMAND, egui::Key::O),
+                i.consume_key(egui::Modifiers::COMMAND, egui::Key::L),
             )
         });
+        if open {
+            self.file_requests.push(FileRequest::Open);
+        }
+        if layers {
+            self.shelf_open = !self.shelf_open;
+        }
+        // Undo and redo, unless a text field has the keyboard (it undoes its own typing).
+        if ctx.memory(|m| m.focused().is_none()) {
+            let (redo, undo) = ctx.input_mut(|i| {
+                (
+                    i.consume_key(egui::Modifiers::COMMAND | egui::Modifiers::SHIFT, egui::Key::Z),
+                    i.consume_key(egui::Modifiers::COMMAND, egui::Key::Z),
+                )
+            });
+            if redo {
+                self.command(ctx, Command::Redo);
+            } else if undo {
+                self.command(ctx, Command::Undo);
+            }
+        }
         if debug {
             self.debug_overlay = !self.debug_overlay;
         } else if find {
@@ -266,4 +478,18 @@ impl Shell {
             Err(std::sync::mpsc::TryRecvError::Disconnected) => self.loading = None,
         }
     }
+}
+
+/// "Open schools.csv" → "open schools.csv", for "Undid …".
+fn lower_first(s: &str) -> String {
+    let mut c = s.chars();
+    match c.next() {
+        Some(f) => f.to_lowercase().collect::<String>() + c.as_str(),
+        None => String::new(),
+    }
+}
+
+/// Exports the question log (JSON lines) to CSV for pilot analysis; returns the rows written.
+pub fn export_question_log(log: &std::path::Path, out: &std::path::Path) -> Result<usize, String> {
+    lm_doc::export_csv(log, out).map_err(|e| e.to_string())
 }
