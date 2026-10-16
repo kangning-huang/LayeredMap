@@ -317,6 +317,18 @@ impl Workspace {
             AssumptionKind::ChinaOffsetPossible | AssumptionKind::ChinaOffsetNamed if matches!(choice.id.as_str(), "gcj02" | "bd09") => {
                 self.convert_offset(id, &choice, kind, subject)
             }
+            AssumptionKind::ExcelSheet if choice.id.starts_with("sheet:") => {
+                let data = self.data(id).cloned().ok_or("This layer's data isn't loaded.")?;
+                let mut new = lm_jobs::import::choose_sheet(&data, &choice).map_err(|e| e.to_string())?;
+                new.profile.data_rev = layer.profile.data_rev + 1;
+                self.data.insert((id, new.profile.data_rev), Arc::new(new.clone()));
+                let tx = self.doc.set_profile_tx(id, new.profile).map(|mut t| {
+                    t.label = format!("Open another sheet of {}", layer.display_name);
+                    t
+                });
+                self.commit(tx);
+                Ok(())
+            }
             _ => self.record(id, kind, subject, choice, label),
         }
     }
@@ -710,5 +722,27 @@ mod compare_tests {
         w.start_compare(id, false).unwrap();
         w.end_compare(Some(true)).unwrap();
         assert_eq!(w.doc.layers.len(), 2, "a converted GPS layer");
+    }
+}
+
+#[cfg(test)]
+mod sheet_tests {
+    use super::*;
+
+    #[test]
+    fn choosing_another_sheet_is_one_undo_step() {
+        let xlsx = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/T5/survey.xlsx");
+        let layers = lm_jobs::import::import_path(&xlsx, &lm_jobs::import::Ctx::detached(Default::default())).unwrap();
+        let mut w = Workspace::default();
+        w.add_imported(layers, 1);
+        let id = w.doc.layers[0].id;
+        let sheet =
+            |w: &Workspace| w.doc.layers[0].profile.assumptions.iter().find(|a| a.kind == AssumptionKind::ExcelSheet).unwrap().clone();
+        let a = sheet(&w);
+        let other = a.alternatives.iter().find(|c| c.id.starts_with("sheet:") && c.id != a.chosen.id).unwrap().clone();
+        w.change_assumption(id, a.kind, a.subject.clone(), other.clone(), None).unwrap();
+        assert_eq!(sheet(&w).chosen.id, other.id);
+        w.undo();
+        assert_eq!(sheet(&w).chosen.id, a.chosen.id);
     }
 }

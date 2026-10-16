@@ -61,7 +61,7 @@ impl<R> Counting<R> {
 impl<R: Read> Read for Counting<R> {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
         if self.ticket.is_canceled() {
-            return Err(std::io::Error::new(std::io::ErrorKind::Interrupted, CANCELED));
+            return Err(std::io::Error::other(CANCELED));
         }
         let n = self.inner.read(buf)?;
         self.ticket.add(n as u64);
@@ -72,7 +72,7 @@ impl<R: Read> Read for Counting<R> {
 impl<R: std::io::Seek> std::io::Seek for Counting<R> {
     fn seek(&mut self, pos: std::io::SeekFrom) -> std::io::Result<u64> {
         if self.ticket.is_canceled() {
-            return Err(std::io::Error::new(std::io::ErrorKind::Interrupted, CANCELED));
+            return Err(std::io::Error::other(CANCELED));
         }
         self.inner.seek(pos)
     }
@@ -143,6 +143,17 @@ mod tests {
         assert_eq!(t.bytes().0, 5);
         t.cancel();
         let e = r.read(&mut buf).unwrap_err();
+        assert!(is_cancel_message(&e.to_string()));
+    }
+
+    /// `read_to_end` and `read_exact` retry `Interrupted` errors forever: a canceled reader must
+    /// fail with another kind, or a canceled import spins (found with the GeoPackage reader).
+    #[test]
+    fn a_canceled_reader_stops_read_to_end() {
+        let t = Ticket::default();
+        t.cancel();
+        let mut out = Vec::new();
+        let e = Counting::new(&b"hello world"[..], t).read_to_end(&mut out).unwrap_err();
         assert!(is_cancel_message(&e.to_string()));
     }
 

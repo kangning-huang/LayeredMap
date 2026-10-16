@@ -4,12 +4,14 @@
 //! row. A canceled import leaves nothing behind; source files are only ever read.
 //!
 //! Formats sit behind [`FormatAdapter`] (WP2.2): GeoJSON, Shapefile (also zipped), CSV/TSV and
-//! GeoTIFF/COG, wrapping the upstream `rustgis-data` readers where they fit and streaming where
+//! GeoTIFF/COG (P0), GeoPackage and Excel (P1, behind [`P1_FORMATS`]), wrapping the upstream `rustgis-data` readers where they fit and streaming where
 //! they don't (large GeoJSON and CSV are scanned as streams, never read whole to learn a name or
 //! bounds).
 
 mod csv;
+mod excel;
 mod geojson;
+mod gpkg;
 pub mod limits;
 pub mod progress;
 mod raster;
@@ -290,9 +292,39 @@ pub struct Metadata {
     pub has_overviews: bool,
 }
 
-/// Every adapter, in sniffing order.
-fn adapters() -> [&'static dyn FormatAdapter; 5] {
-    [&geojson::GeoJson, &csv::Delimited, &shapefile::Shapefile, &shapefile::ZippedShapefile, &raster::GeoTiff]
+/// The P1 formats of WP2.2 (GeoPackage, Excel) are on. Cutting rule (plan, Phase 2 › Rollback):
+/// a P1 format that fails at the gate is switched off here and moved to Phase 6 (WP6.7); that
+/// does not fail the gate. Off, its files are refused as any unsupported format is ("LayeredMap
+/// can't open .gpkg files yet.").
+pub const P1_FORMATS: bool = true;
+
+/// File extensions of the P1 formats.
+const P1_EXTENSIONS: &[&str] = &["gpkg", "xlsx", "xlsm", "xls"];
+
+/// Every adapter, in sniffing order (the P1 ones only when `p1`). GeoPackage and Excel come
+/// before the zipped Shapefile, which claims anything starting like a ZIP (as an `.xlsx` does).
+fn adapters(p1: bool) -> Vec<&'static dyn FormatAdapter> {
+    let mut v: Vec<&'static dyn FormatAdapter> = vec![&geojson::GeoJson, &csv::Delimited, &shapefile::Shapefile];
+    if p1 {
+        v.push(&gpkg::GeoPackage);
+        v.push(&excel::Excel);
+    }
+    v.push(&shapefile::ZippedShapefile);
+    v.push(&raster::GeoTiff);
+    v
+}
+
+/// The adapter that reads `path`, or why there is none.
+fn pick_adapter(path: &Path, head: &[u8], p1: bool) -> Result<&'static dyn FormatAdapter, ImportError> {
+    let ext = extension(path);
+    let switched_off = !p1 && P1_EXTENSIONS.contains(&ext.as_str());
+    match adapters(p1).into_iter().find(|a| a.sniff(path, head)).filter(|_| !switched_off) {
+        Some(a) => Ok(a),
+        None if ext.is_empty() => {
+            Err(ImportError::Unsupported(format!("LayeredMap can't open {}: it isn't a format it reads yet.", file_name(path))))
+        }
+        None => Err(ImportError::Unsupported(format!("LayeredMap can't open .{ext} files yet."))),
+    }
 }
 
 /// Imports one file synchronously (the job thread, tests and the fixture snapshots call this).
@@ -317,14 +349,7 @@ pub fn import_path(path: &Path, ctx: &Ctx) -> Result<Vec<ImportedLayer>, ImportE
         f.read(&mut head).map_err(|e| ImportError::read(&name, e))?
     };
     head.truncate(n);
-    let Some(adapter) = adapters().into_iter().find(|a| a.sniff(path, &head)) else {
-        let ext = extension(path);
-        return Err(ImportError::Unsupported(if ext.is_empty() {
-            format!("LayeredMap can't open {name}: it isn't a format it reads yet.")
-        } else {
-            format!("LayeredMap can't open .{ext} files yet.")
-        }));
-    };
+    let adapter = pick_adapter(path, &head, P1_FORMATS)?;
     ctx.stage(Stage::Metadata)?;
     let m = adapter.open_metadata(path, ctx)?;
     let layers = if adapter.is_raster() { adapter.read_window(path, &m, ctx)? } else { adapter.stream_features(path, &m, ctx)? };
@@ -489,6 +514,12 @@ pub fn place_candidates(layer: &ImportedLayer, place: (f64, f64)) -> Vec<lm_prof
     })
 }
 
+/// Opens another sheet of an Excel layer's workbook (the ExcelSheet assumption's Change:
+/// `sheet:<name>`), keeping the layer's name; the workbook is read again, never written.
+pub fn choose_sheet(layer: &ImportedLayer, choice: &Choice) -> Result<ImportedLayer, ImportError> {
+    excel::choose_sheet(layer, choice)
+}
+
 /// Reprojects a layer read with raw coordinates from the coordinate system the user chose
 /// ("Where should this data be?"), as a new layer; the source file is untouched.
 pub fn reproject(layer: &ImportedLayer, epsg: u32) -> Result<ImportedLayer, ImportError> {
@@ -511,7 +542,10 @@ pub fn reproject(layer: &ImportedLayer, epsg: u32) -> Result<ImportedLayer, Impo
         }
     }
     let mut profile = layer.profile.clone();
-    let name = lm_profile::crs_candidates::CANDIDATES.iter().find(|(c, _, _)| u32::from(*c) == epsg).map_or_else(|| format!("EPSG:{epsg}"), |(_, n, _)| (*n).to_string());
+    let name = lm_profile::crs_candidates::CANDIDATES
+        .iter()
+        .find(|(c, _, _)| u32::from(*c) == epsg)
+        .map_or_else(|| format!("EPSG:{epsg}"), |(_, n, _)| (*n).to_string());
     profile.crs = Known::certain(Crs::Epsg(epsg), format!("Chosen by you: {name} (EPSG:{epsg})."));
     profile.extent_wgs84 = extent_of(&out);
     profile.kind = kind_of(&out);
