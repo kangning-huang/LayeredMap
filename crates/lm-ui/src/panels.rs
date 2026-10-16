@@ -603,7 +603,13 @@ pub fn compare_banner(shell: &mut Shell, ui: &mut Ui, map: Rect) {
     }
     if let Some(keep) = action {
         let now = ui.input(|i| i.time);
-        if let Err(e) = shell.ws.end_compare(keep) {
+        // Seconds since the layer's China question was first shown, for the question log.
+        let seconds = shell.ws.compare.as_ref().and_then(|c| {
+            [AssumptionKind::ChinaOffsetNamed, AssumptionKind::ChinaOffsetPossible]
+                .iter()
+                .find_map(|k| shell.question_seen.get(&(c.layer.0, *k as u8)).map(|t| now - t))
+        });
+        if let Err(e) = shell.ws.end_compare(keep, seconds) {
             shell.set_notice(e, now);
         }
     }

@@ -266,11 +266,13 @@ impl Shell {
             }
             Command::OpenDocument(dir) => match lm_doc::load(&dir) {
                 Ok(doc) => {
-                    let paths: Vec<PathBuf> = doc.layers.iter().map(|l| PathBuf::from(&l.profile.source.path)).collect();
                     self.notice = Some((format!("Opened a document with {} layers; reading their files again.", doc.layers.len()), t));
-                    let waker = ctx.clone();
+                    let view = doc.view;
                     self.ws = workspace::Workspace::with_waker(ctx);
-                    self.ws.open(paths, move || waker.request_repaint());
+                    self.ws.restore(doc);
+                    if let Some((lon, lat, zoom)) = view {
+                        self.map.fly_to(lm_mapview::Coord::new(lon, lat), zoom, t, self.last_map_size, self.reduce_motion);
+                    }
                 }
                 Err(e) => self.notice = Some((e.to_string(), t)),
             },

@@ -135,6 +135,19 @@ impl MapView {
         self.worker.edit(Box::new(f));
     }
 
+    /// Adds a layer whose two copies (for the view and for the render thread) were built ahead,
+    /// off the interface thread, so nothing large is copied here. A layer with the same id is
+    /// replaced.
+    pub fn add_layer_pair(&mut self, for_view: rustgis_map::Layer, for_render: rustgis_map::Layer) {
+        let id = for_view.id;
+        self.map.layers.retain(|l| l.id != id);
+        self.map.layers.push(for_view);
+        self.worker.edit(Box::new(move |m: &mut Map| {
+            m.layers.retain(|l| l.id != id);
+            m.layers.push(for_render);
+        }));
+    }
+
     /// The time of the last frame shown (seconds, egui's clock).
     pub fn last_time(&self) -> f64 {
         self.last_t.unwrap_or(0.0)
