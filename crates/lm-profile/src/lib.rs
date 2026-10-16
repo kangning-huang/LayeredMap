@@ -23,7 +23,7 @@
 //! | Raster cell meaning | [`raster_cell_meaning`] | `RasterCellMeaning` | Visible if likely, else deferred |
 //! | Field looks like an identifier | [`profile_fields`] | `IdentifierField` | Silent |
 //! | Numeric field with ≤ 12 values | [`profile_fields`] | `FewValuesCategorical` | Silent |
-//! | Shapefile text, no .cpg | [`shapefile_encoding`] | `ShapefileGbk` | Silent |
+//! | Shapefile text, no .cpg | [`shapefile_encoding`] | `ShapefileGbk` | Silent if strong, else Visible |
 //! | Excel workbook with several sheets | [`excel_sheet`] | `ExcelSheet` | Visible |
 //! | GeoJSON with mixed geometry | [`mixed_geometry_split`] | `MixedGeometrySplit` | Silent |
 //!
@@ -53,7 +53,7 @@ mod raster;
 
 pub use china::{china_offset, in_mainland_china, mainland_china_share};
 pub use crs::{crs_from_values, looks_like_lonlat};
-pub use csv::{CoordinatePair, CsvLocation, csv_locate, parse_number};
+pub use csv::{CoordinatePair, CsvLocation, NumberStyle, csv_locate, csv_locate_delimited, number_style, parse_number, parse_number_with};
 pub use encoding::{TextEncoding, shapefile_encoding};
 pub use fields::{CoordinateColumn, RawTable, profile_fields, profile_raw_table};
 pub use layout::{SheetChoice, SheetSample, excel_sheet, geometry_kinds, mixed_geometry_split};
@@ -94,6 +94,8 @@ pub mod lines {
     pub const IDENTIFIER: &str = "Treated as an ID.";
     pub const FEW_VALUES: &str = "Colored as categories.";
     pub const SHAPEFILE_GBK: &str = "Read text as Chinese (GBK).";
+    /// Not in the catalog's wording (its row covers GBK); same pattern, same assumption kind.
+    pub const SHAPEFILE_WINDOWS1252: &str = "Read text as Western (Windows-1252).";
     /// `Opened sheet 'Schools'.`
     pub fn excel_sheet(name: &str) -> String {
         format!("Opened sheet '{name}'.")
@@ -137,6 +139,49 @@ pub(crate) fn tokens(name: &str) -> Vec<String> {
     name.to_lowercase().split(|c: char| !c.is_alphanumeric()).filter(|t| !t.is_empty()).map(str::to_string).collect()
 }
 
+/// Lower-cased words of a name, for whole-word hints: split on anything not alphanumeric, at a
+/// lower-to-upper case change ("AmapPOI" → amap, poi), at the end of an upper-case run
+/// ("POIList" → poi, list) and between letters and digits ("bd09" → bd, 09). A run of CJK
+/// characters stays one word (Chinese has no word breaks; callers match CJK hints inside it).
+pub(crate) fn words(name: &str) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    let mut cur = String::new();
+    let chars: Vec<char> = name.chars().collect();
+    let kind = |c: char| {
+        if c.is_ascii_digit() {
+            1
+        } else if c.is_alphabetic() && !c.is_ascii() && !c.is_lowercase() && !c.is_uppercase() {
+            2 // CJK and other caseless scripts
+        } else {
+            0
+        }
+    };
+    for (i, &c) in chars.iter().enumerate() {
+        if !c.is_alphanumeric() {
+            if !cur.is_empty() {
+                out.push(std::mem::take(&mut cur));
+            }
+            continue;
+        }
+        if let Some(&prev) = i.checked_sub(1).and_then(|j| chars.get(j))
+            && prev.is_alphanumeric()
+        {
+            let next_lower = chars.get(i + 1).is_some_and(|n| n.is_lowercase());
+            let split = kind(prev) != kind(c)
+                || (prev.is_lowercase() && c.is_uppercase())
+                || (prev.is_uppercase() && c.is_uppercase() && next_lower);
+            if split && !cur.is_empty() {
+                out.push(std::mem::take(&mut cur));
+            }
+        }
+        cur.extend(c.to_lowercase());
+    }
+    if !cur.is_empty() {
+        out.push(cur);
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -154,5 +199,16 @@ mod tests {
         assert_eq!(tokens("Lng_GCJ"), vec!["lng", "gcj"]);
         assert_eq!(tokens("经度"), vec!["经度"]);
         assert_eq!(tokens(" point x "), vec!["point", "x"]);
+    }
+
+    #[test]
+    fn words_split_at_case_and_digit_changes() {
+        assert_eq!(words("AmapPOI"), vec!["amap", "poi"]);
+        assert_eq!(words("POIList_v2"), vec!["poi", "list", "v", "2"]);
+        assert_eq!(words("BD-09 lng"), vec!["bd", "09", "lng"]);
+        assert_eq!(words("shops_gcj02"), vec!["shops", "gcj", "02"]);
+        assert_eq!(words("china_map"), vec!["china", "map"]);
+        assert_eq!(words("高德导出2024"), vec!["高德导出", "2024"]);
+        assert_eq!(words("PopCount"), vec!["pop", "count"]);
     }
 }

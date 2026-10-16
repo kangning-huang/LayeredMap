@@ -7,7 +7,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 use lm_core::model::{Assumption, AssumptionKind, Choice, Crs, Exclusion, Known, LayerKind, LayerProfile};
-use lm_profile::{CoordinatePair, CsvLocation, RawTable};
+use lm_profile::{CoordinatePair, CsvLocation, NumberStyle, RawTable};
 use rustgis_engine::data::geometry::Geometry;
 use rustgis_engine::data::{Dataset, Field, FieldType, GeometryType, Value};
 use rustgis_engine::geom::Coord;
@@ -83,13 +83,13 @@ impl FormatAdapter for Delimited {
             });
         }
         ctx.stage(Stage::Extent)?;
-        let raw = RawRows { headers, rows };
+        let raw = RawRows { headers, rows, delimiter: Some(char::from(delimiter)) };
         let mut notices = Vec::new();
         if encoding == encoding_rs::WINDOWS_1252 {
             notices.push("The text isn't UTF-8 or Chinese (GBK); it was read as Western (Windows-1252).".into());
         }
         let enc_label = if encoding == encoding_rs::GB18030 { "GBK".to_string() } else { encoding.name().to_string() };
-        let location = lm_profile::csv_locate(&raw.headers, &raw.rows, &name);
+        let location = lm_profile::csv_locate_delimited(&raw.headers, &raw.rows, &name, raw.delimiter);
         ctx.stage(Stage::Profile)?;
         let origin = TableOrigin {
             path,
@@ -154,16 +154,31 @@ fn dedupe_headers(h: Vec<String>) -> Vec<String> {
     out
 }
 
-/// A column's inferred type from its cells as written. Leading zeros keep a column as text.
-fn infer_type(raw: &RawRows, col: usize) -> FieldType {
+/// The number style of column `col` ([`lm_profile::number_style`]: what a comma means there).
+fn column_style(raw: &RawRows, col: usize) -> NumberStyle {
+    lm_profile::number_style(raw.rows.iter().map(|r| r.get(col).map_or("", String::as_str)), raw.delimiter).value
+}
+
+/// A whole number as written in `style` ("12,500" with thousands separators).
+fn integer(c: &str, style: NumberStyle) -> Option<i64> {
+    if style == NumberStyle::Thousands && c.contains(',') && !c.contains('.') {
+        lm_profile::parse_number_with(c, style)?;
+        return c.replace(',', "").parse().ok();
+    }
+    c.parse().ok()
+}
+
+/// A column's inferred type from its cells as written, in its number style. Leading zeros keep
+/// a column as text, and so do commas whose meaning can't be told.
+fn infer_type(raw: &RawRows, col: usize, style: NumberStyle) -> FieldType {
     let mut ty = None::<FieldType>;
     for r in &raw.rows {
         let Some(c) = r.get(col).map(|c| c.trim()).filter(|c| !c.is_empty()) else { continue };
         let this = if c.len() > 1 && c.starts_with('0') && !c.starts_with("0.") && !c.starts_with("0,") {
             FieldType::Text
-        } else if c.parse::<i64>().is_ok() {
+        } else if integer(c, style).is_some() {
             FieldType::Integer
-        } else if lm_profile::parse_number(c).is_some() {
+        } else if lm_profile::parse_number_with(c, style).is_some() {
             FieldType::Double
         } else if c.eq_ignore_ascii_case("true") || c.eq_ignore_ascii_case("false") {
             FieldType::Boolean
@@ -183,29 +198,32 @@ fn infer_type(raw: &RawRows, col: usize) -> FieldType {
     ty.unwrap_or(FieldType::Text)
 }
 
-fn typed(cell: &str, ty: FieldType) -> Value {
+fn typed(cell: &str, ty: FieldType, style: NumberStyle) -> Value {
     let c = cell.trim();
     if c.is_empty() {
         return Value::Null;
     }
     match ty {
-        FieldType::Integer => c.parse().map(Value::Int).unwrap_or_else(|_| Value::Text(cell.to_string())),
-        FieldType::Double => lm_profile::parse_number(c).map(Value::Float).unwrap_or_else(|| Value::Text(cell.to_string())),
+        FieldType::Integer => integer(c, style).map(Value::Int).unwrap_or_else(|| Value::Text(cell.to_string())),
+        FieldType::Double => lm_profile::parse_number_with(c, style).map(Value::Float).unwrap_or_else(|| Value::Text(cell.to_string())),
         FieldType::Boolean => Value::Bool(c.eq_ignore_ascii_case("true")),
         _ => Value::Text(cell.to_string()),
     }
 }
 
 /// Why a row has no usable location, or its point.
-fn locate_row(row: &[String], pair: &CoordinatePair, check_range: bool) -> Result<Coord, String> {
+fn locate_row(row: &[String], pair: &CoordinatePair, styles: &[NumberStyle], check_range: bool) -> Result<Coord, String> {
+    let style = |i: usize| styles.get(i).copied().unwrap_or(NumberStyle::Point);
     let cell = |i: usize| row.get(i).map_or("", |c| c.trim());
     let (xs, ys) = (cell(pair.x_index), cell(pair.y_index));
     if xs.is_empty() || ys.is_empty() {
         let blank = if xs.is_empty() { &pair.x } else { &pair.y };
         return Err(format!("No location: {blank} is blank"));
     }
-    let x = lm_profile::parse_number(xs).ok_or_else(|| format!("No location: {} is not a number (\"{xs}\")", pair.x))?;
-    let y = lm_profile::parse_number(ys).ok_or_else(|| format!("No location: {} is not a number (\"{ys}\")", pair.y))?;
+    let x = lm_profile::parse_number_with(xs, style(pair.x_index))
+        .ok_or_else(|| format!("No location: {} is not a number (\"{xs}\")", pair.x))?;
+    let y = lm_profile::parse_number_with(ys, style(pair.y_index))
+        .ok_or_else(|| format!("No location: {} is not a number (\"{ys}\")", pair.y))?;
     if check_range && !((-180.0..=180.0).contains(&x) && (-90.0..=90.0).contains(&y)) {
         return Err(format!("No location: {x}, {y} is outside longitude −180 to 180 or latitude −90 to 90"));
     }
@@ -249,15 +267,17 @@ fn build_with(
     lonlat: bool,
 ) -> Result<ImportedLayer, ImportError> {
     let TableOrigin { path, member, name, format, encoding, notices, assumptions: before } = origin;
-    let types: Vec<FieldType> = (0..raw.headers.len()).map(|i| infer_type(raw, i)).collect();
+    let styles: Vec<NumberStyle> = (0..raw.headers.len()).map(|i| column_style(raw, i)).collect();
+    let types: Vec<FieldType> = styles.iter().enumerate().map(|(i, s)| infer_type(raw, i, *s)).collect();
     let fields: Vec<Field> = raw.headers.iter().zip(&types).map(|(h, t)| Field::new(h.clone(), *t)).collect();
     let mut ds = Dataset::new(name.clone(), if pair.is_some() { GeometryType::Point } else { GeometryType::None }, fields);
     ds.source = Some(path.display().to_string());
     let mut exclusions = Vec::new();
     for (i, row) in raw.rows.iter().enumerate() {
-        let attrs: Vec<Value> = types.iter().enumerate().map(|(c, t)| row.get(c).map_or(Value::Null, |cell| typed(cell, *t))).collect();
+        let attrs: Vec<Value> =
+            types.iter().zip(&styles).enumerate().map(|(c, (t, s))| row.get(c).map_or(Value::Null, |cell| typed(cell, *t, *s))).collect();
         let geom = match &pair {
-            Some(p) => match locate_row(row, p, lonlat) {
+            Some(p) => match locate_row(row, p, &styles, lonlat) {
                 Ok(c) => Some(Geometry::Point(c)),
                 Err(reason) => {
                     exclusions.push(Exclusion { row: i as u64 + 1, reason });
@@ -270,7 +290,7 @@ fn build_with(
     }
     let mut assumptions: Vec<Assumption> = before;
     assumptions.extend(location.assumption().into_iter().cloned());
-    let raw_table = RawTable { headers: &raw.headers, rows: &raw.rows };
+    let raw_table = RawTable { headers: &raw.headers, rows: &raw.rows, delimiter: raw.delimiter };
     let (field_profiles, field_assumptions) = lm_profile::profile_fields(&ds, Some(raw_table), &location.coordinate_columns());
     assumptions.extend(field_assumptions);
     let extent = super::extent_of(&ds);
@@ -322,7 +342,7 @@ fn build_with(
 /// table (Not sure). Its format, sheet and sheet choice are kept.
 pub fn relocate(layer: &ImportedLayer, raw: &Arc<RawRows>, choice: &Choice) -> Result<ImportedLayer, ImportError> {
     let path = Path::new(&layer.profile.source.path);
-    let mut location = lm_profile::csv_locate(&raw.headers, &raw.rows, layer.profile.source.file_name());
+    let mut location = lm_profile::csv_locate_delimited(&raw.headers, &raw.rows, layer.profile.source.file_name(), raw.delimiter);
     let chosen_pair = choice.id.strip_prefix("columns:").and_then(|cols| {
         let (x, y) = cols.split_once(',')?;
         let xi = raw.headers.iter().position(|h| h == x)?;
@@ -394,11 +414,36 @@ mod tests {
         let raw = RawRows {
             headers: vec!["code".into(), "n".into(), "x".into()],
             rows: vec![vec!["007".into(), "3".into(), "1,5".into()], vec!["120".into(), "4".into(), "2".into()]],
+            delimiter: Some(','),
         };
-        assert_eq!(infer_type(&raw, 0), FieldType::Text);
-        assert_eq!(infer_type(&raw, 1), FieldType::Integer);
-        assert_eq!(infer_type(&raw, 2), FieldType::Double);
-        assert_eq!(typed("007", FieldType::Text), Value::Text("007".into()));
+        let ty = |i: usize| infer_type(&raw, i, column_style(&raw, i));
+        assert_eq!(ty(0), FieldType::Text);
+        assert_eq!(ty(1), FieldType::Integer);
+        assert_eq!(ty(2), FieldType::Double);
+        assert_eq!(typed("007", FieldType::Text, NumberStyle::Point), Value::Text("007".into()));
+    }
+
+    #[test]
+    fn number_styles_type_columns() {
+        let col = |cells: &[&str], delimiter| RawRows {
+            headers: vec!["n".into()],
+            rows: cells.iter().map(|c| vec![c.to_string()]).collect(),
+            delimiter,
+        };
+        let raw = col(&["12,500", "1,250,000", "980"], Some(','));
+        let style = column_style(&raw, 0);
+        assert_eq!((style, infer_type(&raw, 0, style)), (NumberStyle::Thousands, FieldType::Integer));
+        assert_eq!(typed("1,250,000", FieldType::Integer, style), Value::Int(1_250_000));
+        let raw = col(&["12,500.5", "3,400"], Some(','));
+        let style = column_style(&raw, 0);
+        assert_eq!(infer_type(&raw, 0, style), FieldType::Double);
+        assert_eq!(typed("3,400", FieldType::Double, style), Value::Float(3400.0));
+        let raw = col(&["12,500", "3,400"], Some(','));
+        assert_eq!(infer_type(&raw, 0, column_style(&raw, 0)), FieldType::Text);
+        let raw = col(&["12,500", "3,400"], Some(';'));
+        let style = column_style(&raw, 0);
+        assert_eq!((style, infer_type(&raw, 0, style)), (NumberStyle::DecimalComma, FieldType::Double));
+        assert_eq!(typed("12,500", FieldType::Double, style), Value::Float(12.5));
     }
 
     #[test]

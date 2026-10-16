@@ -3,7 +3,7 @@
 
 use crate::crs::projected_question;
 use crate::{lines, make, tokens};
-use lm_core::model::{Assumption, AssumptionKind, Choice, Confidence, Consequence, Extent, Subject, Treatment};
+use lm_core::model::{Assumption, AssumptionKind, Choice, Confidence, Consequence, Extent, Known, Subject, Treatment};
 
 /// Share of non-blank sample rows that must parse as in-range coordinates for a pair to locate
 /// the records without a question (catalog: "at least 95% of rows parse").
@@ -120,19 +120,148 @@ impl CsvLocation {
     }
 }
 
-/// Parses a number as written in a cell: `121.47`, ` -3 `, or with a decimal comma (`121,473701`,
-/// `1234,50`: exactly one comma and no point). Blank or anything else: `None`.
-pub fn parse_number(cell: &str) -> Option<f64> {
+/// How a column writes its numbers: what a comma means.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum NumberStyle {
+    /// A decimal point; a comma is not part of a number (cells with commas stay text).
+    Point,
+    /// A decimal point, with commas grouping thousands (`12,500`, `1,250,000.5`).
+    Thousands,
+    /// A decimal comma (`121,473701`, `1234,50`); no grouping.
+    DecimalComma,
+}
+
+/// What one cell's commas say about the column's style.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum CommaCell {
+    /// No comma.
+    None,
+    /// `^-?\d{1,3}(,\d{3})+(\.\d+)?$` with two or more groups or a decimal point: thousands.
+    Thousands,
+    /// `^-?\d{1,3},\d{3}$`: thousands or a decimal comma; can't tell alone.
+    Either,
+    /// `^-?\d+,\d+$` otherwise (not exactly three digits after the comma, or more than three
+    /// before it): a decimal comma.
+    Decimal,
+    /// Anything else with a comma ("1,2,3", "1.234,5"): not a number in any style.
+    Other,
+}
+
+fn all_digits(s: &str) -> bool {
+    !s.is_empty() && s.bytes().all(|b| b.is_ascii_digit())
+}
+
+fn comma_cell(cell: &str) -> CommaCell {
+    let s = cell.trim();
+    if !s.contains(',') {
+        return CommaCell::None;
+    }
+    let body = s.strip_prefix('-').unwrap_or(s);
+    let (int, frac) = match body.split_once('.') {
+        Some((i, f)) => (i, Some(f)),
+        None => (body, None),
+    };
+    if frac.is_some_and(|f| !all_digits(f)) {
+        return CommaCell::Other;
+    }
+    let groups: Vec<&str> = int.split(',').collect();
+    let grouped =
+        groups.first().is_some_and(|g| all_digits(g) && g.len() <= 3) && groups.iter().skip(1).all(|g| g.len() == 3 && all_digits(g));
+    if grouped {
+        return if groups.len() == 2 && frac.is_none() { CommaCell::Either } else { CommaCell::Thousands };
+    }
+    match (groups.as_slice(), frac) {
+        ([a, b], None) if all_digits(a) && all_digits(b) => CommaCell::Decimal,
+        _ => CommaCell::Other,
+    }
+}
+
+/// The number style of one column, decided from all its cells as written.
+///
+/// - No cell has a comma → [`NumberStyle::Point`] (`Certain`).
+/// - Every comma cell is grouped like `12,500` / `1,250,000` / `12,500.50`, and at least one has
+///   two groups or a decimal point → [`NumberStyle::Thousands`] (`Likely`).
+/// - Some comma cell has other than exactly three digits after its comma (`121,473701`, `12,5`)
+///   or more than three before it, and none is grouped unmistakably →
+///   [`NumberStyle::DecimalComma`] (`Likely`).
+/// - Every comma cell is `d,ddd` (one to three digits, a comma, three digits) and nothing else
+///   tells: with a `;` delimiter (`delimiter == Some(';')`, the European convention) →
+///   [`NumberStyle::DecimalComma`] (`Likely`); otherwise **not guessed**:
+///   [`NumberStyle::Point`] with `Unknown` confidence, so those cells stay text.
+/// - Both unmistakable kinds in one column → `Point`, `Unknown` (they stay text).
+pub fn number_style<'a>(cells: impl IntoIterator<Item = &'a str>, delimiter: Option<char>) -> Known<NumberStyle> {
+    let (mut thousands, mut either, mut decimal) = (0usize, 0usize, 0usize);
+    let mut example: Option<String> = None;
+    for c in cells {
+        match comma_cell(c) {
+            CommaCell::Thousands => thousands += 1,
+            CommaCell::Either => {
+                either += 1;
+                if example.is_none() {
+                    example = Some(c.trim().to_string());
+                }
+            }
+            CommaCell::Decimal => decimal += 1,
+            CommaCell::None | CommaCell::Other => {}
+        }
+    }
+    match (thousands > 0, decimal > 0) {
+        (true, true) => Known::unknown(
+            NumberStyle::Point,
+            "Commas are used both as thousands separators and as decimal commas; cells with commas are kept as text.",
+        ),
+        (true, false) => Known::likely(NumberStyle::Thousands, "Commas group thousands (as in 1,250,000)."),
+        (false, true) => {
+            Known::likely(NumberStyle::DecimalComma, "Commas are decimal commas (digits after the comma aren't groups of three).")
+        }
+        (false, false) if either == 0 => Known::certain(NumberStyle::Point, "No commas in the numbers."),
+        (false, false) if delimiter == Some(';') => {
+            Known::likely(NumberStyle::DecimalComma, "Commas read as decimal commas, because the columns are separated by semicolons.")
+        }
+        (false, false) => Known::unknown(
+            NumberStyle::Point,
+            format!(
+                "Values such as {} could use a thousands separator or a decimal comma, and nothing in the file tells which; kept as text.",
+                example.unwrap_or_default()
+            ),
+        ),
+    }
+}
+
+/// Parses a number as written in a cell of a column in `style` ([`number_style`]). Blank, or not
+/// a number in that style: `None`.
+pub fn parse_number_with(cell: &str, style: NumberStyle) -> Option<f64> {
     let s = cell.trim();
     if s.is_empty() {
         return None;
     }
-    let v = match s.parse::<f64>() {
-        Ok(v) => Some(v),
-        Err(_) if s.matches(',').count() == 1 && !s.contains('.') => s.replace(',', ".").parse::<f64>().ok(),
-        Err(_) => None,
+    let v = if !s.contains(',') {
+        s.parse::<f64>().ok()
+    } else {
+        match (style, comma_cell(s)) {
+            (NumberStyle::Thousands, CommaCell::Thousands | CommaCell::Either) => s.replace(',', "").parse::<f64>().ok(),
+            (NumberStyle::DecimalComma, CommaCell::Decimal | CommaCell::Either) => s.replace(',', ".").parse::<f64>().ok(),
+            _ => None,
+        }
     };
     v.filter(|v| v.is_finite())
+}
+
+/// Parses a single cell whose style is unmistakable on its own: `121.47`, ` -3 `, `121,473701`
+/// and `1234,50` (decimal commas), `1,250,000` and `1,234.5` (thousands). A cell like `12,500`
+/// could be either and gives `None`: decide per column with [`number_style`] and
+/// [`parse_number_with`].
+pub fn parse_number(cell: &str) -> Option<f64> {
+    let style = number_style([cell], None);
+    if style.confidence == Confidence::Unknown {
+        return None;
+    }
+    parse_number_with(cell, style.value)
+}
+
+/// The number style of column `i` of `rows`.
+pub(crate) fn column_style(rows: &[Vec<String>], i: usize, delimiter: Option<char>) -> NumberStyle {
+    number_style(rows.iter().map(|r| r.get(i).map(String::as_str).unwrap_or("")), delimiter).value
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -230,7 +359,8 @@ fn named_pairs(headers: &[String]) -> Vec<(usize, usize, Family)> {
     pairs
 }
 
-fn evaluate(headers: &[String], rows: &[Vec<String>], xi: usize, yi: usize) -> CoordinatePair {
+fn evaluate(headers: &[String], rows: &[Vec<String>], xi: usize, yi: usize, delimiter: Option<char>) -> CoordinatePair {
+    let (sx, sy) = (column_style(rows, xi, delimiter), column_style(rows, yi, delimiter));
     let name = |i: usize| headers.get(i).map(|h| h.trim().to_string()).unwrap_or_default();
     let mut p = CoordinatePair {
         x: name(xi),
@@ -266,7 +396,7 @@ fn evaluate(headers: &[String], rows: &[Vec<String>], xi: usize, yi: usize) -> C
             continue;
         }
         p.rows_nonblank += 1;
-        let Some((x, y)) = parse_number(cx).zip(parse_number(cy)) else { continue };
+        let Some((x, y)) = parse_number_with(cx, sx).zip(parse_number_with(cy, sy)) else { continue };
         p.rows_numeric += 1;
         let fits = |lon: f64, lat: f64| (-180.0..=180.0).contains(&lon) && (-90.0..=90.0).contains(&lat);
         if fits(x, y) {
@@ -283,11 +413,12 @@ fn evaluate(headers: &[String], rows: &[Vec<String>], xi: usize, yi: usize) -> C
 }
 
 /// Extent of all numeric rows of a pair (for projected values).
-fn numeric_extent(rows: &[Vec<String>], xi: usize, yi: usize) -> Option<Extent> {
+fn numeric_extent(rows: &[Vec<String>], xi: usize, yi: usize, delimiter: Option<char>) -> Option<Extent> {
+    let (sx, sy) = (column_style(rows, xi, delimiter), column_style(rows, yi, delimiter));
     let mut ext: Option<Extent> = None;
     for row in rows {
         let cell = |i: usize| row.get(i).map(String::as_str).unwrap_or("");
-        if let Some((x, y)) = parse_number(cell(xi)).zip(parse_number(cell(yi))) {
+        if let Some((x, y)) = parse_number_with(cell(xi), sx).zip(parse_number_with(cell(yi), sy)) {
             let e = ext.get_or_insert(Extent { min_x: x, min_y: y, max_x: x, max_y: y });
             e.min_x = e.min_x.min(x);
             e.min_y = e.min_y.min(y);
@@ -308,7 +439,7 @@ fn numeric_extent(rows: &[Vec<String>], xi: usize, yi: usize) -> Option<Extent> 
 /// 经度 with lat / latitude / y / 纬度, also inside longer names ("Lng_GCJ", "pickup_lat",
 /// "lng2"); easting / northing count as projected names. Columns pair up by the rest of their
 /// names ("lng2" with "lat2"). Each pair is checked on the sample: rows where both cells are
-/// non-blank must parse (decimal commas accepted) within ±180 / ±90 for at least 95% of rows.
+/// non-blank must parse (in each column's [`number_style`]) within ±180 / ±90 for at least 95% of rows.
 ///
 /// - Exactly one such pair and no row that only fits swapped → [`CsvLocation::Located`].
 /// - Two or more plausible pairs, or a pair with latitudes above 90 that fit swapped →
@@ -317,11 +448,18 @@ fn numeric_extent(rows: &[Vec<String>], xi: usize, yi: usize) -> Option<Extent> 
 ///   [`CsvLocation::Projected`].
 /// - Otherwise → [`CsvLocation::Table`].
 pub fn csv_locate(headers: &[String], sample_rows: &[Vec<String>], file_name: &str) -> CsvLocation {
+    csv_locate_delimited(headers, sample_rows, file_name, None)
+}
+
+/// [`csv_locate`] for a delimited file whose delimiter is known: a `;` delimiter reads `d,ddd`
+/// values as decimal commas ([`number_style`]). `None` for a sheet.
+pub fn csv_locate_delimited(headers: &[String], sample_rows: &[Vec<String>], file_name: &str, delimiter: Option<char>) -> CsvLocation {
     let named = named_pairs(headers);
     if named.is_empty() {
         return CsvLocation::Table { reason: format!("{file_name}: no columns named like longitude and latitude.") };
     }
-    let evaluated: Vec<(CoordinatePair, Family)> = named.iter().map(|&(x, y, f)| (evaluate(headers, sample_rows, x, y), f)).collect();
+    let evaluated: Vec<(CoordinatePair, Family)> =
+        named.iter().map(|&(x, y, f)| (evaluate(headers, sample_rows, x, y, delimiter), f)).collect();
     // Plausible as degrees: parses, and fits one way or the other in at least 95% of rows.
     let plausible: Vec<&CoordinatePair> = evaluated
         .iter()
@@ -338,7 +476,7 @@ pub fn csv_locate(headers: &[String], sample_rows: &[Vec<String>], file_name: &s
         [p] => {
             // Latitudes above 90: offer the columns as named and swapped.
             let as_named = (*p).clone();
-            let mut swapped = evaluate(headers, sample_rows, p.y_index, p.x_index);
+            let mut swapped = evaluate(headers, sample_rows, p.y_index, p.x_index, delimiter);
             swapped.swapped = true;
             let recommended = usize::from(swapped.rows_in_range > as_named.rows_in_range);
             let candidates = vec![as_named, swapped];
@@ -350,13 +488,13 @@ pub fn csv_locate(headers: &[String], sample_rows: &[Vec<String>], file_name: &s
                 p.rows_nonblank > 0
                     && p.numeric_share() >= PARSE_SHARE
                     && p.rows_in_range + p.swapped_rows.len() < p.rows_numeric
-                    && numeric_extent(sample_rows, p.x_index, p.y_index)
+                    && numeric_extent(sample_rows, p.x_index, p.y_index, delimiter)
                         .is_some_and(|e| e.max_x.abs().max(e.min_x.abs()) > 1000.0 || e.max_y.abs().max(e.min_y.abs()) > 1000.0)
             });
             match projected {
                 Some(p) => {
                     let mut pair = p.clone();
-                    pair.extent = numeric_extent(sample_rows, p.x_index, p.y_index);
+                    pair.extent = numeric_extent(sample_rows, p.x_index, p.y_index, delimiter);
                     CsvLocation::Projected { pair, assumption: projected_question() }
                 }
                 None => CsvLocation::Table {
@@ -563,12 +701,58 @@ mod tests {
     }
 
     #[test]
-    fn parse_number_accepts_decimal_commas_only_when_unambiguous() {
+    fn parse_number_accepts_commas_only_when_unambiguous() {
         assert_eq!(parse_number(" 121.5 "), Some(121.5));
         assert_eq!(parse_number("1234,50"), Some(1234.5));
-        assert_eq!(parse_number("1,234.5"), None);
+        assert_eq!(parse_number("121,473701"), Some(121.473701));
+        assert_eq!(parse_number("1,234.5"), Some(1234.5));
+        assert_eq!(parse_number("1,250,000"), Some(1_250_000.0));
+        // Regression (S1): "12,500" was 12.5. Alone it could be either, so it is not a number.
+        assert_eq!(parse_number("12,500"), None);
+        assert_eq!(parse_number("1.234,5"), None);
         assert_eq!(parse_number("1,2,3"), None);
         assert_eq!(parse_number(""), None);
         assert_eq!(parse_number("NaN"), None);
+    }
+
+    fn style(cells: &[&str], delimiter: Option<char>) -> (NumberStyle, Confidence) {
+        let k = number_style(cells.iter().copied(), delimiter);
+        (k.value, k.confidence)
+    }
+
+    #[test]
+    fn number_style_is_decided_per_column() {
+        use NumberStyle::*;
+        assert_eq!(style(&["12", "3.5", ""], None), (Point, Confidence::Certain));
+        assert_eq!(style(&["12,500", "3,400", "1,250,000"], None), (Thousands, Confidence::Likely));
+        assert_eq!(style(&["12,500.5", "980"], None), (Thousands, Confidence::Likely));
+        assert_eq!(style(&["121,473701", "121,5"], None), (DecimalComma, Confidence::Likely));
+        assert_eq!(style(&["12,5", "3,400"], None), (DecimalComma, Confidence::Likely));
+        assert_eq!(style(&["1234,567"], None), (DecimalComma, Confidence::Likely));
+        // Truly ambiguous: not guessed, unless the delimiter is a semicolon.
+        assert_eq!(style(&["12,500", "3,400"], None), (Point, Confidence::Unknown));
+        assert_eq!(style(&["12,500", "3,400"], Some(',')), (Point, Confidence::Unknown));
+        assert_eq!(style(&["12,500", "3,400"], Some(';')), (DecimalComma, Confidence::Likely));
+        // Unmistakable groups beat the semicolon.
+        assert_eq!(style(&["12,500", "1,250,000"], Some(';')), (Thousands, Confidence::Likely));
+        // Contradicting cells: not guessed.
+        assert_eq!(style(&["1,250,000", "12,5"], None).1, Confidence::Unknown);
+        assert_eq!(parse_number_with("12,500", Thousands), Some(12_500.0));
+        assert_eq!(parse_number_with("-1,250,000.25", Thousands), Some(-1_250_000.25));
+        assert_eq!(parse_number_with("12,5", Thousands), None);
+        assert_eq!(parse_number_with("12,500", DecimalComma), Some(12.5));
+        assert_eq!(parse_number_with("1,250,000", DecimalComma), None);
+        assert_eq!(parse_number_with("12,500", Point), None);
+        assert_eq!(parse_number_with("7", Point), Some(7.0));
+    }
+
+    #[test]
+    fn csv_coordinates_with_semicolons_and_ambiguous_decimal_commas() {
+        // "121,473" alone could be thousands; in a `;` file it is a decimal comma.
+        let headers = s(&["lon", "lat"]);
+        let r: Vec<Vec<String>> = (0..10).map(|i| s(&[&format!("121,4{i}3"), &format!("31,2{i}0")])).collect();
+        assert!(matches!(csv_locate(&headers, &r, "f.csv"), CsvLocation::Table { .. }));
+        let CsvLocation::Located { pair, .. } = csv_locate_delimited(&headers, &r, "f.csv", Some(';')) else { panic!() };
+        assert_eq!(pair.extent.map(|e| e.min_x), Some(121.403));
     }
 }
