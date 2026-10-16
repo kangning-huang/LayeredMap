@@ -77,6 +77,23 @@ Twelve rules decide every design dispute in this plan. When two rules conflict, 
 
 **Question budget** *(new)*. In novice sessions (one sitting with one task script, from launch to quit), the median number of question cards is at most 1 per session and the 90th percentile at most 3. The app keeps a local count of question cards. That count is a pass/fail number at Gates 2, 4 and 5.
 
+## Product tiers
+LayeredMap ships in two tiers (owner decision, 2026-10-16): Free, an open-source app for opening, overlaying and mapping data; and Pro, a closed subscription that adds an assistant you ask about your layers in plain words. The business case is in the LayeredMap Business Case document.
+
+| | Free | Pro |
+|---|---|---|
+| Who | People with no GIS training who need to examine map data (the first audience) | The same people, when they need answers the map alone doesn't give |
+| Code | This repository, Apache-2.0 | A closed module built into the official app; open-source builds have no assistant |
+| Phases | 0–3, 5, 6 | Phase 7, on top of the Phase 4 tool library |
+| Analysis | None exposed: no tool menus, composer or suggested-action buttons | Through the Ask box only; the model calls Phase 4's vetted actions |
+| Model | None | Hosted by LayeredMap behind its assistant service; no bring-your-own key for now |
+
+Rules that follow from the tiers:
+- **One door to analysis.** Phase 4's actions have no menus or buttons of their own; the Ask box is the only way to run them, so the interface stays simple.
+- **The model never computes numbers.** It chooses actions and fills their inputs; LayeredMap checks the plan, runs the actions locally and shows scope, assumptions, preview and recipe, as every result does.
+- **Only descriptions leave the Mac.** The assistant sends layer names, kinds, field names and types, extents and assumptions; never feature values or file contents.
+- **A new network service.** The assistant service joins the allowed list (basemap, search, library, update, assistant); it is used only in Pro.
+
 ## Priority model
 Every function carries one of four priorities. Priority decides what gets cut, never what gets tested less. P0 items pass the same correctness checks in every phase.
 - **P0 — Core.** Without it the product is not LayeredMap. It must be in the pilot and must pass every correctness test.
@@ -380,7 +397,7 @@ These targets are measured on the reference Mac at 2× display scale, with the o
     - red circle: failed
     - broken link: source file missing
 
-- **Click** the row to select the layer. **Click the eye** to toggle visibility only. **Double-click** the name to rename its display alias. **Drag** to reorder, with an insertion line.
+- **Click** the row to select the layer. **Click the eye** to toggle visibility only. **Double-click** the row to zoom to the layer (rename is in the right-click menu; owner decision, 2026-10-16). **Drag** to reorder, with an insertion line.
 - **Right-click:** Zoom to layer, Rename, Style…, View data, Remove from map.
 - **Nesting:** results nest under their main input, indented 16 px, with a "Result" tag. A file with several layers (a GeoPackage) becomes one collapsible group.
 - **Dropping files:** a "+ Open file" row closes the list. Dragging files over the window shows a full-window overlay: "Drop to add to the map".
@@ -1041,6 +1058,8 @@ There is nothing to roll back yet. If no strategy passes, change stack and repea
 ## Phase 4 — Contextual actions, previews, result cards
 **Goal:** from any selection, a novice can ask one of up to three relevant questions, preview the answer, and keep a result that explains itself. **Effort:** 5 effort-weeks, the largest phase. **Scope:** P0 registry, relevance, composer, jobs, area drawing, certified actions and result cards; P1 action search.
 
+**Revised 2026-10-16 (Product tiers):** Phase 4 builds the action library, jobs, previews and result cards as the engine behind Pro's assistant. The composer, suggested-action buttons, More actions and action search described below are not shown in either tier; they stay as a developer surface for testing the actions. Result cards, recipes, previews and the certified algorithms are unchanged. Each action also gets a machine-readable description (inputs, requirements, decisions, output) that the assistant uses to call it. The Phase 4 gate validates the actions through that developer surface and the certified-algorithm fixtures.
+
 ### Work packages
 **WP4.1 Action registry and relevance** (P0)
 - Write an `ActionSpec` for every action in *Selection → suggested actions*. The row orders live in `lm-actions/rules.toml`.
@@ -1377,6 +1396,45 @@ Candidates, in likely order:
 - travel time over a street network
 - 3D
 - plugins
+
+## Phase 7 — LayeredMap Pro: ask your layers
+**Goal:** a person with no GIS training asks a question about their layers in plain words and gets a correct new layer whose recipe they can read. **Effort:** about 6 effort-weeks, after the public beta. **Scope:** P0 the Ask box, the assistant service, tool calling over Phase 4's actions, plan checks, answers with result cards, accounts and subscription; P1 follow-up questions, usage allowance and model routing.
+
+### Work packages
+**WP7.1 The Ask box** (P0)
+- One field at the bottom of the map: "Ask about your layers". Pro only; Free shows nothing in its place.
+- The answer appears as the plan's preview banner and result card, never as a chat transcript that hides the map.
+- Questions the tools can't answer get a plain "I can't answer that with these layers, because…", never a guess.
+
+**WP7.2 Tool calling** (P0)
+- Expose each Phase 4 action as a tool: name, plain description, typed inputs (layers, fields, distances with units), requirements and decisions.
+- The model sees layer descriptions only (names, kinds, fields and types, extents, assumptions), never values.
+- Every plan is checked before it runs: layers exist, units make sense, requirements are met, decisions are asked through the usual question cards.
+
+**WP7.3 Assistant service** (P0, closed)
+- A small hosted service that holds the model credentials, applies the account's allowance and forwards requests; it stores no layer descriptions after answering.
+- The app talks only to this service, an addition to the allowed network services.
+
+**WP7.4 Accounts and subscription** (P0, closed)
+- Sign in, subscribe, see the month's allowance. App Store or direct billing is decided with the Apple enrollment before the pilot.
+
+**WP7.5 Evaluation set** (P0)
+- At least 200 real questions over the K1 teaching set and the B fixtures, each with the expected tool calls and answer.
+- Run on every model or prompt change; results go in the gate report.
+
+### Gate 7
+**Automated**
+- On the evaluation set: the right action and inputs for at least 90% of answerable questions; an honest refusal for at least 95% of unanswerable ones; zero answers without a result card and recipe.
+- No feature value appears in any request to the assistant service (request logs checked in tests).
+
+**Your validation (90 minutes)**
+- Three people with no GIS training each bring a question about their own data and ask it. Note whether the answer was right, whether they understood the recipe, and how long it took.
+
+**Exit criteria**
+- The automated thresholds above are met, and at least 4 of 5 owner-validation answers are correct and understood without help.
+
+**Rollback**
+- The Ask box is switched off by its flag; Free is unaffected.
 
 ## Test fixtures and stress tests
 Every gate test names its fixtures by ID. Small fixtures live in the repository under `fixtures/`. Large ones are generated by `cargo xtask fixtures`, or downloaded from a pinned bucket with checksums. Each fixture's license is recorded in `fixtures/LICENSES.md`.
