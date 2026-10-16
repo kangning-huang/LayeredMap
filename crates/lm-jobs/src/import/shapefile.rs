@@ -141,11 +141,12 @@ fn read_parts(
     }
     // Features without a shape are listed in the import report.
     profile.exclusions.extend(
-        ds.features
-            .iter()
-            .enumerate()
-            .filter(|(_, f)| f.geometry.is_none() && profile.kind != LayerKind::Table)
-            .map(|(i, _)| lm_core::model::Exclusion { row: i as u64 + 1, reason: "No shape".into() }),
+        ds.features.iter().enumerate().filter(|(_, f)| f.geometry.is_none() && profile.kind != LayerKind::Table).map(|(i, _)| {
+            lm_core::model::Exclusion {
+                row: i as u64 + 1,
+                reason: if report.unreadable.contains(&i) { "The shape couldn't be read".into() } else { "No shape".into() },
+            }
+        }),
     );
     let display = ds.name.clone();
     Ok(ImportedLayer { name: display, status: status_of(&profile), profile, data: LayerData::Vector(Arc::new(ds)), raw: None })

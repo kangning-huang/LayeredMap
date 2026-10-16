@@ -751,3 +751,27 @@ fn a_truncated_shapefile_without_its_index_finishes() {
     assert!(l.profile.notices.iter().any(|n| n.contains("couldn't be read")), "{:?}", l.profile.notices);
     let _ = std::fs::remove_dir_all(dir);
 }
+
+/// Review finding (S2): a shape that can't be read is listed in the import report at its own row
+/// (not dropped, and the rows after it keep their own attributes).
+#[test]
+fn an_unreadable_shape_is_listed_not_dropped() {
+    let dir = std::env::temp_dir().join(format!("lm-unreadable-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    for ext in ["shp", "shx", "dbf", "cpg"] {
+        std::fs::copy(fixtures().join(format!("V3/sites.{ext}")), dir.join(format!("sites.{ext}"))).unwrap();
+    }
+    let good = open("V3/sites.shp").unwrap().remove(0);
+    // Mark the second record's shape type as unknown (99).
+    let mut shp = std::fs::read(dir.join("sites.shp")).unwrap();
+    let len1 = u32::from_be_bytes(shp[104..108].try_into().unwrap()) as usize * 2;
+    let second = 100 + 8 + len1;
+    shp[second + 8..second + 12].copy_from_slice(&99i32.to_le_bytes());
+    std::fs::write(dir.join("sites.shp"), &shp).unwrap();
+    let bad = import_path(&dir.join("sites.shp"), &Ctx::detached(Ticket::default())).unwrap().remove(0);
+    let (LayerData::Vector(g), LayerData::Vector(b)) = (&good.data, &bad.data) else { panic!() };
+    assert_eq!(b.features.len(), g.features.len(), "no row dropped");
+    assert!(bad.profile.exclusions.iter().any(|e| e.row == 2 && e.reason.contains("couldn't be read")), "{:?}", bad.profile.exclusions);
+    assert_eq!(b.features[2].attrs, g.features[2].attrs, "the next row keeps its own attributes");
+    let _ = std::fs::remove_dir_all(dir);
+}
