@@ -1,0 +1,47 @@
+{
+  "files": [
+    {
+      "file": "x3_huge_array.geojson",
+      "layers": [
+        {
+          "assumptions": [
+            {
+              "chosen": "find_place",
+              "kind": "NoCrsProjected",
+              "line": "Where should this data be?",
+              "treatment": "Question"
+            }
+          ],
+          "count": 1,
+          "crs": "Unknown",
+          "crs_confidence": "Unknown",
+          "encoding": null,
+          "exclusions": 0,
+          "extent": null,
+          "fields": {},
+          "format": "GeoJSON",
+          "kind": "Lines",
+          "member": null,
+          "name": "x3_huge_array",
+          "notices": [],
+          "status": "NeedsDecision"
+        }
+      ]
+    },
+    {
+      "error": {
+        "kind": "Failed",
+        "message": "x3_nan.geojson isn't valid GeoJSON (a problem on line 1). Your file has not been changed."
+      },
+      "file": "x3_nan.geojson"
+    },
+    {
+      "error": {
+        "kind": "Failed",
+        "message": "x3_nesting.geojson is nested too deeply to be valid GeoJSON. Your file has not been changed."
+      },
+      "file": "x3_nesting.geojson"
+    }
+  ],
+  "fixture": "X3"
+}

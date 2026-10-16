@@ -1,0 +1,55 @@
+{
+  "files": [
+    {
+      "error": {
+        "kind": "Unsupported",
+        "message": "LayeredMap can't open .gpkg files yet."
+      },
+      "file": "city_layers.gpkg"
+    },
+    {
+      "file": "roads_bundle.zip",
+      "layers": [
+        {
+          "assumptions": [
+            {
+              "chosen": "id",
+              "kind": "IdentifierField",
+              "line": "Treated as an ID.",
+              "treatment": "Silent"
+            },
+            {
+              "chosen": "categories",
+              "kind": "FewValuesCategorical",
+              "line": "Colored as categories.",
+              "treatment": "Silent"
+            }
+          ],
+          "count": 6,
+          "crs": "Wgs84",
+          "crs_confidence": "Certain",
+          "encoding": "UTF-8",
+          "exclusions": 0,
+          "extent": [
+            121.4,
+            31.18,
+            121.56,
+            31.28
+          ],
+          "fields": {
+            "lanes": "Category (Likely)",
+            "name": "Name (Likely)",
+            "road_id": "Identifier (Likely)"
+          },
+          "format": "Zipped Shapefile",
+          "kind": "Lines",
+          "member": "export/2024/shanghai/transport/roads.shp",
+          "name": "roads",
+          "notices": [],
+          "status": "Complete"
+        }
+      ]
+    }
+  ],
+  "fixture": "V9"
+}

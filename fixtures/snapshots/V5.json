@@ -1,0 +1,49 @@
+{
+  "files": [
+    {
+      "file": "places_gbk.shp",
+      "layers": [
+        {
+          "assumptions": [
+            {
+              "chosen": "gbk",
+              "kind": "ShapefileGbk",
+              "line": "Read text as Chinese (GBK).",
+              "treatment": "Silent"
+            },
+            {
+              "chosen": "id",
+              "kind": "IdentifierField",
+              "line": "Treated as an ID.",
+              "treatment": "Silent"
+            }
+          ],
+          "count": 12,
+          "crs": "Wgs84",
+          "crs_confidence": "Certain",
+          "encoding": "GBK",
+          "exclusions": 0,
+          "extent": [
+            121.056,
+            31.097,
+            121.5055,
+            31.2988
+          ],
+          "fields": {
+            "category": "Category (Likely)",
+            "district": "Category (Likely)",
+            "id": "Identifier (Likely)",
+            "name": "Name (Likely)"
+          },
+          "format": "Shapefile",
+          "kind": "Points",
+          "member": null,
+          "name": "places_gbk",
+          "notices": [],
+          "status": "Complete"
+        }
+      ]
+    }
+  ],
+  "fixture": "V5"
+}

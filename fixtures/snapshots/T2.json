@@ -1,0 +1,57 @@
+{
+  "files": [
+    {
+      "file": "deliveries.csv",
+      "layers": [
+        {
+          "assumptions": [
+            {
+              "chosen": "columns:lng2,lat2",
+              "kind": "CsvAmbiguousColumns",
+              "line": "Which columns locate these records?",
+              "treatment": "Question"
+            },
+            {
+              "chosen": "id",
+              "kind": "IdentifierField",
+              "line": "Treated as an ID.",
+              "treatment": "Silent"
+            },
+            {
+              "chosen": "wgs84",
+              "kind": "ChinaOffsetPossible",
+              "line": "If these came from a Chinese map app (Amap, Tencent or Baidu), they may sit a few hundred meters off.",
+              "treatment": "Visible"
+            }
+          ],
+          "count": 30,
+          "crs": "Wgs84",
+          "crs_confidence": "Likely",
+          "encoding": "UTF-8",
+          "exclusions": 2,
+          "extent": [
+            121.319273,
+            31.020057,
+            121.686887,
+            31.392694
+          ],
+          "fields": {
+            "id": "Identifier (Likely)",
+            "lat2": "Coordinate (Possible)",
+            "lng2": "Coordinate (Possible)",
+            "name": "Name (Likely)",
+            "x": "Coordinate (Possible)",
+            "y": "Coordinate (Possible)"
+          },
+          "format": "CSV",
+          "kind": "Points",
+          "member": null,
+          "name": "deliveries",
+          "notices": [],
+          "status": "NeedsDecision"
+        }
+      ]
+    }
+  ],
+  "fixture": "T2"
+}

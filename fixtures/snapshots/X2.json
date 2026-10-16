@@ -1,0 +1,12 @@
+{
+  "files": [
+    {
+      "error": {
+        "kind": "Refused",
+        "message": "This archive contains a file that points outside the archive (\"../../evil.shp\"), so it was not opened. Your file has not been changed."
+      },
+      "file": "x2_traversal.zip"
+    }
+  ],
+  "fixture": "X2"
+}

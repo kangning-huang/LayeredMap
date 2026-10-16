@@ -1,0 +1,84 @@
+{
+  "files": [
+    {
+      "file": "edge_cases.geojson",
+      "layers": [
+        {
+          "assumptions": [
+            {
+              "chosen": "split",
+              "kind": "MixedGeometrySplit",
+              "line": "Split into 2 layers: lines, areas",
+              "treatment": "Silent"
+            },
+            {
+              "chosen": "wgs84",
+              "kind": "NoCrsLonLat",
+              "line": "Assumed GPS coordinates (WGS 84), because the file doesn't say.",
+              "treatment": "Visible"
+            }
+          ],
+          "count": 3,
+          "crs": "Wgs84",
+          "crs_confidence": "Likely",
+          "encoding": null,
+          "exclusions": 2,
+          "extent": [
+            -179.5,
+            0.0,
+            179.5,
+            0.0
+          ],
+          "fields": {
+            "case": "Text (Likely)",
+            "description": "Text (Likely)"
+          },
+          "format": "GeoJSON",
+          "kind": "Lines",
+          "member": "edge_cases (lines)",
+          "name": "edge_cases (lines)",
+          "notices": [],
+          "status": "CompleteWithExclusions"
+        },
+        {
+          "assumptions": [
+            {
+              "chosen": "split",
+              "kind": "MixedGeometrySplit",
+              "line": "Split into 2 layers: lines, areas",
+              "treatment": "Silent"
+            },
+            {
+              "chosen": "wgs84",
+              "kind": "NoCrsLonLat",
+              "line": "Assumed GPS coordinates (WGS 84), because the file doesn't say.",
+              "treatment": "Visible"
+            }
+          ],
+          "count": 6,
+          "crs": "Wgs84",
+          "crs_confidence": "Likely",
+          "encoding": null,
+          "exclusions": 0,
+          "extent": [
+            -180.0,
+            -17.0,
+            180.0,
+            90.0
+          ],
+          "fields": {
+            "case": "Text (Likely)",
+            "description": "Text (Likely)"
+          },
+          "format": "GeoJSON",
+          "kind": "Areas",
+          "member": "edge_cases (areas)",
+          "name": "edge_cases (areas)",
+          "notices": [],
+          "status": "Complete"
+        }
+      ]
+    }
+  ],
+  "fixture": "V10"
+}

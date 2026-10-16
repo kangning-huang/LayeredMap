@@ -1,0 +1,50 @@
+{
+  "files": [
+    {
+      "file": "schools.csv",
+      "layers": [
+        {
+          "assumptions": [
+            {
+              "chosen": "columns:lon,lat",
+              "kind": "CsvCoordinateColumns",
+              "line": "Located using lon and lat as GPS coordinates (WGS 84).",
+              "treatment": "Visible"
+            },
+            {
+              "chosen": "wgs84",
+              "kind": "ChinaOffsetPossible",
+              "line": "If these came from a Chinese map app (Amap, Tencent or Baidu), they may sit a few hundred meters off.",
+              "treatment": "Visible"
+            }
+          ],
+          "count": 248,
+          "crs": "Wgs84",
+          "crs_confidence": "Likely",
+          "encoding": "UTF-8",
+          "exclusions": 6,
+          "extent": [
+            121.213541,
+            30.908356,
+            121.793389,
+            31.490863
+          ],
+          "fields": {
+            "lat": "Coordinate (Likely)",
+            "lon": "Coordinate (Likely)",
+            "name": "Name (Likely)",
+            "students": "Measure(Count) (Likely)",
+            "type": "Category (Likely)"
+          },
+          "format": "CSV",
+          "kind": "Points",
+          "member": null,
+          "name": "schools",
+          "notices": [],
+          "status": "CompleteWithExclusions"
+        }
+      ]
+    }
+  ],
+  "fixture": "T1"
+}

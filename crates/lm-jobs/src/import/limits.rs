@@ -150,7 +150,9 @@ mod tests {
 
     #[test]
     fn the_generated_bomb_and_traversal_fixtures_are_refused() {
-        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/generated");
+        let dir = std::env::var_os("LM_FIXTURES_DIR")
+            .map(std::path::PathBuf::from)
+            .unwrap_or_else(|| std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/generated"));
         for (f, word) in [("X1/x1_bomb.zip", "archives inside"), ("X2/x2_traversal.zip", "outside")] {
             let Ok(bytes) = std::fs::read(dir.join(f)) else { continue };
             let t = std::time::Instant::now();

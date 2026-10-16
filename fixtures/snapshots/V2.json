@@ -1,0 +1,160 @@
+{
+  "files": [
+    {
+      "file": "mixed.geojson",
+      "layers": [
+        {
+          "assumptions": [
+            {
+              "chosen": "split",
+              "kind": "MixedGeometrySplit",
+              "line": "Split into 3 layers: points, lines, areas",
+              "treatment": "Silent"
+            },
+            {
+              "chosen": "wgs84",
+              "kind": "NoCrsLonLat",
+              "line": "Assumed GPS coordinates (WGS 84), because the file doesn't say.",
+              "treatment": "Visible"
+            },
+            {
+              "chosen": "wgs84",
+              "kind": "ChinaOffsetPossible",
+              "line": "If these came from a Chinese map app (Amap, Tencent or Baidu), they may sit a few hundred meters off.",
+              "treatment": "Visible"
+            },
+            {
+              "chosen": "id",
+              "kind": "IdentifierField",
+              "line": "Treated as an ID.",
+              "treatment": "Silent"
+            }
+          ],
+          "count": 4,
+          "crs": "Wgs84",
+          "crs_confidence": "Likely",
+          "encoding": null,
+          "exclusions": 0,
+          "extent": [
+            121.46,
+            31.21,
+            121.51,
+            31.24
+          ],
+          "fields": {
+            "id": "Identifier (Likely)",
+            "kind": "Category (Likely)",
+            "name": "Name (Likely)"
+          },
+          "format": "GeoJSON",
+          "kind": "Points",
+          "member": "mixed (points)",
+          "name": "mixed (points)",
+          "notices": [],
+          "status": "Complete"
+        },
+        {
+          "assumptions": [
+            {
+              "chosen": "split",
+              "kind": "MixedGeometrySplit",
+              "line": "Split into 3 layers: points, lines, areas",
+              "treatment": "Silent"
+            },
+            {
+              "chosen": "wgs84",
+              "kind": "NoCrsLonLat",
+              "line": "Assumed GPS coordinates (WGS 84), because the file doesn't say.",
+              "treatment": "Visible"
+            },
+            {
+              "chosen": "wgs84",
+              "kind": "ChinaOffsetPossible",
+              "line": "If these came from a Chinese map app (Amap, Tencent or Baidu), they may sit a few hundred meters off.",
+              "treatment": "Visible"
+            },
+            {
+              "chosen": "id",
+              "kind": "IdentifierField",
+              "line": "Treated as an ID.",
+              "treatment": "Silent"
+            }
+          ],
+          "count": 3,
+          "crs": "Wgs84",
+          "crs_confidence": "Likely",
+          "encoding": null,
+          "exclusions": 0,
+          "extent": [
+            121.4,
+            31.2,
+            121.5,
+            31.27
+          ],
+          "fields": {
+            "id": "Identifier (Likely)",
+            "kind": "Category (Likely)",
+            "name": "Name (Likely)"
+          },
+          "format": "GeoJSON",
+          "kind": "Lines",
+          "member": "mixed (lines)",
+          "name": "mixed (lines)",
+          "notices": [],
+          "status": "Complete"
+        },
+        {
+          "assumptions": [
+            {
+              "chosen": "split",
+              "kind": "MixedGeometrySplit",
+              "line": "Split into 3 layers: points, lines, areas",
+              "treatment": "Silent"
+            },
+            {
+              "chosen": "wgs84",
+              "kind": "NoCrsLonLat",
+              "line": "Assumed GPS coordinates (WGS 84), because the file doesn't say.",
+              "treatment": "Visible"
+            },
+            {
+              "chosen": "wgs84",
+              "kind": "ChinaOffsetPossible",
+              "line": "If these came from a Chinese map app (Amap, Tencent or Baidu), they may sit a few hundred meters off.",
+              "treatment": "Visible"
+            },
+            {
+              "chosen": "id",
+              "kind": "IdentifierField",
+              "line": "Treated as an ID.",
+              "treatment": "Silent"
+            }
+          ],
+          "count": 3,
+          "crs": "Wgs84",
+          "crs_confidence": "Likely",
+          "encoding": null,
+          "exclusions": 0,
+          "extent": [
+            121.42,
+            31.2,
+            121.53,
+            31.32
+          ],
+          "fields": {
+            "id": "Identifier (Likely)",
+            "kind": "Category (Likely)",
+            "name": "Name (Likely)"
+          },
+          "format": "GeoJSON",
+          "kind": "Areas",
+          "member": "mixed (areas)",
+          "name": "mixed (areas)",
+          "notices": [],
+          "status": "Complete"
+        }
+      ]
+    }
+  ],
+  "fixture": "V2"
+}

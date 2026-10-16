@@ -1,0 +1,12 @@
+{
+  "files": [
+    {
+      "error": {
+        "kind": "Unsupported",
+        "message": "survey.xlsx holds no Shapefile. LayeredMap opens zipped Shapefiles; open other files directly (it holds docProps/app.xml, docProps/core.xml, xl/theme/theme1.xml, xl/worksheets/sheet1.xml, xl/worksheets/sheet2.xml)."
+      },
+      "file": "survey.xlsx"
+    }
+  ],
+  "fixture": "T5"
+}
