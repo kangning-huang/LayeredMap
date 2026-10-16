@@ -499,7 +499,8 @@ pub fn inspector(shell: &mut Shell, ui: &mut Ui, map: Rect) {
 
 fn status_lines(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, l: &lm_core::document::DocLayer) {
     let p = &l.profile;
-    let opened = p.count.saturating_sub(p.exclusions.len() as u64);
+    // The count is what was placed; exclusions are the records left out.
+    let opened = p.count;
     if !p.exclusions.is_empty() {
         let (one, many) = p.kind.nouns();
         let _ = one;

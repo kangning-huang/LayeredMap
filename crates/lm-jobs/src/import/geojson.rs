@@ -130,7 +130,21 @@ impl Sink {
         let row = self.seen;
         let (geometry, props) = match f {
             Json::Object(mut m) => match m.get("type").and_then(Json::as_str) {
-                Some("Feature") => (m.remove("geometry").unwrap_or(Json::Null), m.remove("properties").unwrap_or(Json::Null)),
+                Some("Feature") => {
+                    let geometry = m.remove("geometry").unwrap_or(Json::Null);
+                    let mut props = m.remove("properties").unwrap_or(Json::Null);
+                    // The Feature's own id is kept as a field (unless a property has that name).
+                    if let Some(id) = m.remove("id") {
+                        match &mut props {
+                            Json::Object(p) => {
+                                p.entry("id").or_insert(id);
+                            }
+                            Json::Null => props = Json::Object(serde_json::Map::from_iter([("id".to_string(), id)])),
+                            _ => {}
+                        }
+                    }
+                    (geometry, props)
+                }
                 Some(_) => (Json::Object(m), Json::Null),
                 None => (Json::Null, Json::Null),
             },

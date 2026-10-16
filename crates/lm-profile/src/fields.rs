@@ -124,12 +124,17 @@ fn name_like(name: &str) -> bool {
 
 fn measure_kind(name: &str, integers: bool) -> MeasureKind {
     let l = name.to_lowercase();
-    let has = |words: &[&str]| words.iter().any(|w| l.contains(w));
-    if has(&["density", "per_km", "per km", "/km", "密度"]) {
+    // Latin hints match whole words ("country" is not a count); Chinese hints match anywhere.
+    let tokens = crate::words(name);
+    let word = |ws: &[&str]| tokens.iter().any(|t| ws.iter().any(|w| t == w || (*w == "pop" && t.ends_with("pop"))));
+    let han = |ws: &[&str]| ws.iter().any(|w| l.contains(w));
+    if word(&["density"]) || han(&["per_km", "per km", "/km", "密度"]) {
         MeasureKind::Density
-    } else if integers && has(&["pop", "count", "number", "total", "students", "人口", "数量", "人数"]) {
+    } else if integers
+        && (word(&["pop", "population", "count", "counts", "number", "total", "students", "n"]) || han(&["人口", "数量", "人数"]))
+    {
         MeasureKind::Count
-    } else if has(&["temp", "rate", "pct", "percent", "ratio", "mean", "avg", "average", "率", "温度"]) {
+    } else if word(&["temp", "temperature", "rate", "pct", "percent", "ratio", "mean", "avg", "average"]) || han(&["率", "温度"]) {
         MeasureKind::Intensive
     } else {
         MeasureKind::Unknown
@@ -560,5 +565,20 @@ mod tests {
         assert!(!is_date("2024-13-01"));
         assert!(!is_date("20240301"));
         assert!(!is_date("1.2.3"));
+    }
+}
+
+#[cfg(test)]
+mod measure_tests {
+    use super::*;
+
+    #[test]
+    fn measure_hints_match_whole_words() {
+        assert_eq!(measure_kind("country", true), MeasureKind::Unknown);
+        assert_eq!(measure_kind("pop_2020", true), MeasureKind::Count);
+        assert_eq!(measure_kind("student_count", true), MeasureKind::Count);
+        assert_eq!(measure_kind("人口", true), MeasureKind::Count);
+        assert_eq!(measure_kind("temperature", false), MeasureKind::Intensive);
+        assert_eq!(measure_kind("pop_density", false), MeasureKind::Density);
     }
 }

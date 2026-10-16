@@ -75,7 +75,13 @@ impl FormatAdapter for Delimited {
                 Err(e) => return Err(ImportError::read(&name, e)),
             }
         }
-        let headers = dedupe_headers(headers.unwrap_or_default());
+        // Rows longer than the header keep their extra cells, in numbered columns.
+        let mut headers = headers.unwrap_or_default();
+        let widest = rows.iter().map(Vec::len).max().unwrap_or(0);
+        if widest > headers.len() {
+            headers.resize(widest, String::new());
+        }
+        let headers = dedupe_headers(headers);
         if headers.is_empty() {
             return Err(ImportError::Failed {
                 message: format!("{name} is empty. Nothing was added to your map."),
@@ -323,7 +329,7 @@ fn build_with(
         source: source_ref(path, member),
         format,
         kind,
-        count: ds.features.len() as u64,
+        count: super::located_count(&ds, kind),
         extent_wgs84: if kind == LayerKind::Points { extent } else { None },
         crs,
         fields: field_profiles,

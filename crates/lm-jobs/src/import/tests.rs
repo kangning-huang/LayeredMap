@@ -26,7 +26,7 @@ fn t1_csv_lands_with_a_visible_assumption_and_six_exclusions() {
     let l = open("T1/schools.csv").unwrap();
     let l = &l[0];
     assert_eq!(l.profile.kind, LayerKind::Points);
-    assert_eq!(l.profile.count, 248);
+    assert_eq!(l.profile.count, 242, "248 rows, 6 without a location");
     assert_eq!(l.profile.exclusions.len(), 6, "{:?}", l.profile.exclusions);
     assert_eq!(l.status, ImportStatus::CompleteWithExclusions);
     let a = l.profile.assumptions.iter().find(|a| a.kind == AssumptionKind::CsvCoordinateColumns).unwrap();
@@ -599,4 +599,29 @@ fn csv_thousands_separators_are_read_as_thousands() {
     let l = import_text("werte.csv", "name;wert;lon;lat\nA;12,500;121,40;31,20\nB;3,400;121,41;31,21\n");
     assert_eq!(column(&l, "wert"), vec![Value::Float(12.5), Value::Float(3.4)]);
     assert_eq!(l.profile.kind, LayerKind::Points);
+}
+
+/// Review finding (S1): the header counts located points, not rows with no location.
+#[test]
+fn t1_counts_located_points() {
+    let l = open("T1/schools.csv").unwrap().remove(0);
+    assert_eq!(l.profile.count + l.profile.exclusions.len() as u64, 248, "{}", l.profile.subtitle());
+    assert_eq!(l.profile.subtitle(), format!("{} points · schools.csv", l.profile.count));
+}
+
+/// Review finding (S2): nothing is dropped silently: extra CSV cells and GeoJSON ids are kept.
+#[test]
+fn ragged_rows_and_feature_ids_are_kept() {
+    let csv = import_text("ragged.csv", "name,lon,lat\nA,121.4,31.2,extra\nB,121.5,31.3\n");
+    let LayerData::Vector(ds) = &csv.data else { panic!() };
+    assert!(ds.field_index("column 4").is_some(), "{:?}", ds.fields.iter().map(|f| &f.name).collect::<Vec<_>>());
+    let dir = std::env::temp_dir().join(format!("lm-gj-id-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let p = dir.join("ids.geojson");
+    std::fs::write(&p, r#"{"type":"FeatureCollection","features":[{"type":"Feature","id":"a1","geometry":{"type":"Point","coordinates":[1,2]},"properties":{"n":1}}]}"#).unwrap();
+    let l = import_path(&p, &Ctx::detached(Ticket::default())).unwrap().remove(0);
+    let LayerData::Vector(ds) = &l.data else { panic!() };
+    let i = ds.field_index("id").unwrap();
+    assert_eq!(ds.value(0, i), &rustgis_engine::data::Value::Text("a1".into()));
+    let _ = std::fs::remove_dir_all(dir);
 }
