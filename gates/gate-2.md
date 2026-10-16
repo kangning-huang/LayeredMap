@@ -50,7 +50,7 @@ progress.
 |---|---|
 | Changed snapshots explained | see fixtures/snapshots/README.md (in progress) |
 | Second review of the macOS `unsafe` hook | approved (docs/lm/decisions.md) |
-| Independent review of the changes since `gate-1-pass` | **done 2026-10-16**: 6 S1, 5 S2, several S3. All S1 and S2 fixed except one S2 (listed below), each with a regression test that fails without the fix. |
+| Independent review of the changes since `gate-1-pass` | **done 2026-10-16**: 6 S1, 5 S2, several S3. All S1 and S2 fixed, each with a regression test that fails without the fix. A second review of the fixes follows. |
 
 ### Independent review findings
 
@@ -67,7 +67,7 @@ progress.
 | S2 | Converting Amap points left the original layer's question open | fixed: closed in the same undo step |
 | S2 | A Western Shapefile without .cpg was read as Chinese (GBK) | fixed: strong evidence required; weak evidence is a visible line; Windows-1252 fallback has Change |
 | S2 | "amap" matched inside other words (china_map.csv) | fixed: whole-word hints |
-| S2 | Records dropped without appearing in exclusions | fixed for ragged CSV rows, GeoJSON ids and failed reprojection; **open** for Shapefile records the engine can't read (the engine fix is in the Gate 2 checks branch, merging next) |
+| S2 | Records dropped without appearing in exclusions | fixed: ragged CSV rows, GeoJSON ids, failed reprojection, and Shapefile shapes the engine can't read (kept as rows and listed; `an_unreadable_shape_is_listed_not_dropped`) |
 | S3 | Cancel race, Compare answers not logged, GBK after an ASCII head, zip size cap, Excel duplicate headers, EPSG:0, notices dropped on Change, "country" read as a count | fixed |
 | S3 | Layer data from earlier revisions is kept in memory for undo | open: pruning arrives with the Phase 3 undo depth limit |
 

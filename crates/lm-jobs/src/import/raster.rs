@@ -210,8 +210,9 @@ pub fn apply_raster_choices(raw: &Raster, profile: &mut LayerProfile, metas: &[B
         // Scale and offset: the Landsat rule, or the file's own (none: the stored numbers).
         let (mut scale, mut offset) = match chosen(profile, AssumptionKind::LandsatScale, n) {
             Some("landsat_c2_st") => (Some(lm_profile::LANDSAT_C2_ST_SCALE), Some(lm_profile::LANDSAT_C2_ST_OFFSET)),
-            Some(_) => (meta.scale, meta.offset),
-            None => (band.scale.or(meta.scale), band.offset.or(meta.offset)),
+            // Always from the file's own values, never from the band's current (already shifted)
+            // numbers, so applying the choices again gives the same result.
+            _ => (meta.scale, meta.offset),
         };
         // Kelvin shown in °C: the display offset moves by −273.15.
         let kelvin = chosen(profile, AssumptionKind::RasterKelvin, n);
@@ -222,7 +223,11 @@ pub fn apply_raster_choices(raw: &Raster, profile: &mut LayerProfile, metas: &[B
                 Some("°C".to_string())
             }
             Some(_) => Some("K".to_string()),
-            None => band.unit.value.clone(),
+            // A unit the user gave (RasterNoUnit) or the file's.
+            None => match chosen(profile, AssumptionKind::RasterNoUnit, n).and_then(|id| id.strip_prefix("unit:")) {
+                Some(u) => Some(u.to_string()),
+                None => meta.unit.clone().or_else(|| band.unit.value.clone()),
+            },
         };
         let values = raw.bands.get(i).map(|b| b.data.as_slice()).unwrap_or_default();
         let nd32 = nd.map(|v| v as f32);
@@ -252,6 +257,8 @@ pub fn apply_raster_choices(raw: &Raster, profile: &mut LayerProfile, metas: &[B
                 (AssumptionKind::RasterKelvin, _) => "Values shown as stored (kelvin).".into(),
                 (AssumptionKind::LandsatScale, "landsat_c2_st") => a.line.clone(),
                 (AssumptionKind::LandsatScale, _) => "Values shown as the stored numbers (no scale or offset applied).".into(),
+                (AssumptionKind::RasterNoUnit, id) if id.starts_with("unit:") => format!("Unit: {}.", id.trim_start_matches("unit:")),
+                (AssumptionKind::RasterNoUnit, _) => lm_profile::lines::RASTER_NO_UNIT.into(),
                 _ => a.line.clone(),
             };
         }

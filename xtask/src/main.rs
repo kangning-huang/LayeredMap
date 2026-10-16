@@ -1,4 +1,5 @@
-//! `cargo xtask ci | layers | web-pwa <dir>`
+//! `cargo xtask ci | layers | web-pwa <dir>` (LayeredMap adds `fixtures`, `feel`, `launch`, `stress` and
+//! `fuzz`; see `lm.rs`, `fixtures.rs` and `gate.rs`).
 //!
 //! - `layers`: enforces the crate layering (nothing below L6 may depend on egui/eframe/rfd).
 //! - `ci`: fmt check, clippy -D warnings, tests and the layer check.
@@ -8,6 +9,7 @@
 use std::process::{Command, ExitCode};
 
 mod fixtures;
+mod gate;
 mod lm;
 
 const LAYERS: &[(&str, u8)] = &[
@@ -155,7 +157,9 @@ fn main() -> ExitCode {
         "fixtures" => fixtures::run(&root(), &std::env::args().skip(2).collect::<Vec<_>>()),
         "feel" => lm::feel(&root(), &std::env::args().skip(2).collect::<Vec<_>>()),
         "launch" => lm::launch(&root(), &std::env::args().skip(2).collect::<Vec<_>>()),
-        _ => Err("usage: cargo xtask ci | layers | web-pwa <dir> | fixtures [--out DIR] [--only IDS] [--large] | feel [--runs N] [--out DIR] | launch [--n N]".into()),
+        "stress" => gate::stress(&root(), &std::env::args().skip(2).collect::<Vec<_>>()),
+        "fuzz" => gate::fuzz(&root(), &std::env::args().skip(2).collect::<Vec<_>>()),
+        _ => Err("usage: cargo xtask ci | layers | web-pwa <dir> | fixtures [--out DIR] [--only IDS] [--large] | feel [--runs N] [--out DIR] | launch [--n N] | stress | fuzz [--secs N] [--target T]".into()),
     };
     match r {
         Ok(()) => ExitCode::SUCCESS,

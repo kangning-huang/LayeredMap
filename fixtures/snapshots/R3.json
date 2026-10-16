@@ -1,0 +1,54 @@
+{
+  "files": [
+    {
+      "file": "landcover.tif",
+      "layers": [
+        {
+          "assumptions": [
+            {
+              "chosen": "unknown",
+              "kind": "RasterNoUnit",
+              "line": "Unit unknown.",
+              "treatment": "Visible"
+            },
+            {
+              "chosen": "category",
+              "kind": "RasterCellMeaning",
+              "line": "Treated as categories (shares, not averages).",
+              "treatment": "Visible"
+            }
+          ],
+          "bands": [
+            {
+              "cell_meaning": "Category (Likely)",
+              "index": 1,
+              "nodata": 0.0,
+              "offset": null,
+              "scale": null,
+              "unit": null
+            }
+          ],
+          "count": 40000,
+          "crs": "Wgs84",
+          "crs_confidence": "Certain",
+          "encoding": null,
+          "exclusions": 0,
+          "extent": [
+            121.2,
+            30.9,
+            121.8,
+            31.5
+          ],
+          "fields": {},
+          "format": "GeoTIFF",
+          "kind": "Raster",
+          "member": null,
+          "name": "landcover",
+          "notices": [],
+          "status": "Complete"
+        }
+      ]
+    }
+  ],
+  "fixture": "R3"
+}

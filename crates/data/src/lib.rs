@@ -91,6 +91,9 @@ impl Serialize for Dataset {
 pub struct ReadReport {
     pub skipped: usize,
     pub messages: Vec<String>,
+    /// Rows (0-based feature positions) kept without a geometry because theirs couldn't be read,
+    /// so a caller can list them with a reason rather than lose them.
+    pub unreadable: Vec<usize>,
 }
 
 impl Dataset {

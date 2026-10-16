@@ -131,6 +131,8 @@ pub struct Shell {
     pub(crate) change_for: Option<(lm_core::model::LayerId, lm_core::model::AssumptionKind, lm_core::model::Subject, egui::Rect)>,
     pub(crate) review_for: Option<lm_core::model::LayerId>,
     pub(crate) rename: Option<(lm_core::model::LayerId, String)>,
+    /// Renaming just started: the field takes the keyboard this frame only.
+    pub(crate) rename_started: bool,
     /// When each question card was first shown (for seconds-to-answer in the question log).
     pub(crate) question_seen: std::collections::HashMap<(u64, u8), f64>,
     pub(crate) drag_from: Option<usize>,
@@ -172,6 +174,7 @@ impl Shell {
             change_for: None,
             review_for: None,
             rename: None,
+            rename_started: false,
             question_seen: Default::default(),
             drag_from: None,
             zoom_to: None,

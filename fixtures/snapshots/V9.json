@@ -1,0 +1,139 @@
+{
+  "files": [
+    {
+      "file": "city_layers.gpkg",
+      "layers": [
+        {
+          "assumptions": [],
+          "count": 3,
+          "crs": "Wgs84",
+          "crs_confidence": "Certain",
+          "encoding": null,
+          "exclusions": 0,
+          "extent": [
+            121.43,
+            31.2,
+            121.52,
+            31.26
+          ],
+          "fields": {
+            "kind": "Text (Likely)",
+            "name": "Name (Likely)"
+          },
+          "format": "GeoPackage",
+          "kind": "Areas",
+          "member": "parks",
+          "name": "parks",
+          "notices": [],
+          "status": "Complete"
+        },
+        {
+          "assumptions": [
+            {
+              "chosen": "id",
+              "kind": "IdentifierField",
+              "line": "Treated as an ID.",
+              "treatment": "Silent"
+            },
+            {
+              "chosen": "categories",
+              "kind": "FewValuesCategorical",
+              "line": "Colored as categories.",
+              "treatment": "Silent"
+            }
+          ],
+          "count": 6,
+          "crs": "Wgs84",
+          "crs_confidence": "Certain",
+          "encoding": null,
+          "exclusions": 0,
+          "extent": [
+            121.4,
+            31.18,
+            121.56,
+            31.28
+          ],
+          "fields": {
+            "lanes": "Category (Likely)",
+            "name": "Name (Likely)",
+            "road_id": "Identifier (Likely)"
+          },
+          "format": "GeoPackage",
+          "kind": "Lines",
+          "member": "roads",
+          "name": "roads",
+          "notices": [],
+          "status": "Complete"
+        },
+        {
+          "assumptions": [],
+          "count": 8,
+          "crs": "Wgs84",
+          "crs_confidence": "Certain",
+          "encoding": null,
+          "exclusions": 0,
+          "extent": [
+            121.403988,
+            31.180563,
+            121.537736,
+            31.27833
+          ],
+          "fields": {
+            "name": "Name (Likely)",
+            "students": "Measure(Count) (Likely)"
+          },
+          "format": "GeoPackage",
+          "kind": "Points",
+          "member": "schools",
+          "name": "schools",
+          "notices": [],
+          "status": "Complete"
+        }
+      ]
+    },
+    {
+      "file": "roads_bundle.zip",
+      "layers": [
+        {
+          "assumptions": [
+            {
+              "chosen": "id",
+              "kind": "IdentifierField",
+              "line": "Treated as an ID.",
+              "treatment": "Silent"
+            },
+            {
+              "chosen": "categories",
+              "kind": "FewValuesCategorical",
+              "line": "Colored as categories.",
+              "treatment": "Silent"
+            }
+          ],
+          "count": 6,
+          "crs": "Wgs84",
+          "crs_confidence": "Certain",
+          "encoding": "UTF-8",
+          "exclusions": 0,
+          "extent": [
+            121.4,
+            31.18,
+            121.56,
+            31.28
+          ],
+          "fields": {
+            "lanes": "Category (Likely)",
+            "name": "Name (Likely)",
+            "road_id": "Identifier (Likely)"
+          },
+          "format": "Zipped Shapefile",
+          "kind": "Lines",
+          "member": "export/2024/shanghai/transport/roads.shp",
+          "name": "roads",
+          "notices": [],
+          "status": "Complete"
+        }
+      ]
+    }
+  ],
+  "fixture": "V9"
+}

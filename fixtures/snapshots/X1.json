@@ -1,0 +1,12 @@
+{
+  "files": [
+    {
+      "error": {
+        "kind": "Refused",
+        "message": "This archive has other archives inside it. LayeredMap doesn't open archives inside archives, because they can expand without limit; unzip it first. Your file has not been changed."
+      },
+      "file": "x1_bomb.zip"
+    }
+  ],
+  "fixture": "X1"
+}

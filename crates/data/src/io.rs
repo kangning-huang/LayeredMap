@@ -1202,15 +1202,112 @@ fn read_shapefile_parts(parts: ShapefileParts, name: &str) -> Result<(Dataset, R
     read_shapefile_parts_with(parts, name, ShapefileOptions::default())
 }
 
+/// Marks every shape whose part or point counts claim more bytes than its record holds as
+/// unreadable (an unknown shape type, in this copy of the `.shp`), so the reader never reserves
+/// memory for points the file doesn't contain: a few bytes could otherwise ask for gigabytes.
+/// Shapes are found through the `.shx` (rebuilt by [`rebuild_index`] when missing).
+fn defuse_shapes(shp: &mut [u8], shx: &[u8]) {
+    let be = |b: &[u8], at: usize| b.get(at..at + 4).map(|x| i64::from(i32::from_be_bytes([x[0], x[1], x[2], x[3]])));
+    let le = |b: &[u8], at: usize| b.get(at..at + 4).map(|x| i64::from(i32::from_le_bytes([x[0], x[1], x[2], x[3]])));
+    let check = |shp: &mut [u8], pos: usize| -> Option<usize> {
+        let content = be(shp, pos + 4)?.checked_mul(2)?;
+        let start = pos + 8;
+        if content < 0 {
+            // A negative record size: nothing in this record can be trusted.
+            if let Some(t) = shp.get_mut(start..start + 4) {
+                t.copy_from_slice(&99i32.to_le_bytes());
+            }
+            return None;
+        }
+        let avail = i64::try_from(shp.len().saturating_sub(start)).ok()?.min(content);
+        let ty = le(shp, start)?;
+        // A null shape is read as its 4-byte type and nothing more, whatever its record declares,
+        // and the reader doesn't skip the rest: any other size leaves it reading the next record
+        // from a place nobody checked. (Other shapes check their size or skip what's left.)
+        if ty == 0 && content != 4 {
+            if let Some(t) = shp.get_mut(start..start + 4) {
+                t.copy_from_slice(&99i32.to_le_bytes());
+            }
+            return usize::try_from(content).ok().map(|c| start + c);
+        }
+        // (offset of the first count, bytes before the counted data, bytes per part, per point)
+        let layout = match ty {
+            3 | 5 | 13 | 15 | 23 | 25 => Some((36, 44, 4, 16)),
+            8 | 18 | 28 => Some((36, 40, 0, 16)),
+            31 => Some((36, 44, 8, 16)),
+            _ => None,
+        };
+        if let Some((at, fixed, per_part, per_point)) = layout {
+            let (parts, points) = if per_part == 0 {
+                (0, le(shp, start + at).unwrap_or(-1))
+            } else {
+                (le(shp, start + at).unwrap_or(-1), le(shp, start + at + 4).unwrap_or(-1))
+            };
+            let need = fixed + per_part * parts.max(0) + per_point * points.max(0);
+            // Each part starts at a point index, in order, within the points: the reader sizes
+            // each part from these, so one bad index is as dangerous as a bad count.
+            let bad_parts = per_part > 0
+                && need <= avail
+                && (0..usize::try_from(parts).unwrap_or(0))
+                    .map(|k| le(shp, start + 44 + 4 * k).unwrap_or(-1))
+                    .try_fold(0i64, |prev, p| (p >= prev && p <= points).then_some(p))
+                    .is_none();
+            if (parts < 0 || points < 0 || need > avail || bad_parts)
+                && let Some(t) = shp.get_mut(start..start + 4)
+            {
+                t.copy_from_slice(&99i32.to_le_bytes());
+            }
+        }
+        usize::try_from(content).ok().map(|c| start + c)
+    };
+    for i in 0..shx.len().saturating_sub(100) / 8 {
+        if let Some(off) = be(shx, 100 + 8 * i).and_then(|o| usize::try_from(o.checked_mul(2)?).ok()) {
+            check(shp, off);
+        }
+    }
+}
+
+/// An index (`.shx`) for a `.shp` that has none, from the record headers read in order up to the
+/// first one that can't be right (a negative size, or one that doesn't move forward). Reading
+/// through an index keeps the reader at the records that were checked: read in order, a shape
+/// that takes more bytes than its record declares would leave it reading from a place nobody
+/// checked, and a damaged shape would make it return the same error forever (found by fuzzing).
+fn rebuild_index(shp: &[u8]) -> Vec<u8> {
+    let be = |at: usize| shp.get(at..at + 4).map(|x| i64::from(i32::from_be_bytes([x[0], x[1], x[2], x[3]])));
+    let mut entries = Vec::new();
+    let mut pos = 100usize;
+    while pos + 12 <= shp.len() {
+        let Some(content) = be(pos + 4).and_then(|w| w.checked_mul(2)).filter(|c| *c >= 0) else { break };
+        let Ok(content) = usize::try_from(content) else { break };
+        entries.push((pos, content));
+        match pos.checked_add(8 + content) {
+            Some(next) if next > pos => pos = next,
+            _ => break,
+        }
+    }
+    let mut shx = shp.get(..100).map(<[u8]>::to_vec).unwrap_or_else(|| vec![0; 100]);
+    shx.resize(100, 0);
+    let words = |n: usize| i32::try_from(n / 2).unwrap_or(i32::MAX).to_be_bytes();
+    shx[24..28].copy_from_slice(&words(100 + 8 * entries.len()));
+    for (off, content) in entries {
+        shx.extend_from_slice(&words(off));
+        shx.extend_from_slice(&words(content));
+    }
+    shx
+}
+
 /// Reads a Shapefile from its files in memory, with a `.dbf` text encoding and without the `.prj`
 /// conversion if asked. With no `.dbf` the shapes have no fields (said in the report); with no
-/// `.shx` the shapes are read in order.
+/// `.shx` one is rebuilt from the record headers.
 pub fn read_shapefile_parts_with(parts: ShapefileParts, name: &str, opts: ShapefileOptions) -> Result<(Dataset, ReadReport)> {
     use shapefile::Shape;
-    use shapefile::dbase::FieldValue;
     use std::io::Cursor;
     let fmt = |e: shapefile::Error| DataError::Format(format!("Shapefile: {e}"));
     let mut report = ReadReport::default();
+    let mut parts = parts;
+    let shx = parts.shx.take().unwrap_or_else(|| rebuild_index(&parts.shp));
+    defuse_shapes(&mut parts.shp, &shx);
+    parts.shx = Some(shx);
     let Some(dbf_bytes) = parts.dbf else {
         return read_shapes_only(parts.shp, parts.shx, parts.prj, name, opts);
     };
@@ -1236,21 +1333,36 @@ pub fn read_shapefile_parts_with(parts: ShapefileParts, name: &str, opts: Shapef
             (f.name().to_string(), ty)
         })
         .collect();
-    let shapes = match parts.shx {
+    let mut shapes = match parts.shx {
         Some(shx) => shapefile::ShapeReader::with_shx(Cursor::new(parts.shp), Cursor::new(shx)),
         None => shapefile::ShapeReader::new(Cursor::new(parts.shp)),
     }
     .map_err(fmt)?;
-    let mut reader = shapefile::Reader::new(shapes, dbf);
+    let mut dbf = dbf;
+    let mut records = dbf.iter_records();
     let fields: Vec<Field> = order.iter().map(|(n, t)| Field::new(n.clone(), *t)).collect();
     let mut ds = Dataset::new(name, GeometryType::None, fields);
     let to_lonlat = if opts.raw_coordinates { None } else { shapefile_crs(parts.prj.as_deref(), &mut report) };
     let (mut converted, mut unconverted) = (0usize, 0usize);
     let pt = |x: f64, y: f64| Coord::new(x, y);
-    for item in reader.iter_shapes_and_records() {
-        let Ok((shape, record)) = item else {
-            report.skipped += 1;
-            continue;
+    for item in shapes.iter_shapes() {
+        // One record per shape, also for a shape that can't be read, so the attributes of the
+        // shapes after it stay with their own shapes.
+        let record = records.next();
+        let (shape, record) = match (item, record) {
+            (Ok(shape), Some(Ok(record))) => (shape, record),
+            (_, record) => {
+                // Kept as a row without a shape (its attributes too, when they could be read), so
+                // it is reported, not lost.
+                report.skipped += 1;
+                report.unreadable.push(ds.features.len());
+                let attrs = match &record {
+                    Some(Ok(r)) => ds.fields.iter().map(|f| dbf_value(r.get(&f.name))).collect(),
+                    _ => Vec::new(),
+                };
+                ds.push_next(None, attrs);
+                continue;
+            }
         };
         let geom = match shape {
             Shape::NullShape => None,
@@ -1274,7 +1386,8 @@ pub fn read_shapefile_parts_with(parts: ShapefileParts, name: &str, opts: Shapef
             }
             Shape::Multipatch(_) => {
                 report.skipped += 1;
-                continue;
+                report.unreadable.push(ds.features.len());
+                None
             }
         };
         let geom = match (&to_lonlat, geom) {
@@ -1288,22 +1401,7 @@ pub fn read_shapefile_parts_with(parts: ShapefileParts, name: &str, opts: Shapef
             }
             (_, g) => g,
         };
-        let attrs = ds
-            .fields
-            .iter()
-            .map(|f| match record.get(&f.name) {
-                Some(FieldValue::Character(Some(s))) => Value::Text(s.trim().to_string()),
-                Some(FieldValue::Numeric(Some(n))) if n.is_finite() => Value::Float(*n),
-                Some(FieldValue::Float(Some(n))) => Value::Float(f64::from(*n)),
-                Some(FieldValue::Integer(i)) => Value::Int(i64::from(*i)),
-                Some(FieldValue::Double(d)) => Value::Float(*d),
-                Some(FieldValue::Currency(d)) => Value::Float(*d),
-                Some(FieldValue::Logical(Some(b))) => Value::Bool(*b),
-                Some(FieldValue::Memo(s)) => Value::Text(s.clone()),
-                Some(FieldValue::Date(Some(d))) => Value::Text(format!("{:04}-{:02}-{:02}", d.year(), d.month(), d.day())),
-                _ => Value::Null,
-            })
-            .collect();
+        let attrs = ds.fields.iter().map(|f| dbf_value(record.get(&f.name))).collect();
         ds.push_next(geom, attrs);
     }
     ds.geometry_type = dominant_type(&ds);
@@ -1321,6 +1419,23 @@ pub fn read_shapefile_parts_with(parts: ShapefileParts, name: &str, opts: Shapef
         report.messages.push(format!("{unconverted} shapes couldn't be converted to longitude/latitude and have no geometry"));
     }
     Ok((ds, report))
+}
+
+/// One `.dbf` value as a value (dates as `YYYY-MM-DD` text, blanks as null).
+fn dbf_value(v: Option<&shapefile::dbase::FieldValue>) -> Value {
+    use shapefile::dbase::FieldValue;
+    match v {
+        Some(FieldValue::Character(Some(s))) => Value::Text(s.trim().to_string()),
+        Some(FieldValue::Numeric(Some(n))) if n.is_finite() => Value::Float(*n),
+        Some(FieldValue::Float(Some(n))) => Value::Float(f64::from(*n)),
+        Some(FieldValue::Integer(i)) => Value::Int(i64::from(*i)),
+        Some(FieldValue::Double(d)) => Value::Float(*d),
+        Some(FieldValue::Currency(d)) => Value::Float(*d),
+        Some(FieldValue::Logical(Some(b))) => Value::Bool(*b),
+        Some(FieldValue::Memo(s)) => Value::Text(s.clone()),
+        Some(FieldValue::Date(Some(d))) => Value::Text(format!("{:04}-{:02}-{:02}", d.year(), d.month(), d.day())),
+        _ => Value::Null,
+    }
 }
 
 /// A Shapefile without its `.dbf`: the shapes, with no fields.
@@ -1350,7 +1465,11 @@ fn read_shapes_only(
                 };
                 ds.push_next(Some(g), Vec::new());
             }
-            None => report.skipped += 1,
+            None => {
+                report.skipped += 1;
+                report.unreadable.push(ds.features.len());
+                ds.push_next(None, Vec::new());
+            }
         }
     }
     ds.geometry_type = dominant_type(&ds);
@@ -1667,6 +1786,92 @@ mod tests {
         assert_eq!(read.features.len(), 3);
         assert!(read.fields.is_empty());
         assert!(rep.messages.iter().any(|m| m.contains(".dbf")), "{:?}", rep.messages);
+    }
+
+    /// A `.shp` whose header promises more than the file holds, read without its `.shx`, stops at
+    /// the damaged shape instead of returning the same error forever (found by fuzzing).
+    #[test]
+    fn a_truncated_shapefile_without_its_index_stops() {
+        let mut ds = Dataset::new("pts", GeometryType::Point, vec![Field::new("n", FieldType::Integer)]);
+        for i in 0..3 {
+            ds.push(Some(Geometry::Point(Coord::new(f64::from(i), 1.0))), vec![Value::Int(i64::from(i))]);
+        }
+        let (files, _) = shapefile_parts(&ds).unwrap();
+        let get = |e: &str| files.iter().find(|(x, _)| *x == e).map(|(_, b)| b.clone()).unwrap();
+        let mut shp = get("shp");
+        // File length (16-bit words, big-endian) far past the end, and the last shape cut short.
+        shp[24..28].copy_from_slice(&1_000_000u32.to_be_bytes());
+        shp.truncate(shp.len() - 6);
+        for dbf in [None, Some(get("dbf"))] {
+            let with_dbf = dbf.is_some();
+            let parts = ShapefileParts { shp: shp.clone(), shx: None, dbf, prj: None };
+            let t = std::time::Instant::now();
+            let (read, rep) = read_shapefile_parts_with(parts, "pts", ShapefileOptions::default()).unwrap();
+            assert!(t.elapsed().as_secs() < 5, "with .dbf: {with_dbf}");
+            // The damaged shape is kept as a row without a shape, and reported.
+            assert_eq!(read.features.len(), 3, "with .dbf: {with_dbf}");
+            assert_eq!(rep.skipped, 1);
+            assert_eq!(rep.unreadable, vec![2]);
+            assert!(read.features[2].geometry.is_none());
+        }
+        // With the index, a shape that can't be read keeps the next record with the next shape.
+        let mut shp = get("shp");
+        // The second point record (header 100 bytes, records of 8 + 20) gets an unknown shape type.
+        shp[136..140].copy_from_slice(&99i32.to_le_bytes());
+        let parts = ShapefileParts { shp, shx: Some(get("shx")), dbf: Some(get("dbf")), prj: None };
+        let (read, rep) = read_shapefile_parts_with(parts, "pts", ShapefileOptions::default()).unwrap();
+        assert_eq!(rep.skipped, 1);
+        assert_eq!(rep.unreadable, vec![1]);
+        assert_eq!(read.features.len(), 3);
+        assert!(read.features[1].geometry.is_none());
+        let n = read.field_index("n").unwrap();
+        assert_eq!(read.value(2, n), &Value::Int(2), "the third shape keeps the third record");
+    }
+
+    /// A shape whose point count claims far more than its record holds is skipped without
+    /// reserving memory for it (found by fuzzing: 13 KB asked for 4 GB).
+    #[test]
+    fn a_shape_claiming_too_many_points_is_skipped() {
+        let mut ds = Dataset::new("lines", GeometryType::Polyline, vec![Field::new("n", FieldType::Integer)]);
+        for i in 0..3 {
+            let x = f64::from(i);
+            ds.push(Some(Geometry::Line(vec![vec![Coord::new(x, 0.0), Coord::new(x, 1.0)]])), vec![Value::Int(i64::from(i))]);
+        }
+        let (files, _) = shapefile_parts(&ds).unwrap();
+        let get = |e: &str| files.iter().find(|(x, _)| *x == e).map(|(_, b)| b.clone()).unwrap();
+        let shx = get("shx");
+        let second = 2 * usize::try_from(u32::from_be_bytes(shx[108..112].try_into().unwrap())).unwrap();
+        let mut shp = get("shp");
+        // num_parts (record start + 8 header + 36) and num_points of the second line.
+        shp[second + 44..second + 48].copy_from_slice(&0x3FFF_FFFFi32.to_le_bytes());
+        shp[second + 48..second + 52].copy_from_slice(&0x0FFF_FFFFi32.to_le_bytes());
+        let mut copy = shp.clone();
+        defuse_shapes(&mut copy, &shx);
+        assert_eq!(&copy[second + 8..second + 12], &99i32.to_le_bytes(), "marked unreadable");
+        assert_eq!(rebuild_index(&shp), shx, "the rebuilt index is the written one");
+        // A part index outside the points (fuzzing: a negative first index asked for 6 GB).
+        let mut bad_index = get("shp");
+        bad_index[second + 52..second + 56].copy_from_slice(&(-384_827_392i32).to_le_bytes());
+        defuse_shapes(&mut bad_index, &shx);
+        assert_eq!(&bad_index[second + 8..second + 12], &99i32.to_le_bytes());
+        // A null shape in a record of another size than 4 bytes (fuzzing: the reader then read the
+        // next record from a place nobody checked).
+        let mut tiny = get("shp");
+        tiny[second + 4..second + 8].copy_from_slice(&0i32.to_be_bytes());
+        tiny[second + 8..second + 12].copy_from_slice(&0i32.to_le_bytes());
+        defuse_shapes(&mut tiny, &shx);
+        assert_eq!(&tiny[second + 8..second + 12], &99i32.to_le_bytes());
+        // A negative record size is distrusted whatever the counts say (also found by fuzzing).
+        let mut negative = get("shp");
+        negative[second + 4..second + 8].copy_from_slice(&(-11i32).to_be_bytes());
+        defuse_shapes(&mut negative, &shx);
+        assert_eq!(&negative[second + 8..second + 12], &99i32.to_le_bytes());
+        let parts = ShapefileParts { shp, shx: Some(shx), dbf: Some(get("dbf")), prj: None };
+        let (read, rep) = read_shapefile_parts_with(parts, "lines", ShapefileOptions::default()).unwrap();
+        assert_eq!(rep.skipped, 1);
+        assert_eq!(rep.unreadable, vec![1]);
+        assert_eq!(read.features.len(), 3);
+        assert_eq!(read.value(2, read.field_index("n").unwrap()), &Value::Int(2));
     }
 
     /// A GBK `.dbf` read as GBK gives its Chinese text (LayeredMap fixture V5, when present).

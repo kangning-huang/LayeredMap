@@ -220,13 +220,24 @@ fn layer_rows(shell: &mut Shell, ui: &mut Ui, t: &Theme) {
         // Name, or the rename field.
         let name_rect = Rect::from_min_max(pos2(r.left() + 50.0, r.top()), pos2(r.right() - 26.0, r.bottom()));
         if shell.rename.as_ref().is_some_and(|(rid, _)| rid == id) {
+            // Return or a click elsewhere keeps the new name; Esc keeps the old one. The field takes
+            // the keyboard once, when renaming starts (taking it every frame meant it never ended).
             let mut done = false;
+            let mut cancel = false;
+            let started = shell.rename_started;
             if let Some((_, text)) = shell.rename.as_mut() {
                 let te = ui.put(name_rect.shrink2(vec2(0.0, 4.0)), egui::TextEdit::singleline(text).font(egui::FontId::proportional(BODY)));
-                te.request_focus();
-                done = te.lost_focus();
+                if started {
+                    te.request_focus();
+                }
+                let (enter, esc) = ui.input(|i| (i.key_pressed(egui::Key::Enter), i.key_pressed(egui::Key::Escape)));
+                cancel = esc;
+                done = te.lost_focus() || (te.has_focus() && enter);
             }
-            if done && let Some((rid, text)) = shell.rename.take() {
+            shell.rename_started = false;
+            if cancel {
+                shell.rename = None;
+            } else if done && let Some((rid, text)) = shell.rename.take() {
                 {
                     let name = text.trim().to_string();
                     if !name.is_empty() && name != l.display_name {
@@ -261,8 +272,9 @@ fn layer_rows(shell: &mut Shell, ui: &mut Ui, t: &Theme) {
         if resp.clicked() {
             shell.ws.selected = Some(*id);
         }
+        // Double-click zooms to the layer (owner's choice: done far more often than renaming).
         if resp.double_clicked() {
-            shell.rename = Some((*id, l.display_name.clone()));
+            shell.zoom_to = shell.ws.extent(*id);
         }
         resp.clone().on_hover_text(l.profile.subtitle());
         // Drag to reorder.
@@ -276,6 +288,7 @@ fn layer_rows(shell: &mut Shell, ui: &mut Ui, t: &Theme) {
             }
             if ui.button("Rename").clicked() {
                 shell.rename = Some((*id, l.display_name.clone()));
+                shell.rename_started = true;
                 ui.close();
             }
             if ui.button("Remove from map").clicked() {
@@ -783,6 +796,16 @@ pub fn change_popover(shell: &mut Shell, ui: &mut Ui) {
                 ui.label(RichText::new(&a.line).size(CAPTION).color(t.text_secondary));
                 ui.add_space(4.0);
                 let mut alts = a.alternatives.clone();
+                // "Add unit": the common units for cell values, to pick from.
+                if kind == AssumptionKind::RasterNoUnit {
+                    alts = std::iter::once(Choice::new("unknown", "Unknown"))
+                        .chain(
+                            ["°C", "K", "m", "mm", "%", "people", "people per km²", "kg/ha"]
+                                .iter()
+                                .map(|u| Choice::new(format!("unit:{u}"), *u)),
+                        )
+                        .collect();
+                }
                 if !alts.iter().any(|c| c.id == "not_sure")
                     && matches!(subject, Subject::Layer)
                     && a.consequence != lm_core::model::Consequence::DisplayOnly

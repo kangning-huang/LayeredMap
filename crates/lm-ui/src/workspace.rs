@@ -139,7 +139,9 @@ pub struct Workspace {
     pub compare: Option<Compare>,
     pending: Vec<PendingEdit>,
     /// Background work that finishes with a closure applied here.
-    jobs: Vec<(LayerId, std::sync::mpsc::Receiver<Finish>)>,
+    /// Each job's layer (`None` for work that doesn't make the layer busy: map layers, the
+    /// Compare preview) and what to do if it fails.
+    jobs: Vec<(Option<LayerId>, std::sync::mpsc::Receiver<Finish>)>,
     /// Map layers being built, and built.
     building: Vec<(LayerId, u32)>,
     ready: Vec<ReadyLayer>,
@@ -315,11 +317,24 @@ impl Workspace {
         }
     }
 
+    /// Whether a layer is being read again (undo and redo wait for it).
+    fn rereading(&self) -> bool {
+        !self.pending.is_empty() || self.jobs.iter().any(|(l, _)| l.is_some())
+    }
+
     pub fn undo(&mut self) -> Option<String> {
+        if self.rereading() {
+            self.notice = Some("Still reading a layer. Undo in a moment.".into());
+            return None;
+        }
         self.undo.undo(&mut self.doc)
     }
 
     pub fn redo(&mut self) -> Option<String> {
+        if self.rereading() {
+            self.notice = Some("Still reading a layer. Redo in a moment.".into());
+            return None;
+        }
         self.undo.redo(&mut self.doc)
     }
 
@@ -373,7 +388,7 @@ impl Workspace {
                 });
                 Ok(())
             }
-            AssumptionKind::RasterNoData | AssumptionKind::RasterKelvin | AssumptionKind::LandsatScale => {
+            AssumptionKind::RasterNoData | AssumptionKind::RasterKelvin | AssumptionKind::LandsatScale | AssumptionKind::RasterNoUnit => {
                 let data = self.data(id).cloned().ok_or("This layer's data isn't loaded.")?;
                 let wake = self.wake.clone();
                 self.spawn_edit(id, label, false, wake, move || {
@@ -389,19 +404,40 @@ impl Workspace {
                 });
                 Ok(())
             }
-            // "Choose where it should be…": the question card comes back.
-            AssumptionKind::NoCrsProjected if choice.id == "find_place" => {
-                let mut profile = layer.profile.clone();
-                for a in profile.assumptions.iter_mut().filter(|a| a.kind == kind) {
-                    a.treatment = lm_core::model::Treatment::Question;
-                    a.confirmed_by_user = false;
-                    a.line = "Where should this data be?".into();
-                }
-                let tx = self.doc.set_profile_tx(id, profile).map(|mut t| {
-                    t.label = format!("Place {} again", layer.display_name);
-                    t
+            // "Choose where it should be…", and Not sure on data that was placed by hand: the file is
+            // read again with its coordinates as stored (never projecting placed data twice), and
+            // the question comes back (or, for Not sure, the layer opens as a table).
+            AssumptionKind::NoCrsProjected | AssumptionKind::NoCrsLonLat if choice.id == "find_place" || choice.id == "not_sure" => {
+                let saved = layer.profile.clone();
+                let as_table = choice.id == "not_sure";
+                let wake = self.wake.clone();
+                self.spawn_edit(id, format!("Place {} again", layer.display_name), false, wake, move || {
+                    let fresh = lm_jobs::import::fresh_read(&saved.source).map_err(|e| e.to_string())?;
+                    let mut others = saved.clone();
+                    others.assumptions.retain(|a| !matches!(a.kind, AssumptionKind::NoCrsProjected | AssumptionKind::NoCrsLonLat));
+                    let mut layer = lm_jobs::import::reapply_choices(fresh, &others).map_err(|e| e.to_string())?;
+                    let p = &mut layer.profile;
+                    p.assumptions.retain(|a| !matches!(a.kind, AssumptionKind::NoCrsProjected | AssumptionKind::NoCrsLonLat));
+                    p.assumptions.push(lm_core::model::Assumption {
+                        kind: AssumptionKind::NoCrsProjected,
+                        subject: Subject::Layer,
+                        chosen: if as_table { Choice::not_sure() } else { Choice::new("find_place", "Choose where it should be…") },
+                        alternatives: vec![Choice::new("find_place", "Choose where it should be…"), Choice::not_sure()],
+                        confidence: lm_core::model::Confidence::Unknown,
+                        consequence: lm_core::model::Consequence::ChangesLocations,
+                        treatment: if as_table { lm_core::model::Treatment::Visible } else { lm_core::model::Treatment::Question },
+                        line: if as_table {
+                            "Opened as a table: where this data is hasn't been chosen.".into()
+                        } else {
+                            "Where should this data be?".into()
+                        },
+                        confirmed_by_user: as_table,
+                    });
+                    p.crs = lm_core::model::Known::unknown(Crs::Unknown, "Not chosen yet.");
+                    p.extent_wgs84 = None;
+                    p.kind = LayerKind::Table;
+                    Ok(layer)
                 });
-                self.commit(tx);
                 Ok(())
             }
             _ => self.record(id, kind, subject, choice, label),
@@ -410,12 +446,15 @@ impl Workspace {
 
     /// Runs `work` on its own thread; the closure it returns is applied here by `poll`. `layer` is
     /// the layer it concerns (its row shows the working badge meanwhile).
-    fn spawn_job(&mut self, layer: LayerId, work: impl FnOnce() -> Finish + Send + 'static) {
+    fn spawn_job(&mut self, layer: Option<LayerId>, on_fail: Finish, work: impl FnOnce() -> Finish + Send + 'static) {
         let (tx, rx) = std::sync::mpsc::channel::<Finish>();
         let wake = self.wake.clone();
         let spawned = std::thread::Builder::new().name("lm-work".into()).spawn(move || {
             let f = std::panic::catch_unwind(std::panic::AssertUnwindSafe(work)).unwrap_or_else(|_| {
-                Box::new(|w: &mut Workspace| w.notice = Some("That couldn't be done. Nothing was changed.".into())) as Finish
+                Box::new(move |w: &mut Workspace| {
+                    w.notice = Some("That couldn't be done. Nothing was changed.".into());
+                    on_fail(w);
+                }) as Finish
             });
             let _ = tx.send(f);
             if let Some(w) = wake {
@@ -470,7 +509,7 @@ impl Workspace {
 
     /// Whether a layer is being re-read (its row shows the working badge).
     pub fn is_busy(&self, id: LayerId) -> bool {
-        self.pending.iter().any(|p| p.id == id) || self.jobs.iter().any(|(l, _)| *l == id)
+        self.pending.iter().any(|p| p.id == id) || self.jobs.iter().any(|(l, _)| *l == Some(id))
     }
 
     /// Refuses a second change to a layer while the first is still being worked out.
@@ -558,7 +597,7 @@ impl Workspace {
         }
         let base_rev = self.doc.layer(id).map_or(0, |l| l.profile.data_rev);
         let choice = choice.clone();
-        self.spawn_job(id, move || {
+        self.spawn_job(Some(id), Box::new(|_| {}), move || {
             let LayerData::Vector(ds) = &data.data else { return Box::new(|_: &mut Workspace| {}) };
             match lm_jobs::import::convert_offset(ds, choice.id == "bd09") {
                 Ok((mut converted, recipe)) => {
@@ -589,10 +628,8 @@ impl Workspace {
         let mut profile = orig.profile.clone();
         profile.crs = lm_core::model::Known::certain(Crs::Wgs84, recipe.clone());
         profile.notices.push(recipe);
-        for a in profile.assumptions.iter_mut().filter(|a| a.kind == kind && a.subject == subject) {
-            a.chosen = choice.clone();
-            a.confirmed_by_user = true;
-        }
+        // The GPS copy is converted: it no longer offers a conversion.
+        profile.assumptions.retain(|a| !(a.kind == kind && a.subject == subject));
         profile.data_rev = 0;
         let e = ds.extent();
         profile.extent_wgs84 = e.min_x.is_finite().then_some(Extent { min_x: e.min_x, min_y: e.min_y, max_x: e.max_x, max_y: e.max_y });
@@ -618,8 +655,18 @@ impl Workspace {
         if let Some(hide) = self.doc.set_visible_tx(id, false) {
             ops.extend(hide.ops);
         }
-        // The original's question is answered by this conversion too.
-        if let Some(answer) = self.doc.set_assumption_tx(id, kind, subject, choice) {
+        // The original's question is answered by this conversion too, and its line says so.
+        let mut original = orig.profile.clone();
+        for a in original.assumptions.iter_mut().filter(|a| a.kind == kind && a.subject == subject) {
+            a.chosen = choice.clone();
+            a.confirmed_by_user = true;
+            a.treatment = lm_core::model::Treatment::Visible;
+            a.line = format!(
+                "Converted to GPS coordinates in “{} (GPS)”; this layer is hidden and keeps the positions as in the file.",
+                orig.display_name
+            );
+        }
+        if let Some(answer) = self.doc.set_profile_tx(id, original) {
             ops.extend(answer.ops);
         }
         let tx = Transaction::new(format!("Convert {} to GPS coordinates", orig.display_name), ops);
@@ -650,8 +697,18 @@ impl Workspace {
             });
         }
         let wake = self.wake.clone();
+        let saved = layer.profile.clone();
         self.spawn_edit(id, format!("Place {}", layer.display_name), true, wake, move || {
-            lm_jobs::import::reproject(&data, u32::from(epsg)).map_err(|e| e.to_string())
+            // Always from the coordinates as stored: data placed before is read again first.
+            let base = if matches!(saved.crs.value, Crs::Unknown) {
+                (*data).clone()
+            } else {
+                let fresh = lm_jobs::import::fresh_read(&saved.source).map_err(|e| e.to_string())?;
+                let mut others = saved.clone();
+                others.assumptions.retain(|a| !matches!(a.kind, AssumptionKind::NoCrsProjected | AssumptionKind::NoCrsLonLat));
+                lm_jobs::import::reapply_choices(fresh, &others).map_err(|e| e.to_string())?
+            };
+            lm_jobs::import::reproject(&base, u32::from(epsg)).map_err(|e| e.to_string())
         });
         Ok(())
     }
@@ -671,7 +728,7 @@ impl Workspace {
         }
         let focus = focus.ok_or("This layer has nothing to compare.")?;
         self.compare = Some(Compare { layer: id, from_bd09, map_pair: None, focus });
-        self.spawn_job(id, move || {
+        self.spawn_job(None, Box::new(|w: &mut Workspace| w.compare = None), move || {
             let LayerData::Vector(ds) = &data.data else { return Box::new(|_: &mut Workspace| {}) };
             match lm_jobs::import::convert_offset(ds, from_bd09) {
                 Ok((converted, recipe)) => {
@@ -755,8 +812,9 @@ impl Workspace {
         self.selected = None;
         for (path, layers) in by_path {
             let Some(first) = layers.first().map(|l| l.id) else { continue };
-            let state = lm_doc::check_source(&layers[0].profile.source);
-            self.spawn_job(first, move || {
+            self.spawn_job(Some(first), Box::new(|_| {}), move || {
+                // The source check may hash the file: here, off the interface thread.
+                let state = lm_doc::check_source(&layers[0].profile.source);
                 let file = layers[0].profile.source.file_name().to_string();
                 let mut notes = Vec::new();
                 let mut out = Vec::new();
@@ -779,9 +837,15 @@ impl Workspace {
                             Err(e) => notes.push(e.to_string()),
                             Ok(read) => {
                                 for dl in layers {
-                                    let base =
-                                        read.iter().find(|r| r.profile.source.member == dl.profile.source.member).or_else(|| read.first());
-                                    let Some(base) = base else { continue };
+                                    // The layer's own part of the file; a part that's gone is said.
+                                    let base = match &dl.profile.source.member {
+                                        Some(m) => read.iter().find(|r| r.profile.source.member.as_ref() == Some(m)),
+                                        None => read.first().filter(|_| read.len() == 1),
+                                    };
+                                    let Some(base) = base else {
+                                        notes.push(format!("{} is no longer in {file}.", dl.display_name));
+                                        continue;
+                                    };
                                     match derive_saved(base, &dl) {
                                         Ok(mut layer) => {
                                             layer.name = dl.display_name.clone();
@@ -835,7 +899,7 @@ impl Workspace {
             let map_id = MAP_ID_BASE + self.next_map_id;
             let (id, rev) = (*id, *rev);
             self.building.push((id, rev));
-            self.spawn_job(id, move || {
+            self.spawn_job(None, Box::new(move |w: &mut Workspace| w.building.retain(|b| *b != (id, rev))), move || {
                 let for_view = map_layer(map_id, &data);
                 let for_render = for_view.clone();
                 Box::new(move |w: &mut Workspace| {
@@ -951,27 +1015,14 @@ fn line_for(kind: AssumptionKind, choice: &Choice) -> Option<String> {
 /// document records: another Excel sheet, other coordinate columns, a chosen coordinate system,
 /// a GCJ-02/BD-09 conversion.
 fn derive_saved(base: &ImportedLayer, saved: &lm_core::document::DocLayer) -> Result<ImportedLayer, String> {
-    let chosen =
-        |k: AssumptionKind| saved.profile.assumptions.iter().find(|a| a.kind == k && a.confirmed_by_user).map(|a| a.chosen.clone());
-    let mut layer = base.clone();
-    if let Some(c) = chosen(AssumptionKind::ExcelSheet).filter(|c| c.id.starts_with("sheet:")) {
-        layer = lm_jobs::import::choose_sheet(&layer, &c).map_err(|e| e.to_string())?;
-    }
-    for k in [AssumptionKind::CsvCoordinateColumns, AssumptionKind::CsvAmbiguousColumns] {
-        if let Some(c) = chosen(k).filter(|c| layer.raw.is_some() && (c.id.starts_with("columns:") || c.id == "not_sure")) {
-            layer = lm_jobs::import::relocate_csv(&layer, &c).map_err(|e| e.to_string())?;
-        }
-    }
-    if let Some(epsg) = chosen(AssumptionKind::NoCrsProjected).and_then(|c| c.id.strip_prefix("epsg:").and_then(|n| n.parse::<u32>().ok()))
-    {
-        layer = lm_jobs::import::reproject(&layer, epsg).map_err(|e| e.to_string())?;
-    }
-    if let Some(note) = saved.profile.notices.iter().find(|n| n.starts_with("Converted from ")) {
-        let LayerData::Vector(ds) = &layer.data else { return Err("only points, lines and areas can be converted".into()) };
-        let (converted, _) = lm_jobs::import::convert_offset(ds, note.contains("BD-09")).map_err(|e| e.to_string())?;
-        layer.data = LayerData::Vector(Arc::new(converted));
-    }
-    Ok(layer)
+    // A chosen text encoding needs the file read again in it; every other choice is re-applied.
+    let encoding =
+        saved.profile.assumptions.iter().find(|a| a.kind == AssumptionKind::ShapefileGbk && a.confirmed_by_user).map(|a| a.chosen.clone());
+    let fresh = match encoding {
+        Some(c) => lm_jobs::import::read_in_encoding(&saved.profile.source, &c).map_err(|e| e.to_string())?,
+        None => base.clone(),
+    };
+    lm_jobs::import::reapply_choices(fresh, &saved.profile).map_err(|e| e.to_string())
 }
 
 /// Whether a layer can be drawn: located in GPS coordinates (or a raster with an extent).
@@ -1233,5 +1284,91 @@ mod restore_tests {
             );
         }
         assert!(r.doc.layers.iter().any(|l| l.display_name == "my deliveries"));
+    }
+}
+
+#[cfg(test)]
+mod second_review_tests {
+    use super::*;
+
+    fn open(rel: &str) -> Vec<ImportedLayer> {
+        let p = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../fixtures").join(rel);
+        lm_jobs::import::import_path(&p, &lm_jobs::import::Ctx::detached(Default::default())).unwrap()
+    }
+
+    fn extent(w: &Workspace, id: LayerId) -> Extent {
+        w.doc.layer(id).unwrap().profile.extent_wgs84.unwrap()
+    }
+
+    /// N3: placing a layer, asking to place it again and choosing the same system lands it in
+    /// the same place (never projected twice).
+    #[test]
+    fn placing_again_starts_from_the_stored_coordinates() {
+        let mut w = Workspace::default();
+        w.add_imported(open("V4/districts_gk.shp"), 1);
+        let id = w.doc.layers[0].id;
+        w.place_layer(id, 4549, None).unwrap();
+        w.wait_pending();
+        let first = extent(&w, id);
+        w.change_assumption(
+            id,
+            AssumptionKind::NoCrsProjected,
+            Subject::Layer,
+            Choice::new("find_place", "Choose where it should be…"),
+            None,
+        )
+        .unwrap();
+        w.wait_pending();
+        assert!(w.doc.layer(id).unwrap().profile.open_questions().next().is_some(), "the question is back");
+        w.place_layer(id, 4549, None).unwrap();
+        w.wait_pending();
+        let again = extent(&w, id);
+        assert!((first.min_x - again.min_x).abs() < 1e-9 && (first.min_y - again.min_y).abs() < 1e-9, "{first:?} vs {again:?}");
+    }
+
+    /// N2: reopening applies raster and encoding choices to the data, not only to the lines.
+    #[test]
+    fn reopening_keeps_raster_and_encoding_choices() {
+        let mut w = Workspace::default();
+        w.add_imported(open("V5/places_gbk.shp"), 1);
+        w.add_imported(open("R6/scaled.tif"), 2);
+        let v5 = w.doc.layers.iter().find(|l| l.profile.kind != LayerKind::Raster).unwrap().id;
+        let r6 = w.doc.layers.iter().find(|l| l.profile.kind == LayerKind::Raster).unwrap().id;
+        w.change_assumption(v5, AssumptionKind::ShapefileGbk, Subject::Layer, Choice::new("utf8", "Unicode (UTF-8)"), None).unwrap();
+        w.wait_pending();
+        let nd = w.doc.layer(r6).unwrap().profile.assumptions.iter().find(|a| a.kind == AssumptionKind::RasterNoData).unwrap().clone();
+        w.change_assumption(r6, nd.kind, nd.subject, Choice::new("value", "a real value"), None).unwrap();
+        w.wait_pending();
+        let doc = w.doc.clone();
+        let mut r = Workspace::default();
+        r.restore(doc);
+        r.wait_pending();
+        let LayerData::Raster(raster) = &r.data(r6).unwrap().data else { panic!() };
+        assert_eq!(raster.nodata, None, "the −9999 border is a real value, as chosen");
+        let LayerData::Vector(ds) = &r.data(v5).unwrap().data else { panic!() };
+        let name = ds.field_index("name").unwrap();
+        assert_ne!(ds.value(0, name), &lm_jobs::import::Value::Text("人民广场".into()), "read as UTF-8, as chosen");
+        assert_eq!(r.data(v5).unwrap().profile.encoding.as_deref(), Some("UTF-8"));
+    }
+
+    /// N6: the GPS copy doesn't offer to convert again; the original's line says what happened.
+    #[test]
+    fn a_converted_layer_does_not_offer_to_convert_again() {
+        let mut w = Workspace::default();
+        w.add_imported(open("C1/amap_pois.csv"), 1);
+        let id = w.doc.layers[0].id;
+        let a = w.doc.layers[0].profile.assumptions.iter().find(|a| a.kind == AssumptionKind::ChinaOffsetNamed).unwrap().clone();
+        w.change_assumption(id, a.kind, a.subject, Choice::new("gcj02", "Amap"), None).unwrap();
+        w.wait_pending();
+        let gps = w.doc.layers.iter().find(|l| l.id != id).unwrap();
+        assert!(
+            !gps.profile
+                .assumptions
+                .iter()
+                .any(|a| matches!(a.kind, AssumptionKind::ChinaOffsetNamed | AssumptionKind::ChinaOffsetPossible))
+        );
+        let orig =
+            w.doc.layer(id).unwrap().profile.assumptions.iter().find(|a| a.kind == AssumptionKind::ChinaOffsetNamed).unwrap().clone();
+        assert!(orig.line.starts_with("Converted to GPS coordinates"), "{}", orig.line);
     }
 }
