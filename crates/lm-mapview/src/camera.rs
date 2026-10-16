@@ -47,10 +47,22 @@ pub fn pan(cam: &mut Camera, dx: f64, dy: f64) {
     cam.center.y += dy * cam.res;
 }
 
-/// Sets the zoom to `zoom` keeping the map point under screen point (`sx`, `sy`) fixed.
+/// The coarsest zoom for a view `h` points tall: the whole world's height fills it ([`clamp`]).
+pub fn min_zoom(h: f64) -> f64 {
+    if h > 0.0 { zoom_of((2.0 * HALF_WORLD / h).max(res_of(MAX_ZOOM))) } else { 0.0 }
+}
+
+/// A zoom kept between [`min_zoom`] and [`MAX_ZOOM`], for zoom targets and steps.
+pub fn clamp_zoom(zoom: f64, h: f64) -> f64 {
+    zoom.clamp(min_zoom(h), MAX_ZOOM)
+}
+
+/// Sets the zoom to `zoom` keeping the map point under screen point (`sx`, `sy`) fixed. The zoom
+/// is first kept within limits, so a zoom out at the world view doesn't move the centre while
+/// [`clamp`] holds the resolution.
 pub fn zoom_about(cam: &mut Camera, zoom: f64, sx: f64, sy: f64, w: f64, h: f64) {
     let anchor = cam.to_map(sx, sy, w, h);
-    cam.res = res_of(zoom.clamp(-1.0, MAX_ZOOM));
+    cam.res = res_of(clamp_zoom(zoom, h));
     let after = cam.to_map(sx, sy, w, h);
     cam.center.x += anchor.x - after.x;
     cam.center.y += anchor.y - after.y;
@@ -173,6 +185,21 @@ mod tests {
         pan(&mut c, 50.0, 0.0);
         let (x1, _) = c.to_screen(p, 1280.0, 800.0);
         assert!((x1 - x0 - 50.0).abs() < 1e-9);
+    }
+
+    /// Review finding (S2): zooming out at the world view must not slide the map sideways.
+    #[test]
+    fn zooming_out_at_the_world_view_does_not_drift() {
+        let (w, h) = (1280.0, 748.0);
+        let mut c = Camera { center: Coord::new(0.0, 0.0), res: res_of(min_zoom(h)) };
+        for _ in 0..20 {
+            let z = zoom_of(c.res) - 0.5;
+            zoom_about(&mut c, z, 1000.0, 300.0, w, h);
+            clamp(&mut c, w, h);
+        }
+        assert!(c.center.x.abs() < 1e-6, "centre drifted to {}", c.center.x);
+        assert!((zoom_of(c.res) - min_zoom(h)).abs() < 1e-9);
+        assert_eq!(clamp_zoom(25.0, h), MAX_ZOOM);
     }
 
     #[test]

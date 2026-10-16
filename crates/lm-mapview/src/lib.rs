@@ -89,6 +89,8 @@ pub struct MapView {
     fade_s: f64,
     /// Renders finished, for the performance harness's counters.
     pub renders: u64,
+    /// Times the render thread was restarted.
+    restarts: u32,
 }
 
 impl MapView {
@@ -117,6 +119,7 @@ impl MapView {
             last_render_ms: 0.0,
             fade_s: FADE_S,
             renders: 0,
+            restarts: 0,
         }
     }
 
@@ -125,10 +128,11 @@ impl MapView {
         &self.map
     }
 
-    /// Changes the map (basemap, tile layers, data layers); the next frame shows the change.
-    pub fn edit_map(&mut self, f: impl FnOnce(&mut Map)) {
+    /// Changes the map (basemap, tile layers, data layers); the next frame shows the change. The
+    /// same edit is applied to the render thread's copy, so the map isn't copied whole.
+    pub fn edit_map(&mut self, f: impl Fn(&mut Map) + Send + 'static) {
         f(&mut self.map);
-        self.worker.set_map(self.map.clone());
+        self.worker.edit(Box::new(f));
     }
 
     pub fn camera(&self) -> Camera {
@@ -157,7 +161,8 @@ impl MapView {
             _ => from,
         };
         self.velocity = egui::Vec2::ZERO;
-        self.anim = Some(Animation::Zoom { from, to: base + levels, start: t, anchor: (f64::from(size.x) / 2.0, f64::from(size.y) / 2.0) });
+        let to = camera::clamp_zoom(base + levels, f64::from(size.y));
+        self.anim = Some(Animation::Zoom { from, to, start: t, anchor: (f64::from(size.x) / 2.0, f64::from(size.y) / 2.0) });
     }
 
     /// Flies to a place (search results): 600–900 ms, or a jump with Reduce Motion.
@@ -228,6 +233,12 @@ impl MapView {
         // Ask the worker for the newest view; take what it finished.
         let ppp = ui.ctx().pixels_per_point();
         let view = View { width: w, height: h, pixels_per_point: f64::from(ppp), camera: self.camera, dark: false };
+        if self.worker.dead && self.restarts < 3 {
+            // The render thread stopped (a panic in the renderer): start a fresh one on the map.
+            log::error!("the map render thread stopped; restarting it");
+            self.restarts += 1;
+            self.worker = worker::Worker::spawn(self.map.clone(), ui.ctx().clone());
+        }
         self.worker.request(view, rustgis_tiles::cache::generation());
         // While a crossfade runs, a newer frame waits for it to finish (at most 150 ms) unless the
         // camera is moving: swapping mid-fade would drop the half-faded frame and pop.
@@ -347,6 +358,8 @@ impl MapView {
             let local = p - rect.min;
             for e in ui.input(|i| i.events.clone()) {
                 match e {
+                    // A purely sideways notch (tilt wheel, ⇧-scroll) doesn't zoom.
+                    egui::Event::MouseWheel { unit: egui::MouseWheelUnit::Line, delta, .. } if delta.y == 0.0 => {}
                     egui::Event::MouseWheel { unit: egui::MouseWheelUnit::Line, delta, .. } => {
                         // A mouse wheel: half a zoom level per notch, animated over 250 ms.
                         let from = self.zoom();
@@ -354,7 +367,7 @@ impl MapView {
                             Some(Animation::Zoom { to, .. }) => to,
                             _ => from,
                         };
-                        let to = base + 0.5 * f64::from(delta.y.signum());
+                        let to = camera::clamp_zoom(base + 0.5 * f64::from(delta.y.signum()), h);
                         self.anim = Some(Animation::Zoom { from, to, start: t, anchor: (f64::from(local.x), f64::from(local.y)) });
                         self.velocity = egui::Vec2::ZERO;
                         moved = true;
@@ -383,7 +396,7 @@ impl MapView {
             // Zoom one level about the click (⌥ zooms out).
             let local = p - rect.min;
             let from = self.zoom();
-            let to = if ui.input(|i| i.modifiers.alt) { from - 1.0 } else { from + 1.0 };
+            let to = camera::clamp_zoom(if ui.input(|i| i.modifiers.alt) { from - 1.0 } else { from + 1.0 }, h);
             self.anim = Some(Animation::Zoom { from, to, start: t, anchor: (f64::from(local.x), f64::from(local.y)) });
             self.velocity = egui::Vec2::ZERO;
         }

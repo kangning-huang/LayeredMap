@@ -25,7 +25,22 @@ click › Open once).
 | Item | Result |
 |---|---|
 | Profile the worst camera script with puffin; fix the top 3 hotspots or explain | **not done** — every script is far inside the 60 fps goal; the visible cost is off the UI thread (the worker's CPU render). Profile if your feel test finds a problem. |
-| Independent review of the changes since `gate-0-pass` | not yet run |
+| Independent review of the changes since `gate-0-pass` | **done 2026-10-16** (fresh agent, after the pass): no S1; one S2, several S3/S4. See below. |
+
+### Independent review findings (fixed on `phase-2` unless marked open)
+
+| Sev | Finding | Status |
+|---|---|---|
+| S2 | Zooming out at the world view slid the map up to 270° sideways (the zoom anchor moved while the resolution was clamped), leaving most of the window plain ground colour | fixed: zoom limited to the real minimum (`camera::min_zoom`); test `zooming_out_at_the_world_view_does_not_drift` |
+| S3 | A purely sideways wheel notch (tilt wheel, ⇧-scroll) zoomed in (`0.0.signum()` is 1) | fixed |
+| S3 | Zoom targets built up past the limits, so reverse notches were ignored | fixed: targets clamped |
+| S3 | Every map edit copied the whole map (all features) on the UI thread for the render thread | fixed: the same edit is applied to the render thread's copy |
+| S3 | A dead render thread, or a render returning nothing, left the map waiting forever | fixed: "nothing" replies; a stopped thread is restarted (up to 3 times) |
+| S3 | Any tile error shows the offline notice; the basemap URL is a dated download build | open: needs the WP0.6 host |
+| S3 | lm-ui reaches engine types through lm-mapview/lm-jobs re-exports, which `xtask layers` can't see; `layeredmap → lm-core` added without a log entry | open: Phase 2 import moves layer work into lm-jobs; log entry added |
+| S3 | "Cold launch" runs back to back (warm) and stops at the first frame | open: relabel or wait for tiles |
+| S4 | No thousands separators in the scale bar and the fixture notice | fixed |
+| S4 | Reduce Motion fade resets to 150 ms before the jump's frame arrives; Esc clears the search text anywhere; the spare-texture comment is wrong; Load fixture can't pick a single file | open (cosmetic); the dialog title now says folder |
 
 ## 3. Your validation — the feel test (60 minutes)
 

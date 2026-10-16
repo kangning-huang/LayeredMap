@@ -178,7 +178,7 @@ impl Shell {
 
     fn basemap_changed(&mut self) {
         let (prefs, dark) = (self.prefs.clone(), self.theme.dark);
-        self.map.edit_map(|m| basemap::apply(m, &prefs, dark));
+        self.map.edit_map(move |m| basemap::apply(m, &prefs, dark));
         self.backdrop = basemap::backdrop(self.map.map());
     }
 
@@ -248,14 +248,14 @@ impl Shell {
         match rx.try_recv() {
             Ok(Ok(layers)) => {
                 let n: usize = layers.iter().map(|l| l.dataset.features.len()).sum();
-                self.map.edit_map(|m| {
-                    for l in layers {
-                        m.add_layer(l);
+                self.map.edit_map(move |m| {
+                    for l in &layers {
+                        m.add_layer(l.clone());
                     }
                     // Points above areas (index 0 draws on top).
                     m.layers.sort_by_key(|l| u8::from(l.dataset.geometry_type != lm_jobs::GeometryType::Point));
                 });
-                self.notice = Some((format!("Loaded {n} features"), t));
+                self.notice = Some((format!("Loaded {} features", lm_core::model::group_thousands(n as u64)), t));
                 self.loading = None;
             }
             Ok(Err(e)) => {

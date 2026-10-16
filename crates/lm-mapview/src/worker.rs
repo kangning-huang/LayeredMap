@@ -8,9 +8,19 @@ use rustgis_map::Map;
 use rustgis_map::camera::Camera;
 use rustgis_render::{PlacedLabel, View};
 
+/// An edit applied to the render thread's copy of the map, the same as on the UI's.
+pub type Edit = Box<dyn Fn(&mut Map) + Send>;
+
 enum Msg {
-    Map(Box<Map>),
+    Edit(Edit),
     Render { seq: u64, view: View },
+}
+
+/// What the render thread sends back: a frame, or word that a render produced nothing (so the
+/// UI doesn't wait for it forever).
+enum Out {
+    Frame(Frame),
+    Nothing(u64),
 }
 
 /// A finished render.
@@ -30,17 +40,19 @@ pub struct Frame {
 
 pub struct Worker {
     tx: Sender<Msg>,
-    rx: Receiver<Frame>,
+    rx: Receiver<Out>,
     seq: u64,
     map_rev: u64,
     last: Option<(Camera, [u32; 2], u64, u64)>,
     pub in_flight: bool,
+    /// The render thread has stopped (it panicked); the view restarts it.
+    pub dead: bool,
 }
 
 impl Worker {
     pub fn spawn(map: Map, ctx: egui::Context) -> Worker {
         let (tx, req) = channel::<Msg>();
-        let (out, rx) = channel::<Frame>();
+        let (out, rx) = channel::<Out>();
         let spawned = std::thread::Builder::new().name("lm-render".into()).spawn(move || {
             let mut map = map;
             while let Ok(first) = req.recv() {
@@ -48,13 +60,20 @@ impl Worker {
                 let mut render = None;
                 for msg in std::iter::once(first).chain(std::iter::from_fn(|| req.try_recv().ok())) {
                     match msg {
-                        Msg::Map(m) => map = *m,
+                        Msg::Edit(f) => f(&mut map),
                         Msg::Render { seq, view } => render = Some((seq, view)),
                     }
                 }
                 let Some((seq, view)) = render else { continue };
                 let t = web_time::Instant::now();
-                if let Some(r) = rustgis_render::render(&mut map, &view) {
+                let Some(r) = rustgis_render::render(&mut map, &view) else {
+                    if out.send(Out::Nothing(seq)).is_err() {
+                        return;
+                    }
+                    ctx.request_repaint();
+                    continue;
+                };
+                {
                     let frame = Frame {
                         seq,
                         camera: view.camera,
@@ -67,7 +86,7 @@ impl Worker {
                         tiles_pending: r.tiles_pending,
                         render_ms: t.elapsed().as_secs_f64() * 1000.0,
                     };
-                    if out.send(frame).is_err() {
+                    if out.send(Out::Frame(frame)).is_err() {
                         return;
                     }
                     ctx.request_repaint();
@@ -77,14 +96,17 @@ impl Worker {
         if let Err(e) = spawned {
             log::error!("could not start the map render thread: {e}");
         }
-        Worker { tx, rx, seq: 0, map_rev: 0, last: None, in_flight: false }
+        Worker { tx, rx, seq: 0, map_rev: 0, last: None, in_flight: false, dead: false }
     }
 
-    /// Replaces the worker's map (a basemap change, a new layer); the next render shows it.
-    pub fn set_map(&mut self, map: Map) {
+    /// Applies an edit to the worker's map (a basemap change, a new layer); the next render shows
+    /// it.
+    pub fn edit(&mut self, f: Edit) {
         self.map_rev += 1;
         self.last = None;
-        let _ = self.tx.send(Msg::Map(Box::new(map)));
+        if self.tx.send(Msg::Edit(f)).is_err() {
+            self.dead = true;
+        }
     }
 
     /// Asks for `view` unless it was the last thing asked for (same map and tile generation).
@@ -97,14 +119,35 @@ impl Worker {
         self.seq += 1;
         self.last = Some(key);
         self.in_flight = true;
-        let _ = self.tx.send(Msg::Render { seq: self.seq, view });
+        if self.tx.send(Msg::Render { seq: self.seq, view }).is_err() {
+            self.dead = true;
+            self.in_flight = false;
+        }
     }
 
     /// The newest finished frame, if any arrived since the last poll.
     pub fn poll(&mut self) -> Option<Frame> {
-        let newest = self.rx.try_iter().last();
-        if newest.as_ref().is_some_and(|f| f.seq == self.seq) {
-            self.in_flight = false;
+        let mut newest = None;
+        loop {
+            match self.rx.try_recv() {
+                Ok(Out::Frame(f)) => {
+                    if f.seq == self.seq {
+                        self.in_flight = false;
+                    }
+                    newest = Some(f);
+                }
+                Ok(Out::Nothing(seq)) => {
+                    if seq == self.seq {
+                        self.in_flight = false;
+                    }
+                }
+                Err(std::sync::mpsc::TryRecvError::Empty) => break,
+                Err(std::sync::mpsc::TryRecvError::Disconnected) => {
+                    self.dead = true;
+                    self.in_flight = false;
+                    break;
+                }
+            }
         }
         newest
     }
