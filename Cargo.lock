@@ -3994,7 +3994,7 @@ dependencies = [
  "image",
  "laz",
  "lz4_flex",
- "miniz_oxide 0.8.9",
+ "miniz_oxide 0.9.1",
  "parquet",
  "proj4rs",
  "roxmltree",
@@ -4106,7 +4106,7 @@ dependencies = [
  "epaint_default_fonts",
  "image",
  "log",
- "miniz_oxide 0.8.9",
+ "miniz_oxide 0.9.1",
  "rustgis-data",
  "rustgis-geom",
  "rustgis-map",
@@ -4121,7 +4121,7 @@ version = "0.2.0"
 dependencies = [
  "image",
  "log",
- "miniz_oxide 0.8.9",
+ "miniz_oxide 0.9.1",
  "roxmltree",
  "rustgis-data",
  "rustgis-geom",
@@ -6110,7 +6110,7 @@ checksum = "e450f9b2ed1dff33c94c12589a87338689467b9c4f5d8a5710bd09a847d2c8a7"
 name = "xtask"
 version = "0.2.0"
 dependencies = [
- "miniz_oxide 0.8.9",
+ "miniz_oxide 0.9.1",
  "tiff",
 ]
 
