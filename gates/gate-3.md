@@ -59,7 +59,7 @@ are in; your validation is next.
 | Screenshot regression: object card, no value, overlap chooser, filtered, Style tab | pass (`phase3_*`) |
 | Action table: a snapshot per row and per merged pair, determinism ×1,000 | pass (`lm-actions` tests) |
 | Geodesic length and area against N5 | pass, within 1e-9 relative |
-| Fuzzing (Gate 2 carry-over, 1 hour per adapter) | geojson 2,983,162 runs and dbf 1,995,516 runs: 0 findings. csv, shapefile, geotiff_header: one finding each (a slow CSV profile, a 7.8 GB Shapefile allocation, a GeoTIFF header stall) — being fixed, see Gate 2 |
+| Fuzzing (Gate 2 carry-over, 1 hour per adapter) | pass: 0 findings on the fixed code — csv 1,738,531 runs, geojson 2,983,162, shapefile 6,093,603, dbf 1,995,516, geotiff_header 6,416,344 (Gate 2) |
 
 ## 2. Debug pass
 

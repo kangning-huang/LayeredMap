@@ -35,6 +35,14 @@ pub fn cell(ds: &Dataset, row: usize, field: usize) -> Cell<'_> {
 /// A cell's text for cards and the table; None for a blank (shown as "—", so blank and zero
 /// stay distinct).
 pub fn cell_text(ds: &Dataset, row: usize, field: usize) -> Option<String> {
+    // A year reads as "2019", never "2,019".
+    if ds.fields.get(field).is_some_and(|f| is_year_name(&f.name))
+        && let Some(v) = cell_number(ds, row, field)
+        && v.fract() == 0.0
+        && (1000.0..=9999.0).contains(&v)
+    {
+        return Some(format!("{v:.0}"));
+    }
     match ds.value(row, field) {
         Value::Null => None,
         Value::Int(i) => {
@@ -47,6 +55,12 @@ pub fn cell_text(ds: &Dataset, row: usize, field: usize) -> Option<String> {
         Value::Text(t) if t.trim().is_empty() => None,
         Value::Text(t) => Some(t.clone()),
     }
+}
+
+/// Whether a field name says it holds years: "year", "gdp_year", "YearBuilt", "yr", "fiscal_yr".
+pub fn is_year_name(name: &str) -> bool {
+    let n = name.to_lowercase();
+    n.contains("year") || n.split(|c: char| !c.is_ascii_alphanumeric()).any(|w| w == "yr" || w == "yyyy")
 }
 
 /// A number for cards: thousands separators, up to the precision that matters (at most 4
@@ -1161,6 +1175,20 @@ mod example_tests {
         let rc = classes_for(&layer, ds, None, None).unwrap();
         eprintln!("{name}: {:?}", rc.legend);
         assert!(rc.legend.items.len() >= 3);
+    }
+
+    /// Years read as "2019", never "2,019"; other numbers keep their separators.
+    #[test]
+    fn years_have_no_thousands_separator() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets/examples/countries.geojson");
+        let layers = crate::import::import_path(&path, &crate::import::Ctx::detached(crate::import::Ticket::default())).unwrap();
+        let crate::import::LayerData::Vector(ds) = &layers[0].data else { panic!() };
+        let year = field_index(ds, "gdp_year").unwrap();
+        let pop = field_index(ds, "pop_est").unwrap();
+        let t = cell_text(ds, 0, year).unwrap();
+        assert!(t.len() == 4 && !t.contains(','), "{t}");
+        assert!(cell_text(ds, 0, pop).unwrap().contains(','));
+        assert!(is_year_name("YearBuilt") && is_year_name("fiscal_yr") && !is_year_name("layer") && !is_year_name("yield"));
     }
 }
 
