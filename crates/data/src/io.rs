@@ -1301,7 +1301,6 @@ fn rebuild_index(shp: &[u8]) -> Vec<u8> {
 /// `.shx` one is rebuilt from the record headers.
 pub fn read_shapefile_parts_with(parts: ShapefileParts, name: &str, opts: ShapefileOptions) -> Result<(Dataset, ReadReport)> {
     use shapefile::Shape;
-    use shapefile::dbase::FieldValue;
     use std::io::Cursor;
     let fmt = |e: shapefile::Error| DataError::Format(format!("Shapefile: {e}"));
     let mut report = ReadReport::default();
@@ -1350,13 +1349,20 @@ pub fn read_shapefile_parts_with(parts: ShapefileParts, name: &str, opts: Shapef
         // One record per shape, also for a shape that can't be read, so the attributes of the
         // shapes after it stay with their own shapes.
         let record = records.next();
-        let (Ok(shape), Some(Ok(record))) = (item, record) else {
-            // Kept as a row without a shape (its attributes too, when they could be read), so it
-            // is reported, not lost.
-            report.skipped += 1;
-            report.unreadable.push(ds.features.len());
-            ds.push_next(None, Vec::new());
-            continue;
+        let (shape, record) = match (item, record) {
+            (Ok(shape), Some(Ok(record))) => (shape, record),
+            (_, record) => {
+                // Kept as a row without a shape (its attributes too, when they could be read), so
+                // it is reported, not lost.
+                report.skipped += 1;
+                report.unreadable.push(ds.features.len());
+                let attrs = match &record {
+                    Some(Ok(r)) => ds.fields.iter().map(|f| dbf_value(r.get(&f.name))).collect(),
+                    _ => Vec::new(),
+                };
+                ds.push_next(None, attrs);
+                continue;
+            }
         };
         let geom = match shape {
             Shape::NullShape => None,
@@ -1395,22 +1401,7 @@ pub fn read_shapefile_parts_with(parts: ShapefileParts, name: &str, opts: Shapef
             }
             (_, g) => g,
         };
-        let attrs = ds
-            .fields
-            .iter()
-            .map(|f| match record.get(&f.name) {
-                Some(FieldValue::Character(Some(s))) => Value::Text(s.trim().to_string()),
-                Some(FieldValue::Numeric(Some(n))) if n.is_finite() => Value::Float(*n),
-                Some(FieldValue::Float(Some(n))) => Value::Float(f64::from(*n)),
-                Some(FieldValue::Integer(i)) => Value::Int(i64::from(*i)),
-                Some(FieldValue::Double(d)) => Value::Float(*d),
-                Some(FieldValue::Currency(d)) => Value::Float(*d),
-                Some(FieldValue::Logical(Some(b))) => Value::Bool(*b),
-                Some(FieldValue::Memo(s)) => Value::Text(s.clone()),
-                Some(FieldValue::Date(Some(d))) => Value::Text(format!("{:04}-{:02}-{:02}", d.year(), d.month(), d.day())),
-                _ => Value::Null,
-            })
-            .collect();
+        let attrs = ds.fields.iter().map(|f| dbf_value(record.get(&f.name))).collect();
         ds.push_next(geom, attrs);
     }
     ds.geometry_type = dominant_type(&ds);
@@ -1428,6 +1419,23 @@ pub fn read_shapefile_parts_with(parts: ShapefileParts, name: &str, opts: Shapef
         report.messages.push(format!("{unconverted} shapes couldn't be converted to longitude/latitude and have no geometry"));
     }
     Ok((ds, report))
+}
+
+/// One `.dbf` value as a value (dates as `YYYY-MM-DD` text, blanks as null).
+fn dbf_value(v: Option<&shapefile::dbase::FieldValue>) -> Value {
+    use shapefile::dbase::FieldValue;
+    match v {
+        Some(FieldValue::Character(Some(s))) => Value::Text(s.trim().to_string()),
+        Some(FieldValue::Numeric(Some(n))) if n.is_finite() => Value::Float(*n),
+        Some(FieldValue::Float(Some(n))) => Value::Float(f64::from(*n)),
+        Some(FieldValue::Integer(i)) => Value::Int(i64::from(*i)),
+        Some(FieldValue::Double(d)) => Value::Float(*d),
+        Some(FieldValue::Currency(d)) => Value::Float(*d),
+        Some(FieldValue::Logical(Some(b))) => Value::Bool(*b),
+        Some(FieldValue::Memo(s)) => Value::Text(s.clone()),
+        Some(FieldValue::Date(Some(d))) => Value::Text(format!("{:04}-{:02}-{:02}", d.year(), d.month(), d.day())),
+        _ => Value::Null,
+    }
 }
 
 /// A Shapefile without its `.dbf`: the shapes, with no fields.
