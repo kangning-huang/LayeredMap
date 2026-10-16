@@ -36,11 +36,11 @@ progress.
 | Check | Result |
 |---|---|
 | `cargo xtask ci` (fmt, clippy, all tests, layering) | pass locally |
-| Every V, T, C and R fixture opens; profile matches the approved JSON snapshot | in progress (fixtures/snapshots) |
+| Every V, T, C and R fixture opens; profile matches the approved JSON snapshot | pass (`fixtures/snapshots/`; differences from hand-written expected.json listed in its README) |
 | Every X fixture refused with its message: X1 (archives inside archives), X2 (path outside the archive), X4 (over 200,000 px per side) | pass, each in under 1 s |
 | Every source file byte-identical before and after import (hash check) | pass for every hand-made fixture |
-| `cargo fuzz`, 1 hour per adapter (CSV, GeoJSON, Shapefile, DBF, GeoTIFF header) | in progress |
-| No UI stall over 100 ms during fixture imports | in progress |
+| `cargo fuzz` per adapter (CSV, GeoJSON, Shapefile, DBF, GeoTIFF header) | 5 minutes each run: 0 crashes on the final code; earlier runs found 1 hang and 4 huge-allocation bugs in the Shapefile reader, all fixed with tests. **The 1-hour runs per adapter are still to do** (`cargo xtask fuzz --secs 3600`). |
+| No UI stall over 100 ms during fixture imports | pass: worst 23 ms |
 | China conversion against two implementations (fixture C2), residual under 0.5 m | pass: max round-trip residual 1.0e-4 m over 58 points; C1 and C3 within 4.9e-7° |
 | Screenshot regression (Phase 1 and Phase 2 images) | pass |
 
@@ -50,7 +50,7 @@ progress.
 |---|---|
 | Changed snapshots explained | see fixtures/snapshots/README.md (in progress) |
 | Second review of the macOS `unsafe` hook | approved (docs/lm/decisions.md) |
-| Independent review of the changes since `gate-1-pass` | **done 2026-10-16**: 6 S1, 5 S2, several S3. All S1 and S2 fixed, each with a regression test that fails without the fix. A second review of the fixes follows. |
+| Independent review of the changes since `gate-1-pass` | **done 2026-10-16**: 6 S1, 5 S2, several S3. All S1 and S2 fixed, each with a regression test. A **second review** of the fixes found 3 new S1 and 2 S2 (choices applied on top of themselves; reopen dropping raster/encoding choices; placing twice) — fixed with one shared `reapply_choices`. A **third review** found 1 S1 and 2 S2 (a GPS copy losing its conversion after an encoding change; Not sure on placed data; GeoPackage parts) — fixed. No open S1 or S2. |
 
 ### Independent review findings
 
@@ -96,8 +96,9 @@ with screen recording on.
 | Test | Measured | Threshold | Result |
 |---|---|---|---|
 | X1: ZIP bomb rejected | well under 1 s | < 1 s | pass |
-| V6: 500 MB GeoJSON opens, map stays interactive | not yet run (the OSM extract isn't downloaded) | interactive throughout | — |
-| T3: 1,000,000-row CSV opens | 2.1 s (release) | opens | pass |
+| V6: 500 MB GeoJSON opens, map stays interactive | 1,346,007 polygons (524 MB) in 3.8 s; interface loop's worst gap 20 ms; file unchanged — **synthetic stand-in** of the same size and shape until the OSM extract is fetched | interactive throughout | pass (stand-in) |
+| T3: 1,000,000-row CSV opens | 2.15 s (release), snapshot matches | opens | pass |
+| UI stall during 15 fixture imports | worst gap 23 ms, none over 50 ms | ≤ 100 ms | pass |
 | R4: 2 GB COG previews | 0.98 s | ≤ 3 s | pass |
 | R5: preparation of a 4 GB TIFF can be canceled | stopped 10 ms after cancel | cancelable | pass |
 | 50 files dropped at once | you | no crash; four read at a time | — |
