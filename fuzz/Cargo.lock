@@ -993,6 +993,7 @@ dependencies = [
  "lm-core",
  "lm-profile",
  "log",
+ "rusqlite",
  "rustgis-analysis",
  "rustgis-engine",
  "serde",
