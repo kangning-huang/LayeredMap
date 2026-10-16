@@ -1221,6 +1221,15 @@ fn defuse_shapes(shp: &mut [u8], shx: &[u8]) {
         }
         let avail = i64::try_from(shp.len().saturating_sub(start)).ok()?.min(content);
         let ty = le(shp, start)?;
+        // A null shape is read as its 4-byte type and nothing more, whatever its record declares,
+        // and the reader doesn't skip the rest: any other size leaves it reading the next record
+        // from a place nobody checked. (Other shapes check their size or skip what's left.)
+        if ty == 0 && content != 4 {
+            if let Some(t) = shp.get_mut(start..start + 4) {
+                t.copy_from_slice(&99i32.to_le_bytes());
+            }
+            return usize::try_from(content).ok().map(|c| start + c);
+        }
         // (offset of the first count, bytes before the counted data, bytes per part, per point)
         let layout = match ty {
             3 | 5 | 13 | 15 | 23 | 25 => Some((36, 44, 4, 16)),
@@ -1823,6 +1832,13 @@ mod tests {
         bad_index[second + 52..second + 56].copy_from_slice(&(-384_827_392i32).to_le_bytes());
         defuse_shapes(&mut bad_index, &shx);
         assert_eq!(&bad_index[second + 8..second + 12], &99i32.to_le_bytes());
+        // A null shape in a record of another size than 4 bytes (fuzzing: the reader then read the
+        // next record from a place nobody checked).
+        let mut tiny = get("shp");
+        tiny[second + 4..second + 8].copy_from_slice(&0i32.to_be_bytes());
+        tiny[second + 8..second + 12].copy_from_slice(&0i32.to_le_bytes());
+        defuse_shapes(&mut tiny, &shx);
+        assert_eq!(&tiny[second + 8..second + 12], &99i32.to_le_bytes());
         // A negative record size is distrusted whatever the counts say (also found by fuzzing).
         let mut negative = get("shp");
         negative[second + 4..second + 8].copy_from_slice(&(-11i32).to_be_bytes());
