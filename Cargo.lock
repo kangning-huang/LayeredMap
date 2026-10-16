@@ -2660,9 +2660,11 @@ dependencies = [
 name = "lm-profile"
 version = "0.2.0"
 dependencies = [
+ "encoding_rs",
  "lm-core",
  "rustgis-data",
  "rustgis-geom",
+ "serde_json",
 ]
 
 [[package]]
