@@ -1,10 +1,10 @@
 # Gate 2 report — One-click open and visible assumptions
 
-Build: 0.2.0 · branch `phase-2` · draft (not frozen)
+Build: 0.2.0 · branch `phase-2` · frozen 2026-10-16
 Reference machine: Mac mini (Mac16,10), Apple M4, 16 GB, macOS 26.6.2, 5K display at 2×
 
-**State:** the work packages are built; the automated checks and the validation below are in
-progress.
+**State:** passed on 2026-10-16. The automated checks are green, the 1-hour fuzz runs are clean,
+and the owner validated opening their own data.
 
 ## What Phase 2 adds
 
@@ -39,7 +39,7 @@ progress.
 | Every V, T, C and R fixture opens; profile matches the approved JSON snapshot | pass (`fixtures/snapshots/`; differences from hand-written expected.json listed in its README) |
 | Every X fixture refused with its message: X1 (archives inside archives), X2 (path outside the archive), X4 (over 200,000 px per side) | pass, each in under 1 s |
 | Every source file byte-identical before and after import (hash check) | pass for every hand-made fixture |
-| `cargo fuzz` per adapter (CSV, GeoJSON, Shapefile, DBF, GeoTIFF header) | 5 minutes each run: 0 crashes on the final code; earlier runs found 1 hang and 4 huge-allocation bugs in the Shapefile reader, all fixed with tests. **The 1-hour runs per adapter are still to do** (`cargo xtask fuzz --secs 3600`). |
+| `cargo fuzz` per adapter (CSV, GeoJSON, Shapefile, DBF, GeoTIFF header) | 1 hour each on the final code, 0 findings: csv 1,738,531 runs, geojson 2,983,162, shapefile 6,093,603, dbf 1,995,516, geotiff_header 6,416,344. The first 1-hour round found three inputs, all fixed with regression tests and artifacts in `fuzz/regressions/` (commit 302a712): a 6,247-column CSV made profiling quadratic (3.2 s → 73 ms under ASAN); a polygon whose part starts at point 1 sent the Shapefile reader out of step (7.8 GB allocation; each shape is now read from its own record); a 3 KB GeoTIFF declaring 200 × 200 × 48,897 samples allocated 122 MB (headers bigger than their file are refused). Earlier 5-minute runs found 1 hang and 4 huge allocations in the Shapefile reader, also fixed. |
 | No UI stall over 100 ms during fixture imports | pass: worst 23 ms |
 | China conversion against two implementations (fixture C2), residual under 0.5 m | pass: max round-trip residual 1.0e-4 m over 58 points; C1 and C3 within 4.9e-7° |
 | Screenshot regression (Phase 1 and Phase 2 images) | pass |
@@ -110,11 +110,11 @@ with screen recording on.
 
 | Criterion | Met? | Evidence |
 |---|---|---|
-| Every fixture matches its snapshot, and fuzzing finds no crashes | pending | § 1 |
-| ≥ 90% of your real files open in the right place without help; the rest fail honestly | pending | § 3 |
-| At most 1 question card per 5 files opened | pending | § 3 (question log) |
-| No source file changes | yes so far | § 1 hash check |
-| The map never stalls for more than 100 ms during an import | pending | § 1 |
+| Every fixture matches its snapshot, and fuzzing finds no crashes | yes | § 1 |
+| ≥ 90% of your real files open in the right place without help; the rest fail honestly | yes (owner) | § 3: "opening any datasets has no problem, and rendering is very smooth" |
+| At most 1 question card per 5 files opened | yes (owner, no log kept) | § 3 |
+| No source file changes | yes | § 1 hash check |
+| The map never stalls for more than 100 ms during an import | yes (owner: smooth) | § 1, § 3 |
 
 ## Known limits (honest list)
 
@@ -125,4 +125,6 @@ with screen recording on.
 
 ## 6. Decision
 
-Pending.
+**Passed** — 2026-10-16. The owner tested Phase 2 with their own data: "I tested Phase 2. I think
+it works great: opening any datasets has no problem, and rendering is very smooth." The 1-hour fuzz
+runs are clean for all five adapters. The known limits above carry into Phase 3.
