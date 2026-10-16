@@ -7,7 +7,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 use lm_core::model::{Assumption, AssumptionKind, Choice, Crs, Exclusion, Known, LayerKind, LayerProfile};
-use lm_profile::{CoordinatePair, CsvLocation, RawTable};
+use lm_profile::{CoordinatePair, CsvLocation, NumberStyle, RawTable};
 use rustgis_engine::data::geometry::Geometry;
 use rustgis_engine::data::{Dataset, Field, FieldType, GeometryType, Value};
 use rustgis_engine::geom::Coord;
@@ -45,37 +45,28 @@ impl FormatAdapter for Delimited {
         let open = || std::fs::File::open(path).map_err(|e| ImportError::read(&name, e));
         let mut head = Vec::with_capacity(HEAD);
         open()?.take(HEAD as u64).read_to_end(&mut head).map_err(|e| ImportError::read(&name, e))?;
-        let (encoding, bom) = detect_encoding(&head);
+        let (mut encoding, bom) = detect_encoding(&head);
         let head_text = encoding.decode_without_bom_handling(head.get(bom..).unwrap_or_default()).0;
         let delimiter =
             if matches!(extension(path).as_str(), "tsv" | "tab") { b'\t' } else { rustgis_engine::data::io::sniff_delimiter(&head_text) };
-        ctx.ticket.set_total(meta.size);
-        let mut file = Counting::new(std::io::BufReader::new(open()?), ctx.ticket.clone());
-        let mut skip = vec![0u8; bom];
-        file.read_exact(&mut skip).map_err(|e| ImportError::read(&name, e))?;
-        let reader: Box<dyn Read> = if encoding == encoding_rs::UTF_8 { Box::new(file) } else { Box::new(Decoding::new(file, encoding)) };
-        let mut csv = ::csv::ReaderBuilder::new().delimiter(delimiter).flexible(true).has_headers(false).from_reader(reader);
-        let mut headers: Option<Vec<String>> = None;
-        let mut rows: Vec<Vec<String>> = Vec::new();
-        let mut record = ::csv::StringRecord::new();
-        loop {
-            match csv.read_record(&mut record) {
-                Ok(false) => break,
-                Ok(true) => {
-                    let cells: Vec<String> = record.iter().map(str::to_string).collect();
-                    match &headers {
-                        None => headers = Some(cells),
-                        Some(_) if cells.iter().all(|c| c.trim().is_empty()) => {}
-                        Some(_) => rows.push(cells),
-                    }
-                    if rows.len().is_multiple_of(50_000) {
-                        ctx.ticket.check()?;
-                    }
-                }
-                Err(e) => return Err(ImportError::read(&name, e)),
+        // A file that looked like UTF-8 in its first 64 KiB but isn't further on is read again
+        // as Chinese (GBK) rather than failing or losing characters.
+        let (headers, rows) = match read_rows(path, &name, encoding, bom, delimiter, meta.size, ctx) {
+            Err(ImportError::Failed { details, .. })
+                if encoding == encoding_rs::UTF_8 && details.to_ascii_lowercase().contains("utf-8") =>
+            {
+                encoding = encoding_rs::GB18030;
+                read_rows(path, &name, encoding, bom, delimiter, meta.size, ctx)?
             }
+            other => other?,
+        };
+        // Rows longer than the header keep their extra cells, in numbered columns.
+        let mut headers = headers.unwrap_or_default();
+        let widest = rows.iter().map(Vec::len).max().unwrap_or(0);
+        if widest > headers.len() {
+            headers.resize(widest, String::new());
         }
-        let headers = dedupe_headers(headers.unwrap_or_default());
+        let headers = dedupe_headers(headers);
         if headers.is_empty() {
             return Err(ImportError::Failed {
                 message: format!("{name} is empty. Nothing was added to your map."),
@@ -83,13 +74,13 @@ impl FormatAdapter for Delimited {
             });
         }
         ctx.stage(Stage::Extent)?;
-        let raw = RawRows { headers, rows };
+        let raw = RawRows { headers, rows, delimiter: Some(char::from(delimiter)) };
         let mut notices = Vec::new();
         if encoding == encoding_rs::WINDOWS_1252 {
             notices.push("The text isn't UTF-8 or Chinese (GBK); it was read as Western (Windows-1252).".into());
         }
         let enc_label = if encoding == encoding_rs::GB18030 { "GBK".to_string() } else { encoding.name().to_string() };
-        let location = lm_profile::csv_locate(&raw.headers, &raw.rows, &name);
+        let location = lm_profile::csv_locate_delimited(&raw.headers, &raw.rows, &name, raw.delimiter);
         ctx.stage(Stage::Profile)?;
         let origin = TableOrigin {
             path,
@@ -103,6 +94,46 @@ impl FormatAdapter for Delimited {
         let layer = build(origin, &raw, location)?;
         Ok(vec![ImportedLayer { raw: Some(Arc::new(raw)), ..layer }])
     }
+}
+
+/// Reads every row of a delimited file as raw cells: the header row, then the data rows.
+fn read_rows(
+    path: &Path,
+    name: &str,
+    encoding: &'static encoding_rs::Encoding,
+    bom: usize,
+    delimiter: u8,
+    size: u64,
+    ctx: &Ctx,
+) -> Result<(Option<Vec<String>>, Vec<Vec<String>>), ImportError> {
+    ctx.ticket.set_total(size);
+    let f = std::fs::File::open(path).map_err(|e| ImportError::read(name, e))?;
+    let mut file = Counting::new(std::io::BufReader::new(f), ctx.ticket.clone());
+    let mut skip = vec![0u8; bom];
+    file.read_exact(&mut skip).map_err(|e| ImportError::read(name, e))?;
+    let reader: Box<dyn Read> = if encoding == encoding_rs::UTF_8 { Box::new(file) } else { Box::new(Decoding::new(file, encoding)) };
+    let mut csv = ::csv::ReaderBuilder::new().delimiter(delimiter).flexible(true).has_headers(false).from_reader(reader);
+    let mut headers: Option<Vec<String>> = None;
+    let mut rows: Vec<Vec<String>> = Vec::new();
+    let mut record = ::csv::StringRecord::new();
+    loop {
+        match csv.read_record(&mut record) {
+            Ok(false) => break,
+            Ok(true) => {
+                let cells: Vec<String> = record.iter().map(str::to_string).collect();
+                match &headers {
+                    None => headers = Some(cells),
+                    Some(_) if cells.iter().all(|c| c.trim().is_empty()) => {}
+                    Some(_) => rows.push(cells),
+                }
+                if rows.len().is_multiple_of(50_000) {
+                    ctx.ticket.check()?;
+                }
+            }
+            Err(e) => return Err(ImportError::read(name, e)),
+        }
+    }
+    Ok((headers, rows))
 }
 
 /// GBK text a byte sniffer would miss (it isn't UTF-8): two lines split alike by a separator.
@@ -138,7 +169,7 @@ fn detect_encoding(head: &[u8]) -> (&'static encoding_rs::Encoding, usize) {
 }
 
 /// Blank or repeated header names get a number, so every field can be told apart.
-fn dedupe_headers(h: Vec<String>) -> Vec<String> {
+pub(super) fn dedupe_headers(h: Vec<String>) -> Vec<String> {
     let mut out: Vec<String> = Vec::with_capacity(h.len());
     for (i, name) in h.into_iter().enumerate() {
         let base = name.trim().trim_start_matches('\u{feff}').to_string();
@@ -154,16 +185,31 @@ fn dedupe_headers(h: Vec<String>) -> Vec<String> {
     out
 }
 
-/// A column's inferred type from its cells as written. Leading zeros keep a column as text.
-fn infer_type(raw: &RawRows, col: usize) -> FieldType {
+/// The number style of column `col` ([`lm_profile::number_style`]: what a comma means there).
+fn column_style(raw: &RawRows, col: usize) -> NumberStyle {
+    lm_profile::number_style(raw.rows.iter().map(|r| r.get(col).map_or("", String::as_str)), raw.delimiter).value
+}
+
+/// A whole number as written in `style` ("12,500" with thousands separators).
+fn integer(c: &str, style: NumberStyle) -> Option<i64> {
+    if style == NumberStyle::Thousands && c.contains(',') && !c.contains('.') {
+        lm_profile::parse_number_with(c, style)?;
+        return c.replace(',', "").parse().ok();
+    }
+    c.parse().ok()
+}
+
+/// A column's inferred type from its cells as written, in its number style. Leading zeros keep
+/// a column as text, and so do commas whose meaning can't be told.
+fn infer_type(raw: &RawRows, col: usize, style: NumberStyle) -> FieldType {
     let mut ty = None::<FieldType>;
     for r in &raw.rows {
         let Some(c) = r.get(col).map(|c| c.trim()).filter(|c| !c.is_empty()) else { continue };
         let this = if c.len() > 1 && c.starts_with('0') && !c.starts_with("0.") && !c.starts_with("0,") {
             FieldType::Text
-        } else if c.parse::<i64>().is_ok() {
+        } else if integer(c, style).is_some() {
             FieldType::Integer
-        } else if lm_profile::parse_number(c).is_some() {
+        } else if lm_profile::parse_number_with(c, style).is_some() {
             FieldType::Double
         } else if c.eq_ignore_ascii_case("true") || c.eq_ignore_ascii_case("false") {
             FieldType::Boolean
@@ -183,29 +229,32 @@ fn infer_type(raw: &RawRows, col: usize) -> FieldType {
     ty.unwrap_or(FieldType::Text)
 }
 
-fn typed(cell: &str, ty: FieldType) -> Value {
+fn typed(cell: &str, ty: FieldType, style: NumberStyle) -> Value {
     let c = cell.trim();
     if c.is_empty() {
         return Value::Null;
     }
     match ty {
-        FieldType::Integer => c.parse().map(Value::Int).unwrap_or_else(|_| Value::Text(cell.to_string())),
-        FieldType::Double => lm_profile::parse_number(c).map(Value::Float).unwrap_or_else(|| Value::Text(cell.to_string())),
+        FieldType::Integer => integer(c, style).map(Value::Int).unwrap_or_else(|| Value::Text(cell.to_string())),
+        FieldType::Double => lm_profile::parse_number_with(c, style).map(Value::Float).unwrap_or_else(|| Value::Text(cell.to_string())),
         FieldType::Boolean => Value::Bool(c.eq_ignore_ascii_case("true")),
         _ => Value::Text(cell.to_string()),
     }
 }
 
 /// Why a row has no usable location, or its point.
-fn locate_row(row: &[String], pair: &CoordinatePair, check_range: bool) -> Result<Coord, String> {
+fn locate_row(row: &[String], pair: &CoordinatePair, styles: &[NumberStyle], check_range: bool) -> Result<Coord, String> {
+    let style = |i: usize| styles.get(i).copied().unwrap_or(NumberStyle::Point);
     let cell = |i: usize| row.get(i).map_or("", |c| c.trim());
     let (xs, ys) = (cell(pair.x_index), cell(pair.y_index));
     if xs.is_empty() || ys.is_empty() {
         let blank = if xs.is_empty() { &pair.x } else { &pair.y };
         return Err(format!("No location: {blank} is blank"));
     }
-    let x = lm_profile::parse_number(xs).ok_or_else(|| format!("No location: {} is not a number (\"{xs}\")", pair.x))?;
-    let y = lm_profile::parse_number(ys).ok_or_else(|| format!("No location: {} is not a number (\"{ys}\")", pair.y))?;
+    let x = lm_profile::parse_number_with(xs, style(pair.x_index))
+        .ok_or_else(|| format!("No location: {} is not a number (\"{xs}\")", pair.x))?;
+    let y = lm_profile::parse_number_with(ys, style(pair.y_index))
+        .ok_or_else(|| format!("No location: {} is not a number (\"{ys}\")", pair.y))?;
     if check_range && !((-180.0..=180.0).contains(&x) && (-90.0..=90.0).contains(&y)) {
         return Err(format!("No location: {x}, {y} is outside longitude −180 to 180 or latitude −90 to 90"));
     }
@@ -249,15 +298,17 @@ fn build_with(
     lonlat: bool,
 ) -> Result<ImportedLayer, ImportError> {
     let TableOrigin { path, member, name, format, encoding, notices, assumptions: before } = origin;
-    let types: Vec<FieldType> = (0..raw.headers.len()).map(|i| infer_type(raw, i)).collect();
+    let styles: Vec<NumberStyle> = (0..raw.headers.len()).map(|i| column_style(raw, i)).collect();
+    let types: Vec<FieldType> = styles.iter().enumerate().map(|(i, s)| infer_type(raw, i, *s)).collect();
     let fields: Vec<Field> = raw.headers.iter().zip(&types).map(|(h, t)| Field::new(h.clone(), *t)).collect();
     let mut ds = Dataset::new(name.clone(), if pair.is_some() { GeometryType::Point } else { GeometryType::None }, fields);
     ds.source = Some(path.display().to_string());
     let mut exclusions = Vec::new();
     for (i, row) in raw.rows.iter().enumerate() {
-        let attrs: Vec<Value> = types.iter().enumerate().map(|(c, t)| row.get(c).map_or(Value::Null, |cell| typed(cell, *t))).collect();
+        let attrs: Vec<Value> =
+            types.iter().zip(&styles).enumerate().map(|(c, (t, s))| row.get(c).map_or(Value::Null, |cell| typed(cell, *t, *s))).collect();
         let geom = match &pair {
-            Some(p) => match locate_row(row, p, lonlat) {
+            Some(p) => match locate_row(row, p, &styles, lonlat) {
                 Ok(c) => Some(Geometry::Point(c)),
                 Err(reason) => {
                     exclusions.push(Exclusion { row: i as u64 + 1, reason });
@@ -270,7 +321,7 @@ fn build_with(
     }
     let mut assumptions: Vec<Assumption> = before;
     assumptions.extend(location.assumption().into_iter().cloned());
-    let raw_table = RawTable { headers: &raw.headers, rows: &raw.rows };
+    let raw_table = RawTable { headers: &raw.headers, rows: &raw.rows, delimiter: raw.delimiter };
     let (field_profiles, field_assumptions) = lm_profile::profile_fields(&ds, Some(raw_table), &location.coordinate_columns());
     assumptions.extend(field_assumptions);
     let extent = super::extent_of(&ds);
@@ -303,7 +354,7 @@ fn build_with(
         source: source_ref(path, member),
         format,
         kind,
-        count: ds.features.len() as u64,
+        count: super::located_count(&ds, kind),
         extent_wgs84: if kind == LayerKind::Points { extent } else { None },
         crs,
         fields: field_profiles,
@@ -322,7 +373,7 @@ fn build_with(
 /// table (Not sure). Its format, sheet and sheet choice are kept.
 pub fn relocate(layer: &ImportedLayer, raw: &Arc<RawRows>, choice: &Choice) -> Result<ImportedLayer, ImportError> {
     let path = Path::new(&layer.profile.source.path);
-    let mut location = lm_profile::csv_locate(&raw.headers, &raw.rows, layer.profile.source.file_name());
+    let mut location = lm_profile::csv_locate_delimited(&raw.headers, &raw.rows, layer.profile.source.file_name(), raw.delimiter);
     let chosen_pair = choice.id.strip_prefix("columns:").and_then(|cols| {
         let (x, y) = cols.split_once(',')?;
         let xi = raw.headers.iter().position(|h| h == x)?;
@@ -368,10 +419,13 @@ pub fn relocate(layer: &ImportedLayer, raw: &Arc<RawRows>, choice: &Choice) -> R
         name: layer.name.clone(),
         format: layer.profile.format.clone(),
         encoding: layer.profile.encoding.clone(),
-        notices: Vec::new(),
+        // The import's notices stay (encoding, preview size…).
+        notices: layer.profile.notices.clone(),
         assumptions: layer.profile.assumptions.iter().filter(|a| a.kind == AssumptionKind::ExcelSheet).cloned().collect(),
     };
     let mut out = build_with(origin, raw, location, pair, lonlat)?;
+    let mut seen = std::collections::HashSet::new();
+    out.profile.notices.retain(|n| seen.insert(n.clone()));
     out.raw = Some(raw.clone());
     Ok(out)
 }
@@ -394,11 +448,36 @@ mod tests {
         let raw = RawRows {
             headers: vec!["code".into(), "n".into(), "x".into()],
             rows: vec![vec!["007".into(), "3".into(), "1,5".into()], vec!["120".into(), "4".into(), "2".into()]],
+            delimiter: Some(','),
         };
-        assert_eq!(infer_type(&raw, 0), FieldType::Text);
-        assert_eq!(infer_type(&raw, 1), FieldType::Integer);
-        assert_eq!(infer_type(&raw, 2), FieldType::Double);
-        assert_eq!(typed("007", FieldType::Text), Value::Text("007".into()));
+        let ty = |i: usize| infer_type(&raw, i, column_style(&raw, i));
+        assert_eq!(ty(0), FieldType::Text);
+        assert_eq!(ty(1), FieldType::Integer);
+        assert_eq!(ty(2), FieldType::Double);
+        assert_eq!(typed("007", FieldType::Text, NumberStyle::Point), Value::Text("007".into()));
+    }
+
+    #[test]
+    fn number_styles_type_columns() {
+        let col = |cells: &[&str], delimiter| RawRows {
+            headers: vec!["n".into()],
+            rows: cells.iter().map(|c| vec![c.to_string()]).collect(),
+            delimiter,
+        };
+        let raw = col(&["12,500", "1,250,000", "980"], Some(','));
+        let style = column_style(&raw, 0);
+        assert_eq!((style, infer_type(&raw, 0, style)), (NumberStyle::Thousands, FieldType::Integer));
+        assert_eq!(typed("1,250,000", FieldType::Integer, style), Value::Int(1_250_000));
+        let raw = col(&["12,500.5", "3,400"], Some(','));
+        let style = column_style(&raw, 0);
+        assert_eq!(infer_type(&raw, 0, style), FieldType::Double);
+        assert_eq!(typed("3,400", FieldType::Double, style), Value::Float(3400.0));
+        let raw = col(&["12,500", "3,400"], Some(','));
+        assert_eq!(infer_type(&raw, 0, column_style(&raw, 0)), FieldType::Text);
+        let raw = col(&["12,500", "3,400"], Some(';'));
+        let style = column_style(&raw, 0);
+        assert_eq!((style, infer_type(&raw, 0, style)), (NumberStyle::DecimalComma, FieldType::Double));
+        assert_eq!(typed("12,500", FieldType::Double, style), Value::Float(12.5));
     }
 
     #[test]

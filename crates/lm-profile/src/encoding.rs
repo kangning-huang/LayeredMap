@@ -63,6 +63,52 @@ fn is_cjk(c: char) -> bool {
     matches!(c, '\u{4E00}'..='\u{9FFF}' | '\u{3400}'..='\u{4DBF}' | '\u{3000}'..='\u{303F}' | '\u{FF00}'..='\u{FFEF}')
 }
 
+/// A hanzi among GB2312's level 1: the 3,755 most common characters (GBK lead byte 0xB0–0xD7).
+fn is_common_hanzi(c: char) -> bool {
+    let mut buf = [0u8; 4];
+    let (bytes, _, unmappable) = encoding_rs::GBK.encode(c.encode_utf8(&mut buf));
+    !unmappable && bytes.len() == 2 && bytes.first().is_some_and(|b| (0xB0..=0xD7).contains(b))
+}
+
+/// Share of the decoded characters that are CJK, and of the hanzi that are common.
+const GBK_CJK_SHARE: f64 = 0.9;
+const GBK_COMMON_SHARE: f64 = 0.8;
+
+/// True when the bytes read plausibly as Western text in Windows-1252: most non-ASCII
+/// characters are Latin letters (À–ÿ), and most stand alone between ASCII characters ("São",
+/// "Zürich"). GBK text has its non-ASCII bytes in pairs and runs.
+fn plausible_windows1252(non_ascii: &[&[u8]]) -> bool {
+    let (mut total, mut letters, mut alone) = (0usize, 0usize, 0usize);
+    for s in non_ascii {
+        let (text, _) = encoding_rs::WINDOWS_1252.decode_without_bom_handling(s);
+        let chars: Vec<char> = text.chars().collect();
+        for (i, c) in chars.iter().enumerate().filter(|(_, c)| !c.is_ascii()) {
+            total += 1;
+            if matches!(c, '\u{C0}'..='\u{FF}') && !matches!(c, '×' | '÷') {
+                letters += 1;
+            }
+            let ascii_at = |j: Option<usize>| j.and_then(|j| chars.get(j)).is_none_or(char::is_ascii);
+            if ascii_at(i.checked_sub(1)) && ascii_at(Some(i + 1)) {
+                alone += 1;
+            }
+        }
+    }
+    total > 0 && letters as f64 >= 0.8 * total as f64 && alone as f64 >= 0.5 * total as f64
+}
+
+fn choices(first: &str) -> Vec<Choice> {
+    let mut all = vec![
+        Choice::new("gbk", "Chinese (GBK)"),
+        Choice::new("utf8", "Unicode (UTF-8)"),
+        Choice::new("windows1252", "Western (Windows-1252)"),
+    ];
+    if let Some(i) = all.iter().position(|c| c.id == first) {
+        let c = all.remove(i);
+        all.insert(0, c);
+    }
+    all
+}
+
 /// The encoding of a Shapefile's attribute text.
 ///
 /// - `samples`: raw bytes of text cells from the `.dbf` (a few hundred cells are plenty; trailing
@@ -70,10 +116,17 @@ fn is_cjk(c: char) -> bool {
 /// - `cpg`: the `.cpg` file's contents, if there is one.
 ///
 /// A readable `.cpg` decides (`Certain`, no assumption). Without one: text that is valid UTF-8
-/// (plain ASCII included) is UTF-8 (`Likely`). Otherwise, if decoding as GBK has no errors and
-/// yields Chinese characters (at least half of the non-ASCII characters), it is GBK, `Likely`,
-/// with the silent [`AssumptionKind::ShapefileGbk`] for Details. Anything else is read as
-/// Windows-1252 with `Possible` confidence (no catalog row).
+/// (plain ASCII included) is UTF-8 (`Likely`). Otherwise the text is decoded as GBK:
+///
+/// - **Strong evidence** (no decoding errors; at least 90% of the non-ASCII characters are CJK;
+///   at least 80% of the hanzi are among GB2312 level 1, the 3,755 common ones; and the bytes
+///   don't read plausibly as Western text): GBK, `Likely`, the silent
+///   [`AssumptionKind::ShapefileGbk`] for Details (the catalog row).
+/// - **Weaker evidence** (decodes cleanly with at least as many CJK as other characters, and
+///   doesn't read as Western text): GBK is still the best guess, `Possible`, and the same
+///   assumption is made *visible*, since a wrong guess garbles every label.
+/// - Otherwise Windows-1252, `Possible`, with a visible `ShapefileGbk` assumption choosing
+///   Windows-1252 ("Read text as Western (Windows-1252)." + Change; GBK and UTF-8 offered).
 pub fn shapefile_encoding(samples: &[&[u8]], cpg: Option<&str>) -> (Known<TextEncoding>, Option<Assumption>) {
     if let Some(e) = cpg.and_then(TextEncoding::from_cpg) {
         return (Known::certain(e, "Named by the .cpg file."), None);
@@ -83,33 +136,62 @@ pub fn shapefile_encoding(samples: &[&[u8]], cpg: Option<&str>) -> (Known<TextEn
         let why = if non_ascii.is_empty() { "The text is plain ASCII." } else { "The text is valid UTF-8." };
         return (Known::likely(TextEncoding::Utf8, why), None);
     }
-    let (mut errors, mut cjk, mut other) = (false, 0usize, 0usize);
+    let (mut errors, mut cjk, mut other, mut hanzi, mut common) = (false, 0usize, 0usize, 0usize, 0usize);
     for s in &non_ascii {
         let (text, had_errors) = encoding_rs::GBK.decode_without_bom_handling(s);
         errors |= had_errors;
         for c in text.chars().filter(|c| !c.is_ascii()) {
-            if is_cjk(c) { cjk += 1 } else { other += 1 }
+            if is_cjk(c) {
+                cjk += 1;
+                if ('\u{4E00}'..='\u{9FFF}').contains(&c) {
+                    hanzi += 1;
+                    common += usize::from(is_common_hanzi(c));
+                }
+            } else {
+                other += 1;
+            }
         }
     }
-    if !errors && cjk > 0 && cjk >= other {
-        let a = make(
+    let western = plausible_windows1252(&non_ascii);
+    let gbk_line = |confidence, treatment| {
+        make(
             AssumptionKind::ShapefileGbk,
             Subject::Layer,
             Choice::new("gbk", "Chinese (GBK)"),
-            vec![
-                Choice::new("gbk", "Chinese (GBK)"),
-                Choice::new("utf8", "Unicode (UTF-8)"),
-                Choice::new("windows1252", "Western (Windows-1252)"),
-            ],
-            Confidence::Likely,
+            choices("gbk"),
+            confidence,
             Consequence::DisplayOnly,
-            Treatment::Silent,
+            treatment,
             lines::SHAPEFILE_GBK,
-        );
-        let why = format!("No .cpg file; the text is not UTF-8, and as GBK it reads as {cjk} Chinese characters.");
-        return (Known::likely(TextEncoding::Gbk, why), Some(a));
+        )
+    };
+    let strong = !errors
+        && cjk as f64 >= GBK_CJK_SHARE * (cjk + other) as f64
+        && hanzi > 0
+        && common as f64 >= GBK_COMMON_SHARE * hanzi as f64
+        && !western;
+    if strong {
+        let why =
+            format!("No .cpg file; the text is not UTF-8, and as GBK it reads as {cjk} Chinese characters, {common} of {hanzi} common.");
+        return (Known::likely(TextEncoding::Gbk, why), Some(gbk_line(Confidence::Likely, Treatment::Silent)));
     }
-    (Known::possible(TextEncoding::Windows1252, "No .cpg file; the text is neither UTF-8 nor Chinese (GBK)."), None)
+    if !errors && cjk > 0 && cjk >= other && !western {
+        let why = format!(
+            "No .cpg file; the text is not UTF-8, and as GBK it reads as {cjk} Chinese characters, but only {common} of {hanzi} are common ones."
+        );
+        return (Known::possible(TextEncoding::Gbk, why), Some(gbk_line(Confidence::Possible, Treatment::Visible)));
+    }
+    let a = make(
+        AssumptionKind::ShapefileGbk,
+        Subject::Layer,
+        Choice::new("windows1252", "Western (Windows-1252)"),
+        choices("windows1252"),
+        Confidence::Possible,
+        Consequence::DisplayOnly,
+        Treatment::Visible,
+        lines::SHAPEFILE_WINDOWS1252,
+    );
+    (Known::possible(TextEncoding::Windows1252, "No .cpg file; the text is neither UTF-8 nor clearly Chinese (GBK)."), Some(a))
 }
 
 #[cfg(test)]
@@ -145,7 +227,40 @@ mod tests {
         // Western text in Windows-1252: "Café Müller".
         let latin = encoding_rs::WINDOWS_1252.encode("Café Müller").0.into_owned();
         let (enc, a) = shapefile_encoding(&[latin.as_slice()], None);
-        assert_eq!((enc.value, a), (TextEncoding::Windows1252, None));
+        assert_eq!((enc.value, a.map(|a| a.chosen.id)), (TextEncoding::Windows1252, Some("windows1252".to_string())));
+    }
+
+    fn w1252(s: &str) -> Vec<u8> {
+        encoding_rs::WINDOWS_1252.encode(s).0.into_owned()
+    }
+
+    #[test]
+    fn western_text_without_cpg_is_not_read_as_gbk() {
+        // Regression (S2): "São Paulo" in Windows-1252 decodes cleanly as GBK ("S鉶 Paulo").
+        for words in [&["São Paulo", "Rio de Janeiro"][..], &["Montréal", "Québec"], &["Zürich", "Genève"], &["Ñuñoa"]] {
+            let cells: Vec<Vec<u8>> = words.iter().map(|w| w1252(w)).collect();
+            let refs: Vec<&[u8]> = cells.iter().map(Vec::as_slice).collect();
+            let (enc, a) = shapefile_encoding(&refs, None);
+            assert_eq!(enc.value, TextEncoding::Windows1252, "{words:?}");
+            assert_eq!(enc.value.decode(&cells[0]), words[0]);
+            let a = a.unwrap();
+            assert_eq!((a.kind, a.treatment, a.chosen.id.as_str()), (AssumptionKind::ShapefileGbk, Treatment::Visible, "windows1252"));
+            assert_eq!(a.line, "Read text as Western (Windows-1252).");
+            let ids: Vec<&str> = a.alternatives.iter().map(|c| c.id.as_str()).collect();
+            assert_eq!(ids, vec!["windows1252", "gbk", "utf8"]);
+        }
+    }
+
+    #[test]
+    fn rare_hanzi_are_gbk_but_visible() {
+        // GBK-decodable, but outside the 3,755 common characters: still the best guess, shown.
+        let cells = [gbk("鑫淼"), gbk("焱")];
+        let refs: Vec<&[u8]> = cells.iter().map(Vec::as_slice).collect();
+        let (enc, a) = shapefile_encoding(&refs, None);
+        assert_eq!((enc.value, enc.confidence), (TextEncoding::Gbk, Confidence::Possible));
+        let a = a.unwrap();
+        assert_eq!((a.kind, a.treatment, a.confidence), (AssumptionKind::ShapefileGbk, Treatment::Visible, Confidence::Possible));
+        assert_eq!(a.line, "Read text as Chinese (GBK).");
     }
 
     #[test]

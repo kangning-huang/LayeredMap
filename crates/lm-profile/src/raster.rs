@@ -51,11 +51,15 @@ pub(crate) fn nodata_label(v: f64) -> String {
     s.replacen('-', "\u{2212}", 1)
 }
 
-fn names(name: &str, file_name: &str) -> String {
-    // The file name without its extension.
+/// The band name and the file name without its extension, as written.
+fn names_as_written(name: &str, file_name: &str) -> String {
     let stem = file_name.rsplit(['/', '\\']).next().unwrap_or(file_name);
     let stem = stem.rsplit_once('.').map(|(s, _)| s).unwrap_or(stem);
-    format!("{name} {stem}").to_lowercase()
+    format!("{name} {stem}")
+}
+
+fn names(name: &str, file_name: &str) -> String {
+    names_as_written(name, file_name).to_lowercase()
 }
 
 fn is_st_b10(name: &str, file_name: &str) -> bool {
@@ -63,6 +67,17 @@ fn is_st_b10(name: &str, file_name: &str) -> bool {
     n.contains("st_b10")
         || n.contains("st-b10")
         || tokens(&n).windows(2).any(|w| w.first().is_some_and(|a| a == "st") && w.get(1).is_some_and(|b| b == "b10"))
+}
+
+/// The name says population or count, as whole words ([`crate::words`]): pop, population,
+/// count, a word ending in "pop" (WorldPop's "worldpop", "totpop"), or 人口. "country",
+/// "popular" and "accountant" don't.
+fn total_name(name: &str, file_name: &str) -> bool {
+    let n = names_as_written(name, file_name);
+    n.contains("人口")
+        || crate::words(&n)
+            .iter()
+            .any(|w| matches!(w.as_str(), "pop" | "pops" | "population" | "populations" | "count" | "counts") || w.ends_with("pop"))
 }
 
 fn percentile(sorted: &[f64], p: f64) -> Option<f64> {
@@ -86,8 +101,13 @@ pub fn raster_nodata(
     declared: Option<f64>,
     band: u32,
 ) -> (Known<Option<f64>>, Option<Assumption>) {
-    if let Some(v) = declared.filter(|v| !v.is_nan()) {
-        return (Known::certain(Some(v), "Declared in the file."), None);
+    match declared {
+        Some(v) if v.is_nan() => {
+            // NaN cells are never valid values anyway; the file has spoken, so no spike is guessed.
+            return (Known::certain(None, "Declared in the file as NaN: cells that are not a number are No data."), None);
+        }
+        Some(v) => return (Known::certain(Some(v), "Declared in the file."), None),
+        None => {}
     }
     let n = width.saturating_mul(height).min(values.len());
     let grid = values.get(..n).unwrap_or(&[]);
@@ -254,7 +274,8 @@ pub fn raster_kelvin(name: &str, file_name: &str, valid_decoded: &[f64], band: u
 /// What a band's cells mean (catalog: "Raster cell meaning"), from the decoded valid values:
 ///
 /// - decimals or negative values → measured (`Likely`, visible);
-/// - whole numbers and a name containing pop or count → totals (`Likely`, visible);
+/// - whole numbers and a name with the word pop or count (see `total_name`) → totals
+///   (`Likely`, visible);
 /// - at most 32 distinct whole numbers → categories (`Likely`, visible);
 /// - otherwise → measured, the safe reading, with `Possible` confidence and
 ///   [`Treatment::Silent`]: a deferred question for the first summary
@@ -284,7 +305,6 @@ pub fn raster_cell_meaning(name: &str, file_name: &str, valid_decoded: &[f64], b
     };
     let integers = v.iter().all(|x| x.fract() == 0.0);
     let negative = v.iter().any(|x| *x < 0.0);
-    let n = names(name, file_name);
     if !integers || negative {
         let why = if negative { "Some values are negative." } else { "Values have decimals." };
         return (
@@ -292,7 +312,7 @@ pub fn raster_cell_meaning(name: &str, file_name: &str, valid_decoded: &[f64], b
             Some(mk(measured, Confidence::Likely, Treatment::Visible, lines::CELL_MEASURED)),
         );
     }
-    if n.contains("pop") || n.contains("count") || n.contains("人口") {
+    if total_name(name, file_name) {
         return (
             Known::likely(CellMeaning::Total, "Whole numbers, and the name says population or count."),
             Some(mk(total, Confidence::Likely, Treatment::Visible, lines::CELL_TOTAL)),
@@ -320,7 +340,10 @@ pub fn profile_band(s: &BandSample) -> (BandProfile, Vec<Assumption>) {
     let (nodata, a) = raster_nodata(s.values, s.width, s.height, s.declared_nodata, s.index);
     out.extend(a);
     let nd = nodata.value;
-    let valid_raw: Vec<f64> = s.values.iter().map(|v| f64::from(*v)).filter(|v| v.is_finite() && Some(*v) != nd).collect();
+    // Compared in f32, as the cells are stored and as upstream's `Raster::is_valid` does: a
+    // declared -3.40282346639e+38 or -9999.1 is not exactly representable in f32.
+    let nd32 = nd.filter(|d| !d.is_nan()).map(|d| d as f32);
+    let valid_raw: Vec<f64> = s.values.iter().copied().filter(|v| v.is_finite() && Some(*v) != nd32).map(f64::from).collect();
     let landsat = landsat_scale(s.name, s.file_name, &valid_raw, s.scale, s.offset, s.integer_type, s.index);
     let (scale, offset) = match &landsat {
         Some((sc, off, _)) => (Some(*sc), Some(*off)),
@@ -480,6 +503,60 @@ mod tests {
         // Decimals named "pop" are still measured (a density, not a total).
         let (m, _) = raster_cell_meaning("pop_density", "x.tif", &[1.5, 2.5], 1);
         assert_eq!(m.value, CellMeaning::Measured);
+    }
+
+    fn sample<'a>(values: &'a [f32], w: usize, declared: Option<f64>) -> BandSample<'a> {
+        BandSample {
+            index: 1,
+            name: "",
+            file_name: "dem.tif",
+            width: w,
+            height: values.len() / w.max(1),
+            values,
+            declared_nodata: declared,
+            scale: None,
+            offset: None,
+            unit: Some("m"),
+            integer_type: false,
+        }
+    }
+
+    #[test]
+    fn profile_band_compares_declared_nodata_as_f32() {
+        // Regression (S1): GDAL writes the lowest float as -3.40282346639e+38, which is not
+        // f64::from(f32::MIN); compared in f64 the NoData cells polluted min and max.
+        let g = framed(10, 10, 1, f32::MIN, |r, c| (r * 10 + c) as f32 + 0.5);
+        let (b, _) = profile_band(&sample(&g, 10, Some(-3.402_823_466_39e38)));
+        assert_eq!((b.min, b.max), (Some(11.5), Some(88.5)));
+        // -9999.1 is not exact in f32 either.
+        let g = framed(10, 10, 1, -9999.1, |r, c| (r * 10 + c) as f32 + 0.5);
+        let (b, _) = profile_band(&sample(&g, 10, Some(-9999.1)));
+        assert_eq!(b.min, Some(11.5));
+    }
+
+    #[test]
+    fn profile_band_with_nan_nodata_ignores_nan_and_keeps_real_values() {
+        // NaN declared: NaN cells are No data; -9999 is then a real value, as upstream reads it.
+        let g = framed(10, 10, 1, f32::NAN, |r, c| if r == 5 && c == 5 { -9999.0 } else { (r * 10 + c) as f32 + 0.5 });
+        let (b, a) = profile_band(&sample(&g, 10, Some(f64::NAN)));
+        assert_eq!(b.nodata.confidence, Confidence::Certain);
+        assert!(a.iter().all(|a| a.kind != AssumptionKind::RasterNoData));
+        assert_eq!((b.min, b.max), (Some(-9999.0), Some(88.5)));
+    }
+
+    #[test]
+    fn raster_cell_meaning_matches_whole_name_tokens() {
+        // Regression (S3): "count" matched inside "country", so country codes became totals.
+        let codes: Vec<f64> = (0..500).map(|i| (i * 7) as f64).collect();
+        for file in ["country_codes.tif", "countries.tif", "popular.tif", "accountant.tif"] {
+            let (m, _) = raster_cell_meaning("", file, &codes, 1);
+            assert_ne!(m.value, CellMeaning::Total, "{file}");
+        }
+        for file in ["worldpop_2020.tif", "pop.tif", "Population.tif", "building_count.tif", "PopCount.tif", "人口.tif", "chn_pop_2020.tif"]
+        {
+            let (m, _) = raster_cell_meaning("", file, &codes, 1);
+            assert_eq!(m.value, CellMeaning::Total, "{file}");
+        }
     }
 
     #[test]

@@ -9,7 +9,7 @@ use rustgis_map::camera::Camera;
 use rustgis_render::{PlacedLabel, View};
 
 /// An edit applied to the render thread's copy of the map, the same as on the UI's.
-pub type Edit = Box<dyn Fn(&mut Map) + Send>;
+pub type Edit = Box<dyn FnOnce(&mut Map) + Send>;
 
 enum Msg {
     Edit(Edit),

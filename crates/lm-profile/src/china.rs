@@ -40,17 +40,20 @@ pub fn mainland_china_share(points: &[(f64, f64)]) -> f64 {
     finite.iter().filter(|(x, y)| in_mainland_china(*x, *y)).count() as f64 / finite.len() as f64
 }
 
-/// The offset system a name hints at, from the catalog's list of hints.
+/// The offset system a name hints at, from the catalog's list of hints, matched as whole words
+/// ([`crate::words`]): "amap_pois", "AmapPOI", "Lng_GCJ", "gcj02", "BD-09" match; "china_map",
+/// "teamap" don't. 高德 and 百度 match inside a run of Chinese characters.
 fn name_hint(names: &[&str]) -> Option<Crs> {
     // Checked in order: the file name first, then the columns; within a name, Baidu's hints
     // are more specific ("bd09" also appears next to "gcj" in conversion tools' output).
     for n in names {
-        let l = n.to_lowercase();
-        let compact: String = l.chars().filter(|c| c.is_alphanumeric()).collect();
-        if compact.contains("baidu") || l.contains("百度") || compact.contains("bd09") {
+        let w = crate::words(n);
+        let has = |word: &str| w.iter().any(|t| t == word);
+        let pair = |a: &str, b: &str| w.windows(2).any(|p| p.first().is_some_and(|x| x == a) && p.get(1).is_some_and(|y| y == b));
+        if has("baidu") || pair("bd", "09") || n.contains("百度") {
             return Some(Crs::Bd09);
         }
-        if compact.contains("gcj") || compact.contains("amap") || compact.contains("gaode") || l.contains("高德") {
+        if has("gcj") || has("amap") || has("gaode") || n.contains("高德") {
             return Some(Crs::Gcj02);
         }
     }
@@ -192,6 +195,14 @@ mod tests {
             ("百度.csv", vec![], "bd09", lines::CHINA_OFFSET_BD09),
             ("p.csv", vec!["lng_bd09", "lat_bd09"], "bd09", lines::CHINA_OFFSET_BD09),
             ("p.csv", vec!["BD-09 lng", "BD-09 lat"], "bd09", lines::CHINA_OFFSET_BD09),
+            ("AmapPOI.csv", vec![], "gcj02", lines::CHINA_OFFSET_GCJ02),
+            ("gaode_shops.csv", vec![], "gcj02", lines::CHINA_OFFSET_GCJ02),
+            ("shops_gcj02.csv", vec![], "gcj02", lines::CHINA_OFFSET_GCJ02),
+            ("p.csv", vec!["lngGcj", "latGcj"], "gcj02", lines::CHINA_OFFSET_GCJ02),
+            ("p.csv", vec!["GCJ-02 lng", "GCJ-02 lat"], "gcj02", lines::CHINA_OFFSET_GCJ02),
+            ("BaiduPOI.csv", vec![], "bd09", lines::CHINA_OFFSET_BD09),
+            ("pois_bd09.csv", vec![], "bd09", lines::CHINA_OFFSET_BD09),
+            ("百度地图导出.csv", vec![], "bd09", lines::CHINA_OFFSET_BD09),
         ] {
             let cols: Vec<String> = cols.into_iter().map(String::from).collect();
             let a = china_offset(&shanghai(), &assumed(), file, &cols).unwrap();
@@ -208,6 +219,11 @@ mod tests {
     fn china_offset_named_does_not_match_without_hints() {
         let a = china_offset(&shanghai(), &assumed(), "pois.csv", &["lng".into(), "lat".into()]).unwrap();
         assert_ne!(a.kind, AssumptionKind::ChinaOffsetNamed);
+        // Regression (S2): hints match whole tokens, not letters across words.
+        for file in ["china_map.csv", "camapana.csv", "teamap.csv", "bigcjk.csv", "abaiduk.csv"] {
+            let a = china_offset(&shanghai(), &assumed(), file, &["lng".into(), "lat".into()]).unwrap();
+            assert_eq!(a.kind, AssumptionKind::ChinaOffsetPossible, "{file}");
+        }
         // A hint outside China is no offset.
         let paris = vec![(2.35, 48.85)];
         assert_eq!(china_offset(&paris, &assumed(), "amap.csv", &[]), None);

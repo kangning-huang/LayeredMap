@@ -166,7 +166,7 @@ impl Shell {
             reduce_motion: system.reduce_motion,
             notice: None,
             last_map_size: egui::vec2(1280.0, 748.0),
-            ws: workspace::Workspace::default(),
+            ws: workspace::Workspace::with_waker(ctx),
             shelf_open: true,
             inspector_tab: 0,
             change_for: None,
@@ -266,11 +266,13 @@ impl Shell {
             }
             Command::OpenDocument(dir) => match lm_doc::load(&dir) {
                 Ok(doc) => {
-                    let paths: Vec<PathBuf> = doc.layers.iter().map(|l| PathBuf::from(&l.profile.source.path)).collect();
                     self.notice = Some((format!("Opened a document with {} layers; reading their files again.", doc.layers.len()), t));
-                    let waker = ctx.clone();
-                    self.ws = workspace::Workspace::default();
-                    self.ws.open(paths, move || waker.request_repaint());
+                    let view = doc.view;
+                    self.ws = workspace::Workspace::with_waker(ctx);
+                    self.ws.restore(doc);
+                    if let Some((lon, lat, zoom)) = view {
+                        self.map.fly_to(lm_mapview::Coord::new(lon, lat), zoom, t, self.last_map_size, self.reduce_motion);
+                    }
                 }
                 Err(e) => self.notice = Some((e.to_string(), t)),
             },
@@ -338,6 +340,9 @@ impl Shell {
             self.command(ctx, Command::Open(dropped));
         }
         self.ws.poll();
+        if let Some(n) = self.ws.notice.take() {
+            self.notice = Some((n, t));
+        }
         self.ws.sync_map(&mut self.map);
         if let Some(e) = self.ws.fit.take() {
             self.fly_to_extent(e);

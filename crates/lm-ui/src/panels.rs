@@ -248,7 +248,9 @@ fn layer_rows(shell: &mut Shell, ui: &mut Ui, t: &Theme) {
             );
         }
         // Badge.
-        let badge = if l.profile.open_questions().next().is_some() {
+        let badge = if shell.ws.is_busy(*id) {
+            Badge::Working
+        } else if l.profile.open_questions().next().is_some() {
             Badge::Decision
         } else if l.profile.visible_assumptions().next().is_some() {
             Badge::Assumption
@@ -497,7 +499,8 @@ pub fn inspector(shell: &mut Shell, ui: &mut Ui, map: Rect) {
 
 fn status_lines(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, l: &lm_core::document::DocLayer) {
     let p = &l.profile;
-    let opened = p.count.saturating_sub(p.exclusions.len() as u64);
+    // The count is what was placed; exclusions are the records left out.
+    let opened = p.count;
     if !p.exclusions.is_empty() {
         let (one, many) = p.kind.nouns();
         let _ = one;
@@ -601,7 +604,13 @@ pub fn compare_banner(shell: &mut Shell, ui: &mut Ui, map: Rect) {
     }
     if let Some(keep) = action {
         let now = ui.input(|i| i.time);
-        if let Err(e) = shell.ws.end_compare(keep) {
+        // Seconds since the layer's China question was first shown, for the question log.
+        let seconds = shell.ws.compare.as_ref().and_then(|c| {
+            [AssumptionKind::ChinaOffsetNamed, AssumptionKind::ChinaOffsetPossible]
+                .iter()
+                .find_map(|k| shell.question_seen.get(&(c.layer.0, *k as u8)).map(|t| now - t))
+        });
+        if let Err(e) = shell.ws.end_compare(keep, seconds) {
             shell.set_notice(e, now);
         }
     }

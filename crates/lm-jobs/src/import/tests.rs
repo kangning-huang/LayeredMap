@@ -26,7 +26,7 @@ fn t1_csv_lands_with_a_visible_assumption_and_six_exclusions() {
     let l = open("T1/schools.csv").unwrap();
     let l = &l[0];
     assert_eq!(l.profile.kind, LayerKind::Points);
-    assert_eq!(l.profile.count, 248);
+    assert_eq!(l.profile.count, 242, "248 rows, 6 without a location");
     assert_eq!(l.profile.exclusions.len(), 6, "{:?}", l.profile.exclusions);
     assert_eq!(l.status, ImportStatus::CompleteWithExclusions);
     let a = l.profile.assumptions.iter().find(|a| a.kind == AssumptionKind::CsvCoordinateColumns).unwrap();
@@ -512,4 +512,136 @@ fn zip_based_documents_are_not_taken_for_zipped_shapefiles() {
     }
     // A ZIP without a telling name is still tried as a zipped Shapefile.
     assert_eq!(pick_adapter(std::path::Path::new("download"), b"PK\x03\x04", true).map(|a| a.name()).ok(), Some("Zipped Shapefile"));
+}
+
+/// R6: scale 0.1 and offset −100 come from the GDAL metadata, so the values shown are decoded
+/// (about 0–160), never the raw integers (a wrong number would be an S1).
+#[test]
+fn r6_scale_and_offset_are_applied() {
+    let l = open("R6/scaled.tif").unwrap().remove(0);
+    let b = &l.profile.bands[0];
+    assert_eq!(b.scale, Some(0.1), "{b:?}");
+    assert_eq!(b.offset, Some(-100.0));
+    let (lo, hi) = (b.min.unwrap(), b.max.unwrap());
+    assert!(lo >= -1.0 && hi <= 161.0 && hi > 50.0, "decoded range {lo}..{hi}");
+}
+
+#[test]
+fn geojson_states_no_assumed_gps_line() {
+    let l = open("V1/districts.geojson").unwrap().remove(0);
+    assert!(!has(&l, AssumptionKind::NoCrsLonLat), "{:?}", l.profile.assumptions);
+    assert_eq!(l.profile.crs.value, lm_core::model::Crs::Wgs84);
+}
+
+/// Review finding (S1): the NoData line must be true. R6's −9999 border is left out of the band's
+/// numbers and drawn clear; choosing "a real value" puts it back, and the line says so.
+#[test]
+fn r6_detected_nodata_is_applied_and_can_be_changed() {
+    let l = open("R6/scaled.tif").unwrap().remove(0);
+    let LayerData::Raster(r) = &l.data else { panic!() };
+    assert_eq!(r.nodata, Some(-9999.0));
+    let b = &l.profile.bands[0];
+    assert!(b.min.unwrap() > -1.0, "the −9999 border is out of the range: {:?}", b.min);
+    let a = l.profile.assumptions.iter().find(|a| a.kind == AssumptionKind::RasterNoData).unwrap().clone();
+    let real = a.alternatives.iter().find(|c| c.id == "value").unwrap().clone();
+    let changed = rechoose_raster(&l, a.kind, &a.subject, &real).unwrap();
+    let LayerData::Raster(r2) = &changed.data else { panic!() };
+    assert_eq!(r2.nodata, None);
+    assert!(changed.profile.bands[0].min.unwrap() < -1000.0, "now −9999 × 0.1 − 100 is in the range");
+    let line = &changed.profile.assumptions.iter().find(|x| x.kind == AssumptionKind::RasterNoData).unwrap().line;
+    assert!(line.contains("real value"), "{line}");
+}
+
+/// Review finding (S1): changing the text encoding re-reads the file in that encoding.
+#[test]
+fn v5_text_encoding_can_be_changed() {
+    let l = open("V5/places_gbk.shp").unwrap().remove(0);
+    let utf8 = lm_core::model::Choice::new("utf8", "Unicode (UTF-8)");
+    let changed = reread_encoding(&l, &utf8).unwrap();
+    let LayerData::Vector(ds) = &changed.data else { panic!() };
+    let name = ds.field_index("name").unwrap();
+    assert_ne!(ds.value(0, name), &rustgis_engine::data::Value::Text("人民广场".into()));
+    let back = reread_encoding(&changed, &lm_core::model::Choice::new("gbk", "Chinese (GBK)")).unwrap();
+    let LayerData::Vector(ds) = &back.data else { panic!() };
+    assert_eq!(ds.value(0, name), &rustgis_engine::data::Value::Text("人民广场".into()));
+}
+
+/// Writes `text` to a fresh temporary CSV and imports it.
+fn import_text(file: &str, text: &str) -> ImportedLayer {
+    let dir = std::env::temp_dir().join(format!("lm-numstyle-{}-{file}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join(file);
+    std::fs::write(&path, text).unwrap();
+    let l = import_path(&path, &Ctx::detached(Ticket::default())).unwrap().remove(0);
+    let _ = std::fs::remove_dir_all(dir);
+    l
+}
+
+fn column(l: &ImportedLayer, name: &str) -> Vec<rustgis_engine::data::Value> {
+    let LayerData::Vector(ds) = &l.data else { panic!() };
+    let i = ds.field_index(name).unwrap();
+    (0..ds.features.len()).map(|r| ds.value(r, i).clone()).collect()
+}
+
+#[test]
+fn csv_thousands_separators_are_read_as_thousands() {
+    // Regression (S1): "12,500" was read as 12.5.
+    use rustgis_engine::data::Value;
+    let l = import_text(
+        "towns.csv",
+        "name,population,lon,lat\nA,\"12,500\",121.40,31.20\nB,\"3,400\",121.41,31.21\nC,\"1,250,000\",121.42,31.22\nD,980,121.43,31.23\n",
+    );
+    assert_eq!(column(&l, "population"), vec![Value::Int(12_500), Value::Int(3_400), Value::Int(1_250_000), Value::Int(980)]);
+    // Only d,ddd values and a comma delimiter: not guessed, kept as written.
+    let l = import_text("towns2.csv", "name,population,lon,lat\nA,\"12,500\",121.40,31.20\nB,\"3,400\",121.41,31.21\n");
+    assert_eq!(column(&l, "population"), vec![Value::Text("12,500".into()), Value::Text("3,400".into())]);
+    // With semicolons, decimal commas.
+    let l = import_text("werte.csv", "name;wert;lon;lat\nA;12,500;121,40;31,20\nB;3,400;121,41;31,21\n");
+    assert_eq!(column(&l, "wert"), vec![Value::Float(12.5), Value::Float(3.4)]);
+    assert_eq!(l.profile.kind, LayerKind::Points);
+}
+
+/// Review finding (S1): the header counts located points, not rows with no location.
+#[test]
+fn t1_counts_located_points() {
+    let l = open("T1/schools.csv").unwrap().remove(0);
+    assert_eq!(l.profile.count + l.profile.exclusions.len() as u64, 248, "{}", l.profile.subtitle());
+    assert_eq!(l.profile.subtitle(), format!("{} points · schools.csv", l.profile.count));
+}
+
+/// Review finding (S2): nothing is dropped silently: extra CSV cells and GeoJSON ids are kept.
+#[test]
+fn ragged_rows_and_feature_ids_are_kept() {
+    let csv = import_text("ragged.csv", "name,lon,lat\nA,121.4,31.2,extra\nB,121.5,31.3\n");
+    let LayerData::Vector(ds) = &csv.data else { panic!() };
+    assert!(ds.field_index("column 4").is_some(), "{:?}", ds.fields.iter().map(|f| &f.name).collect::<Vec<_>>());
+    let dir = std::env::temp_dir().join(format!("lm-gj-id-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let p = dir.join("ids.geojson");
+    std::fs::write(&p, r#"{"type":"FeatureCollection","features":[{"type":"Feature","id":"a1","geometry":{"type":"Point","coordinates":[1,2]},"properties":{"n":1}}]}"#).unwrap();
+    let l = import_path(&p, &Ctx::detached(Ticket::default())).unwrap().remove(0);
+    let LayerData::Vector(ds) = &l.data else { panic!() };
+    let i = ds.field_index("id").unwrap();
+    assert_eq!(ds.value(0, i), &rustgis_engine::data::Value::Text("a1".into()));
+    let _ = std::fs::remove_dir_all(dir);
+}
+
+/// Review finding (S3): a CSV whose first 64 KiB are ASCII but which is GBK further on.
+#[test]
+fn gbk_after_an_ascii_head_is_read_as_gbk() {
+    let mut text = String::from("name,lon,lat\n");
+    for i in 0..4000 {
+        text.push_str(&format!("site{i},121.4,31.2\n"));
+    }
+    text.push_str("人民广场,121.47,31.23\n");
+    let (bytes, _, _) = encoding_rs::GBK.encode(&text);
+    let dir = std::env::temp_dir().join(format!("lm-gbk-tail-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let p = dir.join("tail.csv");
+    std::fs::write(&p, &bytes).unwrap();
+    let l = import_path(&p, &Ctx::detached(Ticket::default())).unwrap().remove(0);
+    assert_eq!(l.profile.encoding.as_deref(), Some("GBK"));
+    let LayerData::Vector(ds) = &l.data else { panic!() };
+    assert_eq!(ds.value(4000, 0), &rustgis_engine::data::Value::Text("人民广场".into()));
+    let _ = std::fs::remove_dir_all(dir);
 }

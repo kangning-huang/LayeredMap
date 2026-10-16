@@ -22,11 +22,11 @@ use std::sync::mpsc::{Receiver, Sender, channel};
 use std::sync::{Arc, Condvar, Mutex};
 
 use lm_core::model::{Assumption, Choice, Crs, Exclusion, Extent, ImportStatus, Known, LayerKind, LayerProfile, SourceRef};
-use rustgis_engine::data::Dataset;
 use rustgis_engine::data::raster::Raster;
 
 pub use lm_profile::PlaceCandidate;
 pub use progress::Ticket;
+pub use rustgis_engine::data::Dataset;
 
 /// Why an import didn't produce layers. The message is shown as written (Error and status copy).
 #[derive(Clone, Debug, PartialEq)]
@@ -85,6 +85,9 @@ pub enum LayerData {
 pub struct RawRows {
     pub headers: Vec<String>,
     pub rows: Vec<Vec<String>>,
+    /// The delimiter of a delimited file (decides what `12,500` means with
+    /// `lm_profile::number_style`); `None` for a sheet.
+    pub delimiter: Option<char>,
 }
 
 /// What a finished import hands to the document.
@@ -401,6 +404,12 @@ fn sample_points(ds: &Dataset, n: usize) -> Vec<(f64, f64)> {
         .collect()
 }
 
+/// What a layer counts in its header: located features for points, lines and areas (excluded
+/// rows are reported separately), every row for a table.
+pub(crate) fn located_count(ds: &Dataset, kind: LayerKind) -> u64 {
+    if kind == LayerKind::Table { ds.features.len() as u64 } else { ds.features.iter().filter(|f| f.geometry.is_some()).count() as u64 }
+}
+
 /// The status a layer's profile implies.
 fn status_of(profile: &LayerProfile) -> ImportStatus {
     if profile.open_questions().next().is_some() {
@@ -441,7 +450,7 @@ fn vector_profile(
         source: source_ref(path, member),
         format: format.into(),
         kind,
-        count: ds.features.len() as u64,
+        count: located_count(ds, kind),
         extent_wgs84: if matches!(crs.value, Crs::Wgs84 | Crs::Gcj02 | Crs::Bd09) { extent } else { None },
         crs,
         fields,
@@ -520,6 +529,18 @@ pub fn choose_sheet(layer: &ImportedLayer, choice: &Choice) -> Result<ImportedLa
     excel::choose_sheet(layer, choice)
 }
 
+pub use raster::rechoose_raster;
+pub use shapefile::reread_encoding;
+
+/// The name of a coordinate system in the candidate table ("CGCS2000 / 3-degree Gauss-Kruger CM
+/// 120E"), or "EPSG:n".
+pub fn crs_name(epsg: u16) -> String {
+    lm_profile::crs_candidates::CANDIDATES
+        .iter()
+        .find(|(c, _, _)| *c == epsg)
+        .map_or_else(|| format!("EPSG:{epsg}"), |(_, n, _)| (*n).to_string())
+}
+
 /// Reprojects a layer read with raw coordinates from the coordinate system the user chose
 /// ("Where should this data be?"), as a new layer; the source file is untouched.
 pub fn reproject(layer: &ImportedLayer, epsg: u32) -> Result<ImportedLayer, ImportError> {
@@ -533,12 +554,16 @@ pub fn reproject(layer: &ImportedLayer, epsg: u32) -> Result<ImportedLayer, Impo
         .transformer()
         .map_err(|e| ImportError::Failed { message: format!("EPSG:{epsg} can't be converted."), details: e.to_string() })?;
     let mut out = (**ds).clone();
+    let mut failed: Vec<u64> = Vec::new();
     for f in &mut out.features {
         if let Some(g) = f.geometry.take() {
             let g = g.map_coords(&|c| t.to_lonlat(c).unwrap_or(rustgis_engine::geom::Coord::new(f64::NAN, f64::NAN)));
             let mut ok = true;
             g.for_each_coord(|c| ok &= c.is_finite());
             f.geometry = ok.then_some(g);
+            if !ok {
+                failed.push(f.id);
+            }
         }
     }
     let mut profile = layer.profile.clone();
@@ -548,6 +573,11 @@ pub fn reproject(layer: &ImportedLayer, epsg: u32) -> Result<ImportedLayer, Impo
         .map_or_else(|| format!("EPSG:{epsg}"), |(_, n, _)| (*n).to_string());
     profile.crs = Known::certain(Crs::Epsg(epsg), format!("Chosen by you: {name} (EPSG:{epsg})."));
     profile.extent_wgs84 = extent_of(&out);
+    // Shapes the chosen system can't convert are listed, never dropped silently.
+    let rows: Vec<u64> = out.features.iter().enumerate().filter(|(_, f)| failed.contains(&f.id)).map(|(i, _)| i as u64 + 1).collect();
+    profile
+        .exclusions
+        .extend(rows.into_iter().map(|row| Exclusion { row, reason: "Couldn't be placed with the chosen coordinate system".into() }));
     profile.kind = kind_of(&out);
     // The choice becomes a visible assumption that names the system (WP2.4 step 5).
     for a in profile.assumptions.iter_mut().filter(|a| a.kind == lm_core::model::AssumptionKind::NoCrsProjected) {

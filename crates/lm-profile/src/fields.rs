@@ -1,7 +1,7 @@
 //! Field roles and statistics, and the catalog rows "Field looks like an identifier" and
 //! "Numeric field with 12 or fewer distinct values".
 
-use crate::csv::parse_number;
+use crate::csv::{NumberStyle, number_style, parse_number_with};
 use crate::{lines, make, tokens};
 use lm_core::model::{
     Assumption, AssumptionKind, Choice, Confidence, Consequence, DataType, FieldProfile, FieldRole, FieldStats, Known, MeasureKind,
@@ -20,6 +20,9 @@ pub struct RawTable<'a> {
     pub headers: &'a [String],
     /// Data rows in file order, each split into cells.
     pub rows: &'a [Vec<String>],
+    /// The delimiter of a delimited file (`Some(';')` makes `12,500` a decimal comma, see
+    /// [`crate::number_style`]); `None` for a sheet.
+    pub delimiter: Option<char>,
 }
 
 /// A column that locates the records (from [`crate::CsvLocation::coordinate_columns`]).
@@ -42,7 +45,7 @@ enum Cell {
     Bool(bool),
 }
 
-fn cell_from_raw(s: &str) -> Cell {
+fn cell_from_raw(s: &str, style: NumberStyle) -> Cell {
     let t = s.trim();
     if t.is_empty() {
         return Cell::Null;
@@ -52,10 +55,22 @@ fn cell_from_raw(s: &str) -> Cell {
     if digits.len() > 1 && digits.starts_with('0') && !digits.starts_with("0.") && !digits.starts_with("0,") {
         return Cell::Text(t.to_string());
     }
-    match parse_number(t) {
-        Some(v) => Cell::Number { value: v, integer: v.fract() == 0.0 && !t.contains(['.', ',', 'e', 'E']) },
+    let decimal_mark = if style == NumberStyle::DecimalComma { ',' } else { '.' };
+    match parse_number_with(t, style) {
+        Some(v) => Cell::Number { value: v, integer: v.fract() == 0.0 && !t.contains([decimal_mark, 'e', 'E']) },
         None => Cell::Text(t.to_string()),
     }
+}
+
+/// A raw column's cells in its number style, and a note for the evidence when its commas could
+/// not be read (kept as text).
+fn raw_cells(rows: &[Vec<String>], j: usize, delimiter: Option<char>) -> (Vec<Cell>, Option<String>) {
+    fn cell(row: &[String], j: usize) -> &str {
+        row.get(j).map(String::as_str).unwrap_or("")
+    }
+    let style = number_style(rows.iter().map(|r| cell(r, j)), delimiter);
+    let note = (style.confidence == lm_core::model::Confidence::Unknown).then(|| style.evidence.0.clone());
+    (rows.iter().map(|row| cell_from_raw(cell(row, j), style.value)).collect(), note)
 }
 
 fn cell_from_value(v: &Value, ty: FieldType) -> Cell {
@@ -109,12 +124,17 @@ fn name_like(name: &str) -> bool {
 
 fn measure_kind(name: &str, integers: bool) -> MeasureKind {
     let l = name.to_lowercase();
-    let has = |words: &[&str]| words.iter().any(|w| l.contains(w));
-    if has(&["density", "per_km", "per km", "/km", "密度"]) {
+    // Latin hints match whole words ("country" is not a count); Chinese hints match anywhere.
+    let tokens = crate::words(name);
+    let word = |ws: &[&str]| tokens.iter().any(|t| ws.iter().any(|w| t == w || (*w == "pop" && t.ends_with("pop"))));
+    let han = |ws: &[&str]| ws.iter().any(|w| l.contains(w));
+    if word(&["density"]) || han(&["per_km", "per km", "/km", "密度"]) {
         MeasureKind::Density
-    } else if integers && has(&["pop", "count", "number", "total", "students", "人口", "数量", "人数"]) {
+    } else if integers
+        && (word(&["pop", "population", "count", "counts", "number", "total", "students", "n"]) || han(&["人口", "数量", "人数"]))
+    {
         MeasureKind::Count
-    } else if has(&["temp", "rate", "pct", "percent", "ratio", "mean", "avg", "average", "率", "温度"]) {
+    } else if word(&["temp", "temperature", "rate", "pct", "percent", "ratio", "mean", "avg", "average"]) || han(&["率", "温度"]) {
         MeasureKind::Intensive
     } else {
         MeasureKind::Unknown
@@ -157,6 +177,8 @@ struct Column<'a> {
     name: &'a str,
     cells: Vec<Cell>,
     declared: Option<FieldType>,
+    /// Why some cells that look numeric were kept as text (their commas are ambiguous).
+    note: Option<String>,
 }
 
 fn profile_column(col: &Column, coords: &[CoordinateColumn], name_taken: &mut bool) -> (FieldProfile, Vec<Assumption>) {
@@ -283,6 +305,10 @@ fn profile_column(col: &Column, coords: &[CoordinateColumn], name_taken: &mut bo
         evidence = format!("Text with {distinct} distinct values.");
         role = Known::likely(FieldRole::Text, "");
     }
+    let evidence = match &col.note {
+        Some(n) => format!("{evidence} {n}"),
+        None => evidence,
+    };
     let role = Known { evidence: lm_core::model::Evidence(evidence), ..role };
     let unit = match unit_from_name(col.name) {
         Some(u) => Known::likely(Some(u), "From the field name."),
@@ -307,8 +333,9 @@ fn profile_columns(cols: &[Column], coords: &[CoordinateColumn]) -> (Vec<FieldPr
 /// read from the name, and statistics (min, max, median, distinct count, null count).
 ///
 /// - `raw`: the file's raw cell strings (CSV, sheets). A field whose name is a header there is
-///   judged on its raw strings, so codes keep leading zeros ("001234" is text), decimal commas
-///   parse, and dates are recognised as written. Other fields use the dataset's typed values.
+///   judged on its raw strings, so codes keep leading zeros ("001234" is text), numbers parse
+///   in their column's [`crate::number_style`] (a column whose commas can't be told apart stays
+///   text, and its role evidence says so), and dates are recognised as written. Other fields use the dataset's typed values.
 /// - `coordinates`: columns that locate the records ([`crate::CsvLocation::coordinate_columns`]).
 ///
 /// Roles, in order of precedence:
@@ -333,11 +360,11 @@ pub fn profile_fields(ds: &Dataset, raw: Option<RawTable>, coordinates: &[Coordi
         .enumerate()
         .map(|(i, f)| {
             let raw_col = raw.and_then(|r| r.headers.iter().position(|h| h.trim() == f.name.trim()).map(|j| (r, j)));
-            let cells = match raw_col {
-                Some((r, j)) => r.rows.iter().map(|row| cell_from_raw(row.get(j).map(String::as_str).unwrap_or(""))).collect(),
-                None => (0..ds.features.len()).map(|row| cell_from_value(ds.value(row, i), f.ty)).collect(),
+            let (cells, note) = match raw_col {
+                Some((r, j)) => raw_cells(r.rows, j, r.delimiter),
+                None => ((0..ds.features.len()).map(|row| cell_from_value(ds.value(row, i), f.ty)).collect(), None),
             };
-            Column { name: &f.name, cells, declared: if raw_col.is_some() { None } else { Some(f.ty) } }
+            Column { name: &f.name, cells, declared: if raw_col.is_some() { None } else { Some(f.ty) }, note }
         })
         .collect();
     profile_columns(&cols, coordinates)
@@ -349,10 +376,9 @@ pub fn profile_raw_table(raw: RawTable, coordinates: &[CoordinateColumn]) -> (Ve
         .headers
         .iter()
         .enumerate()
-        .map(|(j, h)| Column {
-            name: h.as_str(),
-            cells: raw.rows.iter().map(|row| cell_from_raw(row.get(j).map(String::as_str).unwrap_or(""))).collect(),
-            declared: None,
+        .map(|(j, h)| {
+            let (cells, note) = raw_cells(raw.rows, j, raw.delimiter);
+            Column { name: h.as_str(), cells, declared: None, note }
         })
         .collect();
     profile_columns(&cols, coordinates)
@@ -397,7 +423,7 @@ mod tests {
         // Leading zeros, from raw strings.
         let headers = vec!["编码".to_string()];
         let rows: Vec<Vec<String>> = ["001234", "000056", "120001"].iter().map(|s| vec![s.to_string()]).collect();
-        let (f, a) = profile_raw_table(RawTable { headers: &headers, rows: &rows }, &[]);
+        let (f, a) = profile_raw_table(RawTable { headers: &headers, rows: &rows, delimiter: None }, &[]);
         assert_eq!(f[0].role.value, FieldRole::Identifier);
         assert_eq!(f[0].dtype, DataType::Text);
         assert_eq!(kinds(&a), vec![(AssumptionKind::IdentifierField, Subject::Field("编码".into()))]);
@@ -473,7 +499,7 @@ mod tests {
             CoordinateColumn { name: "lon".into(), confidence: Confidence::Likely },
             CoordinateColumn { name: "lat".into(), confidence: Confidence::Likely },
         ];
-        let (f, a) = profile_raw_table(RawTable { headers: &headers, rows: &rows }, &coords);
+        let (f, a) = profile_raw_table(RawTable { headers: &headers, rows: &rows, delimiter: None }, &coords);
         assert_eq!(role(&f, "name"), FieldRole::Name);
         assert_eq!(role(&f, "名称"), FieldRole::Name);
         assert_eq!(role(&f, "type"), FieldRole::Category);
@@ -498,6 +524,40 @@ mod tests {
         assert_eq!(f[0].unit.value.as_deref(), Some("km²"));
     }
 
+    fn raw_col(header: &str, cells: &[&str]) -> (Vec<String>, Vec<Vec<String>>) {
+        (vec![header.to_string()], cells.iter().map(|c| vec![c.to_string()]).collect())
+    }
+
+    #[test]
+    fn thousands_separators_are_not_read_as_decimal_commas() {
+        // Regression (S1): "12,500" was read as 12.5, a population 1,000× too small.
+        let (h, r) = raw_col("population", &["12,500", "3,400", "1,250,000", "980"]);
+        let (f, _) = profile_raw_table(RawTable { headers: &h, rows: &r, delimiter: None }, &[]);
+        assert_eq!(f[0].dtype, DataType::Integer);
+        let s = f[0].stats.clone().unwrap();
+        assert_eq!((s.min, s.max), (Some(980.0), Some(1_250_000.0)));
+        assert_eq!(f[0].role.value, FieldRole::Measure(MeasureKind::Count));
+        // Grouped with decimals.
+        let (h, r) = raw_col("income", &["12,500.50", "3,400.25"]);
+        let (f, _) = profile_raw_table(RawTable { headers: &h, rows: &r, delimiter: None }, &[]);
+        assert_eq!(f[0].stats.clone().and_then(|s| s.max), Some(12_500.5));
+    }
+
+    #[test]
+    fn ambiguous_comma_columns_stay_text_with_evidence() {
+        // Every comma value is d,ddd and nothing else tells: not guessed.
+        let (h, r) = raw_col("population", &["12,500", "3,400", "7,125"]);
+        let (f, _) = profile_raw_table(RawTable { headers: &h, rows: &r, delimiter: None }, &[]);
+        assert_eq!(f[0].dtype, DataType::Text);
+        assert_eq!(f[0].stats.clone().and_then(|s| s.max), None);
+        assert!(f[0].role.evidence.0.contains("thousands"), "{}", f[0].role.evidence.0);
+        // Decimal commas are told by digits after the comma other than three.
+        let (h, r) = raw_col("amount", &["12,5", "3,400", "0,75"]);
+        let (f, _) = profile_raw_table(RawTable { headers: &h, rows: &r, delimiter: None }, &[]);
+        let s = f[0].stats.clone().unwrap();
+        assert_eq!((s.min, s.max), (Some(0.75), Some(12.5)));
+    }
+
     #[test]
     fn dates_are_checked() {
         assert!(is_date("2024-02-29"));
@@ -505,5 +565,20 @@ mod tests {
         assert!(!is_date("2024-13-01"));
         assert!(!is_date("20240301"));
         assert!(!is_date("1.2.3"));
+    }
+}
+
+#[cfg(test)]
+mod measure_tests {
+    use super::*;
+
+    #[test]
+    fn measure_hints_match_whole_words() {
+        assert_eq!(measure_kind("country", true), MeasureKind::Unknown);
+        assert_eq!(measure_kind("pop_2020", true), MeasureKind::Count);
+        assert_eq!(measure_kind("student_count", true), MeasureKind::Count);
+        assert_eq!(measure_kind("人口", true), MeasureKind::Count);
+        assert_eq!(measure_kind("temperature", false), MeasureKind::Intensive);
+        assert_eq!(measure_kind("pop_density", false), MeasureKind::Density);
     }
 }

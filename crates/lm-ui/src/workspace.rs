@@ -62,6 +62,32 @@ pub struct QuestionAnswer {
     pub seconds: f64,
 }
 
+/// A re-read running off the interface thread (other coordinate columns, another sheet, a chosen
+/// coordinate system). Its result replaces the layer's data in one undo step.
+struct PendingEdit {
+    id: LayerId,
+    label: String,
+    /// The revision the result will carry (from a counter that only goes up).
+    rev: u32,
+    /// The layer's revision when the edit started: a result for a layer that changed meanwhile
+    /// is dropped rather than committed over the newer state.
+    base_rev: u32,
+    fit: bool,
+    rx: std::sync::mpsc::Receiver<Result<ImportedLayer, String>>,
+}
+
+/// Heavy work done off the interface thread that ends with a small change to the workspace.
+type Finish = Box<dyn FnOnce(&mut Workspace) + Send>;
+
+/// A map layer built ahead in both copies (view and render thread).
+struct ReadyLayer {
+    id: LayerId,
+    rev: u32,
+    map_id: u32,
+    for_view: lm_mapview::map::Layer,
+    for_render: lm_mapview::map::Layer,
+}
+
 /// What the map currently holds for a layer.
 #[derive(Clone, PartialEq)]
 struct Synced {
@@ -75,7 +101,8 @@ struct Synced {
 pub struct Compare {
     pub layer: LayerId,
     pub from_bd09: bool,
-    data: Arc<ImportedLayer>,
+    /// The converted points' map layer in both copies, until the map takes it.
+    map_pair: Option<(lm_mapview::map::Layer, lm_mapview::map::Layer)>,
     /// Where to look: a point of the layer, at street level.
     pub focus: (f64, f64),
 }
@@ -110,10 +137,26 @@ pub struct Workspace {
     /// Answers to question cards, for the question log (taken by the shell).
     pub answers: Vec<QuestionAnswer>,
     pub compare: Option<Compare>,
+    pending: Vec<PendingEdit>,
+    /// Background work that finishes with a closure applied here.
+    jobs: Vec<(LayerId, std::sync::mpsc::Receiver<Finish>)>,
+    /// Map layers being built, and built.
+    building: Vec<(LayerId, u32)>,
+    ready: Vec<ReadyLayer>,
+    next_rev: u32,
+    next_map_id: u32,
+    /// Wakes the interface when background work finishes (set by the shell).
+    pub wake: Option<Arc<dyn Fn() + Send + Sync>>,
     compare_synced: Option<(LayerId, bool)>,
 }
 
 impl Workspace {
+    /// A workspace whose background work repaints `ctx` when it finishes.
+    pub fn with_waker(ctx: &egui::Context) -> Self {
+        let c = ctx.clone();
+        Workspace { wake: Some(Arc::new(move || c.request_repaint())), ..Workspace::default() }
+    }
+
     /// Starts importing files (Open, a drop, Open With): one batch.
     pub fn open(&mut self, paths: Vec<PathBuf>, wake: impl Fn() + Send + Sync + Clone + 'static) {
         if paths.is_empty() {
@@ -154,6 +197,11 @@ impl Workspace {
     /// Takes news from running imports. Returns whether the document changed.
     pub fn poll(&mut self) -> bool {
         let mut changed = false;
+        for e in self.poll_pending() {
+            self.notice = Some(e);
+            changed = true;
+        }
+        self.poll_jobs();
         let mut finished: Vec<(usize, Result<Vec<ImportedLayer>, ImportError>)> = Vec::new();
         for (i, row) in self.imports.iter_mut().enumerate() {
             let Some(job) = &row.job else { continue };
@@ -168,7 +216,12 @@ impl Workspace {
         // Back to front, so indices stay valid while rows are removed.
         for (i, result) in finished.into_iter().rev() {
             let batch = self.imports[i].batch;
+            // A × clicked as the import finished still wins: nothing is added.
+            let canceled = self.imports[i].job.as_ref().is_some_and(|j| j.ticket.is_canceled());
             match result {
+                Ok(_) if canceled => {
+                    self.imports.remove(i);
+                }
                 Ok(layers) => {
                     self.imports.remove(i);
                     changed |= self.add_imported(layers, batch);
@@ -287,6 +340,7 @@ impl Workspace {
         seconds: Option<f64>,
     ) -> Result<(), String> {
         let Some(layer) = self.doc.layer(id).cloned() else { return Err("That layer is gone.".into()) };
+        self.not_busy(id, &layer.display_name)?;
         let was_question = layer
             .profile
             .assumptions
@@ -304,14 +358,8 @@ impl Workspace {
                 if data.raw.is_none() {
                     return self.record(id, kind, subject, choice, label);
                 }
-                let mut new = lm_jobs::import::relocate_csv(&data, &choice).map_err(|e| e.to_string())?;
-                new.profile.data_rev = layer.profile.data_rev + 1;
-                self.data.insert((id, new.profile.data_rev), Arc::new(new.clone()));
-                let tx = self.doc.set_profile_tx(id, new.profile).map(|mut t| {
-                    t.label = label;
-                    t
-                });
-                self.commit(tx);
+                let wake = self.wake.clone();
+                self.spawn_edit(id, label, false, wake, move || lm_jobs::import::relocate_csv(&data, &choice).map_err(|e| e.to_string()));
                 Ok(())
             }
             AssumptionKind::ChinaOffsetPossible | AssumptionKind::ChinaOffsetNamed if matches!(choice.id.as_str(), "gcj02" | "bd09") => {
@@ -319,11 +367,38 @@ impl Workspace {
             }
             AssumptionKind::ExcelSheet if choice.id.starts_with("sheet:") => {
                 let data = self.data(id).cloned().ok_or("This layer's data isn't loaded.")?;
-                let mut new = lm_jobs::import::choose_sheet(&data, &choice).map_err(|e| e.to_string())?;
-                new.profile.data_rev = layer.profile.data_rev + 1;
-                self.data.insert((id, new.profile.data_rev), Arc::new(new.clone()));
-                let tx = self.doc.set_profile_tx(id, new.profile).map(|mut t| {
-                    t.label = format!("Open another sheet of {}", layer.display_name);
+                let wake = self.wake.clone();
+                self.spawn_edit(id, format!("Open another sheet of {}", layer.display_name), true, wake, move || {
+                    lm_jobs::import::choose_sheet(&data, &choice).map_err(|e| e.to_string())
+                });
+                Ok(())
+            }
+            AssumptionKind::RasterNoData | AssumptionKind::RasterKelvin | AssumptionKind::LandsatScale => {
+                let data = self.data(id).cloned().ok_or("This layer's data isn't loaded.")?;
+                let wake = self.wake.clone();
+                self.spawn_edit(id, label, false, wake, move || {
+                    lm_jobs::import::rechoose_raster(&data, kind, &subject, &choice).map_err(|e| e.to_string())
+                });
+                Ok(())
+            }
+            AssumptionKind::ShapefileGbk if matches!(choice.id.as_str(), "gbk" | "utf8" | "windows1252") => {
+                let data = self.data(id).cloned().ok_or("This layer's data isn't loaded.")?;
+                let wake = self.wake.clone();
+                self.spawn_edit(id, label, false, wake, move || {
+                    lm_jobs::import::reread_encoding(&data, &choice).map_err(|e| e.to_string())
+                });
+                Ok(())
+            }
+            // "Choose where it should be…": the question card comes back.
+            AssumptionKind::NoCrsProjected if choice.id == "find_place" => {
+                let mut profile = layer.profile.clone();
+                for a in profile.assumptions.iter_mut().filter(|a| a.kind == kind) {
+                    a.treatment = lm_core::model::Treatment::Question;
+                    a.confirmed_by_user = false;
+                    a.line = "Where should this data be?".into();
+                }
+                let tx = self.doc.set_profile_tx(id, profile).map(|mut t| {
+                    t.label = format!("Place {} again", layer.display_name);
                     t
                 });
                 self.commit(tx);
@@ -333,32 +408,192 @@ impl Workspace {
         }
     }
 
+    /// Runs `work` on its own thread; the closure it returns is applied here by `poll`. `layer` is
+    /// the layer it concerns (its row shows the working badge meanwhile).
+    fn spawn_job(&mut self, layer: LayerId, work: impl FnOnce() -> Finish + Send + 'static) {
+        let (tx, rx) = std::sync::mpsc::channel::<Finish>();
+        let wake = self.wake.clone();
+        let spawned = std::thread::Builder::new().name("lm-work".into()).spawn(move || {
+            let f = std::panic::catch_unwind(std::panic::AssertUnwindSafe(work)).unwrap_or_else(|_| {
+                Box::new(|w: &mut Workspace| w.notice = Some("That couldn't be done. Nothing was changed.".into())) as Finish
+            });
+            let _ = tx.send(f);
+            if let Some(w) = wake {
+                w();
+            }
+        });
+        if spawned.is_ok() {
+            self.jobs.push((layer, rx));
+        }
+    }
+
+    fn poll_jobs(&mut self) {
+        let mut done = Vec::new();
+        self.jobs.retain(|(_, rx)| match rx.try_recv() {
+            Ok(f) => {
+                done.push(f);
+                false
+            }
+            Err(std::sync::mpsc::TryRecvError::Empty) => true,
+            Err(std::sync::mpsc::TryRecvError::Disconnected) => false,
+        });
+        for f in done {
+            f(self);
+        }
+    }
+
+    /// Runs a re-read of a layer's data on its own thread; `poll` commits the result.
+    fn spawn_edit(
+        &mut self,
+        id: LayerId,
+        label: String,
+        fit: bool,
+        wake: Option<Arc<dyn Fn() + Send + Sync>>,
+        work: impl FnOnce() -> Result<ImportedLayer, String> + Send + 'static,
+    ) {
+        let base_rev = self.doc.layer(id).map_or(0, |l| l.profile.data_rev);
+        self.next_rev = self.next_rev.max(base_rev) + 1;
+        let rev = self.next_rev;
+        let (tx, rx) = std::sync::mpsc::channel();
+        let spawned = std::thread::Builder::new().name("lm-reread".into()).spawn(move || {
+            let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(work))
+                .unwrap_or_else(|_| Err("The layer couldn't be read again.".into()));
+            let _ = tx.send(r);
+            if let Some(w) = wake {
+                w();
+            }
+        });
+        if spawned.is_ok() {
+            self.pending.push(PendingEdit { id, label, rev, base_rev, fit, rx });
+        }
+    }
+
+    /// Whether a layer is being re-read (its row shows the working badge).
+    pub fn is_busy(&self, id: LayerId) -> bool {
+        self.pending.iter().any(|p| p.id == id) || self.jobs.iter().any(|(l, _)| *l == id)
+    }
+
+    /// Refuses a second change to a layer while the first is still being worked out.
+    fn not_busy(&self, id: LayerId, name: &str) -> Result<(), String> {
+        if self.is_busy(id) { Err(format!("Still reading {name}. Try again in a moment.")) } else { Ok(()) }
+    }
+
+    /// Commits re-reads that have finished. Returns errors to show.
+    fn poll_pending(&mut self) -> Vec<String> {
+        let mut errors = Vec::new();
+        let mut done = Vec::new();
+        for (i, p) in self.pending.iter().enumerate() {
+            match p.rx.try_recv() {
+                Ok(r) => done.push((i, r)),
+                Err(std::sync::mpsc::TryRecvError::Empty) => {}
+                Err(std::sync::mpsc::TryRecvError::Disconnected) => done.push((i, Err("The layer couldn't be read again.".into()))),
+            }
+        }
+        for (i, r) in done.into_iter().rev() {
+            let p = self.pending.remove(i);
+            let current = self.doc.layer(p.id).map(|l| l.profile.data_rev);
+            match r {
+                Ok(_) if current != Some(p.base_rev) => {
+                    errors.push("The layer changed while it was being read again, so that change was not applied.".into());
+                }
+                Ok(mut new) => {
+                    new.profile.data_rev = p.rev;
+                    let fit = new.profile.extent_wgs84.filter(|_| p.fit);
+                    self.data.insert((p.id, p.rev), Arc::new(new.clone()));
+                    let tx = self.doc.set_profile_tx(p.id, new.profile).map(|mut t| {
+                        t.label = p.label.clone();
+                        t
+                    });
+                    if self.commit(tx) && fit.is_some() {
+                        self.fit = fit;
+                    }
+                }
+                Err(e) => errors.push(e),
+            }
+        }
+        errors
+    }
+
+    /// Blocks until every re-read has finished (tests, and before saving).
+    pub fn wait_pending(&mut self) {
+        while !self.pending.is_empty() || !self.jobs.is_empty() {
+            for e in self.poll_pending() {
+                self.notice = Some(e);
+            }
+            self.poll_jobs();
+            std::thread::sleep(std::time::Duration::from_millis(2));
+        }
+    }
+
     /// Records a changed choice (and marks it confirmed) without re-reading data.
     fn record(&mut self, id: LayerId, kind: AssumptionKind, subject: Subject, choice: Choice, label: String) -> Result<(), String> {
-        let tx = self.doc.set_assumption_tx(id, kind, subject, choice).map(|mut t| {
+        let Some(layer) = self.doc.layer(id).cloned() else { return Err("That layer is gone.".into()) };
+        // The line must say what is now in effect.
+        let mut profile = layer.profile.clone();
+        let mut found = false;
+        for a in profile.assumptions.iter_mut().filter(|a| a.kind == kind && a.subject == subject) {
+            a.line = line_for(kind, &choice).unwrap_or_else(|| a.line.clone());
+            a.chosen = choice.clone();
+            a.confirmed_by_user = true;
+            found = true;
+        }
+        if !found {
+            return Err("That assumption couldn't be changed.".into());
+        }
+        let tx = self.doc.set_profile_tx(id, profile).map(|mut t| {
             t.label = label;
             t
         });
         if self.commit(tx) { Ok(()) } else { Err("That assumption couldn't be changed.".into()) }
     }
 
-    /// Converts a layer's points from GCJ-02 or BD-09 to GPS coordinates as a new layer beside it;
-    /// the original is hidden in the same step, and the source file is untouched (WP2.5).
+    /// Converts a layer's points from GCJ-02 or BD-09 to GPS coordinates as a new layer beside it
+    /// (WP2.5). The conversion runs off the interface thread; then, in one undo step, the GPS
+    /// layer is added, the original hidden, and the original's question closed. The source file is
+    /// untouched.
     fn convert_offset(&mut self, id: LayerId, choice: &Choice, kind: AssumptionKind, subject: Subject) -> Result<(), String> {
         let data = self.data(id).cloned().ok_or("This layer's data isn't loaded.")?;
-        let LayerData::Vector(ds) = &data.data else { return Err("Only points, lines and areas can be converted.".into()) };
-        let converted = lm_jobs::import::convert_offset(ds, choice.id == "bd09").map_err(|e| e.to_string())?;
-        let Some(orig) = self.doc.layer(id).cloned() else { return Err("That layer is gone.".into()) };
+        if !matches!(data.data, LayerData::Vector(_)) {
+            return Err("Only points, lines and areas can be converted.".into());
+        }
+        let base_rev = self.doc.layer(id).map_or(0, |l| l.profile.data_rev);
+        let choice = choice.clone();
+        self.spawn_job(id, move || {
+            let LayerData::Vector(ds) = &data.data else { return Box::new(|_: &mut Workspace| {}) };
+            match lm_jobs::import::convert_offset(ds, choice.id == "bd09") {
+                Ok((mut converted, recipe)) => {
+                    converted.source = None;
+                    Box::new(move |w: &mut Workspace| w.finish_convert(id, base_rev, choice, kind, subject, converted, recipe))
+                }
+                Err(e) => Box::new(move |w: &mut Workspace| w.notice = Some(e.to_string())),
+            }
+        });
+        Ok(())
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn finish_convert(
+        &mut self,
+        id: LayerId,
+        base_rev: u32,
+        choice: Choice,
+        kind: AssumptionKind,
+        subject: Subject,
+        ds: lm_jobs::import::Dataset,
+        recipe: String,
+    ) {
+        let Some(orig) = self.doc.layer(id).cloned().filter(|l| l.profile.data_rev == base_rev) else {
+            self.notice = Some("The layer changed while it was being converted, so nothing was added.".into());
+            return;
+        };
         let mut profile = orig.profile.clone();
-        profile.crs = lm_core::model::Known::certain(Crs::Wgs84, converted.1.clone());
-        profile.notices.push(converted.1.clone());
+        profile.crs = lm_core::model::Known::certain(Crs::Wgs84, recipe.clone());
+        profile.notices.push(recipe);
         for a in profile.assumptions.iter_mut().filter(|a| a.kind == kind && a.subject == subject) {
             a.chosen = choice.clone();
             a.confirmed_by_user = true;
         }
         profile.data_rev = 0;
-        let mut ds = converted.0;
-        ds.source = None;
         let e = ds.extent();
         profile.extent_wgs84 = e.min_x.is_finite().then_some(Extent { min_x: e.min_x, min_y: e.min_y, max_x: e.max_x, max_y: e.max_y });
         let mut add = self.doc.add_layer_tx(profile.clone());
@@ -368,7 +603,7 @@ impl Workspace {
             l.style = orig.style.clone();
             new_id = Some(l.id);
         }
-        let Some(new_id) = new_id else { return Err("The converted layer couldn't be added.".into()) };
+        let Some(new_id) = new_id else { return };
         self.data.insert(
             (new_id, 0),
             Arc::new(ImportedLayer {
@@ -383,12 +618,15 @@ impl Workspace {
         if let Some(hide) = self.doc.set_visible_tx(id, false) {
             ops.extend(hide.ops);
         }
+        // The original's question is answered by this conversion too.
+        if let Some(answer) = self.doc.set_assumption_tx(id, kind, subject, choice) {
+            ops.extend(answer.ops);
+        }
         let tx = Transaction::new(format!("Convert {} to GPS coordinates", orig.display_name), ops);
         if self.commit(Some(tx)) {
             self.selected = Some(new_id);
-            Ok(())
         } else {
-            Err("The converted layer couldn't be added.".into())
+            self.notice = Some("The converted layer couldn't be added.".into());
         }
     }
 
@@ -402,32 +640,27 @@ impl Workspace {
     pub fn place_layer(&mut self, id: LayerId, epsg: u16, seconds: Option<f64>) -> Result<(), String> {
         let data = self.data(id).cloned().ok_or("This layer's data isn't loaded.")?;
         let Some(layer) = self.doc.layer(id).cloned() else { return Err("That layer is gone.".into()) };
-        let mut new = lm_jobs::import::reproject(&data, u32::from(epsg)).map_err(|e| e.to_string())?;
-        new.profile.data_rev = layer.profile.data_rev + 1;
-        if let Some(secs) = seconds
-            && let Some(a) = new.profile.assumptions.iter().find(|a| a.kind == AssumptionKind::NoCrsProjected)
-        {
-            self.answers.push(QuestionAnswer { kind: a.kind, answer: a.chosen.clone(), seconds: secs });
+        self.not_busy(id, &layer.display_name)?;
+        if let Some(secs) = seconds {
+            let name = lm_jobs::import::crs_name(epsg);
+            self.answers.push(QuestionAnswer {
+                kind: AssumptionKind::NoCrsProjected,
+                answer: Choice::new(format!("epsg:{epsg}"), name),
+                seconds: secs,
+            });
         }
-        self.data.insert((id, new.profile.data_rev), Arc::new(new.clone()));
-        let fit = new.profile.extent_wgs84;
-        let tx = self.doc.set_profile_tx(id, new.profile).map(|mut t| {
-            t.label = format!("Place {}", layer.display_name);
-            t
+        let wake = self.wake.clone();
+        self.spawn_edit(id, format!("Place {}", layer.display_name), true, wake, move || {
+            lm_jobs::import::reproject(&data, u32::from(epsg)).map_err(|e| e.to_string())
         });
-        if self.commit(tx) {
-            self.fit = fit;
-            Ok(())
-        } else {
-            Err("The layer couldn't be placed.".into())
-        }
+        Ok(())
     }
 
     /// Starts comparing a layer's points with the same points converted from GCJ-02 (or BD-09).
+    /// The conversion and the map layer are built off the interface thread.
     pub fn start_compare(&mut self, id: LayerId, from_bd09: bool) -> Result<(), String> {
         let data = self.data(id).cloned().ok_or("This layer's data isn't loaded.")?;
         let LayerData::Vector(ds) = &data.data else { return Err("Only points, lines and areas can be compared.".into()) };
-        let (converted, recipe) = lm_jobs::import::convert_offset(ds, from_bd09).map_err(|e| e.to_string())?;
         let mut focus = None;
         if let Some(g) = ds.features.iter().find_map(|f| f.geometry.as_ref()) {
             g.for_each_coord(|c| {
@@ -437,22 +670,40 @@ impl Workspace {
             });
         }
         let focus = focus.ok_or("This layer has nothing to compare.")?;
-        let mut profile = data.profile.clone();
-        profile.notices = vec![recipe];
-        let preview = ImportedLayer {
-            name: format!("{} (converted)", data.name),
-            profile,
-            data: LayerData::Vector(Arc::new(converted)),
-            status: ImportStatus::Complete,
-            raw: None,
-        };
-        self.compare = Some(Compare { layer: id, from_bd09, data: Arc::new(preview), focus });
+        self.compare = Some(Compare { layer: id, from_bd09, map_pair: None, focus });
+        self.spawn_job(id, move || {
+            let LayerData::Vector(ds) = &data.data else { return Box::new(|_: &mut Workspace| {}) };
+            match lm_jobs::import::convert_offset(ds, from_bd09) {
+                Ok((converted, recipe)) => {
+                    let mut profile = data.profile.clone();
+                    profile.notices = vec![recipe];
+                    let preview = ImportedLayer {
+                        name: format!("{} (converted)", data.name),
+                        profile,
+                        data: LayerData::Vector(Arc::new(converted)),
+                        status: ImportStatus::Complete,
+                        raw: None,
+                    };
+                    let a = map_layer(COMPARE_MAP_ID, &preview);
+                    let b = a.clone();
+                    Box::new(move |w: &mut Workspace| {
+                        if let Some(c) = w.compare.as_mut().filter(|c| c.layer == id && c.from_bd09 == from_bd09) {
+                            c.map_pair = Some((a, b));
+                        }
+                    })
+                }
+                Err(e) => Box::new(move |w: &mut Workspace| {
+                    w.compare = None;
+                    w.notice = Some(e.to_string());
+                }),
+            }
+        });
         Ok(())
     }
 
     /// Ends the Compare view: keep the converted points (a new GPS layer), keep the points as
     /// they are (the assumption is confirmed), or just close it.
-    pub fn end_compare(&mut self, keep: Option<bool>) -> Result<(), String> {
+    pub fn end_compare(&mut self, keep: Option<bool>, seconds: Option<f64>) -> Result<(), String> {
         let Some(c) = self.compare.take() else { return Ok(()) };
         let Some(a) = self.doc.layer(c.layer).and_then(|l| {
             l.profile
@@ -471,7 +722,7 @@ impl Workspace {
                     .find(|x| x.id == if c.from_bd09 { "bd09" } else { "gcj02" })
                     .cloned()
                     .unwrap_or_else(|| Choice::new("gcj02", "Amap/Tencent coordinates (GCJ-02): convert"));
-                self.change_assumption(c.layer, a.kind, a.subject, choice, None)
+                self.change_assumption(c.layer, a.kind, a.subject, choice, seconds)
             }
             Some(false) => {
                 let choice = a
@@ -480,9 +731,79 @@ impl Workspace {
                     .find(|x| x.id == "wgs84")
                     .cloned()
                     .unwrap_or_else(|| Choice::new("wgs84", "GPS coordinates (WGS 84): keep where they are"));
-                self.change_assumption(c.layer, a.kind, a.subject, choice, None)
+                self.change_assumption(c.layer, a.kind, a.subject, choice, seconds)
             }
             None => Ok(()),
+        }
+    }
+
+    /// Reopens a saved document as it was saved (names, styles, order, visibility, answers,
+    /// placements, conversions). Each source file is read once, off the interface thread, and each
+    /// layer's data is derived again from it by the choices the document records. A file that is
+    /// missing or has changed is said in a notice.
+    pub fn restore(&mut self, doc: Document) {
+        let mut by_path: Vec<(String, Vec<lm_core::document::DocLayer>)> = Vec::new();
+        for l in &doc.layers {
+            match by_path.iter_mut().find(|(p, _)| *p == l.profile.source.path) {
+                Some((_, v)) => v.push(l.clone()),
+                None => by_path.push((l.profile.source.path.clone(), vec![l.clone()])),
+            }
+        }
+        self.next_rev = doc.layers.iter().map(|l| l.profile.data_rev).max().unwrap_or(0);
+        self.doc = doc;
+        self.undo = UndoStack::new();
+        self.selected = None;
+        for (path, layers) in by_path {
+            let Some(first) = layers.first().map(|l| l.id) else { continue };
+            let state = lm_doc::check_source(&layers[0].profile.source);
+            self.spawn_job(first, move || {
+                let file = layers[0].profile.source.file_name().to_string();
+                let mut notes = Vec::new();
+                let mut out = Vec::new();
+                match state {
+                    lm_doc::SourceState::Missing => {
+                        let folder = std::path::Path::new(&path)
+                            .parent()
+                            .and_then(|p| p.file_name())
+                            .and_then(|n| n.to_str())
+                            .unwrap_or("its folder")
+                            .to_string();
+                        notes.push(format!("Can't find {file}. It was last seen in {folder}."));
+                    }
+                    other => {
+                        if other == lm_doc::SourceState::Changed {
+                            notes.push(format!("{file} has changed since this document was saved; it was read as it is now."));
+                        }
+                        match lm_jobs::import::import_path(std::path::Path::new(&path), &lm_jobs::import::Ctx::detached(Default::default()))
+                        {
+                            Err(e) => notes.push(e.to_string()),
+                            Ok(read) => {
+                                for dl in layers {
+                                    let base =
+                                        read.iter().find(|r| r.profile.source.member == dl.profile.source.member).or_else(|| read.first());
+                                    let Some(base) = base else { continue };
+                                    match derive_saved(base, &dl) {
+                                        Ok(mut layer) => {
+                                            layer.name = dl.display_name.clone();
+                                            layer.profile = dl.profile.clone();
+                                            out.push((dl.id, dl.profile.data_rev, layer));
+                                        }
+                                        Err(e) => notes.push(format!("{}: {e}", dl.display_name)),
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                Box::new(move |w: &mut Workspace| {
+                    for (id, rev, layer) in out {
+                        w.data.insert((id, rev), Arc::new(layer));
+                    }
+                    if let Some(n) = notes.into_iter().next() {
+                        w.notice = Some(n);
+                    }
+                })
+            });
         }
     }
 
@@ -503,30 +824,45 @@ impl Workspace {
             view.edit_map(move |m: &mut Map| m.layers.retain(|l| !stale.contains(&l.id)));
             self.synced.retain(|s| wanted.contains(&(s.id, s.rev)));
         }
-        // Add what's new.
+        // Add what's new: map layers are built in both copies off the interface thread, then
+        // handed to the map without copying here.
         for (id, rev) in &wanted {
-            if self.synced.iter().any(|s| s.id == *id && s.rev == *rev) {
+            if self.synced.iter().any(|s| s.id == *id && s.rev == *rev) || self.building.contains(&(*id, *rev)) {
                 continue;
             }
             let Some(data) = self.data.get(&(*id, *rev)).cloned() else { continue };
-            let map_id = MAP_ID_BASE + (id.0 as u32).wrapping_mul(64).wrapping_add(rev % 64);
-            let layer = map_layer(map_id, &data);
-            view.edit_map(move |m: &mut Map| {
-                m.layers.retain(|l| l.id != map_id);
-                m.layers.push(layer.clone());
+            self.next_map_id += 1;
+            let map_id = MAP_ID_BASE + self.next_map_id;
+            let (id, rev) = (*id, *rev);
+            self.building.push((id, rev));
+            self.spawn_job(id, move || {
+                let for_view = map_layer(map_id, &data);
+                let for_render = for_view.clone();
+                Box::new(move |w: &mut Workspace| {
+                    w.building.retain(|b| *b != (id, rev));
+                    w.ready.push(ReadyLayer { id, rev, map_id, for_view, for_render });
+                })
             });
-            self.synced.push(Synced { id: *id, map_id, rev: *rev });
+        }
+        for r in std::mem::take(&mut self.ready) {
+            if !wanted.contains(&(r.id, r.rev)) || self.synced.iter().any(|s| s.id == r.id && s.rev == r.rev) {
+                continue;
+            }
+            view.add_layer_pair(r.for_view, r.for_render);
+            self.synced.push(Synced { id: r.id, map_id: r.map_id, rev: r.rev });
+            self.order_key.clear();
         }
         // The Compare view's converted points.
-        let want_compare = self.compare.as_ref().map(|c| (c.layer, c.from_bd09));
+        let want_compare = self
+            .compare
+            .as_ref()
+            .filter(|c| c.map_pair.is_some() || self.compare_synced == Some((c.layer, c.from_bd09)))
+            .map(|c| (c.layer, c.from_bd09));
         if want_compare != self.compare_synced {
-            let layer = self.compare.as_ref().map(|c| map_layer(COMPARE_MAP_ID, &c.data));
-            view.edit_map(move |m: &mut Map| {
-                m.layers.retain(|l| l.id != COMPARE_MAP_ID);
-                if let Some(l) = &layer {
-                    m.layers.insert(0, l.clone());
-                }
-            });
+            view.edit_map(move |m: &mut Map| m.layers.retain(|l| l.id != COMPARE_MAP_ID));
+            if let Some((a, b)) = self.compare.as_mut().and_then(|c| c.map_pair.take()) {
+                view.add_layer_pair(a, b);
+            }
             self.compare_synced = want_compare;
             self.order_key.clear();
         }
@@ -588,6 +924,54 @@ fn compare_style() -> Style {
     let mut s = Style::for_kind(LayerKind::Points, [0xD5, 0x5E, 0x00, 0xFF], 0);
     s.point_size = 9.0;
     s
+}
+
+/// The line for a choice that changes how values are read but not the data itself.
+fn line_for(kind: AssumptionKind, choice: &Choice) -> Option<String> {
+    Some(match (kind, choice.id.as_str()) {
+        (AssumptionKind::RasterCellMeaning, "measured") => "Treated as measured values (averaged, not summed).".into(),
+        (AssumptionKind::RasterCellMeaning, "total") => "Treated as totals per cell (summed).".into(),
+        (AssumptionKind::RasterCellMeaning, "category") => "Treated as categories (shares, not averages).".into(),
+        (AssumptionKind::RasterCellMeaning, "not_sure") => {
+            "Treated as measured values because the meaning is unconfirmed. Totals are hidden.".into()
+        }
+        (AssumptionKind::ChinaOffsetPossible | AssumptionKind::ChinaOffsetNamed, "wgs84") => {
+            "Kept as GPS coordinates (WGS 84), as you chose.".into()
+        }
+        (AssumptionKind::ChinaOffsetPossible | AssumptionKind::ChinaOffsetNamed, "not_sure") => {
+            "Points left where they are; they may sit a few hundred meters off if they came from a Chinese map app.".into()
+        }
+        (AssumptionKind::RasterNoUnit, _) => format!("Unit: {}.", choice.label),
+        (_, "not_sure") => format!("Left as it is: {}.", choice.label.to_lowercase()),
+        _ => format!("{}.", choice.label.trim_end_matches('.')),
+    })
+}
+
+/// A saved layer's data derived again from a fresh read of its source, by the choices the
+/// document records: another Excel sheet, other coordinate columns, a chosen coordinate system,
+/// a GCJ-02/BD-09 conversion.
+fn derive_saved(base: &ImportedLayer, saved: &lm_core::document::DocLayer) -> Result<ImportedLayer, String> {
+    let chosen =
+        |k: AssumptionKind| saved.profile.assumptions.iter().find(|a| a.kind == k && a.confirmed_by_user).map(|a| a.chosen.clone());
+    let mut layer = base.clone();
+    if let Some(c) = chosen(AssumptionKind::ExcelSheet).filter(|c| c.id.starts_with("sheet:")) {
+        layer = lm_jobs::import::choose_sheet(&layer, &c).map_err(|e| e.to_string())?;
+    }
+    for k in [AssumptionKind::CsvCoordinateColumns, AssumptionKind::CsvAmbiguousColumns] {
+        if let Some(c) = chosen(k).filter(|c| layer.raw.is_some() && (c.id.starts_with("columns:") || c.id == "not_sure")) {
+            layer = lm_jobs::import::relocate_csv(&layer, &c).map_err(|e| e.to_string())?;
+        }
+    }
+    if let Some(epsg) = chosen(AssumptionKind::NoCrsProjected).and_then(|c| c.id.strip_prefix("epsg:").and_then(|n| n.parse::<u32>().ok()))
+    {
+        layer = lm_jobs::import::reproject(&layer, epsg).map_err(|e| e.to_string())?;
+    }
+    if let Some(note) = saved.profile.notices.iter().find(|n| n.starts_with("Converted from ")) {
+        let LayerData::Vector(ds) = &layer.data else { return Err("only points, lines and areas can be converted".into()) };
+        let (converted, _) = lm_jobs::import::convert_offset(ds, note.contains("BD-09")).map_err(|e| e.to_string())?;
+        layer.data = LayerData::Vector(Arc::new(converted));
+    }
+    Ok(layer)
 }
 
 /// Whether a layer can be drawn: located in GPS coordinates (or a raster with an extent).
@@ -689,6 +1073,7 @@ mod tests {
         let q = w.doc.layers[0].profile.open_questions().next().unwrap().clone();
         let pick = q.alternatives.iter().find(|c| c.id.starts_with("columns:")).unwrap().clone();
         w.change_assumption(id, q.kind, q.subject.clone(), pick, Some(3.0)).unwrap();
+        w.wait_pending();
         assert!(w.doc.layers[0].profile.open_questions().next().is_none());
         assert_eq!(w.answers.len(), 1, "logged for the question budget");
         assert_eq!(w.data(id).unwrap().profile.data_rev, 1);
@@ -704,6 +1089,9 @@ mod tests {
         let id = w.doc.layers[0].id;
         let a = w.doc.layers[0].profile.assumptions.iter().find(|a| a.kind == AssumptionKind::ChinaOffsetNamed).unwrap().clone();
         w.change_assumption(id, a.kind, a.subject.clone(), Choice::new("gcj02", "Amap (GCJ-02)"), Some(2.0)).unwrap();
+        w.wait_pending();
+        let orig = w.doc.layer(id).unwrap();
+        assert!(orig.profile.open_questions().next().is_none(), "the original's question is closed too");
         assert_eq!(w.doc.layers.len(), 2);
         assert!(!w.doc.layer(id).unwrap().visible);
         let new = w.doc.layers.iter().find(|l| l.id != id).unwrap();
@@ -726,13 +1114,16 @@ mod compare_tests {
         w.add_imported(layers, 1);
         let id = w.doc.layers[0].id;
         w.start_compare(id, false).unwrap();
-        assert!(w.compare.is_some());
-        w.end_compare(Some(false)).unwrap();
+        w.wait_pending();
+        assert!(w.compare.as_ref().is_some_and(|c| c.map_pair.is_some()));
+        w.end_compare(Some(false), None).unwrap();
         assert_eq!(w.doc.layers.len(), 1, "kept as is");
         let a = w.doc.layers[0].profile.assumptions.iter().find(|a| a.kind == AssumptionKind::ChinaOffsetPossible).unwrap();
         assert!(a.confirmed_by_user);
         w.start_compare(id, false).unwrap();
-        w.end_compare(Some(true)).unwrap();
+        w.wait_pending();
+        w.end_compare(Some(true), None).unwrap();
+        w.wait_pending();
         assert_eq!(w.doc.layers.len(), 2, "a converted GPS layer");
     }
 }
@@ -753,8 +1144,94 @@ mod sheet_tests {
         let a = sheet(&w);
         let other = a.alternatives.iter().find(|c| c.id.starts_with("sheet:") && c.id != a.chosen.id).unwrap().clone();
         w.change_assumption(id, a.kind, a.subject.clone(), other.clone(), None).unwrap();
+        w.wait_pending();
         assert_eq!(sheet(&w).chosen.id, other.id);
         w.undo();
         assert_eq!(sheet(&w).chosen.id, a.chosen.id);
+    }
+}
+
+#[cfg(test)]
+mod race_tests {
+    use super::*;
+
+    /// Review finding (S1): two quick changes must not leave the document saying one thing and
+    /// the data another. A second change while the first re-read runs is refused.
+    #[test]
+    fn a_second_change_waits_for_the_first() {
+        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/T2/deliveries.csv");
+        let layers = lm_jobs::import::import_path(&path, &lm_jobs::import::Ctx::detached(Default::default())).unwrap();
+        let mut w = Workspace::default();
+        w.add_imported(layers, 1);
+        let id = w.doc.layers[0].id;
+        let q = w.doc.layers[0].profile.open_questions().next().unwrap().clone();
+        let picks: Vec<Choice> = q.alternatives.iter().filter(|c| c.id.starts_with("columns:")).cloned().collect();
+        assert!(picks.len() >= 2);
+        w.change_assumption(id, q.kind, q.subject.clone(), picks[0].clone(), None).unwrap();
+        let second = w.change_assumption(id, q.kind, q.subject.clone(), picks[1].clone(), None);
+        assert!(second.is_err(), "refused while the first re-read runs");
+        w.wait_pending();
+        let l = w.doc.layer(id).unwrap();
+        let chosen = l.profile.assumptions.iter().find(|a| a.kind == q.kind).unwrap().chosen.id.clone();
+        assert_eq!(chosen, picks[0].id);
+        assert_eq!(w.data(id).unwrap().profile.data_rev, l.profile.data_rev, "document and data agree");
+    }
+}
+
+#[cfg(test)]
+mod restore_tests {
+    use super::*;
+
+    /// Review finding (S1): reopening a saved document must restore it as saved.
+    #[test]
+    fn a_saved_document_reopens_as_saved() {
+        let fx = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../fixtures");
+        let open = |f: &str| lm_jobs::import::import_path(&fx.join(f), &lm_jobs::import::Ctx::detached(Default::default())).unwrap();
+        let mut w = Workspace::default();
+        w.add_imported(open("T2/deliveries.csv"), 1);
+        w.add_imported(open("C1/amap_pois.csv"), 2);
+        w.add_imported(open("V4/districts_gk.shp"), 3);
+        w.add_imported(open("V2/mixed.geojson"), 4);
+        let id_of = |w: &Workspace, name: &str| w.doc.layers.iter().find(|l| l.display_name == name).unwrap().id;
+        // Answer T2's question, convert C1, place V4, rename and hide one layer.
+        let t2 = id_of(&w, "deliveries");
+        let q = w.doc.layer(t2).unwrap().profile.open_questions().next().unwrap().clone();
+        let pick = q.alternatives.iter().find(|c| c.id.starts_with("columns:")).unwrap().clone();
+        w.change_assumption(t2, q.kind, q.subject, pick, None).unwrap();
+        let c1 = id_of(&w, "amap_pois");
+        let a = w.doc.layer(c1).unwrap().profile.assumptions.iter().find(|a| a.kind == AssumptionKind::ChinaOffsetNamed).unwrap().clone();
+        w.change_assumption(c1, a.kind, a.subject, Choice::new("gcj02", "Amap"), None).unwrap();
+        w.wait_pending();
+        let v4 = id_of(&w, "districts_gk");
+        w.place_layer(v4, 4549, None).unwrap();
+        w.wait_pending();
+        let tx = w.doc.rename_tx(t2, "my deliveries");
+        w.commit(tx);
+        let saved = w.doc.clone();
+        let dir = std::env::temp_dir().join(format!("lm-restore-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        lm_doc::save(&saved, &dir).unwrap();
+        let loaded = lm_doc::load(&dir).unwrap();
+        let _ = std::fs::remove_dir_all(&dir);
+
+        let mut r = Workspace::default();
+        r.restore(loaded);
+        r.wait_pending();
+        assert_eq!(r.doc.layers.len(), saved.layers.len(), "no layer duplicated");
+        for (a, b) in r.doc.layers.iter().zip(&saved.layers) {
+            assert_eq!((a.id, &a.display_name, a.visible), (b.id, &b.display_name, b.visible));
+            let d = r.data(a.id).unwrap_or_else(|| panic!("{} has no data", a.display_name));
+            let orig = w.data(b.id).unwrap();
+            let (LayerData::Vector(x), LayerData::Vector(y)) = (&d.data, &orig.data) else { continue };
+            assert_eq!(x.features.len(), y.features.len(), "{}", a.display_name);
+            let first = |ds: &lm_jobs::import::Dataset| ds.features.iter().find_map(|f| f.geometry.as_ref().map(|g| g.extent()));
+            let (ex, ey) = (first(x).unwrap(), first(y).unwrap());
+            assert!(
+                (ex.min_x - ey.min_x).abs() < 1e-9 && (ex.min_y - ey.min_y).abs() < 1e-9,
+                "{} lands where it was saved",
+                a.display_name
+            );
+        }
+        assert!(r.doc.layers.iter().any(|l| l.display_name == "my deliveries"));
     }
 }
