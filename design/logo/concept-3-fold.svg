@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <title>LayeredMap - Fold</title>
+  <defs>
+    <path id="sq" d="M924 512 L923.8 629.7 L923.4 667.2 L922.6 694.5 L921.5 716.5 L920.1 735.4 L918.3 751.9 L916.3 766.8 L913.9 780.2 L911.2 792.6 L908.1 803.9 L904.7 814.5 L901 824.2 L896.9 833.4 L892.4 841.9 L887.6 849.8 L882.3 857.2 L876.7 864.2 L870.7 870.7 L864.2 876.7 L857.2 882.3 L849.8 887.6 L841.9 892.4 L833.4 896.9 L824.2 901 L814.5 904.7 L803.9 908.1 L792.6 911.2 L780.2 913.9 L766.8 916.3 L751.9 918.3 L735.4 920.1 L716.5 921.5 L694.5 922.6 L667.2 923.4 L629.7 923.8 L512 924 L394.3 923.8 L356.8 923.4 L329.5 922.6 L307.5 921.5 L288.6 920.1 L272.1 918.3 L257.2 916.3 L243.8 913.9 L231.4 911.2 L220.1 908.1 L209.5 904.7 L199.8 901 L190.6 896.9 L182.1 892.4 L174.2 887.6 L166.8 882.3 L159.8 876.7 L153.3 870.7 L147.3 864.2 L141.7 857.2 L136.4 849.8 L131.6 841.9 L127.1 833.4 L123 824.2 L119.3 814.5 L115.9 803.9 L112.8 792.6 L110.1 780.2 L107.7 766.8 L105.7 751.9 L103.9 735.4 L102.5 716.5 L101.4 694.5 L100.6 667.2 L100.2 629.7 L100 512 L100.2 394.3 L100.6 356.8 L101.4 329.5 L102.5 307.5 L103.9 288.6 L105.7 272.1 L107.7 257.2 L110.1 243.8 L112.8 231.4 L115.9 220.1 L119.3 209.5 L123 199.8 L127.1 190.6 L131.6 182.1 L136.4 174.2 L141.7 166.8 L147.3 159.8 L153.3 153.3 L159.8 147.3 L166.8 141.7 L174.2 136.4 L182.1 131.6 L190.6 127.1 L199.8 123 L209.5 119.3 L220.1 115.9 L231.4 112.8 L243.8 110.1 L257.2 107.7 L272.1 105.7 L288.6 103.9 L307.5 102.5 L329.5 101.4 L356.8 100.6 L394.3 100.2 L512 100 L629.7 100.2 L667.2 100.6 L694.5 101.4 L716.5 102.5 L735.4 103.9 L751.9 105.7 L766.8 107.7 L780.2 110.1 L792.6 112.8 L803.9 115.9 L814.5 119.3 L824.2 123 L833.4 127.1 L841.9 131.6 L849.8 136.4 L857.2 141.7 L864.2 147.3 L870.7 153.3 L876.7 159.8 L882.3 166.8 L887.6 174.2 L892.4 182.1 L896.9 190.6 L901 199.8 L904.7 209.5 L908.1 220.1 L911.2 231.4 L913.9 243.8 L916.3 257.2 L918.3 272.1 L920.1 288.6 L921.5 307.5 L922.6 329.5 L923.4 356.8 L923.8 394.3 Z"/>
+    <clipPath id="body"><use href="#sq"/></clipPath>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F8FAFC"/><stop offset="1" stop-color="#E6ECF3"/></linearGradient>
+    <clipPath id="pc"><rect width="226" height="452"/></clipPath>
+    <linearGradient id="shadeL" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000000"/><stop offset="1" stop-color="#000000"/></linearGradient>
+
+  </defs>
+  <!-- container: macOS squircle, 824 px body centred on 1024 canvas -->
+  <use href="#sq" fill="url(#bg)"/>
+  <g clip-path="url(#body)">
+    <!-- panel 1 -->
+    <g transform="matrix(1,-0.21239,0,1,173,310)">
+      <g clip-path="url(#pc)">
+        <rect width="226" height="452" fill="#DCEFDD"/>
+        <g fill="none" stroke="#8CC496" stroke-width="12"><ellipse cx="104" cy="250" rx="96" ry="120"/><ellipse cx="110" cy="262" rx="60" ry="76"/><ellipse cx="116" cy="272" rx="24" ry="32"/></g>
+        <path d="M -10 372 C 150 330, 250 140, 372 214 S 520 330, 608 150" transform="translate(0,0)" fill="none" stroke="#FFFFFF" stroke-width="44" stroke-linecap="round"/>
+        <path d="M -10 372 C 150 330, 250 140, 372 214 S 520 330, 608 150" transform="translate(0,0)" fill="none" stroke="#2563EB" stroke-width="28" stroke-linecap="round"/>
+      </g>
+    </g>
+    <!-- panel 2 -->
+    <g transform="matrix(1,0.21239,0,1,399,262)">
+      <g clip-path="url(#pc)">
+        <rect width="226" height="452" fill="#C6D7F2"/>
+        <polygon points="0,120 120,150 132,300 0,330" fill="#AFC6EE"/><g fill="none" stroke="#FFFFFF" stroke-width="9" stroke-linejoin="round"><polyline points="0,120 120,150 226,110"/><polyline points="120,150 132,300 226,320"/><polyline points="0,330 132,300 110,452"/></g>
+        <path d="M -10 372 C 150 330, 250 140, 372 214 S 520 330, 608 150" transform="translate(-226,0)" fill="none" stroke="#FFFFFF" stroke-width="44" stroke-linecap="round"/>
+        <path d="M -10 372 C 150 330, 250 140, 372 214 S 520 330, 608 150" transform="translate(-226,0)" fill="none" stroke="#2563EB" stroke-width="28" stroke-linecap="round"/>
+        <rect width="226" height="452" fill="#0F172A" fill-opacity="0.1"/>
+      </g>
+    </g>
+    <!-- panel 3 -->
+    <g transform="matrix(1,-0.21239,0,1,625,310)">
+      <g clip-path="url(#pc)">
+        <rect width="226" height="452" fill="#F6EBD2"/>
+        <g fill="#E69F00"><circle cx="186" cy="262" r="20"/><circle cx="150" cy="370" r="20"/><circle cx="70" cy="90" r="20"/></g>
+        <path d="M -10 372 C 150 330, 250 140, 372 214 S 520 330, 608 150" transform="translate(-452,0)" fill="none" stroke="#FFFFFF" stroke-width="44" stroke-linecap="round"/>
+        <path d="M -10 372 C 150 330, 250 140, 372 214 S 520 330, 608 150" transform="translate(-452,0)" fill="none" stroke="#2563EB" stroke-width="28" stroke-linecap="round"/>
+        <circle cx="156" cy="150" r="30" fill="#2563EB"/><circle cx="156" cy="150" r="12" fill="#FFFFFF"/>
+      </g>
+    </g>
+    <line x1="399" y1="262" x2="399" y2="714" stroke="#FFFFFF" stroke-opacity="0.6" stroke-width="3"/>
+    <line x1="625" y1="310" x2="625" y2="762" stroke="#FFFFFF" stroke-opacity="0.6" stroke-width="3"/>
+
+  </g>
+  <use href="#sq" fill="none" stroke="#0F172A" stroke-opacity="0.08" stroke-width="2"/>
+</svg>

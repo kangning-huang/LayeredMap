@@ -1,0 +1,257 @@
+<title>LayeredMap Icon Concepts</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: a quiet specimen sheet. Each concept is one row: big icon, then its Dock-size proofs on light and dark, then the words. */
+:root {
+  --bg: #F4F6F9;
+  --panel: #FFFFFF;
+  --ink: #1B1D21;
+  --muted: #5F6670;
+  --line: #E3E5E8;
+  --accent: #2563EB;
+  --dock-light: #E9EDF2;
+  --dock-dark: #1E1F22;
+  --sans: "Inter", -apple-system, "Helvetica Neue", Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141518; --panel: #1E1F22; --ink: #F1F2F4; --muted: #A9AEB6; --line: #3A3C41; --accent: #5B8DEF;
+    --dock-light: #E9EDF2; --dock-dark: #0E0F11; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141518; --panel: #1E1F22; --ink: #F1F2F4; --muted: #A9AEB6; --line: #3A3C41; --accent: #5B8DEF;
+  --dock-light: #E9EDF2; --dock-dark: #0E0F11; color-scheme: dark;
+}
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 64px;
+}
+main { max-width: 1040px; margin: 0 auto; display: grid; gap: 28px; }
+header { display: grid; gap: 8px; max-width: 68ch; }
+h1 { font-size: 28px; line-height: 1.15; font-weight: 600; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+header p { margin: 0; color: var(--muted); }
+.lineup { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; padding: 16px 20px; background: var(--dock-light); border-radius: 22px; width: fit-content; max-width: 100%; }
+.lineup img { width: 64px; height: 64px; }
+.lineup.dark { background: var(--dock-dark); }
+.docks { display: flex; flex-wrap: wrap; gap: 12px; }
+.concept {
+  display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 28px; align-items: start;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 24px;
+}
+.concept.pick { border-color: var(--accent); }
+h2.part { font-size: 22px; font-weight: 600; margin: 12px 0 0; }
+.partnote { margin: -16px 0 0; color: var(--muted); max-width: 68ch; }
+.big { width: 220px; height: 220px; max-width: 100%; }
+.text { display: grid; gap: 10px; min-width: 0; }
+.name { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; }
+h2 { font-size: 20px; font-weight: 600; margin: 0; }
+.num { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+.tag { font-size: 12px; font-weight: 500; color: var(--accent); border: 1px solid currentColor; border-radius: 999px; padding: 1px 8px; }
+.text p { margin: 0; max-width: 64ch; }
+.label { font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+.proofs { display: flex; flex-wrap: wrap; gap: 10px; }
+.proof { display: flex; align-items: flex-end; gap: 12px; padding: 12px 14px; border-radius: 12px; background: var(--dock-light); }
+.proof.dark { background: var(--dock-dark); }
+.proof img { display: block; }
+.word { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 18px; letter-spacing: -0.01em; }
+.word img { width: 32px; height: 32px; }
+dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 14px; margin: 0; }
+dt { color: var(--muted); }
+dd { margin: 0; }
+footer { color: var(--muted); font-size: 13px; max-width: 68ch; }
+@media (max-width: 640px) {
+  .concept { grid-template-columns: 1fr; }
+  .big { width: 160px; height: 160px; }
+}
+</style>
+
+<main>
+  <header>
+    <h1>LayeredMap icon concepts</h1>
+    <p>App icon directions for LayeredMap. The first round had six concepts; you picked Strata, and the five variations below build on it. Pick one by its name; it can still be refined after you choose.</p>
+  </header>
+
+  <h2 class="part">Strata variations</h2>
+  <p class="partnote">You chose Strata. These five build on it; the designer recommends v2 Link, using v1's simplified artwork at 16 and 32 px.</p>
+  <div class="docks" aria-label="The five variations at Dock size">
+    <div class="lineup"><img src="strata-v1-bold.svg" alt="Strata Bold"><img src="strata-v2-link.svg" alt="Strata Link"><img src="strata-v3-blue.svg" alt="Strata Blue"><img src="strata-v4-cutout.svg" alt="Strata Cutout"><img src="strata-v5-night.svg" alt="Strata Night"></div>
+    <div class="lineup dark"><img src="strata-v1-bold.svg" alt="" data-n=" Bold"><img src="strata-v2-link.svg" alt="" data-n=" Link"><img src="strata-v3-blue.svg" alt="" data-n=" Blue"><img src="strata-v4-cutout.svg" alt="" data-n=" Cutout"><img src="strata-v5-night.svg" alt="" data-n=" Night"></div>
+  </div>
+  <section class="concept">
+    <img class="big" src="strata-v1-bold.svg" alt="Strata Bold">
+    <div class="text">
+      <div class="name"><span class="num">Strata v1</span><h2>Bold</h2></div>
+      <p>Three bigger, plainer sheets with a wider gap. The 16 and 32 px sizes have hand-simplified artwork (16 px is three flat diamonds).</p>
+      <dl><dt>Strength</dt><dd>Clearest at every size.</dd><dt>Weakness</dt><dd>The plainest; loses the points and districts that give Strata its story.</dd></dl>
+      <span class="label">Sizes 64 · 32 · 16 px</span>
+      <div class="proofs">
+        <div class="proof"><img src="strata-v1-bold.svg" width="64" height="64" alt=""><img src="strata-v1-bold-32.svg" width="32" height="32" alt=""><img src="strata-v1-bold-16.svg" width="16" height="16" alt=""></div>
+        <div class="proof dark"><img src="strata-v1-bold.svg" width="64" height="64" alt=""><img src="strata-v1-bold-32.svg" width="32" height="32" alt=""><img src="strata-v1-bold-16.svg" width="16" height="16" alt=""></div>
+        <div class="proof"><span class="word"><img src="strata-v1-bold.svg" alt="">LayeredMap</span></div>
+      </div>
+    </div>
+  </section>
+  <section class="concept pick">
+    <img class="big" src="strata-v2-link.svg" alt="Strata Link">
+    <div class="text">
+      <div class="name"><span class="num">Strata v2</span><h2>Link</h2> <span class="tag">Designer's pick</span></div>
+      <p>A line drops from one point on the top sheet through the district sheet to the same spot on the raster, with a marker on each layer: same place, different data.</p>
+      <dl><dt>Strength</dt><dd>The only variation that shows how the layers relate, not just that there are several.</dd><dt>Weakness</dt><dd>The drop-line only shows from 128 px up; small sizes would use v1's simplified artwork.</dd></dl>
+      <span class="label">Sizes 64 · 32 · 16 px</span>
+      <div class="proofs">
+        <div class="proof"><img src="strata-v2-link.svg" width="64" height="64" alt=""><img src="strata-v2-link.svg" width="32" height="32" alt=""><img src="strata-v2-link.svg" width="16" height="16" alt=""></div>
+        <div class="proof dark"><img src="strata-v2-link.svg" width="64" height="64" alt=""><img src="strata-v2-link.svg" width="32" height="32" alt=""><img src="strata-v2-link.svg" width="16" height="16" alt=""></div>
+        <div class="proof"><span class="word"><img src="strata-v2-link.svg" alt="">LayeredMap</span></div>
+      </div>
+    </div>
+  </section>
+  <section class="concept">
+    <img class="big" src="strata-v3-blue.svg" alt="Strata Blue">
+    <div class="text">
+      <div class="name"><span class="num">Strata v3</span><h2>Blue</h2></div>
+      <p>The squircle in the app's accent blue, with a solid white top sheet and see-through white sheets beneath.</p>
+      <dl><dt>Strength</dt><dd>The strongest Dock presence of the five.</dd><dt>Weakness</dt><dd>Turns into a white blob on blue at 16 px; would need its own small-size artwork.</dd></dl>
+      <span class="label">Sizes 64 · 32 · 16 px</span>
+      <div class="proofs">
+        <div class="proof"><img src="strata-v3-blue.svg" width="64" height="64" alt=""><img src="strata-v3-blue.svg" width="32" height="32" alt=""><img src="strata-v3-blue.svg" width="16" height="16" alt=""></div>
+        <div class="proof dark"><img src="strata-v3-blue.svg" width="64" height="64" alt=""><img src="strata-v3-blue.svg" width="32" height="32" alt=""><img src="strata-v3-blue.svg" width="16" height="16" alt=""></div>
+        <div class="proof"><span class="word"><img src="strata-v3-blue.svg" alt="">LayeredMap</span></div>
+      </div>
+    </div>
+  </section>
+  <section class="concept">
+    <img class="big" src="strata-v4-cutout.svg" alt="Strata Cutout">
+    <div class="text">
+      <div class="name"><span class="num">Strata v4</span><h2>Cutout</h2></div>
+      <p>Only the raster is a full square. Above it float a road network and a single district shape, cut to the same footprint.</p>
+      <dl><dt>Strength</dt><dd>Most like real map data; less like a generic layers symbol.</dd><dt>Weakness</dt><dd>The road layer disappears below 128 px.</dd></dl>
+      <span class="label">Sizes 64 · 32 · 16 px</span>
+      <div class="proofs">
+        <div class="proof"><img src="strata-v4-cutout.svg" width="64" height="64" alt=""><img src="strata-v4-cutout.svg" width="32" height="32" alt=""><img src="strata-v4-cutout.svg" width="16" height="16" alt=""></div>
+        <div class="proof dark"><img src="strata-v4-cutout.svg" width="64" height="64" alt=""><img src="strata-v4-cutout.svg" width="32" height="32" alt=""><img src="strata-v4-cutout.svg" width="16" height="16" alt=""></div>
+        <div class="proof"><span class="word"><img src="strata-v4-cutout.svg" alt="">LayeredMap</span></div>
+      </div>
+    </div>
+  </section>
+  <section class="concept">
+    <img class="big" src="strata-v5-night.svg" alt="Strata Night">
+    <div class="text">
+      <div class="name"><span class="num">Strata v5</span><h2>Night</h2></div>
+      <p>A dark navy icon with the sheets fanned like cards, so the raster glows from below.</p>
+      <dl><dt>Strength</dt><dd>Distinctive and calm; suits dark mode.</dd><dt>Weakness</dt><dd>Dark on dark in a dark Dock (a faint rim keeps the outline); fanned sheets weaken the "same footprint" idea.</dd></dl>
+      <span class="label">Sizes 64 · 32 · 16 px</span>
+      <div class="proofs">
+        <div class="proof"><img src="strata-v5-night.svg" width="64" height="64" alt=""><img src="strata-v5-night.svg" width="32" height="32" alt=""><img src="strata-v5-night.svg" width="16" height="16" alt=""></div>
+        <div class="proof dark"><img src="strata-v5-night.svg" width="64" height="64" alt=""><img src="strata-v5-night.svg" width="32" height="32" alt=""><img src="strata-v5-night.svg" width="16" height="16" alt=""></div>
+        <div class="proof"><span class="word"><img src="strata-v5-night.svg" alt="">LayeredMap</span></div>
+      </div>
+    </div>
+  </section>
+
+  <h2 class="part">First round</h2>
+
+  <div class="docks" aria-label="All six at Dock size">
+    <div class="lineup">
+      <img src="concept-1-strata.svg" alt="1 Strata"><img src="concept-2-overlay.svg" alt="2 Overlay"><img src="concept-3-fold.svg" alt="3 Fold"><img src="concept-4-strata-pin.svg" alt="4 Strata Pin"><img src="concept-5-swipe.svg" alt="5 Swipe"><img src="concept-6-peel.svg" alt="6 Peel">
+    </div>
+    <div class="lineup dark">
+      <img src="concept-1-strata.svg" alt=""><img src="concept-2-overlay.svg" alt=""><img src="concept-3-fold.svg" alt=""><img src="concept-4-strata-pin.svg" alt=""><img src="concept-5-swipe.svg" alt=""><img src="concept-6-peel.svg" alt="">
+    </div>
+  </div>
+
+  <section class="concept pick">
+    <img class="big" src="concept-1-strata.svg" alt="Strata: three stacked isometric map sheets">
+    <div class="text">
+      <div class="name"><span class="num">1</span><h2>Strata</h2><span class="tag">Your pick</span></div>
+      <p>Three map sheets stacked over one footprint: a temperature raster at the bottom, district boundaries in the middle, points on top. It is the app's own layer model, drawn as it is.</p>
+      <dl><dt>Strength</dt><dd>The clearest of the six at 16 and 32 px; uses the app's blue and the viridis ramp.</dd><dt>Weakness</dt><dd>Stacked sheets are a familiar "layers" symbol, so it is less distinctive as a brand.</dd></dl>
+      <span class="label">Sizes 64 · 32 · 16 px</span>
+      <div class="proofs">
+        <div class="proof"><img src="concept-1-strata.svg" width="64" height="64" alt=""><img src="concept-1-strata.svg" width="32" height="32" alt=""><img src="concept-1-strata.svg" width="16" height="16" alt=""></div>
+        <div class="proof dark"><img src="concept-1-strata.svg" width="64" height="64" alt=""><img src="concept-1-strata.svg" width="32" height="32" alt=""><img src="concept-1-strata.svg" width="16" height="16" alt=""></div>
+        <div class="proof"><span class="word"><img src="concept-1-strata.svg" alt="">LayeredMap</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="concept">
+    <img class="big" src="concept-2-overlay.svg" alt="Overlay: a circle and a polygon overlapping, the overlap in blue">
+    <div class="text">
+      <div class="name"><span class="num">2</span><h2>Overlay</h2></div>
+      <p>A buffer circle and a district overlap. Only the area they share turns blue, with one point inside it: the spatial relationship itself, rather than the layers.</p>
+      <dl><dt>Strength</dt><dd>The most abstract and ownable mark; reads well small.</dd><dt>Weakness</dt><dd>Says "map" less directly; could pass for a generic Venn diagram.</dd></dl>
+      <span class="label">Sizes 64 · 32 · 16 px</span>
+      <div class="proofs">
+        <div class="proof"><img src="concept-2-overlay.svg" width="64" height="64" alt=""><img src="concept-2-overlay.svg" width="32" height="32" alt=""><img src="concept-2-overlay.svg" width="16" height="16" alt=""></div>
+        <div class="proof dark"><img src="concept-2-overlay.svg" width="64" height="64" alt=""><img src="concept-2-overlay.svg" width="32" height="32" alt=""><img src="concept-2-overlay.svg" width="16" height="16" alt=""></div>
+        <div class="proof"><span class="word"><img src="concept-2-overlay.svg" alt="">LayeredMap</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="concept">
+    <img class="big" src="concept-3-fold.svg" alt="Fold: a tri-fold paper map with a different layer on each panel">
+    <div class="text">
+      <div class="name"><span class="num">3</span><h2>Fold</h2></div>
+      <p>A folded paper map whose three panels are three layers (contours, districts, points), tied together by one route running across all of them.</p>
+      <dl><dt>Strength</dt><dd>Warm and instantly a map at large sizes.</dd><dt>Weakness</dt><dd>The busiest option: it turns to mush at 16 px, and folded maps are a common map-app image.</dd></dl>
+      <span class="label">Sizes 64 · 32 · 16 px</span>
+      <div class="proofs">
+        <div class="proof"><img src="concept-3-fold.svg" width="64" height="64" alt=""><img src="concept-3-fold.svg" width="32" height="32" alt=""><img src="concept-3-fold.svg" width="16" height="16" alt=""></div>
+        <div class="proof dark"><img src="concept-3-fold.svg" width="64" height="64" alt=""><img src="concept-3-fold.svg" width="32" height="32" alt=""><img src="concept-3-fold.svg" width="16" height="16" alt=""></div>
+        <div class="proof"><span class="word"><img src="concept-3-fold.svg" alt="">LayeredMap</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="concept">
+    <img class="big" src="concept-4-strata-pin.svg" alt="Strata Pin: a location pin cut into three coloured bands">
+    <div class="text">
+      <div class="name"><span class="num">4</span><h2>Strata Pin</h2></div>
+      <p>A location pin cut into three bands in the point, area and raster colours, standing on a quiet street grid: one place, many layers.</p>
+      <dl><dt>Strength</dt><dd>Strong silhouette; recognisable at every size.</dd><dt>Weakness</dt><dd>Pins are the most common map-app symbol, so it sits close to generic map icons.</dd></dl>
+      <span class="label">Sizes 64 · 32 · 16 px</span>
+      <div class="proofs">
+        <div class="proof"><img src="concept-4-strata-pin.svg" width="64" height="64" alt=""><img src="concept-4-strata-pin.svg" width="32" height="32" alt=""><img src="concept-4-strata-pin.svg" width="16" height="16" alt=""></div>
+        <div class="proof dark"><img src="concept-4-strata-pin.svg" width="64" height="64" alt=""><img src="concept-4-strata-pin.svg" width="32" height="32" alt=""><img src="concept-4-strata-pin.svg" width="16" height="16" alt=""></div>
+        <div class="proof"><span class="word"><img src="concept-4-strata-pin.svg" alt="">LayeredMap</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="concept">
+    <img class="big" src="concept-5-swipe.svg" alt="Swipe: one map split by a compare divider">
+    <div class="text">
+      <div class="name"><span class="num">5</span><h2>Swipe</h2></div>
+      <p>One map split by a compare handle: the plain base map on the left, the same districts and river as a data layer on the right.</p>
+      <dl><dt>Strength</dt><dd>Tells the comparison story; distinctive colour block.</dd><dt>Weakness</dt><dd>At 16 px it becomes a two-tone tile; the handle reads as a code symbol to some people.</dd></dl>
+      <span class="label">Sizes 64 · 32 · 16 px</span>
+      <div class="proofs">
+        <div class="proof"><img src="concept-5-swipe.svg" width="64" height="64" alt=""><img src="concept-5-swipe.svg" width="32" height="32" alt=""><img src="concept-5-swipe.svg" width="16" height="16" alt=""></div>
+        <div class="proof dark"><img src="concept-5-swipe.svg" width="64" height="64" alt=""><img src="concept-5-swipe.svg" width="32" height="32" alt=""><img src="concept-5-swipe.svg" width="16" height="16" alt=""></div>
+        <div class="proof"><span class="word"><img src="concept-5-swipe.svg" alt="">LayeredMap</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="concept">
+    <img class="big" src="concept-6-peel.svg" alt="Peel: a blue map sheet with its corner peeled back to show a raster beneath">
+    <div class="text">
+      <div class="name"><span class="num">6</span><h2>Peel</h2></div>
+      <p>A blue base-map sheet with its corner peeled back to reveal a raster layer underneath: what lies below the map you see.</p>
+      <dl><dt>Strength</dt><dd>The boldest silhouette and colour in the Dock.</dd><dt>Weakness</dt><dd>Page-curl icons are associated with documents and older UI styles.</dd></dl>
+      <span class="label">Sizes 64 · 32 · 16 px</span>
+      <div class="proofs">
+        <div class="proof"><img src="concept-6-peel.svg" width="64" height="64" alt=""><img src="concept-6-peel.svg" width="32" height="32" alt=""><img src="concept-6-peel.svg" width="16" height="16" alt=""></div>
+        <div class="proof dark"><img src="concept-6-peel.svg" width="64" height="64" alt=""><img src="concept-6-peel.svg" width="32" height="32" alt=""><img src="concept-6-peel.svg" width="16" height="16" alt=""></div>
+        <div class="proof"><span class="word"><img src="concept-6-peel.svg" alt="">LayeredMap</span></div>
+      </div>
+    </div>
+  </section>
+
+  <footer>All six are 1024 px macOS-style icons (rounded square body, flat colours, no text). The sources are in design/logo/ in the repository; a chosen icon gets hand-tuned 16 and 32 px versions before it ships.</footer>
+</main>
