@@ -623,7 +623,19 @@ fn map_layer(map_id: u32, data: &ImportedLayer) -> lm_mapview::map::Layer {
 fn apply_style(l: &mut lm_mapview::map::Layer, s: &Style, kind: LayerKind) {
     use lm_mapview::map::{Renderer, Symbol};
     l.transparency = ((1.0 - s.opacity.clamp(0.0, 1.0)) * 100.0).round();
-    if l.raster.is_some() {
+    if let Some(r) = l.raster.as_mut() {
+        // A single band stretched through a ramp takes the document's ramp (Data palettes:
+        // viridis by default for measures). Category, colour-table and RGB rasters keep their own.
+        if let lm_mapview::map::RasterRenderer::Stretch { ramp, invert, .. } = &mut r.style.renderer {
+            *ramp = match s.ramp.as_str() {
+                "heat" => lm_mapview::map::Ramp::Thermal,
+                "blues" => lm_mapview::map::Ramp::Lagoon,
+                "greys" => lm_mapview::map::Ramp::Greys,
+                // viridis, cividis: Aurora is the engine's perceptually even indigo–teal–yellow ramp.
+                _ => lm_mapview::map::Ramp::Aurora,
+            };
+            *invert = false;
+        }
         return;
     }
     let fill = match kind {

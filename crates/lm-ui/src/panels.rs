@@ -661,7 +661,12 @@ fn overview(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, l: &lm_core:
     for b in &l.profile.bands {
         if let (Some(lo), Some(hi)) = (b.min, b.max) {
             let unit = b.unit.value.clone().map(|u| format!(" {u}")).unwrap_or_default();
-            ui.label(format!("Band {} ({}): {} to {}{unit}", b.index, b.name, fmt_num(lo), fmt_num(hi)));
+            let name = if b.name.is_empty() || b.name.eq_ignore_ascii_case(&format!("band {}", b.index)) {
+                String::new()
+            } else {
+                format!(" ({})", b.name)
+            };
+            ui.label(format!("Band {}{name}: {} to {}{unit}", b.index, fmt_num(lo), fmt_num(hi)));
         }
     }
 }
