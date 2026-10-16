@@ -15,6 +15,7 @@ pub enum Action {
 
 pub struct MenuBar {
     _menu: Menu,
+    events: std::sync::mpsc::Receiver<MenuEvent>,
     theme: [CheckMenuItem; 3],
     units: [CheckMenuItem; 2],
     debug: CheckMenuItem,
@@ -27,15 +28,15 @@ fn cmd(key: Code) -> Option<Accelerator> {
 impl MenuBar {
     /// Builds the menu bar and installs it in the app (macOS). `None` if that fails, or on other
     /// platforms for now (Windows packaging is Phase 6).
-    pub fn install(developer: bool) -> Option<MenuBar> {
+    pub fn install(developer: bool, ctx: &egui::Context) -> Option<MenuBar> {
         #[cfg(not(target_os = "macos"))]
         {
-            let _ = developer;
+            let _ = (developer, ctx);
             None
         }
         #[cfg(target_os = "macos")]
         {
-            match Self::build(developer) {
+            match Self::build(developer, ctx) {
                 Ok(m) => {
                     m._menu.init_for_nsapp();
                     Some(m)
@@ -49,7 +50,7 @@ impl MenuBar {
     }
 
     #[cfg(target_os = "macos")]
-    fn build(developer: bool) -> muda::Result<MenuBar> {
+    fn build(developer: bool, ctx: &egui::Context) -> muda::Result<MenuBar> {
         let menu = Menu::new();
         let about = AboutMetadata {
             name: Some("LayeredMap".into()),
@@ -128,13 +129,21 @@ impl MenuBar {
         for m in [&app, &file, &edit, &view, &window, &help] {
             menu.append(m)?;
         }
-        Ok(MenuBar { _menu: menu, theme, units, debug })
+        // egui draws only when something happens: a menu choice must wake it, or the choice would
+        // wait for the next mouse move.
+        let (tx, events) = std::sync::mpsc::channel();
+        let ctx = ctx.clone();
+        MenuEvent::set_event_handler(Some(move |e: MenuEvent| {
+            let _ = tx.send(e);
+            ctx.request_repaint();
+        }));
+        Ok(MenuBar { _menu: menu, events, theme, units, debug })
     }
 
     /// The actions the menu asked for since the last poll.
     pub fn poll(&self) -> Vec<Action> {
         let mut out = Vec::new();
-        while let Ok(e) = MenuEvent::receiver().try_recv() {
+        while let Ok(e) = self.events.try_recv() {
             let a = match e.id().0.as_str() {
                 "quit" | "close" => Action::Quit,
                 "load-fixture" => Action::LoadFixture,

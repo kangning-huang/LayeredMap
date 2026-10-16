@@ -34,8 +34,9 @@ click › Open once).
 2. Search "Shanghai", "成都" and "Lisbon" (⌘F, type, Return or click). Then zoom to your campus by hand.
 3. Explore for 10 minutes with the trackpad, then with a mouse; then the same in Apple Maps. Rate
    1–5: pan, pinch, wheel zoom, double-click, tiles appearing, labels, overall calm.
-4. Switch basemaps (the map button, bottom right): Light, Dark, Offline; try "Background
-   strength". Change System Settings to dark mode while the app is open.
+4. Switch basemaps (the map button, bottom right): Auto (the default: light or dark with the
+   appearance), Light, Dark, Offline; try "Background strength". Change System Settings to dark
+   mode while the app is open: with Auto, the map turns dark too.
 5. Turn Wi-Fi off and keep exploring: the notice "Detailed background unavailable offline…"
    appears and the map never goes blank. Turn Wi-Fi back on: detail returns without restarting
    (failed tiles are retried after up to 60 s).
@@ -77,14 +78,13 @@ features on the map.
 
 ## Questions for you (found while building)
 
-1. **Basemap in dark mode.** The plan makes Light the default basemap; in dark mode the map stays
-   light unless you choose Dark (Apple Maps switches with the system). Should the default follow
-   the appearance?
+1. **Basemap in dark mode.** ~~Should the default follow the appearance?~~ **Answered 2026-10-16:
+   yes.** The new default "Auto" follows it; Light and Dark remain as fixed choices.
 2. **Label density.** At zoom 11–13 over Shanghai the basemap names many villages (村/镇). Fewer,
    larger district and town names would be calmer. Tuning the built-in style's label filters is
    about a day.
-3. **Label language.** Labels use each place's own name (Chinese in China, Portuguese in Lisbon).
-   English-first, or both, are one setting away.
+3. **Label language.** ~~Local, English-first, or both?~~ **Answered 2026-10-16: English-first.**
+   Places with no English name in OpenStreetMap (mostly villages) keep their local name.
 4. **Soft data during long gestures.** With F1 loaded, a 4 s pinch re-renders the map 4–5 times:
    frames stay smooth (p95 4.6 ms), but the map is a scaled image for up to ~1 s at a time. If you
    notice it, strategy C (data on the GPU, ADR-001) is the fix.

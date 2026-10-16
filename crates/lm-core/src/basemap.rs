@@ -13,6 +13,8 @@ pub enum Source {
 /// The light or dark look of a provider.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Look {
+    /// Follows the interface's appearance (light or dark), as Apple Maps does.
+    Auto,
     Light,
     Dark,
 }
@@ -41,9 +43,21 @@ pub const PROTOMAPS_ARCHIVE: &str = "https://build.protomaps.com/20261014.pmtile
 const OSM_ATTRIBUTION: &str = "© OpenStreetMap contributors · Protomaps";
 const NE_ATTRIBUTION: &str = "Natural Earth";
 
-/// The built-in providers, in chooser order: Light (the default), Dark, Offline.
+/// The built-in providers, in chooser order: Auto (the default; light or dark with the
+/// appearance), Light, Dark, Offline.
 pub fn providers() -> Vec<Provider> {
     vec![
+        Provider {
+            id: "auto",
+            name: "Auto",
+            url_template: PROTOMAPS_ARCHIVE,
+            attribution: OSM_ATTRIBUTION,
+            max_zoom: 15,
+            offline_allowed: false,
+            export_allowed: true,
+            source: Source::VectorArchive,
+            look: Look::Auto,
+        },
         Provider {
             id: "light",
             name: "Light",
@@ -80,7 +94,7 @@ pub fn providers() -> Vec<Provider> {
     ]
 }
 
-/// The provider with `id`, or the default (Light).
+/// The provider with `id`, or the default (Auto).
 pub fn provider(id: &str) -> Provider {
     let all = providers();
     let found = all.iter().find(|p| p.id == id).cloned();
@@ -108,13 +122,14 @@ mod tests {
     use super::*;
 
     #[test]
-    fn light_is_the_default_and_ids_are_unique() {
+    fn auto_is_the_default_and_ids_are_unique() {
         let p = providers();
-        assert_eq!(p[0].id, "light");
+        assert_eq!(p[0].id, "auto");
+        assert_eq!(p[0].look, Look::Auto);
         let mut ids: Vec<&str> = p.iter().map(|p| p.id).collect();
         ids.dedup();
         assert_eq!(ids.len(), p.len());
-        assert_eq!(provider("nope").id, "light");
+        assert_eq!(provider("nope").id, "auto");
         assert_eq!(provider("offline").source, Source::Offline);
     }
 

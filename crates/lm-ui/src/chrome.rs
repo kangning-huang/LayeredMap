@@ -226,7 +226,7 @@ fn controls(shell: &mut Shell, ui: &mut Ui, map: Rect) {
     }
 }
 
-/// The basemap chooser popover: Light, Dark, Offline thumbnails and "Background strength".
+/// The basemap chooser popover: Auto, Light, Dark, Offline thumbnails and "Background strength".
 fn basemap_chooser(shell: &mut Shell, ui: &mut Ui, anchor: Rect) {
     let t = *shell.theme();
     let mut close = false;

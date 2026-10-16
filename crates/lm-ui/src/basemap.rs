@@ -25,13 +25,16 @@ fn quiet(dark: bool) -> Basemap {
     if dark { Basemap::Midnight } else { Basemap::Paper }
 }
 
-/// The online provider's look follows its own name; the offline one follows the theme.
+/// Light and Dark keep their own look; Auto and the offline outline follow the theme.
 fn look_dark(p: &Provider, dark_ui: bool) -> bool {
-    match p.source {
-        Source::Offline => dark_ui,
-        Source::VectorArchive => p.look == Look::Dark,
+    match (p.source, p.look) {
+        (Source::Offline, _) | (_, Look::Auto) => dark_ui,
+        (Source::VectorArchive, look) => look == Look::Dark,
     }
 }
+
+/// Map labels: the English name where the map has one, else the place's own name (owner, Gate 1).
+pub const LABEL_LANGUAGE: &str = "en";
 
 /// Sets the map's backdrop and tile layer for `prefs.basemap` and `prefs.strength`.
 pub fn apply(map: &mut Map, prefs: &Prefs, dark_ui: bool) {
@@ -49,8 +52,7 @@ pub fn apply(map: &mut Map, prefs: &Prefs, dark_ui: bool) {
         t.attribution = p.attribution.into();
         t.max_zoom = p.max_zoom;
         t.variant = if dark { "dark".into() } else { "light".into() };
-        // Each place in its own language: Chinese in China, as people there read their maps.
-        t.label_language = "local".into();
+        t.label_language = LABEL_LANGUAGE.into();
         // "Background strength": the basemap fades toward the plain ground colour beneath it.
         t.opacity = prefs.strength.clamp(0.4, 1.0);
         map.tiles.insert(0, t);
@@ -78,6 +80,17 @@ pub fn backdrop(map: &Map) -> egui::Color32 {
 
 /// A small picture of a provider for the chooser (no network): ground, water, two roads.
 pub fn paint_thumbnail(p: &egui::Painter, rect: egui::Rect, provider: &Provider, dark_ui: bool) {
+    if provider.look == Look::Auto && provider.source == Source::VectorArchive {
+        // Auto: the light picture on the left half, the dark one on the right.
+        for (dark, half) in [
+            (false, egui::Rect::from_min_max(rect.min, rect.center_bottom())),
+            (true, egui::Rect::from_min_max(rect.center_top(), rect.max)),
+        ] {
+            let forced = Provider { look: if dark { Look::Dark } else { Look::Light }, ..provider.clone() };
+            paint_thumbnail(&p.with_clip_rect(half), rect, &forced, dark_ui);
+        }
+        return;
+    }
     let dark = look_dark(provider, dark_ui);
     let (water, land, line, _) = quiet(dark).palette();
     let c = |r: lm_mapview::map::Rgba| egui::Color32::from_rgb(r.0[0], r.0[1], r.0[2]);
@@ -98,5 +111,42 @@ pub fn paint_thumbnail(p: &egui::Painter, rect: egui::Rect, provider: &Provider,
         );
     } else {
         p.line_segment([water_rect.left_top(), water_rect.right_top()], egui::Stroke::new(1.0, c(line)));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The basemap tile layer's (variant, label language).
+    fn layer(map: &Map) -> Option<(String, String)> {
+        map.tiles.iter().find(|t| t.id.starts_with("lm-basemap")).map(|t| (t.variant.clone(), t.label_language.clone()))
+    }
+
+    #[test]
+    fn the_default_basemap_follows_the_appearance() {
+        let prefs = Prefs::default();
+        assert_eq!(prefs.basemap, "auto");
+        for dark in [false, true] {
+            let map = initial_map(&prefs, dark);
+            assert_eq!(layer(&map).map(|l| l.0).as_deref(), Some(if dark { "dark" } else { "light" }));
+            assert_eq!(map.basemap, quiet(dark));
+        }
+    }
+
+    #[test]
+    fn light_and_dark_keep_their_look_in_either_appearance() {
+        for (id, variant) in [("light", "light"), ("dark", "dark")] {
+            let prefs = Prefs { basemap: id.into(), ..Prefs::default() };
+            for dark_ui in [false, true] {
+                assert_eq!(layer(&initial_map(&prefs, dark_ui)).map(|l| l.0).as_deref(), Some(variant), "{id} with dark UI {dark_ui}");
+            }
+        }
+    }
+
+    #[test]
+    fn labels_are_english_first() {
+        let map = initial_map(&Prefs::default(), false);
+        assert_eq!(layer(&map).map(|l| l.1).as_deref(), Some("en"));
     }
 }

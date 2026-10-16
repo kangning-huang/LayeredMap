@@ -37,6 +37,8 @@ fn reduce_motion() -> bool {
     }
 }
 
+const BASEMAP_KEY: &str = "lm.basemap.v2";
+
 fn load_prefs(storage: Option<&dyn eframe::Storage>) -> Prefs {
     let mut p = Prefs::default();
     let Some(s) = storage else { return p };
@@ -46,7 +48,9 @@ fn load_prefs(storage: Option<&dyn eframe::Storage>) -> Prefs {
         _ => ThemePref::System,
     };
     p.units = if s.get_string("lm.units").as_deref() == Some("imperial") { Units::Imperial } else { Units::Metric };
-    if let Some(b) = s.get_string("lm.basemap").filter(|b| lm_core::basemap::providers().iter().any(|p| p.id == b)) {
+    // `lm.basemap.v2`: builds before Auto existed always stored "light" (the old default), which
+    // would otherwise pin the map to Light now that the default follows the appearance.
+    if let Some(b) = s.get_string(BASEMAP_KEY).filter(|b| lm_core::basemap::providers().iter().any(|p| p.id == b)) {
         p.basemap = b;
     }
     if let Some(v) = s.get_string("lm.strength").and_then(|v| v.parse::<f32>().ok()) {
@@ -120,7 +124,7 @@ impl eframe::App for App {
             .into(),
         );
         storage.set_string("lm.units", if p.units == Units::Imperial { "imperial" } else { "metric" }.into());
-        storage.set_string("lm.basemap", p.basemap);
+        storage.set_string(BASEMAP_KEY, p.basemap);
         storage.set_string("lm.strength", p.strength.to_string());
         if let Some((lon, lat, z)) = p.view {
             storage.set_string("lm.view", format!("{lon},{lat},{z}"));
@@ -183,7 +187,7 @@ fn main() -> eframe::Result {
                 shell.command(&cc.egui_ctx, Command::LoadFixture(dir));
             }
             let feel = feel_out.map(|out| feel::Feel::new(out, runs, shell.map_view().camera()));
-            let menu = menu::MenuBar::install(developer);
+            let menu = menu::MenuBar::install(developer, &cc.egui_ctx);
             Ok(Box::new(App { shell, menu, system, feel, probe: probe.then_some(started), ephemeral }))
         }),
     )

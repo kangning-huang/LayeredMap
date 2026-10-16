@@ -58,7 +58,7 @@ pub struct Prefs {
 
 impl Default for Prefs {
     fn default() -> Self {
-        Prefs { theme: ThemePref::System, units: Units::Metric, basemap: "light".into(), strength: 1.0, view: None }
+        Prefs { theme: ThemePref::System, units: Units::Metric, basemap: "auto".into(), strength: 1.0, view: None }
     }
 }
 
