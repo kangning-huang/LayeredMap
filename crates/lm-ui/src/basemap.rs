@@ -30,6 +30,8 @@ fn look_dark(p: &Provider, dark_ui: bool) -> bool {
     match (p.source, p.look) {
         (Source::Offline, _) | (_, Look::Auto) => dark_ui,
         (Source::VectorArchive, look) => look == Look::Dark,
+        // Imagery is dark: the outline beneath (seen while tiles load) is the dark one.
+        (Source::Imagery, _) => true,
     }
 }
 
@@ -59,6 +61,25 @@ pub fn apply(map: &mut Map, prefs: &Prefs, dark_ui: bool) {
         // "Background strength": the basemap fades toward the plain ground colour beneath it.
         t.opacity = prefs.strength.clamp(0.4, 1.0);
         map.tiles.insert(0, t);
+    }
+    if p.source == Source::Imagery {
+        let mut img = TileLayer::new(p.name, TileKind::Raster, p.url_template.to_string());
+        img.id = format!("lm-basemap-{}", p.id);
+        img.attribution = p.attribution.into();
+        img.max_zoom = p.max_zoom;
+        img.opacity = prefs.strength.clamp(0.4, 1.0);
+        map.tiles.insert(0, img);
+        // Place names, boundaries and major roads from the vector archive, over the imagery.
+        let url = std::env::var("LM_BASEMAP_URL")
+            .ok()
+            .filter(|u| !u.trim().is_empty())
+            .unwrap_or_else(|| lm_mapview::archive::url(lm_core::basemap::PROTOMAPS_ARCHIVE));
+        let mut labels = TileLayer::new("Satellite labels", TileKind::PmTiles, url);
+        labels.id = format!("lm-basemap-{}-labels", p.id);
+        labels.max_zoom = 15;
+        labels.variant = "labels".into();
+        labels.label_language = LABEL_LANGUAGE.into();
+        map.tiles.insert(0, labels);
     }
 }
 
@@ -99,6 +120,22 @@ pub fn paint_thumbnail(p: &egui::Painter, rect: egui::Rect, provider: &Provider,
             let forced = Provider { look: if dark { Look::Dark } else { Look::Light }, ..provider.clone() };
             paint_thumbnail(&p.with_clip_rect(half), rect, &forced, dark_ui);
         }
+        return;
+    }
+    if provider.source == Source::Imagery {
+        // Imagery: dark sea, a green-and-ochre coast, a white place dot.
+        let r8 = egui::CornerRadius::same(crate::theme::RADIUS_CONTROL);
+        p.rect_filled(rect, r8, egui::Color32::from_rgb(0x12, 0x2B, 0x45));
+        let land = [
+            (egui::vec2(0.0, 0.0), egui::vec2(0.62, 0.55), egui::Color32::from_rgb(0x4E, 0x6B, 0x3A)),
+            (egui::vec2(0.0, 0.5), egui::vec2(0.4, 1.0), egui::Color32::from_rgb(0x8A, 0x7A, 0x52)),
+            (egui::vec2(0.45, 0.0), egui::vec2(1.0, 0.3), egui::Color32::from_rgb(0x3E, 0x5A, 0x2E)),
+        ];
+        for (a, b, c) in land {
+            let r = egui::Rect::from_min_max(rect.min + a * rect.size(), rect.min + b * rect.size()).intersect(rect);
+            p.rect_filled(r, 0.0, c);
+        }
+        p.circle(rect.min + egui::vec2(0.3, 0.3) * rect.size(), 2.5, egui::Color32::WHITE, egui::Stroke::NONE);
         return;
     }
     let dark = look_dark(provider, dark_ui);

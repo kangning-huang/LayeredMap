@@ -8,6 +8,9 @@ pub enum Source {
     Offline,
     /// A vector-tile archive (PMTiles) read by byte ranges, drawn in a built-in style variant.
     VectorArchive,
+    /// Raster image tiles (satellite imagery), with place names and boundaries from the vector
+    /// archive drawn over them.
+    Imagery,
 }
 
 /// The light or dark look of a provider.
@@ -42,9 +45,14 @@ pub struct Provider {
 pub const PROTOMAPS_ARCHIVE: &str = "https://build.protomaps.com/20261014.pmtiles";
 const OSM_ATTRIBUTION: &str = "© OpenStreetMap contributors · Protomaps";
 const NE_ATTRIBUTION: &str = "Natural Earth";
+/// Sentinel-2 cloudless by EOX: a cloud-free 10 m mosaic of the world, keyless. The 2024 edition
+/// is CC BY-NC-SA 4.0 (non-commercial; the 2016 edition is CC BY 4.0), so a paid tier needs
+/// another source (docs/lm/decisions.md, 2026-10-17).
+pub const SENTINEL2_TILES: &str = "https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2024_3857/default/GoogleMapsCompatible/{z}/{y}/{x}.jpg";
+const SENTINEL2_ATTRIBUTION: &str = "Sentinel-2 cloudless by EOX (Copernicus Sentinel data 2024)";
 
 /// The built-in providers, in chooser order: Auto (the default; light or dark with the
-/// appearance), Light, Dark, Offline.
+/// appearance), Light, Dark, Satellite, Offline.
 pub fn providers() -> Vec<Provider> {
     vec![
         Provider {
@@ -78,6 +86,17 @@ pub fn providers() -> Vec<Provider> {
             offline_allowed: false,
             export_allowed: true,
             source: Source::VectorArchive,
+            look: Look::Dark,
+        },
+        Provider {
+            id: "satellite",
+            name: "Satellite",
+            url_template: SENTINEL2_TILES,
+            attribution: SENTINEL2_ATTRIBUTION,
+            max_zoom: 14,
+            offline_allowed: false,
+            export_allowed: true,
+            source: Source::Imagery,
             look: Look::Dark,
         },
         Provider {
