@@ -1,0 +1,26 @@
+{
+  "name": "city_open_data",
+  "description": "The city context plus open-data layers used by GeoAnalystBench, GABench and GeoAgentBench (pothos-dev) tasks: car crashes, land parcels, an impervious-surface raster, a points-of-interest layer and a one-rectangle study area. Value-free.",
+  "base": "city",
+  "layers": [
+    {"name": "Car crashes", "kind": "points", "count": 4127, "fields": [
+      ["year", "integer", "year", null],
+      ["killed", "integer", "people", null],
+      ["injured", "integer", "people", null]
+    ]},
+    {"name": "Parcels", "kind": "areas", "count": 6210, "fields": [
+      ["parcel_id", "text", null, null],
+      ["zoning", "category", null, ["residential", "commercial", "industrial", "open space", "mixed"]],
+      ["area_m2", "number", "m²", null]
+    ]},
+    {"name": "Places", "kind": "points", "count": 21544, "fields": [
+      ["name", "text", null, null],
+      ["category", "category", null, ["school", "kindergarten", "university", "hospital", "restaurant", "shop", "other"]],
+      ["confidence", "number", null, null]
+    ]},
+    {"name": "Study area", "kind": "areas", "count": 1, "fields": [
+      ["name", "text", null, null]
+    ]},
+    {"name": "Impervious surface", "kind": "raster", "desc": "1 band, 1 m cells, categories (impervious, pervious)"}
+  ]
+}
