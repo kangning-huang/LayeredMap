@@ -16,6 +16,13 @@ geographiclib-rs = { workspace = true }
 geo = { workspace = true }
 rstar = { version = "0.12", default-features = false }
 robust = "1.2"
+# Decoding GeoTIFF strips and tiles a window at a time (zonal::tiff_source); the same decoder
+# rustgis-data uses.
+tiff = { workspace = true }
+# LZW and Deflate chunks are decompressed here in one pass (the tiff crate's chunk reader fails
+# on some valid GDAL files); both are already in the tree through tiff and rustgis-data.
+weezl = "0.1"
+miniz_oxide = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }

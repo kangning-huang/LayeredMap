@@ -63,9 +63,9 @@ def fresh(fid: str) -> Path:
             if p.name.startswith("expected_") and p.suffix == ".csv":
                 continue  # owned by the reference scripts
             if p.is_dir():
-                shutil.rmtree(p)
+                shutil.rmtree(p, ignore_errors=True)
             else:
-                p.unlink()
+                p.unlink(missing_ok=True)  # an exFAT drive's ._ files vanish with their partner
     d.mkdir(parents=True, exist_ok=True)
     return d
 

@@ -50,7 +50,7 @@ Recurring across fixtures (not repeated below):
   `FewValuesCategorical` ("Colored as categories.") appear, silently, where `expected.json`
   lists no assumptions (V1, V2, V3, V4, V5, V9, T2, T4, R6, C2).
 - **Extra raster unit line.** Every raster gets the visible line *"Unit unknown."*
-  (`RasterNoUnit`): R3, R6, R7.
+  (`RasterNoUnit`): R2, R3, R6, R7.
 - **Coordinate roles.** `expected.json` names coordinate columns `longitude` / `latitude`
   (`longitude?` for T2); the profile has a single role, `Coordinate`. Not a disagreement in
   substance, but the snapshot can't tell longitude from latitude.
@@ -73,6 +73,7 @@ Recurring across fixtures (not repeated below):
 | C3 | `offset_system_bd09`, **visible** | `ChinaOffsetNamed` as a **question** ("These look like Baidu (BD-09) coordinates. …"), preselected bd09 |
 | R3 | `assumptions: []`, NoData 0 | NoData 0 matches; plus visible `RasterCellMeaning` "Treated as categories (shares, not averages)." and the unit line |
 | R6 | scale 0.1, offset −100 (`value = raw * scale + offset`); `nodata_assumed` −9999 visible | matches since the Gate 2 fix on `phase-2` (scale and offset applied): band scale 0.1, offset −100; the NoData line matches ("Treated −9999 as No data."). Cell meaning is now a visible line, "Treated as measured values (averaged, not summed).", confidence Likely; plus the unit line. `points.csv` (the sampling points) opens as 8 points. |
+| R2 | count raster `value_role: count`, density raster `value_role: density per km2` (no `assumptions` key beyond `[]`) | count: NoData 65535, visible `RasterCellMeaning` "Treated as totals per cell (summed, not averaged)." (Likely), matches. **Density: "Treated as measured values (averaged, not summed)." (Likely)** — the catalog has no density meaning, so a density raster needs the owner's confirmation before N6's density total applies. Both get the unit line. First snapshot 17 October 2026. |
 
 T3 and R4 (generated, no `expected.json`) got their first snapshots from the first full
 `cargo xtask stress` run: T3 opens as 1,000,000 points with a visible coordinate-columns line

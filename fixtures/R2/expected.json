@@ -1,0 +1,41 @@
+{
+  "fixture": "R2",
+  "files": [
+    "population_count.tif",
+    "population_density.tif"
+  ],
+  "kind": "raster",
+  "size": [
+    72,
+    72
+  ],
+  "bands": 1,
+  "crs": {
+    "epsg": 4326,
+    "source": "declared"
+  },
+  "bounds": [
+    121.2,
+    30.9,
+    121.8,
+    31.5
+  ],
+  "pixel_size_deg": 0.008333333333333333,
+  "count": {
+    "file": "population_count.tif",
+    "dtype": "uint16",
+    "nodata": 65535,
+    "layout": "strips of 8 rows, LZW, horizontal predictor",
+    "value_role": "count",
+    "total_valid": 13568180
+  },
+  "density": {
+    "file": "population_density.tif",
+    "dtype": "float32",
+    "nodata": -9999.0,
+    "layout": "32 x 32 tiles, Deflate, floating-point predictor",
+    "value_role": "density per km2"
+  },
+  "nodata_cells": 205,
+  "assumptions": []
+}
