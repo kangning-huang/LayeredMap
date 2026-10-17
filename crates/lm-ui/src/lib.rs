@@ -65,6 +65,8 @@ pub enum Command {
     Redo,
     /// Show or hide the layer shelf (⌘L, the Layers button).
     ToggleLayers,
+    /// Remove every layer at once, as one undoable step (the shelf's "Remove all", the menu bar).
+    RemoveAllLayers,
     /// Developer: save the document (manifest.json) into a folder.
     SaveDocument(PathBuf),
     /// Developer: open a document folder.
@@ -361,6 +363,17 @@ impl Shell {
                 }
             }
             Command::ToggleLayers => self.shelf_open = !self.shelf_open,
+            Command::RemoveAllLayers => {
+                let n = self.ws.doc.layers.len();
+                if let Some(tx) = self.ws.doc.remove_all_tx() {
+                    self.ws.commit(Some(tx));
+                    self.ws.clear_selection();
+                    self.find.clear();
+                    self.table_for = None;
+                    let what = if n == 1 { "1 layer".to_string() } else { format!("{n} layers") };
+                    self.notice = Some((format!("Removed {what}. Undo with ⌘Z."), t));
+                }
+            }
             Command::SaveDocument(dir) => {
                 self.ws.doc.view = {
                     let c = self.map.center_lonlat();
@@ -497,7 +510,15 @@ impl Shell {
 
     fn fly_to_extent(&mut self, e: lm_core::model::Extent) {
         let e = lm_mapview::Extent { min_x: e.min_x, min_y: e.min_y, max_x: e.max_x, max_y: e.max_y };
-        self.map.zoom_to_extent(&e, self.last_map_size);
+        let (left, right) = self.panel_insets();
+        self.map.zoom_to_extent_between(&e, self.last_map_size, left, right);
+    }
+
+    /// How much of the map the layer shelf (left) and the inspector (right) cover.
+    fn panel_insets(&self) -> (f32, f32) {
+        let left = if self.shelf_open && !self.ws.doc.layers.is_empty() { panels::SHELF_WIDTH + theme::PANEL_MARGIN } else { 0.0 };
+        let right = if self.ws.selected().is_some() { panels::INSPECTOR_WIDTH + theme::PANEL_MARGIN } else { 0.0 };
+        (left, right)
     }
 
     /// Phase 2 bookkeeping each frame: imports, the map's layers, fitting new data, the log.
@@ -637,8 +658,7 @@ impl Shell {
         panels::shelf(self, ui, map_rect);
         panels::inspector(self, ui, map_rect);
         {
-            let left = if self.shelf_open && !self.ws.doc.layers.is_empty() { panels::SHELF_WIDTH + theme::PANEL_MARGIN } else { 0.0 };
-            let right = if self.ws.selected().is_some() { panels::INSPECTOR_WIDTH + theme::PANEL_MARGIN } else { 0.0 };
+            let (left, right) = self.panel_insets();
             table::drawer(self, ui, map_rect, left, right);
         }
         panels::chooser(self, ui);

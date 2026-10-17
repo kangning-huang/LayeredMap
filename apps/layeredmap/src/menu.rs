@@ -98,6 +98,8 @@ impl MenuBar {
                 &MenuItem::with_id("redo", "Redo (⇧⌘Z)", true, None),
                 &PredefinedMenuItem::separator(),
                 &MenuItem::with_id("find", "Find…", true, cmd(Code::KeyF)),
+                &PredefinedMenuItem::separator(),
+                &MenuItem::with_id("remove-all", "Remove All Layers", true, None),
             ],
         )?;
         let theme = [
@@ -175,6 +177,7 @@ impl MenuBar {
                 "open-document" => Action::OpenDocument,
                 "export-questions" => Action::ExportQuestionLog,
                 "find" => Action::Shell(Command::FocusSearch),
+                "remove-all" => Action::Shell(Command::RemoveAllLayers),
                 "zoom-in" => Action::Shell(Command::ZoomIn),
                 "zoom-out" => Action::Shell(Command::ZoomOut),
                 "zoom-all" => Action::Shell(Command::ZoomToAll),

@@ -281,12 +281,24 @@ impl MapView {
 
     /// Fits a longitude/latitude extent (⌘0, zoom to layer), with a margin.
     pub fn zoom_to_extent(&mut self, e: &Extent, size: egui::Vec2) {
+        self.zoom_to_extent_between(e, size, 0.0, 0.0);
+    }
+
+    /// Fits an extent into the part of the view not covered by panels `left` and `right`
+    /// points wide, so what was asked for doesn't land under a panel.
+    pub fn zoom_to_extent_between(&mut self, e: &Extent, size: egui::Vec2, left: f32, right: f32) {
         let m = extent_to_merc(e);
-        let (w, h) = (f64::from(size.x).max(1.0), f64::from(size.y).max(1.0));
+        // In a window too narrow for that, the panels are ignored.
+        let (left, right) = if size.x - left - right >= 240.0 { (left, right) } else { (0.0, 0.0) };
+        let (w, h) = (f64::from(size.x - left - right).max(1.0), f64::from(size.y).max(1.0));
         let res = (m.width() / (w * 0.85)).max(m.height() / (h * 0.85));
+        // A point or a tiny area stops at street level (zoom 16) instead of the deepest zoom.
+        let res = if res.is_finite() { res.max(res_of(16.0)) } else { res_of(2.0) };
         self.velocity = egui::Vec2::ZERO;
         self.anim = None;
-        self.camera = Camera { center: m.center(), res: if res.is_finite() && res > 0.0 { res } else { res_of(2.0) } };
+        let mut center = m.center();
+        center.x -= f64::from(left - right) / 2.0 * res;
+        self.camera = Camera { center, res };
     }
 
     pub fn stats(&self) -> &FrameStats {

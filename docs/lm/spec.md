@@ -398,7 +398,8 @@ These targets are measured on the reference Mac at 2× display scale, with the o
     - broken link: source file missing
 
 - **Click** the row to select the layer. **Click the eye** to toggle visibility only. **Double-click** the row to zoom to the layer (rename is in the right-click menu; owner decision, 2026-10-16). **Drag** to reorder, with an insertion line.
-- **Right-click:** Zoom to layer, Rename, Style…, View data, Remove from map.
+- **Right-click:** View data, Style…, Zoom to layer, Rename, then Remove from map below a divider. Each item has a leading symbol, Apple's standard one where it exists (table, paintbrush, framing corners, pencil, minus in a circle; minus rather than trash because the file is not deleted).
+- **Remove all** (the shelf header, with two or more layers; also Edit › Remove All Layers) removes every layer in one step; the notice says how many and Undo brings them all back.
 - **Nesting:** results nest under their main input, indented 16 px, with a "Result" tag. A file with several layers (a GeoPackage) becomes one collapsible group.
 - **Dropping files:** a "+ Open file" row closes the list. Dragging files over the window shows a full-window overlay: "Drop to add to the map".
 
@@ -465,7 +466,7 @@ The composer replaces the lower inspector; the card header stays visible.
 The layer inspector opens with one search field above its tabs. It looks and behaves like the map's search box, scoped to this layer.
 - Placeholder "Find in [districts]", a magnifier on the left and, while text is typed, a count on the right ("12 found") and a × that clears it.
 - Every field is searched, not just names: type "Residential", "2019" or "FRA" and the records holding that value are selected on the map as you type.
-- Under the field, up to eight matches: each record's title, then the field that matched with the match in bold ("land_use: **Resid**ential"). Clicking one opens its card. Return zooms to all matches. Esc clears the search and the selection.
+- Under the field, up to eight matches: each record's title, then the field that matched with the match in bold ("land_use: **Resid**ential"). Clicking one opens its card and zooms to it. When typing pauses (0.6 s) the map zooms to all matches, fitted between the panels; Return does the same at once. Esc clears the search and the selection.
 - No results: "No [districts] contain “xyz”." The field stays and nothing else on the panel moves.
 
 ### Joining a table
@@ -1037,7 +1038,7 @@ There is nothing to roll back yet. If no strategy passes, change stack and repea
 **WP3.10 Find in a layer** (P0, added 2026-10-17)
 - A search field at the top of the layer inspector, above the tabs: the same rounded field, magnifier and type as the toolbar search, with the placeholder "Find in [districts]". ⌘F focuses it when a layer is selected. See *Find in a layer*.
 - Typing matches every field of every record: text case- and accent-insensitively; numbers as they are displayed ("2019", "1,250"). Results update as you type (120 ms debounce). An index is built in the background, so 1,000,000 records answer in 100 ms or less.
-- Matches are selected on the map as you type. The field shows the count ("12 found"), and a list of up to eight shows each match's title and the matched field with the match in bold. Return zooms to all matches; clicking a row opens that record's card; Esc clears the search and the selection.
+- Matches are selected on the map as you type. The field shows the count ("12 found"), and a list of up to eight shows each match's title and the matched field with the match in bold. when typing pauses the map zooms to them, between the panels (Return does it at once); clicking a row opens that record's card and zooms to it; Esc clears the search and the selection.
 - The table drawer's search uses the same matcher, so a search gives the same rows in both places.
 
 **WP3.11 Join a table to places** (P0, added 2026-10-17)

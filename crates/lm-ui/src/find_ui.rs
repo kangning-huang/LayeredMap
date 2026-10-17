@@ -1,6 +1,7 @@
 //! Find in a layer (WP3.10): one search field at the top of the layer inspector, styled like the
 //! toolbar search. Typing selects the matching records on the map; the panel lists the first
-//! eight with the matched field in bold; Return zooms to all; Esc clears.
+//! eight with the matched field in bold. Once typing pauses the map zooms to the matches, and
+//! choosing one in the list zooms to it; Return zooms to all again; Esc clears.
 
 use std::sync::Arc;
 
@@ -20,6 +21,9 @@ use crate::theme::{self, BODY, CAPTION, RADIUS_CONTROL, Theme};
 const MAX_SELECTED: usize = 10_000;
 /// Matches listed in the panel.
 const LISTED: usize = 8;
+/// How long typing has to pause before the map zooms to the matches, so it doesn't jump about
+/// with every letter.
+const ZOOM_AFTER: f64 = 0.6;
 
 #[derive(Default)]
 pub struct FindState {
@@ -31,6 +35,8 @@ pub struct FindState {
     pub focus: bool,
     /// A match whose card is open, with a way back to the list.
     pub open_row: Option<usize>,
+    /// When to zoom to the matches (the time the last change to them settles).
+    zoom_at: Option<f64>,
 }
 
 impl FindState {
@@ -44,6 +50,7 @@ impl FindState {
         self.hits = Arc::new(Vec::new());
         self.key.clear();
         self.open_row = None;
+        self.zoom_at = None;
     }
 }
 
@@ -96,10 +103,20 @@ pub fn bar(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
             shell.find.hits = Arc::new(hits);
             shell.find.key = key;
             shell.find.open_row = None;
+            shell.find.zoom_at = (!shell.find.hits.is_empty()).then(|| ui.input(|i| i.time) + ZOOM_AFTER);
         }
     } else {
         indexing = true;
         ui.ctx().request_repaint_after(std::time::Duration::from_millis(50));
+    }
+    if let Some(at) = shell.find.zoom_at {
+        let now = ui.input(|i| i.time);
+        if now >= at {
+            shell.find.zoom_at = None;
+            zoom_to_hits(shell, id);
+        } else {
+            ui.ctx().request_repaint_after(std::time::Duration::from_secs_f64(at - now));
+        }
     }
     // The count and the clear button at the right of the field.
     if has_text {
@@ -205,7 +222,11 @@ pub fn results(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
         ui.painter().galley(r.left_bottom() + vec2(8.0, -5.0 - galley.size().y), galley, t.text_primary);
         if resp.clicked() {
             shell.find.open_row = Some(h.row);
+            shell.find.zoom_at = None;
             shell.ws.selection = SelectionContext::object(FeatureRef { layer: id, row: h.row });
+            if let Some(e) = data::row_extent(&ds, h.row) {
+                shell.zoom_to = Some(e);
+            }
         }
     }
     let n = hits.len();
