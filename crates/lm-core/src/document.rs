@@ -8,7 +8,10 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::model::{AssumptionKind, Choice, LayerId, LayerKind, LayerProfile, Subject};
+use std::collections::BTreeMap;
+
+use crate::filter::Filter;
+use crate::model::{AssumptionKind, Choice, FieldProfile, FieldRole, Known, LayerId, LayerKind, LayerProfile, Subject};
 
 /// The document format version written by this build. A newer number is refused on load.
 pub const DOCUMENT_VERSION: u32 = 0;
@@ -36,7 +39,50 @@ pub const WHITE: Rgba = [0xFF, 0xFF, 0xFF, 0xFF];
 /// Above this many points, points draw at 4 px with no edge (Default symbols).
 pub const DENSE_POINTS: u64 = 10_000;
 
-/// How a layer is drawn. Minimal for Phase 2; Phase 3 adds colour-by-value and classes.
+/// How colours spread over a field's values (Style panel › Classes).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Classes {
+    /// Continuous: each value takes its own colour along the palette.
+    Smooth,
+    /// Classed into `count` groups by quantiles (the default "Groups"), or equal steps.
+    Groups { count: u8, equal_steps: bool },
+}
+
+/// Colour by a field (WP3.5): by value along a sequential palette, or by category.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ColorBy {
+    pub field: String,
+    /// Categories (Okabe–Ito, 7 largest plus Other) rather than a range of values.
+    pub categories: bool,
+    pub classes: Classes,
+    /// Sequential palette for values: "viridis", "cividis", "heat", "blues".
+    pub palette: String,
+    /// Divide by the object's geodesic area in km² (the count guard's density field).
+    #[serde(default)]
+    pub per_km2: bool,
+    /// The range comes from the objects in view rather than the whole layer (legend shows an
+    /// indicator while on).
+    #[serde(default)]
+    pub fit_to_view: bool,
+}
+
+/// Size points by a field (WP3.5): circle area proportional to the value.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SizeBy {
+    pub field: String,
+    /// Diameter in px of the largest value.
+    pub max_size: f32,
+}
+
+/// Labels on the map from a field.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LabelStyle {
+    pub field: String,
+    /// Text size in px.
+    pub size: f32,
+}
+
+/// How a layer is drawn (Visual design system › Default symbols; WP3.5 Style panel).
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Style {
     /// Point and area fill (lines use `stroke`).
@@ -58,6 +104,23 @@ pub struct Style {
     /// Raster stretch (min, max) in cell values; None stretches to the band's range.
     #[serde(default)]
     pub stretch: Option<(f64, f64)>,
+    /// Colour by a field (vector layers).
+    #[serde(default)]
+    pub color_by: Option<ColorBy>,
+    /// Size points by a field.
+    #[serde(default)]
+    pub size_by: Option<SizeBy>,
+    #[serde(default)]
+    pub labels: Option<LabelStyle>,
+    /// Raster band shown, 1-based (0 means the first).
+    #[serde(default)]
+    pub band: u32,
+    /// "Show only values above…": raster cells at or below this are not drawn.
+    #[serde(default)]
+    pub above: Option<f64>,
+    /// "Show where values are like this": raster cells inside this range are highlighted.
+    #[serde(default)]
+    pub like: Option<(f64, f64)>,
 }
 
 impl Default for Style {
@@ -80,6 +143,12 @@ impl Style {
             line_width: 2.0,
             ramp: "viridis".into(),
             stretch: None,
+            color_by: None,
+            size_by: None,
+            labels: None,
+            band: 0,
+            above: None,
+            like: None,
         };
         match kind {
             LayerKind::Points | LayerKind::Table => {
@@ -131,6 +200,35 @@ pub struct DocLayer {
     pub visible: bool,
     pub profile: LayerProfile,
     pub style: Style,
+    /// A display filter: only matching records are drawn and counted in insight (WP3.7).
+    #[serde(default)]
+    pub filter: Option<Filter>,
+    /// Field roles the user changed (WP3.3), by field name. They win over the inferred role and
+    /// survive re-reads of the source.
+    #[serde(default)]
+    pub roles: BTreeMap<String, FieldRole>,
+    /// Fields the user starred ("Show in insight"), in the order starred.
+    #[serde(default)]
+    pub starred: Vec<String>,
+}
+
+impl DocLayer {
+    pub fn new(id: LayerId, display_name: String, profile: LayerProfile, style: Style) -> DocLayer {
+        DocLayer { id, display_name, visible: true, profile, style, filter: None, roles: BTreeMap::new(), starred: Vec::new() }
+    }
+
+    /// A field's role, with the user's choice applied (certain, "Set by you").
+    pub fn role(&self, field: &FieldProfile) -> Known<FieldRole> {
+        match self.roles.get(&field.name) {
+            Some(r) => Known::certain(*r, "Set by you."),
+            None => field.role.clone(),
+        }
+    }
+
+    /// The field profile with this name.
+    pub fn field(&self, name: &str) -> Option<&FieldProfile> {
+        self.profile.fields.iter().find(|f| f.name == name)
+    }
 }
 
 /// The saved document.
@@ -209,6 +307,26 @@ pub enum Op {
         from: Box<LayerProfile>,
         to: Box<LayerProfile>,
     },
+    SetFilter {
+        id: LayerId,
+        from: Option<Filter>,
+        to: Option<Filter>,
+    },
+    /// A field's role set by the user (`None`: back to the inferred role).
+    SetRole {
+        id: LayerId,
+        field: String,
+        from: Option<FieldRole>,
+        to: Option<FieldRole>,
+    },
+    /// Star or unstar a field; `from`/`to` are its position in the starred list (None: not
+    /// starred), so undo puts it back where it was.
+    SetStarred {
+        id: LayerId,
+        field: String,
+        from: Option<usize>,
+        to: Option<usize>,
+    },
 }
 
 impl Op {
@@ -232,6 +350,9 @@ impl Op {
             },
             Op::SetStyle { id, from, to } => Op::SetStyle { id: *id, from: to.clone(), to: from.clone() },
             Op::SetProfile { id, from, to } => Op::SetProfile { id: *id, from: to.clone(), to: from.clone() },
+            Op::SetFilter { id, from, to } => Op::SetFilter { id: *id, from: to.clone(), to: from.clone() },
+            Op::SetRole { id, field, from, to } => Op::SetRole { id: *id, field: field.clone(), from: *to, to: *from },
+            Op::SetStarred { id, field, from, to } => Op::SetStarred { id: *id, field: field.clone(), from: *to, to: *from },
         }
     }
 }
@@ -353,7 +474,7 @@ impl Document {
         };
         let style = Style::for_profile(&profile, self.next_color());
         let index = self.insert_index(profile.kind);
-        let layer = DocLayer { id, display_name, visible: true, profile, style };
+        let layer = DocLayer::new(id, display_name, profile, style);
         Transaction::new("Add layer", vec![Op::AddLayer { index, layer: Box::new(layer) }])
     }
 
@@ -390,6 +511,33 @@ impl Document {
     pub fn set_style_tx(&self, id: LayerId, to: Style) -> Option<Transaction> {
         let from = self.layer(id)?.style.clone();
         Some(Transaction::new("Change style", vec![Op::SetStyle { id, from: Box::new(from), to: Box::new(to) }]))
+    }
+
+    pub fn set_filter_tx(&self, id: LayerId, to: Option<Filter>) -> Option<Transaction> {
+        let from = self.layer(id)?.filter.clone();
+        let label = if to.is_some() { "Filter layer" } else { "Clear filter" };
+        Some(Transaction::new(label, vec![Op::SetFilter { id, from, to }]))
+    }
+
+    /// The user sets a field's role (`None` returns to the inferred role).
+    pub fn set_role_tx(&self, id: LayerId, field: &str, to: Option<FieldRole>) -> Option<Transaction> {
+        let l = self.layer(id)?;
+        l.field(field)?;
+        let from = l.roles.get(field).copied();
+        Some(Transaction::new("Change field role", vec![Op::SetRole { id, field: field.into(), from, to }]))
+    }
+
+    pub fn set_starred_tx(&self, id: LayerId, field: &str, to: bool) -> Option<Transaction> {
+        let l = self.layer(id)?;
+        l.field(field)?;
+        let from = l.starred.iter().position(|s| s == field);
+        let label = if to { "Show in insight" } else { "Remove from insight" };
+        let to = match (to, from) {
+            (true, Some(i)) => Some(i),
+            (true, None) => Some(l.starred.len()),
+            (false, _) => None,
+        };
+        Some(Transaction::new(label, vec![Op::SetStarred { id, field: field.into(), from, to }]))
     }
 
     pub fn set_profile_tx(&self, id: LayerId, to: LayerProfile) -> Option<Transaction> {
@@ -476,6 +624,26 @@ impl Document {
             }
             Op::SetStyle { id, to, .. } => self.layer_mut(*id)?.style = (**to).clone(),
             Op::SetProfile { id, to, .. } => self.layer_mut(*id)?.profile = (**to).clone(),
+            Op::SetFilter { id, to, .. } => self.layer_mut(*id)?.filter = to.clone(),
+            Op::SetRole { id, field, to, .. } => {
+                let l = self.layer_mut(*id)?;
+                match to {
+                    Some(r) => {
+                        l.roles.insert(field.clone(), *r);
+                    }
+                    None => {
+                        l.roles.remove(field);
+                    }
+                }
+            }
+            Op::SetStarred { id, field, to, .. } => {
+                let l = self.layer_mut(*id)?;
+                l.starred.retain(|s| s != field);
+                if let Some(i) = to {
+                    let i = (*i).min(l.starred.len());
+                    l.starred.insert(i, field.clone());
+                }
+            }
         }
         Ok(())
     }

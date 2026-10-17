@@ -5,7 +5,7 @@
 //! without reverting code. The environment is read by the app; this module only interprets it.
 
 /// The phase this build implements: surfaces from later phases are hidden whatever `LM_PHASE` says.
-pub const BUILD_PHASE: u8 = 2;
+pub const BUILD_PHASE: u8 = 3;
 
 /// Which phases' surfaces are shown.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

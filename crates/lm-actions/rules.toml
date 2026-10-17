@@ -1,0 +1,464 @@
+# LayeredMap action rules (Insight cards and suggested actions › Selection → suggested actions).
+#
+# The table in the spec is the specification; this file is that table as data. Changing an
+# order is a one-line edit here plus the matching snapshot in tests/rows.rs.
+#
+# Selection keys (what is selected):
+#   empty          nothing selected, no data open          nothing       nothing selected, data open
+#   one_point      one object of a point layer             point_layer   a whole point layer
+#   one_line       one object of a line layer              line_layer    a whole line layer
+#   one_area       one object of an area layer             area_layer    a whole area layer
+#   raster_pixel   one raster cell                         raster_layer  a whole raster layer
+#   table          a table without locations (or one row)  drawn_area    an area the user drew
+#   several        several objects of one layer
+#
+# Label tokens, filled when an action is suggested:
+#   [layer]   the selected layer's name             [other]   the companion layer's name
+#   [Schools] the point layer in play, [School] its singular; likewise [Districts] / [District]
+#   for the area layer and [Lines] / [Line] for the line layer. [Heat] is the raster in play.
+#   [Type] / [field] the field the action works on   [code] the shared code column
+#
+# Companion kinds: points, lines, areas, raster, any (any visible layer with locations),
+# shared_code (a visible layer with an identifier column of the same name as the table's).
+#
+# surface: "card" actions are display-only and shown as suggested-action buttons in the free
+# app; "assistant" actions are analysis: never buttons in either tier (Product tiers), only shown
+# behind the developer flag, and called by Pro's assistant.
+#
+# Requirement kinds (`need`): measure_field (a number field whose role is Measure, at Certain or
+# Likely confidence), style_field (such a measure field, or a Category field), category_field,
+# coordinate_fields (two columns whose role is Coordinate).
+
+# ---------------------------------------------------------------- Getting started
+
+[[action]]
+id = "open_file"
+label = "Open file"
+aliases = ["import", "load", "add data", "add layer"]
+group = "Understand"
+min_phase = 2
+surface = "card"
+inputs = ["empty"]
+input_reason = "Open files from the File menu or by dropping them on the map."
+
+[[action]]
+id = "try_example"
+label = "Try an example"
+aliases = ["sample data", "demo", "example data"]
+group = "Understand"
+min_phase = 2
+surface = "card"
+inputs = ["empty"]
+input_reason = "Examples are offered when no data is open."
+
+[[action]]
+id = "browse_library"
+label = "Browse data library"
+aliases = ["catalog", "download data", "open data"]
+group = "Understand"
+min_phase = 5
+surface = "card"
+inputs = ["empty"]
+input_reason = "Browse the data library from the File menu."
+
+# ---------------------------------------------------------------- Display-only (Phase 3)
+
+[[action]]
+id = "style_by_value"
+label = "Color by a value"
+aliases = ["choropleth", "symbology", "graduated colors", "classify", "style"]
+group = "Change look"
+min_phase = 3
+surface = "card"
+inputs = ["point_layer", "line_layer", "one_line", "area_layer"]
+input_reason = "Select a layer on the shelf to color it by a value."
+requires = [
+    { need = "style_field", reason = "[layer] has no number or category field to color by. Set a field's role in Details." },
+]
+
+[[action.variant]]
+on = ["point_layer"]
+label = "Color or size by a value"
+
+[[action]]
+id = "filter"
+label = "Filter [layer]"
+aliases = ["query", "where", "subset", "definition query"]
+group = "Change look"
+min_phase = 3
+surface = "card"
+inputs = ["one_point", "one_line", "one_area", "point_layer", "line_layer", "area_layer"]
+input_reason = "Select a layer or an object to filter."
+requires = [
+    { need = "style_field", reason = "[layer] has no number or category field to filter by. Set a field's role in Details." },
+]
+
+[[action.variant]]
+on = ["one_point", "one_line", "one_area"]
+label = "Filter by [Type]"
+requires = [
+    { need = "category_field", reason = "[layer] has no category field to filter by. Set a field's role to Category in Details." },
+]
+
+[[action]]
+id = "compare_peers"
+label = "Compare with other [layer]"
+aliases = ["rank chart", "ranking", "distribution"]
+group = "Compare"
+min_phase = 3
+surface = "card"
+inputs = ["one_area", "one_point", "one_line"]
+input_reason = "Click one object on the map to compare it with the others."
+requires = [
+    { need = "measure_field", reason = "[layer] has no number field to compare. Mark a field as a measure in Details." },
+]
+
+[[action]]
+id = "raster_colors"
+label = "Change colors and range"
+aliases = ["stretch", "color ramp", "palette", "symbology"]
+group = "Change look"
+min_phase = 3
+surface = "card"
+inputs = ["raster_layer", "raster_pixel"]
+input_reason = "Select a raster layer to change its colors."
+
+[[action.variant]]
+on = ["raster_pixel"]
+label = "Change colors"
+
+[[action]]
+id = "threshold"
+label = "Show only values above…"
+aliases = ["threshold", "mask", "cutoff"]
+group = "Change look"
+min_phase = 3
+surface = "card"
+inputs = ["raster_layer", "raster_pixel"]
+input_reason = "Select a raster layer to show only some of its values."
+
+[[action]]
+id = "similar_values"
+label = "Show where values are like this"
+aliases = ["similar cells", "value range", "highlight"]
+group = "Understand"
+min_phase = 3
+surface = "card"
+inputs = ["raster_pixel"]
+input_reason = "Click a cell on a raster layer first."
+
+# ---------------------------------------------------------------- Tables (display)
+
+[[action]]
+id = "view_data"
+label = "View data"
+aliases = ["attribute table", "table", "rows"]
+group = "Understand"
+min_phase = 3
+surface = "card"
+inputs = ["table", "point_layer", "line_layer", "area_layer"]
+input_reason = "Select a layer or a table to view its rows."
+
+[[action]]
+id = "map_coordinates"
+label = "Map using coordinate columns"
+aliases = ["xy to points", "lat lon", "geocode columns"]
+group = "Keep"
+min_phase = 4
+surface = "card"
+inputs = ["table"]
+input_reason = "Select a table without locations."
+requires = [
+    { need = "coordinate_fields", reason = "This table has no longitude and latitude columns. Mark two columns as coordinates in Details." },
+]
+
+[[action]]
+id = "match_by_code"
+label = "Match to [other] by [code]"
+aliases = ["join", "table join", "attribute join"]
+group = "Keep"
+min_phase = 6
+surface = "card"
+inputs = ["table"]
+input_reason = "Select a table without locations."
+companion = { kind = "shared_code", reason = "Open a layer with a code column of the same name as one in this table." }
+
+# ---------------------------------------------------------------- Analysis (Phase 4, assistant)
+
+[[action]]
+id = "buffer"
+label = "Show an area within a distance"
+aliases = ["buffer", "radius", "distance zone"]
+group = "Measure"
+min_phase = 4
+surface = "assistant"
+inputs = ["one_point", "one_line", "line_layer", "point_layer"]
+input_reason = "Select a point or a line, or a point or line layer."
+
+[[action.variant]]
+on = ["point_layer"]
+label = "Show an area within a distance of each"
+
+[[action]]
+id = "measure_from_here"
+label = "Measure from here"
+aliases = ["distance", "ruler", "nearest"]
+group = "Measure"
+min_phase = 4
+surface = "assistant"
+inputs = ["one_point"]
+input_reason = "Click one point on the map first."
+
+[[action]]
+id = "which_container"
+label = "Which [District] is it in?"
+aliases = ["point in polygon", "spatial join", "locate"]
+group = "Understand"
+min_phase = 4
+surface = "assistant"
+inputs = ["one_point"]
+input_reason = "Click one point on the map first."
+companion = { kind = "areas", reason = "Add an area layer to see which area this point is in." }
+
+[[action]]
+id = "count_in"
+label = "Count [Schools] in each [District]"
+aliases = ["points in polygon", "count points", "spatial join"]
+group = "Measure"
+min_phase = 4
+surface = "assistant"
+inputs = ["point_layer", "area_layer"]
+input_reason = "Select a point layer or an area layer."
+companion = { kind = "areas", reason = "Add an area layer to count [layer] in each area." }
+
+[[action.variant]]
+on = ["area_layer"]
+companion = { kind = "points", reason = "Add a point layer to count points in each of [layer]." }
+
+[[action]]
+id = "add_raster_values"
+label = "Add [Heat] values to each [School]"
+aliases = ["extract values", "sample raster", "point sampling"]
+group = "Measure"
+min_phase = 4
+surface = "assistant"
+inputs = ["point_layer"]
+input_reason = "Select a point layer."
+companion = { kind = "raster", reason = "Add a raster layer to read its values at each of [layer]." }
+
+[[action]]
+id = "measure_area"
+label = "Measure its area"
+aliases = ["area", "size", "km2"]
+group = "Measure"
+min_phase = 4
+surface = "assistant"
+inputs = ["one_area", "drawn_area"]
+input_reason = "Click one area on the map, or draw one."
+
+[[action]]
+id = "whats_inside"
+label = "What's inside?"
+aliases = ["points in polygon", "select by location", "within"]
+group = "Understand"
+min_phase = 4
+surface = "assistant"
+inputs = ["one_area"]
+input_reason = "Click one area on the map first."
+companion = { kind = "points", reason = "Add a point layer to see what is inside this area." }
+
+[[action]]
+id = "summarize_here"
+label = "Summarize [Heat] here"
+aliases = ["zonal statistics", "mean value", "raster statistics"]
+group = "Measure"
+min_phase = 4
+surface = "assistant"
+inputs = ["one_area"]
+input_reason = "Click one area on the map first."
+companion = { kind = "raster", reason = "Add a raster layer to summarize its values in this area." }
+
+[[action]]
+id = "summarize_each"
+label = "Summarize [Heat] in each [District]"
+aliases = ["zonal statistics", "zonal stats", "raster by polygon"]
+group = "Measure"
+min_phase = 4
+surface = "assistant"
+inputs = ["area_layer", "raster_layer"]
+input_reason = "Select an area layer or a raster layer."
+companion = { kind = "raster", reason = "Add a raster layer to summarize it in each of [layer]." }
+
+[[action.variant]]
+on = ["raster_layer"]
+companion = { kind = "areas", reason = "Add an area layer to summarize [layer] in each area." }
+
+[[action]]
+id = "rank_by_value"
+label = "Rank [layer] by a value"
+aliases = ["sort", "top ten", "ranking"]
+group = "Compare"
+min_phase = 4
+surface = "assistant"
+inputs = ["area_layer", "point_layer", "line_layer"]
+input_reason = "Select a layer on the shelf to rank its objects."
+requires = [
+    { need = "measure_field", reason = "[layer] has no number field to rank by. Mark a field as a measure in Details." },
+]
+
+[[action]]
+id = "measure_length"
+label = "Measure length"
+aliases = ["length", "distance", "km"]
+group = "Measure"
+min_phase = 4
+surface = "assistant"
+inputs = ["one_line", "line_layer"]
+input_reason = "Select a line or a line layer."
+
+[[action]]
+id = "summarize_drawn"
+label = "Summarize in an area I draw"
+aliases = ["zonal statistics", "draw polygon", "custom area"]
+group = "Measure"
+min_phase = 4
+surface = "assistant"
+inputs = ["raster_pixel", "raster_layer"]
+input_reason = "Select a raster layer first."
+
+[[action]]
+id = "summarize_data_here"
+label = "Summarize data here"
+aliases = ["clip", "statistics in area", "summary"]
+group = "Measure"
+min_phase = 4
+surface = "assistant"
+inputs = ["drawn_area"]
+input_reason = "Draw an area on the map first."
+companion = { kind = "any", reason = "Show a layer with data on the map to summarize it in this area." }
+
+[[action]]
+id = "count_here"
+label = "Count [Schools] here"
+aliases = ["count points", "points in polygon"]
+group = "Measure"
+min_phase = 4
+surface = "assistant"
+inputs = ["drawn_area"]
+input_reason = "Draw an area on the map first."
+companion = { kind = "points", reason = "Add a point layer to count its points in this area." }
+
+# ---------------------------------------------------------------- The table, in order
+# `other` is the spec's "Other open layer" column: none, any, points, lines, areas or raster.
+# A row naming a kind matches when a visible layer of that kind can be the companion; a "none"
+# row matches only when no row naming a kind matched; "any" always matches.
+
+[[row]]
+n = 1
+selected = ["empty"]
+other = "none"
+actions = ["open_file", "try_example", "browse_library"]
+
+[[row]]
+n = 2
+selected = ["one_point"]
+other = "none"
+actions = ["buffer", "measure_from_here", "filter"]
+
+[[row]]
+n = 3
+selected = ["one_point"]
+other = "areas"
+actions = ["which_container", "buffer", "measure_from_here"]
+
+[[row]]
+n = 4
+selected = ["point_layer"]
+other = "none"
+actions = ["style_by_value", "filter", "buffer"]
+
+[[row]]
+n = 5
+selected = ["point_layer"]
+other = "areas"
+actions = ["count_in", "style_by_value", "filter"]
+
+[[row]]
+n = 6
+selected = ["one_area"]
+other = "none"
+actions = ["compare_peers", "measure_area", "filter"]
+
+[[row]]
+n = 7
+selected = ["one_area"]
+other = "points"
+actions = ["whats_inside", "compare_peers", "measure_area"]
+
+[[row]]
+n = 8
+selected = ["one_area"]
+other = "raster"
+actions = ["summarize_here", "compare_peers", "measure_area"]
+
+[[row]]
+n = 9
+selected = ["area_layer"]
+other = "raster"
+actions = ["summarize_each", "style_by_value", "rank_by_value"]
+
+[[row]]
+n = 10
+selected = ["area_layer"]
+other = "points"
+actions = ["count_in", "style_by_value", "rank_by_value"]
+
+[[row]]
+n = 11
+selected = ["area_layer"]
+other = "none"
+actions = ["style_by_value", "rank_by_value", "filter"]
+
+[[row]]
+n = 12
+selected = ["one_line", "line_layer"]
+other = "any"
+actions = ["measure_length", "style_by_value", "buffer"]
+
+[[row]]
+n = 13
+selected = ["raster_pixel"]
+other = "any"
+actions = ["similar_values", "raster_colors", "summarize_drawn"]
+
+[[row]]
+n = 14
+selected = ["raster_layer"]
+other = "areas"
+actions = ["summarize_each", "raster_colors", "threshold"]
+
+[[row]]
+n = 15
+selected = ["raster_layer"]
+other = "none"
+actions = ["raster_colors", "threshold", "summarize_drawn"]
+
+# The spec's "layer with a shared code" is checked by match_by_code's companion, so the row
+# still offers its other two actions when no such layer is open.
+[[row]]
+n = 16
+selected = ["table"]
+other = "any"
+actions = ["match_by_code", "map_coordinates", "view_data"]
+
+[[row]]
+n = 17
+selected = ["drawn_area"]
+other = "any"
+actions = ["summarize_data_here", "count_here", "measure_area"]
+
+[[row]]
+n = 18
+selected = ["point_layer"]
+other = "raster"
+actions = ["add_raster_values", "style_by_value", "filter"]

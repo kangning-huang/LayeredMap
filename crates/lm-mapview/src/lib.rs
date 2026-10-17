@@ -1,5 +1,5 @@
-//! The map widget: camera, gestures, inertia, tile placeholders and fades (later: hit testing,
-//! selection highlight). The only crate below `lm-ui` that may depend on egui, and the only
+//! The map widget: camera, gestures, inertia, tile placeholders and fades, hit testing
+//! ([`hit`]) and the selection highlight ([`MapView::set_selection_style`]). The only crate below `lm-ui` that may depend on egui, and the only
 //! direct line from the interface to RustGIS (its drawing path).
 //!
 //! Drawing follows ADR-001 (strategy B2): RustGIS's CPU renderer runs on a worker thread and
@@ -8,7 +8,9 @@
 //! (only those that appear or disappear, see `labels`).
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
+pub mod archive;
 pub mod camera;
+pub mod hit;
 mod labels;
 pub mod script;
 pub mod stats;
@@ -21,7 +23,10 @@ pub use rustgis_geom::{Coord, Extent, lonlat_to_merc};
 pub use rustgis_map as map;
 pub use rustgis_map::Map;
 use rustgis_map::camera::Camera;
+pub use rustgis_render::SelectionStyle;
 use rustgis_render::{PlacedLabel, View};
+
+pub use hit::{Hit, HitIndex, HitLayer, HitSymbol, raster_values};
 
 use camera::{Animation, INERTIA_STOP, INERTIA_TAU_S};
 pub use camera::{MAX_ZOOM, res_of, zoom_of};
@@ -58,6 +63,18 @@ pub struct MapOutput {
     pub moving: bool,
     /// A click (not a drag) on the map, in longitude/latitude.
     pub clicked: Option<Coord>,
+    /// Where that click was on screen (to place the overlap chooser), in egui points.
+    pub click_pos: Option<Pos2>,
+}
+
+/// LayeredMap's selection highlight (Visual specification › Default symbols › Selected): the
+/// `accent` token's 3 px outline with a 2 px halo, white on light, black on dark.
+pub fn selection_style(dark: bool) -> SelectionStyle {
+    if dark {
+        SelectionStyle::Outline { accent: rustgis_map::Rgba::rgb(0x5B, 0x8D, 0xEF), halo: rustgis_map::Rgba::rgb(0, 0, 0) }
+    } else {
+        SelectionStyle::Outline { accent: rustgis_map::Rgba::rgb(0x25, 0x63, 0xEB), halo: rustgis_map::Rgba::rgb(0xFF, 0xFF, 0xFF) }
+    }
 }
 
 struct Shown {
@@ -91,6 +108,10 @@ pub struct MapView {
     pub renders: u64,
     /// Times the render thread was restarted.
     restarts: u32,
+    /// Where the map was last shown (screen conversions between frames).
+    rect: Option<Rect>,
+    /// How selected features are drawn.
+    selection: SelectionStyle,
 }
 
 impl MapView {
@@ -120,7 +141,62 @@ impl MapView {
             fade_s: FADE_S,
             renders: 0,
             restarts: 0,
+            rect: None,
+            selection: selection_style(false),
         }
+    }
+
+    /// How selected features (each layer's `selection` rows) are drawn; LayeredMap's light-theme
+    /// [`selection_style`] by default. Call with `selection_style(dark)` when the theme changes.
+    pub fn set_selection_style(&mut self, style: SelectionStyle) {
+        self.selection = style;
+    }
+
+    /// Web Mercator metres per logical point at the current camera (not ground metres: the plane
+    /// hit testing and drawing share).
+    pub fn meters_per_pixel(&self) -> f64 {
+        self.camera.res
+    }
+
+    /// Where a longitude/latitude is on screen, in egui points, at the current camera; `None`
+    /// before the map was first shown.
+    pub fn lonlat_to_screen(&self, lonlat: Coord) -> Option<Pos2> {
+        let rect = self.rect?;
+        let (sx, sy) = self.camera.to_screen(lonlat_to_merc(lonlat), f64::from(rect.width()), f64::from(rect.height()));
+        Some(pos2(rect.min.x + sx as f32, rect.min.y + sy as f32))
+    }
+
+    /// The longitude/latitude under a screen point (egui points); `None` before the map was first
+    /// shown. Longitudes are not wrapped into ±180° (east–west panning goes past the antimeridian).
+    pub fn screen_to_lonlat(&self, pos: Pos2) -> Option<Coord> {
+        let rect = self.rect?;
+        let m = self.camera.to_map(
+            f64::from(pos.x - rect.min.x),
+            f64::from(pos.y - rect.min.y),
+            f64::from(rect.width()),
+            f64::from(rect.height()),
+        );
+        Some(rustgis_geom::merc_to_lonlat(m))
+    }
+
+    /// Every object a click at `lonlat` hits in `layers` (the visible, selectable vector layers,
+    /// topmost first), within the click tolerance at the current zoom: the topmost layer's hits
+    /// first, each layer's nearest first. More than one hit means the overlap chooser.
+    pub fn hit_test(&self, layers: &[HitLayer<'_>], lonlat: Coord) -> Vec<Hit> {
+        hit::hit_test(layers, lonlat, self.meters_per_pixel())
+    }
+
+    /// [`MapView::hit_test`] for a screen point (egui points); empty before the map was first
+    /// shown.
+    pub fn hit_test_screen(&self, layers: &[HitLayer<'_>], pos: Pos2) -> Vec<Hit> {
+        let Some(rect) = self.rect else { return Vec::new() };
+        let m = self.camera.to_map(
+            f64::from(pos.x - rect.min.x),
+            f64::from(pos.y - rect.min.y),
+            f64::from(rect.width()),
+            f64::from(rect.height()),
+        );
+        hit::hit_test_merc(layers, m, self.meters_per_pixel())
     }
 
     /// The map being shown.
@@ -245,8 +321,10 @@ impl MapView {
         {
             let m = self.camera.to_map(f64::from(p.x - rect.min.x), f64::from(p.y - rect.min.y), w, h);
             out.clicked = self.map.to_lonlat(m);
+            out.click_pos = Some(p);
         }
         camera::clamp(&mut self.camera, w, h);
+        self.rect = Some(rect);
 
         // Ask the worker for the newest view; take what it finished.
         let ppp = ui.ctx().pixels_per_point();
@@ -257,7 +335,7 @@ impl MapView {
             self.restarts += 1;
             self.worker = worker::Worker::spawn(self.map.clone(), ui.ctx().clone());
         }
-        self.worker.request(view, rustgis_tiles::cache::generation());
+        self.worker.request(view, self.selection, rustgis_tiles::cache::generation());
         // While a crossfade runs, a newer frame waits for it to finish (at most 150 ms) unless the
         // camera is moving: swapping mid-fade would drop the half-faded frame and pop.
         let fading = self.current.as_ref().is_some_and(|c| t - c.since < self.fade_s);

@@ -37,7 +37,7 @@ struct App {
     ephemeral: bool,
     /// `--tour "lon,lat,zoom;…"`: flies to each place in turn, 6 s apart, then quits (checking
     /// what a search jump looks like without driving the keyboard).
-    tour: Vec<(f64, f64, f64)>,
+    tour: Vec<Step>,
     tour_next: Option<f64>,
 }
 
@@ -109,10 +109,14 @@ impl eframe::App for App {
                 if self.tour.is_empty() {
                     ctx.send_viewport_cmd(egui::ViewportCommand::Close);
                 } else {
-                    let (lon, lat, z) = self.tour.remove(0);
-                    self.shell.command(ctx, Command::FlyTo(lon, lat, z));
+                    let step = self.tour.remove(0);
+                    let wait = match step {
+                        Step::Fly(..) => 6.0,
+                        _ => 2.5,
+                    };
+                    self.shell.command(ctx, step.command());
+                    self.tour_next = Some(t + wait);
                 }
-                self.tour_next = Some(t + 6.0);
             }
             ctx.request_repaint_after(std::time::Duration::from_millis(100));
         }
@@ -213,6 +217,48 @@ impl eframe::App for App {
     }
 }
 
+/// One step of a `--tour` script (developer testing without touching the pointer or keyboard):
+/// `lon,lat,zoom` flies there; `click lon,lat` (or `shift-click lon,lat`) clicks the map there;
+/// `layer N` selects the shelf's n-th layer from the top; `tab N` shows an inspector tab;
+/// `table` toggles the table drawer; `preset N` applies a style preset; `esc` presses Esc.
+#[derive(Clone, Debug, PartialEq)]
+enum Step {
+    Fly(f64, f64, f64),
+    Other(Command),
+}
+
+impl Step {
+    fn parse(s: &str) -> Option<Step> {
+        let s = s.trim();
+        let nums = |r: &str| r.split(',').filter_map(|x| x.trim().parse::<f64>().ok()).collect::<Vec<f64>>();
+        let (word, rest) = s.split_once(' ').unwrap_or((s, ""));
+        Some(match word {
+            "click" | "shift-click" => match nums(rest).as_slice() {
+                [lon, lat] => Step::Other(Command::Click(*lon, *lat, word == "shift-click")),
+                _ => return None,
+            },
+            "layer" => Step::Other(Command::SelectLayerAt(rest.trim().parse().ok()?)),
+            "tab" => Step::Other(Command::InspectorTab(rest.trim().parse().ok()?)),
+            "table" => Step::Other(Command::ToggleTable),
+            "preset" => Step::Other(Command::ApplyPreset(rest.trim().parse().ok()?)),
+            "esc" => Step::Other(Command::Escape),
+            "undo" => Step::Other(Command::Undo),
+            "redo" => Step::Other(Command::Redo),
+            _ => match nums(s).as_slice() {
+                [lon, lat, z] => Step::Fly(*lon, *lat, *z),
+                _ => return None,
+            },
+        })
+    }
+
+    fn command(self) -> Command {
+        match self {
+            Step::Fly(lon, lat, z) => Command::FlyTo(lon, lat, z),
+            Step::Other(c) => c,
+        }
+    }
+}
+
 fn main() -> eframe::Result {
     let started = std::time::Instant::now();
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -221,19 +267,7 @@ fn main() -> eframe::Result {
     let runs = arg("--runs").and_then(|v| v.parse::<usize>().ok()).unwrap_or(1);
     let fixture = arg("--fixture").map(std::path::PathBuf::from);
     let probe = args.iter().any(|a| a == "--launch-probe");
-    let tour: Vec<(f64, f64, f64)> = arg("--tour")
-        .map(|v| {
-            v.split(';')
-                .filter_map(|p| {
-                    let n: Vec<f64> = p.split(',').filter_map(|x| x.trim().parse().ok()).collect();
-                    match n.as_slice() {
-                        [lon, lat, z] => Some((*lon, *lat, *z)),
-                        _ => None,
-                    }
-                })
-                .collect()
-        })
-        .unwrap_or_default();
+    let tour: Vec<Step> = arg("--tour").map(|v| v.split(';').filter_map(Step::parse).collect()).unwrap_or_default();
     let ephemeral = feel_out.is_some() || probe || !tour.is_empty();
     if args.iter().any(|a| a == "--version" || a == "-V") {
         println!("layeredmap {}", env!("CARGO_PKG_VERSION"));
@@ -281,6 +315,7 @@ fn main() -> eframe::Result {
             }
             let system = System { dark_mode: cc.egui_ctx.system_theme() == Some(egui::Theme::Dark), reduce_motion: reduce_motion() };
             let mut shell = Shell::new(&cc.egui_ctx, flags, prefs, system);
+            lm_ui::basemap::start_archive_lookup(&cc.egui_ctx);
             if !ephemeral {
                 shell.set_question_log(question_log_path());
             }

@@ -18,6 +18,9 @@ pub mod report;
 mod text;
 mod tiles;
 
+/// The vector data types (`Dataset`, `Geometry`) a map's layers hold, for front ends that read
+/// layer data (hit testing in LayeredMap's map view) without depending on `rustgis-data` directly.
+pub use rustgis_data;
 pub use rustgis_tiles;
 pub use tiles::spec as tile_spec;
 
@@ -111,6 +114,27 @@ use tiny_skia::{
 
 /// Selection highlight (cyan, as desktop GIS users expect).
 pub const SELECTION: Rgba = Rgba::rgb(0x00, 0xE5, 0xFF);
+
+/// How selected features are drawn. The default keeps RustGIS's own cyan highlight; front ends
+/// with their own design (LayeredMap) choose [`SelectionStyle::Outline`] via [`render_styled`].
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub enum SelectionStyle {
+    /// RustGIS's highlight: a cyan outline, a light cyan tint on areas, a cyan ring on points.
+    #[default]
+    Classic,
+    /// A [`OUTLINE_PX`]-point accent outline with a [`HALO_PX`]-point halo outside it (white on
+    /// a light interface, black on a dark one); selected points grow by [`POINT_GROW`].
+    Outline { accent: Rgba, halo: Rgba },
+}
+
+impl SelectionStyle {
+    /// Width of the accent outline in [`SelectionStyle::Outline`], logical points.
+    pub const OUTLINE_PX: f32 = 3.0;
+    /// Width of the halo around the accent outline, logical points.
+    pub const HALO_PX: f32 = 2.0;
+    /// How much selected points grow.
+    pub const POINT_GROW: f32 = 1.4;
+}
 
 /// Largest raster rendered (pixels per side).
 pub const MAX_SIDE: u32 = 8192;
@@ -296,6 +320,8 @@ struct Ctx<'a> {
     cull: Extent,
     /// Set when drawing the globe; coordinates are then longitude/latitude, not Web Mercator.
     globe: Option<Globe>,
+    /// How selected features are drawn.
+    selection: SelectionStyle,
 }
 
 impl Ctx<'_> {
@@ -551,6 +577,9 @@ impl Ctx<'_> {
     }
 
     fn highlight(&self, pm: &mut Pixmap, g: &Geometry, s: &Symbol) {
+        if let SelectionStyle::Outline { accent, halo } = self.selection {
+            return self.outline_highlight(pm, g, s, accent, halo);
+        }
         let cyan = paint(SELECTION, 1.0);
         match g {
             Geometry::Point(c) => self.marker(pm, *c, s, 1.0, Some(SELECTION)),
@@ -561,6 +590,44 @@ impl Ctx<'_> {
             }
             Geometry::Polygon(polys) => self.polygon(pm, polys, Some(paint(SELECTION.with_alpha(40), 1.0)), Some((cyan, 2.0))),
         }
+    }
+
+    /// [`SelectionStyle::Outline`]: the halo is drawn first and wider, so it shows as a band
+    /// outside the accent; the feature itself is redrawn on top (lines, points).
+    fn outline_highlight(&self, pm: &mut Pixmap, g: &Geometry, s: &Symbol, accent: Rgba, halo: Rgba) {
+        let (o, h) = (SelectionStyle::OUTLINE_PX, SelectionStyle::HALO_PX);
+        match g {
+            Geometry::Point(_) | Geometry::MultiPoint(_) => {
+                let grown = Symbol { size: s.size * SelectionStyle::POINT_GROW, ..*s };
+                // A stroke straddles the marker's edge, so twice the band width reaches it outside.
+                let ring = |pm: &mut Pixmap, c: Coord| {
+                    self.marker_ring(pm, c, &grown, halo, 2.0 * (o + h));
+                    self.marker_ring(pm, c, &grown, accent, 2.0 * o);
+                    self.marker(pm, c, &grown, 1.0, None);
+                };
+                match g {
+                    Geometry::Point(c) => ring(pm, *c),
+                    Geometry::MultiPoint(v) => v.iter().for_each(|c| ring(pm, *c)),
+                    _ => {}
+                }
+            }
+            Geometry::Line(parts) => {
+                let w = s.stroke_width.max(1.0);
+                self.line(pm, parts, &paint(halo, 1.0), w + 2.0 * (o + h));
+                self.line(pm, parts, &paint(accent, 1.0), w + 2.0 * o);
+                self.line(pm, parts, &paint(s.stroke, 1.0), w);
+            }
+            Geometry::Polygon(polys) => {
+                self.polygon(pm, polys, None, Some((paint(halo, 1.0), o + 2.0 * h)));
+                self.polygon(pm, polys, None, Some((paint(accent, 1.0), o)));
+            }
+        }
+    }
+
+    /// Strokes a marker's outline `width` points wide (the selection rings).
+    fn marker_ring(&self, pm: &mut Pixmap, c: Coord, s: &Symbol, color: Rgba, width: f32) {
+        let ring = Symbol { fill: color, stroke: color, stroke_width: width, ..*s };
+        self.marker(pm, c, &ring, 1.0, None);
     }
 }
 
@@ -599,10 +666,15 @@ pub fn view_lonlat(map: &Map, view: &View) -> Extent {
 /// Draws the map for the screen. Layers are drawn bottom-up (the last layer in the list first).
 /// On high-density screens rasters are computed at logical-pixel resolution, for speed.
 pub fn render(map: &mut Map, view: &View) -> Option<Rendered> {
-    render_with(map, view, false)
+    render_with(map, view, false, SelectionStyle::Classic)
 }
 
-fn render_with(map: &mut Map, view: &View, full_res_rasters: bool) -> Option<Rendered> {
+/// [`render`] with the selection drawn in `selection`'s style (LayeredMap's map view).
+pub fn render_styled(map: &mut Map, view: &View, selection: SelectionStyle) -> Option<Rendered> {
+    render_with(map, view, false, selection)
+}
+
+fn render_with(map: &mut Map, view: &View, full_res_rasters: bool, selection: SelectionStyle) -> Option<Rendered> {
     let (w, h) = view.pixel_size();
     let mut pm = Pixmap::new(w, h)?;
     // Streamed layers read the view: in the background for the screen, in place for an export
@@ -618,6 +690,7 @@ fn render_with(map: &mut Map, view: &View, full_res_rasters: bool) -> Option<Ren
         wireframe: map.view.wireframe,
         cull: view.camera.extent(view.width, view.height).padded(0.05, 0.0),
         globe,
+        selection,
     };
     let scale = map.ground_res_at(&view.camera) / rustgis_geom::PIXEL_M;
     // On the globe nothing is culled by the flat extent: the horizon clips instead.
@@ -1215,7 +1288,7 @@ fn place_labels(mut cands: Vec<(PlacedLabel, f32, (u32, usize))>, fixed: Vec<Pla
 /// missing (a style, then its sources, then their tiles) and waits for it, at most a minute in
 /// all. In the browser, which can't wait, it draws what has arrived.
 pub(crate) fn render_complete(map: &mut Map, view: &View) -> Option<Rendered> {
-    let mut r = render_with(map, view, true)?;
+    let mut r = render_with(map, view, true, SelectionStyle::Classic)?;
     let start = web_time::Instant::now();
     let budget = web_time::Duration::from_secs(60);
     let mut passes = 0;
@@ -1223,7 +1296,7 @@ pub(crate) fn render_complete(map: &mut Map, view: &View) -> Option<Rendered> {
         // Each wait within what is left of the minute.
         let left = budget.saturating_sub(start.elapsed());
         rustgis_tiles::cache::wait(left.min(web_time::Duration::from_secs(30)));
-        r = render_with(map, view, true)?;
+        r = render_with(map, view, true, SelectionStyle::Classic)?;
         passes += 1;
     }
     Some(r)
@@ -1350,6 +1423,34 @@ mod tests {
         let png = render_png(&mut m, &view).unwrap();
         assert!(png.len() > 1000);
         assert!(!world().is_empty());
+    }
+
+    /// LayeredMap's selection style: an accent outline with a halo outside it; the default
+    /// (Classic) is unchanged and never draws the accent.
+    #[test]
+    fn outline_selection_style_draws_accent_and_halo() {
+        let mut m = Map::new("Map");
+        m.graticule = false;
+        let sq = |h: f64| vec![Coord::new(-h, -h), Coord::new(h, -h), Coord::new(h, h), Coord::new(-h, h), Coord::new(-h, -h)];
+        let mut d = Dataset::new("a", GeometryType::Polygon, vec![]);
+        d.push(Some(Geometry::Polygon(vec![vec![sq(1.0)]])), vec![]);
+        let id = m.add_dataset(d);
+        if let Some(l) = m.layer_mut(id) {
+            l.selection = vec![0];
+        }
+        // 1° ≈ 111 km; at 1000 m/px the square's east edge is ~111 px right of the centre.
+        let camera = Camera { center: Coord::new(0.0, 0.0), res: 1000.0 };
+        let view = View { width: 400.0, height: 300.0, pixels_per_point: 1.0, camera, dark: false };
+        let accent = Rgba::rgb(0x25, 0x63, 0xEB);
+        let style = SelectionStyle::Outline { accent, halo: Rgba::rgb(0xFF, 0xFF, 0xFF) };
+        let edge = (200.0 + lonlat_to_merc(Coord::new(1.0, 0.0)).x / 1000.0).round() as u32;
+        let px = |r: &Rendered, x: u32| r.pixmap.pixel(x, 150).map(|p| (p.red(), p.green(), p.blue()));
+        let styled = render_styled(&mut m, &view, style).unwrap();
+        assert_eq!(px(&styled, edge), Some((0x25, 0x63, 0xEB)), "accent on the outline");
+        assert_eq!(px(&styled, edge + 2), Some((0xFF, 0xFF, 0xFF)), "halo outside the accent");
+        assert_ne!(px(&styled, edge + 5), Some((0xFF, 0xFF, 0xFF)), "and only 2 px of it");
+        let classic = render(&mut m, &view).unwrap();
+        assert_ne!(px(&classic, edge), Some((0x25, 0x63, 0xEB)));
     }
 
     #[test]

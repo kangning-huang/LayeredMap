@@ -153,6 +153,21 @@ pub struct Layer {
     /// Bumped whenever geometry changes so caches rebuild.
     #[serde(default)]
     pub geometry_rev: u64,
+    /// Rows a front end filtered out by its own rules (LayeredMap's filter builder): a row whose
+    /// entry is false never draws, as if the definition query rejected it. Shared, not saved.
+    #[serde(skip)]
+    pub row_mask: Option<std::sync::Arc<Vec<bool>>>,
+    /// A symbol per row worked out by a front end (LayeredMap's colour and size by value): when
+    /// set, it wins over `renderer`. Shared, not saved.
+    #[serde(skip)]
+    pub row_symbols: Option<std::sync::Arc<RowSymbols>>,
+}
+
+/// Per-row symbols as a small table and an index per row (two bytes a row, not a symbol).
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct RowSymbols {
+    pub index: Vec<u16>,
+    pub symbols: Vec<Symbol>,
 }
 
 fn yes() -> bool {
@@ -190,6 +205,8 @@ impl Layer {
             projected_rev: u64::MAX,
             projected_for: String::new(),
             geometry_rev: 0,
+            row_mask: None,
+            row_symbols: None,
         }
     }
 
@@ -315,6 +332,11 @@ impl Layer {
 
     /// The symbol a row draws with.
     pub fn symbol(&self, row: usize) -> Symbol {
+        if let Some(rs) = &self.row_symbols
+            && let Some(s) = rs.index.get(row).and_then(|i| rs.symbols.get(usize::from(*i)))
+        {
+            return *s;
+        }
         if self.graphics { graphics::symbol(&self.dataset, row) } else { self.renderer.symbol_for(&self.dataset, row) }
     }
 
@@ -386,16 +408,21 @@ impl Layer {
         rows
     }
 
-    /// Rows passing the definition query (all rows when none or invalid).
+    /// Rows passing the definition query (all rows when none or invalid) and the row mask.
     pub fn visible_rows(&self) -> Vec<bool> {
         let n = self.dataset.features.len();
-        match self.definition_query.as_deref().filter(|q| !q.trim().is_empty()) {
-            Some(q) => match rustgis_data::query::parse(q, &self.dataset) {
-                Ok(e) => (0..n).map(|r| rustgis_data::query::eval(&e, &self.dataset, r)).collect(),
-                Err(_) => vec![true; n],
-            },
+        let mut rows = match &self.row_mask {
+            Some(m) => (0..n).map(|r| m.get(r).copied().unwrap_or(true)).collect(),
             None => vec![true; n],
+        };
+        if let Some(q) = self.definition_query.as_deref().filter(|q| !q.trim().is_empty())
+            && let Ok(e) = rustgis_data::query::parse(q, &self.dataset)
+        {
+            for (r, keep) in rows.iter_mut().enumerate() {
+                *keep = *keep && rustgis_data::query::eval(&e, &self.dataset, r);
+            }
         }
+        rows
     }
 
     /// Extent in longitude/latitude.
@@ -411,7 +438,7 @@ impl Layer {
     /// Extent in longitude/latitude of the features the definition query lets through (the whole
     /// extent without a query, for rasters and for streamed layers, whose rows are only those read).
     pub fn shown_extent(&self) -> Extent {
-        let query = self.definition_query.as_deref().is_some_and(|q| !q.trim().is_empty());
+        let query = self.definition_query.as_deref().is_some_and(|q| !q.trim().is_empty()) || self.row_mask.is_some();
         if !query || self.raster.is_some() || self.source.is_some() {
             return self.extent();
         }

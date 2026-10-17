@@ -46,7 +46,10 @@ pub fn apply(map: &mut Map, prefs: &Prefs, dark_ui: bool) {
     map.tiles.retain(|t| !t.id.starts_with("lm-basemap"));
     if p.source == Source::VectorArchive {
         // Developer override, for testing a host or simulating being offline (an unreachable address).
-        let url = std::env::var("LM_BASEMAP_URL").ok().filter(|u| !u.trim().is_empty()).unwrap_or_else(|| p.url_template.to_string());
+        let url = std::env::var("LM_BASEMAP_URL")
+            .ok()
+            .filter(|u| !u.trim().is_empty())
+            .unwrap_or_else(|| lm_mapview::archive::url(p.url_template));
         let mut t = TileLayer::new(p.name, TileKind::PmTiles, url);
         t.id = format!("lm-basemap-{}", p.id);
         t.attribution = p.attribution.into();
@@ -57,6 +60,13 @@ pub fn apply(map: &mut Map, prefs: &Prefs, dark_ui: bool) {
         t.opacity = prefs.strength.clamp(0.4, 1.0);
         map.tiles.insert(0, t);
     }
+}
+
+/// Starts looking for the newest daily build of the online basemap (the app calls this once; tests
+/// don't, so they never touch the network). The map switches to it when it is found.
+pub fn start_archive_lookup(ctx: &egui::Context) {
+    let ctx = ctx.clone();
+    lm_mapview::archive::start(move || ctx.request_repaint());
 }
 
 /// The starting map: the saved view, or the whole world on first launch.
