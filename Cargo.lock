@@ -2674,6 +2674,8 @@ dependencies = [
  "rustgis-map",
  "rustgis-render",
  "rustgis-tiles",
+ "serde_json",
+ "ureq",
  "web-time",
 ]
 

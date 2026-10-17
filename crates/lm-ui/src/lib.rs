@@ -169,6 +169,8 @@ pub struct Shell {
     pub(crate) chooser_hover: Option<lm_core::selection::FeatureRef>,
     /// "Your data" search results, with the query and layers they were found for.
     pub(crate) data_search: (String, Vec<chrome::DataRow>),
+    /// The daily basemap build the map reads, once the newest one is known.
+    archive_url: Option<String>,
 }
 
 impl Shell {
@@ -196,6 +198,7 @@ impl Shell {
             reduce_motion: system.reduce_motion,
             notice: None,
             last_map_size: egui::vec2(1280.0, 748.0),
+            archive_url: None,
             ws: workspace::Workspace::with_waker(ctx),
             shelf_open: true,
             inspector_tab: 0,
@@ -534,6 +537,13 @@ impl Shell {
                 accent: lm_mapview::map::Rgba([a.r(), a.g(), a.b(), 255]),
                 halo: lm_mapview::map::Rgba(halo),
             });
+        }
+        // The newest daily basemap build, once found, replaces the pinned one.
+        if let Some(u) = lm_mapview::archive::found()
+            && self.archive_url.as_ref() != Some(&u)
+        {
+            self.archive_url = Some(u);
+            self.basemap_changed();
         }
         self.shortcuts(&ctx);
         self.poll_loading(&ctx);

@@ -19,3 +19,8 @@ web-time = { workspace = true }
 log = { workspace = true }
 # The per-layer hit-test index (R-tree; MIT/Apache-2.0). Already in the build through `geo`.
 rstar = { version = "0.12", default-features = false }
+serde_json = { workspace = true }
+
+# Finding the newest daily basemap build (`archive`). Already in the build through rustgis-tiles.
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+ureq = { version = "3", default-features = false, features = ["rustls", "gzip"] }

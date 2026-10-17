@@ -499,6 +499,7 @@ pub fn inspector(shell: &mut Shell, ui: &mut Ui, map: Rect) {
     egui::Area::new(egui::Id::new("lm-inspector")).order(egui::Order::Middle).fixed_pos(pos).show(ui.ctx(), |ui| {
         frame(&t).show(ui, |ui| {
             ui.set_width(INSPECTOR_WIDTH - 2.0 * theme::PANEL_PADDING);
+            ui.set_max_width(INSPECTOR_WIDTH - 2.0 * theme::PANEL_PADDING);
             ui.horizontal(|ui| {
                 ui.vertical(|ui| {
                     ui.set_width(INSPECTOR_WIDTH - 2.0 * theme::PANEL_PADDING - 40.0);
@@ -971,15 +972,19 @@ fn details(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, l: &lm_core::
         ui.label(RichText::new("Fields").font(semibold(BODY)));
         let mut role_change: Option<(String, Option<lm_core::model::FieldRole>)> = None;
         let mut star: Option<(String, bool)> = None;
-        egui::Grid::new(("lm-fields", id.0)).striped(true).num_columns(4).show(ui, |ui| {
-            for f in &p.fields {
-                let known = l.role(f);
-                let starred = l.starred.contains(&f.name);
-                let is_measure = matches!(known.value, lm_core::model::FieldRole::Measure(_) | lm_core::model::FieldRole::Category);
-                let star_icon = if starred { icon::STAR_FOUR } else { icon::STAR };
+        // One row per field: star, name with its evidence wrapped beneath, role chip. Fixed widths
+        // keep the inspector from growing with long evidence text.
+        for f in &p.fields {
+            let known = l.role(f);
+            let starred = l.starred.contains(&f.name);
+            let is_measure = matches!(known.value, lm_core::model::FieldRole::Measure(_) | lm_core::model::FieldRole::Category);
+            let star_icon = if starred { icon::STAR_FOUR } else { icon::STAR };
+            ui.add_space(4.0);
+            ui.horizontal(|ui| {
                 if is_measure {
                     if ui
-                        .add(
+                        .add_sized(
+                            vec2(18.0, 18.0),
                             egui::Button::new(RichText::new(star_icon).color(if starred { t.accent } else { t.text_secondary }))
                                 .frame(false),
                         )
@@ -989,30 +994,35 @@ fn details(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, l: &lm_core::
                         star = Some((f.name.clone(), !starred));
                     }
                 } else {
-                    ui.label("");
+                    ui.allocate_exact_size(vec2(18.0, 18.0), egui::Sense::hover());
                 }
-                ui.label(&f.name);
+                let text_w = (ui.available_width() - 92.0).max(80.0);
+                ui.vertical(|ui| {
+                    ui.set_width(text_w);
+                    ui.add(egui::Label::new(&f.name).wrap());
+                    ui.add(egui::Label::new(RichText::new(&known.evidence.0).size(CAPTION).color(t.text_secondary)).wrap());
+                });
                 // The role chip, with Change.
-                let chip = egui::Button::new(RichText::new(role_name(known.value)).size(CAPTION))
-                    .fill(t.accent_weak)
-                    .corner_radius(egui::CornerRadius::same(10));
-                egui::containers::menu::MenuButton::from_button(chip).ui(ui, |ui| {
-                    ui.label(RichText::new("Treat this field as").size(CAPTION).color(t.text_secondary));
-                    for r in ROLE_CHOICES {
-                        if ui.selectable_label(known.value == r, role_name(r)).clicked() {
-                            role_change = Some((f.name.clone(), Some(r)));
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
+                    let chip = egui::Button::new(RichText::new(role_name(known.value)).size(CAPTION))
+                        .fill(t.accent_weak)
+                        .corner_radius(egui::CornerRadius::same(10));
+                    egui::containers::menu::MenuButton::from_button(chip).ui(ui, |ui| {
+                        ui.label(RichText::new("Treat this field as").size(CAPTION).color(t.text_secondary));
+                        for r in ROLE_CHOICES {
+                            if ui.selectable_label(known.value == r, role_name(r)).clicked() {
+                                role_change = Some((f.name.clone(), Some(r)));
+                                ui.close();
+                            }
+                        }
+                        if l.roles.contains_key(&f.name) && ui.button("Back to the detected role").clicked() {
+                            role_change = Some((f.name.clone(), None));
                             ui.close();
                         }
-                    }
-                    if l.roles.contains_key(&f.name) && ui.button("Back to the detected role").clicked() {
-                        role_change = Some((f.name.clone(), None));
-                        ui.close();
-                    }
+                    });
                 });
-                ui.label(RichText::new(&known.evidence.0).size(CAPTION).color(t.text_secondary));
-                ui.end_row();
-            }
-        });
+            });
+        }
         if let Some((field, to)) = role_change {
             let tx = shell.ws.doc.set_role_tx(id, &field, to);
             shell.ws.commit(tx);

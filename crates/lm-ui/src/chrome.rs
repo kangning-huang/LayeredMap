@@ -498,17 +498,24 @@ fn notices(shell: &mut Shell, ui: &Ui, map: Rect) {
     let p = lm_core::basemap::provider(&shell.prefs.basemap);
     let offline_text = if p.source == Source::Offline {
         (shell.map_view().zoom() > OFFLINE_MAX_ZOOM).then_some("Detailed background unavailable offline".to_string())
-    } else if !shell.map_view().tile_errors().is_empty() {
+    } else if !shell.map_view().tile_errors().is_empty() && !lm_mapview::archive::looking() {
         Some("Detailed background unavailable offline. Your data and tools still work.".to_string())
     } else {
         None
     };
     let transient = shell.notice.as_ref().filter(|(_, at)| now - at < 4.0).map(|(s, _)| s.clone());
     let Some(text) = offline_text.or(transient) else { return };
-    let galley = ui.painter().layout_no_wrap(text, regular(theme::BODY), t.text_primary);
-    let r = Rect::from_center_size(pos2(map.center().x, map.top() + PANEL_MARGIN + 16.0), galley.size() + vec2(28.0, 14.0));
-    ui.painter().rect(r, CornerRadius::same(16), t.surface, Stroke::new(1.0, t.border), egui::StrokeKind::Inside);
-    ui.painter().galley(r.min + vec2(14.0, 7.0), galley, t.text_primary);
+    // Wrapped to the free part of the map and drawn above the panels, so neither ever cuts it off.
+    let max_w = (map.width() - 2.0 * PANEL_MARGIN - 28.0).max(120.0);
+    let painter = ui.ctx().layer_painter(egui::LayerId::new(egui::Order::Foreground, egui::Id::new("lm-notice")));
+    let galley = painter.layout(text, regular(theme::BODY), t.text_primary, max_w);
+    let size = galley.size() + vec2(28.0, 14.0);
+    // One line centres 16 px below the panel margin, as before; more lines hang from the margin.
+    let top = if galley.rows.len() > 1 { map.top() + PANEL_MARGIN } else { map.top() + PANEL_MARGIN + 16.0 - size.y / 2.0 };
+    let r = Rect::from_min_size(pos2(map.center().x - size.x / 2.0, top), size);
+    let radius = if galley.rows.len() > 1 { CornerRadius::same(theme::RADIUS_CARD) } else { CornerRadius::same(16) };
+    painter.rect(r, radius, t.surface, Stroke::new(1.0, t.border), egui::StrokeKind::Inside);
+    painter.galley(r.min + vec2(14.0, 7.0), galley, t.text_primary);
     if shell.notice.is_some() {
         ui.ctx().request_repaint_after(std::time::Duration::from_millis(250));
     }

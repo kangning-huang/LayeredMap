@@ -315,6 +315,7 @@ fn main() -> eframe::Result {
             }
             let system = System { dark_mode: cc.egui_ctx.system_theme() == Some(egui::Theme::Dark), reduce_motion: reduce_motion() };
             let mut shell = Shell::new(&cc.egui_ctx, flags, prefs, system);
+            lm_ui::basemap::start_archive_lookup(&cc.egui_ctx);
             if !ephemeral {
                 shell.set_question_log(question_log_path());
             }

@@ -338,6 +338,28 @@ fn phase3_style_tab() {
     h.snapshot("phase3_style_tab");
 }
 
+/// Details lists every field with wrapped evidence; the inspector keeps its width however long
+/// the evidence is, frame after frame (owner's Phase 3 recording: it used to grow off the window).
+#[test]
+fn phase3_details_tab() {
+    let mut h = phase3(&["../assets/examples/populated_places.geojson"], (100.0, 35.0, 3.0), |s| {
+        // The same source text on every machine.
+        s.ws.doc.layers[0].profile.source.path = "examples/populated_places.geojson".into();
+        let id = s.ws.doc.layers[0].id;
+        s.ws.select_layer(id);
+        s.inspector_tab = 2;
+    });
+    settle(&mut h);
+    let width = |h: &Harness<'static, Option<Shell>>| h.ctx.memory(|m| m.area_rect(egui::Id::new("lm-inspector"))).map(|r| r.width());
+    let first = width(&h).expect("the inspector is open");
+    for _ in 0..10 {
+        h.run();
+        assert_eq!(width(&h), Some(first));
+    }
+    assert!(first <= crate::panels::INSPECTOR_WIDTH + 2.0, "{first}"); // the frame's 1 px border on each side
+    h.snapshot("phase3_details_tab");
+}
+
 /// Selection is shared: an object selected (as a table row click does) is highlighted on the map,
 /// and a map click selects the object the table then shows.
 #[test]
