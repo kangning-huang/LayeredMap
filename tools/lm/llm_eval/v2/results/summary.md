@@ -15,6 +15,7 @@ Rescored from the stored plans by `report_v2.py`. v1 rows: the 2026-10-17 v1 run
 | v2-per_action | google/gemini-3.5-flash | 99% | 99% | 98% | 98% | 98% (83) | 100% (8) | 6.827 | 13.693 | 55% | 11.21 | 16.78 | 2.36 | 0.02 | 0.33 |
 | v2-per_action | openai/gpt-oss-120b | 86% | 86% | 86% | 86% | 84% (83) | 100% (8) | 0.163 | 0.756 | 90% | 4.63 | 7.82 | 2.12 | 0.03 | 0.25 |
 | v2-per_action | z-ai/glm-5.3-flash | 99% | 99% | 99% | 99% | 99% (83) | 100% (8) | 0.984 | 1.134 | 77% | 2.70 | 5.97 | 2.28 | 0.02 | 0.21 |
+| v2-per_action-jev | typesafe/jev-router | 99% | 99% | 100% | 100% | 100% (83) | 100% (8) | 1.197 | 1.197 | 79% | 4.95 | 12.00 | 2.25 | 0.01 | 0.23 |
 | v2-per_action-nochecker | anthropic/claude-haiku-5.5 | 94% | 94% | 96% | 96% | 96% (83) | 88% (8) | 0.379 | 1.689 | 93% | 2.48 | 3.91 | 2.16 | 0.00 | 0.28 |
 | v2-per_action-nochecker | openai/gpt-oss-120b | 78% | 88% | 70% | 90% | 66% (83) | 100% (8) | 0.263 | 0.551 | 42% | 5.28 | 9.88 | 2.24 | 0.00 | 0.27 |
 | v2-per_action-nochecker | z-ai/glm-5.3-flash | 95% | 96% | 94% | 96% | 94% (83) | 100% (8) | 0.969 | 1.113 | 75% | 3.80 | 9.83 | 2.25 | 0.00 | 0.22 |
@@ -29,6 +30,7 @@ Rescored from the stored plans by `report_v2.py`. v1 rows: the 2026-10-17 v1 run
 | v2-submit_plan | anthropic/claude-haiku-5.5 | 96% | 96% | 98% | 98% | 98% (83) | 100% (8) | 0.206 | 0.720 | 90% | 1.34 | 2.54 | 1.29 | 0.03 | 0.28 |
 | v2-submit_plan | openai/gpt-oss-120b | 87% | 87% | 90% | 90% | 89% (83) | 100% (8) | 0.087 | 0.321 | 81% | 3.55 | 7.20 | 1.24 | 0.00 | 0.24 |
 | v2-submit_plan | z-ai/glm-5.3-flash | 99% | 99% | 100% | 100% | 100% (83) | 100% (8) | 0.380 | 0.431 | 74% | 1.23 | 2.58 | 1.22 | 0.00 | 0.24 |
+| v2-submit_plan-jev | typesafe/jev-router | 96% | 96% | 98% | 98% | 98% (83) | 100% (8) | 0.445 | 0.445 | 67% | 2.20 | 4.17 | 1.24 | 0.00 | 0.26 |
 
 ## By category (v2 strict)
 
@@ -45,6 +47,7 @@ Rescored from the stored plans by `report_v2.py`. v1 rows: the 2026-10-17 v1 run
 | v2-per_action | google/gemini-3.5-flash | 100% | 100% | 100% | 100% | 100% | 100% | 100% | 100% | 82% | 100% |
 | v2-per_action | openai/gpt-oss-120b | 93% | 84% | 57% | 92% | 83% | 100% | 100% | 83% | 82% | 78% |
 | v2-per_action | z-ai/glm-5.3-flash | 100% | 100% | 100% | 100% | 100% | 100% | 100% | 100% | 91% | 100% |
+| v2-per_action-jev | typesafe/jev-router | 100% | 100% | 100% | 100% | 100% | 100% | 100% | 100% | 100% | 100% |
 | v2-per_action-nochecker | anthropic/claude-haiku-5.5 | 93% | 100% | 100% | 100% | 100% | 100% | 83% | 83% | 100% | 100% |
 | v2-per_action-nochecker | openai/gpt-oss-120b | 78% | 79% | 57% | 50% | 83% | 100% | 100% | 58% | 45% | 22% |
 | v2-per_action-nochecker | z-ai/glm-5.3-flash | 96% | 100% | 93% | 92% | 83% | 100% | 100% | 92% | 91% | 78% |
@@ -59,6 +62,7 @@ Rescored from the stored plans by `report_v2.py`. v1 rows: the 2026-10-17 v1 run
 | v2-submit_plan | anthropic/claude-haiku-5.5 | 100% | 95% | 93% | 100% | 100% | 100% | 100% | 100% | 100% | 100% |
 | v2-submit_plan | openai/gpt-oss-120b | 89% | 89% | 71% | 92% | 83% | 100% | 100% | 83% | 100% | 78% |
 | v2-submit_plan | z-ai/glm-5.3-flash | 100% | 100% | 100% | 100% | 100% | 100% | 100% | 100% | 100% | 100% |
+| v2-submit_plan-jev | typesafe/jev-router | 96% | 95% | 100% | 100% | 100% | 100% | 100% | 92% | 100% | 100% |
 
 ## Failures (v2 strict)
 
@@ -66,6 +70,7 @@ Rescored from the stored plans by `report_v2.py`. v1 rows: the 2026-10-17 v1 run
 - **v2-per_action / google/gemini-3.5-flash**: 2 — s04, s10 (extra_steps 2); repaired cases 2, plans read from text 0, prose read as ask/refuse 0
 - **v2-per_action / openai/gpt-oss-120b**: 14 — a11, f07, f14, m01, m06, m07, m08, r08, r09, s03, s08, u03, v04, z01 (refused_answerable 7, wrong_action 3, asked_unnecessarily 2, missing_steps 1, acted_instead_of_asking 1); repaired cases 2, plans read from text 12, prose read as ask/refuse 0
 - **v2-per_action / z-ai/glm-5.3-flash**: 1 — s06 (extra_steps 1); repaired cases 2, plans read from text 2, prose read as ask/refuse 0
+- **v2-per_action-jev / typesafe/jev-router**: 0 —  (); repaired cases 1, plans read from text 1, prose read as ask/refuse 0
 - **v2-per_action-nochecker / anthropic/claude-haiku-5.5**: 4 — a08, a11, t02, u04 (extra_steps 2, wrong_object 1, acted_instead_of_asking 1); repaired cases 0, plans read from text 2, prose read as ask/refuse 0
 - **v2-per_action-nochecker / openai/gpt-oss-120b**: 29 — a02, a05, a11, a16, a19, f02, f15, m01, m05, m06, m07, m09, r01, r02, r04, r05, r06, r08, r09, s01, s03, s04, s05, s06, u02, u04, v04, x05, z01 (extra_steps 20, refused_answerable 4, wrong_object 2, wrong_action 1, missing_steps 1, acted_instead_of_asking 1); repaired cases 0, plans read from text 21, prose read as ask/refuse 0
 - **v2-per_action-nochecker / z-ai/glm-5.3-flash**: 6 — m06, r03, r04, s06, u04, z01 (extra_steps 2, wrong_object 2, wrong_layer 1, acted_instead_of_asking 1); repaired cases 0, plans read from text 1, prose read as ask/refuse 0
@@ -80,3 +85,4 @@ Rescored from the stored plans by `report_v2.py`. v1 rows: the 2026-10-17 v1 run
 - **v2-submit_plan / anthropic/claude-haiku-5.5**: 2 — f13, m10 (missing_steps 1, refused_answerable 1); repaired cases 3, plans read from text 0, prose read as ask/refuse 0
 - **v2-submit_plan / openai/gpt-oss-120b**: 10 — a11, a20, f13, m01, m03, r08, r09, u03, v04, z01 (refused_answerable 4, wrong_action 3, missing_steps 1, acted_instead_of_asking 1, extra_steps 1); repaired cases 0, plans read from text 0, prose read as ask/refuse 0
 - **v2-submit_plan / z-ai/glm-5.3-flash**: 0 —  (); repaired cases 0, plans read from text 0, prose read as ask/refuse 0
+- **v2-submit_plan-jev / typesafe/jev-router**: 2 — a11, f13 (extra_steps 1, refused_answerable 1); repaired cases 0, plans read from text 0, prose read as ask/refuse 0

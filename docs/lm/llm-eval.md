@@ -448,3 +448,29 @@ inside the app.
   tokens, cost, latency, provider), `summary.csv`, `summary.md` and `spend.json`.
 - `docs/lm/img/llm-eval-pareto.png`: the chart above, made by `report.py`.
 - `tools/lm/llm_eval/v2/`: harness v2, its 97 cases, results (`results/<run>/<model>.jsonl`, `summary.{md,csv}`, `spend.json`) and README.
+
+## TypeSafe Jev (2026-10-17, owner's request)
+
+Two TypeSafe products on OpenRouter were tested on the v2 benchmark (97 cases) with the v2 harness; total spend US$0.17.
+
+- **Jev 1.13** (`typesafe/jev-1.13`) is a *decision model*, not a chat model. It serves only OpenRouter's Decisions API (`POST /api/alpha/decisions`), not chat completions, and has no tool calling. It answers typed questions: a choice among named options with probabilities, yes/no, a score, or an image box. It can't write a plan's values (distances, thresholds, field names), so it can't produce a LayeredMap plan by itself. It was scored on the two decisions a plan starts with: act, ask or refuse (`mode`), and which action the plan starts with (`first action`). `tools/lm/llm_eval/v2/jev_decisions.py` does this from the same map description and request the plan models see.
+- **Jev Router** (`typesafe/jev-router`) is a chat model that routes each request to a model it picks, with tool calling. It ran the full v2 benchmark like any other model. Every request went to **GLM 5.3 Flash** (the response's `model` field; provider Inceptron in the runs).
+
+| Model | v2 strict (full plans) | Answerable / honest refusal | Mode right | First action right | US$ / 1,000 requests | Median latency |
+|---|---|---|---|---|---|---|
+| Jev 1.13, decisions only | (can't plan) | – | 95% (92/97) | 84% (70/83) | 0.066 | 0.5 s |
+| Claude Haiku 5.5, submit_plan | 98% | 98% / 100% | 99% | 99% | 0.206 | 1.3 s |
+| GLM 5.3 Flash, submit_plan | 100% | 100% / 100% | 100% | 100% | 0.380 | 1.2 s |
+| Jev Router, submit_plan | 98% | 98% / 100% | 98% | 99% | 0.445 | 2.2 s |
+| Jev Router, per action | 100% | 100% / 100% | 99% | 100% | 1.197 | 5.0 s |
+
+**What this means:**
+- **Jev 1.13 as the planner:** not a fit. It decides fast and very cheaply, but it can't fill in a plan. Even on the decisions it can make, it trails the plan models: it picked the wrong first action for 13 of 83 answerable requests.
+- **Jev 1.13 as a pre-filter:** possible in principle, deciding "answerable or not" before calling a plan model. But Haiku's full plan with prompt caching already costs US$0.21 per 1,000 requests, so the saving would be at most US$0.07 per 1,000, against a 5-point loss on mode decisions.
+- **Jev Router:** picked GLM 5.3 Flash for this workload. It matched GLM's accuracy within run-to-run noise, but cost about 17% more and was about twice as slow (2.2 s against 1.2 s, the extra hop). Calling GLM directly does the same for less.
+- **The recommendation stands:** Claude Haiku 5.5 with submit_plan, GLM 5.3 Flash as the fallback.
+
+Caveats:
+- One run each.
+- Jev's decisions used the plan models' action descriptions as option criteria. Better-tuned criteria might lift its first-action score.
+- The router's choice may change as TypeSafe updates it.

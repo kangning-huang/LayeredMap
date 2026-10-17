@@ -65,7 +65,8 @@ def rescore_v1(r: dict) -> dict:
 def load_runs() -> dict[tuple[str, str], list[dict]]:
     out = {}
     for run in sorted(p for p in (HERE / "results").iterdir() if p.is_dir()):
-        if run.name.startswith("dryrun") or "-smoke" in run.name or "-dev" in run.name:
+        # jev-decisions holds typed decisions, not plans (jev_decisions.py reports it).
+        if run.name.startswith("dryrun") or "-smoke" in run.name or "-dev" in run.name or run.name == "jev-decisions":
             continue
         for f in sorted(run.glob("*.jsonl")):
             if f.name.startswith("._"):
