@@ -1,0 +1,7 @@
+{"type": "FeatureCollection", "name": "lines", "features": [
+{"type": "Feature", "properties": {"feature_id": "L_EQ", "note": "equator"}, "geometry": {"type": "LineString", "coordinates": [[0.0, 0.0], [1.0, 0.0], [2.0, 0.0]]}},
+{"type": "Feature", "properties": {"feature_id": "L_HIGH", "note": "high latitude"}, "geometry": {"type": "LineString", "coordinates": [[0.0, 80.0], [40.0, 80.0], [80.0, 82.0]]}},
+{"type": "Feature", "properties": {"feature_id": "L_AM", "note": "split at 180"}, "geometry": {"type": "MultiLineString", "coordinates": [[[179.0, 10.0], [180.0, 10.0]], [[-180.0, 10.0], [-178.0, 11.0]]]}},
+{"type": "Feature", "properties": {"feature_id": "L_MULTI", "note": "two parts"}, "geometry": {"type": "MultiLineString", "coordinates": [[[5.0, 5.0], [6.0, 5.0]], [[7.0, 5.0], [7.0, 6.0], [8.0, 7.0]]]}},
+{"type": "Feature", "properties": {"feature_id": "L_LONG", "note": "a quarter of the way round"}, "geometry": {"type": "LineString", "coordinates": [[0.0, 30.0], [45.0, 30.0], [90.0, 30.0]]}}
+]}

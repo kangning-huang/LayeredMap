@@ -1,0 +1,20 @@
+{"type": "FeatureCollection", "name": "points", "features": [
+{"type": "Feature", "properties": {"feature_id": "P01", "note": "in A1 and A9: A1 (first)"}, "geometry": {"type": "Point", "coordinates": [0.5, 0.5]}},
+{"type": "Feature", "properties": {"feature_id": "P02", "note": "on the A1/A2 edge: A1"}, "geometry": {"type": "Point", "coordinates": [1.0, 0.5]}},
+{"type": "Feature", "properties": {"feature_id": "P03", "note": "in A2 and A3: A2"}, "geometry": {"type": "Point", "coordinates": [1.75, 0.75]}},
+{"type": "Feature", "properties": {"feature_id": "P04", "note": "A3 only"}, "geometry": {"type": "Point", "coordinates": [2.25, 1.25]}},
+{"type": "Feature", "properties": {"feature_id": "P05", "note": "in A4's hole, inside A6"}, "geometry": {"type": "Point", "coordinates": [4.0, 1.0]}},
+{"type": "Feature", "properties": {"feature_id": "P06", "note": "in A4's hole: outside"}, "geometry": {"type": "Point", "coordinates": [3.625, 0.625]}},
+{"type": "Feature", "properties": {"feature_id": "P07", "note": "on A4's hole ring: A4"}, "geometry": {"type": "Point", "coordinates": [3.5, 1.0]}},
+{"type": "Feature", "properties": {"feature_id": "P08", "note": "between A5's parts: outside"}, "geometry": {"type": "Point", "coordinates": [6.75, 0.25]}},
+{"type": "Feature", "properties": {"feature_id": "P09", "note": "A5's second part"}, "geometry": {"type": "Point", "coordinates": [7.25, 0.25]}},
+{"type": "Feature", "properties": {"feature_id": "P10", "note": "on A7's seam"}, "geometry": {"type": "Point", "coordinates": [180.0, 0.0]}},
+{"type": "Feature", "properties": {"feature_id": "P11", "note": "A7's eastern part"}, "geometry": {"type": "Point", "coordinates": [-179.75, 0.5]}},
+{"type": "Feature", "properties": {"feature_id": "P12", "note": "Arctic"}, "geometry": {"type": "Point", "coordinates": [0.0, 82.0]}},
+{"type": "Feature", "properties": {"feature_id": "P13", "note": "on A8's east edge"}, "geometry": {"type": "Point", "coordinates": [30.0, 82.0]}},
+{"type": "Feature", "properties": {"feature_id": "P14", "note": "outside"}, "geometry": {"type": "Point", "coordinates": [10.0, 10.0]}},
+{"type": "Feature", "properties": {"feature_id": "P15", "note": "no geometry"}, "geometry": null},
+{"type": "Feature", "properties": {"feature_id": "P16", "note": "on A2's top edge and A3's west edge: A2"}, "geometry": {"type": "Point", "coordinates": [1.5, 1.0]}},
+{"type": "Feature", "properties": {"feature_id": "P17", "note": "inside A1, on A9's corner: A1, on a boundary"}, "geometry": {"type": "Point", "coordinates": [0.25, 0.25]}},
+{"type": "Feature", "properties": {"feature_id": "M01", "note": "multipoint: one point in A2 and A3"}, "geometry": {"type": "MultiPoint", "coordinates": [[10.0, 10.0], [1.75, 0.75]]}}
+]}

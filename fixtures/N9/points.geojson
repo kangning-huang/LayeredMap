@@ -1,0 +1,14 @@
+{"type": "FeatureCollection", "name": "points", "features": [
+{"type": "Feature", "properties": {"point_id": "S01", "note": "inside I01"}, "geometry": {"type": "Point", "coordinates": [150.125, -9.875]}},
+{"type": "Feature", "properties": {"point_id": "S02", "note": "on I02's west edge"}, "geometry": {"type": "Point", "coordinates": [150.75, -9.9375]}},
+{"type": "Feature", "properties": {"point_id": "S03", "note": "in I07's lagoon, not on I06"}, "geometry": {"type": "Point", "coordinates": [152.8125, -10.125]}},
+{"type": "Feature", "properties": {"point_id": "S04", "note": "near the antimeridian"}, "geometry": {"type": "Point", "coordinates": [-179.75, -15.5]}},
+{"type": "Feature", "properties": {"point_id": "S05", "note": "south of I08's western part"}, "geometry": {"type": "Point", "coordinates": [179.9375, -16.25]}},
+{"type": "Feature", "properties": {"point_id": "S06", "note": "high latitude"}, "geometry": {"type": "Point", "coordinates": [21.5, 78.375]}},
+{"type": "Feature", "properties": {"point_id": "S07", "note": "far from everything"}, "geometry": {"type": "Point", "coordinates": [0.0, 0.0]}},
+{"type": "Feature", "properties": {"point_id": "S08", "note": "inside I14"}, "geometry": {"type": "Point", "coordinates": [-139.9375, -29.9375]}},
+{"type": "Feature", "properties": {"point_id": "S09", "note": "near the pole"}, "geometry": {"type": "Point", "coordinates": [0.0, 89.5]}},
+{"type": "Feature", "properties": {"point_id": "S10", "note": "exactly on L01 (a lon/lat straight edge)"}, "geometry": {"type": "Point", "coordinates": [150.5, -9.0]}},
+{"type": "Feature", "properties": {"point_id": "S11", "note": "between I01 and L01"}, "geometry": {"type": "Point", "coordinates": [150.5, -9.5]}},
+{"type": "Feature", "properties": {"point_id": "S12", "note": "just south of L02's eastern part"}, "geometry": {"type": "Point", "coordinates": [-179.8125, -15.0625]}}
+]}

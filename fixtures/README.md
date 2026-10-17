@@ -56,6 +56,9 @@ without them they print "skipped".
 | N6 | `N6/` | count versus density totals (R2 × V1 and six cut-cell areas) | present |
 | N7 | `N7/` (+ `generated/R4/`, `generated/N7/`) | R4 across 3,000 areas (stress, sampled exactextract check); `layouts/`: GeoTIFFs in every layout the window reader handles | present; polygons generated (`cargo xtask fixtures`) |
 | N8 | `N8/` | category shares (R3 × V1) | present |
+| N9 | `N9/` | nearest distance and island isolation: same-layer multipart exclusion, touching, holes, antimeridian, high latitude | present |
+| N10 | `N10/` | join by location: first area in row order, boundaries, holes, antimeridian, lines and areas by label point | present |
+| N11 | `N11/` | per-feature measurements (area, perimeter with holes, length, coordinates) and label points | present |
 | K1 | — | — | owner-supplied |
 | D1–D4 | — | — | TBD |
 | B1–B20 | — | — | owner-supplied |

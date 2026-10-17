@@ -1,5 +1,7 @@
 //! Point and area overlay, the certified actions of WP4.5 (spec › WP4.5 Certified actions):
-//! "Count [points] in each [area]", "Which [area] is it in?" and "What's inside?".
+//! "Count [points] in each [area]", "Which [area] is it in?" and "What's inside?"; and A6
+//! "Add [area] details to each [feature]" ([`join_by_location`], `docs/lm/puzzles/mechanics.md`
+//! › A6).
 //!
 //! # Definition
 //!
@@ -20,6 +22,12 @@
 //!   non-polygon one or a non-finite coordinate get 0 and are listed.
 //! - **Multipoints.** A multipoint row intersects an area when any of its points does; it counts
 //!   once per area (it is one row).
+//! - **Join by location.** Each feature is placed by its point (a multipoint by all its points,
+//!   a line or an area by its [`crate::measure::label_point`]) and takes the *first* area row,
+//!   in row order, that the point touches (inside or on the boundary), the GeoPandas
+//!   `sjoin(predicate="intersects")` match with the lowest area index. Features whose point lies
+//!   on the boundary of any area are counted ([`JoinByLocation::on_boundary`]), as are features in
+//!   no area ([`JoinByLocation::outside`]).
 //!
 //! # Exactness
 //!
@@ -89,6 +97,23 @@ pub struct WhatsInside {
     pub without_geometry: Vec<usize>,
 }
 
+/// The result of "Add [area] details to each [feature]".
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct JoinByLocation {
+    /// For each feature row, the first area row containing its point (boundary counts); `None`
+    /// when it is in no area or has no usable geometry.
+    pub area_of: Vec<Option<usize>>,
+    /// Features whose point lies on the boundary of at least one area.
+    pub on_boundary: u64,
+    /// Features with a usable geometry that fell in no area.
+    pub outside: u64,
+    /// Feature rows without a usable geometry (or without a label point).
+    pub without_geometry: Vec<usize>,
+    /// Area rows without a usable polygon geometry (never matched).
+    pub areas_without_geometry: Vec<usize>,
+}
+
+const PHASE_JOIN: &str = "Finding the area of each feature";
 const PHASE_COUNT: &str = "Counting points in areas";
 const PHASE_WHICH: &str = "Finding the area of each point";
 const PHASE_INSIDE: &str = "Finding what's inside the area";
@@ -134,6 +159,66 @@ pub fn which_area(points: &Dataset, areas: &Dataset, ctl: &Control) -> Result<Wh
         }
         Some(hits) => out.areas.push(hits.to_vec()),
     })?;
+    Ok(out)
+}
+
+/// For each feature of `features` (points; lines/areas by their label point), the first area row
+/// that contains it (boundary counts), else None (see the module rules).
+pub fn join_by_location(features: &Dataset, areas: &Dataset, ctl: &Control) -> Result<JoinByLocation, Cancelled> {
+    let index = AreaIndex::build(areas, ctl)?;
+    let total = features.features.len() as u64;
+    let mut out = JoinByLocation {
+        area_of: Vec::with_capacity(features.features.len()),
+        areas_without_geometry: index.without_geometry.clone(),
+        ..JoinByLocation::default()
+    };
+    let mut work = Work::new(ctl);
+    let mut probes: Vec<Coord> = Vec::new();
+    for (row, feat) in features.features.iter().enumerate() {
+        if row % 65_536 == 0 {
+            ctl.report(PHASE_JOIN, row as u64, Some(total));
+        }
+        work.add(32)?;
+        probes.clear();
+        match feat.geometry.as_ref().filter(|g| usable(g)) {
+            Some(Geometry::Point(c)) => probes.push(*c),
+            Some(Geometry::MultiPoint(v)) => probes.extend_from_slice(v),
+            Some(g) => probes.extend(crate::measure::label_point(g)),
+            None => {}
+        }
+        if probes.is_empty() {
+            out.without_geometry.push(row);
+            out.area_of.push(None);
+            continue;
+        }
+        let mut first: Option<usize> = None;
+        let mut boundary = false;
+        for &p in &probes {
+            for e in index.tree.locate_in_envelope_intersecting(&AABB::from_point([p.x, p.y])) {
+                let Some(part) = index.parts.get(e.data) else { continue };
+                if first.is_some_and(|a| a <= part.area) && boundary {
+                    continue;
+                }
+                work.add(polygon_size(part.rings))?;
+                match locate_in_polygon(part.rings, p) {
+                    Location::Boundary => {
+                        boundary = true;
+                        first = Some(first.map_or(part.area, |a| a.min(part.area)));
+                    }
+                    Location::Inside => first = Some(first.map_or(part.area, |a| a.min(part.area))),
+                    Location::Outside => {}
+                }
+            }
+        }
+        if boundary {
+            out.on_boundary += 1;
+        }
+        if first.is_none() {
+            out.outside += 1;
+        }
+        out.area_of.push(first);
+    }
+    ctl.report(PHASE_JOIN, total, Some(total));
     Ok(out)
 }
 
@@ -274,7 +359,7 @@ fn finite(g: &Geometry) -> bool {
 }
 
 /// A geometry with at least one coordinate, all finite.
-fn usable(g: &Geometry) -> bool {
+pub(crate) fn usable(g: &Geometry) -> bool {
     g.coord_count() > 0 && finite(g)
 }
 
@@ -283,16 +368,16 @@ fn usable_polygon(g: &Geometry) -> bool {
 }
 
 /// Counts edge tests and checks for cancel every 2^18 of them.
-struct Work<'a> {
+pub(crate) struct Work<'a> {
     ctl: &'a Control,
     n: u64,
 }
 
 impl<'a> Work<'a> {
-    fn new(ctl: &'a Control) -> Self {
+    pub(crate) fn new(ctl: &'a Control) -> Self {
         Work { ctl, n: 0 }
     }
-    fn add(&mut self, n: usize) -> Result<(), Cancelled> {
+    pub(crate) fn add(&mut self, n: usize) -> Result<(), Cancelled> {
         self.n += n as u64;
         if self.n >= 1 << 18 {
             self.n = 0;
@@ -697,6 +782,80 @@ mod tests {
         a.push_next(Some(Geometry::Polygon(vec![vec![rect(5.0, 5.0, 6.0, 6.0)]])), vec![Value::Text("empty".into())]);
         let r = count_points_in_areas(&points(&[c(0.2, 0.2), c(1.0, 1.0)]), &a, &Control::none()).unwrap();
         assert_eq!(r.counts, vec![2, 0]);
+    }
+
+    #[test]
+    fn n10_join_matches_the_reference() {
+        let a = read("N10/areas.geojson");
+        let area_ids = ids(&a, "area_id");
+        let want = csv("N10/expected_join.csv");
+        let mut seen = 0;
+        for layer in ["points", "lines", "polygons"] {
+            let f = read(&format!("N10/{layer}.geojson"));
+            let r = join_by_location(&f, &a, &Control::none()).unwrap();
+            assert_eq!(r.areas_without_geometry, vec![9], "A10");
+            let fids = ids(&f, "feature_id");
+            let mut boundary = 0;
+            let mut outside = 0;
+            for row in want.iter().filter(|w| w["layer"] == layer) {
+                let i = fids.iter().position(|x| *x == row["feature_id"]).unwrap();
+                let got = r.area_of[i].map(|k| area_ids[k].clone()).unwrap_or_default();
+                assert_eq!(got, row["area_id"], "{layer} {}", row["feature_id"]);
+                let g = f.features[i].geometry.as_ref();
+                let probes: Vec<Coord> = match g {
+                    Some(Geometry::Point(c)) => vec![*c],
+                    Some(Geometry::MultiPoint(v)) => v.clone(),
+                    Some(g) => crate::measure::label_point(g).into_iter().collect(),
+                    None => vec![],
+                };
+                // Lines and areas: the reference doesn't know LayeredMap's label point, so the
+                // boundary flag is recomputed from it here.
+                let on = probes.iter().any(|p| {
+                    a.features.iter().any(|af| matches!(&af.geometry, Some(Geometry::Polygon(ps)) if ps.iter().any(|rings| locate_in_polygon(rings, *p) == Location::Boundary)))
+                });
+                match row["on_boundary"].as_str() {
+                    "true" => assert!(on, "{}", row["feature_id"]),
+                    "false" => assert!(!on, "{}", row["feature_id"]),
+                    _ => {}
+                }
+                boundary += u64::from(on);
+                outside += u64::from(g.is_some() && row["area_id"].is_empty());
+                seen += 1;
+            }
+            assert_eq!(r.on_boundary, boundary, "{layer}");
+            assert_eq!(r.outside, outside, "{layer}");
+            if layer == "points" {
+                assert_eq!(r.without_geometry, vec![fids.iter().position(|x| x == "P15").unwrap()]);
+                assert_eq!(r.on_boundary, 6);
+            }
+        }
+        assert_eq!(seen, want.len());
+    }
+
+    #[test]
+    fn join_takes_the_first_area_and_uses_the_label_point() {
+        let a =
+            areas(vec![vec![vec![rect(0.0, 0.0, 1.0, 1.0)]], vec![vec![rect(1.0, 0.0, 3.0, 1.0)]], vec![vec![rect(-1.0, -1.0, 5.0, 5.0)]]]);
+        let mut f = Dataset::new("f", GeometryType::Polygon, vec![]);
+        // Straddles areas 0 and 1, mostly in 1: its label point is in 1 (and in 2, listed later).
+        f.push_next(Some(Geometry::Polygon(vec![vec![rect(0.9, 0.1, 2.9, 0.9)]])), vec![]);
+        // A line whose middle vertex is in 0.
+        f.push_next(Some(Geometry::Line(vec![vec![c(4.0, 4.0), c(0.5, 0.5), c(-3.0, -3.0)]])), vec![]);
+        // On the edge between 0 and 1.
+        f.push_next(Some(Geometry::Point(c(1.0, 0.5))), vec![]);
+        f.push_next(Some(Geometry::Point(c(9.0, 9.0))), vec![]);
+        f.push_next(Some(Geometry::Polygon(vec![])), vec![]);
+        let r = join_by_location(&f, &a, &Control::none()).unwrap();
+        assert_eq!(r.area_of, vec![Some(1), Some(0), Some(0), None, None]);
+        assert_eq!((r.on_boundary, r.outside, r.without_geometry.clone()), (1, 1, vec![4]));
+        // Agrees with "Which area" for points: the first of its list.
+        let p = points(&[c(1.0, 0.5), c(2.0, 0.5), c(9.0, 9.0), c(4.0, 4.0)]);
+        let w = which_area(&p, &a, &Control::none()).unwrap();
+        let j = join_by_location(&p, &a, &Control::none()).unwrap();
+        assert_eq!(j.area_of, w.areas.iter().map(|v| v.first().copied()).collect::<Vec<_>>());
+        let ctl = Control::none();
+        ctl.cancel();
+        assert_eq!(join_by_location(&p, &a, &ctl), Err(Cancelled));
     }
 
     /// Brute force: the definition applied point by point, no index.
