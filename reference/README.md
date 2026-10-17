@@ -42,6 +42,9 @@ no arguments for its fixture jobs or with explicit paths (see each `--help`).
 | `geodesic.py` | `N5/expected_measure.csv`, `N5/expected_buffer.csv` | pyproj.Geod lengths and areas; 360-vertex geodesic circles; local AEQD buffers |
 | `raster_sample.py` | `R6/expected_raster_sample.csv` | containing cell with floor indexing (a point on an edge takes the cell to its right or below), scale/offset applied, NoData left blank |
 | `rank_check.py` | `V1/expected_insight.csv` | rank phrases: upper or lower half, ties, ≤2 objects get no rank, ≥1000 objects get a percentile |
+| `make_where_clip_fixtures.py` | data + `README.md` + `expected.json` for N11 (find_where GeoTIFFs) and N12 (clip/erase layers) | hand-drawn and closed-form; GDAL's GTiff writer with fixed options |
+| `find_where.py` | `N11/expected_find_where.csv`, `N11/expected_labels_{A,B,C}.csv` | numpy tests on values × scale + offset (others sampled at the first grid's cell centres, floor); `scipy.ndimage.label` 3×3; ellipsoidal cell-area sums (latitude bands, or (λ, q) quadrilaterals for a projected grid); pyproj Geod areas of the `rasterio.features.shapes` outlines (densified), asserted within 1e-6 of the sums; area-weighted means |
+| `clip_erase.py` | `N12/expected_clip.csv` | GeoPandas `overlay` intersection / difference with the dissolved mask (`keep_geom_type=True`); pyproj Geod areas and lengths; exact coordinates for lines and points |
 | `run_all.py` | — | runs all of the above in order |
 
 Numbers are written with up to 12 significant digits.

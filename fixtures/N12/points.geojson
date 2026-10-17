@@ -1,0 +1,11 @@
+{"type": "FeatureCollection", "name": "points", "features": [
+{"type": "Feature", "properties": {"id": "P1", "name": "inside"}, "geometry": {"type": "Point", "coordinates": [120.5, 30.5]}},
+{"type": "Feature", "properties": {"id": "P2", "name": "in the hole"}, "geometry": {"type": "Point", "coordinates": [122.0, 32.0]}},
+{"type": "Feature", "properties": {"id": "P3", "name": "on the hole's edge"}, "geometry": {"type": "Point", "coordinates": [121.5, 32.0]}},
+{"type": "Feature", "properties": {"id": "P4", "name": "on the outer edge"}, "geometry": {"type": "Point", "coordinates": [120.0, 32.0]}},
+{"type": "Feature", "properties": {"id": "P5", "name": "in the overlap"}, "geometry": {"type": "Point", "coordinates": [123.5, 32.0]}},
+{"type": "Feature", "properties": {"id": "P6", "name": "outside"}, "geometry": {"type": "Point", "coordinates": [127.0, 34.0]}},
+{"type": "Feature", "properties": {"id": "P7", "name": "multipoint, one in one out"}, "geometry": {"type": "MultiPoint", "coordinates": [[128.5, 30.5], [128.5, 31.5]]}},
+{"type": "Feature", "properties": {"id": "P8", "name": "on M2's east edge"}, "geometry": {"type": "Point", "coordinates": [126.0, 32.0]}},
+{"type": "Feature", "properties": {"id": "P9", "name": "on a corner"}, "geometry": {"type": "Point", "coordinates": [120.0, 30.0]}}
+]}

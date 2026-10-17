@@ -24,7 +24,7 @@ FIX = HERE.parent / "fixtures"
 # --only R4,N7) and say "skipped" without them.
 SCRIPTS = ["make_handmade.py", "make_summary_fixtures.py", "coord_vectors.py", "count_in_areas.py", "which_area.py",
            "zonal_mean.py", "category_shares.py", "zonal_totals.py", "zonal_r7.py", "n7_sample.py", "geodesic.py",
-           "raster_sample.py", "rank_check.py"]
+           "raster_sample.py", "rank_check.py", "make_where_clip_fixtures.py", "find_where.py", "clip_erase.py"]
 
 
 def run_once():

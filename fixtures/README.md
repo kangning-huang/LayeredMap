@@ -56,6 +56,8 @@ without them they print "skipped".
 | N6 | `N6/` | count versus density totals (R2 × V1 and six cut-cell areas) | present |
 | N7 | `N7/` (+ `generated/R4/`, `generated/N7/`) | R4 across 3,000 areas (stress, sampled exactextract check); `layouts/`: GeoTIFFs in every layout the window reader handles | present; polygons generated (`cargo xtask fixtures`) |
 | N8 | `N8/` | category shares (R3 × V1) | present |
+| N11 | `N11/` | find_where: holes, corner contacts, NoData, two rasters on different grids (scale/offset, categories), a projected raster | present |
+| N12 | `N12/` | keep_inside / remove_inside: overlapping mask with a hole and parts; areas with holes and parts, a sliver; lines; points on edges | present |
 | K1 | — | — | owner-supplied |
 | D1–D4 | — | — | TBD |
 | B1–B20 | — | — | owner-supplied |

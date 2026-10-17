@@ -1,0 +1,11 @@
+{"type": "FeatureCollection", "name": "areas", "features": [
+{"type": "Feature", "properties": {"id": "A1", "name": "corner square"}, "geometry": {"type": "Polygon", "coordinates": [[[119.0, 29.0], [121.0, 29.0], [121.0, 31.0], [119.0, 31.0], [119.0, 29.0]]]}},
+{"type": "Feature", "properties": {"id": "A2", "name": "holed square over the mask's hole"}, "geometry": {"type": "Polygon", "coordinates": [[[121.0, 31.0], [123.0, 31.0], [123.0, 33.0], [121.0, 33.0], [121.0, 31.0]], [[121.75, 31.75], [121.75, 32.25], [122.25, 32.25], [122.25, 31.75], [121.75, 31.75]]]}},
+{"type": "Feature", "properties": {"id": "A3", "name": "two parts across M3"}, "geometry": {"type": "MultiPolygon", "coordinates": [[[[127.5, 30.5], [128.5, 30.5], [128.5, 32.5], [127.5, 32.5], [127.5, 30.5]]], [[[128.75, 29.5], [130.0, 29.5], [130.0, 30.5], [128.75, 30.5], [128.75, 29.5]]]]}},
+{"type": "Feature", "properties": {"id": "A4", "name": "outside"}, "geometry": {"type": "Polygon", "coordinates": [[[131.0, 35.0], [132.0, 35.0], [132.0, 36.0], [131.0, 36.0], [131.0, 35.0]]]}},
+{"type": "Feature", "properties": {"id": "A5", "name": "inside"}, "geometry": {"type": "Polygon", "coordinates": [[[120.25, 30.25], [121.25, 30.25], [121.25, 31.25], [120.25, 31.25], [120.25, 30.25]]]}},
+{"type": "Feature", "properties": {"id": "A6", "name": "slanted triangle"}, "geometry": {"type": "Polygon", "coordinates": [[[122.3, 32.9], [127.1, 31.7], [125.3, 34.6], [122.3, 32.9]]]}},
+{"type": "Feature", "properties": {"id": "A7", "name": "sliver past M2's east edge"}, "geometry": {"type": "Polygon", "coordinates": [[[125.99999999, 31.5], [127.0, 31.5], [127.0, 32.0], [125.99999999, 32.0], [125.99999999, 31.5]]]}},
+{"type": "Feature", "properties": {"id": "A8", "name": "no geometry"}, "geometry": null},
+{"type": "Feature", "properties": {"id": "A9", "name": "clockwise, inside the mask's hole"}, "geometry": {"type": "Polygon", "coordinates": [[[121.6, 31.6], [121.6, 32.4], [122.4, 32.4], [122.4, 31.6], [121.6, 31.6]]]}}
+]}

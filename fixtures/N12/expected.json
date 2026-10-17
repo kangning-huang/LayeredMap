@@ -1,0 +1,33 @@
+{
+  "fixture": "N12",
+  "kind": "vector",
+  "files": [
+    "mask.geojson",
+    "areas.geojson",
+    "lines.geojson",
+    "points.geojson"
+  ],
+  "layers": [
+    {
+      "file": "mask.geojson",
+      "geometry": "area",
+      "count": 3
+    },
+    {
+      "file": "areas.geojson",
+      "geometry": "area",
+      "count": 9
+    },
+    {
+      "file": "lines.geojson",
+      "geometry": "line",
+      "count": 6
+    },
+    {
+      "file": "points.geojson",
+      "geometry": "point",
+      "count": 9
+    }
+  ],
+  "assumptions": []
+}

@@ -1,0 +1,5 @@
+{"type": "FeatureCollection", "name": "mask", "features": [
+{"type": "Feature", "properties": {"mask_id": "M1"}, "geometry": {"type": "Polygon", "coordinates": [[[120.0, 30.0], [124.0, 30.0], [124.0, 34.0], [120.0, 34.0], [120.0, 30.0]], [[121.5, 31.5], [121.5, 32.5], [122.5, 32.5], [122.5, 31.5], [121.5, 31.5]]]}},
+{"type": "Feature", "properties": {"mask_id": "M2"}, "geometry": {"type": "Polygon", "coordinates": [[[123.0, 31.0], [123.0, 33.0], [126.0, 33.0], [126.0, 31.0], [123.0, 31.0]]]}},
+{"type": "Feature", "properties": {"mask_id": "M3"}, "geometry": {"type": "MultiPolygon", "coordinates": [[[[128.0, 30.0], [129.0, 30.0], [129.0, 31.0], [128.0, 31.0], [128.0, 30.0]]], [[[128.0, 32.0], [129.0, 32.0], [129.0, 33.0], [128.0, 33.0], [128.0, 32.0]]]]}}
+]}
