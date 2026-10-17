@@ -509,9 +509,22 @@ fn builder(shell: &mut Shell, ui: &mut Ui, drawer: egui::Rect) {
                             });
                         }
                         (_, "between") => {
-                            ui.add(egui::TextEdit::singleline(&mut d.a).desired_width(80.0).hint_text(hint(d.kind)));
-                            ui.label("and");
-                            ui.add(egui::TextEdit::singleline(&mut d.b).desired_width(80.0).hint_text(hint(d.kind)));
+                            // "[a] and [b]" moves to the next line as one piece, never split or
+                            // squeezed.
+                            let and_w = ui.fonts_mut(|f| {
+                                f.layout_no_wrap("and".into(), egui::FontId::proportional(theme::BODY), egui::Color32::WHITE).size().x
+                            });
+                            let need = 2.0 * 80.0 + and_w + 4.0 * ui.spacing().item_spacing.x + 2.0 * ui.spacing().button_padding.x;
+                            // A wrapping row reports its full width as available; what is left on
+                            // this line is from the cursor to the right edge.
+                            if ui.max_rect().right() - ui.cursor().left() < need {
+                                ui.end_row();
+                            }
+                            ui.horizontal(|ui| {
+                                ui.add(egui::TextEdit::singleline(&mut d.a).desired_width(80.0).hint_text(hint(d.kind)));
+                                ui.label("and");
+                                ui.add(egui::TextEdit::singleline(&mut d.b).desired_width(80.0).hint_text(hint(d.kind)));
+                            });
                         }
                         _ => {
                             ui.add(egui::TextEdit::singleline(&mut d.a).desired_width(140.0).hint_text(hint(d.kind)));

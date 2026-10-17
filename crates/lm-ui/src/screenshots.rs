@@ -605,3 +605,18 @@ fn phase4_composer_preview_keep_undo() {
     let s = h.state().as_ref().unwrap();
     assert_eq!((s.ws.doc.layers.len(), s.ws.doc.results.len()), (before, 0));
 }
+
+/// "between" keeps "[a] and [b]" together: when the sentence wraps, both boxes move as one.
+#[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+fn phase3_filter_between() {
+    let mut h = phase3(&["V1/districts.geojson"], SHANGHAI, |s| {
+        let l = s.ws.doc.layers[0].clone();
+        s.table_for = Some(l.id);
+        let mut d = crate::table::FilterDraft::preset(s, &l, Some("population"), None);
+        d.verb = "between";
+        s.filter_draft = Some(d);
+    });
+    settle(&mut h);
+    h.snapshot("phase3_filter_between");
+}
