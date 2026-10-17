@@ -16,6 +16,17 @@ fn harness(dark: bool, view: (f64, f64, f64), setup: impl Fn(&mut Shell) + 'stat
 }
 
 fn harness_phase(phase: u8, dark: bool, view: (f64, f64, f64), setup: impl Fn(&mut Shell) + 'static) -> Harness<'static, Option<Shell>> {
+    harness_sized(SIZE, 1.0, phase, dark, view, setup)
+}
+
+fn harness_sized(
+    size: egui::Vec2,
+    ppp: f32,
+    phase: u8,
+    dark: bool,
+    view: (f64, f64, f64),
+    setup: impl Fn(&mut Shell) + 'static,
+) -> Harness<'static, Option<Shell>> {
     let prefs = Prefs {
         theme: if dark { ThemePref::Dark } else { ThemePref::Light },
         basemap: "offline".into(),
@@ -23,7 +34,7 @@ fn harness_phase(phase: u8, dark: bool, view: (f64, f64, f64), setup: impl Fn(&m
         ..Prefs::default()
     };
     let system = System { dark_mode: dark, reduce_motion: true };
-    let mut h = Harness::builder().with_size(SIZE).with_pixels_per_point(1.0).wgpu().build_ui_state(
+    let mut h = Harness::builder().with_size(size).with_pixels_per_point(ppp).wgpu().build_ui_state(
         move |ui, state: &mut Option<Shell>| {
             let shell = state.get_or_insert_with(|| {
                 let mut s = Shell::new(ui.ctx(), Flags::up_to(phase), prefs.clone(), system);
@@ -388,4 +399,36 @@ fn selection_is_shared_between_table_and_map() {
     settle(&mut h);
     assert!(on_map(&h).is_empty());
     assert_eq!(h.state().as_ref().and_then(|s| s.ws.selected()), Some(id));
+}
+
+/// The Style tab in its main states, rendered tall at 1.5x (the test GPU allows 2048 px textures) into `$LM_GALLERY` for design reviews
+/// (`LM_GALLERY=dir cargo test -p lm-ui style_gallery -- --ignored`). Not a regression test.
+#[test]
+#[ignore]
+fn style_gallery() {
+    let Some(dir) = std::env::var_os("LM_GALLERY").map(std::path::PathBuf::from) else { return };
+    std::fs::create_dir_all(&dir).unwrap();
+    type Setup = fn(&mut Shell);
+    let scenes: [(&str, &'static str, bool, Setup); 6] = [
+        ("areas-single", "countries.geojson", false, |_| {}),
+        ("areas-by-value", "countries.geojson", false, |s| s.command(&egui::Context::default(), crate::Command::ApplyPreset(2))),
+        ("areas-by-value-dark", "countries.geojson", true, |s| s.command(&egui::Context::default(), crate::Command::ApplyPreset(2))),
+        ("areas-by-category", "countries.geojson", false, |s| s.command(&egui::Context::default(), crate::Command::ApplyPreset(1))),
+        ("points-size", "populated_places.geojson", false, |s| s.command(&egui::Context::default(), crate::Command::ApplyPreset(3))),
+        ("raster", "elevation.tif", false, |_| {}),
+    ];
+    for (name, file, dark, setup) in scenes {
+        let mut h = harness_sized(egui::vec2(1280.0, 1300.0), 1.5, 3, dark, (100.0, 35.0, 3.0), move |s| {
+            let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../assets/examples").join(file);
+            let layers = lm_jobs::import::import_path(&path, &lm_jobs::import::Ctx::detached(Default::default())).unwrap_or_default();
+            s.ws.add_imported(layers, 300);
+            s.ws.new_data = None;
+            let id = s.ws.doc.layers[0].id;
+            s.ws.select_layer(id);
+            s.inspector_tab = 1;
+            setup(s);
+        });
+        settle(&mut h);
+        h.render().unwrap().save(dir.join(format!("{name}.png"))).unwrap();
+    }
 }

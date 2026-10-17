@@ -7,6 +7,7 @@
 pub mod basemap;
 mod chrome;
 pub mod examples;
+pub mod form;
 pub mod insight;
 pub mod inspect;
 pub mod panels;

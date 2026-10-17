@@ -19,6 +19,9 @@ pub struct Theme {
     pub surface: Color32,
     pub surface_raised: Color32,
     pub border: Color32,
+    /// The edge of a control (checkbox, segmented control, pop-up): 3:1 against the surface, so
+    /// a control's shape and state are visible (Apple design review, 2026-10-17).
+    pub control_stroke: Color32,
     pub text_primary: Color32,
     pub text_secondary: Color32,
     pub accent: Color32,
@@ -41,6 +44,7 @@ impl Theme {
         surface: hex(0xFFFFFF),
         surface_raised: hex(0xF6F7F9),
         border: hex(0xE3E5E8),
+        control_stroke: hex(0x868C95),
         text_primary: hex(0x1B1D21),
         text_secondary: hex(0x5F6670),
         accent: hex(0x2563EB),
@@ -56,6 +60,7 @@ impl Theme {
         surface: hex(0x1E1F22),
         surface_raised: hex(0x2A2B2F),
         border: hex(0x3A3C41),
+        control_stroke: hex(0x767B84),
         text_primary: hex(0xF1F2F4),
         text_secondary: hex(0xA9AEB6),
         accent: hex(0x5B8DEF),
