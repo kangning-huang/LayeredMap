@@ -1446,7 +1446,7 @@ Candidates, in likely order:
 
 **WP7.2 Tool calling** (P0)
 - Expose each Phase 4 action as a tool: name, plain description, typed inputs (layers, fields, distances with units), requirements and decisions.
-- The model sees layer descriptions only (names, kinds, fields and types, extents, assumptions), never values.
+- The model sees layer descriptions only (names, kinds, fields and types, extents, assumptions), never bulk values. The one exception (owner's decision, 2026-10-17): a `resolve_feature(layer, text)` lookup returns the few stored names or category labels that match what the user typed (for example 世纪大道 → "Century Ave"), so names in another language or spelling resolve. Nothing else from the data is sent.
 - Every plan is checked before it runs: layers exist, units make sense, requirements are met, decisions are asked through the usual question cards.
 
 **WP7.3 Assistant service** (P0, closed)
