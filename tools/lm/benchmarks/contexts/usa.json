@@ -1,0 +1,65 @@
+{
+  "name": "usa",
+  "description": "A United States project like GeoBenchX's US tasks and GeoQuery's questions: states, counties, cities, transport lines and stations, hospitals, weather stations, wildfires and four rasters. Value-free.",
+  "layers": [
+    {"name": "States", "kind": "areas", "count": 51, "fields": [
+      ["name", "text", null, null],
+      ["abbrev", "text", null, null],
+      ["region", "category", null, ["Northeast", "Midwest", "South", "West"]],
+      ["population", "integer", "people", null],
+      ["area_km2", "number", "km²", null],
+      ["median_income", "integer", "US$", null]
+    ]},
+    {"name": "Counties", "kind": "areas", "count": 3143, "fields": [
+      ["name", "text", null, null],
+      ["state", "text", null, null],
+      ["fips", "text", null, null],
+      ["population", "integer", "people", null],
+      ["pop_over65", "integer", "people", null],
+      ["median_income", "integer", "US$", null],
+      ["unemployment", "number", "%", null],
+      ["area_km2", "number", "km²", null]
+    ]},
+    {"name": "Cities", "kind": "points", "count": 3824, "fields": [
+      ["name", "text", null, null],
+      ["state", "text", null, null],
+      ["population", "integer", "people", null],
+      ["capital", "yes/no", null, ["true", "false"]]
+    ]},
+    {"name": "Amtrak stations", "kind": "points", "count": 527, "fields": [
+      ["name", "text", null, null],
+      ["state", "text", null, null]
+    ]},
+    {"name": "Hospitals", "kind": "points", "count": 7596, "fields": [
+      ["name", "text", null, null],
+      ["state", "text", null, null],
+      ["beds", "integer", "beds", null],
+      ["type", "category", null, ["General acute care", "Critical access", "Psychiatric", "Children", "Long term care"]]
+    ]},
+    {"name": "Weather stations", "kind": "points", "count": 1218, "fields": [
+      ["station_id", "text", null, null],
+      ["temperature_f", "number", "°F", null],
+      ["precip_in", "number", "inches per year", null]
+    ]},
+    {"name": "Rivers", "kind": "lines", "count": 2310, "fields": [
+      ["name", "text", null, null]
+    ]},
+    {"name": "Railways", "kind": "lines", "count": 31567, "fields": [
+      ["owner", "text", null, null],
+      ["passenger", "yes/no", null, ["true", "false"]]
+    ]},
+    {"name": "Interstates", "kind": "lines", "count": 1520, "fields": [
+      ["route", "text", null, null],
+      ["lanes", "integer", null, null]
+    ]},
+    {"name": "Wildfires", "kind": "areas", "count": 2875, "fields": [
+      ["fire_name", "text", null, null],
+      ["year", "integer", "year", null],
+      ["acres", "number", "acres", null]
+    ]},
+    {"name": "Snow depth", "kind": "raster", "desc": "1 band, 4 km cells, accumulated snowfall in inches, season 2024–2025"},
+    {"name": "Elevation", "kind": "raster", "desc": "1 band, 90 m cells, metres above sea level"},
+    {"name": "Land cover", "kind": "raster", "desc": "1 band, 30 m cells, categories (NLCD classes)"},
+    {"name": "Population density", "kind": "raster", "desc": "1 band, 1 km cells, people per km²"}
+  ]
+}
