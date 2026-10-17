@@ -247,11 +247,28 @@ pub struct Document {
     /// is re-sorted.
     #[serde(default)]
     pub user_ordered: bool,
+    /// Kept results (WP4.6), oldest first.
+    #[serde(default)]
+    pub results: Vec<crate::recipe::ResultRecord>,
+    #[serde(default = "first_result_id")]
+    pub next_result_id: u64,
+}
+
+fn first_result_id() -> u64 {
+    1
 }
 
 impl Default for Document {
     fn default() -> Self {
-        Document { version: DOCUMENT_VERSION, layers: Vec::new(), view: None, next_layer_id: 1, user_ordered: false }
+        Document {
+            version: DOCUMENT_VERSION,
+            layers: Vec::new(),
+            view: None,
+            next_layer_id: 1,
+            user_ordered: false,
+            results: Vec::new(),
+            next_result_id: 1,
+        }
     }
 }
 
@@ -327,6 +344,15 @@ pub enum Op {
         from: Option<usize>,
         to: Option<usize>,
     },
+    /// Keep a result (WP4.6), at `index` in the result list.
+    AddResult {
+        index: usize,
+        record: Box<crate::recipe::ResultRecord>,
+    },
+    RemoveResult {
+        index: usize,
+        record: Box<crate::recipe::ResultRecord>,
+    },
 }
 
 impl Op {
@@ -353,6 +379,8 @@ impl Op {
             Op::SetFilter { id, from, to } => Op::SetFilter { id: *id, from: to.clone(), to: from.clone() },
             Op::SetRole { id, field, from, to } => Op::SetRole { id: *id, field: field.clone(), from: *to, to: *from },
             Op::SetStarred { id, field, from, to } => Op::SetStarred { id: *id, field: field.clone(), from: *to, to: *from },
+            Op::AddResult { index, record } => Op::RemoveResult { index: *index, record: record.clone() },
+            Op::RemoveResult { index, record } => Op::AddResult { index: *index, record: record.clone() },
         }
     }
 }
@@ -654,6 +682,20 @@ impl Document {
                     l.starred.insert(i, field.clone());
                 }
             }
+            Op::AddResult { index, record } => {
+                let n = self.results.len();
+                if *index > n {
+                    return Err(ApplyError::IndexOutOfRange { index: *index, len: n });
+                }
+                self.next_result_id = self.next_result_id.max(record.id.saturating_add(1));
+                self.results.insert(*index, (**record).clone());
+            }
+            Op::RemoveResult { index, record } => match self.results.get(*index) {
+                Some(r) if r.id == record.id => {
+                    self.results.remove(*index);
+                }
+                _ => return Err(ApplyError::IndexOutOfRange { index: *index, len: self.results.len() }),
+            },
         }
         Ok(())
     }

@@ -118,6 +118,46 @@ fn confidence_word(c: Confidence) -> &'static str {
     }
 }
 
+/// What a result card shows (spec › Result card), kept with the result so it reads the same
+/// after the document is reopened.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct ResultCard {
+    /// "Schools in each district".
+    pub title: String,
+    /// One line for the composer after a preview: "17 districts · 0–34 schools · 2 with none".
+    pub summary: String,
+    pub answer: Answer,
+    /// Inputs, scope and exclusions, one line each ("Schools, 248; Districts, 17").
+    #[serde(default)]
+    pub context: Vec<String>,
+    /// Things the reader must know ("2 schools are counted in two districts").
+    #[serde(default)]
+    pub notices: Vec<String>,
+}
+
+/// The answer part of a result card.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub enum Answer {
+    #[default]
+    None,
+    /// A ranking: every row, largest first (the card shows the top 5, then "Show all").
+    Ranking { rows: Vec<RankRow>, unit: String },
+    /// One number with its unit and a line under it ("over 83% of this district; the rest has
+    /// no data").
+    Number { value: f64, unit: String, detail: String },
+    /// A short list of names ("Huangpu", "Jing'an") with a heading ("In 2 districts").
+    List { heading: String, items: Vec<String> },
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RankRow {
+    pub label: String,
+    /// None: no value (shown as "No data", ranked last).
+    pub value: Option<f64>,
+    /// The source row, to select it on the map.
+    pub row: usize,
+}
+
 /// A kept result in the document: the layer it made (if any), its recipe and its version.
 /// Update result adds a version; the old one stays readable.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -129,6 +169,12 @@ pub struct ResultRecord {
     /// The versions this one replaced, oldest first.
     #[serde(default)]
     pub history: Vec<Recipe>,
+    #[serde(default)]
+    pub card: ResultCard,
+    /// The layer the question was about (the composer's layer), where a card-only result is
+    /// listed.
+    #[serde(default)]
+    pub about: Option<LayerId>,
 }
 
 impl ResultRecord {
@@ -142,7 +188,15 @@ impl ResultRecord {
     pub fn updated(&self, recipe: Recipe) -> ResultRecord {
         let mut history = self.history.clone();
         history.push(self.recipe.clone());
-        ResultRecord { id: self.id, layer: self.layer, recipe, version: self.version + 1, history }
+        ResultRecord {
+            id: self.id,
+            layer: self.layer,
+            recipe,
+            version: self.version + 1,
+            history,
+            card: self.card.clone(),
+            about: self.about,
+        }
     }
 }
 
@@ -200,7 +254,15 @@ mod tests {
 
     #[test]
     fn a_moved_fingerprint_marks_the_source_changed() {
-        let r = ResultRecord { id: 1, layer: None, recipe: schools(), version: 1, history: Vec::new() };
+        let r = ResultRecord {
+            id: 1,
+            layer: None,
+            recipe: schools(),
+            version: 1,
+            history: Vec::new(),
+            card: ResultCard::default(),
+            about: None,
+        };
         assert_eq!(r.status(|i| Some(i.fingerprint.clone())), None);
         assert_eq!(
             r.status(|i| if i.file == "schools.csv" { Some("zz".into()) } else { Some(i.fingerprint.clone()) }).as_deref(),

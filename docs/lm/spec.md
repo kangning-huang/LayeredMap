@@ -447,7 +447,7 @@ The composer replaces the lower inspector; the card header stays visible.
 ### Table drawer
 - **Header:** layer name, "Showing 12 of 248", filter chips, + Filter, a search box, Close.
 - **Columns:** source order, with identifier columns pinned left. Numbers are right-aligned in tabular figures. Blank cells show "—" in secondary color, so blank and zero stay distinct.
-- **Selection** is shared both ways: selecting rows selects objects, and selecting objects highlights rows. Clicking a header sorts the view without changing the data.
+- **Selection** is shared both ways: selecting rows selects objects, and selecting objects highlights rows. Double-clicking a row also zooms the map to that record. Clicking a header sorts the view without changing the data.
 - **Scale:** rows are virtualized; 1,000,000 rows scroll at 60 fps.
 
 ### Filter builder
@@ -458,6 +458,7 @@ The composer replaces the lower inspector; the card header stays visible.
     - date: before, after, between
     - category: is any of
 
+- **Symbols:** each condition in the menu has a symbol before its word, so the meaning is exact: = is, ≠ is not, magnifier contains, > above (strictly greater), < below, [ ] between (both ends included), dashed circle is empty; dates use < before and > after. The sentence keeps the words ("where population is above 500,000"). The value box says what to type ("a number").
 - **Live count:** "42 match", updated as you edit.
 - **Applying** turns the filter into a chip ("Type is Primary ×").
 - **Keep as new layer** asks: Live view (follows the source) or Snapshot.

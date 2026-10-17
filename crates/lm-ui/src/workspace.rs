@@ -114,7 +114,9 @@ const COMPARE_MAP_ID: u32 = MAP_ID_BASE - 1;
 /// Map layer ids for LayeredMap's layers start here, clear of anything the map assigns itself.
 const MAP_ID_BASE: u32 = 1_000_000;
 
+mod analysis;
 mod join;
+pub use analysis::RunOutcome;
 pub use join::{JoinOffer, JoinQuestion, JoinReport};
 
 #[derive(Default)]
@@ -174,6 +176,8 @@ pub struct Workspace {
     finding: HashMap<LayerId, u32>,
     /// Joining tables to places (WP3.11).
     joins: join::JoinState,
+    /// Actions as jobs, previews and kept results (Phase 4).
+    pub(crate) analysis: analysis::Analysis,
 }
 
 /// Drawing state derived from a layer's data (WP3.5, WP3.7).
@@ -1014,6 +1018,14 @@ impl Workspace {
             self.compare_synced = want_compare;
             self.order_key.clear();
         }
+        // An action's preview.
+        if let Some(change) = self.preview_change() {
+            view.edit_map(move |m: &mut Map| m.layers.retain(|l| l.id != analysis::PREVIEW_MAP_ID));
+            if let Some((a, b)) = change {
+                view.add_layer_pair(a, b);
+            }
+            self.order_key.clear();
+        }
         // Order (the map draws index 0 on top; the document lists bottom to top), visibility, style.
         let order: Vec<(u32, bool, Style, LayerKind)> = self
             .doc
@@ -1060,16 +1072,29 @@ impl Workspace {
                 .collect();
             view.edit_map(move |m: &mut Map| {
                 let mut compare = None;
+                let mut preview = None;
                 let mut ours: Vec<lm_mapview::map::Layer> = Vec::new();
                 let mut others = Vec::new();
                 for l in m.layers.drain(..) {
-                    if l.id == COMPARE_MAP_ID {
+                    if l.id == analysis::PREVIEW_MAP_ID {
+                        preview = Some(l);
+                    } else if l.id == COMPARE_MAP_ID {
                         compare = Some(l);
                     } else if l.id >= MAP_ID_BASE {
                         ours.push(l);
                     } else {
                         others.push(l);
                     }
+                }
+                // An action's preview draws above everything (spec › Preview).
+                if let Some(mut p) = preview {
+                    let kind = match p.dataset.geometry_type {
+                        lm_jobs::GeometryType::Point => LayerKind::Points,
+                        lm_jobs::GeometryType::Polyline => LayerKind::Lines,
+                        _ => LayerKind::Areas,
+                    };
+                    apply_style(&mut p, &preview_style(kind), kind);
+                    m.layers.push(p);
                 }
                 // The Compare view's converted points draw above everything.
                 if let Some(mut c) = compare {
@@ -1122,6 +1147,11 @@ impl Workspace {
         let mut rows = self.selection.rows_in(id);
         if let Some(h) = self.hover.filter(|h| h.layer == id && !rows.contains(&h.row)) {
             rows.push(h.row);
+        }
+        if let Some((l, extra)) = &self.analysis.highlight
+            && *l == id
+        {
+            rows.extend(extra.iter().filter(|r| !rows.contains(r)).copied().collect::<Vec<_>>());
         }
         rows
     }
@@ -1340,6 +1370,14 @@ impl Workspace {
     pub fn needs_decision(&self) -> bool {
         self.doc.layers.iter().any(|l| l.profile.open_questions().next().is_some())
     }
+}
+
+/// An action's preview: the accent blue at low opacity with a strong outline, so it reads as
+/// "not yet part of the map".
+fn preview_style(kind: LayerKind) -> Style {
+    let mut s = Style::for_kind(kind, [0x25, 0x63, 0xEB, 0xFF], 0);
+    s.opacity = 0.45;
+    s
 }
 
 /// The Compare view's converted points: vermillion (Okabe–Ito), larger, with a white edge.

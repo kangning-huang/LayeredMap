@@ -4,6 +4,7 @@
 //! `rustgis-data` or `rustgis-analysis`: all work goes through `lm-jobs`.
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
+pub mod analysis;
 pub mod basemap;
 mod chrome;
 pub mod draw;
@@ -94,6 +95,11 @@ pub enum Command {
     StartDrawing(draw::Mode),
     /// Make an area layer from an outline in longitude/latitude (scripts and tests).
     DrawArea(Vec<(f64, f64)>),
+    /// Developer surface (scripts and tests): open the composer for an analysis action on the
+    /// selected layer (and selected object), with parameters such as `distance=500 m`.
+    ComposeAction(String, Vec<(String, String)>),
+    /// Developer surface: keep the composer's preview.
+    KeepResult,
 }
 
 /// A file dialog the shell asks the app to show (the shell itself never opens dialogs).
@@ -187,6 +193,11 @@ pub struct Shell {
     pub(crate) data_search: (String, Vec<chrome::DataRow>),
     /// The daily basemap build the map reads, once the newest one is known.
     archive_url: Option<String>,
+    /// The developer flag (`LM_DEV=1` or a debug build): shows assistant actions and the
+    /// composer (Phase 4's developer surface).
+    pub developer: bool,
+    /// A question being composed (developer surface).
+    pub(crate) composer: Option<analysis::Composer>,
 }
 
 impl Shell {
@@ -215,6 +226,8 @@ impl Shell {
             notice: None,
             last_map_size: egui::vec2(1280.0, 748.0),
             archive_url: None,
+            developer: false,
+            composer: None,
             find: find_ui::FindState::default(),
             drawing: None,
             ws: workspace::Workspace::with_waker(ctx),
@@ -306,6 +319,10 @@ impl Shell {
                 if let Some(layer) = lm_jobs::import::drawn_area(&name, &ring) {
                     self.ws.add_imported(vec![layer], u64::MAX);
                 }
+            }
+            Command::ComposeAction(action, params) => analysis::compose_by_id(self, &action, params),
+            Command::KeepResult => {
+                analysis::keep(self);
             }
             Command::Find(text) => {
                 if let Some(id) = self.ws.selected() {
@@ -524,6 +541,7 @@ impl Shell {
     /// Phase 2 bookkeeping each frame: imports, the map's layers, fitting new data, the log.
     fn update_workspace(&mut self, ctx: &egui::Context) {
         let t = ctx.input(|i| i.time);
+        analysis::poll(self);
         // Files dropped on the window (Open With and the Dock icon arrive through the app).
         let dropped: Vec<PathBuf> =
             ctx.input(|i| i.raw.dropped_files.iter().map(|f| f.path().to_path_buf()).filter(|p| !p.as_os_str().is_empty()).collect());
