@@ -1,0 +1,1231 @@
+{
+  "version": 1,
+  "about": "Original geographic puzzles for testing LayeredMap Pro end to end and for release videos. Stories, characters and clue combinations are original to LayeredMap. Verification blocks are written by tools/lm/puzzles/solve.py --update.",
+  "data_readme": "/Volumes/LaCie/data/layeredmap-puzzles/README.md",
+  "datasets": {
+    "ne_places": {
+      "name": "Natural Earth 1:10m populated places (v5.1.2)",
+      "licence": "Public domain",
+      "fields_used": [
+        "NAME",
+        "NAME_ZH",
+        "ADM0NAME",
+        "POP_MAX"
+      ]
+    },
+    "ne_countries": {
+      "name": "Natural Earth 1:10m admin-0 countries (v5.1.1)",
+      "licence": "Public domain",
+      "fields_used": [
+        "ADMIN",
+        "CONTINENT",
+        "POP_EST"
+      ]
+    },
+    "ne_boundaries": {
+      "name": "Natural Earth 1:10m admin-0 land boundary lines (v5.1.0)",
+      "licence": "Public domain"
+    },
+    "ne_land": {
+      "name": "Natural Earth 1:10m land (v5.1.1) and minor islands (v4.1.0)",
+      "licence": "Public domain"
+    },
+    "ne_coastline": {
+      "name": "Natural Earth 1:10m coastline",
+      "licence": "Public domain"
+    },
+    "ne_rivers": {
+      "name": "Natural Earth 1:10m rivers and lake centerlines (v5.0.0); major = scalerank 4 or less",
+      "licence": "Public domain"
+    },
+    "wc_elev": {
+      "name": "WorldClim 2.1 elevation, 10 arc-minutes",
+      "licence": "CC BY 4.0 (Fick and Hijmans 2017)"
+    },
+    "wc_bio1": {
+      "name": "WorldClim 2.1 BIO1 annual mean temperature, 10 arc-minutes",
+      "licence": "CC BY 4.0 (Fick and Hijmans 2017)"
+    },
+    "wc_bio12": {
+      "name": "WorldClim 2.1 BIO12 annual precipitation, 10 arc-minutes",
+      "licence": "CC BY 4.0 (Fick and Hijmans 2017)"
+    },
+    "wc_tavg01": {
+      "name": "WorldClim 2.1 January mean temperature, 10 arc-minutes",
+      "licence": "CC BY 4.0 (Fick and Hijmans 2017)"
+    },
+    "wc_tavg07": {
+      "name": "WorldClim 2.1 July mean temperature, 10 arc-minutes",
+      "licence": "CC BY 4.0 (Fick and Hijmans 2017)"
+    },
+    "gem_faults": {
+      "name": "GEM Global Active Faults, harmonized",
+      "licence": "CC BY-SA 4.0 (Styron and Pagani 2020)"
+    }
+  },
+  "new_actions": {
+    "find_where": "A1 Find areas where [Heat] meets conditions",
+    "keep_inside": "A2 Keep the part of [layer] inside [other]",
+    "nearest_distance": "A3 Add the distance to the nearest [other] to each [School]",
+    "add_measurements": "A4 Add area and coordinates to each [District]",
+    "calculate_field": "A5 Add a field calculated from two values",
+    "join_by_location": "A6 Add [District] details to each [School]",
+    "split_parts": "A7 Split [layer] into separate parts",
+    "filter:starts_with": "Filter test 'starts with' (extension of filter)"
+  },
+  "puzzles": [
+    {
+      "id": "P1",
+      "title": "Grandma's Flower Postcard",
+      "difficulty": "easy",
+      "setting": "China",
+      "answer_kind": "city",
+      "story": "Xiaomei lives in Harbin, where January snow piles up to the windowsills. This winter her grandma moved south to be near her aunt, and the first postcard has just arrived: a photo of a market stall heaped with flowers, and Grandma in a thin cotton jacket. \"It's January and I haven't worn my down coat once,\" she wrote. \"The city is big and busy, but it sits so high up in the mountains that I was out of breath on the stairs for my first week.\" There is no postmark, because the corner got wet. Xiaomei wants to put a pin in the map above her bed. Can you help her find Grandma's new home?",
+      "clues": [
+        "It is a Chinese city of more than two million people.",
+        "It is at least 1,500 metres above sea level.",
+        "Its January average temperature is at least 5 °C."
+      ],
+      "request": {
+        "en": "Which city in China has more than two million people, is at least 1,500 metres above sea level and has a January average of 5 °C or warmer?",
+        "zh": "中国哪座城市人口超过两百万、海拔至少1500米、一月平均气温不低于5°C？"
+      },
+      "datasets": [
+        "ne_places",
+        "wc_elev",
+        "wc_tavg01"
+      ],
+      "plan": [
+        {
+          "action": "filter",
+          "new": false,
+          "on": "Populated places",
+          "detail": "ADM0NAME is China, POP_MAX above 2,000,000"
+        },
+        {
+          "action": "add_raster_values",
+          "new": false,
+          "on": "Populated places",
+          "detail": "elevation"
+        },
+        {
+          "action": "add_raster_values",
+          "new": false,
+          "on": "Populated places",
+          "detail": "January mean temperature"
+        },
+        {
+          "action": "filter",
+          "new": false,
+          "on": "Populated places",
+          "detail": "elevation at least 1500 and January at least 5"
+        }
+      ],
+      "answer": {
+        "name": "Kunming",
+        "name_zh": "昆明",
+        "country": "China",
+        "lat": 25.043,
+        "lon": 102.697,
+        "note": "Yunnan's capital, long called the Spring City; its flower market is one of Asia's largest."
+      },
+      "verification": {
+        "solver": "tools/lm/puzzles/solve.py",
+        "verified": true,
+        "found": [
+          {
+            "name": "Kunming",
+            "lat": 25.043,
+            "lon": 102.697,
+            "country": "China",
+            "population": 2931000,
+            "elev": 1985.0,
+            "bio_1": 14.9,
+            "bio_12": 928.0,
+            "tavg_01": 8.1,
+            "tavg_07": 19.7,
+            "fault_km": 6.1,
+            "major_river_km": 47.4,
+            "coast_km": 602.4,
+            "countries_within_30km": 1
+          }
+        ],
+        "candidates_after_each_clue": [
+          45,
+          2,
+          1
+        ],
+        "solver_tests": [
+          "in China, population over 2,000,000",
+          "elevation at least 1500 m",
+          "January mean at least 5.0 °C"
+        ],
+        "robustness": {
+          "pop": {
+            "value": 2000000,
+            "step": 100000,
+            "unit": "",
+            "steps_down_ok": 8,
+            "steps_up_ok": 8,
+            "holds_from": 1200000,
+            "holds_to": 2800000,
+            "capped": true
+          },
+          "elev": {
+            "value": 1500,
+            "step": 100,
+            "unit": "m",
+            "steps_down_ok": 8,
+            "steps_up_ok": 4,
+            "holds_from": 700,
+            "holds_to": 1900,
+            "capped": true
+          },
+          "jan": {
+            "value": 5.0,
+            "step": 0.5,
+            "unit": "°C",
+            "steps_down_ok": 8,
+            "steps_up_ok": 6,
+            "holds_from": 1.0,
+            "holds_to": 8.0,
+            "capped": true
+          }
+        }
+      },
+      "verification_note": "After the elevation clue only Lanzhou (January −6.2 °C) and Kunming (8.1 °C) remain. The population clue says two million on purpose: Baoshan, Yunnan (exactly 1,000,000 in Natural Earth, 1,938 m, January 8.7 °C) would pass a one-million clue, and other high Yunnan cities pass below that."
+    },
+    {
+      "id": "P2",
+      "title": "Aurora Week",
+      "difficulty": "easy",
+      "setting": "North America",
+      "answer_kind": "city",
+      "story": "The astronomy club at a school in Singapore has never seen snow, let alone the northern lights. Their teacher, Mr Rahman, has found a sister school in North America willing to host them for one week in January. The club voted on one rule: it has to be properly cold, the kind of cold where your breath freezes on your scarf, because the clearest, darkest nights come with it. Mr Rahman also wants a real city with a science museum and a planetarium, not a tiny town. The club has the list of possible host cities. Which one wins the vote?",
+      "clues": [
+        "The city is in North America.",
+        "At least 500,000 people live there.",
+        "Its January average temperature is −15 °C or colder."
+      ],
+      "request": {
+        "en": "Find the city in North America with at least 500,000 people where the average January temperature is minus 15 °C or colder."
+      },
+      "datasets": [
+        "ne_places",
+        "ne_countries",
+        "wc_tavg01"
+      ],
+      "plan": [
+        {
+          "action": "join_by_location",
+          "new": true,
+          "on": "Populated places",
+          "detail": "add CONTINENT from Countries (alternative without a new action: filter ADM0NAME is any of the North American countries)"
+        },
+        {
+          "action": "filter",
+          "new": false,
+          "on": "Populated places",
+          "detail": "continent is North America, POP_MAX at least 500,000"
+        },
+        {
+          "action": "add_raster_values",
+          "new": false,
+          "on": "Populated places",
+          "detail": "January mean temperature"
+        },
+        {
+          "action": "filter",
+          "new": false,
+          "on": "Populated places",
+          "detail": "January at most −15"
+        },
+        {
+          "action": "rank_by_value",
+          "new": false,
+          "on": "Populated places",
+          "detail": "by January temperature, coldest first (shows the margin to the runner-up)"
+        }
+      ],
+      "answer": {
+        "name": "Winnipeg",
+        "name_zh": "温尼伯",
+        "country": "Canada",
+        "lat": 49.883,
+        "lon": -97.166,
+        "note": "Manitoba's capital, on the Canadian prairie, with a planetarium in its science centre."
+      },
+      "verification": {
+        "solver": "tools/lm/puzzles/solve.py",
+        "verified": true,
+        "found": [
+          {
+            "name": "Winnipeg",
+            "lat": 49.883,
+            "lon": -97.166,
+            "country": "Canada",
+            "population": 632063,
+            "elev": 231.0,
+            "bio_1": 2.8,
+            "bio_12": 558.0,
+            "tavg_01": -18.3,
+            "tavg_07": 20.5,
+            "fault_km": 1104.7,
+            "major_river_km": 391.7,
+            "coast_km": 831.2,
+            "countries_within_30km": 1
+          }
+        ],
+        "candidates_after_each_clue": [
+          1448,
+          146,
+          1
+        ],
+        "solver_tests": [
+          "in North America",
+          "population at least 500,000",
+          "January mean at most -15.0 °C"
+        ],
+        "robustness": {
+          "pop": {
+            "value": 500000,
+            "step": 50000,
+            "unit": "",
+            "steps_down_ok": 6,
+            "steps_up_ok": 2,
+            "holds_from": 200000,
+            "holds_to": 600000,
+            "capped": false
+          },
+          "jan": {
+            "value": -15.0,
+            "step": 0.5,
+            "unit": "°C",
+            "steps_down_ok": 6,
+            "steps_up_ok": 2,
+            "holds_from": -18.0,
+            "holds_to": -14.0,
+            "capped": false
+          }
+        }
+      },
+      "verification_note": "The next coldest North American cities of 500,000 or more are Edmonton (−13.9 °C) and Québec (−13.0 °C); Winnipeg's January mean is −18.3 °C. The population threshold cannot rise above Winnipeg's 632,063."
+    },
+    {
+      "id": "P3",
+      "title": "Grandpa's Squid Boat",
+      "difficulty": "medium",
+      "setting": "South Korea (East Asia)",
+      "answer_kind": "island",
+      "story": "Ji-woo's grandfather fished for squid for forty years. On summer nights the boats hung rows of bright lamps over the water, and from far away the sea looked like a city floating in the dark. He grew up on a small island that belongs to South Korea, and he says it is so far out that on a clear day you still could not see any other land, only water in every direction. When Ji-woo asked how big it was, he laughed: \"Big enough for a school, a harbour and a mountain; small enough to walk around in a few days.\" Ji-woo wants to surprise him with a trip back. Which island is it?",
+      "clues": [
+        "The island is part of South Korea.",
+        "Its area is between 50 and 100 km².",
+        "The nearest other land, island or mainland, is at least 75 km away."
+      ],
+      "request": {
+        "en": "Which island of South Korea is between 50 and 100 square kilometres and at least 75 km from any other land?",
+        "zh": "韩国有哪个岛面积在50到100平方公里之间，并且离其他任何陆地都至少75公里？"
+      },
+      "datasets": [
+        "ne_land",
+        "ne_countries"
+      ],
+      "plan": [
+        {
+          "action": "split_parts",
+          "new": true,
+          "on": "Land and Minor islands",
+          "detail": "one feature per island"
+        },
+        {
+          "action": "join_by_location",
+          "new": true,
+          "on": "Islands",
+          "detail": "add country ADMIN from Countries"
+        },
+        {
+          "action": "add_measurements",
+          "new": true,
+          "on": "Islands",
+          "detail": "area_km2"
+        },
+        {
+          "action": "filter",
+          "new": false,
+          "on": "Islands",
+          "detail": "country is South Korea, area between 50 and 100"
+        },
+        {
+          "action": "nearest_distance",
+          "new": true,
+          "on": "Islands",
+          "detail": "to the nearest other island or mainland (same-layer variant)"
+        },
+        {
+          "action": "filter",
+          "new": false,
+          "on": "Islands",
+          "detail": "distance at least 75 km"
+        }
+      ],
+      "answer": {
+        "name": "Ulleungdo",
+        "name_zh": "郁陵岛",
+        "country": "South Korea",
+        "lat": 37.497,
+        "lon": 130.861,
+        "note": "A volcanic island in the East Sea famous for squid fishing; the coordinates are a point on the island."
+      },
+      "verification": {
+        "solver": "tools/lm/puzzles/solve.py",
+        "verified": true,
+        "found": [
+          {
+            "name": "Ulleungdo",
+            "lat": 37.497,
+            "lon": 130.861,
+            "country": "South Korea",
+            "area_km2": 73.1,
+            "nearest_land_km": 88.2,
+            "bio_1": 11.4,
+            "bio_12": 1265.2,
+            "tavg_01": -0.2,
+            "tavg_07": 21.9
+          }
+        ],
+        "candidates_after_each_clue": [
+          231,
+          6,
+          1
+        ],
+        "solver_tests": [
+          "an island of South Korea",
+          "area 50–100 km²",
+          "at least 75 km from any other land"
+        ],
+        "robustness": {
+          "area_min": {
+            "value": 50,
+            "step": 5,
+            "unit": "km²",
+            "steps_down_ok": 8,
+            "steps_up_ok": 4,
+            "holds_from": 10,
+            "holds_to": 70,
+            "capped": true
+          },
+          "area_max": {
+            "value": 100,
+            "step": 5,
+            "unit": "km²",
+            "steps_down_ok": 5,
+            "steps_up_ok": 8,
+            "holds_from": 75,
+            "holds_to": 140,
+            "capped": true
+          },
+          "isolation": {
+            "value": 75,
+            "step": 2,
+            "unit": "km",
+            "steps_down_ok": 8,
+            "steps_up_ok": 6,
+            "holds_from": 59,
+            "holds_to": 87,
+            "capped": true
+          }
+        }
+      },
+      "verification_note": "Six South Korean islands are 50–100 km²; the other five lie off the south and west coasts, each within 9 km of other land. Ulleungdo (73.1 km² at 1:10m) is 88 km from the nearest land in the data, a group of tiny islets to its east-south-east, and 135 km from the Korean mainland. Distances are boundary to boundary."
+    },
+    {
+      "id": "P4",
+      "title": "The Tea Caravan Notebook",
+      "difficulty": "medium",
+      "difficulty_note": "six clues, but four are thresholds set in one find_where call",
+      "setting": "China",
+      "answer_kind": "area",
+      "story": "Clearing out her family's old house, Li Na found a cloth-bound notebook that belonged to her great-great-grandfather, who led mule caravans carrying tea. Most pages are lists of loads and prices, but one page describes where the best leaves grew: green hills, never lowland and never high peaks, warm all year, soaked by summer rain, with winters so mild the tea bushes never froze. He wrote that the tea country was one great stretch of land that took his caravan weeks to cross, all inside China, and that every load started from its market town. Li Na wants to find the tea hills, and the town, on a modern map.",
+      "clues": [
+        "Elevation between 1,000 and 2,000 metres.",
+        "Annual average temperature at least 17 °C.",
+        "Annual rainfall at least 1,300 mm.",
+        "January average temperature at least 10 °C.",
+        "Inside China.",
+        "One connected stretch of land of at least 10,000 km²."
+      ],
+      "request": {
+        "en": "Show me the areas in China between 1,000 and 2,000 metres where the annual average temperature is at least 17 °C, annual rain is at least 1,300 mm and January averages 10 °C or more. Which of those areas is bigger than 10,000 square kilometres, and which town is in it?",
+        "zh": "在中国找出海拔1000到2000米、年平均气温不低于17°C、年降水量至少1300毫米、一月平均气温不低于10°C的地区。其中哪一片面积超过一万平方公里？里面是哪座城镇？"
+      },
+      "datasets": [
+        "wc_elev",
+        "wc_bio1",
+        "wc_bio12",
+        "wc_tavg01",
+        "ne_countries",
+        "ne_places"
+      ],
+      "plan": [
+        {
+          "action": "find_where",
+          "new": true,
+          "on": "Elevation, Annual mean temperature, Annual precipitation, January mean temperature",
+          "detail": "elevation 1000–2000, annual mean at least 17, rain at least 1300, January at least 10; one area per connected group of cells"
+        },
+        {
+          "action": "keep_inside",
+          "new": true,
+          "on": "Areas found",
+          "detail": "inside the Countries feature China"
+        },
+        {
+          "action": "add_measurements",
+          "new": true,
+          "on": "Areas inside China",
+          "detail": "area_km2 (recomputed after the clip)"
+        },
+        {
+          "action": "filter",
+          "new": false,
+          "on": "Areas inside China",
+          "detail": "area_km2 at least 10,000"
+        },
+        {
+          "action": "whats_inside",
+          "new": false,
+          "on": "the remaining area",
+          "detail": "Populated places inside it"
+        }
+      ],
+      "answer": {
+        "name": "Tea hills of south-west Yunnan around Pu'er (Simao)",
+        "name_zh": "滇西南普洱（思茅）一带的茶山",
+        "country": "China",
+        "lat": 23.037,
+        "lon": 100.078,
+        "town": "Simao (思茅, now the centre of Pu'er city), 22.781° N, 100.978° E",
+        "note": "The coordinates are the area's centroid. Pu'er gave its name to the tea and was a starting point of the old tea-and-horse caravan roads."
+      },
+      "verification": {
+        "solver": "tools/lm/puzzles/solve.py",
+        "verified": true,
+        "found": [
+          {
+            "name": "Simao",
+            "lat": 23.037,
+            "lon": 100.078,
+            "area_km2": 57516,
+            "cells": 182,
+            "towns_inside": [
+              "Simao (162,725)"
+            ]
+          }
+        ],
+        "candidates_after_each_clue": [
+          1075,
+          573,
+          355,
+          356,
+          15,
+          1
+        ],
+        "solver_tests": [
+          "elevation 1000–2000 m",
+          "annual mean at least 17.0 °C",
+          "annual rainfall at least 1300 mm",
+          "January mean at least 10.0 °C",
+          "inside China",
+          "one connected area of at least 10,000 km²"
+        ],
+        "robustness": {
+          "elev_min": {
+            "value": 1000,
+            "step": 50,
+            "unit": "m",
+            "steps_down_ok": 5,
+            "steps_up_ok": 6,
+            "holds_from": 750,
+            "holds_to": 1300,
+            "capped": false
+          },
+          "elev_max": {
+            "value": 2000,
+            "step": 50,
+            "unit": "m",
+            "steps_down_ok": 8,
+            "steps_up_ok": 8,
+            "holds_from": 1600,
+            "holds_to": 2400,
+            "capped": true
+          },
+          "annual": {
+            "value": 17.0,
+            "step": 0.5,
+            "unit": "°C",
+            "steps_down_ok": 8,
+            "steps_up_ok": 3,
+            "holds_from": 13.0,
+            "holds_to": 18.5,
+            "capped": true
+          },
+          "rain": {
+            "value": 1300,
+            "step": 50,
+            "unit": "mm",
+            "steps_down_ok": 6,
+            "steps_up_ok": 3,
+            "holds_from": 1000,
+            "holds_to": 1450,
+            "capped": false
+          },
+          "jan": {
+            "value": 10.0,
+            "step": 0.5,
+            "unit": "°C",
+            "steps_down_ok": 8,
+            "steps_up_ok": 6,
+            "holds_from": 6.0,
+            "holds_to": 13.0,
+            "capped": true
+          },
+          "min_area": {
+            "value": 10000,
+            "step": 1000,
+            "unit": "km²",
+            "steps_down_ok": 8,
+            "steps_up_ok": 8,
+            "holds_from": 2000,
+            "holds_to": 18000,
+            "capped": true
+          }
+        }
+      },
+      "verification_note": "After clipping to China, 15 separate areas remain; the tea area (57,516 km², 182 cells of 10′) is 36 times larger than the next (1,576 km² in south-east Yunnan). Simao is the only Natural Earth town inside it. On the 10′ grid (cells about 18 km wide) the area is coarse; raising the rain floor to 1,500 mm splits it in two, which is why the clue says 1,300 mm. The count rises from 355 to 356 at the January clue because removing cells can split one area into two."
+    },
+    {
+      "id": "P5",
+      "title": "The Windy Letter Z",
+      "difficulty": "medium",
+      "setting": "Europe",
+      "answer_kind": "city",
+      "story": "Every Friday, Ms Okafor's class plays the European Alphabet Game: each week a letter, and each team must find a mystery city starting with it. This week is the last and hardest letter, Z. Team Kestrel's clue card says the city is big, more than three hundred thousand people, and surprisingly dry for Europe: a strong cold wind blows down its river valley and the sky is often clear, so its whole year brings less rain than some cities get in a few autumn months. Team Kestrel has ten minutes left. Which city do they write on the board?",
+      "clues": [
+        "The city is in Europe.",
+        "Its name starts with Z.",
+        "At least 300,000 people live there.",
+        "Its annual rainfall is 400 mm or less."
+      ],
+      "request": {
+        "en": "Which European city whose name starts with Z has at least 300,000 people and gets 400 mm of rain a year or less?"
+      },
+      "datasets": [
+        "ne_places",
+        "ne_countries",
+        "wc_bio12"
+      ],
+      "plan": [
+        {
+          "action": "join_by_location",
+          "new": true,
+          "on": "Populated places",
+          "detail": "add CONTINENT from Countries"
+        },
+        {
+          "action": "filter:starts_with",
+          "new": true,
+          "on": "Populated places",
+          "detail": "NAME starts with Z, continent is Europe, POP_MAX at least 300,000"
+        },
+        {
+          "action": "add_raster_values",
+          "new": false,
+          "on": "Populated places",
+          "detail": "annual precipitation"
+        },
+        {
+          "action": "filter",
+          "new": false,
+          "on": "Populated places",
+          "detail": "precipitation at most 400"
+        }
+      ],
+      "answer": {
+        "name": "Zaragoza",
+        "name_zh": "萨拉戈萨",
+        "country": "Spain",
+        "lat": 41.65,
+        "lon": -0.89,
+        "note": "On the Ebro in Aragón; its dry north-westerly wind is called the cierzo."
+      },
+      "verification": {
+        "solver": "tools/lm/puzzles/solve.py",
+        "verified": true,
+        "found": [
+          {
+            "name": "Zaragoza",
+            "lat": 41.65,
+            "lon": -0.89,
+            "country": "Spain",
+            "population": 649404,
+            "elev": 340.0,
+            "bio_1": 14.6,
+            "bio_12": 353.0,
+            "tavg_01": 6.1,
+            "tavg_07": 24.2,
+            "fault_km": 54.1,
+            "major_river_km": 788.1,
+            "coast_km": 163.1,
+            "countries_within_30km": 1
+          }
+        ],
+        "candidates_after_each_clue": [
+          1398,
+          29,
+          4,
+          1
+        ],
+        "solver_tests": [
+          "in Europe",
+          "name starts with Z",
+          "population at least 300,000",
+          "annual rainfall at most 400 mm"
+        ],
+        "robustness": {
+          "pop": {
+            "value": 300000,
+            "step": 25000,
+            "unit": "",
+            "steps_down_ok": 8,
+            "steps_up_ok": 8,
+            "holds_from": 100000,
+            "holds_to": 500000,
+            "capped": true
+          },
+          "rain": {
+            "value": 400,
+            "step": 20,
+            "unit": "mm",
+            "steps_down_ok": 2,
+            "steps_up_ok": 4,
+            "holds_from": 360,
+            "holds_to": 480,
+            "capped": false
+          }
+        }
+      },
+      "verification_note": "Zaporizhzhya (491 mm), Zagreb (906 mm) and Zürich (1,082 mm) pass the first three clues; Zaragoza gets 353 mm."
+    },
+    {
+      "id": "P6",
+      "title": "The Running Club's Secret Hill",
+      "difficulty": "hard",
+      "setting": "Africa",
+      "answer_kind": "city",
+      "story": "Coach Thandiwe runs a girls' distance club in Durban. Her best runners are ready for a training camp in thin mountain air, and she has a shortlist of rules from her own coach, who once trained there. It must be a big city in Africa with a proper running track and an airport. It must be high, well above the sea, and far inland. Its coolest month comes in the middle of the year, like at home. And her coach always said the best part was the long runs above a great crack in the Earth, where the ground is still slowly pulling apart. Where should the club book their camp?",
+      "clues": [
+        "The city is in Africa.",
+        "At least one million people live there.",
+        "It is at least 1,500 metres above sea level.",
+        "July is at least 1 °C cooler than January.",
+        "It is at least 300 km from the sea.",
+        "It is within 50 km of a mapped active fault."
+      ],
+      "request": {
+        "en": "Find an African city of at least a million people, at least 1,500 m high and 300 km or more from the sea, where July averages at least 1 °C cooler than January and an active fault is within 50 km."
+      },
+      "datasets": [
+        "ne_places",
+        "ne_countries",
+        "ne_coastline",
+        "wc_elev",
+        "wc_tavg01",
+        "wc_tavg07",
+        "gem_faults"
+      ],
+      "plan": [
+        {
+          "action": "join_by_location",
+          "new": true,
+          "on": "Populated places",
+          "detail": "add CONTINENT from Countries"
+        },
+        {
+          "action": "filter",
+          "new": false,
+          "on": "Populated places",
+          "detail": "continent is Africa, POP_MAX at least 1,000,000"
+        },
+        {
+          "action": "add_raster_values",
+          "new": false,
+          "on": "Populated places",
+          "detail": "elevation, January and July mean temperature (three calls)"
+        },
+        {
+          "action": "calculate_field",
+          "new": true,
+          "on": "Populated places",
+          "detail": "July minus January"
+        },
+        {
+          "action": "filter",
+          "new": false,
+          "on": "Populated places",
+          "detail": "elevation at least 1500, July minus January at most −1"
+        },
+        {
+          "action": "nearest_distance",
+          "new": true,
+          "on": "Populated places",
+          "detail": "to Coastline"
+        },
+        {
+          "action": "nearest_distance",
+          "new": true,
+          "on": "Populated places",
+          "detail": "to Active faults"
+        },
+        {
+          "action": "filter",
+          "new": false,
+          "on": "Populated places",
+          "detail": "coast distance at least 300, fault distance at most 50"
+        }
+      ],
+      "answer": {
+        "name": "Nairobi",
+        "name_zh": "内罗毕",
+        "country": "Kenya",
+        "lat": -1.281,
+        "lon": 36.815,
+        "note": "Kenya's capital sits on the shoulder of the East African Rift, a classic base for altitude training."
+      },
+      "verification": {
+        "solver": "tools/lm/puzzles/solve.py",
+        "verified": true,
+        "found": [
+          {
+            "name": "Nairobi",
+            "lat": -1.281,
+            "lon": 36.815,
+            "country": "Kenya",
+            "population": 3010000,
+            "elev": 1824.0,
+            "bio_1": 18.6,
+            "bio_12": 1008.0,
+            "tavg_01": 19.4,
+            "tavg_07": 16.3,
+            "fault_km": 22.2,
+            "major_river_km": 433.2,
+            "coast_km": 408.1,
+            "countries_within_30km": 1
+          }
+        ],
+        "candidates_after_each_clue": [
+          1290,
+          53,
+          7,
+          6,
+          5,
+          1
+        ],
+        "solver_tests": [
+          "in Africa",
+          "population at least 1,000,000",
+          "elevation at least 1500 m",
+          "July at least 1.0 °C cooler than January",
+          "at least 300 km from the sea",
+          "within 50 km of a mapped active fault"
+        ],
+        "robustness": {
+          "pop": {
+            "value": 1000000,
+            "step": 250000,
+            "unit": "",
+            "steps_down_ok": 2,
+            "steps_up_ok": 8,
+            "holds_from": 500000,
+            "holds_to": 3000000,
+            "capped": true
+          },
+          "elev": {
+            "value": 1500,
+            "step": 50,
+            "unit": "m",
+            "steps_down_ok": 8,
+            "steps_up_ok": 6,
+            "holds_from": 1100,
+            "holds_to": 1800,
+            "capped": true
+          },
+          "cooler": {
+            "value": 1.0,
+            "step": 0.5,
+            "unit": "°C",
+            "steps_down_ok": 1,
+            "steps_up_ok": 4,
+            "holds_from": 0.5,
+            "holds_to": 3.0,
+            "capped": false
+          },
+          "fault": {
+            "value": 50,
+            "step": 5,
+            "unit": "km",
+            "steps_down_ok": 5,
+            "steps_up_ok": 8,
+            "holds_from": 25,
+            "holds_to": 90,
+            "capped": true
+          },
+          "coast": {
+            "value": 300,
+            "step": 25,
+            "unit": "km",
+            "steps_down_ok": 8,
+            "steps_up_ok": 4,
+            "holds_from": 100,
+            "holds_to": 400,
+            "capped": true
+          }
+        }
+      },
+      "verification_note": "Johannesburg, Benoni, Vereeniging and Harare pass the first five clues but are 240–510 km from the nearest mapped active fault; Nairobi is 22 km from faults of the East African Rift. GEM's map has gaps (Madagascar, parts of central Africa), which do not affect these candidates."
+    },
+    {
+      "id": "P7",
+      "title": "Three Flags and a Thousand Waterfalls",
+      "difficulty": "hard",
+      "setting": "South America",
+      "answer_kind": "city",
+      "story": "Twins Tomás and Bia are writing a school report on borders, and their grandmother has promised a trip to a place where you can stand by one river and see two other countries across the water. All she will tell them is this: it rains a lot there, the forest is thick and green, and a great river runs right past the city. In July, which is winter there, the evenings are cool enough for a sweater. Three countries come together within a short bus ride of the hotel, and the city belongs to the country with by far the most people of the three. Which city are they flying to?",
+      "clues": [
+        "The city is in South America.",
+        "Its annual rainfall is at least 1,500 mm.",
+        "It is within 10 km of a major river.",
+        "Its July average temperature is 18 °C or cooler.",
+        "Three countries are within 30 km of it.",
+        "Its country has more than 100 million people."
+      ],
+      "request": {
+        "en": "Which South American city with at least 1,500 mm of rain a year, within 10 km of a major river and with a July average of 18 °C or less, has three countries within 30 km, in a country of more than 100 million people?",
+        "zh": "南美洲哪座城市年降水量至少1500毫米、距大河不超过10公里、七月平均气温不高于18°C，30公里内有三个国家，并且所在国家人口超过一亿？"
+      },
+      "datasets": [
+        "ne_places",
+        "ne_countries",
+        "ne_boundaries",
+        "ne_rivers",
+        "wc_bio12",
+        "wc_tavg07"
+      ],
+      "plan": [
+        {
+          "action": "join_by_location",
+          "new": true,
+          "on": "Populated places",
+          "detail": "add CONTINENT and POP_EST from Countries"
+        },
+        {
+          "action": "add_raster_values",
+          "new": false,
+          "on": "Populated places",
+          "detail": "annual precipitation, July mean temperature"
+        },
+        {
+          "action": "filter",
+          "new": false,
+          "on": "Rivers",
+          "detail": "scalerank at most 4 (major rivers)"
+        },
+        {
+          "action": "nearest_distance",
+          "new": true,
+          "on": "Populated places",
+          "detail": "to the filtered Rivers"
+        },
+        {
+          "action": "filter",
+          "new": false,
+          "on": "Populated places",
+          "detail": "South America, rain at least 1500, river at most 10 km, July at most 18 (7 left)"
+        },
+        {
+          "action": "buffer",
+          "new": false,
+          "on": "each remaining city",
+          "detail": "30 km, one area each"
+        },
+        {
+          "action": "whats_inside",
+          "new": false,
+          "on": "each buffer",
+          "detail": "Boundary lines inside: three countries named on them"
+        },
+        {
+          "action": "filter",
+          "new": false,
+          "on": "Populated places",
+          "detail": "country population above 100 million"
+        }
+      ],
+      "answer": {
+        "name": "Foz do Iguaçu",
+        "name_zh": "伊瓜苏市",
+        "country": "Brazil",
+        "lat": -25.523,
+        "lon": -54.53,
+        "note": "Where Brazil, Paraguay and Argentina meet on the Paraná and Iguaçu rivers, beside the Iguaçu Falls. Ciudad del Este (Paraguay) passes every clue except the last."
+      },
+      "verification": {
+        "solver": "tools/lm/puzzles/solve.py",
+        "verified": true,
+        "found": [
+          {
+            "name": "Foz do Iguaçu",
+            "lat": -25.523,
+            "lon": -54.53,
+            "country": "Brazil",
+            "population": 440455,
+            "elev": 197.0,
+            "bio_1": 21.3,
+            "bio_12": 1782.0,
+            "tavg_01": 25.8,
+            "tavg_07": 16.2,
+            "fault_km": 854.7,
+            "major_river_km": 6.2,
+            "coast_km": 577.2,
+            "countries_within_30km": 3
+          }
+        ],
+        "candidates_after_each_clue": [
+          1042,
+          343,
+          48,
+          7,
+          2,
+          1
+        ],
+        "solver_tests": [
+          "in South America",
+          "annual rainfall at least 1500 mm",
+          "within 10 km of a major river",
+          "July mean at most 18.0 °C",
+          "three countries within 30 km",
+          "its country has more than 100 million people"
+        ],
+        "robustness": {
+          "rain": {
+            "value": 1500,
+            "step": 50,
+            "unit": "mm",
+            "steps_down_ok": 8,
+            "steps_up_ok": 5,
+            "holds_from": 1100,
+            "holds_to": 1750,
+            "capped": true
+          },
+          "river": {
+            "value": 10,
+            "step": 2,
+            "unit": "km",
+            "steps_down_ok": 1,
+            "steps_up_ok": 8,
+            "holds_from": 8,
+            "holds_to": 26,
+            "capped": true
+          },
+          "july": {
+            "value": 18.0,
+            "step": 0.5,
+            "unit": "°C",
+            "steps_down_ok": 3,
+            "steps_up_ok": 8,
+            "holds_from": 16.5,
+            "holds_to": 22.0,
+            "capped": true
+          },
+          "country_pop": {
+            "value": 100000000.0,
+            "step": 20000000.0,
+            "unit": "",
+            "steps_down_ok": 4,
+            "steps_up_ok": 5,
+            "holds_from": 20000000.0,
+            "holds_to": 200000000.0,
+            "capped": false
+          }
+        }
+      },
+      "verification_note": "Ciudad del Este (Paraguay), across the Paraná, falls in the same WorldClim cell and passes every clue except the last. Natural Earth has no Puerto Iguazú (Argentina). Three countries within 30 km means the containing country plus every country whose boundary comes within 30 km."
+    },
+    {
+      "id": "P8",
+      "title": "The Red Crab Crossing",
+      "difficulty": "hard",
+      "setting": "Indian Ocean (Australia)",
+      "answer_kind": "island",
+      "story": "A class in Chengdu received a letter from Ranger Aisha, who looks after a national park on a faraway island. Once a year, when the first heavy rains come, millions of bright red land crabs leave the forest and march to the sea to lay their eggs. Roads close, bridges are built just for crabs, and children help count them. Aisha forgot to say where she lives, but left a riddle on the back of the photo: the island lies between the tropics, is a bit smaller than a big city, and is far from every other speck of land. It is very rainy. And if you ignore the signs, its longitude is ten times its latitude. Where should the class post their reply?",
+      "clues": [
+        "The island is between the Tropic of Cancer and the Tropic of Capricorn.",
+        "Its area is between 50 and 150 km².",
+        "The nearest other land is at least 300 km away.",
+        "Its annual rainfall is at least 1,500 mm.",
+        "Ignoring signs, its longitude is ten times its latitude (within 0.5)."
+      ],
+      "request": {
+        "en": "Find a tropical island of 50 to 150 square kilometres that is at least 300 km from any other land, gets at least 1,500 mm of rain a year, and whose longitude is about ten times its latitude, ignoring signs.",
+        "zh": "找一个热带岛屿：面积50到150平方公里，离其他任何陆地至少300公里，年降水量至少1500毫米，而且（不计正负号）经度大约是纬度的十倍。"
+      },
+      "datasets": [
+        "ne_land",
+        "wc_bio12"
+      ],
+      "plan": [
+        {
+          "action": "split_parts",
+          "new": true,
+          "on": "Land and Minor islands",
+          "detail": "one feature per island"
+        },
+        {
+          "action": "add_measurements",
+          "new": true,
+          "on": "Islands",
+          "detail": "area_km2, longitude, latitude"
+        },
+        {
+          "action": "filter",
+          "new": false,
+          "on": "Islands",
+          "detail": "latitude between −23.44 and 23.44, area between 50 and 150"
+        },
+        {
+          "action": "nearest_distance",
+          "new": true,
+          "on": "Islands",
+          "detail": "to the nearest other island or mainland (same-layer variant)"
+        },
+        {
+          "action": "filter",
+          "new": false,
+          "on": "Islands",
+          "detail": "distance at least 300 km (5 left)"
+        },
+        {
+          "action": "summarize_each",
+          "new": false,
+          "on": "Islands",
+          "detail": "annual precipitation, mean"
+        },
+        {
+          "action": "calculate_field",
+          "new": true,
+          "on": "Islands",
+          "detail": "|longitude| ÷ |latitude|"
+        },
+        {
+          "action": "filter",
+          "new": false,
+          "on": "Islands",
+          "detail": "rain at least 1500, ratio between 9.5 and 10.5"
+        }
+      ],
+      "answer": {
+        "name": "Christmas Island",
+        "name_zh": "圣诞岛",
+        "country": "Australia (Indian Ocean Territories)",
+        "lat": -10.496,
+        "lon": 105.65,
+        "note": "Famous for the yearly red crab migration; the coordinates are a point on the island (105.65 ÷ 10.50 = 10.06)."
+      },
+      "verification": {
+        "solver": "tools/lm/puzzles/solve.py",
+        "verified": true,
+        "found": [
+          {
+            "name": "Christmas Island",
+            "lat": -10.496,
+            "lon": 105.65,
+            "country": "Indian Ocean Territories",
+            "area_km2": 98.7,
+            "nearest_land_km": 347.6,
+            "bio_1": 23.6,
+            "bio_12": 1970.8,
+            "tavg_01": 23.7,
+            "tavg_07": 22.7
+          }
+        ],
+        "candidates_after_each_clue": [
+          3876,
+          346,
+          5,
+          2,
+          1
+        ],
+        "solver_tests": [
+          "between the tropics",
+          "area 50–150 km²",
+          "at least 300 km from any other land",
+          "annual rainfall at least 1500 mm",
+          "longitude is ten times latitude (±0.5), ignoring signs"
+        ],
+        "robustness": {
+          "area_min": {
+            "value": 50,
+            "step": 5,
+            "unit": "km²",
+            "steps_down_ok": 8,
+            "steps_up_ok": 8,
+            "holds_from": 10,
+            "holds_to": 90,
+            "capped": true
+          },
+          "area_max": {
+            "value": 150,
+            "step": 10,
+            "unit": "km²",
+            "steps_down_ok": 5,
+            "steps_up_ok": 8,
+            "holds_from": 100,
+            "holds_to": 230,
+            "capped": true
+          },
+          "isolation": {
+            "value": 300,
+            "step": 10,
+            "unit": "km",
+            "steps_down_ok": 8,
+            "steps_up_ok": 4,
+            "holds_from": 220,
+            "holds_to": 340,
+            "capped": true
+          },
+          "rain": {
+            "value": 1500,
+            "step": 100,
+            "unit": "mm",
+            "steps_down_ok": 8,
+            "steps_up_ok": 4,
+            "holds_from": 700,
+            "holds_to": 1900,
+            "capped": true
+          },
+          "ratio_tol": {
+            "value": 0.5,
+            "step": 0.1,
+            "unit": "",
+            "steps_down_ok": 4,
+            "steps_up_ok": 8,
+            "holds_from": 0.09999999999999998,
+            "holds_to": 1.3,
+            "capped": true
+          }
+        }
+      },
+      "verification_note": "Rodrigues, Saint Helena, Ascension and Kosrae are also small, tropical and isolated; only Kosrae (about 5,300 mm) is as rainy, and its longitude is 31 times its latitude. Christmas Island is 348 km from Java. Island rain is the mean of the WorldClim cells the island touches; LayeredMap's summarize_each uses an area-weighted fractional mean, which cannot move 1,971 mm below the 1,500 mm threshold."
+    }
+  ]
+}
