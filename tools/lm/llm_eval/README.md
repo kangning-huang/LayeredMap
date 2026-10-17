@@ -20,6 +20,7 @@ their inputs, and LayeredMap runs them locally (spec › Product tiers, Phase 7)
 | `openrouter_models_2026-10-17.json` | OpenRouter's public model list, fetched 2026-10-17: prices, parameters, reasoning settings |
 | `results/<date>/<run>/<model>.jsonl` | One line per case: the calls made, both scores, tokens, cost, latency, provider. No headers, no key |
 | `results/<date>/summary.{csv,md}`, `spend.json` | Summaries and the money spent that day |
+| `v2/` | **Harness v2** (resolve_feature, plan checker with repair, rules and worked examples, caching, forced tool choice, `submit_plan` A/B) and the 97-case v2 benchmark; see `v2/README.md`. v1 here is unchanged |
 
 ## Running
 
