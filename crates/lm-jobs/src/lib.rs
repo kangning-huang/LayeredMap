@@ -9,6 +9,7 @@ pub mod find;
 pub mod fingerprint;
 pub mod import;
 pub mod inspect;
+pub mod jobs;
 pub mod join;
 
 use std::path::{Path, PathBuf};
