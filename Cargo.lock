@@ -2611,6 +2611,7 @@ dependencies = [
 name = "lm-analysis"
 version = "0.2.0"
 dependencies = [
+ "geo",
  "geographiclib-rs",
  "proptest",
  "robust",
