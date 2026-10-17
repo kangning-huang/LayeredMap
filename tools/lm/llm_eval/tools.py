@@ -83,6 +83,7 @@ ROLE_OF_PHRASE = {
     "the layer (parameters `a`, `op`, `b`, `name`)": ("layer", "layer"),
     "the rasters (parameter `conditions`)": ("raster", "layer"),
     "the areas": ("areas", "layer"),
+    "the other layer": ("other", "layer"),
 }
 
 

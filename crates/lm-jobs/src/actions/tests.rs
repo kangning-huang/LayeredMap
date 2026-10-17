@@ -353,3 +353,49 @@ fn keep_and_remove_inside_split_a_layer_between_them() {
     }
     assert!(keep.card.title.contains("inside") && remove.card.title.contains("outside"));
 }
+
+/// Distances to the nearest other point (N9-style isolation) and to another layer; every
+/// feature gets a distance and a name, and the distances are positive and sorted on the card.
+#[test]
+fn nearest_distances_become_fields() {
+    let r = run(&plan("nearest_other", vec![input("N1/points.geojson", 1)], &[]), &Control::none()).unwrap();
+    let ActionOutput::NewFields { data, fields, .. } = &r.output else { panic!() };
+    assert_eq!(fields.len(), 2);
+    let k = data.field_index(&fields[0]).unwrap();
+    assert!(data.features.iter().all(|f| f.attrs[k].as_f64().is_some_and(|d| d >= 0.0)));
+    let r =
+        run(&plan("nearest_distance", vec![input("N1/points.geojson", 1), input("N1/areas.geojson", 2)], &[]), &Control::none()).unwrap();
+    let ActionOutput::NewFields { data, fields, .. } = &r.output else { panic!() };
+    let k = data.field_index(&fields[0]).unwrap();
+    // Points inside an area are 0 km from it.
+    assert!(data.features.iter().any(|f| f.attrs[k].as_f64() == Some(0.0)));
+    let Answer::Ranking { rows, .. } = &r.card.answer else { panic!() };
+    assert!(rows.windows(2).all(|w| w[0].value >= w[1].value));
+}
+
+/// Area details by location: N1 points take their area's id; points in no area get blanks.
+#[test]
+fn points_take_the_details_of_their_area() {
+    let r = run(
+        &plan("join_by_location", vec![input("N1/points.geojson", 1), input("N1/areas.geojson", 2)], &[("fields", "area_id")]),
+        &Control::none(),
+    )
+    .unwrap();
+    let ActionOutput::NewFields { data, fields, .. } = &r.output else { panic!() };
+    assert_eq!(fields, &vec!["area_id".to_string()]);
+    let k = data.field_index("area_id").unwrap();
+    let blanks = data.features.iter().filter(|f| matches!(f.attrs[k], Value::Null)).count();
+    assert!(blanks >= 2, "P17 and P18 are outside every area");
+    assert!(r.card.notices.iter().any(|n| n.contains("no area")), "{:?}", r.card.notices);
+}
+
+/// Measurements: areas get area, perimeter and coordinates; points just coordinates.
+#[test]
+fn measurements_become_fields() {
+    let r = run(&plan("add_measurements", vec![input("V1/districts.geojson", 1)], &[]), &Control::none()).unwrap();
+    let ActionOutput::NewFields { fields, .. } = &r.output else { panic!() };
+    assert_eq!(fields, &vec!["area_km2 2".to_string(), "perimeter_km".to_string(), "longitude".to_string(), "latitude".to_string()]);
+    let r = run(&plan("add_measurements", vec![input("N1/points.geojson", 1)], &[]), &Control::none()).unwrap();
+    let ActionOutput::NewFields { fields, .. } = &r.output else { panic!() };
+    assert_eq!(fields, &vec!["longitude".to_string(), "latitude".to_string()]);
+}

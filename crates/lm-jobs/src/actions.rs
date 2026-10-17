@@ -21,6 +21,10 @@
 //! | `split_parts` | the layer |
 //! | `find_where` | the rasters (parameter `conditions`) |
 //! | `keep_inside`, `remove_inside` | the layer, the areas |
+//! | `nearest_distance` | the layer, the other layer |
+//! | `nearest_other` | the layer |
+//! | `join_by_location` | the layer, the areas |
+//! | `add_measurements` | the layer |
 //!
 //! Parameters: `distance` ("1 km", "500 m"), `merge` ("yes"/"no"), `band` (1-based), `field`;
 //! `stat` on `count_in` (count, sum, mean, median, min, max; with `field`, a numeric field of the
@@ -245,6 +249,10 @@ pub const ACTIONS: &[&str] = &[
     "find_where",
     "keep_inside",
     "remove_inside",
+    "nearest_distance",
+    "nearest_other",
+    "join_by_location",
+    "add_measurements",
 ];
 
 /// Runs a plan. Checks `ctl` throughout; a cancelled run returns [`ActionError::Cancelled`] and
@@ -265,6 +273,9 @@ pub fn run(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
         "split_parts" => split_parts(plan, ctl),
         "find_where" => find_where(plan, ctl),
         "keep_inside" | "remove_inside" => clip_action(plan, ctl),
+        "nearest_distance" | "nearest_other" => nearest_action(plan, ctl),
+        "join_by_location" => join_action(plan, ctl),
+        "add_measurements" => measure_fields(plan, ctl),
         other => Err(ActionError::Input(format!("LayeredMap can't run “{other}” yet."))),
     }
 }
@@ -1561,6 +1572,223 @@ fn clip_action(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> 
         },
         recipe: recipe(plan, &title, &inputs, "", vec![decision], Vec::new()),
         output: ActionOutput::NewLayer { layer: layer_from(&title, "Result", out), color_by: None },
+        highlight: None,
+    })
+}
+
+/// A point on a geometry (the certified label point), for tools that list objects.
+pub fn label_point(g: &Geometry) -> Option<Coord> {
+    lm_analysis::measure::label_point(g)
+}
+
+// ---------------------------------------------------------------------------------------------
+// Distances, details by location, measurements (new fields on the layer)
+
+/// The layer with fields set from `values[i]` for the scoped row `rows[i]`.
+fn with_fields(full: &Dataset, rows: &[usize], columns: Vec<(String, FieldType, Vec<Value>)>) -> (Dataset, Vec<String>) {
+    let mut out = full.clone();
+    let mut names = Vec::new();
+    for (name, ty, values) in columns {
+        let name = free_field(&out, &name);
+        let k = out.ensure_field(&name, ty);
+        for (r, v) in rows.iter().zip(values) {
+            if let Some(f) = out.features.get_mut(*r) {
+                f.attrs[k] = v;
+            }
+        }
+        names.push(name);
+    }
+    (out, names)
+}
+
+fn nearest_action(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
+    let same = plan.action == "nearest_other";
+    let layer_in = plan.input(0)?;
+    let (ds, rows) = layer_in.scoped()?;
+    let (targets_in, targets) = if same { (layer_in, ds.clone()) } else { (plan.input(1)?, plan.input(1)?.scoped()?.0) };
+    let res = lm_analysis::nearest::nearest_distance(&ds, &targets, same, ctl)?;
+    let tfull = targets_in.vector()?;
+    let target_rows: Vec<usize> = if same { rows.clone() } else { targets_in.scoped()?.1 };
+    let km: Vec<Value> = res.nearest.iter().map(|n| n.as_ref().map_or(Value::Null, |n| Value::Float(n.distance_m / 1000.0))).collect();
+    let names: Vec<Value> = res
+        .nearest
+        .iter()
+        .map(|n| {
+            n.as_ref().map_or(Value::Null, |n| {
+                Value::Text(targets_in.title(tfull, target_rows.get(n.target_row).copied().unwrap_or(n.target_row)))
+            })
+        })
+        .collect();
+    let other_words =
+        if same { format!("nearest other {}", layer_in.singular_noun()) } else { format!("nearest {}", targets_in.singular_noun()) };
+    let (out, fields) = with_fields(
+        layer_in.vector()?,
+        &rows,
+        vec![(format!("km to {other_words}"), FieldType::Double, km), (other_words.clone(), FieldType::Text, names)],
+    );
+    let dist: Vec<f64> = res.nearest.iter().flatten().map(|n| n.distance_m / 1000.0).collect();
+    let range = match (dist.iter().copied().reduce(f64::min), dist.iter().copied().reduce(f64::max)) {
+        (Some(lo), Some(hi)) => format!("{}–{} km", number(lo), number(hi)),
+        _ => "no distances".into(),
+    };
+    let ranked: Vec<RankRow> = res
+        .nearest
+        .iter()
+        .enumerate()
+        .map(|(i, n)| RankRow {
+            label: layer_in.title(layer_in.vector().map(|d| &**d).unwrap_or(&ds), rows[i]),
+            value: n.as_ref().map(|n| n.distance_m / 1000.0),
+            row: rows[i],
+        })
+        .collect();
+    let mut notices = Vec::new();
+    if !res.without_geometry.is_empty() {
+        notices.push(format!("{} have no location and get no distance.", layer_in.things(res.without_geometry.len() as u64)));
+    }
+    let title = format!("Distance from each {} to the {other_words}", layer_in.singular_noun());
+    let inputs: Vec<&PlanInput> = if same { vec![layer_in] } else { vec![layer_in, targets_in] };
+    Ok(ActionResult {
+        label: format!("Add the distance to the {other_words}"),
+        card: ResultCard {
+            title: title.clone(),
+            summary: format!("{} · {range}", layer_in.things(rows.len() as u64)),
+            answer: Answer::Ranking { rows: ranking(ranked), unit: "km".into() },
+            context: context(&inputs, &[]),
+            notices,
+        },
+        recipe: recipe(
+            plan,
+            &title,
+            &inputs,
+            GEODESIC,
+            vec![format!("the other layer's edges followed at least every {} m", number(res.densify_m))],
+            Vec::new(),
+        ),
+        output: ActionOutput::NewFields { layer: layer_in.layer.id, data: Arc::new(out), fields },
+        highlight: None,
+    })
+}
+
+fn join_action(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
+    let (layer_in, areas_in) = (plan.input(0)?, plan.input(1)?);
+    let (ds, rows) = layer_in.scoped()?;
+    let (areas, _) = areas_in.scoped()?;
+    let res = lm_analysis::overlay::join_by_location(&ds, &areas, ctl)?;
+    // Which of the areas' fields to add (parameter `fields`, comma-separated; all by default).
+    let wanted: Vec<usize> = match plan.param("fields").filter(|f| !f.trim().is_empty()) {
+        Some(list) => list.split(',').filter_map(|f| areas.field_index(f.trim())).collect(),
+        None => (0..areas.fields.len()).collect(),
+    };
+    if wanted.is_empty() {
+        return Err(ActionError::Input(format!("{} has none of those fields.", areas_in.name())));
+    }
+    let columns: Vec<(String, FieldType, Vec<Value>)> = wanted
+        .iter()
+        .map(|k| {
+            let f = &areas.fields[*k];
+            let vals = res
+                .area_of
+                .iter()
+                .map(|a| a.and_then(|a| areas.features.get(a)).and_then(|af| af.attrs.get(*k)).cloned().unwrap_or(Value::Null))
+                .collect();
+            (f.name.clone(), f.ty, vals)
+        })
+        .collect();
+    let (out, fields) = with_fields(layer_in.vector()?, &rows, columns);
+    let matched = res.area_of.iter().filter(|a| a.is_some()).count() as u64;
+    let mut notices = Vec::new();
+    if res.outside > 0 {
+        notices.push(format!("{} are in no {} and get blanks.", layer_in.things(res.outside), areas_in.singular_noun()));
+    }
+    if res.on_boundary > 0 {
+        notices.push(format!(
+            "{} lie on a shared boundary and take the first {} listed.",
+            layer_in.things(res.on_boundary),
+            areas_in.singular_noun()
+        ));
+    }
+    let title = format!("{} details added to {}", capitalized(&areas_in.singular_noun()), layer_in.name());
+    let inputs = [layer_in, areas_in];
+    Ok(ActionResult {
+        label: format!("Add {} details to {}", areas_in.name(), layer_in.name()),
+        card: ResultCard {
+            title: title.clone(),
+            summary: format!(
+                "{} of {} matched · {} fields added",
+                group_thousands(matched),
+                group_thousands(rows.len() as u64),
+                fields.len()
+            ),
+            answer: Answer::Number {
+                value: matched as f64,
+                unit: layer_in.plural_noun(),
+                detail: format!("now carry {}", fields.join(", ")),
+            },
+            context: context(&inputs, &[]),
+            notices,
+        },
+        recipe: recipe(plan, &title, &inputs, PLANAR, Vec::new(), Vec::new()),
+        output: ActionOutput::NewFields { layer: layer_in.layer.id, data: Arc::new(out), fields },
+        highlight: None,
+    })
+}
+
+fn measure_fields(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
+    let input = plan.input(0)?;
+    let (ds, rows) = input.scoped()?;
+    let mut area = Vec::with_capacity(rows.len());
+    let mut perim = Vec::with_capacity(rows.len());
+    let mut length = Vec::with_capacity(rows.len());
+    let mut lon = Vec::with_capacity(rows.len());
+    let mut lat = Vec::with_capacity(rows.len());
+    for (i, f) in ds.features.iter().enumerate() {
+        if i % 1024 == 0 {
+            ctl.check()?;
+        }
+        let m = f.geometry.as_ref().map(lm_analysis::measure::measurements);
+        let v = |x: Option<f64>| x.map_or(Value::Null, Value::Float);
+        area.push(v(m.as_ref().and_then(|m| m.area_km2)));
+        perim.push(v(m.as_ref().and_then(|m| m.perimeter_km)));
+        length.push(v(m.as_ref().and_then(|m| m.length_km)));
+        lon.push(v(m.as_ref().and_then(|m| m.lon)));
+        lat.push(v(m.as_ref().and_then(|m| m.lat)));
+    }
+    let mut columns = Vec::new();
+    match input.layer.profile.kind {
+        LayerKind::Areas => {
+            columns.push(("area_km2".to_string(), FieldType::Double, area));
+            columns.push(("perimeter_km".to_string(), FieldType::Double, perim));
+        }
+        LayerKind::Lines => columns.push(("length_km".to_string(), FieldType::Double, length)),
+        _ => {}
+    }
+    columns.push(("longitude".to_string(), FieldType::Double, lon));
+    columns.push(("latitude".to_string(), FieldType::Double, lat));
+    let (out, fields) = with_fields(input.vector()?, &rows, columns);
+    let title = format!("Measurements added to {}", input.name());
+    let inputs = [input];
+    Ok(ActionResult {
+        label: format!("Add measurements to {}", input.name()),
+        card: ResultCard {
+            title: title.clone(),
+            summary: format!("{} · {}", input.things(rows.len() as u64), fields.join(", ")),
+            answer: Answer::Number {
+                value: rows.len() as f64,
+                unit: input.plural_noun(),
+                detail: format!("now carry {}", fields.join(", ")),
+            },
+            context: context(&inputs, &[]),
+            notices: Vec::new(),
+        },
+        recipe: recipe(
+            plan,
+            &title,
+            &inputs,
+            GEODESIC,
+            vec!["coordinates of each point, or of a point guaranteed to lie on each line or area".into()],
+            Vec::new(),
+        ),
+        output: ActionOutput::NewFields { layer: input.layer.id, data: Arc::new(out), fields },
         highlight: None,
     })
 }

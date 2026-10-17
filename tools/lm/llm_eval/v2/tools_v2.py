@@ -39,7 +39,7 @@ import tools as toolmod  # noqa: E402
 REFS = [f"#{i}" for i in range(1, 7)]
 POINT_STATS = ["count", "sum", "mean", "median", "min", "max"]
 RASTER_STATS = ["mean", "median", "min", "max", "sum", "std"]
-OPS = ["is", "is_not", "contains", "is_empty", "above", "below", "between", "before", "after", "any_of"]
+OPS = ["is", "is_not", "contains", "starts_with", "ends_with", "is_empty", "above", "below", "between", "before", "after", "any_of"]
 DISPLAY = ["filter", "color_by", "view_data", "zoom_to"]
 META = ["ask_user", "cannot_do"]
 NEW_LAYER_ACTIONS = {"count_in", "buffer", "summarize_each"}
@@ -104,11 +104,15 @@ DESCRIPTIONS = {
     "split_parts": "Split a line or area layer's multi-part features into one feature per part (e.g. separate islands). New layer with a 'part' field.",
     "find_where": (
         "Find the areas where every raster condition holds (e.g. elevation at least 3000 and rainfall at least 500). "
-        "raster: the first raster; conditions: 'raster name|at_least|value', 'raster name|at_most|value' or "
-        "'raster name|between|low|high', joined by ';'. New area layer, largest area first, with area_km2."
+        "raster: the first raster; conditions: [{field: <raster name>, op: above (at least) | below (at most) | between, value, value2}]. "
+        "New area layer, largest area first, with area_km2."
     ),
     "keep_inside": "Keep only the part of a layer inside an area layer's areas (clip). New layer.",
     "remove_inside": "Remove the part of a layer inside an area layer's areas (erase; 'away from', 'outside'). New layer.",
+    "nearest_distance": "Add to each object of a layer the geodesic distance in km to the nearest object of another layer (other), and that object's name. Adds fields 'km to nearest <other>' and 'nearest <other>'.",
+    "nearest_other": "Add to each object the distance in km to the nearest other object of the same layer (isolation), and its name.",
+    "join_by_location": "Add to each object of a layer the details (fields) of the area it lies in (spatial join): layer, areas, optional fields (comma list; all by default).",
+    "add_measurements": "Add area_km2 and perimeter_km (areas), length_km (lines), and longitude/latitude (a point on each object) as fields.",
 }
 
 OBJ_NOTE = "One object: {layer, field, value} with value as stored (resolve_feature finds it); omit field and value for the selected object or a drawn area."
@@ -276,6 +280,12 @@ def submit_plan_tools(context: str, with_resolve: bool = True) -> list[dict]:
         "band": param_schema("band", "summarize_each", stats),
         "stat": {"type": "string", "enum": sorted(set(POINT_STATS) | set(RASTER_STATS)), "description": "count_in: count|sum|mean|median|min|max; summarize_*: mean|median|min|max|sum|std"},
         "field": S,
+        "other": {"type": "string", "enum": L["vector"]},
+        "fields": {"type": "string", "description": "join_by_location: comma list of the areas' fields to add (all by default)"},
+        "a": S,
+        "op": {"type": "string", "enum": ["add", "subtract", "multiply", "divide"]},
+        "b": {"type": "string", "description": "calculate_field: a number field or a number"},
+        "name": {"type": "string", "description": "calculate_field: the new field's name"},
         "conditions": {"type": "array", "items": condition_schema()},
         "value": S,
         "question": S,
