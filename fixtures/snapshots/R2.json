@@ -1,0 +1,103 @@
+{
+  "files": [
+    {
+      "file": "population_count.tif",
+      "layers": [
+        {
+          "assumptions": [
+            {
+              "chosen": "unknown",
+              "kind": "RasterNoUnit",
+              "line": "Unit unknown.",
+              "treatment": "Visible"
+            },
+            {
+              "chosen": "total",
+              "kind": "RasterCellMeaning",
+              "line": "Treated as totals per cell (summed, not averaged).",
+              "treatment": "Visible"
+            }
+          ],
+          "bands": [
+            {
+              "cell_meaning": "Total (Likely)",
+              "index": 1,
+              "nodata": 65535.0,
+              "offset": null,
+              "scale": null,
+              "unit": null
+            }
+          ],
+          "count": 5184,
+          "crs": "Wgs84",
+          "crs_confidence": "Certain",
+          "encoding": null,
+          "exclusions": 0,
+          "extent": [
+            121.2,
+            30.9,
+            121.8,
+            31.5
+          ],
+          "fields": {},
+          "format": "GeoTIFF",
+          "kind": "Raster",
+          "member": null,
+          "name": "population_count",
+          "notices": [],
+          "status": "Complete"
+        }
+      ]
+    },
+    {
+      "file": "population_density.tif",
+      "layers": [
+        {
+          "assumptions": [
+            {
+              "chosen": "unknown",
+              "kind": "RasterNoUnit",
+              "line": "Unit unknown.",
+              "treatment": "Visible"
+            },
+            {
+              "chosen": "measured",
+              "kind": "RasterCellMeaning",
+              "line": "Treated as measured values (averaged, not summed).",
+              "treatment": "Visible"
+            }
+          ],
+          "bands": [
+            {
+              "cell_meaning": "Measured (Likely)",
+              "index": 1,
+              "nodata": -9999.0,
+              "offset": null,
+              "scale": null,
+              "unit": null
+            }
+          ],
+          "count": 5184,
+          "crs": "Wgs84",
+          "crs_confidence": "Certain",
+          "encoding": null,
+          "exclusions": 0,
+          "extent": [
+            121.2,
+            30.9,
+            121.8,
+            31.5
+          ],
+          "fields": {},
+          "format": "GeoTIFF",
+          "kind": "Raster",
+          "member": null,
+          "name": "population_density",
+          "notices": [],
+          "status": "Complete"
+        }
+      ]
+    }
+  ],
+  "fixture": "R2"
+}

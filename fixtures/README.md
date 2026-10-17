@@ -13,7 +13,9 @@ mamba run -n layeredmap-ref python -I reference/run_all.py --check
 ```
 
 The generated fixtures are rebuilt with `cargo xtask fixtures` and written to
-`fixtures/generated/`.
+`fixtures/generated/` (ignored by git; never commit it). `reference/zonal_r7.py`
+(N4) needs `--only R7` and `reference/n7_sample.py` (N7) needs `--only R4,N7`;
+without them they print "skipped".
 
 ## Index
 
@@ -40,16 +42,19 @@ The generated fixtures are rebuilt with `cargo xtask fixtures` and written to
 | C2 | `C2/` | GCJ-02 / BD-09 test vectors | vectors present; landmarks owner-supplied (`landmarks_TODO.csv`) |
 | C3 | `C3/` | BD-09 points | present |
 | R1 | — | — | owner-supplied |
-| R2 | — | population grid | TBD (licence to verify) |
+| R2 | `R2/` | integer population counts with NoData, and a density version (synthetic stand-in for the open population grid) | present |
 | R3 | `R3/` | land-cover categories (synthetic WorldCover stand-in) | present |
-| R4 | `generated/R4/` | — | generated (`cargo xtask fixtures`) |
+| R4 | `generated/R4/` | 2.9 GB tiled BigTIFF COG with overviews (N7) | generated (`cargo xtask fixtures --only R4`) |
 | R5 | `generated/R5/` | — | generated (`cargo xtask fixtures`) |
 | R6 | `R6/` | scale/offset, -9999 edges, no NoData tag | present |
-| R7 | `generated/R7/` | — | generated (`cargo xtask fixtures`) |
+| R7 | `generated/R7/` | geographic raster 10°S–70°N, unequal cell areas (N4) | generated (`cargo xtask fixtures`) |
 | N1 | `N1/` | count rules: shared boundary, overlap, zero-count area | present |
 | N2 | `N2/` | count rules: holes, multipolygons | present |
 | N3 | `N3/` | 4×4 area-weighted mean and coverage (with hand calculation) | present |
+| N4 | `N4/` (+ `generated/R7/`) | summary over R7: unequal cell areas, against exactextract and a geodesic integration | present |
 | N5 | `N5/` | geodesic lengths, areas, buffers | present |
+| N6 | `N6/` | count versus density totals (R2 × V1 and six cut-cell areas) | present |
+| N7 | `N7/` (+ `generated/R4/`, `generated/N7/`) | R4 across 3,000 areas (stress, sampled exactextract check); `layouts/`: GeoTIFFs in every layout the window reader handles | present; polygons generated (`cargo xtask fixtures`) |
 | N8 | `N8/` | category shares (R3 × V1) | present |
 | K1 | — | — | owner-supplied |
 | D1–D4 | — | — | TBD |

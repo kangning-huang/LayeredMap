@@ -2613,12 +2613,15 @@ version = "0.2.0"
 dependencies = [
  "geo",
  "geographiclib-rs",
+ "miniz_oxide 0.9.1",
  "proptest",
  "robust",
  "rstar",
  "rustgis-data",
  "rustgis-geom",
  "serde_json",
+ "tiff",
+ "weezl",
 ]
 
 [[package]]

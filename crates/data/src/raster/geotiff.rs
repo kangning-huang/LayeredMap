@@ -114,6 +114,17 @@ pub(crate) fn cog_geo<R: Read + Seek>(dec: &mut Decoder<R>) -> Result<(Crs, GeoT
     Ok((crs, geo.transform, geo.nodata))
 }
 
+/// A GeoTIFF's coordinate system, georeferencing and no-data value (the GDAL_NODATA tag), from
+/// its first image's header alone: no pixels are read, so a reader that decodes a window at a
+/// time can use it on files of any size. Strips or tiles alike.
+pub fn georeferencing<R: Read + Seek>(r: R) -> Result<(Crs, GeoTransform, Option<f64>)> {
+    let mut limits = Limits::default();
+    // A large file's strip or tile index sits in the first IFD.
+    limits.ifd_value_size = 32 << 20;
+    let mut dec = Decoder::new(r).map_err(err)?.with_limits(limits);
+    cog_geo(&mut dec)
+}
+
 #[cfg(test)]
 pub(crate) mod tests_support {
     /// A small GeoTIFF in strips (as [`super::write`] writes them).
@@ -802,6 +813,18 @@ mod tests {
         assert_eq!(back.value(0, 2, 1), Some(7.0));
         assert_eq!(back.value(0, 1, 1), None);
         assert_eq!(back.data_type, "Float32");
+    }
+
+    #[test]
+    fn georeferencing_from_the_header_alone() {
+        let r = small();
+        let bytes = write(&r, 0).unwrap();
+        assert_eq!(georeferencing(std::io::Cursor::new(&bytes)).unwrap(), (Crs::LonLat, r.transform, Some(-9999.0)));
+        let gt = GeoTransform { origin_x: 500_000.0, origin_y: 4_000_000.0, pixel_width: 30.0, pixel_height: -30.0 };
+        let utm = Raster::new("u", 1, 1, vec![vec![1.0]], gt, Crs::from_epsg(32651).unwrap(), None, ColorHint::Gray, "Float32").unwrap();
+        let (crs, t, nodata) = georeferencing(std::io::Cursor::new(write(&utm, 0).unwrap())).unwrap();
+        assert_eq!((crs.epsg(), t, nodata), (32651, gt, None));
+        assert!(georeferencing(std::io::Cursor::new(b"II*\0junk".to_vec())).is_err());
     }
 
     #[test]

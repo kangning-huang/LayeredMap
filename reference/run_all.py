@@ -1,6 +1,6 @@
 """Regenerate every hand-made fixture and every expected output.
 
-Runs make_handmade.py first, then each reference script, each in a fresh
+Runs make_handmade.py and make_summary_fixtures.py first, then each reference script, each in a fresh
 `python -I` subprocess of the current interpreter. Deterministic: rerunning
 gives the same bytes. With --check, runs everything twice and verifies that
 the SHA-256 of every file under fixtures/ (excluding fixtures/generated/) is
@@ -20,8 +20,11 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 FIX = HERE.parent / "fixtures"
-SCRIPTS = ["make_handmade.py", "coord_vectors.py", "count_in_areas.py", "which_area.py", "zonal_mean.py",
-           "category_shares.py", "geodesic.py", "raster_sample.py", "rank_check.py"]
+# zonal_r7.py and n7_sample.py need generated fixtures (cargo xtask fixtures --only R7, and
+# --only R4,N7) and say "skipped" without them.
+SCRIPTS = ["make_handmade.py", "make_summary_fixtures.py", "coord_vectors.py", "count_in_areas.py", "which_area.py",
+           "zonal_mean.py", "category_shares.py", "zonal_totals.py", "zonal_r7.py", "n7_sample.py", "geodesic.py",
+           "raster_sample.py", "rank_check.py"]
 
 
 def run_once():

@@ -1,0 +1,39 @@
+{
+  "fixture": "N4",
+  "files": [
+    "polygons.geojson",
+    "../generated/R7/r7_wide_latitude.tif"
+  ],
+  "kind": "raster+vector",
+  "action": "summarize (area-weighted mean, coverage)",
+  "raster": {
+    "file": "generated/R7/r7_wide_latitude.tif",
+    "generated_by": "cargo xtask fixtures --only R7",
+    "size": [
+      1600,
+      1600
+    ],
+    "bounds": [
+      100,
+      -10,
+      180,
+      70
+    ],
+    "pixel_size_deg": 0.05,
+    "value_role": "measured"
+  },
+  "areas": {
+    "file": "polygons.geojson",
+    "id": "area_id",
+    "count": 8
+  },
+  "expected_files": [
+    "expected_zonal_mean.csv",
+    "expected_geodesic_integration.csv"
+  ],
+  "tolerance": {
+    "vs_exactextract_rel": 1e-06,
+    "vs_geodesic_integration_rel": 0.001
+  },
+  "assumptions": []
+}

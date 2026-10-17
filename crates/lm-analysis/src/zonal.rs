@@ -34,7 +34,8 @@
 //! bounding box clipped to the raster; each strip reads only its window through
 //! [`RasterSource::read_window`], so memory stays bounded (about 20 MB per strip) whatever the
 //! raster's size, and a 2 GB raster never has to fit in memory. The control is checked after
-//! every strip read and every 4,096 edges, and progress is reported per area.
+//! every strip read and every 4,096 edges, and progress is reported per area. [`TiffSource`]
+//! reads a GeoTIFF on disk this way, decoding only the strips or tiles each window touches.
 //!
 //! **Cell area.** Area on the ellipsoid of a region of longitude/latitude is
 //! `(b²/2) ∬ dλ dq(φ)` with `q` the authalic function
@@ -59,6 +60,9 @@
 //! longitude range as given.
 
 use std::collections::BTreeMap;
+
+pub mod tiff_source;
+pub use tiff_source::TiffSource;
 
 use crate::control::{Cancelled, Control};
 use rustgis_data::Geometry;

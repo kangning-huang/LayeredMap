@@ -1,0 +1,40 @@
+{
+  "fixture": "N6",
+  "files": [
+    "areas.geojson",
+    "../R2/population_count.tif",
+    "../R2/population_density.tif",
+    "../V1/districts.geojson"
+  ],
+  "kind": "raster+vector",
+  "action": "summarize with totals",
+  "areas": [
+    {
+      "file": "../V1/districts.geojson",
+      "id": "district_id",
+      "count": 17
+    },
+    {
+      "file": "areas.geojson",
+      "id": "area_id",
+      "count": 6
+    }
+  ],
+  "count": {
+    "file": "../R2/population_count.tif",
+    "value_role": "count",
+    "formula": "N = sum(n_i f_i)"
+  },
+  "density": {
+    "file": "../R2/population_density.tif",
+    "value_role": "density per km2",
+    "formula": "N = sum(d_i a_i) / 1e6, a_i = f_i A_i"
+  },
+  "expected_files": [
+    "expected_totals.csv"
+  ],
+  "tolerance": {
+    "vs_exactextract_rel": 1e-06
+  },
+  "assumptions": []
+}
