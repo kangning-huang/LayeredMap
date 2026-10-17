@@ -79,6 +79,8 @@ ROLE_OF_PHRASE = {
     "the layer to look in": ("layer", "layer"),
     "the layer (or its selected rows)": ("layer", "layer+object"),
     "the layer; parameter `field`": ("layer", "layer"),
+    "the layer": ("layer", "layer"),
+    "the layer (parameters `a`, `op`, `b`, `name`)": ("layer", "layer"),
 }
 
 
@@ -110,6 +112,7 @@ PARAMS_OF_ACTION = {
     "summarize_drawn": ["band"],
     "add_raster_values": ["band"],
     "rank_by_value": ["field"],
+    "calculate_field": ["a", "op", "b", "name"],
 }
 
 # What each action makes, so a later call can use it. Not in rules.toml (the runner builds
@@ -168,6 +171,10 @@ PARAM_SCHEMA = {
     "merge": {"type": "boolean", "description": "merge overlaps (default true)"},
     "band": {"type": "integer", "description": "1-based, default 1"},
     "field": S,
+    "a": {"type": "string", "description": "a number field"},
+    "op": {"type": "string", "enum": ["add", "subtract", "multiply", "divide"]},
+    "b": {"type": "string", "description": "a number field, or a number"},
+    "name": {"type": "string", "description": "the new field's name"},
 }
 
 

@@ -320,7 +320,10 @@ def test_cases_cover_the_brief():
     assert len(cs) >= 50
     assert sum(c["lang"] == "zh" for c in cs) >= 10
     expected_names = {call["name"] for c in cs for call in c["expected"]}
-    assert set(toolmod.connected_actions()) <= expected_names
+    # The v1 benchmark is frozen; actions connected after it (2026-10-17) are covered by v2 and
+    # tools/lm/benchmarks instead.
+    added_later = {"calculate_field", "split_parts"}
+    assert set(toolmod.connected_actions()) - added_later <= expected_names
     for cat in ["multi", "vague", "impossible", "trap", "units", "filter", "style"]:
         assert any(cat in c["categories"] for c in cs), cat
 

@@ -96,6 +96,12 @@ DESCRIPTIONS = {
     "summarize_drawn": "Summarize a raster in an area the user will draw (omit area), or in a drawn area.",
     "add_raster_values": "Add the raster's value at each point as a field named after the raster (Heat: 'Heat'). Changes the points layer; no new layer.",
     "rank_by_value": "Rank a layer's objects by a numeric field (highest first).",
+    "calculate_field": (
+        "Add a number field calculated from two values: a (a number field) op (add|subtract|multiply|divide) b "
+        "(a number field or a number), e.g. density = population divide area_km2. Blank inputs or division by "
+        "zero give blanks. Adds the field 'name' (default 'a op b') to the layer."
+    ),
+    "split_parts": "Split a line or area layer's multi-part features into one feature per part (e.g. separate islands). New layer with a 'part' field.",
 }
 
 OBJ_NOTE = "One object: {layer, field, value} with value as stored (resolve_feature finds it); omit field and value for the selected object or a drawn area."
@@ -147,6 +153,8 @@ def param_schema(p: str, action: str, stats: dict) -> dict:
         if action == "count_in":
             return {"type": "string", "description": "numeric field of the points, for a stat other than count"}
         return S
+    if p in toolmod.PARAM_SCHEMA:
+        return toolmod.PARAM_SCHEMA[p]
     raise KeyError(p)
 
 

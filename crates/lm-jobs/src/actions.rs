@@ -17,10 +17,14 @@
 //! | `summarize_here`, `summarize_drawn` | raster, the area (one row) |
 //! | `add_raster_values` | raster, points |
 //! | `rank_by_value` | the layer; parameter `field` |
-//! | `calculate_field` | the layer; parameters `a` (field), `op` (add, subtract, multiply, divide), `b` (field or number), `name` |
+//! | `calculate_field` | the layer (parameters `a`, `op`, `b`, `name`) |
 //! | `split_parts` | the layer |
 //!
-//! Parameters: `distance` ("1 km", "500 m"), `merge` ("yes"/"no"), `band` (1-based), `field`.
+//! Parameters: `distance` ("1 km", "500 m"), `merge` ("yes"/"no"), `band` (1-based), `field`;
+//! `stat` on `count_in` (count, sum, mean, median, min, max; with `field`, a numeric field of the
+//! points) and on the summaries (mean, median, min, max, sum, std); for `calculate_field`, `a` (a
+//! number field), `op` (add, subtract, multiply, divide), `b` (a number field or a number) and
+//! `name` (the new field's name).
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;
