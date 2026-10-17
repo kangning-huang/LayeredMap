@@ -1586,10 +1586,25 @@ pub fn label_point(g: &Geometry) -> Option<Coord> {
 
 /// The layer with fields set from `values[i]` for the scoped row `rows[i]`.
 fn with_fields(full: &Dataset, rows: &[usize], columns: Vec<(String, FieldType, Vec<Value>)>) -> (Dataset, Vec<String>) {
+    with_fields_mode(full, rows, columns, false).0
+}
+
+/// [`with_fields`], or (`overwrite`) writing into fields of the same name when they exist, and
+/// saying which.
+fn with_fields_mode(
+    full: &Dataset,
+    rows: &[usize],
+    columns: Vec<(String, FieldType, Vec<Value>)>,
+    overwrite: bool,
+) -> ((Dataset, Vec<String>), Vec<String>) {
     let mut out = full.clone();
     let mut names = Vec::new();
+    let mut replaced = Vec::new();
     for (name, ty, values) in columns {
-        let name = free_field(&out, &name);
+        if overwrite && out.field_index(&name).is_some() {
+            replaced.push(name.clone());
+        }
+        let name = if overwrite { name } else { free_field(&out, &name) };
         let k = out.ensure_field(&name, ty);
         for (r, v) in rows.iter().zip(values) {
             if let Some(f) = out.features.get_mut(*r) {
@@ -1598,17 +1613,26 @@ fn with_fields(full: &Dataset, rows: &[usize], columns: Vec<(String, FieldType, 
         }
         names.push(name);
     }
-    (out, names)
+    ((out, names), replaced)
 }
 
 fn nearest_action(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
     let same = plan.action == "nearest_other";
     let layer_in = plan.input(0)?;
     let (ds, rows) = layer_in.scoped()?;
-    let (targets_in, targets) = if same { (layer_in, ds.clone()) } else { (plan.input(1)?, plan.input(1)?.scoped()?.0) };
-    let res = lm_analysis::nearest::nearest_distance(&ds, &targets, same, ctl)?;
+    // "Nearest other" measures to every object of the layer, even when a filter shows only some
+    // (owner's decision, 2026-10-17); each object skips only itself.
+    let (targets_in, res, target_rows) = if same {
+        let whole = layer_in.vector()?;
+        let skip: Vec<Option<usize>> = rows.iter().map(|r| Some(*r)).collect();
+        let res = lm_analysis::nearest::nearest_distance_skipping(&ds, whole, &skip, ctl)?;
+        (layer_in, res, (0..whole.features.len()).collect::<Vec<usize>>())
+    } else {
+        let t = plan.input(1)?;
+        let (targets, trows) = t.scoped()?;
+        (t, lm_analysis::nearest::nearest_distance(&ds, &targets, false, ctl)?, trows)
+    };
     let tfull = targets_in.vector()?;
-    let target_rows: Vec<usize> = if same { rows.clone() } else { targets_in.scoped()?.1 };
     let km: Vec<Value> = res.nearest.iter().map(|n| n.as_ref().map_or(Value::Null, |n| Value::Float(n.distance_m / 1000.0))).collect();
     let names: Vec<Value> = res
         .nearest
@@ -1673,7 +1697,25 @@ fn join_action(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> 
     let (layer_in, areas_in) = (plan.input(0)?, plan.input(1)?);
     let (ds, rows) = layer_in.scoped()?;
     let (areas, _) = areas_in.scoped()?;
-    let res = lm_analysis::overlay::join_by_location(&ds, &areas, ctl)?;
+    let mut res = lm_analysis::overlay::join_by_location(&ds, &areas, ctl)?;
+    // Points just outside every area (a coastline drawn a little inland) take the nearest area
+    // within JOIN_NEAR_M, counted and stated (owner's decision, 2026-10-17).
+    let missing: Vec<usize> = (0..ds.features.len()).filter(|i| res.area_of[*i].is_none() && !res.without_geometry.contains(i)).collect();
+    let mut nearby = 0u64;
+    if !missing.is_empty() {
+        let mut sub = Dataset::new(ds.name.clone(), ds.geometry_type, ds.fields.clone());
+        for i in &missing {
+            sub.features.push(ds.features[*i].clone());
+        }
+        let near = lm_analysis::nearest::nearest_distance(&sub, &areas, false, ctl)?;
+        for (k, n) in near.nearest.iter().enumerate() {
+            if let Some(n) = n.as_ref().filter(|n| n.distance_m <= JOIN_NEAR_M) {
+                res.area_of[missing[k]] = Some(n.target_row);
+                nearby += 1;
+            }
+        }
+        res.outside = res.outside.saturating_sub(nearby);
+    }
     // Which of the areas' fields to add (parameter `fields`, comma-separated; all by default).
     let wanted: Vec<usize> = match plan.param("fields").filter(|f| !f.trim().is_empty()) {
         Some(list) => list.split(',').filter_map(|f| areas.field_index(f.trim())).collect(),
@@ -1707,6 +1749,14 @@ fn join_action(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> 
             areas_in.singular_noun()
         ));
     }
+    if nearby > 0 {
+        notices.push(format!(
+            "{} lie just outside every {} (within {} km) and take the nearest one.",
+            layer_in.things(nearby),
+            areas_in.singular_noun(),
+            number(JOIN_NEAR_M / 1000.0)
+        ));
+    }
     let title = format!("{} details added to {}", capitalized(&areas_in.singular_noun()), layer_in.name());
     let inputs = [layer_in, areas_in];
     Ok(ActionResult {
@@ -1727,11 +1777,29 @@ fn join_action(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> 
             context: context(&inputs, &[]),
             notices,
         },
-        recipe: recipe(plan, &title, &inputs, PLANAR, Vec::new(), Vec::new()),
+        recipe: recipe(
+            plan,
+            &title,
+            &inputs,
+            PLANAR,
+            if nearby > 0 {
+                vec![format!(
+                    "{} in no area took the nearest area within {} km (geodesic)",
+                    layer_in.things(nearby),
+                    number(JOIN_NEAR_M / 1000.0)
+                )]
+            } else {
+                Vec::new()
+            },
+            Vec::new(),
+        ),
         output: ActionOutput::NewFields { layer: layer_in.layer.id, data: Arc::new(out), fields },
         highlight: None,
     })
 }
+
+/// How far outside every area a feature may be and still take the nearest one's details.
+pub const JOIN_NEAR_M: f64 = 25_000.0;
 
 fn measure_fields(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
     let input = plan.input(0)?;
@@ -1764,7 +1832,14 @@ fn measure_fields(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionErro
     }
     columns.push(("longitude".to_string(), FieldType::Double, lon));
     columns.push(("latitude".to_string(), FieldType::Double, lat));
-    let (out, fields) = with_fields(input.vector()?, &rows, columns);
+    // Its own fields are overwritten, so a clipped layer's stale area is replaced (owner's
+    // decision, 2026-10-17).
+    let ((out, fields), replaced) = with_fields_mode(input.vector()?, &rows, columns, true);
+    let notices = if replaced.is_empty() {
+        Vec::new()
+    } else {
+        vec![format!("Replaced the existing {} with new measurements.", replaced.join(", "))]
+    };
     let title = format!("Measurements added to {}", input.name());
     let inputs = [input];
     Ok(ActionResult {
@@ -1778,7 +1853,7 @@ fn measure_fields(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionErro
                 detail: format!("now carry {}", fields.join(", ")),
             },
             context: context(&inputs, &[]),
-            notices: Vec::new(),
+            notices,
         },
         recipe: recipe(
             plan,

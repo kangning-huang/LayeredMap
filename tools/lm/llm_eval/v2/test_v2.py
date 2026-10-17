@@ -305,3 +305,15 @@ def test_runner_word_ports():
         ["river", "active fault", "city", "box", "glass", "lands in separate part"]
     assert [chk.rs_plural(w) for w in ["land", "city", "box", "area 1", "places"]] == ["lands", "cities", "boxes", "area 1", "places"]
     assert chk.rs_word("Lands in separate parts") is None and chk.rs_word("Minor islands") == "minor islands"
+
+
+def test_a_second_filter_that_drops_an_earlier_condition_is_flagged():
+    k = chk.Checker("world", None, "Cities in China above 1500 m")
+    plan = [
+        {"name": "filter", "args": {"layer": "Populated places", "conditions": [{"field": "country", "op": "is", "value": "China"}]}},
+        {"name": "filter", "args": {"layer": "Populated places", "conditions": [{"field": "Elevation", "op": "above", "value": "1500"}]}},
+    ]
+    errs = k.lint(plan)
+    assert errs and "without country" in errs[-1]
+    plan[1]["args"]["conditions"].insert(0, {"field": "country", "op": "is", "value": "China"})
+    assert not any("without" in e for e in k.lint(plan))

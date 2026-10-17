@@ -384,9 +384,10 @@ fn points_take_the_details_of_their_area() {
     let ActionOutput::NewFields { data, fields, .. } = &r.output else { panic!() };
     assert_eq!(fields, &vec!["area_id".to_string()]);
     let k = data.field_index("area_id").unwrap();
-    let blanks = data.features.iter().filter(|f| matches!(f.attrs[k], Value::Null)).count();
-    assert!(blanks >= 2, "P17 and P18 are outside every area");
-    assert!(r.card.notices.iter().any(|n| n.contains("no area")), "{:?}", r.card.notices);
+    // P17 and P18 lie outside every area but within 25 km of one: they take the nearest area,
+    // and the card says so (owner's decision, 2026-10-17).
+    assert!(data.features.iter().all(|f| !matches!(f.attrs[k], Value::Null)));
+    assert!(r.card.notices.iter().any(|n| n.contains("just outside")), "{:?}", r.card.notices);
 }
 
 /// Measurements: areas get area, perimeter and coordinates; points just coordinates.
@@ -394,8 +395,42 @@ fn points_take_the_details_of_their_area() {
 fn measurements_become_fields() {
     let r = run(&plan("add_measurements", vec![input("V1/districts.geojson", 1)], &[]), &Control::none()).unwrap();
     let ActionOutput::NewFields { fields, .. } = &r.output else { panic!() };
-    assert_eq!(fields, &vec!["area_km2 2".to_string(), "perimeter_km".to_string(), "longitude".to_string(), "latitude".to_string()]);
+    // V1 already has area_km2: it is overwritten, and the card says so.
+    assert_eq!(fields, &vec!["area_km2".to_string(), "perimeter_km".to_string(), "longitude".to_string(), "latitude".to_string()]);
+    assert!(r.card.notices.iter().any(|n| n.contains("Replaced the existing area_km2")), "{:?}", r.card.notices);
     let r = run(&plan("add_measurements", vec![input("N1/points.geojson", 1)], &[]), &Control::none()).unwrap();
     let ActionOutput::NewFields { fields, .. } = &r.output else { panic!() };
     assert_eq!(fields, &vec!["longitude".to_string(), "latitude".to_string()]);
+}
+
+/// Points just outside every area take the nearest one within 25 km; farther ones stay blank.
+#[test]
+fn points_just_outside_take_the_nearest_area_within_25_km() {
+    use rustgis_engine::data::GeometryType;
+    let areas = input("N1/areas.geojson", 2);
+    let LayerData::Vector(a) = &areas.data else { panic!() };
+    // Two points east of the areas' eastern edge: ~5 km and ~100 km out.
+    let east = a
+        .features
+        .iter()
+        .filter_map(|f| f.geometry.as_ref())
+        .flat_map(|g| match g {
+            Geometry::Polygon(p) => p.iter().flatten().flatten().map(|c| c.x).collect::<Vec<_>>(),
+            _ => vec![],
+        })
+        .fold(f64::MIN, f64::max);
+    let lat = 31.2;
+    let mut ds = Dataset::new("near", GeometryType::Point, vec![Field::new("id", FieldType::Integer)]);
+    ds.push_next(Some(Geometry::Point(Coord::new(east + 0.05, lat))), vec![Value::Int(1)]);
+    ds.push_next(Some(Geometry::Point(Coord::new(east + 1.0, lat))), vec![Value::Int(2)]);
+    let pts = PlanInput { layer: areas.layer.clone(), data: LayerData::Vector(Arc::new(ds)), rows: None, path: None };
+    let mut pts = pts;
+    pts.layer.id = LayerId(9);
+    pts.layer.display_name = "near".into();
+    let r = run(&plan("join_by_location", vec![pts, areas], &[("fields", "area_id")]), &Control::none()).unwrap();
+    let ActionOutput::NewFields { data, .. } = &r.output else { panic!() };
+    let k = data.field_index("area_id").unwrap();
+    assert!(!matches!(data.features[0].attrs[k], Value::Null), "5 km out takes the nearest area");
+    assert!(matches!(data.features[1].attrs[k], Value::Null), "100 km out stays blank");
+    assert!(r.card.notices.iter().any(|n| n.contains("just outside")), "{:?}", r.card.notices);
 }

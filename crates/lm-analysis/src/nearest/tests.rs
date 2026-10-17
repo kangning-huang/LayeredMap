@@ -628,3 +628,27 @@ fn stress_cancel_lands_quickly() {
         assert!(lag < 0.2, "{lag}");
     }
 }
+
+/// A subset measured against the whole layer, skipping each feature's own row, equals the
+/// same-layer result for those rows.
+#[test]
+fn a_subset_against_the_whole_layer_matches_the_same_layer_result() {
+    use rustgis_data::{Field, FieldType, GeometryType, Value};
+    let mut ds = Dataset::new("pts", GeometryType::Point, vec![Field::new("id", FieldType::Integer)]);
+    for (i, (x, y)) in [(0.0, 0.0), (0.5, 0.1), (3.0, 1.0), (3.2, 1.1), (10.0, -2.0)].iter().enumerate() {
+        ds.push_next(Some(Geometry::Point(Coord::new(*x, *y))), vec![Value::Int(i as i64)]);
+    }
+    let whole = nearest_distance(&ds, &ds, true, &Control::none()).unwrap();
+    let rows = [1usize, 4];
+    let mut sub = Dataset::new("sub", GeometryType::Point, ds.fields.clone());
+    for r in rows {
+        sub.features.push(ds.features[r].clone());
+    }
+    let skip: Vec<Option<usize>> = rows.iter().map(|r| Some(*r)).collect();
+    let part = nearest_distance_skipping(&sub, &ds, &skip, &Control::none()).unwrap();
+    for (k, r) in rows.iter().enumerate() {
+        let (a, b) = (part.nearest[k].as_ref().unwrap(), whole.nearest[*r].as_ref().unwrap());
+        assert_eq!(a.target_row, b.target_row);
+        assert!((a.distance_m - b.distance_m).abs() < 1e-6);
+    }
+}

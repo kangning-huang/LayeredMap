@@ -121,6 +121,27 @@ pub struct NearestResult {
 /// not read); a feature never matches itself. See the module notes for the definition.
 pub fn nearest_distance(features: &Dataset, targets: &Dataset, same_layer: bool, ctl: &Control) -> Result<NearestResult, Cancelled> {
     let targets = if same_layer { features } else { targets };
+    search_all(features, targets, |row| same_layer.then_some(row), ctl)
+}
+
+/// [`nearest_distance`] where feature `i` never matches target row `skip[i]` (its own row when
+/// `features` is a subset of `targets`, as for "the nearest other object of the whole layer" on
+/// a filtered layer: owner's decision, 2026-10-17).
+pub fn nearest_distance_skipping(
+    features: &Dataset,
+    targets: &Dataset,
+    skip: &[Option<usize>],
+    ctl: &Control,
+) -> Result<NearestResult, Cancelled> {
+    search_all(features, targets, |row| skip.get(row).copied().flatten(), ctl)
+}
+
+fn search_all(
+    features: &Dataset,
+    targets: &Dataset,
+    skip_of: impl Fn(usize) -> Option<usize>,
+    ctl: &Control,
+) -> Result<NearestResult, Cancelled> {
     let mut work = Work::new(ctl);
     let index = Targets::build(targets, ctl, &mut work)?;
     let total = features.features.len() as u64;
@@ -141,7 +162,7 @@ pub fn nearest_distance(features: &Dataset, targets: &Dataset, same_layer: bool,
             out.nearest.push(None);
             continue;
         };
-        let skip = same_layer.then_some(row);
+        let skip = skip_of(row);
         out.nearest.push(search.nearest(g, skip, &mut work)?);
     }
     ctl.report(PHASE_SEARCH, total, Some(total));

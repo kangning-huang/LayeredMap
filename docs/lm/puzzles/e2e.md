@@ -1,5 +1,7 @@
 # The eight puzzles end to end through the Pro assistant
 
+> **Owner's direction (2026-10-17):** Pro's assistant does not need to solve a puzzle from one request. Its job is to carry out each step a user asks for, so the measure that matters is single-step requests, plus the gold plans below, which show that the actions themselves solve every puzzle. The "still missing" items for solving P3, P7 and P8 in one request are recorded for reference, not planned.
+
 Branch `puzzle-e2e`, 2026-10-17. What was run: each puzzle as a hand-written gold plan through
 LayeredMap's plan executor (`run_plan`), then each puzzle's request (English, and Chinese where the
 puzzle has one) through the Pro assistant pipeline: the v2 harness in the `submit_plan` design,

@@ -872,6 +872,25 @@ class Checker:
                 continue
             errs.append(f"Step #{i + 1} ({c['name']}) changes {key}, but no later step uses {key}, so it has no effect on the "
                         f"result. Put it before the step that should use it, or apply it to the layer the later steps use.")
+        # A filter replaces the layer's earlier filter (owner's decision, 2026-10-17): a later
+        # filter that leaves out an earlier condition on the same layer undoes it, which a
+        # narrowing request almost never means. A filter with no conditions (clear) is exempt.
+        last: dict[str, tuple[int, list[str]]] = {}
+        for i, c in enumerate(plan):
+            if c["name"] != "filter":
+                continue
+            args = c.get("args") or {}
+            key, conds = args.get("layer"), args.get("conditions")
+            if not isinstance(key, str) or not isinstance(conds, list):
+                continue
+            fields = [str(x.get("field")) for x in conds if isinstance(x, dict)]
+            if key in last and conds:
+                j, before = last[key]
+                dropped = [f for f in before if f not in fields]
+                if dropped:
+                    errs.append(f"Step #{i + 1} filters {key} again without {', '.join(dropped)} from step #{j + 1}. A filter replaces "
+                                f"the earlier one, so repeat the earlier conditions you still want in this filter.")
+            last[key] = (i, fields)
         return errs
 
     def finalize(self, plan: list[dict]) -> tuple[list[dict], list[dict]]:
