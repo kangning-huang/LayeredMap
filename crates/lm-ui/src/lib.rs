@@ -6,6 +6,7 @@
 
 pub mod basemap;
 mod chrome;
+pub mod draw;
 pub mod examples;
 pub mod find_ui;
 pub mod form;
@@ -87,6 +88,10 @@ pub enum Command {
     Escape,
     /// Find in the selected layer (WP3.10; scripts and tests).
     Find(String),
+    /// Start drawing an area (WP4.4): from the assistant or the developer surface.
+    StartDrawing(draw::Mode),
+    /// Make an area layer from an outline in longitude/latitude (scripts and tests).
+    DrawArea(Vec<(f64, f64)>),
 }
 
 /// A file dialog the shell asks the app to show (the shell itself never opens dialogs).
@@ -170,6 +175,8 @@ pub struct Shell {
     pub(crate) compare_peers: Option<(lm_core::model::LayerId, Option<String>)>,
     /// Find in a layer (WP3.10).
     pub(crate) find: find_ui::FindState,
+    /// An area being drawn (WP4.4).
+    pub(crate) drawing: Option<draw::Drawing>,
     /// The overlap chooser: where the click was and what it hit, topmost first.
     pub(crate) chooser: Option<(egui::Pos2, Vec<lm_core::selection::FeatureRef>)>,
     /// A chooser row being hovered: its object is highlighted.
@@ -207,6 +214,7 @@ impl Shell {
             last_map_size: egui::vec2(1280.0, 748.0),
             archive_url: None,
             find: find_ui::FindState::default(),
+            drawing: None,
             ws: workspace::Workspace::with_waker(ctx),
             shelf_open: true,
             inspector_tab: 0,
@@ -287,6 +295,16 @@ impl Shell {
                 }
             }
             Command::InspectorTab(tab) => self.inspector_tab = tab,
+            Command::StartDrawing(mode) => {
+                self.find.clear();
+                self.drawing = Some(draw::Drawing::new(mode));
+            }
+            Command::DrawArea(ring) => {
+                let name = draw::next_name(self.ws.doc.layers.iter().map(|l| l.display_name.clone()));
+                if let Some(layer) = lm_jobs::import::drawn_area(&name, &ring) {
+                    self.ws.add_imported(vec![layer], u64::MAX);
+                }
+            }
             Command::Find(text) => {
                 if let Some(id) = self.ws.selected() {
                     self.find.layer = Some(id);
@@ -310,7 +328,8 @@ impl Shell {
                 }
             }
             Command::Escape => {
-                if let Some(id) = self.find.layer.filter(|id| self.find.active_for(*id)) {
+                if self.drawing.take().is_some() {
+                } else if let Some(id) = self.find.layer.filter(|id| self.find.active_for(*id)) {
                     self.find.clear();
                     self.ws.selection = lm_core::selection::SelectionContext::layer(id);
                 } else if self.chooser.take().is_none() && self.compare_peers.take().is_none() {
@@ -576,8 +595,12 @@ impl Shell {
 
         // The map first, so the chrome draws over it.
         let keyboard = ctx.memory(|m| m.focused().is_none());
-        let out = self.map.show(ui, map_rect, ViewOptions { backdrop: self.backdrop, reduce_motion: system.reduce_motion, keyboard });
-        if let Some(lonlat) = out.clicked.filter(|_| self.flags.shows(3)) {
+        let drawing = self.drawing.is_some();
+        let out =
+            self.map.show(ui, map_rect, ViewOptions { backdrop: self.backdrop, reduce_motion: system.reduce_motion, keyboard, drawing });
+        if drawing {
+            draw::frame(self, ui, map_rect, &out);
+        } else if let Some(lonlat) = out.clicked.filter(|_| self.flags.shows(3)) {
             let (pos, shift) = ctx.input(|i| (i.pointer.interact_pos(), i.modifiers.shift));
             self.map_click(lonlat, pos.unwrap_or(map_rect.center()), shift);
         }

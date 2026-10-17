@@ -54,6 +54,9 @@ pub struct ViewOptions {
     pub reduce_motion: bool,
     /// Keyboard navigation applies (the map, not a text field, has the keyboard).
     pub keyboard: bool,
+    /// An area is being drawn (WP4.4): a drag draws instead of panning, and a double-click
+    /// finishes instead of zooming. The wheel and pinch still zoom.
+    pub drawing: bool,
 }
 
 /// What happened in the map this frame.
@@ -65,6 +68,11 @@ pub struct MapOutput {
     pub clicked: Option<Coord>,
     /// Where that click was on screen (to place the overlap chooser), in egui points.
     pub click_pos: Option<Pos2>,
+    /// While drawing: a double-click, in longitude/latitude.
+    pub double_clicked: Option<Coord>,
+    /// While drawing: a drag from its start to the pointer now, and whether it was released this
+    /// frame.
+    pub drag: Option<(Coord, Coord, bool)>,
 }
 
 /// LayeredMap's selection highlight (Visual specification › Default symbols › Selected): the
@@ -323,6 +331,21 @@ impl MapView {
             out.clicked = self.map.to_lonlat(m);
             out.click_pos = Some(p);
         }
+        if opts.drawing {
+            let to_lonlat =
+                |me: &MapView, p: Pos2| me.map.to_lonlat(me.camera.to_map(f64::from(p.x - rect.min.x), f64::from(p.y - rect.min.y), w, h));
+            if resp.double_clicked()
+                && let Some(p) = resp.interact_pointer_pos()
+            {
+                out.double_clicked = to_lonlat(self, p);
+            }
+            if (resp.dragged() || resp.drag_stopped())
+                && let (Some(a), Some(b)) = (ui.input(|i| i.pointer.press_origin()), resp.interact_pointer_pos())
+                && let (Some(a), Some(b)) = (to_lonlat(self, a), to_lonlat(self, b))
+            {
+                out.drag = Some((a, b, resp.drag_stopped()));
+            }
+        }
         camera::clamp(&mut self.camera, w, h);
         self.rect = Some(rect);
 
@@ -428,8 +451,10 @@ impl MapView {
         let stop_anim = |me: &mut MapView| {
             me.anim = None;
         };
-        // Drag: the map follows the pointer; release keeps its speed (inertia).
-        if resp.dragged() {
+        // Drag: the map follows the pointer; release keeps its speed (inertia). Not while drawing.
+        if opts.drawing {
+            self.velocity = egui::Vec2::ZERO;
+        } else if resp.dragged() {
             let d = resp.drag_delta();
             camera::pan(&mut self.camera, f64::from(d.x), f64::from(d.y));
             if dt > 0.0 {
@@ -490,7 +515,8 @@ impl MapView {
                 }
             }
         }
-        if resp.double_clicked()
+        if !opts.drawing
+            && resp.double_clicked()
             && let Some(p) = resp.interact_pointer_pos()
         {
             // Zoom one level about the click (⌥ zooms out).

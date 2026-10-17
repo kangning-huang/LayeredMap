@@ -423,6 +423,32 @@ fn phase3_join_question() {
     h.snapshot("phase3_join_question");
 }
 
+/// Drawing an area (WP4.4): the outline so far and the banner; a finished outline becomes the
+/// layer "Area 1" in WGS 84.
+#[test]
+fn phase4_drawing() {
+    let mut h = phase3(&["V1/districts.geojson"], SHANGHAI, |s| {
+        s.ws.clear_selection();
+        let mut d = crate::draw::Drawing::new(crate::draw::Mode::Polygon);
+        for p in [(121.30, 31.30), (121.45, 31.33), (121.50, 31.20)] {
+            d.click(p, |a, b| a == b);
+        }
+        s.drawing = Some(d);
+    });
+    settle(&mut h);
+    h.snapshot("phase4_drawing");
+    if let Some(s) = h.state_mut().as_mut() {
+        s.command(&egui::Context::default(), crate::Command::Escape);
+        assert!(s.drawing.is_none(), "Esc cancels");
+        s.command(&egui::Context::default(), crate::Command::DrawArea(vec![(121.30, 31.30), (121.45, 31.33), (121.50, 31.20)]));
+    }
+    settle(&mut h);
+    let s = h.state().as_ref().unwrap();
+    let area = s.ws.doc.layers.iter().find(|l| l.display_name == "Area 1").expect("Area 1");
+    assert_eq!(area.profile.kind, lm_core::model::LayerKind::Areas);
+    assert_eq!(area.profile.crs.value, lm_core::model::Crs::Wgs84);
+}
+
 /// Selection is shared: an object selected (as a table row click does) is highlighted on the map,
 /// and a map click selects the object the table then shows.
 #[test]
