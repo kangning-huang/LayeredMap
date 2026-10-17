@@ -71,3 +71,27 @@ fn objects_are_found_by_field_value_and_errors_name_the_step() {
     .unwrap();
     assert_eq!(asked.len(), 1);
 }
+
+/// "At least" and "at most" include the bound; above and below don't (puzzle clues say "at
+/// least 1,500 m"). 2,455 students is the value of three schools in the fixture.
+#[test]
+fn at_least_and_at_most_include_the_bound() {
+    let shown = |op: &str| {
+        let mut layers = vec![layer("fixtures/T1/schools.csv", "Schools", 1)];
+        let plan = steps(
+            json!([{"name": "filter", "args": {"layer": "Schools", "conditions": [{"field": "students", "op": op, "value": "2,455"}]}}]),
+        );
+        match execute(&mut layers, &plan, 0, &Control::none()).unwrap().remove(0) {
+            StepOutcome::Filtered { shown, of, .. } => (shown, of),
+            other => panic!("{other:?}"),
+        }
+    };
+    let (above, of) = shown("above");
+    let (at_least, _) = shown("at_least");
+    let (below, _) = shown("below");
+    let (at_most, _) = shown("at_most");
+    assert_eq!(at_least, above + 3);
+    assert_eq!(at_most, below + 3);
+    assert_eq!(at_least + below, of);
+    assert_eq!(at_most + above, of);
+}

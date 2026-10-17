@@ -1,0 +1,11 @@
+{"puzzle": "P1", "limit": 10,
+ "layers": [{"name": "Populated places", "path": "/Volumes/LaCie/data/layeredmap-puzzles/naturalearth/ne_10m_populated_places/ne_10m_populated_places.shp"},
+  {"name": "Elevation", "path": "/Volumes/LaCie/data/layeredmap-puzzles/worldclim/wc2.1_10m_elev.tif"},
+  {"name": "January mean temperature", "path": "/Volumes/LaCie/data/layeredmap-puzzles/worldclim/wc2.1_10m_tavg_01.tif"}],
+ "steps": [
+  {"name": "filter", "args": {"layer": "Populated places", "conditions": [{"field": "ADM0NAME", "op": "is", "value": "China"}, {"field": "POP_MAX", "op": "above", "value": "2000000"}]}},
+  {"name": "add_raster_values", "args": {"raster": "Elevation", "points": "Populated places"}},
+  {"name": "filter", "args": {"layer": "Populated places", "conditions": [{"field": "ADM0NAME", "op": "is", "value": "China"}, {"field": "POP_MAX", "op": "above", "value": "2000000"}, {"field": "Elevation", "op": "at_least", "value": "1500"}]}},
+  {"name": "add_raster_values", "args": {"raster": "January mean temperature", "points": "Populated places"}},
+  {"name": "filter", "args": {"layer": "Populated places", "conditions": [{"field": "ADM0NAME", "op": "is", "value": "China"}, {"field": "POP_MAX", "op": "above", "value": "2000000"}, {"field": "Elevation", "op": "at_least", "value": "1500"}, {"field": "January mean temperature", "op": "at_least", "value": "5"}]}}
+ ]}

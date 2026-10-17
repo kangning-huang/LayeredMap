@@ -8,8 +8,8 @@
 //!
 //! Arguments follow the assistant's tools: layers by display name or `#k`; one object as
 //! `{layer, field, value}`; filter conditions as `{field, op, value, value2, values}` with ops is,
-//! is_not, contains, starts_with, ends_with, is_empty, above, below, between, before, after,
-//! any_of; `find_where` conditions as `"raster|test|a|b;…"` with raster names, or a list of
+//! is_not, contains, starts_with, ends_with, is_empty, above and below (strict), at_least and
+//! at_most (inclusive), between (inclusive), before, after, any_of; `find_where` conditions as `"raster|test|a|b;…"` with raster names, or a list of
 //! `{raster, op, value, value2}` (or filter-shaped `{field: raster, op: above|below|between…}`).
 
 use std::collections::BTreeMap;
@@ -131,6 +131,10 @@ fn condition(c: &Json, step: usize) -> Result<Condition, PlanError> {
         "is_empty" => Test::IsEmpty,
         "above" => Test::Above(num(&v)?),
         "below" => Test::Below(num(&v)?),
+        // Inclusive bounds ("at least 1,500 m"): the filter's between with an open end, since
+        // above and below are strict.
+        "at_least" => Test::Between(num(&v)?, f64::INFINITY),
+        "at_most" => Test::Between(f64::NEG_INFINITY, num(&v)?),
         "between" => Test::Between(num(&v)?, num(&c.get("value2").and_then(text).unwrap_or_default())?),
         "before" => Test::Before(v),
         "after" => Test::After(v),

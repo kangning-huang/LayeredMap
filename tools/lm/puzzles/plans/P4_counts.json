@@ -1,0 +1,148 @@
+{
+ "puzzle": "P4",
+ "note": "per-clue counts only (steps 1-4 add one condition each; step 7 shows the stale area_km2 trap)",
+ "limit": 20,
+ "layers": [
+  {
+   "name": "Elevation",
+   "path": "/Volumes/LaCie/data/layeredmap-puzzles/worldclim/wc2.1_10m_elev.tif"
+  },
+  {
+   "name": "Annual mean temperature",
+   "path": "/Volumes/LaCie/data/layeredmap-puzzles/worldclim/wc2.1_10m_bio_1.tif"
+  },
+  {
+   "name": "Annual precipitation",
+   "path": "/Volumes/LaCie/data/layeredmap-puzzles/worldclim/wc2.1_10m_bio_12.tif"
+  },
+  {
+   "name": "January mean temperature",
+   "path": "/Volumes/LaCie/data/layeredmap-puzzles/worldclim/wc2.1_10m_tavg_01.tif"
+  },
+  {
+   "name": "Countries",
+   "path": "/Volumes/LaCie/data/layeredmap-puzzles/naturalearth/ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp"
+  },
+  {
+   "name": "Populated places",
+   "path": "/Volumes/LaCie/data/layeredmap-puzzles/naturalearth/ne_10m_populated_places/ne_10m_populated_places.shp"
+  }
+ ],
+ "steps": [
+  {
+   "name": "find_where",
+   "args": {
+    "conditions": [
+     {
+      "raster": "Elevation",
+      "op": "between",
+      "value": "1000",
+      "value2": "2000"
+     }
+    ]
+   }
+  },
+  {
+   "name": "find_where",
+   "args": {
+    "conditions": [
+     {
+      "raster": "Elevation",
+      "op": "between",
+      "value": "1000",
+      "value2": "2000"
+     },
+     {
+      "raster": "Annual mean temperature",
+      "op": "at_least",
+      "value": "17"
+     }
+    ]
+   }
+  },
+  {
+   "name": "find_where",
+   "args": {
+    "conditions": [
+     {
+      "raster": "Elevation",
+      "op": "between",
+      "value": "1000",
+      "value2": "2000"
+     },
+     {
+      "raster": "Annual mean temperature",
+      "op": "at_least",
+      "value": "17"
+     },
+     {
+      "raster": "Annual precipitation",
+      "op": "at_least",
+      "value": "1300"
+     }
+    ]
+   }
+  },
+  {
+   "name": "find_where",
+   "args": {
+    "conditions": [
+     {
+      "raster": "Elevation",
+      "op": "between",
+      "value": "1000",
+      "value2": "2000"
+     },
+     {
+      "raster": "Annual mean temperature",
+      "op": "at_least",
+      "value": "17"
+     },
+     {
+      "raster": "Annual precipitation",
+      "op": "at_least",
+      "value": "1300"
+     },
+     {
+      "raster": "January mean temperature",
+      "op": "at_least",
+      "value": "10"
+     }
+    ]
+   }
+  },
+  {
+   "name": "filter",
+   "args": {
+    "layer": "Countries",
+    "conditions": [
+     {
+      "field": "ADMIN",
+      "op": "is",
+      "value": "China"
+     }
+    ]
+   }
+  },
+  {
+   "name": "keep_inside",
+   "args": {
+    "layer": "#4",
+    "areas": "Countries"
+   }
+  },
+  {
+   "name": "filter",
+   "args": {
+    "layer": "#6",
+    "conditions": [
+     {
+      "field": "area_km2",
+      "op": "at_least",
+      "value": "10000"
+     }
+    ]
+   }
+  }
+ ]
+}

@@ -73,6 +73,47 @@ DISPLAY_REQUIRED = {"filter": ["layer", "conditions"], "color_by": ["layer", "fi
 SLOT_NEEDS = {"points": "points", "areas": "areas", "raster": "raster", "point": "points", "line": "lines", "area": "areas"}
 
 
+# Steps that change their layer in place (no new layer): the argument naming that layer.
+IN_PLACE = {"filter": "layer", "add_raster_values": "points", "join_by_location": "layer", "nearest_distance": "layer",
+            "nearest_other": "layer", "add_measurements": "layer", "calculate_field": "layer"}
+FIELD_OP_SIGN = {"subtract": "−", "add": "+", "multiply": "×", "divide": "÷"}
+WHERE_OPS = {"at_least": "at_least", "above": "at_least", "at_most": "at_most", "below": "at_most", "between": "between"}
+KIND_NOUNS = {"points": ("point", "points"), "lines": ("line", "lines"), "areas": ("area", "areas"), "drawn area": ("area", "areas")}
+
+
+def rs_singular(name: str) -> str:
+    """``actions::singular`` in the runner."""
+    n = name.strip()
+    if n.endswith("ies") and len(n) > 3:
+        return n[:-3] + "y"
+    for end in ("sses", "shes", "ches", "xes"):
+        if n.endswith(end):
+            return n[:-2]
+    if n.endswith("s") and not n.endswith("ss") and len(n) > 1:
+        return n[:-1]
+    return n
+
+
+def rs_plural(name: str) -> str:
+    """``actions::plural`` in the runner."""
+    n = name.strip()
+    if rs_singular(n) != n:
+        return n
+    if not n or n[-1].isdigit() or not (n[-1].isascii() and n[-1].isalpha()):
+        return n
+    if n.endswith("y") and not n.endswith(("ay", "ey", "oy")):
+        return n[:-1] + "ies"
+    if n.endswith(("s", "x", "ch", "sh")):
+        return n + "es"
+    return n + "s"
+
+
+def rs_word(name: str) -> str | None:
+    """``PlanInput::word``: the layer name as a noun (at most 3 words, letters only), else None."""
+    w = " ".join(name.replace("_", " ").replace("-", " ").lower().split())
+    return w if w and len(w.split(" ")) <= 3 and all(c.isalpha() or c == " " for c in w) else None
+
+
 def _word(name: str) -> str | None:
     w = re.sub(r"[_\-]", " ", name).lower().split()
     ok = w and len(w) <= 3 and all(x.isalpha() for x in w)
@@ -116,6 +157,7 @@ class Checker:
         self.steps: list[dict] = []
         self.outputs: dict[int, dict] = {}  # k -> {kind, fields, name}
         self.added: dict[str, dict[str, str]] = {}  # layer -> fields added by earlier steps
+        self.origin: dict[tuple[str, str], tuple[str, str]] = {}  # (layer, joined field) -> (area layer, its field)
 
     # -----------------------------------------------------------------------------------------
     # Layers and fields
@@ -150,8 +192,8 @@ class Checker:
             prev = self.steps[k - 1]
             if prev["name"] in tools_v2.NEW_LAYER_ACTIONS:
                 key = f"#{k}"
-            elif prev["name"] in ("filter", "add_raster_values"):
-                target = prev["args"].get("layer" if prev["name"] == "filter" else "points")
+            elif prev["name"] in IN_PLACE and isinstance(prev["args"].get(IN_PLACE[prev["name"]]), str):
+                target = prev["args"][IN_PLACE[prev["name"]]]
                 v.fixes.append(f"{role} {s!r} -> {target!r} (step #{k} changes {target} and makes no new layer)")
                 key = target
             else:
@@ -175,6 +217,15 @@ class Checker:
         if need and not self._fits(kind, need):
             fit = [n for n in self.open if self._fits(data.kind(n), need)]
             hint = f" Layers of that kind: {', '.join(fit)}." if fit else " No open layer is of that kind: ask_user or cannot_do."
+            made = [f"#{k} ({self.steps[k - 1]['name']}, {o['kind']})" for k, o in self.outputs.items() if self._fits(o["kind"], need)]
+            if made:
+                hint += " Step outputs of that kind: " + ", ".join(made) + "."
+            if m and not made:
+                hint += f" Step #{m.group(1)} is {self.steps[int(m.group(1)) - 1]['name']}; \"#k\" names the layer made by step k (count the steps from 1)."
+            if action == "add_raster_values" and role == "points" and kind in ("areas", "drawn area"):
+                hint = " For areas, summarize_each(raster, areas) gives each area the raster's statistics (new layer with '<raster> mean')."
+            if action in ("whats_inside", "count_here", "summarize_here", "summarize_data_here") and need == "areas" and kind in ("points", "lines"):
+                hint += " To look near points or lines, buffer them first (merge false keeps one area each) and use the buffer's layer."
             v.errors.append(f"{action}: {role} needs {need}, but {key} is {kind}.{hint}")
             return None
         return key
@@ -280,7 +331,13 @@ class Checker:
             value = "true" if value else "false"
         value = str(value).strip()
         base = key
-        if key.startswith("#"):
+        if fname in self.added.get(key, {}) or (key, fname) in self.origin:
+            # A field an earlier step added: a joined field has its area layer's values; others aren't known yet.
+            src = self.origin.get((key, fname))
+            if not src:
+                return value
+            base, fname = src
+        elif key.startswith("#"):
             base = (self.outputs.get(int(key[1:])) or {}).get("base") or ""
             if not base or base.startswith("#") or fname not in data.fields(base):
                 return value  # a field the plan made: its values aren't known before running
@@ -375,7 +432,7 @@ class Checker:
                 c["values"] = fixed
                 out.append(c)
                 continue
-            if op in ("above", "below", "between"):
+            if op in ("above", "below", "at_least", "at_most", "between"):
                 if not data.is_numeric(ftype):
                     v.errors.append(f"{action}: {op} needs a numeric field; {key}.{f} is {ftype}.")
                     return None
@@ -399,8 +456,8 @@ class Checker:
             if c.get("value") in (None, ""):
                 v.errors.append(f"{action}: condition on {f} has no value.")
                 return None
-            if op == "contains":
-                out.append(c)
+            if op in ("contains", "starts_with", "ends_with"):
+                out.append(c)  # a part of a stored text: no stored value to match
                 continue
             # is / is_not
             if data.is_numeric(ftype):
@@ -446,6 +503,10 @@ class Checker:
     def _check_action(self, name: str, args: dict, v: Verdict) -> None:
         a = ACTIONS[name]
         out: dict = {}
+        if name == "find_where" and args.get("raster") in (None, "") and isinstance(args.get("conditions"), list) and args["conditions"]:
+            c0 = args["conditions"][0]
+            if isinstance(c0, dict) and (c0.get("raster") or c0.get("field")):
+                args = {**args, "raster": c0.get("raster") or c0.get("field")}
         for role, kind in a["roles"]:
             given = args.get(role)
             if kind == "layer":
@@ -530,7 +591,80 @@ class Checker:
             f = self.field(out["layer"], args.get("field"), name, v, numeric=True)
             if f:
                 out["field"] = f
+        if name == "calculate_field" and out.get("layer"):
+            self._check_calculate(out, args, v)
+        if name == "join_by_location" and out.get("areas") and args.get("fields") not in (None, ""):
+            fs = args["fields"] if isinstance(args["fields"], list) else str(args["fields"]).split(",")
+            got = [self.field(out["areas"], f, name, v, role="fields") for f in fs if str(f).strip()]
+            if got and all(got):
+                out["fields"] = ",".join(got)
+        if name == "find_where":
+            self._check_where(out, args, v)
         v.call = {"name": name, "args": out}
+
+    def _check_calculate(self, out: dict, args: dict, v: Verdict) -> None:
+        key = out["layer"]
+        if args.get("a") in (None, ""):
+            nums = [f for f, t in self.fields_of(key).items() if data.is_numeric(t)]
+            v.errors.append(f"calculate_field: the first value (first; a in the per-step tools) is missing: a number field of {key} "
+                            f"(the step is first op second, e.g. first: {nums[-1] if nums else 'population'!r}, op: 'divide', "
+                            f"second: a field or a number, name: the new field).")
+            a = None
+        else:
+            a = self.field(key, args.get("a"), "calculate_field", v, numeric=True, role="a")
+        if a:
+            out["a"] = a
+        op = str(args.get("op") or "subtract").strip().lower()
+        op = {"minus": "subtract", "plus": "add", "times": "multiply", "-": "subtract", "+": "add", "*": "multiply", "/": "divide",
+              "sub": "subtract", "mul": "multiply", "div": "divide"}.get(op, op)
+        if op not in FIELD_OP_SIGN:
+            v.errors.append(f"calculate_field: op {args.get('op')!r} isn't offered; use add, subtract, multiply or divide.")
+        else:
+            out["op"] = op
+        b = args.get("b")
+        if b in (None, ""):
+            v.errors.append("calculate_field: the second value (second; b in the per-step tools) is missing: a number field or a number.")
+        elif self.number(b) is not None and str(b).strip() not in self.fields_of(key):
+            out["b"] = str(self.number(b))
+        else:
+            fb = self.field(key, b, "calculate_field", v, numeric=True, role="b")
+            if fb:
+                out["b"] = fb
+        if args.get("name") not in (None, ""):
+            out["name"] = str(args["name"]).strip()
+
+    def _check_where(self, out: dict, args: dict, v: Verdict) -> None:
+        conds = args.get("conditions")
+        if isinstance(conds, dict):
+            conds = [conds]
+        if not isinstance(conds, list) or not conds:
+            v.errors.append("find_where: conditions are missing: [{field: <raster name>, op: at_least|at_most|between, value, value2}].")
+            return
+        fixed = []
+        for c in conds:
+            if not isinstance(c, dict):
+                v.errors.append("find_where: each condition is {field: <raster name>, op, value, value2}.")
+                return
+            r = c.get("raster") or c.get("field") or out.get("raster")
+            key = self.layer(r, "raster", "condition raster", "find_where", v)
+            if key is None:
+                return
+            op = str(c.get("op") or "").strip().lower().replace(" ", "_")
+            op = OP_FIX.get(op, op)
+            if op not in WHERE_OPS:
+                v.errors.append(f"find_where: op {c.get('op')!r} isn't offered; use at_least, at_most or between.")
+                return
+            item = {"field": key, "op": WHERE_OPS[op]}
+            for k in ("value", "value2") if WHERE_OPS[op] == "between" else ("value",):
+                n = self.number(c.get(k))
+                if n is None:
+                    v.errors.append(f"find_where: {k} of {key} {op} must be a number in the raster's unit; got {c.get(k)!r}.")
+                    return
+                item[k] = str(n)
+            fixed.append(item)
+        out["conditions"] = fixed
+        if "raster" not in out and fixed:
+            out["raster"] = fixed[0]["field"]
 
     def _check_display(self, name: str, args: dict, v: Verdict) -> None:
         out: dict = {}
@@ -595,12 +729,94 @@ class Checker:
                     self.outputs[k] = {"kind": "areas", "fields": f, "name": name, "base": areas}
         elif n == "buffer":
             lyr = a.get("layer")
-            self.outputs[k] = {"kind": "areas", "fields": self.fields_of(lyr) if isinstance(lyr, str) else {}, "name": "", "base": lyr}
+            # The runner's buffer layer has one field, "name": the object's title (or the layer's, merged).
+            self.outputs[k] = {"kind": "areas", "fields": {"name": "text"}, "name": "", "base": None}
         elif n == "add_raster_values":
             r, pts = a.get("raster"), a.get("points")
             if isinstance(r, str) and isinstance(pts, str):
-                self.added.setdefault(pts, {})[r] = "number"
+                self._add_fields(pts, [(r, "number")])
+        elif n == "split_parts" and isinstance(a.get("layer"), str):
+            lyr = a["layer"]
+            f = self.fields_of(lyr)
+            f[self._free(f, "part")] = "integer"
+            name = f"{self._plural_noun(lyr)[:1].upper()}{self._plural_noun(lyr)[1:]} in separate parts"
+            self.outputs[k] = {"kind": self.kind_of(lyr) or "areas", "fields": f, "name": name, "base": lyr}
+        elif n == "find_where":
+            f = {"name": "text", "area_km2": "number", "cells": "integer"}
+            rasters = []
+            for c in a.get("conditions") or []:
+                if isinstance(c, dict) and isinstance(c.get("field"), str) and c["field"] not in rasters:
+                    rasters.append(c["field"])
+            for r in rasters:
+                f[f"{r} mean"] = "number"
+            self.outputs[k] = {"kind": "areas", "fields": f, "name": "Where " + " and ".join(rasters), "base": None}
+        elif n in ("keep_inside", "remove_inside") and isinstance(a.get("layer"), str) and isinstance(a.get("areas"), str):
+            lyr = a["layer"]
+            word = "inside" if n == "keep_inside" else "outside"
+            pn = self._plural_noun(lyr)
+            self.outputs[k] = {"kind": self.kind_of(lyr) or "areas", "fields": self.fields_of(lyr),
+                               "name": f"{pn[:1].upper()}{pn[1:]} {word} {self._name(a['areas'])}", "base": lyr}
+        elif n in ("nearest_distance", "nearest_other") and isinstance(a.get("layer"), str):
+            lyr = a["layer"]
+            if n == "nearest_other":
+                words = f"nearest other {self._singular_noun(lyr)}"
+            elif isinstance(a.get("other"), str):
+                words = f"nearest {self._singular_noun(a['other'])}"
+            else:
+                return k
+            self._add_fields(lyr, [(f"km to {words}", "number"), (words, "text")])
+        elif n == "join_by_location" and isinstance(a.get("layer"), str) and isinstance(a.get("areas"), str):
+            af = self.fields_of(a["areas"])
+            wanted = [x.strip() for x in str(a.get("fields") or "").split(",") if x.strip()] or list(af)
+            got = self._add_fields(a["layer"], [(w, af.get(w, "text")) for w in wanted if w in af])
+            src = a["areas"]
+            if src.startswith("#"):
+                src = (self.outputs.get(int(src[1:])) or {}).get("base") or src
+            for w, name in zip([w for w in wanted if w in af], got):
+                if not src.startswith("#"):
+                    self.origin[(a["layer"], name)] = (src, w)
+        elif n == "add_measurements" and isinstance(a.get("layer"), str):
+            kind = self.kind_of(a["layer"])
+            new = [("area_km2", "number"), ("perimeter_km", "number")] if kind in ("areas", "drawn area") else [("length_km", "number")] if kind == "lines" else []
+            self._add_fields(a["layer"], new + [("longitude", "number"), ("latitude", "number")])
+        elif n == "calculate_field" and isinstance(a.get("layer"), str) and a.get("a"):
+            name = a.get("name") or f"{a.get('a')} {FIELD_OP_SIGN.get(a.get('op') or 'subtract', '−')} {a.get('b')}"
+            self._add_fields(a["layer"], [(name, "number")])
         return k
+
+    @staticmethod
+    def _free(fields: dict, base: str) -> str:
+        """``free_field`` in the runner: the first name not taken (case-insensitive), 'x', 'x 2', ..."""
+        taken = {f.casefold() for f in fields}
+        if base.casefold() not in taken:
+            return base
+        i = 2
+        while f"{base} {i}".casefold() in taken:
+            i += 1
+        return f"{base} {i}"
+
+    def _add_fields(self, key: str, new: list[tuple[str, str]]) -> list[str]:
+        """Fields a step adds to a layer, named as the runner names them; returns the names."""
+        names = []
+        for fname, ftype in new:
+            have = self.fields_of(key)
+            fname = self._free(have, fname)
+            if key.startswith("#"):
+                o = self.outputs.get(int(key[1:]))
+                if o is not None:
+                    o["fields"][fname] = ftype
+            else:
+                self.added.setdefault(key, {})[fname] = ftype
+            names.append(fname)
+        return names
+
+    def _plural_noun(self, key: str) -> str:
+        w = rs_word(self._name(key))
+        return rs_plural(w) if w else KIND_NOUNS.get(self.kind_of(key) or "", ("object", "objects"))[1]
+
+    def _singular_noun(self, key: str) -> str:
+        w = rs_word(self._name(key))
+        return rs_singular(w) if w else KIND_NOUNS.get(self.kind_of(key) or "", ("object", "objects"))[0]
 
     def _name(self, key: str) -> str:
         if key.startswith("#"):
@@ -631,7 +847,7 @@ class Checker:
     # The whole plan
 
     def reset(self) -> None:
-        self.steps, self.outputs, self.added = [], {}, {}
+        self.steps, self.outputs, self.added, self.origin = [], {}, {}, {}
 
     @staticmethod
     def _uses(call: dict, key: str) -> bool:
@@ -674,7 +890,7 @@ class Checker:
 
     def check_plan(self, calls: list[dict]) -> tuple[list[dict], list[str], list[str]]:
         """Check a whole plan at once (submit_plan): (fixed calls, errors, fixes). Resets state."""
-        self.steps, self.outputs, self.added = [], {}, {}
+        self.steps, self.outputs, self.added, self.origin = [], {}, {}, {}
         fixed, errors, fixes = [], [], []
         for i, c in enumerate(calls, 1):
             v = self.check(c)

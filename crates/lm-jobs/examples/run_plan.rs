@@ -55,10 +55,19 @@ fn main() {
     let outcomes: Vec<Value> = match &result {
         Ok(o) => o
             .iter()
-            .map(|s| match s {
+            .enumerate()
+            .map(|(i, s)| match s {
                 StepOutcome::Filtered { layer, shown, of } => json!({"filtered": layer, "shown": shown, "of": of}),
                 StepOutcome::Display => json!({"display": true}),
-                StepOutcome::NewLayer { name, card } => json!({"new_layer": name, "summary": card.summary}),
+                StepOutcome::NewLayer { name, card } => {
+                    // The new layer answers to "#k" (k = the step's position, from 1).
+                    let alias = format!("#{}", i + 1);
+                    let rows = layers.iter().find(|l| l.alias.as_deref() == Some(alias.as_str())).and_then(|l| match &l.data {
+                        LayerData::Vector(ds) => Some(ds.features.len()),
+                        LayerData::Raster(_) => None,
+                    });
+                    json!({"new_layer": name, "alias": alias, "rows": rows, "summary": card.summary})
+                }
                 StepOutcome::NewFields { layer, fields, card } => json!({"new_fields": fields, "layer": layer, "summary": card.summary}),
                 StepOutcome::Card { card, highlight } => {
                     json!({"card": card.title, "summary": card.summary, "answer": format!("{:?}", card.answer), "highlight": highlight})

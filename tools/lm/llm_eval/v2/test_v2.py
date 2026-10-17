@@ -255,3 +255,53 @@ def test_buffer_of_a_selected_object_and_date_ops():
     assert v.ok and "object" not in v.call["args"]
     v = check("world", C("filter", layer="Countries", conditions=[{"field": "pop_year", "op": "before", "value": "2019"}]))
     assert not v.ok and "below" in v.errors[0]
+
+
+def test_checker_knows_the_puzzle_actions_fields_and_layers():
+    # join_by_location: the joined field takes the area layer's stored values (continent -> 'Africa')
+    steps = [C("join_by_location", layer="Populated places", areas="Countries", fields="continent,pop_est")]
+    v = check("world", C("filter", layer="Populated places", conditions=[{"field": "continent", "op": "is", "value": "africa"}]), steps=steps)
+    assert v.ok and v.call["args"]["conditions"][0]["value"] == "Africa", v.errors
+    v = check("world", C("rank_by_value", layer="#1", field="pop_est"), steps=steps)
+    assert v.ok and v.call["args"]["layer"] == "Populated places"  # "#1" changed Populated places in place
+    # nearest_distance names its fields as the runner does
+    v = check("shanghai", C("filter", layer="Schools", conditions=[{"field": "km to nearest road", "op": "at_most", "value": "1"}]),
+              steps=[C("nearest_distance", layer="Schools", other="Roads")])
+    assert v.ok, v.errors
+    v = check("shanghai", C("filter", layer="Schools", conditions=[{"field": "km to nearest other school", "op": "above", "value": "2"}]),
+              steps=[C("nearest_other", layer="Schools")])
+    assert v.ok, v.errors
+    # calculate_field keeps its parameters and adds its field
+    k = chk.Checker("shanghai", None, "")
+    v = k.check({"name": "calculate_field", "args": {"layer": "Districts", "a": "population", "op": "divide", "b": "area_km2", "name": "density"}})
+    assert v.ok and v.call["args"] == {"layer": "Districts", "a": "population", "op": "divide", "b": "area_km2", "name": "density"}
+    k.add(v.call)
+    assert k.check(C("filter", layer="Districts", conditions=[{"field": "density", "op": "at_least", "value": "1000"}])).ok
+    assert not k.check(C("calculate_field", layer="Districts", a="name_en", op="add", b="1")).ok  # a must be a number field
+    # find_where -> keep_inside -> add_measurements: new layers, conditions kept, the area_km2 collision
+    steps = [C("find_where", conditions=[{"field": "Elevation", "op": "above", "value": "3000"}]),
+             C("filter", layer="Countries", conditions=[{"field": "name", "op": "is", "value": "China"}]),
+             C("keep_inside", layer="#1", areas="Countries"), C("add_measurements", layer="#3")]
+    k = chk.Checker("world", None, "")
+    for s in steps:
+        v = k.check(s)
+        assert v.ok, v.errors
+        k.add(v.call)
+    assert k.steps[0]["args"] == {"raster": "Elevation", "conditions": [{"field": "Elevation", "op": "at_least", "value": "3000"}]}
+    assert {"area_km2", "area_km2 2", "longitude", "latitude"} <= set(k.fields_of("#3"))
+    # starts_with is a part of a stored text, not a stored value
+    assert check("world", C("filter", layer="Countries", conditions=[{"field": "name", "op": "starts_with", "value": "Z"}])).ok
+    # split_parts makes a layer; its singular noun is the kind's when the title isn't a noun
+    k = chk.Checker("shanghai", None, "")
+    for s in [C("split_parts", layer="Parks"), C("nearest_other", layer="#1")]:
+        v = k.check(s)
+        assert v.ok, v.errors
+        k.add(v.call)
+    assert "km to nearest other area" in k.fields_of("#1")
+
+
+def test_runner_word_ports():
+    assert [chk.rs_singular(w) for w in ["rivers", "active faults", "cities", "boxes", "glass", "lands in separate parts"]] == \
+        ["river", "active fault", "city", "box", "glass", "lands in separate part"]
+    assert [chk.rs_plural(w) for w in ["land", "city", "box", "area 1", "places"]] == ["lands", "cities", "boxes", "area 1", "places"]
+    assert chk.rs_word("Lands in separate parts") is None and chk.rs_word("Minor islands") == "minor islands"
