@@ -1,0 +1,17 @@
+{"puzzle": "P8", "limit": 10,
+ "layers": [{"name": "Land", "path": "/Volumes/LaCie/data/layeredmap-puzzles/naturalearth/ne_10m_land/ne_10m_land.shp"}, {"name": "Minor islands", "path": "/Volumes/LaCie/data/layeredmap-puzzles/naturalearth/ne_10m_minor_islands/ne_10m_minor_islands.shp"},
+  {"name": "Annual precipitation", "path": "/Volumes/LaCie/data/layeredmap-puzzles/worldclim/wc2.1_10m_bio_12.tif"}],
+ "steps": [
+  {"name": "split_parts", "args": {"layer": "Land"}},
+  {"name": "add_measurements", "args": {"layer": "#1"}},
+  {"name": "nearest_other", "args": {"layer": "#1"}},
+  {"name": "filter", "args": {"layer": "#1", "conditions": [{"field": "latitude", "op": "between", "value": "-23.44", "value2": "23.44"}]}},
+  {"name": "filter", "args": {"layer": "#1", "conditions": [{"field": "latitude", "op": "between", "value": "-23.44", "value2": "23.44"}, {"field": "area_km2", "op": "between", "value": "50", "value2": "150"}]}},
+  {"name": "nearest_distance", "args": {"layer": "#1", "other": "Minor islands"}},
+  {"name": "filter", "args": {"layer": "#1", "conditions": [{"field": "latitude", "op": "between", "value": "-23.44", "value2": "23.44"}, {"field": "area_km2", "op": "between", "value": "50", "value2": "150"}, {"field": "km to nearest other area", "op": "at_least", "value": "300"}, {"field": "km to nearest minor island", "op": "at_least", "value": "300"}]}},
+  {"name": "summarize_each", "args": {"raster": "Annual precipitation", "areas": "#1", "stat": "mean"}},
+  {"name": "filter", "args": {"layer": "#8", "conditions": [{"field": "Annual precipitation mean", "op": "at_least", "value": "1500"}]}},
+  {"name": "calculate_field", "args": {"layer": "#8", "a": "longitude", "op": "divide", "b": "latitude", "name": "ratio"}},
+  {"name": "calculate_field", "args": {"layer": "#8", "a": "ratio", "op": "multiply", "b": "ratio", "name": "ratio squared"}},
+  {"name": "filter", "args": {"layer": "#8", "conditions": [{"field": "Annual precipitation mean", "op": "at_least", "value": "1500"}, {"field": "ratio squared", "op": "between", "value": "90.25", "value2": "110.25"}]}}
+ ]}

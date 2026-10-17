@@ -1,0 +1,11 @@
+{"puzzle": "P3", "limit": 10,
+ "layers": [{"name": "Land", "path": "/Volumes/LaCie/data/layeredmap-puzzles/naturalearth/ne_10m_land/ne_10m_land.shp"}, {"name": "Countries", "path": "/Volumes/LaCie/data/layeredmap-puzzles/naturalearth/ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp"}],
+ "steps": [
+  {"name": "split_parts", "args": {"layer": "Land"}},
+  {"name": "add_measurements", "args": {"layer": "#1"}},
+  {"name": "nearest_other", "args": {"layer": "#1"}},
+  {"name": "join_by_location", "args": {"layer": "#1", "areas": "Countries", "fields": "ADMIN"}},
+  {"name": "filter", "args": {"layer": "#1", "conditions": [{"field": "ADMIN", "op": "is", "value": "South Korea"}]}},
+  {"name": "filter", "args": {"layer": "#1", "conditions": [{"field": "ADMIN", "op": "is", "value": "South Korea"}, {"field": "area_km2", "op": "between", "value": "50", "value2": "100"}]}},
+  {"name": "filter", "args": {"layer": "#1", "conditions": [{"field": "ADMIN", "op": "is", "value": "South Korea"}, {"field": "area_km2", "op": "between", "value": "50", "value2": "100"}, {"field": "km to nearest other area", "op": "at_least", "value": "75"}]}}
+ ]}

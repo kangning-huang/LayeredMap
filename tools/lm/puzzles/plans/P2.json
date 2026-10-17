@@ -1,0 +1,10 @@
+{"puzzle": "P2", "limit": 10,
+ "layers": [{"name": "Populated places", "path": "/Volumes/LaCie/data/layeredmap-puzzles/naturalearth/ne_10m_populated_places/ne_10m_populated_places.shp"}, {"name": "Countries", "path": "/Volumes/LaCie/data/layeredmap-puzzles/naturalearth/ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp"},
+  {"name": "January mean temperature", "path": "/Volumes/LaCie/data/layeredmap-puzzles/worldclim/wc2.1_10m_tavg_01.tif"}],
+ "steps": [
+  {"name": "join_by_location", "args": {"layer": "Populated places", "areas": "Countries", "fields": "CONTINENT"}},
+  {"name": "filter", "args": {"layer": "Populated places", "conditions": [{"field": "CONTINENT", "op": "is", "value": "North America"}]}},
+  {"name": "filter", "args": {"layer": "Populated places", "conditions": [{"field": "CONTINENT", "op": "is", "value": "North America"}, {"field": "POP_MAX", "op": "at_least", "value": "500000"}]}},
+  {"name": "add_raster_values", "args": {"raster": "January mean temperature", "points": "Populated places"}},
+  {"name": "filter", "args": {"layer": "Populated places", "conditions": [{"field": "CONTINENT", "op": "is", "value": "North America"}, {"field": "POP_MAX", "op": "at_least", "value": "500000"}, {"field": "January mean temperature", "op": "at_most", "value": "-15"}]}}
+ ]}

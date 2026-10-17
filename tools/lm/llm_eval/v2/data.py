@@ -32,6 +32,11 @@ SOURCES = {
 }
 
 
+# Layers registered at run time by another harness (the puzzles' ``pro_e2e.py``): name -> a
+# function returning the attribute rows (values as text). Consulted before ``SOURCES``.
+REGISTERED: dict = {}
+
+
 def _text(v) -> str | None:
     if v is None:
         return None
@@ -43,6 +48,8 @@ def _text(v) -> str | None:
 @functools.cache
 def rows(layer: str) -> tuple[dict, ...]:
     """The layer's attribute rows (values as text; ``()`` for rasters and drawn areas)."""
+    if layer in REGISTERED:
+        return tuple(REGISTERED[layer]())
     src = SOURCES.get(layer)
     if src is None:
         return ()

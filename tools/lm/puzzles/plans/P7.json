@@ -1,0 +1,275 @@
+{
+ "puzzle": "P7",
+ "limit": 10,
+ "layers": [
+  {
+   "name": "Populated places",
+   "path": "/Volumes/LaCie/data/layeredmap-puzzles/naturalearth/ne_10m_populated_places/ne_10m_populated_places.shp"
+  },
+  {
+   "name": "Countries",
+   "path": "/Volumes/LaCie/data/layeredmap-puzzles/naturalearth/ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp"
+  },
+  {
+   "name": "Boundary lines",
+   "path": "/Volumes/LaCie/data/layeredmap-puzzles/naturalearth/ne_10m_admin_0_boundary_lines_land/ne_10m_admin_0_boundary_lines_land.shp"
+  },
+  {
+   "name": "Rivers",
+   "path": "/Volumes/LaCie/data/layeredmap-puzzles/naturalearth/ne_10m_rivers_lake_centerlines/ne_10m_rivers_lake_centerlines.shp"
+  },
+  {
+   "name": "Annual precipitation",
+   "path": "/Volumes/LaCie/data/layeredmap-puzzles/worldclim/wc2.1_10m_bio_12.tif"
+  },
+  {
+   "name": "July mean temperature",
+   "path": "/Volumes/LaCie/data/layeredmap-puzzles/worldclim/wc2.1_10m_tavg_07.tif"
+  }
+ ],
+ "steps": [
+  {
+   "name": "join_by_location",
+   "args": {
+    "layer": "Populated places",
+    "areas": "Countries",
+    "fields": "CONTINENT,POP_EST"
+   }
+  },
+  {
+   "name": "filter",
+   "args": {
+    "layer": "Populated places",
+    "conditions": [
+     {
+      "field": "CONTINENT",
+      "op": "is",
+      "value": "South America"
+     }
+    ]
+   }
+  },
+  {
+   "name": "add_raster_values",
+   "args": {
+    "raster": "Annual precipitation",
+    "points": "Populated places"
+   }
+  },
+  {
+   "name": "filter",
+   "args": {
+    "layer": "Populated places",
+    "conditions": [
+     {
+      "field": "CONTINENT",
+      "op": "is",
+      "value": "South America"
+     },
+     {
+      "field": "Annual precipitation",
+      "op": "at_least",
+      "value": "1500"
+     }
+    ]
+   }
+  },
+  {
+   "name": "filter",
+   "args": {
+    "layer": "Rivers",
+    "conditions": [
+     {
+      "field": "scalerank",
+      "op": "at_most",
+      "value": "4"
+     }
+    ]
+   }
+  },
+  {
+   "name": "nearest_distance",
+   "args": {
+    "layer": "Populated places",
+    "other": "Rivers"
+   }
+  },
+  {
+   "name": "filter",
+   "args": {
+    "layer": "Populated places",
+    "conditions": [
+     {
+      "field": "CONTINENT",
+      "op": "is",
+      "value": "South America"
+     },
+     {
+      "field": "Annual precipitation",
+      "op": "at_least",
+      "value": "1500"
+     },
+     {
+      "field": "km to nearest river",
+      "op": "at_most",
+      "value": "10"
+     }
+    ]
+   }
+  },
+  {
+   "name": "add_raster_values",
+   "args": {
+    "raster": "July mean temperature",
+    "points": "Populated places"
+   }
+  },
+  {
+   "name": "filter",
+   "args": {
+    "layer": "Populated places",
+    "conditions": [
+     {
+      "field": "CONTINENT",
+      "op": "is",
+      "value": "South America"
+     },
+     {
+      "field": "Annual precipitation",
+      "op": "at_least",
+      "value": "1500"
+     },
+     {
+      "field": "km to nearest river",
+      "op": "at_most",
+      "value": "10"
+     },
+     {
+      "field": "July mean temperature",
+      "op": "at_most",
+      "value": "18"
+     }
+    ]
+   }
+  },
+  {
+   "name": "buffer",
+   "args": {
+    "layer": "Populated places",
+    "distance": "30 km",
+    "merge": false
+   }
+  },
+  {
+   "name": "whats_inside",
+   "args": {
+    "area": {
+     "layer": "#10",
+     "field": "name",
+     "value": "Encarnación"
+    },
+    "layer": "Countries"
+   }
+  },
+  {
+   "name": "whats_inside",
+   "args": {
+    "area": {
+     "layer": "#10",
+     "field": "name",
+     "value": "Guaira"
+    },
+    "layer": "Countries"
+   }
+  },
+  {
+   "name": "whats_inside",
+   "args": {
+    "area": {
+     "layer": "#10",
+     "field": "name",
+     "value": "Eldorado"
+    },
+    "layer": "Countries"
+   }
+  },
+  {
+   "name": "whats_inside",
+   "args": {
+    "area": {
+     "layer": "#10",
+     "field": "name",
+     "value": "Hohenau"
+    },
+    "layer": "Countries"
+   }
+  },
+  {
+   "name": "whats_inside",
+   "args": {
+    "area": {
+     "layer": "#10",
+     "field": "name",
+     "value": "Foz do Iguaçu"
+    },
+    "layer": "Countries"
+   }
+  },
+  {
+   "name": "whats_inside",
+   "args": {
+    "area": {
+     "layer": "#10",
+     "field": "name",
+     "value": "Ciudad del Este"
+    },
+    "layer": "Countries"
+   }
+  },
+  {
+   "name": "whats_inside",
+   "args": {
+    "area": {
+     "layer": "#10",
+     "field": "name",
+     "value": "Posadas"
+    },
+    "layer": "Countries"
+   }
+  },
+  {
+   "name": "filter",
+   "args": {
+    "layer": "Populated places",
+    "conditions": [
+     {
+      "field": "CONTINENT",
+      "op": "is",
+      "value": "South America"
+     },
+     {
+      "field": "Annual precipitation",
+      "op": "at_least",
+      "value": "1500"
+     },
+     {
+      "field": "km to nearest river",
+      "op": "at_most",
+      "value": "10"
+     },
+     {
+      "field": "July mean temperature",
+      "op": "at_most",
+      "value": "18"
+     },
+     {
+      "field": "POP_EST",
+      "op": "above",
+      "value": "100000000"
+     }
+    ]
+   }
+  }
+ ],
+ "note": "Steps 11-17 read the countries within 30 km of each remaining city from the cards (no action turns them into a field); step 18 keeps cities in countries of more than 100 million."
+}

@@ -39,10 +39,11 @@ import tools as toolmod  # noqa: E402
 REFS = [f"#{i}" for i in range(1, 7)]
 POINT_STATS = ["count", "sum", "mean", "median", "min", "max"]
 RASTER_STATS = ["mean", "median", "min", "max", "sum", "std"]
-OPS = ["is", "is_not", "contains", "starts_with", "ends_with", "is_empty", "above", "below", "between", "before", "after", "any_of"]
+OPS = ["is", "is_not", "contains", "starts_with", "ends_with", "is_empty", "above", "below", "at_least", "at_most", "between", "before", "after", "any_of"]
 DISPLAY = ["filter", "color_by", "view_data", "zoom_to"]
 META = ["ask_user", "cannot_do"]
-NEW_LAYER_ACTIONS = {"count_in", "buffer", "summarize_each"}
+# Actions whose step makes a new layer ("#k"); the others change their layer in place or make a card.
+NEW_LAYER_ACTIONS = {"count_in", "buffer", "summarize_each", "split_parts", "find_where", "keep_inside", "remove_inside"}
 
 S = {"type": "string"}
 
@@ -94,26 +95,52 @@ DESCRIPTIONS = {
     ),
     "summarize_here": "Summarize a raster inside one area (stat default mean). A category raster gives class shares.",
     "summarize_drawn": "Summarize a raster in an area the user will draw (omit area), or in a drawn area.",
-    "add_raster_values": "Add the raster's value at each point as a field named after the raster (Heat: 'Heat'). Changes the points layer; no new layer.",
+    "add_raster_values": "Add the raster's value at each (shown) point as a field named after the raster (Heat: 'Heat'); hidden points stay blank. Changes the points layer; no new layer.",
     "rank_by_value": "Rank a layer's objects by a numeric field (highest first).",
     "calculate_field": (
         "Add a number field calculated from two values: a (a number field) op (add|subtract|multiply|divide) b "
         "(a number field or a number), e.g. density = population divide area_km2. Blank inputs or division by "
-        "zero give blanks. Adds the field 'name' (default 'a op b') to the layer."
+        "zero give blanks. Adds the field 'name' (default 'a op b') to the layer; no new layer."
     ),
     "split_parts": "Split a line or area layer's multi-part features into one feature per part (e.g. separate islands). New layer with a 'part' field.",
     "find_where": (
         "Find the areas where every raster condition holds (e.g. elevation at least 3000 and rainfall at least 500). "
-        "raster: the first raster; conditions: [{field: <raster name>, op: above (at least) | below (at most) | between, value, value2}]. "
-        "New area layer, largest area first, with area_km2."
+        "raster: the first raster; conditions: [{field: <raster name>, op: at_least | at_most | between, value, value2}] in the raster's unit. "
+        "New area layer, one area per connected group of cells, largest first, with fields name, area_km2, cells and '<raster> mean'."
     ),
-    "keep_inside": "Keep only the part of a layer inside an area layer's areas (clip). New layer.",
-    "remove_inside": "Remove the part of a layer inside an area layer's areas (erase; 'away from', 'outside'). New layer.",
-    "nearest_distance": "Add to each object of a layer the geodesic distance in km to the nearest object of another layer (other), and that object's name. Adds fields 'km to nearest <other>' and 'nearest <other>'.",
-    "nearest_other": "Add to each object the distance in km to the nearest other object of the same layer (isolation), and its name.",
-    "join_by_location": "Add to each object of a layer the details (fields) of the area it lies in (spatial join): layer, areas, optional fields (comma list; all by default).",
-    "add_measurements": "Add area_km2 and perimeter_km (areas), length_km (lines), and longitude/latitude (a point on each object) as fields.",
+    "keep_inside": "Keep only the part of a layer inside an area layer's (shown) areas (clip). New layer with the same fields (an area_km2 field is copied, not recomputed).",
+    "remove_inside": "Remove the part of a layer inside an area layer's (shown) areas (erase; 'away from', 'outside'). New layer with the same fields.",
+    "nearest_distance": (
+        "Add to each object of a layer the geodesic distance in km to the nearest (shown) object of another layer (other), and that "
+        "object's name. Adds fields 'km to nearest <other, singular>' and 'nearest <other, singular>' (other Rivers: 'km to nearest river'). "
+        "Changes the layer; no new layer."
+    ),
+    "nearest_other": (
+        "Add to each object the distance in km to the nearest other object of the same layer (isolation), and its name: fields "
+        "'km to nearest other <layer, singular>' ('km to nearest other hospital'). Only the shown objects count as others, so run it "
+        "before filtering that layer. Changes the layer; no new layer."
+    ),
+    "join_by_location": (
+        "Add to each object of a layer the fields of the area it lies in (spatial join; lines and areas use a point on them): layer, "
+        "areas, fields (comma list of the areas' fields; all by default). The new fields keep the areas' field names. Changes the layer; no new layer."
+    ),
+    "add_measurements": (
+        "Add area_km2 and perimeter_km (areas), length_km (lines), and longitude and latitude (degrees, of a point on each object) as "
+        "fields. A field name the layer already has gets ' 2' (area_km2 2). Changes the layer; no new layer."
+    ),
 }
+
+# In the submit_plan step schema, calculate_field's `a` and `b` are `first` and `second`: one
+# step object holds every action's inputs, and a property name that is the start of another
+# (`a` of `area`/`areas`, `b` of `band`) was never produced by GLM 5.3 Flash through its provider's
+# constrained decoding (it wrote `area: {...}` instead), in 61 of 61 calculate_field steps
+# (tools/lm/puzzles results, 2026-10-17); with `first`/`second` it used them in 64 of 64.
+SUBMIT_RENAMES = {"first": "a", "second": "b"}
+SUBMIT_CALCULATE = (
+    "Add a number field calculated from two values: first (a number field) op (add|subtract|multiply|divide) second "
+    "(a number field or a number), e.g. density = population divide area_km2. Blank inputs or division by zero give "
+    "blanks. Adds the field 'name' (default 'first op second') to the layer; no new layer."
+)
 
 OBJ_NOTE = "One object: {layer, field, value} with value as stored (resolve_feature finds it); omit field and value for the selected object or a drawn area."
 
@@ -257,9 +284,12 @@ def submit_plan_tools(context: str, with_resolve: bool = True) -> list[dict]:
     for a in table:
         ins = [f"{r}{'?' if k.endswith('?') else ''}" for r, k in a["roles"]] + [f"{p}?" for p in action_params(a["id"], stats) if p not in required_of(a)]
         ins += [p for p in action_params(a["id"], stats) if p in required_of(a)]
+        if a["id"] == "calculate_field":
+            lines.append(f"- calculate_field(layer, first, op, second, name?): {SUBMIT_CALCULATE}")
+            continue
         lines.append(f"- {a['id']}({', '.join(ins)}): {DESCRIPTIONS[a['id']]}")
     lines += [
-        "- filter(layer, conditions): show only objects meeting all conditions; changes the layer, no new layer.",
+        "- filter(layer, conditions): show only objects meeting all conditions (it replaces the layer's earlier filter, so repeat earlier conditions to keep them); changes the layer, no new layer. Ops: is, is_not, contains, starts_with, ends_with, is_empty, above (>), below (<), at_least (>=), at_most (<=), between (inclusive), before, after, any_of.",
         "- color_by(layer, field) / view_data(layer) / zoom_to(layer, field?, value?): only when asked for.",
         "- ask_user(question, choices?): one question, only when needed. Alone in the plan.",
         "- cannot_do(reason): the tools can't answer. Alone in the plan.",
@@ -280,11 +310,11 @@ def submit_plan_tools(context: str, with_resolve: bool = True) -> list[dict]:
         "band": param_schema("band", "summarize_each", stats),
         "stat": {"type": "string", "enum": sorted(set(POINT_STATS) | set(RASTER_STATS)), "description": "count_in: count|sum|mean|median|min|max; summarize_*: mean|median|min|max|sum|std"},
         "field": S,
-        "other": {"type": "string", "enum": L["vector"]},
+        "other": {"type": "string", "enum": L["vector"], "description": "nearest_distance: the layer to measure to"},
         "fields": {"type": "string", "description": "join_by_location: comma list of the areas' fields to add (all by default)"},
-        "a": S,
+        "first": {"type": "string", "description": "calculate_field: the first value, a number field of the layer (first op second)"},
         "op": {"type": "string", "enum": ["add", "subtract", "multiply", "divide"]},
-        "b": {"type": "string", "description": "calculate_field: a number field or a number"},
+        "second": {"type": "string", "description": "calculate_field: the second value, a number field or a number"},
         "name": {"type": "string", "description": "calculate_field: the new field's name"},
         "conditions": {"type": "array", "items": condition_schema()},
         "value": S,
@@ -293,7 +323,7 @@ def submit_plan_tools(context: str, with_resolve: bool = True) -> list[dict]:
         "reason": S,
     }
     desc = ("Submit the whole plan at once: the steps in order. Nothing runs until the user approves it. "
-            "A step that makes a new layer (count_in, buffer, summarize_each) is referred to by later steps as \"#k\" "
+            "A step that makes a new layer (" + ", ".join(sorted(NEW_LAYER_ACTIONS)) + ") is referred to by later steps as \"#k\" "
             "(k = its position, from 1). Steps:\n" + "\n".join(lines))
     tools = [fn("submit_plan", desc, {"steps": {"type": "array", "minItems": 1, "items": {"type": "object", "properties": step_props, "required": ["action"], "additionalProperties": False}}}, ["steps"])]
     if with_resolve:
@@ -305,13 +335,18 @@ DESIGNS = {"per_action": per_action_tools, "submit_plan": submit_plan_tools}
 
 
 def steps_to_calls(steps) -> list[dict]:
-    """submit_plan steps -> canonical calls {name, args}."""
+    """submit_plan steps -> canonical calls {name, args}. calculate_field's ``first`` and ``second``
+    become the runner's ``a`` and ``b``."""
     out = []
     for s in steps if isinstance(steps, list) else []:
         if not isinstance(s, dict):
             continue
         s = dict(s)
         name = str(s.pop("action", "") or "")
+        for new, old in SUBMIT_RENAMES.items():
+            if new in s:
+                v = s.pop(new)
+                s.setdefault(old, v)
         out.append({"name": name, "args": s})
     return out
 
