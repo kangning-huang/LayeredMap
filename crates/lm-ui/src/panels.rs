@@ -490,11 +490,17 @@ pub fn inspector(shell: &mut Shell, ui: &mut Ui, map: Rect) {
     // What the card shows: one object, several, a raster cell, or the layer.
     let rows = shell.ws.selection.rows_in(id);
     let pixel = shell.ws.selection.pixel.clone();
-    let (title, subtitle) = match (rows.as_slice(), &pixel) {
-        ([row], _) => crate::inspect::object_header(shell, &l, *row),
-        ([], Some(p)) => (format!("{:.4}°, {:.4}°", p.lat, p.lon), format!("{} · cell", l.display_name)),
-        ([], None) => (l.display_name.clone(), l.profile.subtitle()),
-        (many, _) => (format!("{} selected", group_thousands(many.len() as u64)), l.display_name.clone()),
+    // While a search runs (WP3.10) the panel stays the layer's, listing the matches.
+    let finding = shell.find.active_for(id);
+    let (title, subtitle) = if finding {
+        (l.display_name.clone(), l.profile.subtitle())
+    } else {
+        match (rows.as_slice(), &pixel) {
+            ([row], _) => crate::inspect::object_header(shell, &l, *row),
+            ([], Some(p)) => (format!("{:.4}°, {:.4}°", p.lat, p.lon), format!("{} · cell", l.display_name)),
+            ([], None) => (l.display_name.clone(), l.profile.subtitle()),
+            (many, _) => (format!("{} selected", group_thousands(many.len() as u64)), l.display_name.clone()),
+        }
     };
     egui::Area::new(egui::Id::new("lm-inspector")).order(egui::Order::Middle).fixed_pos(pos).show(ui.ctx(), |ui| {
         frame(&t).show(ui, |ui| {
@@ -516,8 +522,13 @@ pub fn inspector(shell: &mut Shell, ui: &mut Ui, map: Rect) {
                     }
                 });
             });
-            let object_view = !rows.is_empty() || pixel.is_some();
-            if !object_view {
+            let object_view = (!rows.is_empty() || pixel.is_some()) && !finding;
+            // Find in a layer: at the top of the layer's panel, above the tabs.
+            if !object_view && l.profile.kind != lm_core::model::LayerKind::Raster && shell.flags.shows(3) {
+                ui.add_space(8.0);
+                crate::find_ui::bar(shell, ui, &t, &l);
+            }
+            if !object_view && !finding {
                 ui.add_space(4.0);
                 ui.horizontal(|ui| {
                     let tabs: &[(u8, &str)] = if shell.flags.shows(3) {
@@ -531,7 +542,7 @@ pub fn inspector(shell: &mut Shell, ui: &mut Ui, map: Rect) {
                         }
                     }
                 });
-            } else if rows.len() > 1 {
+            } else if rows.len() > 1 && !finding {
                 // The selection chip: "3 selected · Clear".
                 ui.horizontal(|ui| {
                     ui.label(RichText::new(format!("{} selected", group_thousands(rows.len() as u64))).size(CAPTION));
@@ -546,7 +557,9 @@ pub fn inspector(shell: &mut Shell, ui: &mut Ui, map: Rect) {
                 .min_scrolled_height((max_h - 90.0).min(560.0))
                 .auto_shrink([false, true])
                 .show(ui, |ui| {
-                    if let Some((cid, field)) = shell.compare_peers.clone().filter(|(c, _)| *c == id) {
+                    if finding {
+                        crate::find_ui::results(shell, ui, &t, &l);
+                    } else if let Some((cid, field)) = shell.compare_peers.clone().filter(|(c, _)| *c == id) {
                         ranking(shell, ui, &t, &l, field.as_deref(), rows.first().copied());
                         if ui.link("Back").clicked() {
                             shell.compare_peers = None;

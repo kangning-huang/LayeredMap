@@ -166,6 +166,9 @@ pub struct Workspace {
     /// Hit-testing indexes per layer and data revision.
     hits: HashMap<(LayerId, u32), Arc<lm_mapview::hit::HitIndex>>,
     indexing: HashMap<LayerId, String>,
+    /// Find-in-a-layer indexes (WP3.10) per layer and data revision, built on first use.
+    finds: HashMap<LayerId, (u32, Arc<lm_jobs::find::FindIndex>)>,
+    finding: HashMap<LayerId, u32>,
 }
 
 /// Drawing state derived from a layer's data (WP3.5, WP3.7).
@@ -1172,11 +1175,48 @@ impl Workspace {
         format!("{}|{:?}|{:?}", l.profile.data_rev, l.filter, l.roles)
     }
 
+    /// A layer's find index for its current data; the first call starts building it in the
+    /// background and returns None until it is ready.
+    pub fn find_index(&mut self, id: LayerId) -> Option<Arc<lm_jobs::find::FindIndex>> {
+        let rev = self.doc.layer(id)?.profile.data_rev;
+        if let Some((r, ix)) = self.finds.get(&id)
+            && *r == rev
+        {
+            return Some(ix.clone());
+        }
+        if self.finding.get(&id) == Some(&rev) {
+            return None;
+        }
+        let data = self.data.get(&(id, rev)).cloned()?;
+        let LayerData::Vector(ds) = &data.data else { return None };
+        let ds = ds.clone();
+        self.finding.insert(id, rev);
+        self.spawn_job(
+            None,
+            Box::new(move |w: &mut Workspace| {
+                if w.finding.get(&id) == Some(&rev) {
+                    w.finding.remove(&id);
+                }
+            }),
+            move || {
+                let ix = Arc::new(lm_jobs::find::FindIndex::build(&ds));
+                Box::new(move |w: &mut Workspace| {
+                    if w.finding.get(&id) == Some(&rev) {
+                        w.finding.remove(&id);
+                    }
+                    w.finds.insert(id, (rev, ix));
+                })
+            },
+        );
+        None
+    }
+
     /// Builds insight indexes in the background for layers whose data, filter or roles changed.
     fn index_layers(&mut self) {
         let wanted: Vec<(LayerId, String, lm_core::document::DocLayer)> =
             self.doc.layers.iter().filter(|l| l.profile.kind != LayerKind::Raster).map(|l| (l.id, Self::index_key(l), l.clone())).collect();
         self.indexes.retain(|id, _| wanted.iter().any(|(w, _, _)| w == id));
+        self.finds.retain(|id, _| wanted.iter().any(|(w, _, _)| w == id));
         for (id, key, layer) in wanted {
             if self.indexes.get(&id).is_some_and(|(k, _)| *k == key) || self.indexing.get(&id) == Some(&key) {
                 continue;

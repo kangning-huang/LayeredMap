@@ -85,7 +85,7 @@ LayeredMap ships in two tiers (owner decision, 2026-10-16): Free, an open-source
 | Who | People with no GIS training who need to examine map data (the first audience) | The same people, when they need answers the map alone doesn't give |
 | Code | This repository, Apache-2.0 | A closed module built into the official app; open-source builds have no assistant |
 | Phases | 0–3, 5, 6 | Phase 7, on top of the Phase 4 tool library |
-| Analysis | None exposed: no tool menus, composer or analysis buttons. Display-only suggestions (Color by a value, Filter, Compare, Change colors) stay on cards | Through the Ask box only; the model calls Phase 4's vetted actions |
+| Analysis | None exposed: no tool menus, composer or analysis buttons. Display-only suggestions (Color by a value, Filter, Compare, Change colors) stay on cards. Joining a table to places by a shared column is Free (WP3.11): it is the most common GIS task, and it creates no new geometry | Through the Ask box only; the model calls Phase 4's vetted actions |
 | Model | None | Hosted by LayeredMap behind its assistant service; no bring-your-own key for now |
 
 Rules that follow from the tiers:
@@ -461,9 +461,26 @@ The composer replaces the lower inspector; the card header stays visible.
 - **Applying** turns the filter into a chip ("Type is Primary ×").
 - **Keep as new layer** asks: Live view (follows the source) or Snapshot.
 
+### Find in a layer
+The layer inspector opens with one search field above its tabs. It looks and behaves like the map's search box, scoped to this layer.
+- Placeholder "Find in [districts]", a magnifier on the left and, while text is typed, a count on the right ("12 found") and a × that clears it.
+- Every field is searched, not just names: type "Residential", "2019" or "FRA" and the records holding that value are selected on the map as you type.
+- Under the field, up to eight matches: each record's title, then the field that matched with the match in bold ("land_use: **Resid**ential"). Clicking one opens its card. Return zooms to all matches. Esc clears the search and the selection.
+- No results: "No [districts] contain “xyz”." The field stays and nothing else on the panel moves.
+
+### Joining a table
+The join should ask nothing when the answer is clear, and ask at most one question when it is not.
+1. **Open the table.** It can be dropped in, opened, or dragged onto a layer row. A table without coordinates is never put on the map as a guess.
+2. **LayeredMap finds the shared column.** It tries each table column against each layer field, with the normalization ladder from WP3.11, and keeps the pairing that matches most.
+3. **Clear winner: it joins.** At least 80% of keys match, 20 points ahead of the next pairing. The card says what happened in one line ("Joined population.csv to districts by name: 16 of 17 matched"), and the layer is coloured by the first new measure. Undo is one click.
+4. **No clear winner: one question.** "Which places does population.csv describe?" with up to three choices, each showing its pairing and match count ("district ↔ name · 15 of 17"), and "None of these", which keeps the table as a table.
+5. **Leftovers are shown, never hidden.** Unmatched rows are listed with near-miss suggestions to accept in one click. Places without data show as No data.
+
+The joined fields behave like the layer's own fields in cards, insight rows, the Style tab, filters, the table and search. In Details they are grouped under the table's name, with Separate to undo the join at any time.
+
 ### Keyboard
 - **Files and history:** ⌘O open, ⌘S save, ⌘Z undo, ⇧⌘Z redo, ⌘E export a map image.
-- **Finding:** ⌘F search, ⌘K find an action, ⌘L layer shelf, ⌘T data table, ⌘0 zoom to all data.
+- **Finding:** ⌘F search (Find in a layer when a layer is selected), ⌘K find an action, ⌘L layer shelf, ⌘T data table, ⌘0 zoom to all data.
 - **Moving between regions:** Tab and ⇧Tab follow toolbar → shelf → map → inspector → drawer. F6 jumps between regions.
 - **Return** triggers the panel's primary button.
 - **Esc** works as a ladder, one step per press:
@@ -962,8 +979,8 @@ There is nothing to roll back yet. If no strategy passes, change stack and repea
 - Return to `gate-1-pass` if a P0 format or the coordinator fails.
 - A failing P1 format (GeoPackage, Excel) is switched off by its flag and moved to Phase 6, under the cutting rule. It does not fail the gate.
 
-## Phase 3 — Inspect, select, and insight cards
-**Goal:** click anything and immediately understand three things: what it is, where it stands among its peers, and how to make the map show it clearly. **Effort:** 3 effort-weeks. **Scope:** P0 selection, cards, insight, field roles, style and undo; P1 table drawer and filters. Display-only actions ship here: Color by a value, Filter, Compare with other [Districts], Change colors and range, Show only values above…, Show where values are like this. Actions that compute new data wait for Phase 4.
+## Phase 3 — Inspect, select, join, and insight cards
+**Goal:** click anything and immediately understand three things: what it is, where it stands among its peers, and how to make the map show it clearly. **Effort:** 4.5 effort-weeks (3, plus 1.5 for WP3.10 and WP3.11, added 2026-10-17). **Scope:** P0 selection, cards, insight, field roles, style, undo, find in a layer and joining a table; P1 table drawer and filters. Display-only actions ship here: Color by a value, Filter, Compare with other [Districts], Change colors and range, Show only values above…, Show where values are like this. Actions that compute new data wait for Phase 4.
 
 ### Work packages
 **WP3.1 Selection** (P0)
@@ -1017,6 +1034,22 @@ There is nothing to roll back yet. If no strategy passes, change stack and repea
 **WP3.9 Search your data** (P1)
 - Extend toolbar search to the Your data group: layer names, and values in each layer's first five text fields. Choosing a result selects the object and opens its card.
 
+**WP3.10 Find in a layer** (P0, added 2026-10-17)
+- A search field at the top of the layer inspector, above the tabs: the same rounded field, magnifier and type as the toolbar search, with the placeholder "Find in [districts]". ⌘F focuses it when a layer is selected. See *Find in a layer*.
+- Typing matches every field of every record: text case- and accent-insensitively; numbers as they are displayed ("2019", "1,250"). Results update as you type (120 ms debounce). An index is built in the background, so 1,000,000 records answer in 100 ms or less.
+- Matches are selected on the map as you type. The field shows the count ("12 found"), and a list of up to eight shows each match's title and the matched field with the match in bold. Return zooms to all matches; clicking a row opens that record's card; Esc clears the search and the selection.
+- The table drawer's search uses the same matcher, so a search gives the same rows in both places.
+
+**WP3.11 Join a table to places** (P0, added 2026-10-17)
+- Opening a table that has no coordinates (CSV, Excel, a DBF on its own) while area or point layers are open tries a join automatically. A table opened first waits on the shelf as "Not on the map yet" and joins when a matching layer arrives. Dragging the table onto a layer row joins it to that layer. See *Joining a table*.
+- Key detection in `lm-jobs::join` is pure and deterministic: every pairing of a table column with a layer field (ID, Name, Category or code-like text) is scored by the share of the table's distinct keys found in the layer and the share of the layer's records that get data.
+- A normalization ladder, recorded with the join: exact match; then trimmed, case-folded and space-collapsed; then accents and punctuation removed ("Côte d'Ivoire" = "Cote dIvoire"); then codes without leading zeros or ".0" ("06037" = "6037"); then bundled crosswalks (country names, ISO 3166 alpha-2, alpha-3 and numeric codes, US state names, abbreviations and FIPS codes, Chinese provinces in English and Chinese).
+- The join is automatic, with no question, when the best pairing matches at least 80% of the table's keys, beats the next by at least 20 points, and needs nothing looser than a crosswalk. Otherwise one question card offers the top three pairings with their match counts, plus "None of these". Near-misses (edit distance 2 or less) are never matched automatically; they are offered afterwards in one click: "3 names look like typos: Shangai → Shanghai… Use these?"
+- Several rows per key: when a date or year column varies within a key, the latest is used and a chip says "Showing 2023 · Change". Otherwise counts are summed and other values averaged per key, and a chip says so ("Summed per district, 3 rows each · Change"). Nothing is aggregated silently.
+- The result: the layer gains the table's fields, grouped in Details under "From population.csv". No file is written and the sources are untouched. The join is one undo step ("Join population.csv"), is saved in the document and is applied again on open. A single-colour layer is coloured by the first joined measure, with "Keep the original colors" on the card.
+- A result card in the inspector: "Joined population.csv to districts by name: 16 of 17 districts matched. Show the 1 not matched · Undo." Records without data are hatched as No data on the map and in the legend. Unmatched table rows are listed with any near-miss suggestions. The layer row on the shelf shows a link chip (+ population.csv) whose menu has Separate.
+- Performance: a 1,000,000-row table against 100,000 records joins in under 1 s, as a background job with progress; the map never stalls.
+
 ### Gate 3
 **Automated**
 - Property tests for ranks.
@@ -1050,6 +1083,8 @@ There is nothing to roll back yet. If no strategy passes, change stack and repea
 - A card appears within 100 ms of a click on F1, and within 200 ms on V7.
 - Both students find the hottest district and explain why, without help.
 - Undo and redo round trips are exact.
+- Fixtures J1–J3 join with no question; J4 asks exactly one; every match count equals `pandas.merge` on the same normalized keys (`validation/gate-3/check_join.py`).
+- You join a table of your own to a layer with no more than one click after opening it, and Find in a layer finds a record by any of its values.
 
 **Rollback**
 - Return to `gate-2-pass` if selection, cards or insight fail.
@@ -1469,6 +1504,11 @@ Every gate test names its fixtures by ID. Small fixtures live in the repository 
 | R6 | Raster with scale and offset, and −9999 only at the edges, with no NoData tag | NoData assumption, decoded values | Hand-made |
 | R7 | A geographic-coordinate raster spanning a wide latitude range | Unequal cell areas in weighting | Generated |
 | K1 | Teaching set: V1 districts plus a July mean temperature field you compute in Earth Engine, a copy of R1 with its unit set to °C, and school points (a variant of T1), with your expected answers | Phases 3–5 validation | You |
+| J1 | The bundled countries plus a World Bank-style CSV keyed by ISO3 codes and by names with variants (Côte d’Ivoire, "Korea, Rep.") | Join with no question; crosswalks | Generated |
+| J2 | US counties with 5-digit FIPS codes, and a CSV whose codes lost their leading zeros (6037 for 06037) | Code normalization | Generated |
+| J3 | V1 districts plus a table with one row per district per year, 2019–2023 | Several rows per key: the latest year, with a chip | Generated |
+| J4 | A layer with two plausible keys (a name and a numeric ID) and a table that matches both partly | Exactly one question card | Hand-built |
+| J5 | Chinese provinces with English names, and a table keyed by Chinese names, with three misspellings | Bilingual crosswalk; near-miss suggestions | Hand-built |
 | N1 | 20 points and 3 areas, with boundary points, an overlap and a zero-count area | Count rules | Hand-checkable |
 | N2 | Counts in polygons with holes and multipolygons | Count rules | Hand-checkable |
 | N3 | A 4 × 4 raster with a polygon covering half cells and two NoData cells | Area-weighted mean and coverage | Hand-computed |

@@ -371,6 +371,21 @@ fn phase3_details_tab() {
     h.snapshot("phase3_details_tab");
 }
 
+/// Find in a layer (WP3.10): "pu" selects every matching district on the map and lists
+/// them with the matched field in bold.
+#[test]
+fn phase3_find() {
+    let mut h = phase3(&["V1/districts.geojson"], SHANGHAI, |s| {
+        let id = s.ws.doc.layers[0].id;
+        s.ws.select_layer(id);
+        s.command(&egui::Context::default(), crate::Command::Find("pu".into()));
+    });
+    settle(&mut h);
+    let (n, selected) = h.state().as_ref().map(|s| (s.find.hits.len(), s.ws.selection.features.len())).unwrap();
+    assert!(n > 0 && selected == n, "{n} found, {selected} selected");
+    h.snapshot("phase3_find");
+}
+
 /// Selection is shared: an object selected (as a table row click does) is highlighted on the map,
 /// and a map click selects the object the table then shows.
 #[test]

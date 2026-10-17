@@ -182,12 +182,21 @@ pub fn drawer(shell: &mut Shell, ui: &mut Ui, map: egui::Rect, left: f32, right:
     if shell.table.key != key && shell.table.computing.as_ref().is_none_or(|(k, _)| *k != key) {
         // Worked out off the interface thread: sorting a million rows takes a few hundred ms.
         let (tx, rx) = std::sync::mpsc::channel();
-        let (ds2, mask2, sort, q) = (ds.clone(), mask.clone(), shell.table.sort, shell.table.search.trim().to_lowercase());
+        let (ds2, mask2, sort, q) = (ds.clone(), mask.clone(), shell.table.sort, lm_jobs::find::fold(shell.table.search.trim()));
         let wake = shell.ws.wake.clone();
         let spawned = std::thread::Builder::new().name("lm-table".into()).spawn(move || {
             let mut rows = data::table_rows(&ds2, mask2.as_deref().map(|m| m.as_slice()), sort);
             if !q.is_empty() {
-                rows.retain(|r| (0..ds2.fields.len()).any(|f| data::cell_text(&ds2, *r, f).is_some_and(|v| v.to_lowercase().contains(&q))));
+                // The same matching as Find in a layer (WP3.10): accents and case ignored, numbers
+                // with or without separators.
+                rows.retain(|r| {
+                    (0..ds2.fields.len()).any(|f| {
+                        data::cell_text(&ds2, *r, f).is_some_and(|v| {
+                            let v = lm_jobs::find::fold(&v);
+                            v.contains(&q) || (v.contains(',') && v.replace(',', "").contains(&q))
+                        })
+                    })
+                });
             }
             let _ = tx.send(rows);
             if let Some(w) = wake {

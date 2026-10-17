@@ -221,7 +221,8 @@ impl eframe::App for App {
 /// `lon,lat,zoom` flies there; `click lon,lat` (or `shift-click lon,lat`) clicks the map there;
 /// `layer N` selects the shelf's n-th layer from the top; `tab N` shows an inspector tab;
 /// `table` toggles the table drawer; `preset N` applies a style preset; `esc` presses Esc;
-/// `basemap ID` switches the basemap (`auto`, `light`, `dark`, `satellite`, `offline`).
+/// `basemap ID` switches the basemap (`auto`, `light`, `dark`, `satellite`, `offline`);
+/// `find TEXT` finds in the selected layer.
 #[derive(Clone, Debug, PartialEq)]
 enum Step {
     Fly(f64, f64, f64),
@@ -244,6 +245,7 @@ impl Step {
             "preset" => Step::Other(Command::ApplyPreset(rest.trim().parse().ok()?)),
             "esc" => Step::Other(Command::Escape),
             "basemap" => Step::Other(Command::SetBasemap(rest.trim().to_string())),
+            "find" => Step::Other(Command::Find(rest.to_string())),
             "undo" => Step::Other(Command::Undo),
             "redo" => Step::Other(Command::Redo),
             _ => match nums(s).as_slice() {
