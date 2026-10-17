@@ -344,7 +344,8 @@ pub fn composer(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
     let Some(c) = shell.composer.as_ref() else { return };
     let kinds = companion_kinds(&c.action, l.profile.kind);
     let action = c.action.clone();
-    ui.label(RichText::new("Developer surface · assistant action").size(CAPTION).color(t.text_secondary));
+    let caption = if shell.pro { "Analysis" } else { "Developer surface · assistant action" };
+    ui.label(RichText::new(caption).size(CAPTION).color(t.text_secondary));
     ui.add_space(2.0);
     // The sentence with its tokens.
     ui.horizontal_wrapped(|ui| {

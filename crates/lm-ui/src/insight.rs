@@ -52,7 +52,7 @@ pub fn actions(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer, row: Opt
     let ctx = context(shell);
     // Analysis actions are never buttons (Product tiers): the free app shows display actions only;
     // the developer surface shows them too, to test what the assistant will call.
-    let opts = if shell.developer {
+    let opts = if shell.analysis_actions() {
         Options::developer(crate::analysis::DEV_PHASE.max(shell.flags.phase()))
     } else {
         Options::free(shell.flags.phase())
@@ -89,7 +89,7 @@ pub fn actions(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer, row: Opt
     }
     if let Some(a) = run {
         let analysis = lm_actions::registry().action(&a.action_id).is_some_and(|s| s.algorithm.is_some());
-        if analysis && shell.developer {
+        if analysis && shell.analysis_actions() {
             crate::analysis::open(shell, l.id, row, &a);
         } else {
             perform(shell, l.id, row, &a);

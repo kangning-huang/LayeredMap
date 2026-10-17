@@ -36,7 +36,15 @@ pub fn toolbar(shell: &mut Shell, ui: &mut Ui, rect: Rect, _system: System) {
     let painter = ui.painter_at(rect);
     painter.rect_filled(rect, 0.0, t.surface);
     painter.line_segment([rect.left_bottom(), rect.right_bottom()], Stroke::new(1.0, t.border));
-    painter.text(rect.left_center() + vec2(16.0, 0.0), Align2::LEFT_CENTER, "LayeredMap", semibold(theme::HEADLINE), t.text_primary);
+    let name =
+        painter.text(rect.left_center() + vec2(16.0, 0.0), Align2::LEFT_CENTER, "LayeredMap", semibold(theme::HEADLINE), t.text_primary);
+    if shell.pro {
+        // "Pro" as a small accent badge after the name.
+        let g = painter.layout_no_wrap("PRO".into(), semibold(10.0), t.on_accent);
+        let badge = Rect::from_min_size(pos2(name.right() + 6.0, rect.center().y - g.size().y / 2.0 - 2.0), g.size() + vec2(10.0, 4.0));
+        painter.rect_filled(badge, 4.0, t.accent);
+        painter.galley(badge.min + vec2(5.0, 2.0), g, t.on_accent);
+    }
 
     let width = (rect.width() * 0.34).clamp(280.0, 480.0);
     let search_rect = Rect::from_center_size(pos2(rect.center().x - width * 0.15, rect.center().y), vec2(width, 32.0));

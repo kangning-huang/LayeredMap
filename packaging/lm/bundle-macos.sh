@@ -2,6 +2,7 @@
 # Builds LayeredMap.app (and, with signing credentials, signs, notarizes and staples it).
 #
 #   packaging/lm/bundle-macos.sh [out-dir]
+#   LM_TIER=pro packaging/lm/bundle-macos.sh [out-dir]   # LayeredMap Pro.app
 #
 # Signing runs only when these are set (CI secrets; see docs/lm/signing.md):
 #   LM_SIGN_IDENTITY   "Developer ID Application: <name> (<team id>)" — in the keychain
@@ -17,7 +18,15 @@ build="${LM_BUILD_NUMBER:-0}"
 
 cargo build --release --locked -p layeredmap --manifest-path "$root/Cargo.toml"
 
-app="$out/LayeredMap.app"
+# The tier is the app (until accounts, Phase 7): Pro is its own bundle with its own id, so both
+# can be installed side by side; the app reads Contents/Resources/tier.
+tier="${LM_TIER:-free}"
+if [[ "$tier" == "pro" ]]; then
+  name="LayeredMap Pro"; bundle_id="app.layeredmap.pro"
+else
+  name="LayeredMap"; bundle_id="app.layeredmap.desktop"
+fi
+app="$out/$name.app"
 rm -rf "$app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 cp "$target_dir/release/layeredmap" "$app/Contents/MacOS/layeredmap"
@@ -27,14 +36,15 @@ cp "$root/assets/examples/populated_places.geojson" "$root/assets/examples/count
   "$root/assets/examples/elevation.tif" "$root/assets/examples/README.md" "$app/Contents/Resources/examples/"
 # The app icon (the Strata logo; tools/lm/make_app_icon.py builds it from design/logo).
 cp "$root/packaging/lm/AppIcon.icns" "$app/Contents/Resources/AppIcon.icns"
+echo "$tier" > "$app/Contents/Resources/tier"
 cat > "$app/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-  <key>CFBundleName</key><string>LayeredMap</string>
-  <key>CFBundleDisplayName</key><string>LayeredMap</string>
-  <key>CFBundleIdentifier</key><string>app.layeredmap.desktop</string>
+  <key>CFBundleName</key><string>${name}</string>
+  <key>CFBundleDisplayName</key><string>${name}</string>
+  <key>CFBundleIdentifier</key><string>${bundle_id}</string>
   <key>CFBundleExecutable</key><string>layeredmap</string>
   <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>CFBundlePackageType</key><string>APPL</string>
@@ -133,5 +143,5 @@ else
   echo "bundle-macos: no LM_SIGN_IDENTITY; ad-hoc signing (will warn on other Macs)" >&2
   codesign --force --sign - "$app"
 fi
-ditto -c -k --keepParent "$app" "$out/LayeredMap-${version}-${build}-macos-arm64.zip"
+ditto -c -k --keepParent "$app" "$out/${name// /-}-${version}-${build}-macos-arm64.zip"
 echo "bundle-macos: $app"

@@ -680,3 +680,26 @@ fn phase4_summarize_in_a_drawn_area() {
     let r = c.result.as_ref().expect("result");
     assert!(matches!(r.card.answer, lm_core::recipe::Answer::Number { value, .. } if value.is_finite()), "{:?}", r.card.answer);
 }
+
+/// LayeredMap Pro: the toolbar says Pro, and a layer's panel offers the analysis actions as
+/// buttons; the free app shows none of them.
+#[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+fn pro_offers_analysis_actions() {
+    use egui_kittest::kittest::Queryable as _;
+    for pro in [false, true] {
+        let mut h = phase3(&["../assets/examples/countries.geojson", "../assets/examples/populated_places.geojson"], WORLD, move |s| {
+            s.pro = pro;
+            let id = s.ws.doc.layers.iter().find(|l| l.display_name == "countries").map(|l| l.id);
+            if let Some(id) = id {
+                s.ws.select_layer(id);
+            }
+        });
+        settle(&mut h);
+        let offered = h.query_by_label("Count populated_places in each country").is_some();
+        assert_eq!(offered, pro, "pro = {pro}");
+        if pro {
+            h.snapshot("pro_layer_panel");
+        }
+    }
+}

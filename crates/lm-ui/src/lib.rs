@@ -196,6 +196,9 @@ pub struct Shell {
     /// The developer flag (`LM_DEV=1` or a debug build): shows assistant actions and the
     /// composer (Phase 4's developer surface).
     pub developer: bool,
+    /// LayeredMap Pro (the Pro app bundle, or `LM_TIER=pro`): the analysis actions are buttons
+    /// and open the composer. Until the assistant (Phase 7) exists this is how Pro asks.
+    pub pro: bool,
     /// A question being composed (developer surface).
     pub(crate) composer: Option<analysis::Composer>,
     /// "Summarize in an area I draw": the raster to summarize once the area is drawn.
@@ -229,6 +232,7 @@ impl Shell {
             last_map_size: egui::vec2(1280.0, 748.0),
             archive_url: None,
             developer: false,
+            pro: false,
             composer: None,
             after_drawing: None,
             find: find_ui::FindState::default(),
@@ -255,6 +259,16 @@ impl Shell {
             data_search: Default::default(),
             prefs,
         }
+    }
+
+    /// Whether analysis actions are offered: in Pro, and on the developer surface.
+    pub fn analysis_actions(&self) -> bool {
+        self.pro || self.developer
+    }
+
+    /// "LayeredMap" or "LayeredMap Pro".
+    pub fn app_name(&self) -> &'static str {
+        if self.pro { "LayeredMap Pro" } else { "LayeredMap" }
     }
 
     pub fn theme(&self) -> &Theme {

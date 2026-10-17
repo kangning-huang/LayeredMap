@@ -1442,6 +1442,7 @@ Candidates, in likely order:
 - One field at the bottom of the map: "Ask about your layers". Pro only; Free shows nothing in its place.
 - The answer appears as the plan's preview banner and result card, never as a chat transcript that hides the map.
 - Questions the tools can't answer get a plain "I can't answer that with these layers, because…", never a guess.
+- **Speaking instead of typing** (owner's request, 2026-10-17): a microphone button in the Ask box starts the system's dictation (macOS Dictation: on-device on Apple silicon, English and Chinese, nothing sent to us), and the usual dictation shortcut works while the box has focus. The recognised text stays editable before it is sent. Windows uses its own voice typing (Win+H) the same way.
 
 **WP7.2 Tool calling** (P0)
 - Expose each Phase 4 action as a tool: name, plain description, typed inputs (layers, fields, distances with units), requirements and decisions.
