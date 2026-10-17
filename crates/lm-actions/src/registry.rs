@@ -2,13 +2,13 @@
 
 use std::sync::OnceLock;
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 /// The rules file, compiled in.
 pub const RULES_TOML: &str = include_str!("../rules.toml");
 
 /// What is selected, reduced to the spec table's "Selected" column.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum SelectionKey {
     /// Nothing selected and no data open.
@@ -125,22 +125,31 @@ pub struct Variant {
     pub companion: Option<CompanionSpec>,
 }
 
-/// How a result is previewed (Phase 4 fills this in).
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+/// How a result is previewed.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum PreviewPolicy {
     /// Display-only actions apply at once and can be undone.
     NotNeeded,
-    /// Not yet specified (Phase 4).
-    Unspecified,
+    /// Analysis: previewed automatically when the estimated cost is under a second, otherwise
+    /// on request, with a warning past 30 seconds (WP4.3).
+    Auto,
 }
 
-/// What an action produces (Phase 4 fills this in).
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+/// What an action produces.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum OutputContract {
     /// Changes only what the map shows, or opens data; creates no new data.
     NoNewData,
-    /// Not yet specified (Phase 4).
-    Unspecified,
+    /// A new layer with a result card ("Schools in each district").
+    NewLayer,
+    /// New fields on the selected layer, one undo step ("Heat" on each school).
+    NewFields,
+    /// A result card only (a measurement, a ranking, which area).
+    Card,
+    /// A filtered view of an existing layer ("What's inside?").
+    FilteredView,
 }
 
 /// One action (Architecture › Data contracts › ActionSpec).
@@ -161,8 +170,12 @@ pub struct ActionSpec {
     pub requires: Vec<Requirement>,
     pub companion: Option<CompanionSpec>,
     pub variants: Vec<Variant>,
-    /// Choices the user makes in the composer (Phase 4).
+    /// Choices the plan makes, which the recipe records ("distance, in meters or kilometers").
     pub decisions: Vec<String>,
+    /// The certified algorithm that computes it (`overlay::count_in_areas`), for analysis.
+    pub algorithm: Option<String>,
+    /// The method sentence the recipe uses, for analysis.
+    pub method: Option<String>,
     pub preview: PreviewPolicy,
     pub output: OutputContract,
     /// The first phase whose build offers the action.
@@ -207,6 +220,39 @@ impl ActionSpec {
             return false;
         }
         std::iter::once(&self.label).chain(self.aliases.iter()).any(|s| s.to_lowercase().contains(&q))
+    }
+}
+
+/// What the assistant is told about an action it may call (Product tiers › Pro): its inputs,
+/// what it needs, the decisions a plan fills in, and what it makes. Descriptions only; the
+/// action runs locally.
+#[derive(Clone, Debug, PartialEq, Serialize)]
+pub struct ActionDescription {
+    pub id: String,
+    pub label: String,
+    pub inputs: Vec<SelectionKey>,
+    pub needs: Vec<String>,
+    pub companion: Option<String>,
+    pub decisions: Vec<String>,
+    pub output: OutputContract,
+    pub method: Option<String>,
+    pub preview: PreviewPolicy,
+}
+
+impl ActionSpec {
+    /// The machine-readable description (serialize it as JSON for the assistant).
+    pub fn describe(&self) -> ActionDescription {
+        ActionDescription {
+            id: self.id.clone(),
+            label: self.label.clone(),
+            inputs: self.inputs.clone(),
+            needs: self.requires.iter().map(|r| r.reason.clone()).collect(),
+            companion: self.companion.as_ref().map(|c| c.reason.clone()),
+            decisions: self.decisions.clone(),
+            output: self.output,
+            method: self.method.clone(),
+            preview: self.preview,
+        }
     }
 }
 
@@ -256,6 +302,8 @@ pub enum RulesError {
     DuplicateAction(String),
     #[error("action {id:?} has an empty {field}")]
     Empty { id: String, field: &'static str },
+    #[error("analysis action {id:?} needs {field} (Phase 4)")]
+    AnalysisContract { id: String, field: &'static str },
     #[error("action {id:?} has min_phase {min_phase}; phases run 0 to 7")]
     BadPhase { id: String, min_phase: u8 },
     #[error("row {row}: unknown action {action:?}")]
@@ -295,13 +343,21 @@ struct RawAction {
     companion: Option<CompanionSpec>,
     #[serde(default)]
     variant: Vec<Variant>,
+    #[serde(default)]
+    output: Option<OutputContract>,
+    #[serde(default)]
+    algorithm: Option<String>,
+    #[serde(default)]
+    method: Option<String>,
+    #[serde(default)]
+    decisions: Vec<String>,
 }
 
 impl From<RawAction> for ActionSpec {
     fn from(a: RawAction) -> Self {
         let (preview, output) = match a.surface {
             Surface::Card => (PreviewPolicy::NotNeeded, OutputContract::NoNewData),
-            Surface::Assistant => (PreviewPolicy::Unspecified, OutputContract::Unspecified),
+            Surface::Assistant => (PreviewPolicy::Auto, a.output.unwrap_or(OutputContract::Card)),
         };
         ActionSpec {
             label_key: format!("action.{}", a.id),
@@ -314,7 +370,9 @@ impl From<RawAction> for ActionSpec {
             requires: a.requires,
             companion: a.companion,
             variants: a.variant,
-            decisions: Vec::new(),
+            decisions: a.decisions,
+            algorithm: a.algorithm,
+            method: a.method,
             preview,
             output,
             min_phase: a.min_phase,
@@ -339,6 +397,18 @@ impl Registry {
     /// Parses and checks a rules file.
     pub fn from_toml(text: &str) -> Result<Self, RulesError> {
         let raw: RawRules = toml::from_str(text)?;
+        // Analysis actions state what they make, how, and the recipe's method sentence.
+        for a in raw.action.iter().filter(|a| a.surface == Surface::Assistant) {
+            for (field, missing) in [
+                ("an output", a.output.is_none()),
+                ("an algorithm", a.algorithm.is_none()),
+                ("a method", a.method.as_deref().is_none_or(|m| m.trim().is_empty())),
+            ] {
+                if missing {
+                    return Err(RulesError::AnalysisContract { id: a.id.clone(), field });
+                }
+            }
+        }
         let actions: Vec<ActionSpec> = raw.action.into_iter().map(ActionSpec::from).collect();
         for (i, a) in actions.iter().enumerate() {
             if actions[..i].iter().any(|b| b.id == a.id) {
@@ -416,6 +486,43 @@ pub fn registry() -> &'static Registry {
 
 #[cfg(test)]
 mod tests {
+
+    /// Every analysis action states its output, its certified algorithm and its recipe method,
+    /// and is previewed by cost (WP4.1, WP4.6).
+    #[test]
+    fn analysis_actions_state_their_contracts() {
+        let r = registry();
+        let analysis: Vec<&ActionSpec> = r.actions().iter().filter(|a| a.surface == Surface::Assistant).collect();
+        assert!(analysis.len() >= 14, "{}", analysis.len());
+        for a in &analysis {
+            assert_eq!(a.preview, PreviewPolicy::Auto, "{}", a.id);
+            assert!(a.algorithm.is_some() && a.method.is_some(), "{}", a.id);
+            assert_ne!(a.output, OutputContract::NoNewData, "{}", a.id);
+        }
+        let count = r.action("count_in").map(ActionSpec::describe);
+        let count = count.as_ref();
+        assert_eq!(count.map(|d| d.output), Some(OutputContract::NewLayer));
+        assert_eq!(count.map(|d| d.inputs.clone()), Some(vec![SelectionKey::PointLayer, SelectionKey::AreaLayer]));
+        assert!(count.is_some_and(|d| d.method.as_deref().is_some_and(|m| m.contains("boundary"))));
+    }
+
+    #[test]
+    fn an_analysis_action_without_a_method_is_refused() {
+        let toml = r#"
+[[action]]
+id = "x"
+label = "X"
+group = "Measure"
+min_phase = 4
+surface = "assistant"
+output = "card"
+algorithm = "a::b"
+inputs = ["one_point"]
+input_reason = "Pick a point."
+"#;
+        assert!(matches!(Registry::from_toml(toml), Err(RulesError::AnalysisContract { field: "a method", .. })));
+    }
+
     use super::*;
 
     #[test]
