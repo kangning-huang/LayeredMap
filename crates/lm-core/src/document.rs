@@ -679,6 +679,7 @@ pub(crate) mod tests {
             encoding: None,
             notices: vec![],
             data_rev: 0,
+            joins: Vec::new(),
         }
     }
 

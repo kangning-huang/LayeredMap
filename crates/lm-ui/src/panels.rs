@@ -490,11 +490,17 @@ pub fn inspector(shell: &mut Shell, ui: &mut Ui, map: Rect) {
     // What the card shows: one object, several, a raster cell, or the layer.
     let rows = shell.ws.selection.rows_in(id);
     let pixel = shell.ws.selection.pixel.clone();
-    let (title, subtitle) = match (rows.as_slice(), &pixel) {
-        ([row], _) => crate::inspect::object_header(shell, &l, *row),
-        ([], Some(p)) => (format!("{:.4}°, {:.4}°", p.lat, p.lon), format!("{} · cell", l.display_name)),
-        ([], None) => (l.display_name.clone(), l.profile.subtitle()),
-        (many, _) => (format!("{} selected", group_thousands(many.len() as u64)), l.display_name.clone()),
+    // While a search runs (WP3.10) the panel stays the layer's, listing the matches.
+    let finding = shell.find.active_for(id);
+    let (title, subtitle) = if finding {
+        (l.display_name.clone(), l.profile.subtitle())
+    } else {
+        match (rows.as_slice(), &pixel) {
+            ([row], _) => crate::inspect::object_header(shell, &l, *row),
+            ([], Some(p)) => (format!("{:.4}°, {:.4}°", p.lat, p.lon), format!("{} · cell", l.display_name)),
+            ([], None) => (l.display_name.clone(), l.profile.subtitle()),
+            (many, _) => (format!("{} selected", group_thousands(many.len() as u64)), l.display_name.clone()),
+        }
     };
     egui::Area::new(egui::Id::new("lm-inspector")).order(egui::Order::Middle).fixed_pos(pos).show(ui.ctx(), |ui| {
         frame(&t).show(ui, |ui| {
@@ -516,8 +522,13 @@ pub fn inspector(shell: &mut Shell, ui: &mut Ui, map: Rect) {
                     }
                 });
             });
-            let object_view = !rows.is_empty() || pixel.is_some();
-            if !object_view {
+            let object_view = (!rows.is_empty() || pixel.is_some()) && !finding;
+            // Find in a layer: at the top of the layer's panel, above the tabs.
+            if !object_view && l.profile.kind != lm_core::model::LayerKind::Raster && shell.flags.shows(3) {
+                ui.add_space(8.0);
+                crate::find_ui::bar(shell, ui, &t, &l);
+            }
+            if !object_view && !finding {
                 ui.add_space(4.0);
                 ui.horizontal(|ui| {
                     let tabs: &[(u8, &str)] = if shell.flags.shows(3) {
@@ -531,7 +542,7 @@ pub fn inspector(shell: &mut Shell, ui: &mut Ui, map: Rect) {
                         }
                     }
                 });
-            } else if rows.len() > 1 {
+            } else if rows.len() > 1 && !finding {
                 // The selection chip: "3 selected · Clear".
                 ui.horizontal(|ui| {
                     ui.label(RichText::new(format!("{} selected", group_thousands(rows.len() as u64))).size(CAPTION));
@@ -546,7 +557,9 @@ pub fn inspector(shell: &mut Shell, ui: &mut Ui, map: Rect) {
                 .min_scrolled_height((max_h - 90.0).min(560.0))
                 .auto_shrink([false, true])
                 .show(ui, |ui| {
-                    if let Some((cid, field)) = shell.compare_peers.clone().filter(|(c, _)| *c == id) {
+                    if finding {
+                        crate::find_ui::results(shell, ui, &t, &l);
+                    } else if let Some((cid, field)) = shell.compare_peers.clone().filter(|(c, _)| *c == id) {
                         ranking(shell, ui, &t, &l, field.as_deref(), rows.first().copied());
                         if ui.link("Back").clicked() {
                             shell.compare_peers = None;
@@ -829,6 +842,11 @@ pub fn compare_banner(shell: &mut Shell, ui: &mut Ui, map: Rect) {
 }
 
 fn overview(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, l: &lm_core::document::DocLayer) {
+    // Joining a table (WP3.11): the result on the joined layer, the question on a table.
+    crate::join_ui::report(shell, ui, t, l);
+    if l.profile.kind == lm_core::model::LayerKind::Table {
+        crate::join_ui::table_status(shell, ui, t, id);
+    }
     if let Some(q) = l.profile.open_questions().next().cloned() {
         question_card(shell, ui, t, id, &q);
         ui.add_space(8.0);
@@ -849,17 +867,19 @@ fn overview(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, l: &lm_core:
     for n in &l.profile.notices {
         ui.label(RichText::new(n).size(CAPTION).color(t.text_secondary));
     }
-    // Legend, generated from the style.
-    ui.add_space(8.0);
-    ui.horizontal(|ui| {
-        ui.label(RichText::new("Legend").font(semibold(BODY)));
-        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            if ui.small_button("Style…").clicked() {
-                shell.inspector_tab = 1;
-            }
+    // Legend, generated from the style (a table isn't drawn, so it has none).
+    if l.profile.kind != lm_core::model::LayerKind::Table {
+        ui.add_space(8.0);
+        ui.horizontal(|ui| {
+            ui.label(RichText::new("Legend").font(semibold(BODY)));
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                if ui.small_button("Style…").clicked() {
+                    shell.inspector_tab = 1;
+                }
+            });
         });
-    });
-    crate::inspect::legend(shell, ui, t, l);
+        crate::inspect::legend(shell, ui, t, l);
+    }
     if let Some(f) = &l.filter {
         ui.horizontal_wrapped(|ui| {
             ui.label(RichText::new(icon::FUNNEL).font(theme::icon_font(14.0)).color(t.accent));
@@ -974,54 +994,72 @@ fn details(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, l: &lm_core::
         let mut star: Option<(String, bool)> = None;
         // One row per field: star, name with its evidence wrapped beneath, role chip. Fixed widths
         // keep the inspector from growing with long evidence text.
-        for f in &p.fields {
-            let known = l.role(f);
-            let starred = l.starred.contains(&f.name);
-            let is_measure = matches!(known.value, lm_core::model::FieldRole::Measure(_) | lm_core::model::FieldRole::Category);
-            let star_icon = if starred { icon::STAR_FOUR } else { icon::STAR };
-            ui.add_space(4.0);
-            ui.horizontal(|ui| {
-                if is_measure {
-                    if ui
-                        .add_sized(
-                            vec2(18.0, 18.0),
-                            egui::Button::new(RichText::new(star_icon).color(if starred { t.accent } else { t.text_secondary }))
-                                .frame(false),
-                        )
-                        .on_hover_text(if starred { "Remove from insight" } else { "Show in insight" })
-                        .clicked()
-                    {
-                        star = Some((f.name.clone(), !starred));
-                    }
-                } else {
-                    ui.allocate_exact_size(vec2(18.0, 18.0), egui::Sense::hover());
-                }
-                let text_w = (ui.available_width() - 92.0).max(80.0);
-                ui.vertical(|ui| {
-                    ui.set_width(text_w);
-                    ui.add(egui::Label::new(&f.name).wrap());
-                    ui.add(egui::Label::new(RichText::new(&known.evidence.0).size(CAPTION).color(t.text_secondary)).wrap());
+        // The layer's own fields first, then each joined table's under its name (WP3.11).
+        let joined: Vec<&str> = p.joins.iter().flat_map(|j| j.fields.iter().map(String::as_str)).collect();
+        let mut groups: Vec<(Option<String>, Vec<&lm_core::model::FieldProfile>)> =
+            vec![(None, p.fields.iter().filter(|f| !joined.contains(&f.name.as_str())).collect())];
+        for j in &p.joins {
+            groups.push((Some(j.table.clone()), p.fields.iter().filter(|f| j.fields.contains(&f.name)).collect()));
+        }
+        for (k, (title, fields)) in groups.iter().enumerate() {
+            if let Some(title) = title {
+                ui.add_space(8.0);
+                ui.horizontal(|ui| {
+                    ui.label(RichText::new(icon::LINK).font(theme::icon_font(13.0)).color(t.text_secondary));
+                    ui.label(RichText::new(format!("From {title}")).size(CAPTION).color(t.text_secondary));
                 });
-                // The role chip, with Change.
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
-                    let chip = egui::Button::new(RichText::new(role_name(known.value)).size(CAPTION))
-                        .fill(t.accent_weak)
-                        .corner_radius(egui::CornerRadius::same(10));
-                    egui::containers::menu::MenuButton::from_button(chip).ui(ui, |ui| {
-                        ui.label(RichText::new("Treat this field as").size(CAPTION).color(t.text_secondary));
-                        for r in ROLE_CHOICES {
-                            if ui.selectable_label(known.value == r, role_name(r)).clicked() {
-                                role_change = Some((f.name.clone(), Some(r)));
+            } else if fields.is_empty() && k == 0 {
+                continue;
+            }
+            for f in fields.iter().copied() {
+                let known = l.role(f);
+                let starred = l.starred.contains(&f.name);
+                let is_measure = matches!(known.value, lm_core::model::FieldRole::Measure(_) | lm_core::model::FieldRole::Category);
+                let star_icon = if starred { icon::STAR_FOUR } else { icon::STAR };
+                ui.add_space(4.0);
+                ui.horizontal(|ui| {
+                    if is_measure {
+                        if ui
+                            .add_sized(
+                                vec2(18.0, 18.0),
+                                egui::Button::new(RichText::new(star_icon).color(if starred { t.accent } else { t.text_secondary }))
+                                    .frame(false),
+                            )
+                            .on_hover_text(if starred { "Remove from insight" } else { "Show in insight" })
+                            .clicked()
+                        {
+                            star = Some((f.name.clone(), !starred));
+                        }
+                    } else {
+                        ui.allocate_exact_size(vec2(18.0, 18.0), egui::Sense::hover());
+                    }
+                    let text_w = (ui.available_width() - 92.0).max(80.0);
+                    ui.vertical(|ui| {
+                        ui.set_width(text_w);
+                        ui.add(egui::Label::new(&f.name).wrap());
+                        ui.add(egui::Label::new(RichText::new(&known.evidence.0).size(CAPTION).color(t.text_secondary)).wrap());
+                    });
+                    // The role chip, with Change.
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
+                        let chip = egui::Button::new(RichText::new(role_name(known.value)).size(CAPTION))
+                            .fill(t.accent_weak)
+                            .corner_radius(egui::CornerRadius::same(10));
+                        egui::containers::menu::MenuButton::from_button(chip).ui(ui, |ui| {
+                            ui.label(RichText::new("Treat this field as").size(CAPTION).color(t.text_secondary));
+                            for r in ROLE_CHOICES {
+                                if ui.selectable_label(known.value == r, role_name(r)).clicked() {
+                                    role_change = Some((f.name.clone(), Some(r)));
+                                    ui.close();
+                                }
+                            }
+                            if l.roles.contains_key(&f.name) && ui.button("Back to the detected role").clicked() {
+                                role_change = Some((f.name.clone(), None));
                                 ui.close();
                             }
-                        }
-                        if l.roles.contains_key(&f.name) && ui.button("Back to the detected role").clicked() {
-                            role_change = Some((f.name.clone(), None));
-                            ui.close();
-                        }
+                        });
                     });
                 });
-            });
+            }
         }
         if let Some((field, to)) = role_change {
             let tx = shell.ws.doc.set_role_tx(id, &field, to);

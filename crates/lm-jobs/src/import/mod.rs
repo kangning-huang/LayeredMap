@@ -461,6 +461,7 @@ fn vector_profile(
         encoding,
         notices,
         data_rev: 0,
+        joins: Vec::new(),
     }
 }
 

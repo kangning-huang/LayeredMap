@@ -70,5 +70,16 @@
     "place": {"text-color": ["match", ["get", "class"], ["country", "state"], "#8b9099", "#a9aeb6"], "text-halo-color": "#1e1f22"},
     "places": {"text-color": ["match", ["get", "kind"], ["country", "region"], "#8b9099", "#a9aeb6"], "text-halo-color": "#1e1f22"},
     "place-labels": {"text-color": "#a9aeb6", "text-halo-color": "#1e1f22"}
+  },
+  "labels": {
+    "boundary": {"line-color": "rgba(255,255,255,0.7)"},
+    "boundaries": {"line-color": "rgba(255,255,255,0.7)"},
+    "roads-major": {"line-color": "rgba(255,236,170,0.55)"},
+    "protomaps-roads-major": {"line-color": "rgba(255,236,170,0.55)"},
+    "streets-major": {"line-color": "rgba(255,236,170,0.55)"},
+    "water-name": {"text-color": "#CFE6FF", "text-halo-color": "rgba(0,0,0,0.75)", "text-halo-width": 1.6},
+    "place": {"text-color": "#FFFFFF", "text-halo-color": "rgba(0,0,0,0.75)", "text-halo-width": 1.6},
+    "places": {"text-color": "#FFFFFF", "text-halo-color": "rgba(0,0,0,0.75)", "text-halo-width": 1.6},
+    "place-labels": {"text-color": "#FFFFFF", "text-halo-color": "rgba(0,0,0,0.75)", "text-halo-width": 1.6}
   }
 }

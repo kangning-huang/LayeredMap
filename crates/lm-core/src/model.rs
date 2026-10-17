@@ -360,6 +360,22 @@ pub struct LayerProfile {
     /// (other coordinate columns), so undo can return to the matching data.
     #[serde(default)]
     pub data_rev: u32,
+    /// Tables joined to this layer (WP3.11), oldest first: their fields come after the layer's own.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub joins: Vec<JoinRecord>,
+}
+
+/// A table joined to a layer (WP3.11), as the document keeps it. The join itself (keys, match
+/// level, rows rule, accepted near-misses) is `spec`, JSON text that `lm-jobs` reads.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct JoinRecord {
+    /// The table's file name ("population.csv").
+    pub table: String,
+    /// Where the table was read from.
+    pub source: SourceRef,
+    /// The fields the join added, in order.
+    pub fields: Vec<String>,
+    pub spec: String,
 }
 
 impl LayerProfile {
@@ -422,6 +438,7 @@ mod tests {
             encoding: None,
             notices: vec![],
             data_rev: 0,
+            joins: Vec::new(),
         };
         assert_eq!(p.subtitle(), "248 points · schools.csv");
     }

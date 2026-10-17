@@ -5,5 +5,6 @@
 #![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used, clippy::panic))]
 
 pub mod china;
+pub mod control;
 pub mod geodesic;
 pub mod insight;

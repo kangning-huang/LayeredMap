@@ -1,0 +1,35 @@
+key,names
+110000,北京市|北京|Beijing|Peking
+120000,天津市|天津|Tianjin
+130000,河北省|河北|Hebei
+140000,山西省|山西|Shanxi
+150000,内蒙古自治区|内蒙古|Inner Mongolia|Nei Mongol|Neimenggu
+210000,辽宁省|辽宁|Liaoning
+220000,吉林省|吉林|Jilin
+230000,黑龙江省|黑龙江|Heilongjiang
+310000,上海市|上海|Shanghai
+320000,江苏省|江苏|Jiangsu
+330000,浙江省|浙江|Zhejiang
+340000,安徽省|安徽|Anhui
+350000,福建省|福建|Fujian
+360000,江西省|江西|Jiangxi
+370000,山东省|山东|Shandong
+410000,河南省|河南|Henan
+420000,湖北省|湖北|Hubei
+430000,湖南省|湖南|Hunan
+440000,广东省|广东|Guangdong
+450000,广西壮族自治区|广西|Guangxi|Guangxi Zhuang
+460000,海南省|海南|Hainan
+500000,重庆市|重庆|Chongqing
+510000,四川省|四川|Sichuan
+520000,贵州省|贵州|Guizhou
+530000,云南省|云南|Yunnan
+540000,西藏自治区|西藏|Tibet|Xizang
+610000,陕西省|陕西|Shaanxi
+620000,甘肃省|甘肃|Gansu
+630000,青海省|青海|Qinghai
+640000,宁夏回族自治区|宁夏|Ningxia|Ningxia Hui
+650000,新疆维吾尔自治区|新疆|Xinjiang|Xinjiang Uygur|Xinjiang Uyghur
+710000,台湾省|台湾|Taiwan
+810000,香港特别行政区|香港|Hong Kong|Hong Kong SAR
+820000,澳门特别行政区|澳门|Macau|Macao|Macao SAR

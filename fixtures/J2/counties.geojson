@@ -1,0 +1,209 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "GEOID": "06037",
+    "NAME": "Los Angeles"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       0.0,
+       0
+      ],
+      [
+       1.0,
+       0
+      ],
+      [
+       1.0,
+       1.0
+      ],
+      [
+       0.0,
+       1.0
+      ],
+      [
+       0.0,
+       0
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "GEOID": "06059",
+    "NAME": "Orange"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       1.2,
+       0
+      ],
+      [
+       2.2,
+       0
+      ],
+      [
+       2.2,
+       1.0
+      ],
+      [
+       1.2,
+       1.0
+      ],
+      [
+       1.2,
+       0
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "GEOID": "06073",
+    "NAME": "San Diego"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       2.4,
+       0
+      ],
+      [
+       3.4,
+       0
+      ],
+      [
+       3.4,
+       1.0
+      ],
+      [
+       2.4,
+       1.0
+      ],
+      [
+       2.4,
+       0
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "GEOID": "36061",
+    "NAME": "New York"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       3.5999999999999996,
+       0
+      ],
+      [
+       4.6,
+       0
+      ],
+      [
+       4.6,
+       1.0
+      ],
+      [
+       3.5999999999999996,
+       1.0
+      ],
+      [
+       3.5999999999999996,
+       0
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "GEOID": "01001",
+    "NAME": "Autauga"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       4.8,
+       0
+      ],
+      [
+       5.8,
+       0
+      ],
+      [
+       5.8,
+       1.0
+      ],
+      [
+       4.8,
+       1.0
+      ],
+      [
+       4.8,
+       0
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "GEOID": "08031",
+    "NAME": "Denver"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       6.0,
+       0
+      ],
+      [
+       7.0,
+       0
+      ],
+      [
+       7.0,
+       1.0
+      ],
+      [
+       6.0,
+       1.0
+      ],
+      [
+       6.0,
+       0
+      ]
+     ]
+    ]
+   }
+  }
+ ]
+}

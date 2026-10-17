@@ -109,6 +109,7 @@ mod tests {
             encoding: Some("UTF-8".into()),
             notices: vec![],
             data_rev: 0,
+            joins: Vec::new(),
         }
     }
 

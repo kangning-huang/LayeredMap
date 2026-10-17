@@ -177,6 +177,7 @@ impl FormatAdapter for GeoTiff {
             encoding: None,
             notices,
             data_rev: 0,
+            joins: Vec::new(),
         };
         // The choices (NoData, Landsat scale, kelvin) are applied to the data and the numbers.
         let r = apply_raster_choices(&r, &mut profile, &metas)?;

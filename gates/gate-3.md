@@ -41,6 +41,23 @@ are in; your validation is next.
   layer data is kept only for revisions the document or undo can still reach.
 - **Search your data** (WP3.9): the toolbar search lists matching layers and values (first five
   text fields) above places; choosing a value selects its object and opens its card.
+- **Find in a layer** (WP3.10, added 2026-10-17): a search field at the top of the layer
+  inspector, styled like the map's search box. Typing matches every field of every record (case
+  and accents ignored; numbers with or without separators), selects the matches on the map, shows
+  "47 found" and lists the first eight with the matched field in bold. Return or Zoom to all frames
+  them; a row opens the record's card with "‹ All 47 found" to go back; Esc, × or a map click
+  clears. ⌘F focuses it when a layer is selected. The table drawer's search matches the same way.
+- **Joining a table to places** (WP3.11, added 2026-10-17): open a table without coordinates
+  beside map layers and LayeredMap finds the shared column on its own. Keys are compared exactly,
+  then ignoring case and accents, then punctuation, then as codes without leading zeros, then
+  through bundled crosswalks (252 countries with ISO and World Bank names, 52 US states, 34
+  Chinese provinces). A clear answer (80% of keys, 20 points ahead of any pairing that places
+  rows differently) joins with no question: the layer gains the table's fields, is coloured by
+  the first joined measure, and the table leaves the shelf, all one undo step. Otherwise one
+  question card offers the top pairings. Several rows per place take the latest year ("Showing
+  2023"), or are combined (counts summed). Typos are never matched on their own; the card offers
+  them ("1 name looks like a typo: Hubel → Hubei · Use this match"). Details groups the joined
+  fields under "From population.csv".
 - **Suggested actions**: from the action registry (`lm-actions/rules.toml`, 18 rows, merge and
   companion rules). Per Product tiers the free app shows display actions only; analysis actions
   are never buttons.
@@ -59,6 +76,10 @@ are in; your validation is next.
 | Screenshot regression: object card, no value, overlap chooser, filtered, Style tab | pass (`phase3_*`) |
 | Action table: a snapshot per row and per merged pair, determinism ×1,000 | pass (`lm-actions` tests) |
 | Geodesic length and area against N5 | pass, within 1e-9 relative |
+| Find in a layer: every field, accents, numbers, ranking, filter respected | pass (`lm-jobs::find` tests; `phase3_find` snapshot: "pu" selects 5 districts) |
+| Join fixtures J1–J5 decide as specified (J1–J3 and J5 join with no question, J4 asks once) | pass (`gate3_join_fixtures`) |
+| Join match counts equal `pandas.merge` on the same normalized keys | pass: J1 174 and 20, J2 6, J3 17, J5 7 (`validation/gate-3/check_join.py`) |
+| A join is one undo step, and Undo doesn't redo it | pass (`phase3_join_card`) |
 | Fuzzing (Gate 2 carry-over, 1 hour per adapter) | pass: 0 findings on the fixed code — csv 1,738,531 runs, geojson 2,983,162, shapefile 6,093,603, dbf 1,995,516, geotiff_header 6,416,344 (Gate 2) |
 
 ## 2. Debug pass
@@ -108,6 +129,12 @@ Release build, reference Mac (`cargo test --release -p lm-jobs gate3_stress -- -
 | Undo and redo round trips are exact | yes so far | § 1 |
 
 ## Known limits (honest list)
+
+- Joining: dragging a table onto a layer row is not built (a table joins when opened beside a
+  matching layer, or through its question card). Separate (undoing a join long after) is not
+  built; Undo covers it until then. A join is re-applied on open only once documents are saved
+  (Phase 5). The join itself runs on the interface thread after the background match (fine to
+  about 100,000 records; to move to a job before the 1,000,000-row stress test).
 
 - Keep as new layer (Filter builder) is not built yet; filters are display only.
 - The legend–style check samples data colours, not rendered pixels.

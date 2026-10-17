@@ -7,9 +7,11 @@
 pub mod basemap;
 mod chrome;
 pub mod examples;
+pub mod find_ui;
 pub mod form;
 pub mod insight;
 pub mod inspect;
+pub mod join_ui;
 pub mod panels;
 #[cfg(test)]
 mod screenshots;
@@ -83,6 +85,8 @@ pub enum Command {
     ApplyPreset(usize),
     /// Scripts: press Esc (one step of the Esc ladder).
     Escape,
+    /// Find in the selected layer (WP3.10; scripts and tests).
+    Find(String),
 }
 
 /// A file dialog the shell asks the app to show (the shell itself never opens dialogs).
@@ -164,6 +168,8 @@ pub struct Shell {
     pub(crate) filter_draft: Option<table::FilterDraft>,
     /// "Compare with other [Districts]": the ranking chart open for a layer and field.
     pub(crate) compare_peers: Option<(lm_core::model::LayerId, Option<String>)>,
+    /// Find in a layer (WP3.10).
+    pub(crate) find: find_ui::FindState,
     /// The overlap chooser: where the click was and what it hit, topmost first.
     pub(crate) chooser: Option<(egui::Pos2, Vec<lm_core::selection::FeatureRef>)>,
     /// A chooser row being hovered: its object is highlighted.
@@ -200,6 +206,7 @@ impl Shell {
             notice: None,
             last_map_size: egui::vec2(1280.0, 748.0),
             archive_url: None,
+            find: find_ui::FindState::default(),
             ws: workspace::Workspace::with_waker(ctx),
             shelf_open: true,
             inspector_tab: 0,
@@ -280,6 +287,12 @@ impl Shell {
                 }
             }
             Command::InspectorTab(tab) => self.inspector_tab = tab,
+            Command::Find(text) => {
+                if let Some(id) = self.ws.selected() {
+                    self.find.layer = Some(id);
+                    self.find.query = text;
+                }
+            }
             Command::ToggleTable => {
                 self.table_for = match self.table_for {
                     Some(_) => None,
@@ -297,7 +310,10 @@ impl Shell {
                 }
             }
             Command::Escape => {
-                if self.chooser.take().is_none() && self.compare_peers.take().is_none() {
+                if let Some(id) = self.find.layer.filter(|id| self.find.active_for(*id)) {
+                    self.find.clear();
+                    self.ws.selection = lm_core::selection::SelectionContext::layer(id);
+                } else if self.chooser.take().is_none() && self.compare_peers.take().is_none() {
                     self.ws.selection.step_back();
                 }
             }
@@ -436,6 +452,8 @@ impl Shell {
     fn map_click(&mut self, lonlat: lm_mapview::Coord, screen: egui::Pos2, shift: bool) {
         use lm_core::selection::{FeatureRef, PixelPick, SelectionContext};
         self.chooser = None;
+        // A click on the map ends a search: what was clicked is shown, not the matches.
+        self.find.clear();
         let hits = self.ws.hit_test(&self.map, lonlat);
         match hits.len() {
             0 => {
@@ -648,7 +666,11 @@ impl Shell {
         if debug {
             self.debug_overlay = !self.debug_overlay;
         } else if find {
-            self.focus_search = true;
+            // ⌘F finds in the selected layer; with none selected it searches places and data.
+            match self.ws.selected().and_then(|id| self.ws.doc.layer(id)) {
+                Some(l) if l.profile.kind != lm_core::model::LayerKind::Raster => self.find.focus = true,
+                _ => self.focus_search = true,
+            }
         }
         if zero {
             self.command(ctx, Command::ZoomToAll);

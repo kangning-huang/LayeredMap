@@ -112,7 +112,12 @@ const STYLE_VARIANTS: &str = include_str!("style_variants.json");
 
 /// The built-in style variants: the default palette, and muted light and dark ones that let the
 /// data drawn over them stand out.
-pub const BUILTIN_VARIANTS: [&str; 3] = ["default", "light", "dark"];
+pub const BUILTIN_VARIANTS: [&str; 4] = ["default", "light", "dark", "labels"];
+
+/// The layers the `labels` variant keeps: place names, water names, boundaries and major roads,
+/// to draw over satellite imagery (a "hybrid" map).
+const LABEL_LAYERS: [&str; 9] =
+    ["boundary", "boundaries", "roads-major", "protomaps-roads-major", "streets-major", "water-name", "place", "places", "place-labels"];
 
 /// The built-in style ([`DEFAULT_STYLE`]) in `variant` (one of [`BUILTIN_VARIANTS`]; `""` or an
 /// unknown name is the default), labelled in `label_language` (see [`label_field`]). `None` only
@@ -122,6 +127,9 @@ pub fn builtin_style(variant: &str, label_language: &str) -> Option<Value> {
     let overrides: Value = serde_json::from_str(STYLE_VARIANTS).ok()?;
     let palette = overrides.get(variant.trim().to_ascii_lowercase()).and_then(Value::as_object);
     let field = label_field(label_language);
+    if variant.trim().eq_ignore_ascii_case("labels") {
+        doc.get_mut("layers")?.as_array_mut()?.retain(|l| l.get("id").and_then(Value::as_str).is_some_and(|id| LABEL_LAYERS.contains(&id)));
+    }
     for layer in doc.get_mut("layers")?.as_array_mut()?.iter_mut() {
         let id = layer.get("id").and_then(Value::as_str).unwrap_or_default().to_string();
         if let Some(paint) = palette.and_then(|p| p.get(&id)).and_then(Value::as_object)
