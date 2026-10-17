@@ -1,0 +1,265 @@
+[
+ {
+  "puzzle": "P1",
+  "steps": 5,
+  "ok": true,
+  "seconds": 0.04237675,
+  "candidates": [
+   45,
+   45,
+   2,
+   2,
+   1
+  ],
+  "counts_plan": null,
+  "solver": [
+   45,
+   2,
+   1
+  ],
+  "shown": 1,
+  "names": [
+   "Kunming"
+  ],
+  "layer": "Populated places",
+  "outcome": "solved"
+ },
+ {
+  "puzzle": "P2",
+  "steps": 5,
+  "ok": true,
+  "seconds": 0.152261,
+  "candidates": [
+   "all",
+   1438,
+   146,
+   146,
+   1
+  ],
+  "counts_plan": null,
+  "solver": [
+   1448,
+   146,
+   1
+  ],
+  "shown": 1,
+  "names": [
+   "Winnipeg"
+  ],
+  "layer": "Populated places",
+  "outcome": "solved"
+ },
+ {
+  "puzzle": "P3",
+  "steps": 7,
+  "ok": true,
+  "seconds": 5.645816667,
+  "candidates": [
+   6837,
+   6837,
+   6837,
+   6837,
+   52,
+   6,
+   1
+  ],
+  "counts_plan": null,
+  "solver": [
+   231,
+   6,
+   1
+  ],
+  "shown": 1,
+  "names": [
+   "Lands in separate parts 3,388"
+  ],
+  "layer": "Lands in separate parts",
+  "outcome": "solved"
+ },
+ {
+  "puzzle": "P4",
+  "steps": 6,
+  "ok": true,
+  "seconds": 0.160865916,
+  "candidates": [
+   356,
+   1,
+   12,
+   12,
+   1,
+   "card"
+  ],
+  "counts_plan": [
+   1075,
+   573,
+   355,
+   356,
+   1,
+   12,
+   1
+  ],
+  "solver": [
+   1075,
+   573,
+   355,
+   356,
+   15,
+   1
+  ],
+  "shown": 1,
+  "names": [
+   "Area 3"
+  ],
+  "layer": "Areas inside Countries",
+  "outcome": "solved",
+  "detail": "town listed"
+ },
+ {
+  "puzzle": "P5",
+  "steps": 6,
+  "ok": true,
+  "seconds": 0.140212333,
+  "candidates": [
+   "all",
+   1397,
+   29,
+   4,
+   4,
+   1
+  ],
+  "counts_plan": null,
+  "solver": [
+   1398,
+   29,
+   4,
+   1
+  ],
+  "shown": 1,
+  "names": [
+   "Zaragoza"
+  ],
+  "layer": "Populated places",
+  "outcome": "solved"
+ },
+ {
+  "puzzle": "P6",
+  "steps": 13,
+  "ok": true,
+  "seconds": 0.9617125,
+  "candidates": [
+   "all",
+   1290,
+   53,
+   53,
+   7,
+   7,
+   7,
+   7,
+   6,
+   6,
+   5,
+   5,
+   1
+  ],
+  "counts_plan": null,
+  "solver": [
+   1290,
+   53,
+   7,
+   6,
+   5,
+   1
+  ],
+  "shown": 1,
+  "names": [
+   "Nairobi"
+  ],
+  "layer": "Populated places",
+  "outcome": "solved"
+ },
+ {
+  "puzzle": "P7",
+  "steps": 18,
+  "ok": true,
+  "seconds": 0.303314958,
+  "candidates": [
+   "all",
+   1037,
+   1037,
+   342,
+   198,
+   342,
+   48,
+   48,
+   7,
+   7,
+   "card",
+   "card",
+   "card",
+   "card",
+   "card",
+   "card",
+   "card",
+   2
+  ],
+  "counts_plan": null,
+  "solver": [
+   1042,
+   343,
+   48,
+   7,
+   2,
+   1
+  ],
+  "shown": 2,
+  "names": [
+   "Guaira",
+   "Foz do Iguaçu"
+  ],
+  "layer": "Populated places",
+  "outcome": "solved_with_cards",
+  "detail": {
+   "encarnacion": 2,
+   "guaira": 2,
+   "eldorado": 2,
+   "hohenau": 2,
+   "foz do iguacu": 3,
+   "ciudad del este": 3,
+   "posadas": 2
+  }
+ },
+ {
+  "puzzle": "P8",
+  "steps": 12,
+  "ok": true,
+  "seconds": 5.160264291,
+  "candidates": [
+   6837,
+   6837,
+   6837,
+   2754,
+   344,
+   344,
+   5,
+   5,
+   2,
+   2,
+   2,
+   1
+  ],
+  "counts_plan": null,
+  "solver": [
+   3876,
+   346,
+   5,
+   2,
+   1
+  ],
+  "shown": 1,
+  "names": [
+   "Lands in separate parts 6"
+  ],
+  "layer": "Annual precipitation in each area of Lands in separate parts",
+  "outcome": "solved"
+ }
+]
