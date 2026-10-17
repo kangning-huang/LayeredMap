@@ -9,3 +9,4 @@ pub mod control;
 pub mod geodesic;
 pub mod insight;
 pub mod overlay;
+pub mod zonal;
