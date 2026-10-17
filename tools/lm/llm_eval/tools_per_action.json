@@ -1,0 +1,600 @@
+[
+ {
+  "type": "function",
+  "function": {
+   "name": "count_in",
+   "description": "Count points in each area. Point-in-area count. New layer: areas with field '<points layer name, lowercase>'.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "points": {
+      "type": "string"
+     },
+     "areas": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "points",
+     "areas"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "count_here",
+   "description": "Count points here. Point-in-area count.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "points": {
+      "type": "string"
+     },
+     "area": {
+      "type": "object",
+      "properties": {
+       "layer": {
+        "type": "string"
+       },
+       "field": {
+        "type": "string"
+       },
+       "value": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "layer"
+      ]
+     }
+    },
+    "required": [
+     "points",
+     "area"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "which_container",
+   "description": "Which area is it in. Point in area.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "point": {
+      "type": "object",
+      "properties": {
+       "layer": {
+        "type": "string"
+       },
+       "field": {
+        "type": "string"
+       },
+       "value": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "layer"
+      ]
+     },
+     "areas": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "point",
+     "areas"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "whats_inside",
+   "description": "What's inside. Everything that touches or lies inside the area. Shows only the objects inside.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "area": {
+      "type": "object",
+      "properties": {
+       "layer": {
+        "type": "string"
+       },
+       "field": {
+        "type": "string"
+       },
+       "value": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "layer"
+      ]
+     },
+     "layer": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "area",
+     "layer"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "summarize_data_here",
+   "description": "Summarize data here. Counts and value summaries of what touches or lies inside the area.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "area": {
+      "type": "object",
+      "properties": {
+       "layer": {
+        "type": "string"
+       },
+       "field": {
+        "type": "string"
+       },
+       "value": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "layer"
+      ]
+     },
+     "layer": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "area",
+     "layer"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "buffer",
+   "description": "Show an area within a distance. Straight-line distance: a geodesic buffer on the WGS 84 ellipsoid. New area layer.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "layer": {
+      "type": "string"
+     },
+     "object": {
+      "type": "object",
+      "properties": {
+       "layer": {
+        "type": "string"
+       },
+       "field": {
+        "type": "string"
+       },
+       "value": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "layer"
+      ],
+      "description": "one object only (optional)"
+     },
+     "distance": {
+      "type": "string",
+      "description": "e.g. '500 m', '2 km', '3 mi'"
+     },
+     "merge": {
+      "type": "boolean",
+      "description": "merge overlaps (default true)"
+     }
+    },
+    "required": [
+     "layer",
+     "distance"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "measure_area",
+   "description": "Measure its area. Geodesic area on the WGS 84 ellipsoid.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "area": {
+      "type": "object",
+      "properties": {
+       "layer": {
+        "type": "string"
+       },
+       "field": {
+        "type": "string"
+       },
+       "value": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "layer"
+      ]
+     }
+    },
+    "required": [
+     "area"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "measure_length",
+   "description": "Measure length. Geodesic length on the WGS 84 ellipsoid.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "line": {
+      "type": "object",
+      "properties": {
+       "layer": {
+        "type": "string"
+       },
+       "field": {
+        "type": "string"
+       },
+       "value": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "layer"
+      ]
+     }
+    },
+    "required": [
+     "line"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "summarize_each",
+   "description": "Summarize raster in each area. Area-weighted mean, minimum and maximum with fractional cell coverage, each cell weighted by its area on the ellipsoid. New layer: areas with fields '<raster> mean', '<raster> min', '<raster> max'.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "raster": {
+      "type": "string"
+     },
+     "areas": {
+      "type": "string"
+     },
+     "band": {
+      "type": "integer",
+      "description": "1-based, default 1"
+     }
+    },
+    "required": [
+     "raster",
+     "areas"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "summarize_here",
+   "description": "Summarize raster here. Area-weighted mean with fractional cell coverage, each cell weighted by its area on the ellipsoid.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "raster": {
+      "type": "string"
+     },
+     "area": {
+      "type": "object",
+      "properties": {
+       "layer": {
+        "type": "string"
+       },
+       "field": {
+        "type": "string"
+       },
+       "value": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "layer"
+      ]
+     },
+     "band": {
+      "type": "integer",
+      "description": "1-based, default 1"
+     }
+    },
+    "required": [
+     "raster",
+     "area"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "summarize_drawn",
+   "description": "Summarize in an area I draw. Area-weighted mean with fractional cell coverage inside the drawn area. Omit area to let the user draw one.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "raster": {
+      "type": "string"
+     },
+     "area": {
+      "type": "object",
+      "properties": {
+       "layer": {
+        "type": "string"
+       },
+       "field": {
+        "type": "string"
+       },
+       "value": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "layer"
+      ]
+     },
+     "band": {
+      "type": "integer",
+      "description": "1-based, default 1"
+     }
+    },
+    "required": [
+     "raster"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "add_raster_values",
+   "description": "Add raster values to each point. The value of the raster cell containing each point, with scale and offset applied. Adds field '<raster name>' to the points.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "raster": {
+      "type": "string"
+     },
+     "points": {
+      "type": "string"
+     },
+     "band": {
+      "type": "integer",
+      "description": "1-based, default 1"
+     }
+    },
+    "required": [
+     "raster",
+     "points"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "rank_by_value",
+   "description": "Rank a layer by a value. A sort by the value.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "layer": {
+      "type": "string"
+     },
+     "field": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "layer",
+     "field"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "filter",
+   "description": "Show only a layer's objects meeting all conditions (replaces its filter; [] clears). Later actions use only shown objects.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "layer": {
+      "type": "string"
+     },
+     "conditions": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "field": {
+         "type": "string"
+        },
+        "op": {
+         "type": "string",
+         "enum": [
+          "is",
+          "is_not",
+          "contains",
+          "is_empty",
+          "above",
+          "below",
+          "between",
+          "before",
+          "after",
+          "any_of"
+         ]
+        },
+        "value": {
+         "type": "string",
+         "description": "number or text"
+        },
+        "value2": {
+         "type": "string",
+         "description": "upper end for between"
+        },
+        "values": {
+         "type": "array",
+         "items": {
+          "type": "string"
+         },
+         "description": "for any_of"
+        }
+       },
+       "required": [
+        "field",
+        "op"
+       ]
+      }
+     }
+    },
+    "required": [
+     "layer",
+     "conditions"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "color_by",
+   "description": "Color a layer by a field's values.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "layer": {
+      "type": "string"
+     },
+     "field": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "layer",
+     "field"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "view_data",
+   "description": "Open a layer's table.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "layer": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "layer"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "zoom_to",
+   "description": "Zoom to and select a layer, or one object.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "layer": {
+      "type": "string"
+     },
+     "field": {
+      "type": "string"
+     },
+     "value": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "layer"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "ask_user",
+   "description": "Ask one question when the request is ambiguous.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "question": {
+      "type": "string"
+     },
+     "choices": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     }
+    },
+    "required": [
+     "question"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "cannot_do",
+   "description": "The tools can't answer this; say why.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "reason": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "reason"
+    ]
+   }
+  }
+ }
+]
