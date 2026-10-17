@@ -1,0 +1,39 @@
+{
+  "fixture": "N11",
+  "kind": "raster",
+  "files": [
+    "a_shapes.tif",
+    "b_first.tif",
+    "b_second.tif",
+    "c_utm.tif"
+  ],
+  "cases": {
+    "A": {
+      "rasters": [
+        "a_shapes.tif"
+      ],
+      "tests": [
+        "between 10 and 20"
+      ]
+    },
+    "B": {
+      "rasters": [
+        "b_first.tif",
+        "b_second.tif"
+      ],
+      "tests": [
+        "at least 15 (raw x 0.1)",
+        "one of 2, 4"
+      ]
+    },
+    "C": {
+      "rasters": [
+        "c_utm.tif"
+      ],
+      "tests": [
+        "at most 0.3"
+      ]
+    }
+  },
+  "assumptions": []
+}

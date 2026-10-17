@@ -1,0 +1,49 @@
+op,layer,id,kept,parts,geod_area_m2,length_m,coords
+keep,areas,A1,true,1,10642455822.3,,
+keep,areas,A2,true,1,31432770391.2,,
+keep,areas,A3,true,3,6600026286.28,,
+keep,areas,A4,false,0,,,
+keep,areas,A5,true,1,10615542906.3,,
+keep,areas,A6,true,1,28065653503,,
+keep,areas,A7,true,1,52.5296005479,,
+keep,areas,A8,false,0,,,
+keep,areas,A9,false,0,,,
+remove,areas,A1,true,1,32098435223.7,,
+remove,areas,A2,true,1,7858447347.4,,
+remove,areas,A3,true,2,27829541483.3,,
+remove,areas,A4,true,1,10066272985.6,,
+remove,areas,A5,false,0,,,
+remove,areas,A6,true,1,32840502996.2,,
+remove,areas,A7,true,1,5252986395.63,,
+remove,areas,A8,false,0,,,
+remove,areas,A9,true,1,6705910428.49,,
+keep,lines,L1,true,2,,479974.228089,120.0 30.5;124.0 30.5|128.0 30.5;129.0 30.5
+keep,lines,L2,true,2,,188985.61005,120.5 32.0;121.5 32.0|122.5 32.0;123.5 32.0
+keep,lines,L3,true,2,,436538.279004,120.0 30.5;121.5 32.0|122.0 32.5;123.5 34.0
+keep,lines,L4,false,0,,,
+keep,lines,L5,true,1,,46988.3370803,128.5 32.5;129.0 32.5
+keep,lines,L6,true,2,,142492.229445,125.0 32.0;126.0 32.0|128.0 30.5;128.5 30.5
+remove,lines,L1,true,3,,575972.84152,119.0 30.5;120.0 30.5|124.0 30.5;128.0 30.5|129.0 30.5;130.0 30.5
+remove,lines,L2,true,1,,94492.805025,121.5 32.0;122.5 32.0
+remove,lines,L3,true,3,,435480.395199,119.0 29.5;120.0 30.5|121.5 32.0;122.0 32.5|123.5 34.0;125.0 35.5
+remove,lines,L4,true,1,,143321.578182,131.0 35.0;132.0 36.0
+remove,lines,L5,true,2,,240623.615313,129.0 32.5;130.0 32.5|132.0 30.0;133.0 31.0
+remove,lines,L6,true,1,,356802.119763,126.0 32.0;127.0 32.0;127.0 30.5;128.0 30.5
+keep,points,P1,true,1,,,120.5 30.5
+keep,points,P2,false,0,,,
+keep,points,P3,true,1,,,121.5 32.0
+keep,points,P4,true,1,,,120.0 32.0
+keep,points,P5,true,1,,,123.5 32.0
+keep,points,P6,false,0,,,
+keep,points,P7,true,1,,,128.5 30.5
+keep,points,P8,true,1,,,126.0 32.0
+keep,points,P9,true,1,,,120.0 30.0
+remove,points,P1,false,0,,,
+remove,points,P2,true,1,,,122.0 32.0
+remove,points,P3,false,0,,,
+remove,points,P4,false,0,,,
+remove,points,P5,false,0,,,
+remove,points,P6,true,1,,,127.0 34.0
+remove,points,P7,true,1,,,128.5 31.5
+remove,points,P8,false,0,,,
+remove,points,P9,false,0,,,
