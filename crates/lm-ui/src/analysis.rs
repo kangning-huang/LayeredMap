@@ -424,6 +424,83 @@ pub fn composer(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
             });
         });
     }
+    // The statistic: raster summaries (mean by default) and counts (a count, or a statistic of
+    // one of the points' numeric values).
+    let stats: &[(&str, &str)] = match action.as_str() {
+        "summarize_each" | "summarize_here" | "summarize_drawn" => lm_jobs::actions::RASTER_STATS,
+        "count_in" => lm_jobs::actions::POINT_STATS,
+        _ => &[],
+    };
+    if !stats.is_empty()
+        && let Some(c) = shell.composer.as_ref()
+    {
+        let default = if action == "count_in" { "count" } else { "mean" };
+        let current = c.params.get("stat").cloned().unwrap_or_else(|| default.to_string());
+        let label = |id: &str| stats.iter().find(|(k, _)| *k == id).map_or(id.to_string(), |(_, l)| l.to_string());
+        // The points layer of a count, for the value to take the statistic of.
+        let points_layer = if action == "count_in" {
+            [Some(c.main), c.companion]
+                .into_iter()
+                .flatten()
+                .find(|id| shell.ws.doc.layer(*id).is_some_and(|l| l.profile.kind == LayerKind::Points))
+        } else {
+            None
+        };
+        let numeric: Vec<String> = points_layer
+            .and_then(|id| shell.ws.doc.layer(id))
+            .map(|pl| {
+                pl.profile
+                    .fields
+                    .iter()
+                    .filter(|f| matches!(pl.role(f).value, lm_core::model::FieldRole::Measure(_)))
+                    .map(|f| f.name.clone())
+                    .collect()
+            })
+            .unwrap_or_default();
+        let mut pick_stat = None;
+        let mut pick_field = None;
+        let field_now = c.params.get("field").cloned();
+        ui.horizontal(|ui| {
+            ui.label(RichText::new("Statistic").color(t.text_secondary));
+            egui::ComboBox::from_id_salt("lm-composer-stat").selected_text(label(&current)).show_ui(ui, |ui| {
+                for (id, name) in stats {
+                    // A statistic of values needs a numeric field on the points.
+                    let usable = action != "count_in" || *id == "count" || !numeric.is_empty();
+                    if ui.add_enabled(usable, egui::Button::selectable(current == *id, *name)).clicked() {
+                        pick_stat = Some(id.to_string());
+                    }
+                }
+            });
+            if action == "count_in" && current != "count" {
+                ui.label(RichText::new("of").color(t.text_secondary));
+                let shown = field_now.clone().unwrap_or_else(|| "Choose a value".into());
+                egui::ComboBox::from_id_salt("lm-composer-stat-field").selected_text(shown).show_ui(ui, |ui| {
+                    for f in &numeric {
+                        if ui.selectable_label(field_now.as_deref() == Some(f), f).clicked() {
+                            pick_field = Some(f.clone());
+                        }
+                    }
+                });
+            }
+        });
+        if let Some(c) = shell.composer.as_mut() {
+            if let Some(st) = pick_stat {
+                if st != "count"
+                    && action == "count_in"
+                    && c.params.get("field").is_none_or(|f| !numeric.contains(f))
+                    && let Some(f) = numeric.first()
+                {
+                    c.params.insert("field".into(), f.clone());
+                }
+                c.params.insert("stat".into(), st);
+                changed = true;
+            }
+            if let Some(f) = pick_field {
+                c.params.insert("field".into(), f);
+                changed = true;
+            }
+        }
+    }
     // Scope line.
     if let Some(c) = shell.composer.as_mut() {
         let (_, many) = l.profile.kind.nouns();
@@ -548,7 +625,15 @@ pub fn result_card(
                 let (rect, _) = ui.allocate_exact_size(vec2(w, 22.0), egui::Sense::hover());
                 let p = ui.painter();
                 let label_w = w * 0.42;
-                p.text(rect.left_center(), egui::Align2::LEFT_CENTER, middle(&r.label, 22), theme::regular(CAPTION), t.text_primary);
+                // The label is clipped to its column so it never runs into the bar.
+                let label_rect = egui::Rect::from_min_max(rect.min, egui::pos2(rect.left() + label_w - 8.0, rect.max.y));
+                p.with_clip_rect(label_rect).text(
+                    rect.left_center(),
+                    egui::Align2::LEFT_CENTER,
+                    middle(&r.label, 40),
+                    theme::regular(CAPTION),
+                    t.text_primary,
+                );
                 let bar_max = w - label_w - 64.0;
                 if let Some(v) = r.value {
                     let bw = if max > 0.0 { (v / max).clamp(0.0, 1.0) as f32 * bar_max } else { 0.0 };

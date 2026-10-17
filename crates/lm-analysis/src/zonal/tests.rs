@@ -913,3 +913,25 @@ fn n7_r4_cog_stress() {
     );
     assert!(ok);
 }
+
+/// N4 again for the other statistics: the area-weighted median, the standard deviation and
+/// Σ x·f, against `reference/zonal_stats_r7.py` (exact shapely fractions; its `sum` also agrees
+/// with exactextract's where exactextract 0.3.0 isn't defective).
+#[test]
+fn n4_median_std_dev_and_sum_match_the_reference() {
+    let a = areas(&fixture("N4/polygons.geojson"), "area_id");
+    let geoms: Vec<Geometry> = a.iter().map(|(_, g)| g.clone()).collect();
+    let got = run(&mut R7::new(), &geoms, ValueRole::Measured);
+    let want: HashMap<String, HashMap<String, String>> =
+        csv_rows(&fixture("N4/expected_zonal_stats.csv")).into_iter().map(|r| (r["area_id"].clone(), r)).collect();
+    assert_eq!(want.len(), 8);
+    for ((id, _), s) in a.iter().zip(&got) {
+        let w = &want[id];
+        // The median is one of the cells' values: exact (to float32 printing).
+        assert!(rel_err(s.median.unwrap(), num(w, "median")) < 1e-9, "{id} median {:?} vs {}", s.median, w["median"]);
+        let tiny = num(w, "std_dev") < 1e-2;
+        let std_err = if tiny { (s.std_dev.unwrap() - num(w, "std_dev")).abs() } else { rel_err(s.std_dev.unwrap(), num(w, "std_dev")) };
+        assert!(std_err < 1e-6, "{id} std dev {:?} vs {}", s.std_dev, w["std_dev"]);
+        assert!(rel_err(s.sum.unwrap(), num(w, "sum")) < 1e-6, "{id} sum {:?} vs {}", s.sum, w["sum"]);
+    }
+}

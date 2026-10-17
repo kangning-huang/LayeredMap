@@ -88,13 +88,38 @@ impl PlanInput {
         self.layer.profile.kind.nouns()
     }
 
+    /// The layer's name as a noun when it reads as one ("populated_places" → "populated
+    /// places"); None for names like "GUB_Global_2018", which then use the kind's noun.
+    fn word(&self) -> Option<String> {
+        let w = self.name().replace(['_', '-'], " ").to_lowercase();
+        let w = w.split_whitespace().collect::<Vec<_>>().join(" ");
+        let ok = !w.is_empty() && w.split(' ').count() <= 3 && w.chars().all(|c| c.is_alphabetic() || c == ' ');
+        ok.then_some(w)
+    }
+
+    /// "districts", or "areas" for a name that isn't a noun.
+    fn plural_noun(&self) -> String {
+        self.word().map_or_else(|| self.nouns().1.to_string(), |w| plural(&w))
+    }
+
+    fn singular_noun(&self) -> String {
+        self.word().map_or_else(|| self.nouns().0.to_string(), |w| singular(&w))
+    }
+
+    /// "each district", or "each area of GUB_Global_2018".
+    fn each(&self) -> String {
+        match self.word() {
+            Some(w) => format!("each {}", singular(&w)),
+            None => format!("each {} of {}", self.nouns().0, self.name()),
+        }
+    }
+
     /// "12 schools" in the layer's own words.
     fn things(&self, n: u64) -> String {
         if self.layer.profile.kind == LayerKind::Raster {
             return format!("{} cells", group_thousands(n));
         }
-        let name = self.name().to_lowercase();
-        if n == 1 { format!("1 {}", singular(&name)) } else { format!("{} {}", group_thousands(n), plural(&name)) }
+        if n == 1 { format!("1 {}", self.singular_noun()) } else { format!("{} {}", group_thousands(n), self.plural_noun()) }
     }
 
     fn title(&self, ds: &Dataset, row: usize) -> String {
@@ -357,7 +382,7 @@ fn scope_words(i: &PlanInput) -> String {
     if i.layer.profile.kind == LayerKind::Raster {
         return format!("all of {}", i.name());
     }
-    let name = plural(&i.name().to_lowercase());
+    let name = i.plural_noun();
     match &i.rows {
         None => format!("all {name}"),
         Some(r) if r.len() == 1 => match &i.data {
@@ -433,41 +458,132 @@ fn layer_from(name: &str, format: &str, ds: Dataset) -> Box<ImportedLayer> {
 // ---------------------------------------------------------------------------------------------
 // Overlay
 
+/// The statistics "Count [points] in each [area]" offers: the count, or a statistic of one of
+/// the points' numeric fields (parameters `stat` and `field`).
+pub const POINT_STATS: &[(&str, &str)] =
+    &[("count", "Count"), ("sum", "Sum"), ("mean", "Mean"), ("median", "Median"), ("min", "Minimum"), ("max", "Maximum")];
+
+/// The statistics a raster summary offers (parameter `stat`; mean by default).
+pub const RASTER_STATS: &[(&str, &str)] =
+    &[("mean", "Mean"), ("median", "Median"), ("min", "Minimum"), ("max", "Maximum"), ("sum", "Sum"), ("std", "Standard deviation")];
+
+fn stat_label(stats: &[(&str, &str)], id: &str) -> String {
+    stats.iter().find(|(k, _)| *k == id).map_or_else(|| id.to_string(), |(_, l)| l.to_string())
+}
+
+/// A statistic of plain values: the sum of none is 0; the others are None without values.
+/// The median of an even count is the mean of the two middle values.
+fn stat_of(stat: &str, vals: &mut [f64]) -> Option<f64> {
+    if stat == "sum" {
+        return Some(vals.iter().sum());
+    }
+    if vals.is_empty() {
+        return None;
+    }
+    Some(match stat {
+        "mean" => vals.iter().sum::<f64>() / vals.len() as f64,
+        "min" => vals.iter().copied().fold(f64::INFINITY, f64::min),
+        "max" => vals.iter().copied().fold(f64::NEG_INFINITY, f64::max),
+        _ => {
+            vals.sort_by(f64::total_cmp);
+            let n = vals.len();
+            if n % 2 == 1 { vals[n / 2] } else { (vals[n / 2 - 1] + vals[n / 2]) / 2.0 }
+        }
+    })
+}
+
+/// "−3,841 to 4,738" when the range goes below zero (a dash would read as a minus), else
+/// "0–34".
+fn range_words(lo: f64, hi: f64) -> String {
+    if lo < 0.0 { format!("{} to {}", number(lo), number(hi)) } else { format!("{}–{}", number(lo), number(hi)) }
+}
+
 fn count_in(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
     let (pts_in, areas_in) = (plan.input(0)?, plan.input(1)?);
     let (pts, _) = pts_in.scoped()?;
     let (areas, area_rows) = areas_in.scoped()?;
+    let stat = plan.param("stat").unwrap_or("count");
+    let value_field = plan.param("field").filter(|_| stat != "count");
+    if stat != "count" && value_field.is_none() {
+        return Err(ActionError::Input(format!(
+            "Choose which value of the {} to take the {} of.",
+            pts_in.plural_noun(),
+            stat_label(POINT_STATS, stat).to_lowercase()
+        )));
+    }
     let r = overlay::count_points_in_areas(&pts, &areas, ctl)?;
-    let things = plural(&pts_in.name().to_lowercase());
-    let area_one = singular(&areas_in.name().to_lowercase());
-    let title = format!("{} in each {}", capitalized(&things), area_one);
+    let things = pts_in.plural_noun();
+    let area_one = areas_in.singular_noun();
+    let each = areas_in.each();
     let mut out = (*areas).clone();
-    out.name = title.clone();
-    let field = free_field(&out, &things);
-    let k = out.ensure_field(&field, FieldType::Integer);
+    let count_field = free_field(&out, &things);
+    let k = out.ensure_field(&count_field, FieldType::Integer);
     for (f, c) in out.features.iter_mut().zip(&r.counts) {
         if let Some(v) = f.attrs.get_mut(k) {
             *v = Value::Int(*c as i64);
         }
     }
-    let rows: Vec<RankRow> = r
-        .counts
-        .iter()
-        .enumerate()
-        .map(|(i, c)| RankRow { label: areas_in.title(&areas, i), value: Some(*c as f64), row: area_rows[i] })
-        .collect();
-    let (lo, hi) = (r.counts.iter().min().copied().unwrap_or(0), r.counts.iter().max().copied().unwrap_or(0));
-    let none = r.counts.iter().filter(|c| **c == 0).count() as u64;
-    let summary = format!(
-        "{} · {}–{} {} · {} with none",
-        areas_in.things(areas.features.len() as u64),
-        group_thousands(lo),
-        group_thousands(hi),
-        things,
-        group_thousands(none)
-    );
-    let mut decisions = Vec::new();
     let mut notices = Vec::new();
+    // A statistic of the points' values: which area each point is in, then the values per area.
+    let (title, values, color_by, unit, summary_what) = match value_field {
+        None => {
+            let values: Vec<Option<f64>> = r.counts.iter().map(|c| Some(*c as f64)).collect();
+            (format!("{} in {each}", capitalized(&things)), values, count_field.clone(), things.clone(), things.clone())
+        }
+        Some(field) => {
+            let vk = pts.field_index(field).ok_or_else(|| ActionError::Input(format!("{} has no field “{field}”.", pts_in.name())))?;
+            let which = overlay::which_area(&pts, &areas, ctl)?;
+            let mut per: Vec<Vec<f64>> = vec![Vec::new(); areas.features.len()];
+            let mut blank = 0u64;
+            for (p, inside) in which.areas.iter().enumerate() {
+                if inside.is_empty() {
+                    continue;
+                }
+                match pts.features.get(p).and_then(|f| f.attrs.get(vk)).and_then(Value::as_f64) {
+                    Some(v) => inside.iter().for_each(|a| per[*a].push(v)),
+                    None => blank += 1,
+                }
+            }
+            if blank > 0 {
+                notices.push(format!(
+                    "{} have no {field} value and are left out of the {}.",
+                    pts_in.things(blank),
+                    stat_label(POINT_STATS, stat).to_lowercase()
+                ));
+            }
+            let label = stat_label(POINT_STATS, stat);
+            let name = free_field(&out, &format!("{} {field}", label.to_lowercase()));
+            let kv = out.ensure_field(&name, FieldType::Double);
+            let values: Vec<Option<f64>> = per.iter_mut().map(|v| stat_of(stat, v)).collect();
+            for (f, v) in out.features.iter_mut().zip(&values) {
+                if let Some(slot) = f.attrs.get_mut(kv) {
+                    *slot = v.map_or(Value::Null, Value::Float);
+                }
+            }
+            (
+                format!("{label} {field} of the {things} in {each}"),
+                values,
+                name,
+                field.to_string(),
+                format!("{} {field}", label.to_lowercase()),
+            )
+        }
+    };
+    out.name = title.clone();
+    let rows: Vec<RankRow> =
+        values.iter().enumerate().map(|(i, v)| RankRow { label: areas_in.title(&areas, i), value: *v, row: area_rows[i] }).collect();
+    let with: Vec<f64> = values.iter().flatten().copied().collect();
+    let none = r.counts.iter().filter(|c| **c == 0).count() as u64;
+    let range = match (with.iter().copied().reduce(f64::min), with.iter().copied().reduce(f64::max)) {
+        (Some(lo), Some(hi)) => range_words(lo, hi),
+        _ => "no values".into(),
+    };
+    let summary =
+        format!("{} · {range} {summary_what} · {} with none", areas_in.things(areas.features.len() as u64), group_thousands(none));
+    let mut decisions = Vec::new();
+    if let Some(f) = value_field {
+        decisions.push(format!("{} of {f} over the {things} in each {area_one}", stat_label(POINT_STATS, stat).to_lowercase()));
+    }
     if r.counted_more_than_once > 0 {
         decisions.push(format!(
             "overlapping {} each count their points ({} counted more than once)",
@@ -490,16 +606,19 @@ fn count_in(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
     }
     let inputs = [pts_in, areas_in];
     Ok(ActionResult {
-        label: format!("Count {things} in each {area_one}"),
+        label: match value_field {
+            None => format!("Count {things} in {each}"),
+            Some(f) => format!("{} {f} of {things} in {each}", stat_label(POINT_STATS, stat)),
+        },
         card: ResultCard {
             title: title.clone(),
             summary,
-            answer: Answer::Ranking { rows: ranking(rows), unit: things.clone() },
+            answer: Answer::Ranking { rows: ranking(rows), unit },
             context: context(&inputs, &excluded),
             notices,
         },
         recipe: recipe(plan, &title, &inputs, PLANAR, decisions, excluded),
-        output: ActionOutput::NewLayer { layer: layer_from(&title, "Result", out), color_by: Some(field) },
+        output: ActionOutput::NewLayer { layer: layer_from(&title, "Result", out), color_by: Some(color_by) },
         highlight: None,
     })
 }
@@ -521,7 +640,7 @@ fn count_here(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
     let (pts, pt_rows) = pts_in.scoped()?;
     let inside = overlay::whats_inside(&g, &pts, ctl)?;
     let n = inside.rows.len() as u64;
-    let things = plural(&pts_in.name().to_lowercase());
+    let things = pts_in.plural_noun();
     let title = format!("{} in {area_name}", capitalized(&things));
     let excluded = exclusions(pts_in);
     let inputs = [pts_in, area_in];
@@ -548,7 +667,7 @@ fn which_container(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionErr
     let mut found: Vec<usize> = r.areas.iter().flatten().copied().collect();
     found.sort_unstable();
     found.dedup();
-    let area_one = singular(&areas_in.name().to_lowercase());
+    let area_one = areas_in.singular_noun();
     let subject = if pt_rows.len() == 1 { pts_in.title(pts_in.vector()?, pt_rows[0]) } else { pts_in.things(pt_rows.len() as u64) };
     let title = format!("Which {area_one} {subject} is in");
     let heading = match found.len() {
@@ -583,7 +702,7 @@ fn whats_inside(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError>
     let (ds, rows) = layer_in.scoped()?;
     let r = overlay::whats_inside(&g, &ds, ctl)?;
     let n = r.rows.len() as u64;
-    let title = format!("{} inside {area_name}", capitalized(&plural(&layer_in.name().to_lowercase())));
+    let title = format!("{} inside {area_name}", capitalized(&layer_in.plural_noun()));
     let full = layer_in.vector()?;
     let items: Vec<String> = r.rows.iter().take(50).map(|i| layer_in.title(full, rows[*i])).collect();
     let heading = format!("{} inside", capitalized(&layer_in.things(n)));
@@ -634,7 +753,7 @@ fn buffer_action(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError
     let (ds, rows) = input.scoped()?;
     let geoms: Vec<Option<Geometry>> = ds.features.iter().map(|f| f.geometry.clone()).collect();
     let out = buffer::buffer_layer(&geoms, &buffer::BufferOptions { distance_m: m, merge }, ctl)?;
-    let subject = if rows.len() == 1 { input.title(input.vector()?, rows[0]) } else { plural(&input.name().to_lowercase()) };
+    let subject = if rows.len() == 1 { input.title(input.vector()?, rows[0]) } else { input.plural_noun() };
     let title = format!("Within {words} of {subject}");
     let mut layer = Dataset::new(title.clone(), rustgis_engine::data::GeometryType::Polygon, vec![Field::new("name", FieldType::Text)]);
     let mut total_m2 = 0.0;
@@ -660,7 +779,7 @@ fn buffer_action(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError
         }
     }
     if layer.features.is_empty() {
-        return Err(ActionError::Input(format!("None of the {} has a location to measure from.", plural(&input.name().to_lowercase()))));
+        return Err(ActionError::Input(format!("None of the {} has a location to measure from.", input.plural_noun())));
     }
     let (v, unit) = area_words(total_m2);
     let detail = if merge {
@@ -794,8 +913,15 @@ fn summarize_each(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionErro
     let geoms: Vec<Geometry> = areas.features.iter().map(|f| f.geometry.clone().unwrap_or(Geometry::Polygon(Vec::new()))).collect();
     let sums = zonal::summarize(&mut b.src, &geoms, b.role, ctl)?;
     let rname = r_in.name().to_string();
-    let area_one = singular(&areas_in.name().to_lowercase());
-    let title = format!("{} in each {area_one}", capitalized(&rname));
+    let area_one = areas_in.singular_noun();
+    let each = areas_in.each();
+    let stat = plan.param("stat").unwrap_or("mean");
+    let stat_name = stat_label(RASTER_STATS, stat);
+    let title = if b.role == zonal::ValueRole::Category || stat == "mean" {
+        format!("{} in {each}", capitalized(&rname))
+    } else {
+        format!("{stat_name} {rname} in {each}")
+    };
     let mut out = (*areas).clone();
     out.name = title.clone();
     let mut rows = Vec::with_capacity(sums.len());
@@ -833,11 +959,19 @@ fn summarize_each(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionErro
         }
         first
     } else {
-        let names = [("mean", 0), ("min", 1), ("max", 2)];
+        let pick = |z: &zonal::ZonalSummary, id: &str| match id {
+            "median" => z.median,
+            "min" => z.min,
+            "max" => z.max,
+            "sum" => z.sum,
+            "std" => z.std_dev,
+            _ => z.mean,
+        };
         let mut ks = Vec::new();
-        for (n, _) in names {
-            let f = free_field(&out, &format!("{rname} {n}"));
-            ks.push((out.ensure_field(&f, FieldType::Double), f));
+        for (id, label) in RASTER_STATS {
+            let words = if *id == "std" { "std dev".to_string() } else { label.to_lowercase() };
+            let f = free_field(&out, &format!("{rname} {words}"));
+            ks.push((out.ensure_field(&f, FieldType::Double), f, *id));
         }
         let cov = free_field(&out, &format!("{rname} coverage %"));
         let kc = out.ensure_field(&cov, FieldType::Double);
@@ -846,8 +980,8 @@ fn summarize_each(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionErro
             out.ensure_field(&f, FieldType::Double)
         });
         for (feat, s) in out.features.iter_mut().zip(&sums) {
-            for ((k, _), v) in ks.iter().zip([s.mean, s.min, s.max]) {
-                feat.attrs[*k] = v.map_or(Value::Null, Value::Float);
+            for (k, _, id) in &ks {
+                feat.attrs[*k] = pick(s, id).map_or(Value::Null, Value::Float);
             }
             feat.attrs[kc] = Value::Float(s.coverage * 100.0);
             if let Some(kt) = kt {
@@ -855,19 +989,19 @@ fn summarize_each(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionErro
             }
         }
         for (i, s) in sums.iter().enumerate() {
-            rows.push(RankRow { label: areas_in.title(&areas, i), value: s.mean, row: area_rows[i] });
+            rows.push(RankRow { label: areas_in.title(&areas, i), value: pick(s, stat), row: area_rows[i] });
         }
-        ks.first().map(|(_, f)| f.clone())
+        ks.iter().find(|(_, _, id)| *id == stat).or(ks.first()).map(|(_, f, _)| f.clone())
     };
     let with: Vec<f64> = rows.iter().filter_map(|r| r.value).collect();
     let no_data = rows.len() - with.len();
     let range = match (with.iter().copied().reduce(f64::min), with.iter().copied().reduce(f64::max)) {
         (Some(lo), Some(hi)) => {
-            format!("{}–{}{}", number(lo), number(hi), if b.unit.is_empty() { String::new() } else { format!(" {}", b.unit) })
+            format!("{}{}", range_words(lo, hi), if b.unit.is_empty() { String::new() } else { format!(" {}", b.unit) })
         }
         _ => "no data".into(),
     };
-    let what = if b.role == zonal::ValueRole::Category { "share of the largest class" } else { "mean" };
+    let what = if b.role == zonal::ValueRole::Category { "share of the largest class".to_string() } else { stat_name.to_lowercase() };
     let summary =
         format!("{} · {what} {range} · {} with no data", areas_in.things(areas.features.len() as u64), group_thousands(no_data as u64));
     let partial = sums.iter().filter(|s| s.valid_cells > 0 && s.coverage < 0.995).count();
@@ -880,15 +1014,34 @@ fn summarize_each(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionErro
             if partial == 1 { "is" } else { "are" }
         ));
     }
+    // Areas smaller than one cell take their value from one or two cells (WP4.5: say so).
+    let tiny = sums.iter().filter(|s| s.valid_cells > 0 && s.valid_fraction_sum < 1.0).count();
+    if tiny > 0 {
+        notices.push(format!(
+            "{} of the {} {} smaller than one raster cell, so {} value comes from one or two cells; a finer raster would describe {} better.",
+            group_thousands(tiny as u64),
+            plural(&area_one),
+            if tiny == 1 { "is" } else { "are" },
+            if tiny == 1 { "its" } else { "their" },
+            if tiny == 1 { "it" } else { "them" }
+        ));
+    }
+    if stat == "sum" && b.role == zonal::ValueRole::Measured {
+        notices.push(format!("A sum of {rname} values depends on the cell size and is rarely meaningful for a measured value; the mean is usually what you want."));
+    }
     let mut decisions = b.decisions.clone();
-    decisions.push(match b.role {
-        zonal::ValueRole::Count => "totals assume each cell's count is spread evenly within the cell (N = Σ n·f)".into(),
-        zonal::ValueRole::Category => "category codes give shares of each area, never an average".into(),
+    decisions.push(match (b.role, stat) {
+        (zonal::ValueRole::Category, _) => "category codes give shares of each area, never an average".into(),
+        (_, "sum") => "sum of cell values, each times the fraction of the cell inside the area (Σ x·f)".into(),
+        (_, "median") => "the area-weighted median of the cells inside each area".into(),
+        (_, "min" | "max") => format!("the {} value of any cell touching the inside of each area", stat_name.to_lowercase()),
+        (_, "std") => "the area-weighted standard deviation of the cells inside each area".into(),
+        (zonal::ValueRole::Count, _) => "totals assume each cell's count is spread evenly within the cell (N = Σ n·f)".into(),
         _ => "values are averaged, weighted by each cell's covered area; no total is given for a measured value".into(),
     });
     let inputs = [r_in, areas_in];
     Ok(ActionResult {
-        label: format!("Summarize {rname} in each {area_one}"),
+        label: if stat == "mean" { format!("Summarize {rname} in {each}") } else { format!("{stat_name} {rname} in {each}") },
         card: ResultCard {
             title: title.clone(),
             summary,
@@ -927,16 +1080,25 @@ fn summarize_one(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError
         let summary = items.first().cloned().unwrap_or_else(|| "no data".into());
         (Answer::List { heading: format!("Shares of {area_name}, {cover}"), items }, summary)
     } else {
-        match s.mean {
+        let stat = plan.param("stat").unwrap_or("mean");
+        let (value, word) = match stat {
+            "median" => (s.median, "median"),
+            "min" => (s.min, "minimum"),
+            "max" => (s.max, "maximum"),
+            "sum" => (s.sum, "sum"),
+            "std" => (s.std_dev, "standard deviation"),
+            _ => (s.mean, "average"),
+        };
+        match value.filter(|_| s.mean.is_some()) {
             Some(m) => {
-                let mut detail = format!("average, {cover}");
+                let mut detail = format!("{word}, {cover}");
                 if let (Some(lo), Some(hi)) = (s.min, s.max) {
-                    detail.push_str(&format!(" · range {}–{}", number(lo), number(hi)));
+                    detail.push_str(&format!(" · range {}", range_words(lo, hi)));
                 }
                 if let Some(t) = s.total {
                     detail.push_str(&format!(" · total {}", number(t.value)));
                 }
-                (Answer::Number { value: m, unit: b.unit.clone(), detail }, format!("{} {} average", number(m), b.unit))
+                (Answer::Number { value: m, unit: b.unit.clone(), detail }, format!("{} {} {word}", number(m), b.unit))
             }
             None => (Answer::Number { value: f64::NAN, unit: b.unit.clone(), detail: cover.clone() }, "no data".into()),
         }
@@ -981,7 +1143,7 @@ fn add_raster_values(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionE
         }
     }
     let blank = values.iter().filter(|v| v.is_none()).count() as u64;
-    let things = plural(&pts_in.name().to_lowercase());
+    let things = pts_in.plural_noun();
     let title = format!("{} values for each {}", capitalized(&rname), singular(&things));
     let with: Vec<f64> = values.iter().flatten().copied().collect();
     let range = match (with.iter().copied().reduce(f64::min), with.iter().copied().reduce(f64::max)) {
@@ -1032,7 +1194,7 @@ fn rank_by_value(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError
         }
         ranked.push(RankRow { label: input.title(full, rows[i]), value: f.attrs.get(k).and_then(Value::as_f64), row: rows[i] });
     }
-    let title = format!("{} ranked by {field}", capitalized(&plural(&input.name().to_lowercase())));
+    let title = format!("{} ranked by {field}", capitalized(&input.plural_noun()));
     let with = ranked.iter().filter(|r| r.value.is_some()).count();
     let inputs = [input];
     let ranked = ranking(ranked);

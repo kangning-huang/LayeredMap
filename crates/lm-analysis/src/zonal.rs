@@ -8,6 +8,11 @@
 //!
 //! * mean `x̄ = Σ x_i a_i / Σ a_i` over valid cells; minimum and maximum over valid cells with
 //!   `f_i > 0` (fractions at or below [`MIN_FRACTION`] count as zero);
+//! * median: the area-weighted median, the smallest valid value whose cumulative weight `Σ a_i`
+//!   (values in ascending order) reaches half the total; standard deviation
+//!   `√(Σ a_i (x_i − x̄)² / Σ a_i)`, both over the same weights as the mean;
+//! * sum `Σ x_i f_i` (exactextract's `sum`: each cell's value times the fraction inside), offered
+//!   for any raster but meaningful only for counts;
 //! * count raster total `N = Σ n_i f_i` (people spread evenly within each cell); density raster
 //!   total `N = Σ d_i a_i / unit` (unit = the density's area unit in m², 10⁶ for "per km²");
 //! * category raster shares: `Σ a_i` per class over `Σ a_i` of all valid cells (never a mean of
@@ -272,6 +277,11 @@ pub struct ZonalSummary {
     /// `A_P`, the polygon's ellipsoidal area (m²).
     pub polygon_area_m2: f64,
     pub total: Option<Total>,
+    /// Area-weighted median, standard deviation, and `Σ x_i f_i` (see the module notes); `None`
+    /// with no valid covered cell, or for a category raster.
+    pub median: Option<f64>,
+    pub std_dev: Option<f64>,
+    pub sum: Option<f64>,
     /// For a category raster: classes present, by value.
     pub categories: Vec<CategoryShare>,
 }
@@ -588,6 +598,11 @@ struct Sums {
     count_total: f64,
     density_total: f64,
     cats: BTreeMap<u32, (f64, f64)>,
+    /// Σ a·x² and Σ x·f.
+    wx2: f64,
+    xf: f64,
+    /// Each valid cell's value and weight, for the median.
+    values: Vec<(f64, f64)>,
 }
 
 fn summarize_polygon(
@@ -767,6 +782,7 @@ fn add_row(sums: &mut Sums, grid: &Grid, role: ValueRole, acc: &[f64], data: &[f
     let mut cov = 0.0;
     // Row partial sums keep long sums accurate.
     let (mut wx, mut w_valid, mut w_all, mut f_valid, mut count_total, mut density_total) = (0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+    let (mut wx2, mut xf) = (0.0, 0.0);
     for (j, (&d, &raw)) in acc.iter().zip(data.iter()).enumerate() {
         cov += d;
         if cov <= MIN_FRACTION {
@@ -785,6 +801,11 @@ fn add_row(sums: &mut Sums, grid: &Grid, role: ValueRole, acc: &[f64], data: &[f
         f_valid += f;
         w_valid += a;
         wx += x * a;
+        wx2 += x * x * a;
+        xf += x * f;
+        if role != ValueRole::Category {
+            sums.values.push((x, a));
+        }
         sums.min = sums.min.min(x);
         sums.max = sums.max.max(x);
         match role {
@@ -803,9 +824,28 @@ fn add_row(sums: &mut Sums, grid: &Grid, role: ValueRole, acc: &[f64], data: &[f
     sums.f_valid += f_valid;
     sums.count_total += count_total;
     sums.density_total += density_total;
+    sums.wx2 += wx2;
+    sums.xf += xf;
 }
 
-fn finish(out: &mut ZonalSummary, s: Sums, role: ValueRole) {
+/// The smallest value whose cumulative weight reaches half the total.
+fn weighted_median(values: &mut [(f64, f64)]) -> Option<f64> {
+    values.sort_by(|a, b| a.0.total_cmp(&b.0));
+    let total: f64 = values.iter().map(|v| v.1).sum();
+    if total <= 0.0 {
+        return None;
+    }
+    let mut run = 0.0;
+    for &(x, w) in values.iter() {
+        run += w;
+        if run >= total / 2.0 {
+            return Some(x);
+        }
+    }
+    values.last().map(|v| v.0)
+}
+
+fn finish(out: &mut ZonalSummary, mut s: Sums, role: ValueRole) {
     out.valid_cells = s.n_valid;
     out.nodata_cells = s.n_nodata;
     out.valid_fraction_sum = s.f_valid;
@@ -816,9 +856,13 @@ fn finish(out: &mut ZonalSummary, s: Sums, role: ValueRole) {
     out.coverage = if denom > 0.0 { (s.w_valid / denom).min(1.0) } else { 0.0 };
     let any = s.n_valid > 0 && s.w_valid > 0.0;
     if role != ValueRole::Category && any {
-        out.mean = Some(s.wx / s.w_valid);
+        let mean = s.wx / s.w_valid;
+        out.mean = Some(mean);
         out.min = Some(s.min);
         out.max = Some(s.max);
+        out.std_dev = Some((s.wx2 / s.w_valid - mean * mean).max(0.0).sqrt());
+        out.sum = Some(s.xf);
+        out.median = weighted_median(&mut s.values);
     }
     out.total = match role {
         ValueRole::Count => Some(Total { value: s.count_total, formula: TotalFormula::CountTimesFraction }),

@@ -189,3 +189,48 @@ fn words() {
     assert_eq!(number(0.123456), "0.123");
     assert_eq!(number(21.26), "21.3");
 }
+
+/// Count with a statistic: T1 schools' students in V1 districts, against GeoPandas
+/// (`reference/stats_in_areas.py`).
+#[test]
+fn t1_students_per_district_match_geopandas_for_every_statistic() {
+    let want = csv("T1/expected_stats_in_areas.csv");
+    for (k, stat) in [(2, "sum"), (3, "mean"), (4, "median"), (5, "min"), (6, "max")] {
+        let r = run(
+            &plan("count_in", vec![input("T1/schools.csv", 1), input("V1/districts.geojson", 2)], &[("stat", stat), ("field", "students")]),
+            &Control::none(),
+        )
+        .unwrap();
+        let LayerData::Vector(ds) = &new_layer(&r).data else { panic!("vector") };
+        let id = ds.field_index("district_id").expect("district_id");
+        let label = POINT_STATS.iter().find(|(s, _)| *s == stat).map(|(_, l)| l.to_lowercase()).unwrap();
+        let f = ds.field_index(&format!("{label} students")).unwrap_or_else(|| panic!("{label} students"));
+        for w in &want {
+            let row = ds.features.iter().find(|ft| ft.attrs[id].to_string() == w[0]).expect("district");
+            let got = row.attrs[f].as_f64();
+            match w[k].parse::<f64>() {
+                Ok(v) => assert!((got.unwrap_or(f64::NAN) - v).abs() < 1e-6 * v.abs().max(1.0), "{stat} {}: {got:?} vs {v}", w[0]),
+                Err(_) => assert!(got.is_none(), "{stat} {} should be blank", w[0]),
+            }
+        }
+        let ActionOutput::NewLayer { color_by, .. } = &r.output else { panic!() };
+        assert_eq!(color_by.as_deref(), Some(format!("{label} students").as_str()));
+        assert!(r.card.title.contains("students"), "{}", r.card.title);
+    }
+    // A statistic without a value asks for one.
+    let e =
+        run(&plan("count_in", vec![input("T1/schools.csv", 1), input("V1/districts.geojson", 2)], &[("stat", "sum")]), &Control::none());
+    assert!(matches!(e, Err(ActionError::Input(_))));
+}
+
+/// Names that aren't nouns ("GUB_Global_2018") use the kind's noun; snake_case reads as words.
+#[test]
+fn layer_names_read_as_words_or_fall_back_to_the_kind() {
+    let mut pts = input("N1/points.geojson", 1);
+    pts.layer.display_name = "populated_places".into();
+    let mut areas = input("N1/areas.geojson", 2);
+    areas.layer.display_name = "GUB_Global_2018".into();
+    let r = run(&plan("count_in", vec![pts, areas], &[]), &Control::none()).unwrap();
+    assert_eq!(r.card.title, "Populated places in each area of GUB_Global_2018");
+    assert!(r.card.summary.starts_with("4 areas · "), "{}", r.card.summary);
+}
