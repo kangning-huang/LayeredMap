@@ -354,6 +354,9 @@ fn exclusions(i: &PlanInput) -> Vec<String> {
 }
 
 fn scope_words(i: &PlanInput) -> String {
+    if i.layer.profile.kind == LayerKind::Raster {
+        return format!("all of {}", i.name());
+    }
     let name = plural(&i.name().to_lowercase());
     match &i.rows {
         None => format!("all {name}"),
