@@ -3,7 +3,7 @@
   "type": "function",
   "function": {
    "name": "count_in",
-   "description": "Count points in each area. Point-in-area count. New layer: areas with field '<points layer name, lowercase>'.",
+   "description": "Count points in each area. Point-in-area count. New layer: the areas with a count field named after the points layer in lowercase (Schools: 'schools').",
    "parameters": {
     "type": "object",
     "properties": {
@@ -278,7 +278,7 @@
   "type": "function",
   "function": {
    "name": "summarize_each",
-   "description": "Summarize raster in each area. Area-weighted mean, minimum and maximum with fractional cell coverage, each cell weighted by its area on the ellipsoid. New layer: areas with fields '<raster> mean', '<raster> min', '<raster> max'.",
+   "description": "Summarize raster in each area. Area-weighted mean, minimum and maximum with fractional cell coverage, each cell weighted by its area on the ellipsoid. New layer: the areas with fields '<raster name> mean', '… min', '… max' (Heat: 'Heat mean').",
    "parameters": {
     "type": "object",
     "properties": {
@@ -383,7 +383,7 @@
   "type": "function",
   "function": {
    "name": "add_raster_values",
-   "description": "Add raster values to each point. The value of the raster cell containing each point, with scale and offset applied. Adds field '<raster name>' to the points.",
+   "description": "Add raster values to each point. The value of the raster cell containing each point, with scale and offset applied. Adds a field named after the raster to the points (Heat: 'Heat').",
    "parameters": {
     "type": "object",
     "properties": {

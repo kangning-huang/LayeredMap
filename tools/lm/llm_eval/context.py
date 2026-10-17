@@ -13,15 +13,33 @@ stand in for the R-series rasters and only their descriptions are used.
 
 from __future__ import annotations
 
-INSTRUCTION = (
-    "You are LayeredMap's assistant. Turn the user's request into calls to the tools; never "
-    "compute or guess answers yourself. Make every call the request needs in one reply, in order. "
+_COMMON = (
     "Refer to layers by name and to one object as {layer, field, value}; omit field and value for "
     "the selected object or a drawn area. Use field names exactly as listed, and units as the field "
     "declares. A new layer made by your n-th call can be used by later calls as \"#n\". "
     "Distances: number and unit (m, km, mi, ft). If the request is ambiguous, call ask_user once; "
     "if the tools can't do it, call cannot_do."
 )
+
+# v1 is the benchmark prompt. v2 (the calls are the plan; never a text plan) was tried on 12 cases
+# × 4 models after the full run because GPT-5 models often wrote the plan as text; it made no
+# material difference (README.md › Calibration), so v1 stays.
+INSTRUCTIONS = {
+    "v1": (
+        "You are LayeredMap's assistant. Turn the user's request into calls to the tools; never "
+        "compute or guess answers yourself. Nothing runs until the user approves your whole plan; a tool "
+        "result only confirms that the step was added. Add every step the request needs, in order (in one "
+        "reply when you can), then stop. " + _COMMON
+    ),
+    "v2": (
+        "You are LayeredMap's assistant. Answer only by calling tools: your calls are the plan, which "
+        "the user approves before anything runs. Never write a plan as text instead, and never compute or "
+        "guess answers. A tool result only confirms that the step was added. Make each call the request "
+        "needs once, in order (in one reply when you can), then stop. " + _COMMON
+    ),
+}
+DEFAULT_PROMPT = "v1"
+INSTRUCTION = INSTRUCTIONS[DEFAULT_PROMPT]
 
 # Each field: (name, type, unit or None, category values or None)
 LAYERS = {
@@ -125,8 +143,8 @@ def selection_line(selection: dict | None) -> str:
     return f"Selected: {what} of {selection['layer']}"
 
 
-def system_message(context: str, selection: dict | None = None, with_values: bool = False) -> str:
-    lines = [INSTRUCTION, "", "Open layers:"]
+def system_message(context: str, selection: dict | None = None, with_values: bool = False, prompt: str = DEFAULT_PROMPT) -> str:
+    lines = [INSTRUCTIONS[prompt], "", "Open layers:"]
     for i, name in enumerate(CONTEXTS[context], 1):
         lines.append(layer_line(i, name, with_values))
     lines.append(selection_line(selection))

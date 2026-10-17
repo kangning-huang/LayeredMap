@@ -299,7 +299,7 @@ def test_retry_then_score(tmp_path, monkeypatch):
     client = FlakyClient(run_eval.MockClient(CASES), fails=2)
     b = run_eval.Budget(tmp_path / "s.json", 1.0)
     rec = run_eval.run_case(client, cat["openai/gpt-oss-20b"], CASES["m02"], toolmod.tools_for("per_action"), False, b)
-    assert rec["tries"] == 3 and rec["strict"] and rec["lenient"]
+    assert rec["tries"] == 4 and rec["turns"] == 2 and rec["strict"] and rec["lenient"]
     rec = run_eval.run_case(run_eval.MockClient(CASES), cat["openai/gpt-oss-20b"], CASES["m07"], toolmod.tools_for("single"), False, b)
     assert rec["strict"], rec
 
@@ -322,3 +322,66 @@ def test_cases_cover_the_brief():
     assert set(toolmod.connected_actions()) <= expected_names
     for cat in ["multi", "vague", "impossible", "trap", "units", "filter", "style"]:
         assert any(cat in c["categories"] for c in cs), cat
+
+
+def test_gemini_namespace_is_lenient():
+    r = score("a01", tc("default_api.count_in", points="Schools", areas="Districts"))
+    assert not r["strict"] and r["lenient"]
+
+
+class SequentialClient:
+    """Answers one call per turn, as many models do, then a short text."""
+
+    def __init__(self, plan):
+        self.plan, self.bodies = plan, []
+
+    def complete(self, body):
+        self.bodies.append(body)
+        k = sum(1 for m in body["messages"] if m["role"] == "tool")
+        usage = {"prompt_tokens": 100, "completion_tokens": 10, "cost": 0.001}
+        if k >= len(self.plan):
+            return 200, {"choices": [{"message": {"role": "assistant", "content": "Done."}, "finish_reason": "stop"}], "usage": usage}
+        name, args = self.plan[k]
+        msg = {"role": "assistant", "content": None, "tool_calls": [{"id": f"x{k}", "type": "function", "function": {"name": name, "arguments": json.dumps(args)}}]}
+        return 200, {"choices": [{"message": msg, "finish_reason": "tool_calls"}], "usage": usage}
+
+
+def test_sequential_calls_are_collected_over_turns(tmp_path):
+    cat = run_eval.load_catalog()
+    client = SequentialClient([("count_in", {"points": "Schools", "areas": "Districts"}), ("rank_by_value", {"layer": "#1", "field": "schools"})])
+    b = run_eval.Budget(tmp_path / "s.json", 1.0)
+    rec = run_eval.run_case(client, cat["openai/gpt-oss-20b"], CASES["m02"], toolmod.tools_for("per_action"), False, b)
+    assert rec["turns"] == 3 and rec["strict"], rec
+    assert abs(rec["cost_usd"] - 0.003) < 1e-12 and rec["prompt_tokens"] == 300
+    tool_msgs = [m for m in client.bodies[-1]["messages"] if m["role"] == "tool"]
+    assert '"#1"' in tool_msgs[0]["content"] and "#2" in tool_msgs[1]["content"]
+
+
+def test_ask_ends_the_turns(tmp_path):
+    cat = run_eval.load_catalog()
+    client = SequentialClient([("ask_user", {"question": "Which?"}), ("count_in", {})])
+    rec = run_eval.run_case(client, cat["openai/gpt-oss-20b"], CASES["v01"], toolmod.tools_for("per_action"), False, run_eval.Budget(tmp_path / "s.json", 1.0))
+    assert rec["turns"] == 1 and rec["strict"]
+
+
+def test_repeated_call_is_lenient():
+    a = tc("measure_length", line={"layer": "Roads", "field": "name", "value": "Century Ave"})
+    r = score("a15", a, a)
+    assert not r["strict"] and r["lenient"] and r["reason"] == "extra_steps"
+
+
+class MalformedClient:
+    def complete(self, body):
+        return 200, {"choices": [{"message": {"role": "assistant", "content": None}, "finish_reason": "error", "native_finish_reason": "MALFORMED_FUNCTION_CALL"}], "usage": {}}
+
+
+def test_malformed_call_is_scored_not_retried(tmp_path):
+    cat = run_eval.load_catalog()
+    rec = run_eval.run_case(MalformedClient(), cat["google/gemini-2.5-flash-lite"], CASES["a01"], toolmod.tools_for("per_action"), False, run_eval.Budget(tmp_path / "s.json", 1.0))
+    assert rec["tries"] == 1 and rec["strict"] is False and rec["reason"] == "malformed_call" and "error" not in rec
+
+
+def test_refs_to_changed_layers_are_lenient():
+    add = tc("add_raster_values", raster="Elevation", points="Populated places")
+    r = score("u03", add, tc("filter", layer="#1", conditions=[{"field": "Elevation", "op": "above", "value": "1524"}]))
+    assert not r["strict"] and r["lenient"] and r["reason"] == "wrong_layer"

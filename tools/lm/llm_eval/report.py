@@ -21,6 +21,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
 import run_eval  # noqa: E402
+import scoring  # noqa: E402
 
 CASES = {c["id"]: c for c in run_eval.load_cases(HERE / "cases.jsonl")}
 GROUPS = ["action", "filter", "style", "display", "multi", "zh", "vague", "impossible", "trap", "units"]
@@ -29,8 +30,14 @@ GROUPS = ["action", "filter", "style", "display", "multi", "zh", "vague", "impos
 def load(date_dir: Path) -> dict[tuple[str, str], list[dict]]:
     out: dict[tuple[str, str], list[dict]] = {}
     for run in sorted(p for p in date_dir.iterdir() if p.is_dir() and not p.name.startswith("dryrun")):
-        for f in sorted(run.glob("*.jsonl")):
+        for f in sorted(p for p in run.glob("*.jsonl") if not p.name.startswith("._")):  # exFAT AppleDouble files
             rows = [json.loads(line) for line in f.read_text(encoding="utf-8").splitlines() if line.strip()]
+            for r in rows:
+                # Rescore from the stored calls, so every run is scored by the current rules.
+                if "error" not in r and "calls" in r:
+                    r.update(scoring.score(CASES[r["case"]], r["calls"], r.get("text", "")))
+                    if r.get("malformed") and not r["strict"]:
+                        r["reason"] = "malformed_call"
             if rows:
                 out[(run.name, rows[0]["model"])] = rows
     return out
@@ -86,6 +93,7 @@ def chart(summ: dict, path: Path, run: str) -> None:
 
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
+    import matplotlib.ticker  # noqa: F401
 
     items = [(m, s) for (r, m), s in summ.items() if r == run and s["n"] > 0]
     if not items:
@@ -111,12 +119,16 @@ def chart(summ: dict, path: Path, run: str) -> None:
                 continue
             on = m in front
             ax.scatter([x], [100 * s["strict"]], s=60 if on else 40, color=blue if on else muted, edgecolor=surface, linewidth=1.5, zorder=3)
-            ax.annotate(m.split("/")[-1], (x, 100 * s["strict"]), xytext=(5, 4), textcoords="offset points", fontsize=7, color=ink if on else "#52514e")
+            # Nudge labels that would sit on a neighbour's (same accuracy, close x).
+            crowded = any(m2 < m and abs(100 * (s2["strict"] - s["strict"])) < 2 and s2[xkey] is not None
+                          and abs((s2[xkey] - x) / (x if logx else 1)) < (0.6 if logx else 0.8) for m2, s2 in items)
+            ax.annotate(m.split("/")[-1], (x, 100 * s["strict"]), xytext=(5, -10 if crowded else 4), textcoords="offset points", fontsize=7, color=ink if on else "#52514e")
         if xkey == "cost_per_1k":
             fr = sorted((s["cost_per_1k"], 100 * s["strict"]) for m, s in items if m in front)
             ax.step([c for c, _ in fr], [a for _, a in fr], where="post", color=blue, linewidth=2, alpha=0.6, zorder=2)
         if logx:
             ax.set_xscale("log")
+            ax.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda v, _: f"${v:g}"))
         ax.set_xlabel(xlabel, color=ink)
         ax.set_ylabel("Strict accuracy (%)", color=ink)
         ax.tick_params(colors="#52514e", labelsize=8)

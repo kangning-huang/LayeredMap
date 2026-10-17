@@ -115,10 +115,10 @@ PARAMS_OF_ACTION = {
 # What each action makes, so a later call can use it. Not in rules.toml (the runner builds
 # these names), so written here from actions.rs; tests check the runner still uses them.
 OUTPUT_NOTE = {
-    "count_in": "New layer: areas with field '<points layer name, lowercase>'.",
+    "count_in": "New layer: the areas with a count field named after the points layer in lowercase (Schools: 'schools').",
     "buffer": "New area layer.",
-    "summarize_each": "New layer: areas with fields '<raster> mean', '<raster> min', '<raster> max'.",
-    "add_raster_values": "Adds field '<raster name>' to the points.",
+    "summarize_each": "New layer: the areas with fields '<raster name> mean', '… min', '… max' (Heat: 'Heat mean').",
+    "add_raster_values": "Adds a field named after the raster to the points (Heat: 'Heat').",
     "whats_inside": "Shows only the objects inside.",
     "summarize_drawn": "Omit area to let the user draw one.",
 }
@@ -331,6 +331,24 @@ def canonical_call(name: str, args: dict) -> dict:
         if p in args:
             out[p] = args[p]
     return {"name": action, "args": out}
+
+
+def output_note(call: dict) -> str:
+    """What a planned step will make, as the app can say before running it (tool results)."""
+    a = call.get("args") or {}
+    name = call.get("name")
+
+    def nm(x):
+        return x if isinstance(x, str) else "?"
+
+    if name == "count_in":
+        return f"Its new layer has field '{nm(a.get('points')).lower()}'."
+    if name == "summarize_each":
+        r = nm(a.get("raster"))
+        return f"Its new layer has fields '{r} mean', '{r} min', '{r} max'."
+    if name == "add_raster_values":
+        return f"It adds field '{nm(a.get('raster'))}' to {nm(a.get('points'))}."
+    return ""
 
 
 def main() -> None:

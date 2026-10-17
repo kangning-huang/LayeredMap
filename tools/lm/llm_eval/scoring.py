@@ -10,7 +10,8 @@ Two scores (README.md › Scoring):
   objects matched on the value alone (including a few spelled-out aliases); distances also in
   Chinese units, within 2 %; operator synonyms; "is X" = "any of [X]"; "above a" + "below b" =
   "between a and b"; consecutive filters on one layer merged; extra zoom/table/color calls
-  ignored; JSON given as a string decoded; a plain-text question counts as ask_user and a plain-
+  and exact repeats of a call ignored; a "#k" pointing at a filter or add-values step read as
+  the layer it changed; JSON given as a string decoded; a plain-text question counts as ask_user and a plain-
   text refusal as cannot_do; and the case's ``lenient_alts`` plans accepted.
 """
 
@@ -44,7 +45,10 @@ def parse_tool_calls(message: dict) -> tuple[list[dict], str]:
                 args = json.loads(raw) if raw else {}
             except (TypeError, ValueError):
                 args = {"_unparsed": raw}
-        calls.append(canonicalize(name, args))
+        c = canonicalize(name, args)
+        if name.startswith("default_api."):
+            c["raw_args"] = args
+        calls.append(c)
     text = message.get("content") or ""
     if isinstance(text, list):
         text = " ".join(p.get("text", "") for p in text if isinstance(p, dict))
@@ -375,11 +379,44 @@ def match_args(name: str, exp: dict, got: dict, lenient: bool) -> str | None:
 # Plans
 
 
+# Steps that change an existing layer (no new layer): a "#k" pointing at one means that layer.
+TOUCHED_LAYER = {"filter": "layer", "add_raster_values": "points"}
+
+
+def resolve_refs(calls: list[dict]) -> list[dict]:
+    """Lenient: replace "#k" that names a filter or add-values step by the layer it changed."""
+    def target(ref):
+        if isinstance(ref, str) and re.fullmatch(r"#\d+", ref.strip()):
+            k = int(ref.strip()[1:])
+            if 1 <= k <= len(calls) and calls[k - 1]["name"] in TOUCHED_LAYER:
+                t = calls[k - 1]["args"].get(TOUCHED_LAYER[calls[k - 1]["name"]])
+                if isinstance(t, str) and not re.fullmatch(r"#\d+", t.strip()):
+                    return t
+        return ref
+
+    out = []
+    for c in calls:
+        args = dict(c["args"]) if isinstance(c.get("args"), dict) else {}
+        for key in list(args):
+            if key in LAYER_KEYS:
+                args[key] = target(args[key])
+            elif key in OBJECT_KEYS and isinstance(args[key], dict) and "layer" in args[key]:
+                args[key] = {**args[key], "layer": target(args[key]["layer"])}
+        out.append({**c, "args": args})
+    return out
+
+
 def lenient_prepare(calls: list[dict], expected_names: set[str]) -> list[dict]:
     out: list[dict] = []
+    calls = resolve_refs(calls)
     for c in calls:
+        if c["name"].startswith("default_api."):  # a Gemini quirk: the namespace in the name
+            c = canonicalize(c["name"][len("default_api."):], c.get("raw_args", c["args"]))
         if c["name"] in DISPLAY_EXTRAS and c["name"] not in expected_names:
             continue
+        key = json.dumps([c["name"], c["args"]], sort_keys=True, ensure_ascii=False)
+        if any(json.dumps([o["name"], o["args"]], sort_keys=True, ensure_ascii=False) == key for o in out):
+            continue  # the same call again (models re-send a step after its stub result)
         if c["name"] == "filter" and out and out[-1]["name"] == "filter" and _norm(out[-1]["args"].get("layer")) == _norm(c["args"].get("layer")):
             a = normalize_conditions(out[-1]["args"].get("conditions"), True) or []
             b = normalize_conditions(c["args"].get("conditions"), True) or []

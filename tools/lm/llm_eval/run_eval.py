@@ -79,6 +79,9 @@ def reasoning_setting(m: dict) -> dict | None:
     return {"enabled": False} if not r.get("mandatory") else None
 
 
+PROVIDER_IGNORE: list[str] = []
+
+
 def request_body(model: dict, messages: list, tools: list) -> dict:
     sp = set(model.get("supported_parameters") or [])
     body = {
@@ -97,6 +100,8 @@ def request_body(model: dict, messages: list, tools: list) -> dict:
     rs = reasoning_setting(model)
     if rs is not None:
         body["reasoning"] = rs
+    if PROVIDER_IGNORE:
+        body["provider"] = {"ignore": list(PROVIDER_IGNORE)}
     return body
 
 
@@ -151,7 +156,11 @@ class MockClient:
         self.mode = mode
 
     def complete(self, body: dict) -> tuple[int, dict]:
-        request = body["messages"][-1]["content"]
+        n = count_tokens(json.dumps(body, ensure_ascii=False))
+        usage = {"prompt_tokens": n, "completion_tokens": 30, "cost": 0.0, "completion_tokens_details": {"reasoning_tokens": 0}}
+        if body["messages"][-1]["role"] == "tool":
+            return 200, {"choices": [{"message": {"role": "assistant", "content": "Done."}, "finish_reason": "stop"}], "usage": usage, "provider": "mock"}
+        request = body["messages"][1]["content"]
         case = next(c for c in self.cases.values() if c["request"] == request)
         tool_names = {t["function"]["name"] for t in body["tools"]}
         calls = []
@@ -162,10 +171,9 @@ class MockClient:
             calls.append({"id": "c0", "type": "function", "function": {"name": "cannot_do", "arguments": "{\"reason\": \"mock\"}"}})
         if "run_action" in tool_names:
             calls = [mock_single(c) for c in calls]
-        n = count_tokens(json.dumps(body, ensure_ascii=False))
         return 200, {
             "choices": [{"message": {"role": "assistant", "content": None, "tool_calls": calls}, "finish_reason": "tool_calls"}],
-            "usage": {"prompt_tokens": n, "completion_tokens": 30, "cost": 0.0, "completion_tokens_details": {"reasoning_tokens": 0}},
+            "usage": usage,
             "provider": "mock",
         }
 
@@ -251,69 +259,143 @@ class Budget:
 RETRYABLE = {408, 409, 425, 429, 500, 502, 503, 504, 520, 522, 524, 529}
 
 
-def run_case(client, model: dict, case: dict, tools: list, with_values: bool, budget: Budget, max_tries: int = 6) -> dict:
-    system = ctxmod.system_message(case["context"], case.get("selection"), with_values)
-    messages = [{"role": "system", "content": system}, {"role": "user", "content": case["request"]}]
-    body = request_body(model, messages, tools)
+NEW_LAYER_ACTIONS = {"count_in", "buffer", "summarize_each"}
+MAX_TURNS = 5
+
+
+def _request(client, body: dict, max_tries: int) -> tuple[int, dict, float, int, str | None]:
+    """One completion with retries. (status, data, latency of the last try, tries, error)."""
+    status, data, latency, tries = 0, {}, 0.0, 0
+    for tries in range(1, max_tries + 1):
+        t0 = time.monotonic()
+        try:
+            status, data = client.complete(body)
+        except Exception as e:  # noqa: BLE001  (network errors are retried)
+            status, data = 599, {"error": {"message": type(e).__name__}}
+        latency = time.monotonic() - t0
+        err = data.get("error") if isinstance(data, dict) else None
+        choice = ((data.get("choices") or [{}])[0]) if isinstance(data, dict) else {}
+        if status == 200 and not err and choice.get("finish_reason") == "error":
+            if choice.get("native_finish_reason") == "MALFORMED_FUNCTION_CALL":
+                # The model's own failure (Gemini), not a transient one: scored, not retried.
+                return status, data, latency, tries, None
+            err = choice.get("error") or {"message": "finish_reason error", "code": 502}
+        code = status
+        if status == 200 and err:
+            code = int(err.get("code")) if str(err.get("code", "")).isdigit() else 502
+        if status == 200 and not err and data.get("choices"):
+            return status, data, latency, tries, None
+        if code in RETRYABLE and tries < max_tries:
+            time.sleep(min(60, 2 ** tries) * (0.5 + random.random()))
+            continue
+        return status, data, latency, tries, str((err or {}).get("message", "no choices"))[:300]
+    return status, data, latency, tries, "no tries"
+
+
+def run_case(client, model: dict, case: dict, tools: list, with_values: bool, budget: Budget, max_tries: int = 6, prompt: str = ctxmod.DEFAULT_PROMPT) -> dict:
+    """Plan one request. Each tool call gets a stub result ("step #k added") and the model may
+    continue, up to MAX_TURNS turns, until it replies without calls or asks or refuses."""
+    system = ctxmod.system_message(case["context"], case.get("selection"), with_values, prompt)
+    messages: list = [{"role": "system", "content": system}, {"role": "user", "content": case["request"]}]
     pin, pout = price(model)
     est_prompt = count_tokens(system) + count_tokens(json.dumps(tools, ensure_ascii=False)) + 50
-    reserve = est_prompt * pin * 1.3 + 1500 * pout
     rec: dict = {"case": case["id"], "model": model["id"]}
-    if not budget.reserve(reserve):
-        rec["error"] = "budget"
-        return rec
-    actual = 0.0
-    try:
-        status, data, latency, tries = 0, {}, 0.0, 0
-        for tries in range(1, max_tries + 1):
-            t0 = time.monotonic()
-            try:
-                status, data = client.complete(body)
-            except Exception as e:  # noqa: BLE001  (network errors are retried)
-                status, data = 599, {"error": {"message": type(e).__name__}}
-            latency = time.monotonic() - t0
-            err = data.get("error") if isinstance(data, dict) else None
-            code = status
-            if status == 200 and err:
-                code = int(err.get("code") or 500) if str(err.get("code", "")).isdigit() else 500
-            if status == 200 and not err and data.get("choices"):
-                break
-            if code in RETRYABLE and tries < max_tries:
-                time.sleep(min(60, 2 ** tries) * (0.5 + random.random()))
-                continue
+    tot = {"prompt_tokens": 0, "completion_tokens": 0, "reasoning_tokens": 0, "cached_tokens": 0}
+    cost = latency = 0.0
+    tries_all = 0
+    calls: list[dict] = []
+    raw_calls: list[dict] = []
+    text = ""
+    turns = 0
+    finish = None
+    error = None
+    for turn in range(MAX_TURNS):
+        body = request_body(model, messages, tools)
+        reserve = (est_prompt + 300 * turn) * pin * 1.3 + 1500 * pout
+        if not budget.reserve(reserve):
+            error = "budget"
             break
-        usage = data.get("usage") or {}
-        actual = float(usage.get("cost") or 0.0)
-        rec.update(
-            {
-                "status": status,
-                "tries": tries,
-                "latency_s": round(latency, 3),
-                "prompt_tokens": usage.get("prompt_tokens"),
-                "completion_tokens": usage.get("completion_tokens"),
-                "reasoning_tokens": (usage.get("completion_tokens_details") or {}).get("reasoning_tokens"),
-                "cached_tokens": (usage.get("prompt_tokens_details") or {}).get("cached_tokens"),
-                "cost_usd": actual,
-                "provider": data.get("provider"),
-            }
-        )
-        if not data.get("choices"):
-            rec["error"] = str((data.get("error") or {}).get("message", "no choices"))[:300]
-            return rec
+        actual = 0.0
+        try:
+            status, data, lat, tries, err = _request(client, body, max_tries)
+            usage = data.get("usage") or {} if isinstance(data, dict) else {}
+            actual = float(usage.get("cost") or 0.0)
+        finally:
+            budget.settle(reserve, actual)
+        turns += 1
+        tries_all += tries
+        cost += actual
+        latency += lat
+        for k, path in [("prompt_tokens", ()), ("completion_tokens", ()), ("reasoning_tokens", ("completion_tokens_details",)), ("cached_tokens", ("prompt_tokens_details",))]:
+            src = usage
+            for p in path:
+                src = src.get(p) or {}
+            tot[k] += src.get(k) or 0
+        rec["provider"] = data.get("provider") if isinstance(data, dict) else None
+        rec["status"] = status
+        if err:
+            error = err
+            break
         choice = data["choices"][0]
+        finish = choice.get("finish_reason")
+        if choice.get("native_finish_reason") == "MALFORMED_FUNCTION_CALL":
+            rec["malformed"] = True
+            break
         msg = choice.get("message") or {}
-        calls, text = scoring.parse_tool_calls(msg)
-        rec["finish_reason"] = choice.get("finish_reason")
-        rec["raw_calls"] = [
-            {"name": (tc.get("function") or {}).get("name"), "arguments": (tc.get("function") or {}).get("arguments")}
-            for tc in msg.get("tool_calls") or []
-        ]
-        rec["calls"] = calls
-        rec["text"] = (text or "")[:500]
-        rec.update(scoring.score(case, calls, text))
+        new_calls, t = scoring.parse_tool_calls(msg)
+        text = t or text
+        tcs = msg.get("tool_calls") or []
+        for tc in tcs:
+            f = tc.get("function") or {}
+            raw_calls.append({"turn": turn + 1, "name": f.get("name"), "arguments": f.get("arguments")})
+        if not new_calls:
+            break
+        calls.extend(new_calls)
+        if any(c["name"] in ("ask_user", "cannot_do") for c in new_calls):
+            break
+        # Send back the assistant turn as given (keeping any reasoning details) and stub results.
+        amsg = {k: v for k, v in msg.items() if k in ("role", "content", "tool_calls", "reasoning_details", "reasoning")}
+        amsg["role"] = "assistant"
+        fixed = []
+        for i, tc in enumerate(tcs):
+            tc = dict(tc)
+            tc.setdefault("id", f"call_{turn}_{i}")
+            if not tc.get("id"):
+                tc["id"] = f"call_{turn}_{i}"
+            tc.setdefault("type", "function")
+            fixed.append(tc)
+        amsg["tool_calls"] = fixed
+        messages.append(amsg)
+        first = len(calls) - len(new_calls)
+        for i, (tc, c) in enumerate(zip(fixed, new_calls)):
+            k = first + i + 1
+            note = f"Step #{k} added to the plan (not run yet)."
+            if c["name"] in NEW_LAYER_ACTIONS:
+                note += f' Later steps can use its new layer as "#{k}".'
+            extra = toolmod.output_note(c)
+            if extra:
+                note += " " + extra
+            messages.append({"role": "tool", "tool_call_id": tc["id"], "content": note})
+    rec.update(
+        {
+            "turns": turns,
+            "tries": tries_all,
+            "latency_s": round(latency, 3),
+            **tot,
+            "cost_usd": cost,
+            "finish_reason": finish,
+            "raw_calls": raw_calls,
+            "calls": calls,
+            "text": (text or "")[:500],
+        }
+    )
+    if error:
+        rec["error"] = error
         return rec
-    finally:
-        budget.settle(reserve, actual)
+    rec.update(scoring.score(case, calls, text))
+    if rec.get("malformed") and not rec["strict"]:
+        rec["reason"] = "malformed_call"
+    return rec
 
 
 # ---------------------------------------------------------------------------------------------
@@ -332,6 +414,7 @@ def main(argv=None) -> int:
     ap.add_argument("--models", default=",".join(SHORTLIST), help="comma-separated OpenRouter ids")
     ap.add_argument("--design", choices=list(toolmod.DESIGNS), default="per_action")
     ap.add_argument("--variant", choices=["value_free", "with_values"], default="value_free")
+    ap.add_argument("--prompt", choices=list(ctxmod.INSTRUCTIONS), default=ctxmod.DEFAULT_PROMPT)
     ap.add_argument("--cases", default=str(HERE / "cases.jsonl"))
     ap.add_argument("--only", default="", help="comma-separated case ids")
     ap.add_argument("--budget", type=float, default=3.0, help="US$ cap for all runs on this date")
@@ -341,9 +424,12 @@ def main(argv=None) -> int:
     ap.add_argument("--out", default=str(HERE / "results"))
     ap.add_argument("--dry-run", action="store_true", help="mocked client, no network, no key")
     ap.add_argument("--mock-mode", default="perfect", choices=["perfect", "refuse"])
+    ap.add_argument("--provider-ignore", default="", help="comma-separated OpenRouter provider names to avoid")
+    ap.add_argument("--tag", default="", help="suffix for the run folder, e.g. repeat2")
     ap.add_argument("--rerun", action="store_true", help="ignore earlier results for these cases")
     a = ap.parse_args(argv)
 
+    PROVIDER_IGNORE[:] = [p.strip() for p in a.provider_ignore.split(",") if p.strip()]
     catalog = load_catalog()
     models = [m.strip() for m in a.models.split(",") if m.strip()]
     missing = [m for m in models if m not in catalog]
@@ -357,7 +443,9 @@ def main(argv=None) -> int:
     tools = toolmod.tools_for(a.design)
     with_values = a.variant == "with_values"
 
-    run_name = a.design + ("" if a.variant == "value_free" else f"-{a.variant}")
+    run_name = a.design + ("" if a.variant == "value_free" else f"-{a.variant}") + ("" if a.prompt == ctxmod.DEFAULT_PROMPT else f"-{a.prompt}")
+    if a.tag:
+        run_name += f"-{a.tag}"
     if a.dry_run:
         run_name = "dryrun-" + run_name
     out_dir = Path(a.out) / a.date / run_name
@@ -395,8 +483,10 @@ def main(argv=None) -> int:
 
     def work(m, c, path):
         with sems[m]:
-            rec = run_case(client, catalog[m], c, tools, with_values, budget)
-        rec["design"], rec["variant"] = a.design, a.variant
+            rec = run_case(client, catalog[m], c, tools, with_values, budget, prompt=a.prompt)
+        rec["design"], rec["variant"], rec["prompt"] = a.design, a.variant, a.prompt
+        if PROVIDER_IGNORE:
+            rec["provider_ignore"] = list(PROVIDER_IGNORE)
         if rec.get("error") == "budget":
             return rec
         with locks[m]:

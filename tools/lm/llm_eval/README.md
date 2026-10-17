@@ -34,8 +34,12 @@ $PY -I tools/lm/llm_eval/run_eval.py --dry-run        # mocked client: no key, n
 $PY -I tools/lm/llm_eval/run_eval.py                  # the 15-model shortlist, design A
 $PY -I tools/lm/llm_eval/run_eval.py --design single --models <ids>
 $PY -I tools/lm/llm_eval/run_eval.py --variant with_values --models <ids>
-$PY -I tools/lm/llm_eval/report.py
+$PY -I tools/lm/llm_eval/run_eval.py --tag repeat2 --models <ids>   # a repeat, in its own folder
+$PY -I tools/lm/llm_eval/report.py                    # rescore every run, write summaries and the chart
 ```
+
+Other options: `--provider-ignore Darkbloom` (skip a failing OpenRouter provider), `--prompt v2`,
+`--only a01,m02`, `--rerun`, `--budget`, `--concurrency`.
 
 The key is read at run time from the macOS keychain
 (`security find-generic-password -s openrouter -a layeredmap -w`) and is never printed, logged or
@@ -51,8 +55,25 @@ network errors (up to 6 tries). A run resumes: cases already scored are skipped.
 OpenRouter don't list it); `usage: {include: true}` for the real cost; `max_tokens 4000`;
 `tool_choice auto`. Reasoning is set to the lowest the catalog allows: switched off where it is
 optional (`reasoning: {enabled: false}`), otherwise the lowest listed effort (`minimal` or
-`low`). Reasoning tokens are recorded. One request per case, one turn: the instruction asks for
-the whole plan in one reply, as the Ask box would need (no tool results are sent back).
+`low`). Reasoning tokens are recorded.
+
+**Turns.** The instruction asks for the whole plan, and says nothing runs until the user approves
+it. Most models still call one tool per turn and wait for its result, so each case is a short
+loop: every tool call gets a stub result ("Step #k added to the plan (not run yet)", plus the new
+layer's `#k` and field names, which the app knows before running), and the model may continue,
+up to 5 turns, until it replies without a call or calls `ask_user` / `cannot_do`. The plan is all
+calls in order. Tokens, cost and latency are summed over the turns, so a model that needs an
+extra turn to say "done" pays for it. No real result or feature value is ever sent back.
+
+**Calibration.** Before the full run, a smoke test (6 cases × 5 models, US$0.05) showed that
+single-turn plans dropped every second step and that models guessed the count field's name;
+the loop above, the "nothing runs until approved" sentence and an example field name in the
+tool notes ("Schools: 'schools'") were added then. After the full run, a second instruction
+(`--prompt v2`: "your calls are the plan; never a text plan") was tried on 12 cases × 4 models
+because GPT-5 models wrote plans as text; it made no material difference, so `v1` stays the
+default. Review of the full run also added one strict alternative (case a11) and three lenient
+rules (exact repeats, `#k` pointing at a changed layer, Gemini's `default_api.` prefix); every
+run is rescored from its stored calls by `report.py`, so all results use the same rules.
 
 ## Tool interface
 
@@ -96,7 +117,7 @@ Century Ave is road 2), and each expected object lists every (field, value) pair
 more in multi-step plans), filters and styling, multi-step plans (11), Chinese (17), vague
 requests that should ask (5), impossible ones that should be refused (6), wrong-layer traps (7),
 and unit conversions (11: miles, feet, hectares, 公里, 米, million US$, 一亿). Cases were not tuned
-on any model's output; nothing was changed after the runs except where noted in the report.
+on any model's output; the one later change (an alternative plan for a11) is noted above.
 
 ## Scoring
 
@@ -118,7 +139,8 @@ case or spacing; any `#n` for a result layer; objects matched on the value alone
 aliases (Century Avenue, 世纪大道); distances in Chinese units (米, 公里) or as numbers, within 2 %;
 operator synonyms (`>`, `gt`, `in`…), `is X` = `any of [X]`, `above a` + `below b` = `between`;
 numbers with thousands separators; consecutive filters on one layer merged; extra `zoom_to`,
-`view_data` or `color_by` calls ignored; JSON arguments sent as strings decoded; a plain-text
+`view_data` or `color_by` calls and exact repeats of a call ignored; a `#k` that points at a
+filter or add-values step read as the layer that step changed; JSON arguments sent as strings decoded; a plain-text
 reply with a question mark counts as `ask_user`, and a plain-text reply as `cannot_do`; and the
 case's `lenient_alts` (acceptable but not ideal plans, e.g. a buffer with the default distance
 when none was given).

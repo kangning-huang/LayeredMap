@@ -119,7 +119,11 @@ case("a10", ["action", "buffer"], "en", "shanghai", "Draw a 1 km buffer around e
      [call("buffer", layer="Roads", distance=dist(1000), merge=False)])
 case("a11", ["action", "buffer", "units"], "en", "world", "Show everything within 100 miles of Paris.",
      [call("buffer", layer="Populated places", object=obj("Populated places", ("name", "Paris"), ("name_zh", "巴黎")), distance=dist(160934.4))],
-     notes="'Paris' exists only in Populated places (the country is France).")
+     alts=[[call("buffer", layer="Populated places", object=obj("Populated places", ("name", "Paris"), ("name_zh", "巴黎")), distance=dist(160934.4)),
+            call("whats_inside", area={"layer": ["#1"], "selected": True}, layer="Populated places")]],
+     lenient_alts=[[ASK]],
+     notes="'Paris' exists only in Populated places (the country is France). Alt added after the run "
+           "(review): listing the places inside the zone is a fair reading of 'everything'.")
 case("a12", ["action", "buffer", "zh", "units"], "zh", "shanghai", "以每所学校为中心画半径500米的范围",
      [call("buffer", layer="Schools", distance=dist(500))])
 case("a13", ["action", "measure_area"], "en", "shanghai", "How big is this district in square kilometres?",
