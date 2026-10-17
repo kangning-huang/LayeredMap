@@ -62,6 +62,8 @@ fn companion_kinds(action: &str, main: LayerKind) -> Vec<LayerKind> {
         ("summarize_here" | "summarize_drawn", _) => vec![Raster],
         ("add_raster_values", Raster) => vec![Points],
         ("add_raster_values", _) => vec![Raster],
+        ("keep_inside" | "remove_inside" | "join_by_location", _) => vec![Areas],
+        ("nearest_distance", _) => vec![Points, Lines, Areas],
         _ => Vec::new(),
     }
 }
@@ -88,6 +90,9 @@ pub fn open(shell: &mut Shell, main: LayerId, row: Option<usize>, a: &Suggested)
     let mut params = BTreeMap::new();
     if a.action_id == "buffer" {
         params.insert("distance".into(), "1 km".into());
+    }
+    if a.action_id == "find_where" {
+        params.insert("conditions".into(), format!("{}|at_least|", main.0));
     }
     if a.action_id == "rank_by_value" {
         let f = a.field.clone().or_else(|| first_numeric_field(&l));
@@ -206,13 +211,45 @@ fn plan(shell: &Shell, c: &Composer) -> Result<Plan, String> {
             let (r, p) = if kind == LayerKind::Raster { (c.main, o) } else { (o, c.main) };
             vec![input(r, None)?, input(p, if p == c.main { rows_main.clone() } else { None })?]
         }
+        "find_where" => {
+            // The conditions name rasters by layer id; the runner wants input positions.
+            let mut ids: Vec<LayerId> = Vec::new();
+            let mut items = Vec::new();
+            for item in c.params.get("conditions").map(String::as_str).unwrap_or("").split(';').filter(|i| !i.trim().is_empty()) {
+                let mut parts: Vec<String> = item.split('|').map(str::to_string).collect();
+                let id = parts.first().and_then(|p| p.parse::<u64>().ok()).map(LayerId).ok_or("A condition names no raster.")?;
+                let k = ids.iter().position(|x| *x == id).unwrap_or_else(|| {
+                    ids.push(id);
+                    ids.len() - 1
+                });
+                parts[0] = k.to_string();
+                items.push(parts.join("|"));
+            }
+            if items.is_empty() {
+                return Err("Add a condition.".into());
+            }
+            let mut v = Vec::new();
+            for id in ids {
+                v.push(input(id, None)?);
+            }
+            let mut p = c.params.clone();
+            p.insert("conditions".into(), items.join(";"));
+            return finish_plan(c, v, p);
+        }
+        "keep_inside" | "remove_inside" | "join_by_location" | "nearest_distance" => {
+            vec![input(c.main, rows_main.clone())?, input(other.unwrap_or(c.main), None)?]
+        }
         _ => vec![input(c.main, rows_main.clone().or(one.clone()))?],
     };
+    finish_plan(c, inputs, c.params.clone())
+}
+
+fn finish_plan(c: &Composer, inputs: Vec<lm_jobs::actions::PlanInput>, params: BTreeMap<String, String>) -> Result<Plan, String> {
     let spec = lm_actions::registry().action(&c.action);
     Ok(Plan {
         action: c.action.clone(),
         inputs,
-        params: c.params.clone(),
+        params,
         method: spec.and_then(|s| s.method.clone()).unwrap_or_default(),
         computed_at: std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_secs() as i64),
         software: format!("LayeredMap {}", env!("CARGO_PKG_VERSION")),
@@ -423,6 +460,81 @@ pub fn composer(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
                 }
             });
         });
+    }
+    // "Find areas where…": one row per condition (raster, test, value), and Add condition.
+    if action == "find_where"
+        && let Some(c) = shell.composer.as_mut()
+    {
+        let rasters: Vec<(LayerId, String)> = shell
+            .ws
+            .doc
+            .layers
+            .iter()
+            .rev()
+            .filter(|o| o.profile.kind == LayerKind::Raster)
+            .map(|o| (o.id, o.display_name.clone()))
+            .collect();
+        let mut rows: Vec<Vec<String>> = c
+            .params
+            .get("conditions")
+            .map(String::as_str)
+            .unwrap_or("")
+            .split(';')
+            .filter(|i| !i.trim().is_empty())
+            .map(|i| i.split('|').map(str::to_string).collect())
+            .collect();
+        let tests = [("at_least", "≥  at least"), ("at_most", "≤  at most"), ("between", "[ ]  between")];
+        let mut remove = None;
+        let mut edited = false;
+        for (k, row) in rows.iter_mut().enumerate() {
+            row.resize(4, String::new());
+            ui.horizontal_wrapped(|ui| {
+                let name =
+                    rasters.iter().find(|(id, _)| id.0.to_string() == row[0]).map_or("Choose a raster".to_string(), |(_, n)| n.clone());
+                egui::ComboBox::from_id_salt(("lm-where-raster", k)).selected_text(name).show_ui(ui, |ui| {
+                    for (id, n) in &rasters {
+                        if ui.selectable_label(id.0.to_string() == row[0], n).clicked() {
+                            row[0] = id.0.to_string();
+                            edited = true;
+                        }
+                    }
+                });
+                let shown = tests.iter().find(|(t, _)| *t == row[1]).map_or("≥  at least", |(_, w)| *w);
+                egui::ComboBox::from_id_salt(("lm-where-test", k)).selected_text(shown).show_ui(ui, |ui| {
+                    for (t, w) in tests {
+                        if ui.selectable_label(row[1] == t, w).clicked() {
+                            row[1] = t.to_string();
+                            edited = true;
+                        }
+                    }
+                });
+                if ui.add(egui::TextEdit::singleline(&mut row[2]).desired_width(64.0).hint_text("a number")).changed() {
+                    edited = true;
+                }
+                if row[1] == "between" {
+                    ui.label("and");
+                    if ui.add(egui::TextEdit::singleline(&mut row[3]).desired_width(64.0).hint_text("a number")).changed() {
+                        edited = true;
+                    }
+                }
+                if k > 0 && ui.small_button("×").on_hover_text("Remove this condition").clicked() {
+                    remove = Some(k);
+                }
+            });
+        }
+        if let Some(k) = remove {
+            rows.remove(k);
+            edited = true;
+        }
+        if ui.link(RichText::new("+ Add condition").size(CAPTION)).clicked() {
+            let first = rasters.first().map(|(id, _)| id.0.to_string()).unwrap_or_default();
+            rows.push(vec![first, "at_least".into(), String::new(), String::new()]);
+            edited = true;
+        }
+        if edited {
+            c.params.insert("conditions".into(), rows.iter().map(|r| r.join("|")).collect::<Vec<_>>().join(";"));
+            changed = true;
+        }
     }
     // "Add a field calculated from two values": first value, operation, second value.
     if action == "calculate_field"

@@ -19,12 +19,16 @@
 //! | `rank_by_value` | the layer; parameter `field` |
 //! | `calculate_field` | the layer (parameters `a`, `op`, `b`, `name`) |
 //! | `split_parts` | the layer |
+//! | `find_where` | the rasters (parameter `conditions`) |
+//! | `keep_inside`, `remove_inside` | the layer, the areas |
 //!
 //! Parameters: `distance` ("1 km", "500 m"), `merge` ("yes"/"no"), `band` (1-based), `field`;
 //! `stat` on `count_in` (count, sum, mean, median, min, max; with `field`, a numeric field of the
 //! points) and on the summaries (mean, median, min, max, sum, std); for `calculate_field`, `a` (a
 //! number field), `op` (add, subtract, multiply, divide), `b` (a number field or a number) and
-//! `name` (the new field's name).
+//! `name` (the new field's name); for `find_where`, `conditions`: `k|test|a|b` items joined by
+//! `;`, where `k` is the raster's input position (0 first), `test` is at_least, at_most, between
+//! or any_of (`a` a comma list of codes).
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;
@@ -238,6 +242,9 @@ pub const ACTIONS: &[&str] = &[
     "rank_by_value",
     "calculate_field",
     "split_parts",
+    "find_where",
+    "keep_inside",
+    "remove_inside",
 ];
 
 /// Runs a plan. Checks `ctl` throughout; a cancelled run returns [`ActionError::Cancelled`] and
@@ -256,6 +263,8 @@ pub fn run(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
         "rank_by_value" => rank_by_value(plan, ctl),
         "calculate_field" => calculate_field(plan, ctl),
         "split_parts" => split_parts(plan, ctl),
+        "find_where" => find_where(plan, ctl),
+        "keep_inside" | "remove_inside" => clip_action(plan, ctl),
         other => Err(ActionError::Input(format!("LayeredMap can't run “{other}” yet."))),
     }
 }
@@ -1380,6 +1389,177 @@ fn split_parts(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> 
             notices: Vec::new(),
         },
         recipe: recipe(plan, &title, &inputs, "", Vec::new(), Vec::new()),
+        output: ActionOutput::NewLayer { layer: layer_from(&title, "Result", out), color_by: None },
+        highlight: None,
+    })
+}
+
+// ---------------------------------------------------------------------------------------------
+// Finding areas, and cutting layers
+
+/// One condition of "Find areas where…": the raster's input position and the test.
+#[derive(Clone, Debug, PartialEq)]
+pub struct WhereCondition {
+    pub input: usize,
+    pub test: lm_analysis::where_areas::Test,
+}
+
+/// Reads the `conditions` parameter (see the module notes).
+pub fn parse_conditions(s: &str) -> Result<Vec<WhereCondition>, String> {
+    use lm_analysis::where_areas::Test;
+    let num = |t: &str| t.trim().replace(',', "").parse::<f64>().map_err(|_| format!("“{t}” isn't a number"));
+    let mut out = Vec::new();
+    for item in s.split(';').map(str::trim).filter(|i| !i.is_empty()) {
+        let parts: Vec<&str> = item.split('|').collect();
+        let input = parts.first().and_then(|k| k.trim().parse::<usize>().ok()).ok_or_else(|| format!("“{item}” names no raster"))?;
+        let a = parts.get(2).copied().unwrap_or("");
+        let test = match parts.get(1).map(|t| t.trim()) {
+            Some("at_least") => Test::AtLeast(num(a)?),
+            Some("at_most") => Test::AtMost(num(a)?),
+            Some("between") => Test::Between(num(a)?, num(parts.get(3).copied().unwrap_or(""))?),
+            Some("any_of") => Test::AnyOf(a.split(',').map(num).collect::<Result<Vec<_>, _>>()?),
+            other => return Err(format!("“{}” isn't a condition LayeredMap knows", other.unwrap_or(""))),
+        };
+        out.push(WhereCondition { input, test });
+    }
+    if out.is_empty() {
+        return Err("Add at least one condition.".into());
+    }
+    Ok(out)
+}
+
+/// "at least 1,500 m", "between 10 and 20 °C".
+pub fn condition_words(t: &lm_analysis::where_areas::Test, unit: &str) -> String {
+    use lm_analysis::where_areas::Test;
+    let u = if unit.is_empty() { String::new() } else { format!(" {unit}") };
+    match t {
+        Test::AtLeast(v) => format!("at least {}{u}", number(*v)),
+        Test::AtMost(v) => format!("at most {}{u}", number(*v)),
+        Test::Between(a, b) => format!("between {} and {}{u}", number(a.min(*b)), number(a.max(*b))),
+        Test::AnyOf(vs) => format!("one of {}", vs.iter().map(|v| number(*v)).collect::<Vec<_>>().join(", ")),
+    }
+}
+
+fn find_where(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
+    let conds = parse_conditions(plan.param("conditions").unwrap_or("")).map_err(ActionError::Input)?;
+    // Each condition's raster as a band (scale and offset applied), in condition order.
+    let mut bands = Vec::with_capacity(conds.len());
+    let mut words = Vec::with_capacity(conds.len());
+    let mut decisions = Vec::new();
+    for c in &conds {
+        let input = plan.input(c.input)?;
+        let b = band(plan, input)?;
+        words.push(format!("{} {}", input.name(), condition_words(&c.test, &b.unit)));
+        decisions.extend(b.decisions.clone());
+        bands.push((b.src, input.name().to_string()));
+    }
+    let names: Vec<String> = bands.iter().map(|(_, n)| n.clone()).collect();
+    let mut conditions: Vec<lm_analysis::where_areas::Condition<'_>> = bands
+        .into_iter()
+        .zip(&conds)
+        .map(|((src, _), c)| lm_analysis::where_areas::Condition { band: src, test: c.test.clone() })
+        .collect();
+    let res = lm_analysis::where_areas::find_where(&mut conditions, ctl)?;
+    let total_m2: f64 = res.areas.iter().map(|a| a.area_m2).sum();
+    let title = format!("Where {}", words.join(" and "));
+    let mut fields =
+        vec![Field::new("name", FieldType::Text), Field::new("area_km2", FieldType::Double), Field::new("cells", FieldType::Integer)];
+    for name in &names {
+        fields.push(Field::new(format!("{name} mean"), FieldType::Double));
+    }
+    let mut layer = Dataset::new(title.clone(), rustgis_engine::data::GeometryType::Polygon, fields);
+    let mut order: Vec<usize> = (0..res.areas.len()).collect();
+    order.sort_by(|a, b| res.areas[*b].area_m2.total_cmp(&res.areas[*a].area_m2));
+    for (rank, i) in order.iter().enumerate() {
+        let a = &res.areas[*i];
+        let mut attrs = vec![Value::Text(format!("Area {}", rank + 1)), Value::Float(a.area_m2 / 1e6), Value::Int(a.cells as i64)];
+        attrs.extend(a.means.iter().map(|m| m.map_or(Value::Null, Value::Float)));
+        layer.push_next(Some(a.geometry.clone()), attrs);
+    }
+    let (v, unit) = area_words(total_m2);
+    let n = res.areas.len() as u64;
+    let rows: Vec<RankRow> = layer
+        .features
+        .iter()
+        .enumerate()
+        .take(200)
+        .map(|(i, f)| RankRow { label: format!("Area {}", i + 1), value: f.attrs.get(1).and_then(Value::as_f64), row: i })
+        .collect();
+    let mut notices = Vec::new();
+    if n == 0 {
+        notices.push("No place meets every condition. Try loosening one of them.".into());
+    }
+    if names.len() > 1 {
+        decisions.push(format!("other rasters read at the centre of each cell of {}'s grid (nearest cell, no interpolation)", names[0]));
+    }
+    let inputs: Vec<&PlanInput> = conds.iter().filter_map(|c| plan.inputs.get(c.input)).collect();
+    Ok(ActionResult {
+        label: "Find areas where conditions hold".into(),
+        card: ResultCard {
+            title: title.clone(),
+            summary: format!("{} {} · {} {unit} in all", group_thousands(n), if n == 1 { "area" } else { "areas" }, number(v)),
+            answer: Answer::Ranking { rows, unit: "km²".into() },
+            context: vec![
+                format!("Conditions: {}", words.join("; ")),
+                format!("Cells that qualify: {} of {}", group_thousands(res.cells_in), group_thousands(res.grid_cells)),
+            ],
+            notices,
+        },
+        recipe: recipe(plan, &title, &inputs, CELL_AREAS, decisions, Vec::new()),
+        output: ActionOutput::NewLayer { layer: layer_from(&title, "Result", layer), color_by: None },
+        highlight: None,
+    })
+}
+
+fn clip_action(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
+    let (layer_in, mask_in) = (plan.input(0)?, plan.input(1)?);
+    let (ds, _) = layer_in.scoped()?;
+    let (mask, _) = mask_in.scoped()?;
+    let keep = plan.action == "keep_inside";
+    let res = if keep { lm_analysis::clip::keep_inside(&ds, &mask, ctl)? } else { lm_analysis::clip::remove_inside(&ds, &mask, ctl)? };
+    let what = layer_in.plural_noun();
+    let title = if keep {
+        format!("{} inside {}", capitalized(&what), mask_in.name())
+    } else {
+        format!("{} outside {}", capitalized(&what), mask_in.name())
+    };
+    let n = res.dataset.features.len() as u64;
+    let mut notices = Vec::new();
+    if res.dropped > 0 {
+        notices.push(format!(
+            "{} had nothing left and {} dropped.",
+            layer_in.things(res.dropped),
+            if res.dropped == 1 { "was" } else { "were" }
+        ));
+    }
+    let mut out = res.dataset;
+    out.name = title.clone();
+    let inputs = [layer_in, mask_in];
+    let decision = if keep {
+        "the part inside the other layer's areas is kept; edges straight in longitude and latitude; points on a boundary are kept"
+            .to_string()
+    } else {
+        "the part inside the other layer's areas is removed; edges straight in longitude and latitude; points on a boundary are removed"
+            .to_string()
+    };
+    Ok(ActionResult {
+        label: if keep {
+            format!("Keep {} inside {}", layer_in.name(), mask_in.name())
+        } else {
+            format!("Remove {} inside {}", layer_in.name(), mask_in.name())
+        },
+        card: ResultCard {
+            title: title.clone(),
+            summary: format!("{} kept · {} dropped", group_thousands(n), group_thousands(res.dropped)),
+            answer: Answer::Number {
+                value: n as f64,
+                unit: what.clone(),
+                detail: format!("{} {}", if keep { "inside" } else { "outside" }, mask_in.name()),
+            },
+            context: context(&inputs, &[]),
+            notices,
+        },
+        recipe: recipe(plan, &title, &inputs, "", vec![decision], Vec::new()),
         output: ActionOutput::NewLayer { layer: layer_from(&title, "Result", out), color_by: None },
         highlight: None,
     })

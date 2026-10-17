@@ -703,3 +703,36 @@ fn pro_offers_analysis_actions() {
         }
     }
 }
+
+/// Pro: "Find areas where elevation is at least 2,000 m" previews areas and keeps them as a layer.
+#[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+fn pro_find_where_on_the_elevation_example() {
+    let mut h = phase3(&["../assets/examples/elevation.tif"], WORLD, |s| {
+        s.pro = true;
+        let id = s.ws.doc.layers[0].id;
+        s.ws.select_layer(id);
+    });
+    let ctx = h.ctx.clone();
+    let id = h.state().as_ref().map(|s| s.ws.doc.layers[0].id.0).unwrap();
+    if let Some(s) = h.state_mut().as_mut() {
+        s.command(&ctx, crate::Command::ComposeAction("find_where".into(), vec![("conditions".into(), format!("{id}|at_least|2000"))]));
+    }
+    for _ in 0..400 {
+        h.step();
+        if h.state().as_ref().is_some_and(|s| s.composer.as_ref().is_some_and(|c| c.result.is_some() || c.error.is_some())) {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+    settle(&mut h);
+    assert_eq!(h.state().as_ref().and_then(|s| s.composer.as_ref().and_then(|c| c.error.clone())), None);
+    h.snapshot("pro_find_where");
+    if let Some(s) = h.state_mut().as_mut() {
+        s.command(&ctx, crate::Command::KeepResult);
+    }
+    settle(&mut h);
+    let s = h.state().as_ref().unwrap();
+    assert_eq!(s.ws.doc.layers.len(), 2);
+    assert!(s.ws.doc.layers.iter().any(|l| l.display_name.starts_with("Where elevation")));
+}

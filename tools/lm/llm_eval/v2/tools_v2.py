@@ -102,6 +102,13 @@ DESCRIPTIONS = {
         "zero give blanks. Adds the field 'name' (default 'a op b') to the layer."
     ),
     "split_parts": "Split a line or area layer's multi-part features into one feature per part (e.g. separate islands). New layer with a 'part' field.",
+    "find_where": (
+        "Find the areas where every raster condition holds (e.g. elevation at least 3000 and rainfall at least 500). "
+        "raster: the first raster; conditions: 'raster name|at_least|value', 'raster name|at_most|value' or "
+        "'raster name|between|low|high', joined by ';'. New area layer, largest area first, with area_km2."
+    ),
+    "keep_inside": "Keep only the part of a layer inside an area layer's areas (clip). New layer.",
+    "remove_inside": "Remove the part of a layer inside an area layer's areas (erase; 'away from', 'outside'). New layer.",
 }
 
 OBJ_NOTE = "One object: {layer, field, value} with value as stored (resolve_feature finds it); omit field and value for the selected object or a drawn area."

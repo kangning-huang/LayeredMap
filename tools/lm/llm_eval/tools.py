@@ -81,6 +81,8 @@ ROLE_OF_PHRASE = {
     "the layer; parameter `field`": ("layer", "layer"),
     "the layer": ("layer", "layer"),
     "the layer (parameters `a`, `op`, `b`, `name`)": ("layer", "layer"),
+    "the rasters (parameter `conditions`)": ("raster", "layer"),
+    "the areas": ("areas", "layer"),
 }
 
 
@@ -113,6 +115,7 @@ PARAMS_OF_ACTION = {
     "add_raster_values": ["band"],
     "rank_by_value": ["field"],
     "calculate_field": ["a", "op", "b", "name"],
+    "find_where": ["conditions"],
 }
 
 # What each action makes, so a later call can use it. Not in rules.toml (the runner builds
@@ -175,6 +178,7 @@ PARAM_SCHEMA = {
     "op": {"type": "string", "enum": ["add", "subtract", "multiply", "divide"]},
     "b": {"type": "string", "description": "a number field, or a number"},
     "name": {"type": "string", "description": "the new field's name"},
+    "conditions": {"type": "string", "description": "conditions joined by ';', each 'raster name|at_least|value', 'raster name|at_most|value' or 'raster name|between|low|high', e.g. 'Elevation|at_least|3000;Rainfall|between|500|1000'"},
 }
 
 

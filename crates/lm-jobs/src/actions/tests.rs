@@ -294,3 +294,62 @@ fn multipart_areas_split_into_parts() {
     assert!(out.features.iter().all(|f| matches!(&f.geometry, Some(Geometry::Polygon(p)) if p.len() == 1)));
     assert!(out.field_index("part").is_some());
 }
+
+fn assets(rel: &str, id: u64) -> PlanInput {
+    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets/examples").join(rel);
+    let mut layers = import_path(&path, &Ctx::detached(Default::default())).unwrap_or_default();
+    let l = layers.remove(0);
+    let style = Style::for_profile(&l.profile, [0, 0, 0, 255]);
+    PlanInput { layer: DocLayer::new(LayerId(id), l.name.clone(), l.profile.clone(), style), data: l.data, rows: None, path: Some(path) }
+}
+
+/// "Find areas where elevation is at least 3,000 m": areas appear, largest first, with their
+/// area on the ellipsoid; a looser condition finds more cells; nonsense conditions are refused.
+#[test]
+fn find_where_turns_raster_conditions_into_areas() {
+    let run_with = |c: &str| run(&plan("find_where", vec![assets("elevation.tif", 1)], &[("conditions", c)]), &Control::none());
+    let high = run_with("0|at_least|3000").unwrap();
+    let LayerData::Vector(ds) = &new_layer(&high).data else { panic!() };
+    assert!(!ds.features.is_empty());
+    let k = ds.field_index("area_km2").unwrap();
+    let areas: Vec<f64> = ds.features.iter().map(|f| f.attrs[k].as_f64().unwrap()).collect();
+    assert!(areas.windows(2).all(|w| w[0] >= w[1]), "largest first");
+    assert!(high.card.title.contains("at least 3,000"), "{}", high.card.title);
+    let low = run_with("0|at_least|1000").unwrap();
+    let LayerData::Vector(ds2) = &new_layer(&low).data else { panic!() };
+    let total = |d: &Dataset| d.features.iter().map(|f| f.attrs[k].as_f64().unwrap()).sum::<f64>();
+    assert!(total(ds2) > total(ds));
+    let between = run_with("0|between|1000|3000").unwrap();
+    assert!(matches!(between.output, ActionOutput::NewLayer { .. }));
+    assert!(matches!(run_with("0|above|3"), Err(ActionError::Input(_))));
+    assert!(matches!(run_with(""), Err(ActionError::Input(_))));
+    assert_eq!(parse_conditions("1|any_of|1,2,3").unwrap()[0].input, 1);
+}
+
+/// Keep / remove the part inside: through the runner, on the clip fixture.
+#[test]
+fn keep_and_remove_inside_split_a_layer_between_them() {
+    let dir = fixtures().join("N12");
+    let files: Vec<String> = std::fs::read_dir(&dir)
+        .unwrap()
+        .filter_map(|e| e.ok())
+        .map(|e| e.file_name().to_string_lossy().to_string())
+        .filter(|n| n.ends_with(".geojson") && !n.starts_with("._"))
+        .collect();
+    let mask_name = files.iter().find(|n| n.contains("mask")).expect("a mask file in N12").clone();
+    let layer_name = files.iter().find(|n| !n.contains("mask") && !n.contains("expected")).expect("a layer in N12").clone();
+    let keep = run(
+        &plan("keep_inside", vec![input(&format!("N12/{layer_name}"), 1), input(&format!("N12/{mask_name}"), 2)], &[]),
+        &Control::none(),
+    )
+    .unwrap();
+    let remove = run(
+        &plan("remove_inside", vec![input(&format!("N12/{layer_name}"), 1), input(&format!("N12/{mask_name}"), 2)], &[]),
+        &Control::none(),
+    )
+    .unwrap();
+    for r in [&keep, &remove] {
+        assert!(matches!(r.output, ActionOutput::NewLayer { .. }));
+    }
+    assert!(keep.card.title.contains("inside") && remove.card.title.contains("outside"));
+}
