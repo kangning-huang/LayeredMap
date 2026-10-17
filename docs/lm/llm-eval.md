@@ -26,6 +26,8 @@ locally (spec › Product tiers, Phase 7).
 
 Total spent: **US$2.71 of the US$3 cap**. This covers every run, including smoke tests and diagnostics.
 
+**Update (harness v2, same day).** A rebuilt harness (resolve_feature, a plan checker with repair, explicit rules and worked examples, caching) lifts Haiku to 97–99% and GLM to 97–99% strict on the same 78 cases; see [Harness v2](#harness-v2-2026-10-17). The recommendation there supersedes the one above.
+
 ## Method
 
 The harness lives in `tools/lm/llm_eval/` (see its README for the details and how to rerun).
@@ -260,9 +262,189 @@ accuracy.
 - **Prices are from the 2026-10-17 catalog.** Per-token prices change; the per-request token counts in
   the table let you re-price.
 
+## Harness v2 (2026-10-17)
+
+v1 (everything above) measured models through a thin harness. v2 rebuilt the harness along the
+plan in `llm-eval-failures.md` and re-measured. The code, cases and raw results are in
+`tools/lm/llm_eval/v2/` (see its README for every design detail and change); v1 still runs unchanged.
+
+**Answer.**
+- **The harness, not the model, was the bottleneck.** With the same three models, strict accuracy on
+  the original 78 cases (v1 scoring) went from 81–88% to 97–99% for Haiku, 77–79% to 97–99% for GLM,
+  and 72–74% to 86% for gpt-oss-120b.
+- **Recommended production harness: Claude Haiku 5.5 with the single `submit_plan` tool,
+  `resolve_feature`, the plan checker and the v2 prompt.** It scored 98% strict on the 97-case v2
+  set, costs **US$0.21 per 1,000 requests** with caching, and has a median latency of **1.3 s**.
+  Per-action tools scored 99–100% over two runs, at US$0.35 per 1,000 and 2.4 s.
+- **Fallback: GLM 5.3 Flash with `submit_plan`**: 100% strict, US$0.38 per 1,000, 1.2 s.
+- On this benchmark both reach Gate 7's 90% on answerable requests and 95% honest refusal. The
+  benchmark is still synthetic, though, and the refusal set has only 8 cases (see Gate 7 outlook).
+
+v2 spent **US$1.75 of its US$3.00 cap**, including smoke tests, two development runs and the ablations
+(`tools/lm/llm_eval/v2/results/spend.json`).
+
+### What changed
+
+| Area | v2 |
+|---|---|
+| Benchmark | 97 cases: the 78 from v1 plus 19 new ones (9 in Chinese; 10 for the statistic menus, 9 for name and category resolution, one of them an ambiguous name that should be asked about). x05 is now answerable (count_in, stat sum of students). m06 accepts filtering after the summary. Expected calls state their `stat`. A **v1 scoring mode** scores every new plan against the original 78 cases with v1's rules. |
+| Tools | Built per map, with enums for layer names per slot (raster slots list only rasters, and so on), `additionalProperties: false`, the `stat` menus, rewritten descriptions (what each step makes, category rasters give shares, display tools only when asked). Two designs: per-action (19 tools + `resolve_feature`), or one `submit_plan(steps[])` + `resolve_feature`. |
+| `resolve_feature` | Simulated from the fixture data. It matches case and punctuation, a hand-made zh→en alias table (6 roads, school types, park kinds, continents; standing in for Wikidata/GeoNames), base names (Huaihai Road = Huaihai Rd, 浦东 = 浦东新区), pinyin (南京路 → Nanjing Rd), `name_zh` fields and fuzzy matches. It returns ≤ 5 stored values with their field and object counts, and points out ambiguity. |
+| Plan checker | Checks every step for: layers and their kinds; `#k` references; required inputs; fields (including fields that earlier steps add); numeric types; units (runner's parser); objects and filter values against the data via the resolver; stats; `before`/`after` only on dates; duplicate steps. A unique confident match is **corrected in place**; anything else is a specific error returned as the tool result, with **≤ 2 repair rounds**. When the model finishes, a **data-flow lint** catches filters that no later step uses. **Trailing zoom/table/colour steps are dropped** unless the request asks for them. |
+| Prompt | Ten explicit rules (only the needed steps; outputs are `#1`, `#2`…; filter first; resolve names; refuse with `cannot_do`; ask only when needed; repair). **9 static worked examples** (3 Chinese) on an invented map that shares no layer, object or request with the benchmark; a test checks for leakage. |
+| Caching | `cache_control` on the static prefix (tools + instructions + examples) for Anthropic and Google; cached tokens are recorded. 90–94% of Haiku's prompt tokens were cache reads. |
+| Format | `tool_choice: "required"` until the plan has a step, then `auto`; `provider: {require_parameters: true}`. Plans written as text (JSON in several shapes, or the examples' notation) are parsed. A prose reply with no plan becomes `ask_user` if it asks a question, otherwise `cannot_do`. |
+
+### Before and after
+
+v1 rows are the 2026-10-17 v1 runs, rescored; v2 rows use the frozen v2 harness. "v1 mode" means the
+original 78 cases with v1's cases and rules. "v2 set" means the 97 v2 cases. Answerable: the 83 v2
+cases that need a plan (v1 runs: the 65 of them in the original 78). Honest refusal: the 8 cases where
+refusing is right, scored lenient. Cost covers all rounds as billed.
+
+| Model | Harness | v1 mode strict | v2 set strict (lenient) | Answerable strict | Honest refusal | US$ / 1,000 req | Median s | Model calls / req | Repair rounds / req |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| claude-haiku-5.5 | v1 (2 runs) | 88%, 81% | — | 86%, 80% | 100% | 0.79 | 2.2 | 1.8 | — |
+| | **v2 per-action** (2 runs) | **97%, 99%** | **99%, 100%** | 99%, 100% | 100% | 0.35 | 2.4 | 2.2 | 0.01 |
+| | **v2 submit_plan** | 96% | 98% | 98% | 100% | **0.21** | **1.3** | 1.3 | 0.03 |
+| glm-5.3-flash | v1 (2 runs) | 79%, 77% | — | 75%, 75% | 100% | 0.32–0.45 | 2.1–3.0 | 2.1 | — |
+| | v2 per-action (2 runs) | 99%, 97% | 99%, 99% | 99%, 99% | 100% | 0.98 | 2.7 | 2.3 | 0.02 |
+| | **v2 submit_plan** | 99% | **100%** | 100% | 100% | 0.38 | **1.2** | 1.2 | 0.00 |
+| gpt-oss-120b | v1 (2 runs) | 74%, 72% | — | 71%, 68% | 100% | 0.07–0.08 | 4.5 | 1.8 | — |
+| | v2 per-action (2 runs) | 86%, 86% | 86% (86%), 87% (87%) | 84%, 86% | 100% | 0.16 | 4.6 | 2.2 | 0.05 |
+| | v2 submit_plan | 87% | 90% | 89% | 100% | **0.09** | 3.5 | 1.2 | 0.00 |
+| gemini-3.5-flash | v1 | 72% | — | 72% | 100% | 4.98 | 2.8 | 2.1 | — |
+| | v2 per-action | 99% | 98% | 98% | 100% | 6.83 | 11.2 | 2.4 | 0.02 |
+
+**Notes on the table.**
+- **Honest refusal:** with x05 now answerable, this set has 8 cases, not v1's 9. Every model refused
+  or asked on all 8.
+- **Haiku cost:** Haiku's prompts are about twice as long as in v1 (bigger tool schemas plus the
+  examples). Without caching it would cost US$1.70 per 1,000 per-action requests and US$0.72 per 1,000
+  `submit_plan` requests; caching cuts that by about 80%.
+- **GLM cost:** GLM got dearer per request. Only one OpenRouter provider (Inceptron) accepts its
+  forced tool choice, and it caches less.
+- **Gemini:** its latency jumped to 11 s, and it is 20–30× Haiku's price. Not a candidate.
+- **Lenient scores:** strict and lenient now almost coincide. The checker already makes the repairs
+  that the lenient score used to forgive.
+
+### What helped (ablation)
+
+Each row switches off one component of the per-action v2 harness. The figure is v2-set strict over 97 cases.
+
+| Variant | Haiku | GLM | gpt-oss-120b |
+|---|---:|---:|---:|
+| Full v2 (two runs) | 99%, 100% | 99%, 99% | 86%, 87% |
+| No worked examples | 99% | 96%\* | 84% |
+| No plan checker (no corrections, repairs, lint or display drop) | 96% | 94% | **70%** |
+| No `resolve_feature` tool (the checker still resolves names) | 94% | — | — |
+| Rules, enums and stat tools only (no examples, checker or resolver) | 94% | — | — |
+| v1 harness | 88%, 81% (v1 mode) | 79%, 77% | 74%, 72% |
+
+\* One GLM request failed on a provider error (Inceptron 500) and counts as wrong.
+
+- **New prompt rules and tool descriptions:** roughly +6–13 points for Haiku, from 81–88% to 94% with
+  no examples, checker or resolver. Most of that comes from "only the needed steps" and the `#k`
+  wording.
+- **Plan checker:** +3 points for Haiku, +5 for GLM and **+16 for gpt-oss-120b**. For gpt-oss most of
+  the gain comes from dropping duplicate and display steps and from fixing names. It matters most for
+  weaker models.
+- **`resolve_feature`:** +5 for Haiku. Without it Haiku guessed or asked about names (a15, r03, r04,
+  m07), even though the checker corrects names it can match.
+- **Worked examples:** little effect on Haiku, +3 for GLM and gpt-oss-120b. They're cheap once cached.
+- **`submit_plan` vs per-action:** strict accuracy within a point or two for Haiku and GLM, +3–4 for
+  gpt-oss. It is about half the cost and half the latency, because there is one model call instead of
+  about 2.2. That reverses v1, where the single `run_action` design lost 12 points: a step with named
+  inputs keeps the roles that `run_action`'s positional list lost.
+
+### Remaining failures (frozen v2, per-action ×2 and submit_plan, Haiku, GLM, gpt-oss)
+
+| Category | Count | Cases |
+|---|---:|---|
+| gpt-oss-120b refuses answerable requests | 15 | m01, u03 ("raster values can't filter points"), z01 (area of France), s03, s08, m06, m07, a11, f09 |
+| Wrong action | 9 | gpt-oss-120b: f07, r08 (view_data instead of filter), r09, f14 (rank instead of an is_empty filter), a20 |
+| Extra steps the checker can't judge useless | 7 | a11 ×3 (also lists the Countries inside the zone), a08 (count + summary), s06 (rank after the summary), m06, m08 |
+| Ask / act mix-ups | 6 | v04 "Compare elevation." acted on ×3; m07, m08, z03 asked unnecessarily (all gpt-oss-120b) |
+| Missing step | 3 | r09 (high-school filter dropped after resolving), m03, m10 in submit_plan (colour step missing) |
+| `submit_plan` description gap | 2 | f13 "Clear the filter" refused (Haiku, gpt-oss): the submit_plan step list doesn't say `conditions: []` clears (the per-action filter tool does) |
+
+Haiku made 3 strict errors in 291 requests, GLM 2 and gpt-oss-120b 37. Nearly every remaining error
+is a judgement call made by the model, not a harness format problem. The one exception is the
+`submit_plan` filter description, which needs a one-line fix.
+
+### Gate 7 outlook
+
+Gate 7 asks for 90% on answerable requests and 95% honest refusal.
+- **Haiku and GLM** score 98–100% answerable strict and 100% honest refusal in every v2 run.
+- **gpt-oss-120b** scores 84–89% answerable; it over-refuses.
+
+That is evidence that the bar is reachable with a value-free context plus `resolve_feature`. It
+isn't proof:
+- 97 synthetic cases from one author;
+- 8 refusal cases (one miss would put a model under 95%);
+- the checker's selection and lint rules were added after development runs on two cases (u04, m06).
+
+The next step is WP7.5's 200 real questions, scored with `report_v2.py` and with the checker running
+inside the app.
+
+### Recommended production harness
+
+- **Model:** `anthropic/claude-haiku-5.5`, reasoning off. Fallback `z-ai/glm-5.3-flash`, reasoning
+  low, from a different vendor. Neither Gemini 3.5 Flash nor gpt-oss-120b.
+- **Design:**
+  - One `submit_plan(steps[])` tool plus `resolve_feature`. Each step is `{action, named inputs}`, with
+    layer enums built from the open map.
+  - Set `tool_choice: required` where a provider accepts it. No Anthropic endpoint on OpenRouter did
+    on 2026-10-17, so Haiku runs with `auto`, with the text-plan parser and prose-to-ask/refuse as the
+    safety net.
+  - Set `provider.require_parameters: true`.
+- **Prompt:**
+  - The v2 rules plus the 9 invented-map examples.
+  - Put the static part first with `cache_control`, and the map context after it.
+  - Add the missing `submit_plan` line "`conditions: []` clears the filter".
+- **Checker (in the app, `lm-assistant`):**
+  - Port `checker.py`: every check above, corrections reported to the user, at most 2 repair rounds,
+    the data-flow lint and the trailing-display drop.
+  - Resolve names through the layer's own `name`/`name_zh` fields plus a Wikidata/GeoNames alias
+    index, OpenCC and pypinyin.
+  - When several objects match, ask.
+- **Cost:** about US$0.0002 per request, so US$0.004–0.02 per active user per month at 20–100
+  requests. Allow 2× for real maps with more layers (longer tool enums) and more repair rounds.
+
+### Caveats (v2)
+
+- **Calibration on the benchmark.** A smoke test (8 cases × 3 models) and two full development runs
+  of the per-action design led to these changes:
+  - the empty-enum fix and the inflected-form resolver rule;
+  - `required` until the first step;
+  - the wider text parser and prose-to-ask/refuse;
+  - the lint, the empty-filter check, the selected-object rule for buffers, and `before`/`after` on
+    dates.
+
+  The development runs are kept in `results/v2-per_action-dev*` and are excluded from the tables.
+  The reported runs used the frozen harness; the 19 new cases were written before any v2 run and
+  never changed.
+- **Leakage control.** The worked examples avoid the test layers. The rules still describe patterns
+  the benchmark tests (filter first, ask on a missing distance), as any good prompt would.
+- **Repeats.**
+  - `submit_plan` and Gemini were run once.
+  - Haiku moved by 1–2 points between repeats (Anthropic on OpenRouter takes no `temperature`).
+  - With 97 cases, one case is about 1 point.
+- **Simulated resolution.** The alias table covers only the benchmark's names; real coverage depends
+  on the alias index. The resolver searches the fixture data locally; only the matching names reach
+  the model, as the owner allowed.
+- **Provider quirks.**
+  - Inceptron (GLM) rejected an empty `enum`, and is GLM's only endpoint that takes a forced tool
+    choice, which makes it a single point of failure (one persistent 500 in the ablation).
+  - The runner learns per model when to fall back to `auto` and which providers to skip.
+- **v1 test fix.** `test_scoring.py::test_output_notes_match_the_runner` failed before any v2 work,
+  because the statistics commit (c56d0f5) rewrote the runner lines it checks. It now checks the
+  current lines.
+
 ## Files
 
 - `tools/lm/llm_eval/`: the harness, cases and README.
 - `tools/lm/llm_eval/results/2026-10-17/`: one JSONL line per case and run (calls made, both scores,
   tokens, cost, latency, provider), `summary.csv`, `summary.md` and `spend.json`.
 - `docs/lm/img/llm-eval-pareto.png`: the chart above, made by `report.py`.
+- `tools/lm/llm_eval/v2/`: harness v2, its 97 cases, results (`results/<run>/<model>.jsonl`, `summary.{md,csv}`, `spend.json`) and README.

@@ -54,9 +54,10 @@ def test_runner_inputs_table_parses_every_action():
 
 def test_output_notes_match_the_runner():
     src = toolmod.RUNNER.read_text(encoding="utf-8")
-    assert 'format!("{} in each {}", capitalized(&things), area_one)' in src
-    assert "let field = free_field(&out, &things);" in src
-    assert 'free_field(&out, &format!("{rname} {n}"))' in src and '("mean", 0), ("min", 1), ("max", 2)' in src
+    # Updated after the statistics menus (commit c56d0f5) changed these lines in the runner.
+    assert 'format!("{} in {each}", capitalized(&things))' in src
+    assert "let count_field = free_field(&out, &things);" in src
+    assert 'free_field(&out, &format!("{rname} {words}"))' in src and '("mean", "Mean"), ("median", "Median")' in src
     assert "let field = free_field(&out, &rname);" in src
 
 
