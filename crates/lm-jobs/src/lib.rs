@@ -8,6 +8,7 @@
 pub mod find;
 pub mod import;
 pub mod inspect;
+pub mod join;
 
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{Receiver, channel};

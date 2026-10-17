@@ -386,6 +386,43 @@ fn phase3_find() {
     h.snapshot("phase3_find");
 }
 
+/// Joining a table (WP3.11): provinces and a table keyed by Chinese names join with no
+/// question, colour the layer, and show the result card with the typo suggestion. The join is
+/// one undo step: Undo brings the table back and the layer's fields as they were.
+#[test]
+fn phase3_join_card() {
+    let mut h = phase3(&["J5/provinces.geojson", "J5/population_zh.csv"], (5.0, 30.5, 6.0), |_| {});
+    settle(&mut h);
+    let s = h.state().as_ref().unwrap();
+    assert_eq!(s.ws.doc.layers.len(), 1, "the table left the shelf");
+    let l = &s.ws.doc.layers[0];
+    assert!(l.profile.fields.iter().any(|f| f.name == "population_millions"));
+    assert!(l.style.color_by.is_some());
+    let r = s.ws.join_report(l.id).expect("a join card");
+    assert_eq!((r.matched, r.near_misses.len()), (7, 1));
+    h.snapshot("phase3_join_card");
+    if let Some(s) = h.state_mut().as_mut() {
+        s.command(&egui::Context::default(), crate::Command::Undo);
+    }
+    settle(&mut h);
+    let s = h.state().as_ref().unwrap();
+    assert_eq!(s.ws.doc.layers.len(), 2);
+    let l = s.ws.doc.layers.iter().find(|l| l.profile.kind != lm_core::model::LayerKind::Table).unwrap();
+    assert!(!l.profile.fields.iter().any(|f| f.name == "population_millions"));
+    assert!(l.style.color_by.is_none());
+}
+
+/// A table whose places aren't clear asks one question (J4).
+#[test]
+fn phase3_join_question() {
+    let mut h = phase3(&["J4/places.geojson", "J4/mixed_keys.csv"], (6.0, 0.5, 6.0), |_| {});
+    settle(&mut h);
+    let s = h.state().as_ref().unwrap();
+    let table = s.ws.doc.layers.iter().find(|l| l.profile.kind == lm_core::model::LayerKind::Table).expect("the table stays");
+    assert!(s.ws.join_question(table.id).is_some_and(|q| q.offers.len() >= 2));
+    h.snapshot("phase3_join_question");
+}
+
 /// Selection is shared: an object selected (as a table row click does) is highlighted on the map,
 /// and a map click selects the object the table then shows.
 #[test]

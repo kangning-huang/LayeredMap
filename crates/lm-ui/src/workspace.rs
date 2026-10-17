@@ -114,6 +114,9 @@ const COMPARE_MAP_ID: u32 = MAP_ID_BASE - 1;
 /// Map layer ids for LayeredMap's layers start here, clear of anything the map assigns itself.
 const MAP_ID_BASE: u32 = 1_000_000;
 
+mod join;
+pub use join::{JoinOffer, JoinQuestion, JoinReport};
+
 #[derive(Default)]
 pub struct Workspace {
     pub doc: Document,
@@ -169,6 +172,8 @@ pub struct Workspace {
     /// Find-in-a-layer indexes (WP3.10) per layer and data revision, built on first use.
     finds: HashMap<LayerId, (u32, Arc<lm_jobs::find::FindIndex>)>,
     finding: HashMap<LayerId, u32>,
+    /// Joining tables to places (WP3.11).
+    joins: join::JoinState,
 }
 
 /// Drawing state derived from a layer's data (WP3.5, WP3.7).
@@ -941,6 +946,7 @@ impl Workspace {
     pub fn sync_map(&mut self, view: &mut lm_mapview::MapView) {
         self.derive_layers();
         self.index_layers();
+        self.try_joins();
         self.prune_data();
         let wanted: Vec<(LayerId, u32)> = self
             .doc

@@ -372,6 +372,7 @@ fn build_with(
         encoding,
         notices,
         data_rev: 0,
+        joins: Vec::new(),
     };
     Ok(ImportedLayer { name, status: status_of(&profile), profile, data: LayerData::Vector(Arc::new(ds)), raw: None })
 }

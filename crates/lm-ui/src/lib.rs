@@ -11,6 +11,7 @@ pub mod find_ui;
 pub mod form;
 pub mod insight;
 pub mod inspect;
+pub mod join_ui;
 pub mod panels;
 #[cfg(test)]
 mod screenshots;
