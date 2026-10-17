@@ -1,0 +1,41 @@
+{
+  "fixture": "N10",
+  "files": [
+    "areas.geojson",
+    "points.geojson",
+    "lines.geojson",
+    "polygons.geojson"
+  ],
+  "kind": "vector",
+  "layers": [
+    {
+      "name": "areas",
+      "geometry": "area",
+      "count": 10
+    },
+    {
+      "name": "points",
+      "geometry": "point",
+      "count": 18
+    },
+    {
+      "name": "lines",
+      "geometry": "line",
+      "count": 5
+    },
+    {
+      "name": "polygons",
+      "geometry": "area",
+      "count": 6
+    }
+  ],
+  "crs": {
+    "epsg": 4326,
+    "source": "declared (GeoJSON RFC 7946 default)"
+  },
+  "rule": "each feature takes the first area row (row order) its point intersects; lines and areas by their label point",
+  "expected_files": [
+    "expected_join.csv"
+  ],
+  "assumptions": []
+}

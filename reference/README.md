@@ -45,6 +45,10 @@ no arguments for its fixture jobs or with explicit paths (see each `--help`).
 | `make_where_clip_fixtures.py` | data + `README.md` + `expected.json` for N11 (find_where GeoTIFFs) and N12 (clip/erase layers) | hand-drawn and closed-form; GDAL's GTiff writer with fixed options |
 | `find_where.py` | `N11/expected_find_where.csv`, `N11/expected_labels_{A,B,C}.csv` | numpy tests on values × scale + offset (others sampled at the first grid's cell centres, floor); `scipy.ndimage.label` 3×3; ellipsoidal cell-area sums (latitude bands, or (λ, q) quadrilaterals for a projected grid); pyproj Geod areas of the `rasterio.features.shapes` outlines (densified), asserted within 1e-6 of the sums; area-weighted means |
 | `clip_erase.py` | `N12/expected_clip.csv` | GeoPandas `overlay` intersection / difference with the dissolved mask (`keep_geom_type=True`); pyproj Geod areas and lengths; exact coordinates for lines and points |
+| `make_vector_ops.py` | data + `README.md` + `expected.json` for N9, N10, N13 | hand-written coordinates (binary fractions where a point must sit on an edge) |
+| `nearest_distance.py` | `N9/expected_nearest_*.csv` | 0 when shapely `intersects` (lon/lat); else feature and targets densified along geodesics to ≤ 1 km, projected to an AEQD centred on the feature, shapely `distance`; same layer leaves the feature's own row out |
+| `join_by_location.py` | `N10/expected_join.csv` | sjoin `intersects`, the lowest area row kept; lines and areas by `representative_point()`; `on_boundary` for points |
+| `measure_features.py` | `N13/expected_measure.csv` | pyproj `Geod.geometry_area_perimeter` (polygons oriented CCW) plus each hole's ring perimeter; `Geod.geometry_length`; point coordinates as given |
 | `run_all.py` | — | runs all of the above in order |
 
 Numbers are written with up to 12 significant digits.

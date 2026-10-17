@@ -58,6 +58,9 @@ without them they print "skipped".
 | N8 | `N8/` | category shares (R3 × V1) | present |
 | N11 | `N11/` | find_where: holes, corner contacts, NoData, two rasters on different grids (scale/offset, categories), a projected raster | present |
 | N12 | `N12/` | keep_inside / remove_inside: overlapping mask with a hole and parts; areas with holes and parts, a sliver; lines; points on edges | present |
+| N9 | `N9/` | nearest distance and island isolation: same-layer multipart exclusion, touching, holes, antimeridian, high latitude | present |
+| N10 | `N10/` | join by location: first area in row order, boundaries, holes, antimeridian, lines and areas by label point | present |
+| N13 | `N13/` | per-feature measurements (area, perimeter with holes, length, coordinates) and label points | present |
 | K1 | — | — | owner-supplied |
 | D1–D4 | — | — | TBD |
 | B1–B20 | — | — | owner-supplied |

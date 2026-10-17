@@ -1,0 +1,35 @@
+{
+  "fixture": "N13",
+  "files": [
+    "areas.geojson",
+    "lines.geojson",
+    "points.geojson"
+  ],
+  "kind": "vector",
+  "layers": [
+    {
+      "name": "areas",
+      "geometry": "area",
+      "count": 10
+    },
+    {
+      "name": "lines",
+      "geometry": "line",
+      "count": 5
+    },
+    {
+      "name": "points",
+      "geometry": "point",
+      "count": 4
+    }
+  ],
+  "crs": {
+    "epsg": 4326,
+    "source": "declared (GeoJSON RFC 7946 default)"
+  },
+  "rule": "geodesic (WGS 84) area and perimeter of areas, length of lines; coordinates of points; label points inside their area",
+  "expected_files": [
+    "expected_measure.csv"
+  ],
+  "assumptions": []
+}

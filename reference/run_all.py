@@ -1,6 +1,7 @@
 """Regenerate every hand-made fixture and every expected output.
 
-Runs make_handmade.py and make_summary_fixtures.py first, then each reference script, each in a fresh
+Runs make_handmade.py and make_summary_fixtures.py first, then each reference script
+(make_vector_ops.py builds N9, N10 and N13 just before their references), each in a fresh
 `python -I` subprocess of the current interpreter. Deterministic: rerunning
 gives the same bytes. With --check, runs everything twice and verifies that
 the SHA-256 of every file under fixtures/ (excluding fixtures/generated/) is
@@ -24,7 +25,8 @@ FIX = HERE.parent / "fixtures"
 # --only R4,N7) and say "skipped" without them.
 SCRIPTS = ["make_handmade.py", "make_summary_fixtures.py", "coord_vectors.py", "count_in_areas.py", "which_area.py",
            "zonal_mean.py", "category_shares.py", "zonal_totals.py", "zonal_r7.py", "n7_sample.py", "geodesic.py",
-           "raster_sample.py", "rank_check.py", "make_where_clip_fixtures.py", "find_where.py", "clip_erase.py"]
+           "raster_sample.py", "rank_check.py", "make_where_clip_fixtures.py", "find_where.py", "clip_erase.py",
+           "make_vector_ops.py", "nearest_distance.py", "join_by_location.py", "measure_features.py"]
 
 
 def run_once():

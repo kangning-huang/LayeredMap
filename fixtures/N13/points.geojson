@@ -1,0 +1,6 @@
+{"type": "FeatureCollection", "name": "points", "features": [
+{"type": "Feature", "properties": {"feature_id": "P_A", "note": "Shanghai"}, "geometry": {"type": "Point", "coordinates": [121.4737, 31.2304]}},
+{"type": "Feature", "properties": {"feature_id": "P_B", "note": "antimeridian"}, "geometry": {"type": "Point", "coordinates": [-179.999, -16.5]}},
+{"type": "Feature", "properties": {"feature_id": "P_C", "note": "Svalbard"}, "geometry": {"type": "Point", "coordinates": [15.6, 78.2]}},
+{"type": "Feature", "properties": {"feature_id": "P_M", "note": "multipoint: its first point"}, "geometry": {"type": "MultiPoint", "coordinates": [[1.25, 2.5], [3.0, 4.0]]}}
+]}
