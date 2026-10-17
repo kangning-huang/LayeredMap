@@ -14,5 +14,6 @@ pub mod palette;
 pub mod phase;
 pub mod places;
 pub mod question;
+pub mod recipe;
 pub mod selection;
 pub mod undo;

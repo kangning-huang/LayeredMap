@@ -109,7 +109,34 @@ pub fn backdrop(map: &Map) -> egui::Color32 {
     egui::Color32::from_rgb(water.0[0], water.0[1], water.0[2])
 }
 
-/// A small picture of a provider for the chooser (no network): ground, water, two roads.
+/// Pictures of the same place (the Golden Gate) in each look, so the choices compare at a glance:
+/// crops of the app's own rendering at 3× the chooser's 96 × 64 tiles (`assets/thumbnails`).
+const THUMBNAILS: [(&str, &[u8]); 3] = [
+    ("light", include_bytes!("../../../assets/thumbnails/light.png")),
+    ("dark", include_bytes!("../../../assets/thumbnails/dark.png")),
+    ("satellite", include_bytes!("../../../assets/thumbnails/satellite.png")),
+];
+
+/// A thumbnail's texture, decoded once and kept for the session.
+fn thumbnail_texture(ctx: &egui::Context, name: &'static str) -> Option<egui::TextureHandle> {
+    let id = egui::Id::new(("lm-basemap-thumbnail", name));
+    if let Some(tex) = ctx.data(|d| d.get_temp::<egui::TextureHandle>(id)) {
+        return Some(tex);
+    }
+    let bytes = THUMBNAILS.iter().find(|(n, _)| *n == name)?.1;
+    let img = image::load_from_memory_with_format(bytes, image::ImageFormat::Png).ok()?.to_rgba8();
+    let size = [img.width() as usize, img.height() as usize];
+    let tex = ctx.load_texture(
+        format!("basemap-{name}"),
+        egui::ColorImage::from_rgba_unmultiplied(size, img.as_raw()),
+        egui::TextureOptions::LINEAR,
+    );
+    ctx.data_mut(|d| d.insert_temp(id, tex.clone()));
+    Some(tex)
+}
+
+/// A small picture of a provider for the chooser (no network): a real crop of the map for the
+/// online looks, a drawn outline for Offline.
 pub fn paint_thumbnail(p: &egui::Painter, rect: egui::Rect, provider: &Provider, dark_ui: bool) {
     if provider.look == Look::Auto && provider.source == Source::VectorArchive {
         // Auto: the light picture on the left half, the dark one on the right.
@@ -122,20 +149,16 @@ pub fn paint_thumbnail(p: &egui::Painter, rect: egui::Rect, provider: &Provider,
         }
         return;
     }
-    if provider.source == Source::Imagery {
-        // Imagery: dark sea, a green-and-ochre coast, a white place dot.
+    let photo = match provider.source {
+        Source::Imagery => Some("satellite"),
+        Source::VectorArchive if look_dark(provider, dark_ui) => Some("dark"),
+        Source::VectorArchive => Some("light"),
+        Source::Offline => None,
+    };
+    if let Some(tex) = photo.and_then(|name| thumbnail_texture(p.ctx(), name)) {
         let r8 = egui::CornerRadius::same(crate::theme::RADIUS_CONTROL);
-        p.rect_filled(rect, r8, egui::Color32::from_rgb(0x12, 0x2B, 0x45));
-        let land = [
-            (egui::vec2(0.0, 0.0), egui::vec2(0.62, 0.55), egui::Color32::from_rgb(0x4E, 0x6B, 0x3A)),
-            (egui::vec2(0.0, 0.5), egui::vec2(0.4, 1.0), egui::Color32::from_rgb(0x8A, 0x7A, 0x52)),
-            (egui::vec2(0.45, 0.0), egui::vec2(1.0, 0.3), egui::Color32::from_rgb(0x3E, 0x5A, 0x2E)),
-        ];
-        for (a, b, c) in land {
-            let r = egui::Rect::from_min_max(rect.min + a * rect.size(), rect.min + b * rect.size()).intersect(rect);
-            p.rect_filled(r, 0.0, c);
-        }
-        p.circle(rect.min + egui::vec2(0.3, 0.3) * rect.size(), 2.5, egui::Color32::WHITE, egui::Stroke::NONE);
+        let uv = egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0));
+        p.add(egui::epaint::RectShape::filled(rect, r8, egui::Color32::WHITE).with_texture(tex.id(), uv));
         return;
     }
     let dark = look_dark(provider, dark_ui);

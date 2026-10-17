@@ -13,6 +13,9 @@ workspace = true
 rustgis-geom = { workspace = true }
 rustgis-data = { workspace = true }
 geographiclib-rs = { workspace = true }
+geo = { workspace = true }
+rstar = { version = "0.12", default-features = false }
+robust = "1.2"
 
 [dev-dependencies]
 proptest = { workspace = true }

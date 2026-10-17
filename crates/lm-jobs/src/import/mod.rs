@@ -422,6 +422,32 @@ fn status_of(profile: &LayerProfile) -> ImportStatus {
     }
 }
 
+/// An area drawn on the map (WP4.4) as a layer: one polygon in WGS 84 named `name` ("Area 1"),
+/// with a `name` field. `ring` is the outline in longitude/latitude; it is closed here.
+pub fn drawn_area(name: &str, ring: &[(f64, f64)]) -> Option<ImportedLayer> {
+    use rustgis_engine::data::{Field, FieldType, GeometryType, geometry::Geometry};
+    use rustgis_engine::geom::Coord;
+    if ring.len() < 3 || ring.iter().any(|(x, y)| !x.is_finite() || !y.is_finite()) {
+        return None;
+    }
+    let mut pts: Vec<Coord> = ring.iter().map(|(x, y)| Coord::new(*x, *y)).collect();
+    if pts.first() != pts.last() {
+        pts.push(pts[0]);
+    }
+    let mut ds = Dataset::new(name, GeometryType::Polygon, vec![Field::new("name", FieldType::Text)]);
+    ds.push(Some(Geometry::Polygon(vec![vec![pts]])), vec![rustgis_engine::data::Value::Text(name.to_string())]);
+    let path = Path::new(name);
+    let mut profile = vector_profile(path, None, "Drawn area", &ds, Some(Crs::Wgs84), Vec::new(), Vec::new(), None, Vec::new(), &[]);
+    profile.source = SourceRef { path: name.to_string(), member: None, size: 0, mtime: 0, sha256: None };
+    Some(ImportedLayer {
+        name: name.to_string(),
+        profile,
+        data: LayerData::Vector(Arc::new(ds)),
+        status: ImportStatus::Complete,
+        raw: None,
+    })
+}
+
 /// Builds the profile of a vector layer read in longitude/latitude (or raw coordinates when the
 /// file declares none), with every assumption the catalog gives it.
 #[allow(clippy::too_many_arguments)]

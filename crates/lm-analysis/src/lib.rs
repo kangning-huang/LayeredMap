@@ -4,7 +4,10 @@
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 #![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used, clippy::panic))]
 
+pub mod buffer;
 pub mod china;
 pub mod control;
 pub mod geodesic;
 pub mod insight;
+pub mod overlay;
+pub mod zonal;

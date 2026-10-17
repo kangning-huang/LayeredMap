@@ -484,6 +484,16 @@ impl Document {
         Some(Transaction::new("Remove layer", vec![Op::RemoveLayer { index, layer: Box::new(layer) }]))
     }
 
+    /// Removes every layer, last first so each index still holds when the ops apply in order;
+    /// Undo puts them all back in their places.
+    pub fn remove_all_tx(&self) -> Option<Transaction> {
+        if self.layers.is_empty() {
+            return None;
+        }
+        let ops = self.layers.iter().enumerate().rev().map(|(index, l)| Op::RemoveLayer { index, layer: Box::new(l.clone()) }).collect();
+        Some(Transaction::new("Remove all layers", ops))
+    }
+
     pub fn rename_tx(&self, id: LayerId, to: impl Into<String>) -> Option<Transaction> {
         let from = self.layer(id)?.display_name.clone();
         Some(Transaction::new("Rename layer", vec![Op::Rename { id, from, to: to.into() }]))
@@ -731,6 +741,16 @@ pub(crate) mod tests {
         round_trip(&mut d, &tx);
         let tx = d.move_tx(2, 0).unwrap();
         round_trip(&mut d, &tx);
+        let tx = d.remove_all_tx().unwrap();
+        round_trip(&mut d, &tx);
+    }
+
+    #[test]
+    fn remove_all_empties_the_map_in_one_step() {
+        let mut d = sample();
+        d.apply(&d.remove_all_tx().unwrap()).unwrap();
+        assert!(d.layers.is_empty());
+        assert!(d.remove_all_tx().is_none());
     }
 
     #[test]

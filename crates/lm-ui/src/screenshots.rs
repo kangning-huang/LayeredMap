@@ -129,6 +129,55 @@ fn phase2_layers() {
     h.snapshot("phase2_layers");
 }
 
+/// The layer's right-click menu, each item with its symbol; then "Remove all" empties the map in
+/// one step that Undo reverses.
+#[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+fn phase3_layer_menu_and_remove_all() {
+    use egui_kittest::kittest::Queryable as _;
+    let mut h = harness_phase(3, false, (121.47, 31.23, 9.0), |s| {
+        let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../fixtures");
+        for (i, f) in ["V1/districts.geojson", "T1/schools.csv"].iter().enumerate() {
+            let layers =
+                lm_jobs::import::import_path(&dir.join(f), &lm_jobs::import::Ctx::detached(Default::default())).unwrap_or_default();
+            s.ws.add_imported(layers, 100 + i as u64);
+        }
+        s.ws.new_data = None;
+    });
+    h.run_steps(20);
+    let row = egui::pos2(110.0, 181.0);
+    h.input_mut().events.push(egui::Event::PointerMoved(row));
+    h.run_steps(2);
+    for pressed in [true, false] {
+        h.input_mut().events.push(egui::Event::PointerButton {
+            pos: row,
+            button: egui::PointerButton::Secondary,
+            pressed,
+            modifiers: egui::Modifiers::NONE,
+        });
+        h.run_steps(2);
+    }
+    h.run_steps(10);
+    h.snapshot("phase3_layer_menu");
+    h.input_mut().events.push(egui::Event::Key {
+        key: egui::Key::Escape,
+        physical_key: None,
+        pressed: true,
+        repeat: false,
+        modifiers: egui::Modifiers::NONE,
+    });
+    h.run_steps(4);
+    h.get_by_label("Remove all").click();
+    h.run_steps(4);
+    assert_eq!(h.state().as_ref().map_or(99, |s| s.ws.doc.layers.len()), 0);
+    let ctx = h.ctx.clone();
+    if let Some(s) = h.state_mut().as_mut() {
+        s.command(&ctx, crate::Command::Undo);
+    }
+    h.run_steps(4);
+    assert_eq!(h.state().as_ref().map_or(0, |s| s.ws.doc.layers.len()), 2);
+}
+
 /// Scrolling over the layer list scrolls the list, never the map (owner's bug report, 2026-10-16).
 #[test]
 fn scrolling_over_the_layer_list_does_not_zoom_the_map() {
@@ -421,6 +470,32 @@ fn phase3_join_question() {
     let table = s.ws.doc.layers.iter().find(|l| l.profile.kind == lm_core::model::LayerKind::Table).expect("the table stays");
     assert!(s.ws.join_question(table.id).is_some_and(|q| q.offers.len() >= 2));
     h.snapshot("phase3_join_question");
+}
+
+/// Drawing an area (WP4.4): the outline so far and the banner; a finished outline becomes the
+/// layer "Area 1" in WGS 84.
+#[test]
+fn phase4_drawing() {
+    let mut h = phase3(&["V1/districts.geojson"], SHANGHAI, |s| {
+        s.ws.clear_selection();
+        let mut d = crate::draw::Drawing::new(crate::draw::Mode::Polygon);
+        for p in [(121.30, 31.30), (121.45, 31.33), (121.50, 31.20)] {
+            d.click(p, |a, b| a == b);
+        }
+        s.drawing = Some(d);
+    });
+    settle(&mut h);
+    h.snapshot("phase4_drawing");
+    if let Some(s) = h.state_mut().as_mut() {
+        s.command(&egui::Context::default(), crate::Command::Escape);
+        assert!(s.drawing.is_none(), "Esc cancels");
+        s.command(&egui::Context::default(), crate::Command::DrawArea(vec![(121.30, 31.30), (121.45, 31.33), (121.50, 31.20)]));
+    }
+    settle(&mut h);
+    let s = h.state().as_ref().unwrap();
+    let area = s.ws.doc.layers.iter().find(|l| l.display_name == "Area 1").expect("Area 1");
+    assert_eq!(area.profile.kind, lm_core::model::LayerKind::Areas);
+    assert_eq!(area.profile.crs.value, lm_core::model::Crs::Wgs84);
 }
 
 /// Selection is shared: an object selected (as a table row click does) is highlighted on the map,

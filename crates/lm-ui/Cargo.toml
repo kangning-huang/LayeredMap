@@ -18,6 +18,7 @@ lm-mapview = { path = "../lm-mapview" }
 egui = { workspace = true }
 egui-phosphor = { version = "0.14", default-features = false, features = ["regular"] }
 log = { workspace = true }
+image = { workspace = true }
 
 [dev-dependencies]
 egui_kittest = { workspace = true, features = ["wgpu", "snapshot"] }

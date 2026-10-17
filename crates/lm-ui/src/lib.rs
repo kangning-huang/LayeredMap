@@ -6,6 +6,7 @@
 
 pub mod basemap;
 mod chrome;
+pub mod draw;
 pub mod examples;
 pub mod find_ui;
 pub mod form;
@@ -64,6 +65,8 @@ pub enum Command {
     Redo,
     /// Show or hide the layer shelf (⌘L, the Layers button).
     ToggleLayers,
+    /// Remove every layer at once, as one undoable step (the shelf's "Remove all", the menu bar).
+    RemoveAllLayers,
     /// Developer: save the document (manifest.json) into a folder.
     SaveDocument(PathBuf),
     /// Developer: open a document folder.
@@ -87,6 +90,10 @@ pub enum Command {
     Escape,
     /// Find in the selected layer (WP3.10; scripts and tests).
     Find(String),
+    /// Start drawing an area (WP4.4): from the assistant or the developer surface.
+    StartDrawing(draw::Mode),
+    /// Make an area layer from an outline in longitude/latitude (scripts and tests).
+    DrawArea(Vec<(f64, f64)>),
 }
 
 /// A file dialog the shell asks the app to show (the shell itself never opens dialogs).
@@ -170,6 +177,8 @@ pub struct Shell {
     pub(crate) compare_peers: Option<(lm_core::model::LayerId, Option<String>)>,
     /// Find in a layer (WP3.10).
     pub(crate) find: find_ui::FindState,
+    /// An area being drawn (WP4.4).
+    pub(crate) drawing: Option<draw::Drawing>,
     /// The overlap chooser: where the click was and what it hit, topmost first.
     pub(crate) chooser: Option<(egui::Pos2, Vec<lm_core::selection::FeatureRef>)>,
     /// A chooser row being hovered: its object is highlighted.
@@ -207,6 +216,7 @@ impl Shell {
             last_map_size: egui::vec2(1280.0, 748.0),
             archive_url: None,
             find: find_ui::FindState::default(),
+            drawing: None,
             ws: workspace::Workspace::with_waker(ctx),
             shelf_open: true,
             inspector_tab: 0,
@@ -287,6 +297,16 @@ impl Shell {
                 }
             }
             Command::InspectorTab(tab) => self.inspector_tab = tab,
+            Command::StartDrawing(mode) => {
+                self.find.clear();
+                self.drawing = Some(draw::Drawing::new(mode));
+            }
+            Command::DrawArea(ring) => {
+                let name = draw::next_name(self.ws.doc.layers.iter().map(|l| l.display_name.clone()));
+                if let Some(layer) = lm_jobs::import::drawn_area(&name, &ring) {
+                    self.ws.add_imported(vec![layer], u64::MAX);
+                }
+            }
             Command::Find(text) => {
                 if let Some(id) = self.ws.selected() {
                     self.find.layer = Some(id);
@@ -310,7 +330,8 @@ impl Shell {
                 }
             }
             Command::Escape => {
-                if let Some(id) = self.find.layer.filter(|id| self.find.active_for(*id)) {
+                if self.drawing.take().is_some() {
+                } else if let Some(id) = self.find.layer.filter(|id| self.find.active_for(*id)) {
                     self.find.clear();
                     self.ws.selection = lm_core::selection::SelectionContext::layer(id);
                 } else if self.chooser.take().is_none() && self.compare_peers.take().is_none() {
@@ -342,6 +363,17 @@ impl Shell {
                 }
             }
             Command::ToggleLayers => self.shelf_open = !self.shelf_open,
+            Command::RemoveAllLayers => {
+                let n = self.ws.doc.layers.len();
+                if let Some(tx) = self.ws.doc.remove_all_tx() {
+                    self.ws.commit(Some(tx));
+                    self.ws.clear_selection();
+                    self.find.clear();
+                    self.table_for = None;
+                    let what = if n == 1 { "1 layer".to_string() } else { format!("{n} layers") };
+                    self.notice = Some((format!("Removed {what}. Undo with ⌘Z."), t));
+                }
+            }
             Command::SaveDocument(dir) => {
                 self.ws.doc.view = {
                     let c = self.map.center_lonlat();
@@ -478,7 +510,15 @@ impl Shell {
 
     fn fly_to_extent(&mut self, e: lm_core::model::Extent) {
         let e = lm_mapview::Extent { min_x: e.min_x, min_y: e.min_y, max_x: e.max_x, max_y: e.max_y };
-        self.map.zoom_to_extent(&e, self.last_map_size);
+        let (left, right) = self.panel_insets();
+        self.map.zoom_to_extent_between(&e, self.last_map_size, left, right);
+    }
+
+    /// How much of the map the layer shelf (left) and the inspector (right) cover.
+    fn panel_insets(&self) -> (f32, f32) {
+        let left = if self.shelf_open && !self.ws.doc.layers.is_empty() { panels::SHELF_WIDTH + theme::PANEL_MARGIN } else { 0.0 };
+        let right = if self.ws.selected().is_some() { panels::INSPECTOR_WIDTH + theme::PANEL_MARGIN } else { 0.0 };
+        (left, right)
     }
 
     /// Phase 2 bookkeeping each frame: imports, the map's layers, fitting new data, the log.
@@ -576,8 +616,12 @@ impl Shell {
 
         // The map first, so the chrome draws over it.
         let keyboard = ctx.memory(|m| m.focused().is_none());
-        let out = self.map.show(ui, map_rect, ViewOptions { backdrop: self.backdrop, reduce_motion: system.reduce_motion, keyboard });
-        if let Some(lonlat) = out.clicked.filter(|_| self.flags.shows(3)) {
+        let drawing = self.drawing.is_some();
+        let out =
+            self.map.show(ui, map_rect, ViewOptions { backdrop: self.backdrop, reduce_motion: system.reduce_motion, keyboard, drawing });
+        if drawing {
+            draw::frame(self, ui, map_rect, &out);
+        } else if let Some(lonlat) = out.clicked.filter(|_| self.flags.shows(3)) {
             let (pos, shift) = ctx.input(|i| (i.pointer.interact_pos(), i.modifiers.shift));
             self.map_click(lonlat, pos.unwrap_or(map_rect.center()), shift);
         }
@@ -614,8 +658,7 @@ impl Shell {
         panels::shelf(self, ui, map_rect);
         panels::inspector(self, ui, map_rect);
         {
-            let left = if self.shelf_open && !self.ws.doc.layers.is_empty() { panels::SHELF_WIDTH + theme::PANEL_MARGIN } else { 0.0 };
-            let right = if self.ws.selected().is_some() { panels::INSPECTOR_WIDTH + theme::PANEL_MARGIN } else { 0.0 };
+            let (left, right) = self.panel_insets();
             table::drawer(self, ui, map_rect, left, right);
         }
         panels::chooser(self, ui);

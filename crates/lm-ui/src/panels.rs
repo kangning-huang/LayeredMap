@@ -81,6 +81,14 @@ pub fn shelf(shell: &mut Shell, ui: &mut Ui, map: Rect) {
             ui.set_width(SHELF_WIDTH - 2.0 * theme::PANEL_PADDING);
             ui.horizontal(|ui| {
                 ui.label(RichText::new("Layers").font(semibold(theme::HEADLINE)));
+                if shell.ws.doc.layers.len() > 1 {
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        let link = ui.link(RichText::new("Remove all").size(CAPTION).color(t.text_secondary));
+                        if link.on_hover_text("Remove every layer from the map (⌘Z brings them back)").clicked() {
+                            shell.command(ui.ctx(), crate::Command::RemoveAllLayers);
+                        }
+                    });
+                }
             });
             ui.add_space(4.0);
             egui::ScrollArea::vertical()
@@ -105,6 +113,16 @@ pub fn shelf(shell: &mut Shell, ui: &mut Ui, map: Rect) {
                 });
         });
     });
+}
+
+/// A menu item with a leading symbol in the label's colour and weight (Apple's standard symbols
+/// where one exists: `menus.md › Icons`). Every item in a menu gets one, so the labels line up.
+fn menu_item(ui: &mut Ui, t: &Theme, glyph: &str, label: &str) -> egui::Response {
+    let mut job = egui::text::LayoutJob::default();
+    let format = |font| egui::TextFormat { font_id: font, color: t.text_primary, valign: egui::Align::Center, ..Default::default() };
+    job.append(glyph, 0.0, format(theme::icon_font(15.0)));
+    job.append(label, 8.0, format(egui::FontId::proportional(BODY)));
+    ui.add(egui::Button::new(job))
 }
 
 fn import_rows(shell: &mut Shell, ui: &mut Ui, t: &Theme) {
@@ -295,25 +313,26 @@ fn layer_rows(shell: &mut Shell, ui: &mut Ui, t: &Theme) {
             shell.drag_from = Some(d);
         }
         resp.context_menu(|ui| {
-            if l.profile.kind != LayerKind::Raster && ui.button("View data").clicked() {
+            if l.profile.kind != LayerKind::Raster && menu_item(ui, t, icon::TABLE, "View data").clicked() {
                 shell.table_for = Some(*id);
                 ui.close();
             }
-            if ui.button("Style…").clicked() {
+            if menu_item(ui, t, icon::PAINT_BRUSH, "Style…").clicked() {
                 shell.ws.select_layer(*id);
                 shell.inspector_tab = 1;
                 ui.close();
             }
-            if ui.button("Zoom to layer").clicked() {
+            if menu_item(ui, t, icon::FRAME_CORNERS, "Zoom to layer").clicked() {
                 shell.zoom_to = shell.ws.extent(*id);
                 ui.close();
             }
-            if ui.button("Rename").clicked() {
+            if menu_item(ui, t, icon::PENCIL_SIMPLE, "Rename").clicked() {
                 shell.rename = Some((*id, l.display_name.clone()));
                 shell.rename_started = true;
                 ui.close();
             }
-            if ui.button("Remove from map").clicked() {
+            ui.separator();
+            if menu_item(ui, t, icon::MINUS_CIRCLE, "Remove from map").clicked() {
                 let tx = shell.ws.doc.remove_layer_tx(*id).map(|mut x| {
                     x.label = format!("Remove {}", l.display_name);
                     x

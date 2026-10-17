@@ -6,8 +6,10 @@
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
 pub mod find;
+pub mod fingerprint;
 pub mod import;
 pub mod inspect;
+pub mod jobs;
 pub mod join;
 
 use std::path::{Path, PathBuf};

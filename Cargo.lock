@@ -2611,8 +2611,11 @@ dependencies = [
 name = "lm-analysis"
 version = "0.2.0"
 dependencies = [
+ "geo",
  "geographiclib-rs",
  "proptest",
+ "robust",
+ "rstar",
  "rustgis-data",
  "rustgis-geom",
  "serde_json",
@@ -2713,6 +2716,7 @@ dependencies = [
  "egui",
  "egui-phosphor",
  "egui_kittest",
+ "image",
  "lm-actions",
  "lm-core",
  "lm-doc",

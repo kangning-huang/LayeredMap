@@ -222,7 +222,8 @@ impl eframe::App for App {
 /// `layer N` selects the shelf's n-th layer from the top; `tab N` shows an inspector tab;
 /// `table` toggles the table drawer; `preset N` applies a style preset; `esc` presses Esc;
 /// `basemap ID` switches the basemap (`auto`, `light`, `dark`, `satellite`, `offline`);
-/// `find TEXT` finds in the selected layer.
+/// `find TEXT` finds in the selected layer; `draw` / `draw rect` starts drawing an area;
+/// `area lon,lat lon,lat lon,lat…` makes an area layer from an outline.
 #[derive(Clone, Debug, PartialEq)]
 enum Step {
     Fly(f64, f64, f64),
@@ -246,6 +247,18 @@ impl Step {
             "esc" => Step::Other(Command::Escape),
             "basemap" => Step::Other(Command::SetBasemap(rest.trim().to_string())),
             "find" => Step::Other(Command::Find(rest.to_string())),
+            "draw" => Step::Other(Command::StartDrawing(if rest.trim() == "rect" {
+                lm_ui::draw::Mode::Rectangle
+            } else {
+                lm_ui::draw::Mode::Polygon
+            })),
+            "area" => {
+                let ring: Vec<(f64, f64)> = rest
+                    .split_whitespace()
+                    .filter_map(|p| p.split_once(',').and_then(|(a, b)| Some((a.trim().parse().ok()?, b.trim().parse().ok()?))))
+                    .collect();
+                Step::Other(Command::DrawArea(ring))
+            }
             "undo" => Step::Other(Command::Undo),
             "redo" => Step::Other(Command::Redo),
             _ => match nums(s).as_slice() {

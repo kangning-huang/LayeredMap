@@ -54,6 +54,9 @@ pub struct ViewOptions {
     pub reduce_motion: bool,
     /// Keyboard navigation applies (the map, not a text field, has the keyboard).
     pub keyboard: bool,
+    /// An area is being drawn (WP4.4): a drag draws instead of panning, and a double-click
+    /// finishes instead of zooming. The wheel and pinch still zoom.
+    pub drawing: bool,
 }
 
 /// What happened in the map this frame.
@@ -65,6 +68,11 @@ pub struct MapOutput {
     pub clicked: Option<Coord>,
     /// Where that click was on screen (to place the overlap chooser), in egui points.
     pub click_pos: Option<Pos2>,
+    /// While drawing: a double-click, in longitude/latitude.
+    pub double_clicked: Option<Coord>,
+    /// While drawing: a drag from its start to the pointer now, and whether it was released this
+    /// frame.
+    pub drag: Option<(Coord, Coord, bool)>,
 }
 
 /// LayeredMap's selection highlight (Visual specification › Default symbols › Selected): the
@@ -273,12 +281,24 @@ impl MapView {
 
     /// Fits a longitude/latitude extent (⌘0, zoom to layer), with a margin.
     pub fn zoom_to_extent(&mut self, e: &Extent, size: egui::Vec2) {
+        self.zoom_to_extent_between(e, size, 0.0, 0.0);
+    }
+
+    /// Fits an extent into the part of the view not covered by panels `left` and `right`
+    /// points wide, so what was asked for doesn't land under a panel.
+    pub fn zoom_to_extent_between(&mut self, e: &Extent, size: egui::Vec2, left: f32, right: f32) {
         let m = extent_to_merc(e);
-        let (w, h) = (f64::from(size.x).max(1.0), f64::from(size.y).max(1.0));
+        // In a window too narrow for that, the panels are ignored.
+        let (left, right) = if size.x - left - right >= 240.0 { (left, right) } else { (0.0, 0.0) };
+        let (w, h) = (f64::from(size.x - left - right).max(1.0), f64::from(size.y).max(1.0));
         let res = (m.width() / (w * 0.85)).max(m.height() / (h * 0.85));
+        // A point or a tiny area stops at street level (zoom 16) instead of the deepest zoom.
+        let res = if res.is_finite() { res.max(res_of(16.0)) } else { res_of(2.0) };
         self.velocity = egui::Vec2::ZERO;
         self.anim = None;
-        self.camera = Camera { center: m.center(), res: if res.is_finite() && res > 0.0 { res } else { res_of(2.0) } };
+        let mut center = m.center();
+        center.x -= f64::from(left - right) / 2.0 * res;
+        self.camera = Camera { center, res };
     }
 
     pub fn stats(&self) -> &FrameStats {
@@ -322,6 +342,21 @@ impl MapView {
             let m = self.camera.to_map(f64::from(p.x - rect.min.x), f64::from(p.y - rect.min.y), w, h);
             out.clicked = self.map.to_lonlat(m);
             out.click_pos = Some(p);
+        }
+        if opts.drawing {
+            let to_lonlat =
+                |me: &MapView, p: Pos2| me.map.to_lonlat(me.camera.to_map(f64::from(p.x - rect.min.x), f64::from(p.y - rect.min.y), w, h));
+            if resp.double_clicked()
+                && let Some(p) = resp.interact_pointer_pos()
+            {
+                out.double_clicked = to_lonlat(self, p);
+            }
+            if (resp.dragged() || resp.drag_stopped())
+                && let (Some(a), Some(b)) = (ui.input(|i| i.pointer.press_origin()), resp.interact_pointer_pos())
+                && let (Some(a), Some(b)) = (to_lonlat(self, a), to_lonlat(self, b))
+            {
+                out.drag = Some((a, b, resp.drag_stopped()));
+            }
         }
         camera::clamp(&mut self.camera, w, h);
         self.rect = Some(rect);
@@ -428,8 +463,10 @@ impl MapView {
         let stop_anim = |me: &mut MapView| {
             me.anim = None;
         };
-        // Drag: the map follows the pointer; release keeps its speed (inertia).
-        if resp.dragged() {
+        // Drag: the map follows the pointer; release keeps its speed (inertia). Not while drawing.
+        if opts.drawing {
+            self.velocity = egui::Vec2::ZERO;
+        } else if resp.dragged() {
             let d = resp.drag_delta();
             camera::pan(&mut self.camera, f64::from(d.x), f64::from(d.y));
             if dt > 0.0 {
@@ -490,7 +527,8 @@ impl MapView {
                 }
             }
         }
-        if resp.double_clicked()
+        if !opts.drawing
+            && resp.double_clicked()
             && let Some(p) = resp.interact_pointer_pos()
         {
             // Zoom one level about the click (⌥ zooms out).
