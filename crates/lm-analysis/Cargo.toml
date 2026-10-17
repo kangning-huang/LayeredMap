@@ -13,6 +13,7 @@ workspace = true
 rustgis-geom = { workspace = true }
 rustgis-data = { workspace = true }
 geographiclib-rs = { workspace = true }
+geo = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }
