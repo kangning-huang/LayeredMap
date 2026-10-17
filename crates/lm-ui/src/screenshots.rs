@@ -620,3 +620,63 @@ fn phase3_filter_between() {
     settle(&mut h);
     h.snapshot("phase3_filter_between");
 }
+
+/// Developer surface on the bundled examples: which assistant actions each selection offers
+/// (printed for the testing guide).
+#[test]
+#[ignore = "prints the developer surface's actions for the testing guide"]
+fn developer_actions_on_examples() {
+    let _h = phase3(
+        &["../assets/examples/countries.geojson", "../assets/examples/populated_places.geojson", "../assets/examples/elevation.tif"],
+        WORLD,
+        |s| {
+            s.developer = true;
+            let ids: Vec<_> = s.ws.doc.layers.iter().map(|l| (l.id, l.display_name.clone(), l.profile.kind)).collect();
+            for (id, name, kind) in ids {
+                for row in [None, Some(0usize)] {
+                    match row {
+                        None => s.ws.select_layer(id),
+                        Some(r) if kind != lm_core::model::LayerKind::Raster => {
+                            s.ws.selection =
+                                lm_core::selection::SelectionContext::object(lm_core::selection::FeatureRef { layer: id, row: r })
+                        }
+                        _ => continue,
+                    }
+                    let ctx = crate::insight::context(s);
+                    let sug = lm_actions::suggest(&ctx, lm_actions::Options::developer(4));
+                    let top: Vec<String> = sug.top.iter().map(|a| format!("{} [{}]", a.label, a.action_id)).collect();
+                    let more: Vec<String> =
+                        sug.more.iter().flat_map(|(_, v)| v.iter().map(|a| format!("{} [{}]", a.label, a.action_id))).collect();
+                    println!("{name} {:?}: top {:?}\n    more {:?}", row.map(|_| "object"), top, more);
+                }
+            }
+        },
+    );
+}
+
+/// "Summarize in an area I draw": drawing on a raster's behalf opens the composer on the new
+/// area with the raster as the second layer, and the summary arrives as a number.
+#[test]
+fn phase4_summarize_in_a_drawn_area() {
+    let mut h = phase3(&["../assets/examples/elevation.tif"], WORLD, |s| {
+        s.developer = true;
+        s.after_drawing = s.ws.doc.layers.first().map(|l| l.id);
+    });
+    let ctx = h.ctx.clone();
+    if let Some(s) = h.state_mut().as_mut() {
+        s.command(&ctx, crate::Command::DrawArea(vec![(100.0, 25.0), (110.0, 25.0), (110.0, 35.0), (100.0, 35.0)]));
+    }
+    for _ in 0..300 {
+        h.step();
+        if h.state().as_ref().is_some_and(|s| s.composer.as_ref().is_some_and(|c| c.result.is_some() || c.error.is_some())) {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+    let s = h.state().as_ref().unwrap();
+    let c = s.composer.as_ref().expect("composer");
+    assert_eq!(c.error, None);
+    assert_eq!(c.action, "summarize_drawn");
+    let r = c.result.as_ref().expect("result");
+    assert!(matches!(r.card.answer, lm_core::recipe::Answer::Number { value, .. } if value.is_finite()), "{:?}", r.card.answer);
+}

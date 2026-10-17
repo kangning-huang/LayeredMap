@@ -74,6 +74,13 @@ pub fn open(shell: &mut Shell, main: LayerId, row: Option<usize>, a: &Suggested)
         return;
     }
     let Some(l) = shell.ws.doc.layer(main).cloned() else { return };
+    // "Summarize in an area I draw" on a raster: draw first, then summarize there.
+    if a.action_id == "summarize_drawn" && l.profile.kind == LayerKind::Raster {
+        close(shell);
+        shell.after_drawing = Some(main);
+        shell.drawing = Some(crate::draw::Drawing::new(crate::draw::Mode::Polygon));
+        return;
+    }
     let kinds = companion_kinds(&a.action_id, l.profile.kind);
     let companion = a
         .companion
@@ -107,6 +114,21 @@ pub fn open(shell: &mut Shell, main: LayerId, row: Option<usize>, a: &Suggested)
         kept: None,
     });
     refresh(shell, true);
+}
+
+/// After an area is drawn for "Summarize in an area I draw": select it and summarize the raster
+/// there.
+pub fn area_drawn(shell: &mut Shell, area: LayerId) {
+    let Some(raster) = shell.after_drawing.take() else { return };
+    shell.ws.selection = lm_core::selection::SelectionContext::object(lm_core::selection::FeatureRef { layer: area, row: 0 });
+    let a = Suggested {
+        action_id: "summarize_drawn".into(),
+        label: lm_actions::registry().action("summarize_drawn").map_or_else(|| "Summarize in an area I draw".into(), |s| s.label.clone()),
+        group: lm_actions::Group::Measure,
+        companion: Some(raster),
+        field: None,
+    };
+    open(shell, area, Some(0), &a);
 }
 
 /// Opens the composer for `action` on the selected layer and object (scripts and tests), with

@@ -198,6 +198,8 @@ pub struct Shell {
     pub developer: bool,
     /// A question being composed (developer surface).
     pub(crate) composer: Option<analysis::Composer>,
+    /// "Summarize in an area I draw": the raster to summarize once the area is drawn.
+    pub(crate) after_drawing: Option<lm_core::model::LayerId>,
 }
 
 impl Shell {
@@ -228,6 +230,7 @@ impl Shell {
             archive_url: None,
             developer: false,
             composer: None,
+            after_drawing: None,
             find: find_ui::FindState::default(),
             drawing: None,
             ws: workspace::Workspace::with_waker(ctx),
@@ -318,6 +321,9 @@ impl Shell {
                 let name = draw::next_name(self.ws.doc.layers.iter().map(|l| l.display_name.clone()));
                 if let Some(layer) = lm_jobs::import::drawn_area(&name, &ring) {
                     self.ws.add_imported(vec![layer], u64::MAX);
+                    if let Some(id) = self.ws.doc.layers.iter().find(|l| l.display_name == name).map(|l| l.id) {
+                        analysis::area_drawn(self, id);
+                    }
                 }
             }
             Command::ComposeAction(action, params) => analysis::compose_by_id(self, &action, params),
