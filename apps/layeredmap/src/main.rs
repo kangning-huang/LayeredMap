@@ -223,7 +223,9 @@ impl eframe::App for App {
 /// `table` toggles the table drawer; `preset N` applies a style preset; `esc` presses Esc;
 /// `basemap ID` switches the basemap (`auto`, `light`, `dark`, `satellite`, `offline`);
 /// `find TEXT` finds in the selected layer; `draw` / `draw rect` starts drawing an area;
-/// `area lon,lat lon,lat lon,lat…` makes an area layer from an outline.
+/// `area lon,lat lon,lat lon,lat…` makes an area layer from an outline;
+/// `action ID key=value,key=value` opens the composer for an analysis action on the selected
+/// layer (developer surface; `with=NAME` picks the second layer); `keep` keeps its preview.
 #[derive(Clone, Debug, PartialEq)]
 enum Step {
     Fly(f64, f64, f64),
@@ -259,6 +261,15 @@ impl Step {
                     .collect();
                 Step::Other(Command::DrawArea(ring))
             }
+            "action" => {
+                let (id, args) = rest.trim().split_once(' ').unwrap_or((rest.trim(), ""));
+                let params = args
+                    .split(',')
+                    .filter_map(|kv| kv.split_once('=').map(|(k, v)| (k.trim().to_string(), v.trim().to_string())))
+                    .collect();
+                Step::Other(Command::ComposeAction(id.to_string(), params))
+            }
+            "keep" => Step::Other(Command::KeepResult),
             "undo" => Step::Other(Command::Undo),
             "redo" => Step::Other(Command::Redo),
             _ => match nums(s).as_slice() {
@@ -274,6 +285,20 @@ impl Step {
             Step::Other(c) => c,
         }
     }
+}
+
+/// LayeredMap Pro: the Pro app bundle carries `Contents/Resources/tier` reading "pro"
+/// (`packaging/lm/bundle-macos.sh` with `LM_TIER=pro`); `LM_TIER=pro` does the same for a run
+/// outside a bundle. Until accounts exist (Phase 7) the tier is the app you open.
+fn is_pro() -> bool {
+    if std::env::var("LM_TIER").is_ok_and(|v| v.eq_ignore_ascii_case("pro")) {
+        return true;
+    }
+    std::env::current_exe()
+        .ok()
+        .and_then(|exe| Some(exe.parent()?.parent()?.join("Resources").join("tier")))
+        .and_then(|p| std::fs::read_to_string(p).ok())
+        .is_some_and(|s| s.trim().eq_ignore_ascii_case("pro"))
 }
 
 fn main() -> eframe::Result {
@@ -299,10 +324,12 @@ fn main() -> eframe::Result {
     });
     let flags = Flags::from_env(std::env::var("LM_PHASE").ok().as_deref());
     let developer = cfg!(debug_assertions) || std::env::var_os("LM_DEV").is_some();
+    let pro = is_pro();
+    let app_name = if pro { "LayeredMap Pro" } else { "LayeredMap" };
     let mut options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
-            .with_title("LayeredMap")
-            .with_app_id("app.layeredmap.desktop")
+            .with_title(app_name)
+            .with_app_id(if pro { "app.layeredmap.pro" } else { "app.layeredmap.desktop" })
             .with_inner_size([1280.0, 800.0])
             .with_min_inner_size([1024.0, 640.0])
             // The Strata logo, for runs outside the app bundle (the bundle has AppIcon.icns).
@@ -318,7 +345,7 @@ fn main() -> eframe::Result {
     #[cfg(target_os = "macos")]
     macos::install_open_handler();
     eframe::run_native(
-        "LayeredMap",
+        app_name,
         options,
         Box::new(move |cc| {
             let mut prefs = if ephemeral { Prefs::default() } else { load_prefs(cc.storage) };
@@ -332,6 +359,8 @@ fn main() -> eframe::Result {
             }
             let system = System { dark_mode: cc.egui_ctx.system_theme() == Some(egui::Theme::Dark), reduce_motion: reduce_motion() };
             let mut shell = Shell::new(&cc.egui_ctx, flags, prefs, system);
+            shell.developer = developer;
+            shell.pro = pro;
             lm_ui::basemap::start_archive_lookup(&cc.egui_ctx);
             if !ephemeral {
                 shell.set_question_log(question_log_path());

@@ -50,8 +50,14 @@ pub fn context(shell: &Shell) -> Context {
 /// Up to three suggested actions as full-width buttons, then More actions…, always last.
 pub fn actions(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer, row: Option<usize>) {
     let ctx = context(shell);
-    // Analysis actions are never buttons (Product tiers): the free app shows display actions only.
-    let s = lm_actions::suggest(&ctx, Options::free(shell.flags.phase()));
+    // Analysis actions are never buttons (Product tiers): the free app shows display actions only;
+    // the developer surface shows them too, to test what the assistant will call.
+    let opts = if shell.analysis_actions() {
+        Options::developer(crate::analysis::DEV_PHASE.max(shell.flags.phase()))
+    } else {
+        Options::free(shell.flags.phase())
+    };
+    let s = lm_actions::suggest(&ctx, opts);
     // When the row's own actions are all for later phases, the first display actions under More
     // take their place, so a card never has an empty action area.
     let mut top: Vec<Suggested> = s.top.clone();
@@ -64,12 +70,13 @@ pub fn actions(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer, row: Opt
         return;
     }
     ui.add_space(10.0);
-    let w = ui.available_width();
     let mut run: Option<Suggested> = None;
     for a in &top {
-        if ui.add_sized(vec2(w, 32.0), egui::Button::new(RichText::new(&a.label).size(BODY))).clicked() {
+        // Each suggestion shows what it will do (crate::illustrations).
+        if crate::illustrations::button(ui, t, &a.action_id, &humanize(&a.label)).clicked() {
             run = Some(a.clone());
         }
+        ui.add_space(2.0);
     }
     if !more.is_empty() {
         ui.menu_button(RichText::new("More actions…").color(t.accent), |ui| {
@@ -82,8 +89,18 @@ pub fn actions(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer, row: Opt
         });
     }
     if let Some(a) = run {
-        perform(shell, l.id, row, &a);
+        let analysis = lm_actions::registry().action(&a.action_id).is_some_and(|s| s.algorithm.is_some());
+        if analysis && shell.analysis_actions() {
+            crate::analysis::open(shell, l.id, row, &a);
+        } else {
+            perform(shell, l.id, row, &a);
+        }
     }
+}
+
+/// Labels read as words: layer names in snake_case ("populated_places") get spaces.
+fn humanize(label: &str) -> String {
+    label.replace('_', " ")
 }
 
 /// Runs a display-only action (none creates new data).

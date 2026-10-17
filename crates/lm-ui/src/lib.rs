@@ -4,12 +4,14 @@
 //! `rustgis-data` or `rustgis-analysis`: all work goes through `lm-jobs`.
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
+pub mod analysis;
 pub mod basemap;
 mod chrome;
 pub mod draw;
 pub mod examples;
 pub mod find_ui;
 pub mod form;
+pub mod illustrations;
 pub mod insight;
 pub mod inspect;
 pub mod join_ui;
@@ -94,6 +96,11 @@ pub enum Command {
     StartDrawing(draw::Mode),
     /// Make an area layer from an outline in longitude/latitude (scripts and tests).
     DrawArea(Vec<(f64, f64)>),
+    /// Developer surface (scripts and tests): open the composer for an analysis action on the
+    /// selected layer (and selected object), with parameters such as `distance=500 m`.
+    ComposeAction(String, Vec<(String, String)>),
+    /// Developer surface: keep the composer's preview.
+    KeepResult,
 }
 
 /// A file dialog the shell asks the app to show (the shell itself never opens dialogs).
@@ -187,6 +194,16 @@ pub struct Shell {
     pub(crate) data_search: (String, Vec<chrome::DataRow>),
     /// The daily basemap build the map reads, once the newest one is known.
     archive_url: Option<String>,
+    /// The developer flag (`LM_DEV=1` or a debug build): shows assistant actions and the
+    /// composer (Phase 4's developer surface).
+    pub developer: bool,
+    /// LayeredMap Pro (the Pro app bundle, or `LM_TIER=pro`): the analysis actions are buttons
+    /// and open the composer. Until the assistant (Phase 7) exists this is how Pro asks.
+    pub pro: bool,
+    /// A question being composed (developer surface).
+    pub(crate) composer: Option<analysis::Composer>,
+    /// "Summarize in an area I draw": the raster to summarize once the area is drawn.
+    pub(crate) after_drawing: Option<lm_core::model::LayerId>,
 }
 
 impl Shell {
@@ -215,6 +232,10 @@ impl Shell {
             notice: None,
             last_map_size: egui::vec2(1280.0, 748.0),
             archive_url: None,
+            developer: false,
+            pro: false,
+            composer: None,
+            after_drawing: None,
             find: find_ui::FindState::default(),
             drawing: None,
             ws: workspace::Workspace::with_waker(ctx),
@@ -239,6 +260,16 @@ impl Shell {
             data_search: Default::default(),
             prefs,
         }
+    }
+
+    /// Whether analysis actions are offered: in Pro, and on the developer surface.
+    pub fn analysis_actions(&self) -> bool {
+        self.pro || self.developer
+    }
+
+    /// "LayeredMap" or "LayeredMap Pro".
+    pub fn app_name(&self) -> &'static str {
+        if self.pro { "LayeredMap Pro" } else { "LayeredMap" }
     }
 
     pub fn theme(&self) -> &Theme {
@@ -305,7 +336,14 @@ impl Shell {
                 let name = draw::next_name(self.ws.doc.layers.iter().map(|l| l.display_name.clone()));
                 if let Some(layer) = lm_jobs::import::drawn_area(&name, &ring) {
                     self.ws.add_imported(vec![layer], u64::MAX);
+                    if let Some(id) = self.ws.doc.layers.iter().find(|l| l.display_name == name).map(|l| l.id) {
+                        analysis::area_drawn(self, id);
+                    }
                 }
+            }
+            Command::ComposeAction(action, params) => analysis::compose_by_id(self, &action, params),
+            Command::KeepResult => {
+                analysis::keep(self);
             }
             Command::Find(text) => {
                 if let Some(id) = self.ws.selected() {
@@ -524,6 +562,7 @@ impl Shell {
     /// Phase 2 bookkeeping each frame: imports, the map's layers, fitting new data, the log.
     fn update_workspace(&mut self, ctx: &egui::Context) {
         let t = ctx.input(|i| i.time);
+        analysis::poll(self);
         // Files dropped on the window (Open With and the Dock icon arrive through the app).
         let dropped: Vec<PathBuf> =
             ctx.input(|i| i.raw.dropped_files.iter().map(|f| f.path().to_path_buf()).filter(|p| !p.as_os_str().is_empty()).collect());

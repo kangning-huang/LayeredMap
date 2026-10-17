@@ -436,16 +436,16 @@ pub fn drawn_area(name: &str, ring: &[(f64, f64)]) -> Option<ImportedLayer> {
     }
     let mut ds = Dataset::new(name, GeometryType::Polygon, vec![Field::new("name", FieldType::Text)]);
     ds.push(Some(Geometry::Polygon(vec![vec![pts]])), vec![rustgis_engine::data::Value::Text(name.to_string())]);
+    Some(derived_layer(name, "Drawn area", ds))
+}
+
+/// A layer LayeredMap made itself (a drawn area, an action's result), in WGS 84 longitude and
+/// latitude, with no file behind it.
+pub fn derived_layer(name: &str, format: &str, ds: Dataset) -> ImportedLayer {
     let path = Path::new(name);
-    let mut profile = vector_profile(path, None, "Drawn area", &ds, Some(Crs::Wgs84), Vec::new(), Vec::new(), None, Vec::new(), &[]);
+    let mut profile = vector_profile(path, None, format, &ds, Some(Crs::Wgs84), Vec::new(), Vec::new(), None, Vec::new(), &[]);
     profile.source = SourceRef { path: name.to_string(), member: None, size: 0, mtime: 0, sha256: None };
-    Some(ImportedLayer {
-        name: name.to_string(),
-        profile,
-        data: LayerData::Vector(Arc::new(ds)),
-        status: ImportStatus::Complete,
-        raw: None,
-    })
+    ImportedLayer { name: name.to_string(), profile, data: LayerData::Vector(Arc::new(ds)), status: ImportStatus::Complete, raw: None }
 }
 
 /// Builds the profile of a vector layer read in longitude/latitude (or raw coordinates when the

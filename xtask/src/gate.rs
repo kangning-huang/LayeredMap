@@ -1,7 +1,7 @@
 //! LayeredMap's gate runs that need more than CI (Gate protocol › Automated checks: "large
 //! fixtures and stress runs use cargo xtask stress on your Mac"; fuzzing from Phase 2 on).
 //!
-//! - `stress`: the ignored large-fixture tests of `lm-jobs`, in release mode, with the generated
+//! - `stress`: the ignored large-fixture tests of `lm-jobs` and `lm-analysis` (N7), in release mode, with the generated
 //!   fixtures. Each check prints a `STRESS` line (fixture, measured value, threshold, pass/fail);
 //!   the run ends with them as a table for the gate report.
 //! - `fuzz [--secs N] [--target T]`: `cargo fuzz` on each import adapter (CSV, GeoJSON,
@@ -56,8 +56,13 @@ pub fn parse_stress(line: &str) -> Option<StressRow> {
     })
 }
 
-/// The stress tests, each run alone so they don't compete for the machine.
-const STRESS_TESTS: &[&str] = &["import::tests::large_fixtures", "import::gate2_tests::ui_stall_during_large_imports"];
+/// The stress tests (package, test), each run alone so they don't compete for the machine.
+const STRESS_TESTS: &[(&str, &str)] = &[
+    ("lm-jobs", "import::tests::large_fixtures"),
+    ("lm-jobs", "import::gate2_tests::ui_stall_during_large_imports"),
+    // Gate 4, N7: R4 across 3,000 areas through the tiled GeoTIFF reader.
+    ("lm-analysis", "zonal::tests::n7_r4_cog_stress"),
+];
 
 /// `cargo xtask stress`.
 pub fn stress(root: &Path, args: &[String]) -> Result<(), String> {
@@ -70,8 +75,8 @@ pub fn stress(root: &Path, args: &[String]) -> Result<(), String> {
     }
     let mut rows = Vec::new();
     let mut failed = Vec::new();
-    for test in STRESS_TESTS {
-        let args = ["test", "-p", "lm-jobs", "--release", "--lib", "--", "--ignored", "--nocapture", "--exact", test];
+    for (package, test) in STRESS_TESTS {
+        let args = ["test", "-p", package, "--release", "--lib", "--", "--ignored", "--nocapture", "--exact", test];
         println!("$ LM_FIXTURES_DIR={} cargo {}", fixtures.display(), args.join(" "));
         let mut child = nested(env!("CARGO"))
             .args(args)
@@ -87,7 +92,7 @@ pub fn stress(root: &Path, args: &[String]) -> Result<(), String> {
             }
         }
         if !child.wait().map_err(|e| e.to_string())?.success() {
-            failed.push(*test);
+            failed.push(format!("{package} {test}"));
         }
     }
     println!("\n{}", stress_table(&rows));

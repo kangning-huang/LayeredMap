@@ -94,6 +94,7 @@ pub fn frame(shell: &mut Shell, ui: &Ui, map_rect: Rect, out: &lm_mapview::MapOu
         step = d.drag((a.x, a.y), (b.x, b.y), released);
     }
     if ui.input(|i| i.key_pressed(egui::Key::Escape)) {
+        shell.after_drawing = None;
         return; // cancelled: the drawing is dropped
     }
     match step {
@@ -101,8 +102,9 @@ pub fn frame(shell: &mut Shell, ui: &Ui, map_rect: Rect, out: &lm_mapview::MapOu
             let name = next_name(shell.ws.doc.layers.iter().map(|l| l.display_name.clone()));
             if let Some(layer) = lm_jobs::import::drawn_area(&name, &ring) {
                 shell.ws.add_imported(vec![layer], u64::MAX);
-                if let Some(id) = shell.ws.doc.layers.last().map(|l| l.id) {
+                if let Some(id) = shell.ws.doc.layers.iter().find(|l| l.display_name == name).map(|l| l.id) {
                     shell.ws.select_layer(id);
+                    crate::analysis::area_drawn(shell, id);
                 }
             }
         }

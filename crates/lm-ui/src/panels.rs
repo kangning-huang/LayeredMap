@@ -576,7 +576,9 @@ pub fn inspector(shell: &mut Shell, ui: &mut Ui, map: Rect) {
                 .min_scrolled_height((max_h - 90.0).min(560.0))
                 .auto_shrink([false, true])
                 .show(ui, |ui| {
-                    if finding {
+                    if shell.composer.as_ref().is_some_and(|c| c.main == id) {
+                        crate::analysis::composer(shell, ui, &t, &l);
+                    } else if finding {
                         crate::find_ui::results(shell, ui, &t, &l);
                     } else if let Some((cid, field)) = shell.compare_peers.clone().filter(|(c, _)| *c == id) {
                         ranking(shell, ui, &t, &l, field.as_deref(), rows.first().copied());
@@ -606,7 +608,12 @@ pub fn inspector(shell: &mut Shell, ui: &mut Ui, map: Rect) {
         shell.ws.clear_selection();
         shell.compare_peers = None;
     } else if esc && shell.change_for.is_none() && shell.chooser.is_none() && shell.filter_draft.is_none() {
-        if shell.compare_peers.is_some() {
+        if shell.composer.is_some() {
+            // Esc discards a preview and closes the composer, but never cancels a running job.
+            if !shell.ws.plan_running() {
+                crate::analysis::close(shell);
+            }
+        } else if shell.compare_peers.is_some() {
             shell.compare_peers = None;
         } else {
             shell.ws.selection.step_back();
@@ -861,6 +868,8 @@ pub fn compare_banner(shell: &mut Shell, ui: &mut Ui, map: Rect) {
 }
 
 fn overview(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, l: &lm_core::document::DocLayer) {
+    // Kept results (WP4.6): the card of the result that made this layer, and cards about it.
+    crate::analysis::kept_cards(shell, ui, t, l);
     // Joining a table (WP3.11): the result on the joined layer, the question on a table.
     crate::join_ui::report(shell, ui, t, l);
     if l.profile.kind == lm_core::model::LayerKind::Table {

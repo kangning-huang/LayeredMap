@@ -7,7 +7,8 @@
 //! RustGIS readers the fixtures test.
 //!
 //! The output directory is `$LM_FIXTURES_DIR`, else `fixtures/generated` (ignored by git). The
-//! large rasters (R4 2 GB, R5 4 GB) are written only with `--large` or `--only`.
+//! large rasters (R4 2 GB, R5 4 GB) are written only with `--large` or `--only`. N7's 3,000 areas
+//! (for the R4 summary stress test) are small and always written.
 
 use std::fs::File;
 use std::io::{BufWriter, Seek, SeekFrom, Write};
@@ -628,6 +629,81 @@ fn r4(out: &Path) -> Result<String, String> {
     Ok(format!("R4: {side}² COG with {} overviews, {bytes} bytes", images.len() - 1))
 }
 
+/// R4's extent: (west, north) and side in degrees (the raster is square).
+fn r4_extent() -> (f64, f64, f64) {
+    (SHANGHAI[0], SHANGHAI[3], (SHANGHAI[2] - SHANGHAI[0]).max(SHANGHAI[3] - SHANGHAI[1]))
+}
+
+/// N7: 3,000 areas over R4 for the summary stress test, a 60 × 50 grid of irregular star
+/// polygons (16–40 vertices) that overlap their neighbours a little. Every 7th has a hole, every
+/// 11th is a multipolygon (a small second part beside it), and the western column and northern
+/// row reach past the raster's edge. Ids `P0000`–`P2999`, row by row from the north-west.
+fn n7(out: &Path) -> Result<String, String> {
+    let dir = out.join("N7");
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let (west, north, side) = r4_extent();
+    let (across, down) = (60usize, 50usize);
+    let (cw, ch) = (side / across as f64, side / down as f64);
+    let mut rng = Rng::new(0x4E37);
+    let mut gj = GeoJson::create(&dir.join("n7_polygons.geojson"))?;
+    let mut vertices = 0usize;
+    for j in 0..down {
+        for i in 0..across {
+            let k = j * across + i;
+            let mut cx = west + (i as f64 + 0.5 + rng.range(-0.2, 0.2)) * cw;
+            let mut cy = north - (j as f64 + 0.5 + rng.range(-0.2, 0.2)) * ch;
+            if i == 0 {
+                cx -= 0.4 * cw;
+            }
+            if j == 0 {
+                cy += 0.4 * ch;
+            }
+            let (rx, ry) = (0.62 * cw, 0.62 * ch);
+            let n = 16 + rng.below(25) as usize;
+            let mut outer: Vec<(f64, f64)> = (0..n)
+                .map(|v| {
+                    let a = std::f64::consts::TAU * (v as f64 + rng.range(-0.3, 0.3)) / n as f64;
+                    let r = rng.range(0.6, 1.0);
+                    (cx + r * rx * a.cos(), cy + r * ry * a.sin())
+                })
+                .collect();
+            outer.push(outer[0]);
+            vertices += outer.len();
+            let mut rings = vec![ring_json(&outer)];
+            if k % 7 == 3 {
+                // A hole well inside the smallest radius (0.6), wound the other way.
+                let mut hole: Vec<(f64, f64)> = (0..10)
+                    .map(|v| {
+                        let a = -std::f64::consts::TAU * v as f64 / 10.0;
+                        (cx + 0.25 * rx * a.cos(), cy + 0.25 * ry * a.sin())
+                    })
+                    .collect();
+                hole.push(hole[0]);
+                vertices += hole.len();
+                rings.push(ring_json(&hole));
+            }
+            let geometry = if k % 11 == 5 {
+                // A second part just outside the first's largest radius (1.0).
+                let (sx, sy) = (cx + 1.25 * rx, cy);
+                let mut part: Vec<(f64, f64)> = (0..8)
+                    .map(|v| {
+                        let a = std::f64::consts::TAU * v as f64 / 8.0;
+                        (sx + 0.15 * rx * a.cos(), sy + 0.15 * ry * a.sin())
+                    })
+                    .collect();
+                part.push(part[0]);
+                vertices += part.len();
+                format!("{{\"type\":\"MultiPolygon\",\"coordinates\":[[{}],[{}]]}}", rings.join(","), ring_json(&part))
+            } else {
+                format!("{{\"type\":\"Polygon\",\"coordinates\":[{}]}}", rings.join(","))
+            };
+            gj.feature(&geometry, &format!("\"area_id\":\"P{k:04}\""))?;
+        }
+    }
+    gj.finish()?;
+    Ok(format!("N7: {} areas over R4, {vertices} vertices", across * down))
+}
+
 /// R5: a ~4 GB striped BigTIFF without overviews.
 fn r5(out: &Path) -> Result<String, String> {
     std::fs::create_dir_all(out.join("R5")).map_err(|e| e.to_string())?;
@@ -704,6 +780,7 @@ const ALL: &[(&str, Gen, bool)] = &[
     ("V8", v8, false),
     ("T3", t3, false),
     ("R7", r7, false),
+    ("N7", n7, false),
     ("X1", x1, false),
     ("X2", x2, false),
     ("X3", x3, false),
@@ -762,8 +839,9 @@ mod tests {
             x4(d).unwrap();
             x5(d).unwrap();
             v8(d).unwrap();
+            n7(d).unwrap();
         }
-        for f in ["X2/x2_traversal.zip", "X4/x4_billion.tif", "X5/x5_formulas.csv", "V8/v8_wide.geojson"] {
+        for f in ["X2/x2_traversal.zip", "X4/x4_billion.tif", "X5/x5_formulas.csv", "V8/v8_wide.geojson", "N7/n7_polygons.geojson"] {
             assert_eq!(std::fs::read(a.join(f)).unwrap(), std::fs::read(b.join(f)).unwrap(), "{f}");
         }
         let _ = std::fs::remove_dir_all(&dir);

@@ -58,6 +58,39 @@ fn field_kind(l: &DocLayer, field: &str) -> FieldKind {
     }
 }
 
+/// The symbol before each verb (owner's request, 2026-10-17): the word stays, since the sentence
+/// reads "where population is above 500,000", and the symbol says exactly what it means — above
+/// is strictly greater (>), between includes both ends ([ ]).
+fn verb_symbol(verb: &str) -> &'static str {
+    match verb {
+        "is" => icon::EQUALS,
+        "is not" => icon::NOT_EQUALS,
+        "contains" => icon::MAGNIFYING_GLASS,
+        "above" | "after" => icon::GREATER_THAN,
+        "below" | "before" => icon::LESS_THAN,
+        "between" => icon::BRACKETS_SQUARE,
+        "is empty" => icon::CIRCLE_DASHED,
+        _ => icon::LIST_CHECKS,
+    }
+}
+
+fn verb_label(verb: &str, color: egui::Color32) -> egui::text::LayoutJob {
+    let mut job = egui::text::LayoutJob::default();
+    let format = |font| egui::TextFormat { font_id: font, color, valign: egui::Align::Center, ..Default::default() };
+    job.append(verb_symbol(verb), 0.0, format(theme::icon_font(14.0)));
+    job.append(verb, 6.0, format(egui::FontId::proportional(theme::BODY)));
+    job
+}
+
+/// What to type in the value box, so an empty box doesn't look like a stray bar.
+fn hint(kind: FieldKind) -> &'static str {
+    match kind {
+        FieldKind::Number => "a number",
+        FieldKind::Date => "a date",
+        _ => "some text",
+    }
+}
+
 fn verbs(kind: FieldKind) -> &'static [&'static str] {
     match kind {
         FieldKind::Text => &["is", "is not", "contains", "is empty"],
@@ -223,6 +256,7 @@ pub fn drawer(shell: &mut Shell, ui: &mut Ui, map: egui::Rect, left: f32, right:
     let selected: Vec<usize> = shell.ws.selection.rows_in(id);
     let mut close = false;
     let mut select: Option<(usize, bool)> = None;
+    let mut zoom_row: Option<usize> = None;
     let mut sort_click: Option<usize> = None;
     let mut remove_condition: Option<usize> = None;
     let mut open_builder = false;
@@ -360,6 +394,11 @@ pub fn drawer(shell: &mut Shell, ui: &mut Ui, map: egui::Rect, left: f32, right:
                             if resp.clicked() {
                                 select = Some((r, ui.input(|i| i.modifiers.shift)));
                             }
+                            // Double-click also zooms to the record (owner's request, 2026-10-17).
+                            if resp.double_clicked() {
+                                select = Some((r, false));
+                                zoom_row = Some(r);
+                            }
                         }
                     });
                 });
@@ -374,6 +413,12 @@ pub fn drawer(shell: &mut Shell, ui: &mut Ui, map: egui::Rect, left: f32, right:
             Some((f, false)) if f == c => None,
             _ => Some((c, true)),
         };
+    }
+    if let Some(r) = zoom_row
+        && let Some(ds) = crate::inspect::dataset(shell, id)
+        && let Some(e) = data::row_extent(&ds, r)
+    {
+        shell.zoom_to = Some(e);
     }
     if let Some((r, shift)) = select {
         let f = FeatureRef { layer: id, row: r };
@@ -439,9 +484,10 @@ fn builder(shell: &mut Shell, ui: &mut Ui, drawer: egui::Rect) {
                         d.b.clear();
                         d.any_of.clear();
                     }
-                    egui::ComboBox::from_id_salt("lm-filter-verb").selected_text(d.verb).show_ui(ui, |ui| {
+                    let color = ui.visuals().text_color();
+                    egui::ComboBox::from_id_salt("lm-filter-verb").selected_text(verb_label(d.verb, color)).show_ui(ui, |ui| {
                         for v in verbs(d.kind) {
-                            ui.selectable_value(&mut d.verb, *v, *v);
+                            ui.selectable_value(&mut d.verb, *v, verb_label(v, color));
                         }
                     });
                     match (d.kind, d.verb) {
@@ -463,12 +509,25 @@ fn builder(shell: &mut Shell, ui: &mut Ui, drawer: egui::Rect) {
                             });
                         }
                         (_, "between") => {
-                            ui.add(egui::TextEdit::singleline(&mut d.a).desired_width(80.0));
-                            ui.label("and");
-                            ui.add(egui::TextEdit::singleline(&mut d.b).desired_width(80.0));
+                            // "[a] and [b]" moves to the next line as one piece, never split or
+                            // squeezed.
+                            let and_w = ui.fonts_mut(|f| {
+                                f.layout_no_wrap("and".into(), egui::FontId::proportional(theme::BODY), egui::Color32::WHITE).size().x
+                            });
+                            let need = 2.0 * 80.0 + and_w + 4.0 * ui.spacing().item_spacing.x + 2.0 * ui.spacing().button_padding.x;
+                            // A wrapping row reports its full width as available; what is left on
+                            // this line is from the cursor to the right edge.
+                            if ui.max_rect().right() - ui.cursor().left() < need {
+                                ui.end_row();
+                            }
+                            ui.horizontal(|ui| {
+                                ui.add(egui::TextEdit::singleline(&mut d.a).desired_width(80.0).hint_text(hint(d.kind)));
+                                ui.label("and");
+                                ui.add(egui::TextEdit::singleline(&mut d.b).desired_width(80.0).hint_text(hint(d.kind)));
+                            });
                         }
                         _ => {
-                            ui.add(egui::TextEdit::singleline(&mut d.a).desired_width(140.0));
+                            ui.add(egui::TextEdit::singleline(&mut d.a).desired_width(140.0).hint_text(hint(d.kind)));
                         }
                     }
                 });

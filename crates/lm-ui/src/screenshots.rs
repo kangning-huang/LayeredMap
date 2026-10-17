@@ -559,3 +559,147 @@ fn style_gallery() {
         h.render().unwrap().save(dir.join(format!("{name}.png"))).unwrap();
     }
 }
+
+/// Phase 4's developer surface: the composer previews "Count points in each area", Keep adds
+/// the result layer and its record in one undo step, and Undo removes both.
+#[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+fn phase4_composer_preview_keep_undo() {
+    let mut h = phase3(&["N1/areas.geojson", "N1/points.geojson"], (121.35, 31.2, 10.0), |s| {
+        s.developer = true;
+        let id = s.ws.doc.layers.iter().find(|l| l.display_name == "points").map(|l| l.id);
+        if let Some(id) = id {
+            s.ws.select_layer(id);
+        }
+    });
+    let ctx = h.ctx.clone();
+    if let Some(s) = h.state_mut().as_mut() {
+        s.command(&ctx, crate::Command::ComposeAction("count_in".into(), vec![]));
+    }
+    for _ in 0..300 {
+        h.step();
+        if h.state().as_ref().is_some_and(|s| s.composer.as_ref().is_some_and(|c| c.result.is_some() || c.error.is_some())) {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+    settle(&mut h);
+    let err = h.state().as_ref().and_then(|s| s.composer.as_ref().and_then(|c| c.error.clone()));
+    assert_eq!(err, None);
+    h.snapshot("phase4_composer");
+    let before = h.state().as_ref().map_or(0, |s| s.ws.doc.layers.len());
+    if let Some(s) = h.state_mut().as_mut() {
+        s.command(&ctx, crate::Command::KeepResult);
+    }
+    settle(&mut h);
+    h.snapshot("phase4_result_card");
+    let s = h.state().as_ref().unwrap();
+    assert_eq!(s.ws.doc.layers.len(), before + 1);
+    assert_eq!(s.ws.doc.results.len(), 1);
+    assert!(s.composer.is_none());
+    assert!(s.ws.doc.layers.iter().any(|l| l.display_name == "Points in each area"));
+    if let Some(s) = h.state_mut().as_mut() {
+        s.command(&ctx, crate::Command::Undo);
+    }
+    settle(&mut h);
+    let s = h.state().as_ref().unwrap();
+    assert_eq!((s.ws.doc.layers.len(), s.ws.doc.results.len()), (before, 0));
+}
+
+/// "between" keeps "[a] and [b]" together: when the sentence wraps, both boxes move as one.
+#[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+fn phase3_filter_between() {
+    let mut h = phase3(&["V1/districts.geojson"], SHANGHAI, |s| {
+        let l = s.ws.doc.layers[0].clone();
+        s.table_for = Some(l.id);
+        let mut d = crate::table::FilterDraft::preset(s, &l, Some("population"), None);
+        d.verb = "between";
+        s.filter_draft = Some(d);
+    });
+    settle(&mut h);
+    h.snapshot("phase3_filter_between");
+}
+
+/// Developer surface on the bundled examples: which assistant actions each selection offers
+/// (printed for the testing guide).
+#[test]
+#[ignore = "prints the developer surface's actions for the testing guide"]
+fn developer_actions_on_examples() {
+    let _h = phase3(
+        &["../assets/examples/countries.geojson", "../assets/examples/populated_places.geojson", "../assets/examples/elevation.tif"],
+        WORLD,
+        |s| {
+            s.developer = true;
+            let ids: Vec<_> = s.ws.doc.layers.iter().map(|l| (l.id, l.display_name.clone(), l.profile.kind)).collect();
+            for (id, name, kind) in ids {
+                for row in [None, Some(0usize)] {
+                    match row {
+                        None => s.ws.select_layer(id),
+                        Some(r) if kind != lm_core::model::LayerKind::Raster => {
+                            s.ws.selection =
+                                lm_core::selection::SelectionContext::object(lm_core::selection::FeatureRef { layer: id, row: r })
+                        }
+                        _ => continue,
+                    }
+                    let ctx = crate::insight::context(s);
+                    let sug = lm_actions::suggest(&ctx, lm_actions::Options::developer(4));
+                    let top: Vec<String> = sug.top.iter().map(|a| format!("{} [{}]", a.label, a.action_id)).collect();
+                    let more: Vec<String> =
+                        sug.more.iter().flat_map(|(_, v)| v.iter().map(|a| format!("{} [{}]", a.label, a.action_id))).collect();
+                    println!("{name} {:?}: top {:?}\n    more {:?}", row.map(|_| "object"), top, more);
+                }
+            }
+        },
+    );
+}
+
+/// "Summarize in an area I draw": drawing on a raster's behalf opens the composer on the new
+/// area with the raster as the second layer, and the summary arrives as a number.
+#[test]
+fn phase4_summarize_in_a_drawn_area() {
+    let mut h = phase3(&["../assets/examples/elevation.tif"], WORLD, |s| {
+        s.developer = true;
+        s.after_drawing = s.ws.doc.layers.first().map(|l| l.id);
+    });
+    let ctx = h.ctx.clone();
+    if let Some(s) = h.state_mut().as_mut() {
+        s.command(&ctx, crate::Command::DrawArea(vec![(100.0, 25.0), (110.0, 25.0), (110.0, 35.0), (100.0, 35.0)]));
+    }
+    for _ in 0..300 {
+        h.step();
+        if h.state().as_ref().is_some_and(|s| s.composer.as_ref().is_some_and(|c| c.result.is_some() || c.error.is_some())) {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+    let s = h.state().as_ref().unwrap();
+    let c = s.composer.as_ref().expect("composer");
+    assert_eq!(c.error, None);
+    assert_eq!(c.action, "summarize_drawn");
+    let r = c.result.as_ref().expect("result");
+    assert!(matches!(r.card.answer, lm_core::recipe::Answer::Number { value, .. } if value.is_finite()), "{:?}", r.card.answer);
+}
+
+/// LayeredMap Pro: the toolbar says Pro, and a layer's panel offers the analysis actions as
+/// buttons; the free app shows none of them.
+#[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+fn pro_offers_analysis_actions() {
+    use egui_kittest::kittest::Queryable as _;
+    for pro in [false, true] {
+        let mut h = phase3(&["../assets/examples/countries.geojson", "../assets/examples/populated_places.geojson"], WORLD, move |s| {
+            s.pro = pro;
+            let id = s.ws.doc.layers.iter().find(|l| l.display_name == "countries").map(|l| l.id);
+            if let Some(id) = id {
+                s.ws.select_layer(id);
+            }
+        });
+        settle(&mut h);
+        let offered = h.query_by_label("Count populated places in each country").is_some();
+        assert_eq!(offered, pro, "pro = {pro}");
+        if pro {
+            h.snapshot("pro_layer_panel");
+        }
+    }
+}

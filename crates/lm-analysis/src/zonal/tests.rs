@@ -4,6 +4,8 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
 
+use crate::zonal::TiffSource;
+
 fn fixture_path(rel: &str) -> PathBuf {
     [env!("CARGO_MANIFEST_DIR"), "..", "..", "fixtures", rel].iter().collect()
 }
@@ -637,4 +639,299 @@ fn n7_stress_from_file() {
         let _ = std::fs::remove_file(&path);
     }
     assert!(el < Duration::from_secs(300));
+}
+
+// ---- N4, N6, N7: R7, R2 and R4 ---------------------------------------------------------------
+
+/// The generated fixtures: `$LM_FIXTURES_DIR`, else `fixtures/generated`.
+fn generated(rel: &str) -> PathBuf {
+    std::env::var_os("LM_FIXTURES_DIR").map(PathBuf::from).unwrap_or_else(|| fixture_path("generated")).join(rel)
+}
+
+fn num(row: &HashMap<String, String>, k: &str) -> f64 {
+    row[k].parse().unwrap_or_else(|e| panic!("{k} = {:?}: {e}", row[k]))
+}
+
+/// R7 made on the fly, cell for cell what `cargo xtask fixtures --only R7` writes
+/// (`xtask/src/fixtures.rs`, `r7` and `field`): 1,600² float32 cells of 0.05°, 100–180°E,
+/// 10°S–70°N, no NoData. When the generated file is present the N4 test also reads it through
+/// [`TiffSource`] and requires identical summaries.
+struct R7 {
+    grid: Grid,
+}
+
+impl R7 {
+    const SIDE: u32 = 1600;
+
+    fn new() -> R7 {
+        let px = 80.0 / f64::from(Self::SIDE);
+        R7 {
+            grid: Grid {
+                width: Self::SIDE,
+                height: Self::SIDE,
+                transform: GeoTransform { origin_x: 100.0, origin_y: 70.0, pixel_width: px, pixel_height: -px },
+                crs: Crs::LonLat,
+                nodata: None,
+                scale: 1.0,
+                offset: 0.0,
+            },
+        }
+    }
+
+    fn field(u: f64, v: f64) -> f32 {
+        (30.0 + 4.0 * (u * 9.0).sin() * (v * 7.0).cos() + 2.0 * ((u + v) * 23.0).sin() - 3.0 * v) as f32
+    }
+}
+
+impl RasterSource for R7 {
+    fn grid(&self) -> &Grid {
+        &self.grid
+    }
+    fn read_window(&mut self, col0: u32, row0: u32, cols: u32, rows: u32, out: &mut [f32]) -> Result<(), ZonalError> {
+        let n = f64::from(Self::SIDE);
+        for r in 0..rows {
+            for c in 0..cols {
+                out[(r * cols + c) as usize] = Self::field(f64::from(col0 + c) / n, f64::from(row0 + r) / n);
+            }
+        }
+        Ok(())
+    }
+}
+
+#[test]
+fn n4_r7_matches_exactextract_to_1_ppm_and_the_geodesic_integration_to_1_ppt() {
+    let a = areas(&fixture("N4/polygons.geojson"), "area_id");
+    let geoms: Vec<Geometry> = a.iter().map(|(_, g)| g.clone()).collect();
+    let got = run(&mut R7::new(), &geoms, ValueRole::Measured);
+    let file = generated("R7/r7_wide_latitude.tif");
+    if file.is_file() {
+        let from_file = run(&mut TiffSource::open(&file, 0).unwrap(), &geoms, ValueRole::Measured);
+        assert_eq!(from_file, got, "the generated R7 differs from the one made here");
+    } else {
+        eprintln!("N4: {} not generated; R7 made on the fly only", file.display());
+    }
+    let ee: HashMap<String, HashMap<String, String>> =
+        csv_rows(&fixture("N4/expected_zonal_mean.csv")).into_iter().map(|r| (r["area_id"].clone(), r)).collect();
+    let gi: HashMap<String, HashMap<String, String>> =
+        csv_rows(&fixture("N4/expected_geodesic_integration.csv")).into_iter().map(|r| (r["area_id"].clone(), r)).collect();
+    assert_eq!((ee.len(), gi.len(), a.len()), (8, 8, 8));
+    let (mut worst_ee, mut worst_gi): (f64, f64) = (0.0, 0.0);
+    for ((id, _), s) in a.iter().zip(&got) {
+        let (e, g) = (&ee[id], &gi[id]);
+        let mean = s.mean.unwrap();
+        // exactextract (1 ppm). Its coverage is Σa/A_P; ours divides by max(A_P, Σ_all a)
+        // (docs/lm/decisions.md, 2026-10-17), so the reference is compared on that footing.
+        let ee_cov = num(e, "coverage") * num(e, "polygon_area_m2") / num(e, "polygon_area_m2").max(s.covered_area_m2);
+        let errs_ee = [
+            rel_err(mean, num(e, "mean")),
+            rel_err(s.coverage, ee_cov),
+            rel_err(s.covered_valid_area_m2, num(e, "covered_valid_area_m2")),
+            rel_err(s.polygon_area_m2, num(e, "polygon_area_m2")),
+            rel_err(s.min.unwrap(), num(e, "min")),
+            rel_err(s.max.unwrap(), num(e, "max")),
+        ];
+        // The geodesic integration (1 part per thousand).
+        let errs_gi = [
+            rel_err(mean, num(g, "mean")),
+            rel_err(s.coverage, num(g, "coverage").min(1.0)),
+            rel_err(s.covered_valid_area_m2, num(g, "covered_area_m2")),
+            rel_err(s.polygon_area_m2, num(g, "polygon_area_m2")),
+        ];
+        let f = |v: &[f64]| v.iter().map(|e| format!("{e:.1e}")).collect::<Vec<_>>().join(" ");
+        eprintln!("N4 {id}: vs exactextract {}; vs geodesic integration {}", f(&errs_ee), f(&errs_gi));
+        assert!(errs_ee.iter().all(|e| *e < 1e-6), "{id} vs exactextract: {errs_ee:?}");
+        assert!(errs_gi.iter().all(|e| *e < 1e-3), "{id} vs geodesic integration: {errs_gi:?}");
+        assert!(s.coverage <= 1.0 + 1e-9, "{id}: coverage {}", s.coverage);
+        worst_ee = errs_ee.iter().fold(worst_ee, |m, e| m.max(*e));
+        worst_gi = errs_gi.iter().fold(worst_gi, |m, e| m.max(*e));
+    }
+    // Where exactextract 0.3.0 is defective the reference holds the exact (shapely) check instead,
+    // and says so (reference/_crosscheck.py).
+    let fixed: Vec<&str> = ee.values().filter(|r| r["source"] != "exactextract").map(|r| r["area_id"].as_str()).collect();
+    eprintln!(
+        "N4: worst relative error {worst_ee:.1e} vs exactextract (limit 1e-6; {} areas checked against shapely where exactextract 0.3.0 is defective: {fixed:?}), {worst_gi:.1e} vs the geodesic integration (limit 1e-3)",
+        fixed.len()
+    );
+    // Unequal cell areas matter: an unweighted mean of the tall area would be visibly different.
+    let tall = a.iter().position(|(id, _)| id == "TALL").unwrap();
+    assert!(got[tall].valid_cells > 100_000);
+}
+
+#[test]
+fn n6_count_and_density_totals_match_exactextract_to_1_ppm() {
+    let count_path = fixture_path("R2/population_count.tif");
+    let density_path = fixture_path("R2/population_density.tif");
+    let mut zones = areas(&fixture("V1/districts.geojson"), "district_id");
+    zones.extend(areas(&fixture("N6/areas.geojson"), "area_id"));
+    let geoms: Vec<Geometry> = zones.iter().map(|(_, g)| g.clone()).collect();
+    let mut count_src = TiffSource::open(&count_path, 0).unwrap();
+    let mut density_src = TiffSource::open(&density_path, 0).unwrap();
+    assert_eq!((count_src.data_type(), density_src.data_type()), ("UInt16", "Float32"));
+    let counts = run(&mut count_src, &geoms, ValueRole::Count);
+    let dens = run(&mut density_src, &geoms, ValueRole::Density { unit_area_m2: 1e6 });
+    // The whole-file reader agrees where it can read the file (the density raster; the LZW count
+    // raster trips the tiff crate, see zonal::tiff_source).
+    if let Ok(r) = rustgis_data::raster::read_path(&density_path) {
+        assert_eq!(run(&mut MemoryBand::new(&r, 0).unwrap(), &geoms, ValueRole::Density { unit_area_m2: 1e6 }), dens);
+    }
+    let want: HashMap<String, HashMap<String, String>> =
+        csv_rows(&fixture("N6/expected_totals.csv")).into_iter().map(|r| (r["area_id"].clone(), r)).collect();
+    assert_eq!(want.len(), zones.len());
+    let mut worst: f64 = 0.0;
+    for (((id, _), c), d) in zones.iter().zip(&counts).zip(&dens) {
+        let w = &want[id];
+        let (ct, dt) = (c.total.unwrap(), d.total.unwrap());
+        assert_eq!((ct.formula, dt.formula), (TotalFormula::CountTimesFraction, TotalFormula::DensityTimesArea));
+        let errs = [
+            rel_err(ct.value, num(w, "count_total")),
+            rel_err(dt.value, num(w, "density_total")),
+            rel_err(c.covered_valid_area_m2, num(w, "covered_valid_area_m2")),
+            rel_err(d.covered_valid_area_m2, num(w, "covered_valid_area_m2")),
+        ];
+        worst = errs.iter().fold(worst, |m, e| m.max(*e));
+        assert!(errs.iter().all(|e| *e < 1e-6), "{id}: {errs:?}");
+        // Two routes to the same people: the density was made as count / cell area.
+        assert!(rel_err(dt.value, ct.value) < 1e-6, "{id}: count {} vs density {}", ct.value, dt.value);
+        assert!(c.coverage <= 1.0 + 1e-9);
+    }
+    // S1 crosses the NoData river; S2 reaches past the raster: both lose coverage.
+    let pos = |k: &str| zones.iter().position(|(id, _)| id == k).unwrap();
+    assert!(counts[pos("S1")].nodata_cells > 0 && counts[pos("S1")].coverage < 1.0);
+    assert!(counts[pos("S2")].coverage < 0.9);
+    let fixed: Vec<&str> = want.values().filter(|r| r["source"] != "exactextract").map(|r| r["area_id"].as_str()).collect();
+    eprintln!(
+        "N6: {} areas, worst relative error {worst:.1e} (limit 1e-6; exactextract 0.3.0 defective, shapely check used: {fixed:?})",
+        zones.len()
+    );
+}
+
+/// N7: R4 (2.9 GB tiled COG) across N7's 3,000 areas, read window by window from the file.
+/// Needs `cargo xtask fixtures --only R4,N7`; run in release:
+/// `cargo test --release -p lm-analysis zonal::tests::n7_r4_cog_stress -- --ignored --nocapture`
+/// (or `cargo xtask stress`).
+#[test]
+#[ignore = "stress: needs the generated R4 and N7; run in release"]
+fn n7_r4_cog_stress() {
+    let r4 = generated("R4/r4_cog.tif");
+    let polys = generated("N7/n7_polygons.geojson");
+    assert!(r4.is_file() && polys.is_file(), "run cargo xtask fixtures --only R4,N7 (or set LM_FIXTURES_DIR)");
+    let bytes = std::fs::metadata(&r4).unwrap().len();
+    let a = areas(&std::fs::read_to_string(&polys).unwrap(), "area_id");
+    assert_eq!(a.len(), 3000);
+    let geoms: Vec<Geometry> = a.iter().map(|(_, g)| g.clone()).collect();
+    let mut src = TiffSource::open(&r4, 0).unwrap();
+    assert_eq!((src.grid().width, src.grid().height, src.chunk_size()), (23_040, 23_040, (512, 512)));
+    let done = std::sync::Arc::new(std::sync::atomic::AtomicU64::new(0));
+    let reports = std::sync::Arc::new(std::sync::atomic::AtomicU64::new(0));
+    let (d2, r2) = (done.clone(), reports.clone());
+    let ctl = Control::with_progress(move |p| {
+        d2.store(p.done, std::sync::atomic::Ordering::Relaxed);
+        r2.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    });
+    let t = Instant::now();
+    let out = summarize(&mut src, &geoms, ValueRole::Measured, &ctl).unwrap();
+    let el = t.elapsed();
+    let cells: u64 = out.iter().map(|s| s.valid_cells + s.nodata_cells).sum();
+    let tiles = src.chunks_decoded();
+    println!(
+        "N7: 3,000 areas over R4 ({bytes} bytes, 23,040² float32 in 512 px tiles) in {:.2} s; {cells} covered cells; {tiles} tile decodes; {} progress reports",
+        el.as_secs_f64(),
+        reports.load(std::sync::atomic::Ordering::Relaxed)
+    );
+    assert_eq!(done.load(std::sync::atomic::Ordering::Relaxed), 3000, "progress reaches every area");
+    assert!(out.iter().all(|s| s.coverage > 0.05 && s.coverage <= 1.0 + 1e-9));
+
+    // Spot check against exactextract on each sampled area's window (reference/n7_sample.py).
+    let sample = csv_rows(&fixture("N7/expected_zonal_mean_sample.csv"));
+    assert!(sample.len() >= 30);
+    let mut worst: f64 = 0.0;
+    for w in &sample {
+        let k: usize = w["index"].parse().unwrap();
+        assert_eq!(a[k].0, w["area_id"]);
+        let s = &out[k];
+        let cov = num(w, "coverage") * num(w, "polygon_area_m2") / num(w, "polygon_area_m2").max(s.covered_area_m2);
+        let errs = [
+            rel_err(s.mean.unwrap(), num(w, "mean")),
+            rel_err(s.coverage, cov),
+            rel_err(s.covered_valid_area_m2, num(w, "covered_valid_area_m2")),
+            rel_err(s.polygon_area_m2, num(w, "polygon_area_m2")),
+            rel_err(s.min.unwrap(), num(w, "min")),
+            rel_err(s.max.unwrap(), num(w, "max")),
+        ];
+        worst = errs.iter().fold(worst, |m, e| m.max(*e));
+        assert!(errs.iter().all(|e| *e < 1e-6), "{}: {errs:?}", w["area_id"]);
+    }
+    println!("N7 spot check: {} areas against exactextract, worst relative error {worst:.1e} (limit 1e-6)", sample.len());
+
+    // The same job again, warm (the file now in the page cache).
+    let mut warm_src = TiffSource::open(&r4, 0).unwrap();
+    let t = Instant::now();
+    let warm = summarize(&mut warm_src, &geoms, ValueRole::Measured, &Control::none()).unwrap();
+    let el_warm = t.elapsed();
+    assert_eq!(warm, out);
+    println!("N7 warm repeat: {:.2} s", el_warm.as_secs_f64());
+
+    // Cancel once a third and once two thirds of the areas are done, each from a fresh reader.
+    let mut worst_lag = Duration::ZERO;
+    for at_area in [1000u64, 2000] {
+        let mut src = TiffSource::open(&r4, 0).unwrap();
+        let geoms = geoms.clone();
+        let done = std::sync::Arc::new(std::sync::atomic::AtomicU64::new(0));
+        let d2 = done.clone();
+        let ctl = Control::with_progress(move |p| d2.store(p.done, std::sync::atomic::Ordering::Relaxed));
+        let c2 = ctl.clone();
+        let worker = std::thread::spawn(move || {
+            let r = summarize(&mut src, &geoms, ValueRole::Measured, &c2);
+            (r, Instant::now())
+        });
+        while done.load(std::sync::atomic::Ordering::Relaxed) < at_area && !worker.is_finished() {
+            std::thread::sleep(Duration::from_millis(1));
+        }
+        let at = Instant::now();
+        ctl.cancel();
+        let (r, finished) = worker.join().unwrap();
+        assert_eq!(r, Err(ZonalError::Cancelled), "cancelled at area {at_area}");
+        worst_lag = worst_lag.max(finished.saturating_duration_since(at));
+    }
+    println!("N7 cancel: worst of 2 landed after {worst_lag:?}");
+    let ok = el < Duration::from_secs(300) && worst_lag < Duration::from_secs(1) && worst < 1e-6;
+    println!(
+        "STRESS\tN7 summarize R4 × 3,000 areas (tiled COG reader)\t{:.1} s (warm {:.1} s)\t< 300 s\t{}",
+        el.as_secs_f64(),
+        el_warm.as_secs_f64(),
+        if el < Duration::from_secs(300) { "pass" } else { "FAIL" }
+    );
+    println!(
+        "STRESS\tN7 cancel during the summary\t{:.1} ms\t< 1000 ms\t{}",
+        worst_lag.as_secs_f64() * 1e3,
+        if worst_lag < Duration::from_secs(1) { "pass" } else { "FAIL" }
+    );
+    println!(
+        "STRESS\tN7 spot check vs exactextract ({} areas)\t{worst:.1e}\t< 1e-6\t{}",
+        sample.len(),
+        if worst < 1e-6 { "pass" } else { "FAIL" }
+    );
+    assert!(ok);
+}
+
+/// N4 again for the other statistics: the area-weighted median, the standard deviation and
+/// Σ x·f, against `reference/zonal_stats_r7.py` (exact shapely fractions; its `sum` also agrees
+/// with exactextract's where exactextract 0.3.0 isn't defective).
+#[test]
+fn n4_median_std_dev_and_sum_match_the_reference() {
+    let a = areas(&fixture("N4/polygons.geojson"), "area_id");
+    let geoms: Vec<Geometry> = a.iter().map(|(_, g)| g.clone()).collect();
+    let got = run(&mut R7::new(), &geoms, ValueRole::Measured);
+    let want: HashMap<String, HashMap<String, String>> =
+        csv_rows(&fixture("N4/expected_zonal_stats.csv")).into_iter().map(|r| (r["area_id"].clone(), r)).collect();
+    assert_eq!(want.len(), 8);
+    for ((id, _), s) in a.iter().zip(&got) {
+        let w = &want[id];
+        // The median is one of the cells' values: exact (to float32 printing).
+        assert!(rel_err(s.median.unwrap(), num(w, "median")) < 1e-9, "{id} median {:?} vs {}", s.median, w["median"]);
+        let tiny = num(w, "std_dev") < 1e-2;
+        let std_err = if tiny { (s.std_dev.unwrap() - num(w, "std_dev")).abs() } else { rel_err(s.std_dev.unwrap(), num(w, "std_dev")) };
+        assert!(std_err < 1e-6, "{id} std dev {:?} vs {}", s.std_dev, w["std_dev"]);
+        assert!(rel_err(s.sum.unwrap(), num(w, "sum")) < 1e-6, "{id} sum {:?} vs {}", s.sum, w["sum"]);
+    }
 }
