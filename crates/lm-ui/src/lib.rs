@@ -11,6 +11,7 @@ pub mod draw;
 pub mod examples;
 pub mod find_ui;
 pub mod form;
+pub mod illustrations;
 pub mod insight;
 pub mod inspect;
 pub mod join_ui;

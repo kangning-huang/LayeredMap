@@ -696,7 +696,7 @@ fn pro_offers_analysis_actions() {
             }
         });
         settle(&mut h);
-        let offered = h.query_by_label("Count populated_places in each country").is_some();
+        let offered = h.query_by_label("Count populated places in each country").is_some();
         assert_eq!(offered, pro, "pro = {pro}");
         if pro {
             h.snapshot("pro_layer_panel");
