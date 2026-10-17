@@ -234,3 +234,63 @@ fn layer_names_read_as_words_or_fall_back_to_the_kind() {
     assert_eq!(r.card.title, "Populated places in each area of GUB_Global_2018");
     assert!(r.card.summary.starts_with("4 areas · "), "{}", r.card.summary);
 }
+
+/// A field from two others: districts' people per km², blanks stay blank.
+#[test]
+fn calculated_fields_divide_and_keep_blanks_blank() {
+    let r = run(
+        &plan(
+            "calculate_field",
+            vec![input("V1/districts.geojson", 1)],
+            &[("a", "population"), ("op", "divide"), ("b", "area_km2"), ("name", "density")],
+        ),
+        &Control::none(),
+    )
+    .unwrap();
+    let ActionOutput::NewFields { data, fields, .. } = &r.output else { panic!() };
+    assert_eq!(fields, &vec!["density".to_string()]);
+    let (k, p, a) = (data.field_index("density").unwrap(), data.field_index("population").unwrap(), data.field_index("area_km2").unwrap());
+    for f in &data.features {
+        match f.attrs[p].as_f64() {
+            Some(pop) => {
+                let want = pop / f.attrs[a].as_f64().unwrap();
+                assert!((f.attrs[k].as_f64().unwrap() - want).abs() < 1e-9 * want);
+            }
+            // V1 has one district with a blank population: its density is blank, not 0.
+            None => assert!(f.attrs[k].as_f64().is_none()),
+        }
+    }
+    assert!(r.card.notices.iter().any(|n| n.contains("blank")), "{:?}", r.card.notices);
+    let r = run(
+        &plan("calculate_field", vec![input("V1/districts.geojson", 1)], &[("a", "population"), ("op", "divide"), ("b", "0")]),
+        &Control::none(),
+    )
+    .unwrap();
+    assert!(r.card.notices.iter().any(|n| n.contains("divide by zero")));
+    let e =
+        run(&plan("calculate_field", vec![input("V1/districts.geojson", 1)], &[("a", "population"), ("b", "nonsense")]), &Control::none());
+    assert!(matches!(e, Err(ActionError::Input(_))));
+}
+
+/// Splitting N2's multipolygon areas gives one feature per part, holes kept with their part.
+#[test]
+fn multipart_areas_split_into_parts() {
+    let areas = input("N2/areas.geojson", 1);
+    let LayerData::Vector(ds) = &areas.data else { panic!() };
+    let parts: usize = ds
+        .features
+        .iter()
+        .map(|f| match &f.geometry {
+            Some(Geometry::Polygon(p)) => p.len(),
+            _ => 1,
+        })
+        .sum();
+    let r = run(&plan("split_parts", vec![areas.clone()], &[]), &Control::none()).unwrap();
+    let out = match &new_layer(&r).data {
+        LayerData::Vector(d) => d.clone(),
+        _ => panic!(),
+    };
+    assert_eq!(out.features.len(), parts);
+    assert!(out.features.iter().all(|f| matches!(&f.geometry, Some(Geometry::Polygon(p)) if p.len() == 1)));
+    assert!(out.field_index("part").is_some());
+}

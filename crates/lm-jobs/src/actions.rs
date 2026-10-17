@@ -17,6 +17,8 @@
 //! | `summarize_here`, `summarize_drawn` | raster, the area (one row) |
 //! | `add_raster_values` | raster, points |
 //! | `rank_by_value` | the layer; parameter `field` |
+//! | `calculate_field` | the layer; parameters `a` (field), `op` (add, subtract, multiply, divide), `b` (field or number), `name` |
+//! | `split_parts` | the layer |
 //!
 //! Parameters: `distance` ("1 km", "500 m"), `merge` ("yes"/"no"), `band` (1-based), `field`.
 
@@ -230,6 +232,8 @@ pub const ACTIONS: &[&str] = &[
     "summarize_drawn",
     "add_raster_values",
     "rank_by_value",
+    "calculate_field",
+    "split_parts",
 ];
 
 /// Runs a plan. Checks `ctl` throughout; a cancelled run returns [`ActionError::Cancelled`] and
@@ -246,6 +250,8 @@ pub fn run(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
         "summarize_here" | "summarize_drawn" => summarize_one(plan, ctl),
         "add_raster_values" => add_raster_values(plan, ctl),
         "rank_by_value" => rank_by_value(plan, ctl),
+        "calculate_field" => calculate_field(plan, ctl),
+        "split_parts" => split_parts(plan, ctl),
         other => Err(ActionError::Input(format!("LayeredMap can't run “{other}” yet."))),
     }
 }
@@ -1217,6 +1223,160 @@ fn rank_by_value(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError
         },
         recipe: recipe(plan, &title, &inputs, "", Vec::new(), Vec::new()),
         output: ActionOutput::Card,
+        highlight: None,
+    })
+}
+
+// ---------------------------------------------------------------------------------------------
+// Fields and parts
+
+/// The operations of "Add a field calculated from two values".
+pub const FIELD_OPS: &[(&str, &str, &str)] =
+    &[("subtract", "minus", "−"), ("add", "plus", "+"), ("multiply", "times", "×"), ("divide", "divided by", "÷")];
+
+fn calculate_field(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
+    let input = plan.input(0)?;
+    let full = input.vector()?;
+    let a = plan.param("a").ok_or_else(|| ActionError::Input("Choose the first value.".into()))?;
+    let ka = full.field_index(a).ok_or_else(|| ActionError::Input(format!("{} has no field “{a}”.", input.name())))?;
+    let op = plan.param("op").unwrap_or("subtract");
+    let (_, op_words, op_sign) = FIELD_OPS
+        .iter()
+        .find(|(k, _, _)| *k == op)
+        .copied()
+        .ok_or_else(|| ActionError::Input(format!("“{op}” isn't an operation LayeredMap knows.")))?;
+    let b_text = plan.param("b").ok_or_else(|| ActionError::Input("Choose the second value: a field or a number.".into()))?;
+    // The second value: a field of the layer, or a number.
+    let b = match full.field_index(b_text) {
+        Some(kb) => Err(kb),
+        None => Ok(b_text
+            .trim()
+            .replace(',', "")
+            .parse::<f64>()
+            .map_err(|_| ActionError::Input(format!("“{b_text}” is neither a field of {} nor a number.", input.name())))?),
+    };
+    let rows: Vec<usize> = input.rows.clone().unwrap_or_else(|| (0..full.features.len()).collect());
+    let mut out = (**full).clone();
+    let default_name = format!("{a} {op_sign} {b_text}");
+    let name = free_field(&out, plan.param("name").filter(|n| !n.trim().is_empty()).unwrap_or(&default_name));
+    let k = out.ensure_field(&name, FieldType::Double);
+    let (mut blank, mut by_zero) = (0u64, 0u64);
+    let mut values = Vec::with_capacity(rows.len());
+    for (i, r) in rows.iter().enumerate() {
+        if i % 4096 == 0 {
+            ctl.check()?;
+        }
+        let Some(f) = out.features.get_mut(*r) else { continue };
+        let x = f.attrs.get(ka).and_then(Value::as_f64);
+        let y = match b {
+            Ok(v) => Some(v),
+            Err(kb) => f.attrs.get(kb).and_then(Value::as_f64),
+        };
+        let v = match (x, y) {
+            (Some(x), Some(y)) => match op {
+                "add" => Some(x + y),
+                "multiply" => Some(x * y),
+                "divide" if y == 0.0 => {
+                    by_zero += 1;
+                    None
+                }
+                "divide" => Some(x / y),
+                _ => Some(x - y),
+            },
+            _ => {
+                blank += 1;
+                None
+            }
+        };
+        let v = v.filter(|v| v.is_finite());
+        f.attrs[k] = v.map_or(Value::Null, Value::Float);
+        values.push(v);
+    }
+    let with: Vec<f64> = values.iter().flatten().copied().collect();
+    let range = match (with.iter().copied().reduce(f64::min), with.iter().copied().reduce(f64::max)) {
+        (Some(lo), Some(hi)) => range_words(lo, hi),
+        _ => "no values".into(),
+    };
+    let mut notices = Vec::new();
+    if blank > 0 {
+        notices.push(format!("{} had a blank value, so their result is blank, not 0.", input.things(blank)));
+    }
+    if by_zero > 0 {
+        notices.push(format!("{} would divide by zero, so their result is blank.", input.things(by_zero)));
+    }
+    let title = format!("{a} {op_words} {b_text}");
+    let inputs = [input];
+    Ok(ActionResult {
+        label: format!("Add “{name}” to {}", input.name()),
+        card: ResultCard {
+            title: capitalized(&title),
+            summary: format!("{} · “{name}” {range}", input.things(rows.len() as u64)),
+            answer: Answer::Number {
+                value: with.len() as f64, unit: input.plural_noun(), detail: format!("now have “{name}” ({range})")
+            },
+            context: context(&inputs, &[]),
+            notices,
+        },
+        recipe: recipe(
+            plan,
+            &capitalized(&title),
+            &inputs,
+            "",
+            vec![format!("“{name}” = {a} {op_sign} {b_text}; a blank input or a division by zero gives a blank")],
+            Vec::new(),
+        ),
+        output: ActionOutput::NewFields { layer: input.layer.id, data: Arc::new(out), fields: vec![name] },
+        highlight: None,
+    })
+}
+
+/// One feature per part of a multi-part line or area (holes stay with their part).
+pub fn split_dataset(ds: &Dataset, rows: &[usize]) -> (Dataset, Vec<usize>) {
+    let mut out = Dataset::new(ds.name.clone(), ds.geometry_type, ds.fields.clone());
+    let kp = out.ensure_field("part", FieldType::Integer);
+    let mut source = Vec::new();
+    for &r in rows {
+        let Some(f) = ds.features.get(r) else { continue };
+        let parts: Vec<Geometry> = match &f.geometry {
+            Some(Geometry::Polygon(ps)) => ps.iter().map(|p| Geometry::Polygon(vec![p.clone()])).collect(),
+            Some(Geometry::Line(ls)) => ls.iter().map(|l| Geometry::Line(vec![l.clone()])).collect(),
+            Some(Geometry::MultiPoint(cs)) => cs.iter().map(|c| Geometry::Point(*c)).collect(),
+            Some(g) => vec![g.clone()],
+            None => Vec::new(),
+        };
+        for (i, g) in parts.into_iter().enumerate() {
+            let mut attrs = f.attrs.clone();
+            attrs.resize(out.fields.len(), Value::Null);
+            attrs[kp] = Value::Int(i as i64 + 1);
+            out.push_next(Some(g), attrs);
+            source.push(r);
+        }
+    }
+    (out, source)
+}
+
+fn split_parts(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
+    let input = plan.input(0)?;
+    let full = input.vector()?;
+    ctl.check()?;
+    let rows: Vec<usize> = input.rows.clone().unwrap_or_else(|| (0..full.features.len()).collect());
+    let (out, _source_rows) = split_dataset(full, &rows);
+    ctl.check()?;
+    let n_in = rows.len() as u64;
+    let n_out = out.features.len() as u64;
+    let title = format!("{} in separate parts", capitalized(&input.plural_noun()));
+    let inputs = [input];
+    Ok(ActionResult {
+        label: format!("Split {} into separate parts", input.name()),
+        card: ResultCard {
+            title: title.clone(),
+            summary: format!("{} → {} parts", input.things(n_in), group_thousands(n_out)),
+            answer: Answer::Number { value: n_out as f64, unit: "parts".into(), detail: format!("from {}", input.things(n_in)) },
+            context: context(&inputs, &[]),
+            notices: Vec::new(),
+        },
+        recipe: recipe(plan, &title, &inputs, "", Vec::new(), Vec::new()),
+        output: ActionOutput::NewLayer { layer: layer_from(&title, "Result", out), color_by: None },
         highlight: None,
     })
 }

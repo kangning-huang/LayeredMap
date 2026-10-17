@@ -18,8 +18,11 @@
 #   for the area layer and [Lines] / [Line] for the line layer. [Heat] is the raster in play.
 #   [Type] / [field] the field the action works on   [code] the shared code column
 #
-# Companion kinds: points, lines, areas, raster, any (any visible layer with locations),
+# Companion kinds: points, lines, areas, raster, any (any visible layer with locations), vector
+# (any visible point, line or area layer),
 # shared_code (a visible layer with an identifier column of the same name as the table's).
+#
+# more_only = true: offered under More actions and to the assistant, never in a row's top three.
 #
 # surface: "card" actions are display-only and shown as suggested-action buttons in the free
 # app; "assistant" actions are analysis: never buttons in either tier (Product tiers), only shown
@@ -400,6 +403,145 @@ decisions = ["which points"]
 inputs = ["drawn_area"]
 input_reason = "Draw an area on the map first."
 companion = { kind = "points", reason = "Add a point layer to count its points in this area." }
+
+# ---------------------------------------------------------------- Analysis added for the puzzles
+# (docs/lm/puzzles/mechanics.md §3, owner's go-ahead 2026-10-17)
+
+[[action]]
+id = "nearest_distance"
+label = "Add the distance to the nearest of [other] to [layer]"
+aliases = ["near", "proximity", "distance to nearest", "how far", "away from"]
+group = "Measure"
+min_phase = 4
+surface = "assistant"
+more_only = true
+output = "new_fields"
+algorithm = "nearest::nearest_distance"
+method = "the shortest geodesic distance on the WGS 84 ellipsoid from each feature to any feature of the other layer (0 where they touch), with the other layer's edges followed at least every kilometre"
+decisions = ["the layer to measure to"]
+inputs = ["point_layer", "line_layer", "area_layer"]
+input_reason = "Select a point, line or area layer."
+companion = { kind = "vector", reason = "Add a point, line or area layer to measure the distance to." }
+
+[[action]]
+id = "nearest_other"
+label = "Add the distance to the nearest neighbour in [layer]"
+aliases = ["isolation", "nearest neighbour", "most remote"]
+group = "Measure"
+min_phase = 4
+surface = "assistant"
+more_only = true
+output = "new_fields"
+algorithm = "nearest::nearest_distance"
+method = "the shortest geodesic distance on the WGS 84 ellipsoid from each feature to any other feature of the same layer; a feature's own parts don't count"
+inputs = ["point_layer", "line_layer", "area_layer"]
+input_reason = "Select a point, line or area layer."
+
+[[action]]
+id = "join_by_location"
+label = "Add [other] details to [layer]"
+aliases = ["spatial join", "attributes by location", "which area"]
+group = "Measure"
+min_phase = 4
+surface = "assistant"
+more_only = true
+output = "new_fields"
+algorithm = "overlay::join_by_location"
+method = "each feature takes the details of the area that contains it (lines and areas by a point on them); a point on a shared boundary takes the first area; a point in no area gets blanks"
+decisions = ["which details to add"]
+inputs = ["point_layer", "line_layer", "area_layer"]
+input_reason = "Select a point, line or area layer."
+companion = { kind = "areas", reason = "Add an area layer whose details to add." }
+
+[[action]]
+id = "add_measurements"
+label = "Add area and coordinates to [layer]"
+aliases = ["calculate geometry", "area field", "coordinates", "centroid", "xy"]
+group = "Measure"
+min_phase = 4
+surface = "assistant"
+more_only = true
+output = "new_fields"
+algorithm = "measure::measurements"
+method = "geodesic area, perimeter and length on the WGS 84 ellipsoid; coordinates of each point, or of a point guaranteed to lie on each line or area"
+inputs = ["point_layer", "line_layer", "area_layer"]
+input_reason = "Select a point, line or area layer."
+
+[[action]]
+id = "calculate_field"
+label = "Add a field calculated from two values"
+aliases = ["field calculator", "difference", "ratio", "compute column"]
+group = "Measure"
+min_phase = 4
+surface = "assistant"
+more_only = true
+output = "new_fields"
+algorithm = "fields::calculate"
+method = "a new number from two number fields, or a field and a number: added, subtracted, multiplied or divided; a blank input or a division by zero gives a blank, never 0"
+decisions = ["the two values", "the operation"]
+inputs = ["point_layer", "line_layer", "area_layer", "table"]
+input_reason = "Select a layer or a table."
+
+[[action]]
+id = "split_parts"
+label = "Split [layer] into separate parts"
+aliases = ["explode", "multipart to singlepart", "separate islands"]
+group = "Measure"
+min_phase = 4
+surface = "assistant"
+more_only = true
+output = "new_layer"
+algorithm = "topology::explode"
+method = "one feature for each separate part of a multi-part line or area (holes stay with their part), its details copied, with a part number"
+inputs = ["line_layer", "area_layer"]
+input_reason = "Select a line or area layer."
+
+[[action]]
+id = "keep_inside"
+label = "Keep the part of [layer] inside [other]"
+aliases = ["clip", "intersect", "cut to"]
+group = "Measure"
+min_phase = 4
+surface = "assistant"
+more_only = true
+output = "new_layer"
+algorithm = "clip::keep_inside"
+method = "the part of each feature inside the other layer's areas (edges straight in longitude and latitude, as the map draws them); points on the boundary are kept; features left empty are dropped and counted"
+decisions = ["which areas to keep inside"]
+inputs = ["point_layer", "line_layer", "area_layer"]
+input_reason = "Select a point, line or area layer."
+companion = { kind = "areas", reason = "Add an area layer to keep [layer] inside." }
+
+[[action]]
+id = "remove_inside"
+label = "Remove the part of [layer] inside [other]"
+aliases = ["erase", "difference", "away from", "outside"]
+group = "Measure"
+min_phase = 4
+surface = "assistant"
+more_only = true
+output = "new_layer"
+algorithm = "clip::remove_inside"
+method = "the part of each feature outside the other layer's areas (edges straight in longitude and latitude); points on the boundary are removed; features left empty are dropped and counted"
+decisions = ["which areas to remove"]
+inputs = ["point_layer", "line_layer", "area_layer"]
+input_reason = "Select a point, line or area layer."
+companion = { kind = "areas", reason = "Add an area layer to remove from [layer]." }
+
+[[action]]
+id = "find_where"
+label = "Find areas where [Heat] meets conditions"
+aliases = ["raster calculator", "map algebra", "suitability", "reclassify", "multi-criteria", "where"]
+group = "Measure"
+min_phase = 4
+surface = "assistant"
+more_only = true
+output = "new_layer"
+algorithm = "where_areas::find_where"
+method = "cells of the first raster's grid where every condition holds (other rasters read at each cell's centre; no data anywhere leaves a cell out), joined into areas where cells touch, edges following the cells; areas measured on the WGS 84 ellipsoid"
+decisions = ["the conditions on each raster"]
+inputs = ["raster_layer"]
+input_reason = "Select a raster layer."
 
 # ---------------------------------------------------------------- The table, in order
 # `other` is the spec's "Other open layer" column: none, any, points, lines, areas or raster.

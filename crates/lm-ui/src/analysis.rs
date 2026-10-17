@@ -424,6 +424,61 @@ pub fn composer(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
             });
         });
     }
+    // "Add a field calculated from two values": first value, operation, second value.
+    if action == "calculate_field"
+        && let Some(c) = shell.composer.as_mut()
+    {
+        let numeric: Vec<String> = l
+            .profile
+            .fields
+            .iter()
+            .filter(|f| matches!(l.role(f).value, lm_core::model::FieldRole::Measure(_)))
+            .map(|f| f.name.clone())
+            .collect();
+        if !c.params.contains_key("a")
+            && let Some(f) = numeric.first()
+        {
+            c.params.insert("a".into(), f.clone());
+        }
+        let a_now = c.params.get("a").cloned().unwrap_or_default();
+        let op_now = c.params.get("op").cloned().unwrap_or_else(|| "subtract".into());
+        let mut b_now = c.params.get("b").cloned().unwrap_or_default();
+        ui.horizontal_wrapped(|ui| {
+            egui::ComboBox::from_id_salt("lm-composer-calc-a")
+                .selected_text(if a_now.is_empty() { "Choose a value".into() } else { a_now.clone() })
+                .show_ui(ui, |ui| {
+                    for f in &numeric {
+                        if ui.selectable_label(a_now == *f, f).clicked() {
+                            c.params.insert("a".into(), f.clone());
+                            changed = true;
+                        }
+                    }
+                });
+            let sign = |k: &str| lm_jobs::actions::FIELD_OPS.iter().find(|(id, _, _)| *id == k).map_or("−", |(_, _, s)| *s);
+            egui::ComboBox::from_id_salt("lm-composer-calc-op").width(44.0).selected_text(sign(&op_now)).show_ui(ui, |ui| {
+                for (id, words, sym) in lm_jobs::actions::FIELD_OPS {
+                    if ui.selectable_label(op_now == *id, format!("{sym}  {words}")).clicked() {
+                        c.params.insert("op".into(), id.to_string());
+                        changed = true;
+                    }
+                }
+            });
+            // The second value: type a number, or pick a field.
+            if ui.add(egui::TextEdit::singleline(&mut b_now).desired_width(90.0).hint_text("a number")).changed() {
+                c.params.insert("b".into(), b_now.clone());
+                changed = true;
+            }
+            ui.menu_button(RichText::new("or a field").size(CAPTION), |ui| {
+                for f in &numeric {
+                    if ui.button(f).clicked() {
+                        c.params.insert("b".into(), f.clone());
+                        changed = true;
+                        ui.close();
+                    }
+                }
+            });
+        });
+    }
     // The statistic: raster summaries (mean by default) and counts (a count, or a statistic of
     // one of the points' numeric values).
     let stats: &[(&str, &str)] = match action.as_str() {

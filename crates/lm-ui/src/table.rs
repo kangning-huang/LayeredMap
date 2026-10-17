@@ -66,6 +66,8 @@ fn verb_symbol(verb: &str) -> &'static str {
         "is" => icon::EQUALS,
         "is not" => icon::NOT_EQUALS,
         "contains" => icon::MAGNIFYING_GLASS,
+        "starts with" => icon::TEXT_ALIGN_LEFT,
+        "ends with" => icon::TEXT_ALIGN_RIGHT,
         "above" | "after" => icon::GREATER_THAN,
         "below" | "before" => icon::LESS_THAN,
         "between" => icon::BRACKETS_SQUARE,
@@ -93,7 +95,7 @@ fn hint(kind: FieldKind) -> &'static str {
 
 fn verbs(kind: FieldKind) -> &'static [&'static str] {
     match kind {
-        FieldKind::Text => &["is", "is not", "contains", "is empty"],
+        FieldKind::Text => &["is", "is not", "contains", "starts with", "ends with", "is empty"],
         FieldKind::Number => &["above", "below", "between", "is empty"],
         FieldKind::Date => &["before", "after", "between"],
         FieldKind::Category => &["is any of"],
@@ -148,6 +150,8 @@ impl FilterDraft {
             (_, "is") if !self.a.trim().is_empty() => Test::Is(self.a.trim().into()),
             (_, "is not") if !self.a.trim().is_empty() => Test::IsNot(self.a.trim().into()),
             (_, "contains") if !self.a.trim().is_empty() => Test::Contains(self.a.trim().into()),
+            (_, "starts with") if !self.a.trim().is_empty() => Test::StartsWith(self.a.trim().into()),
+            (_, "ends with") if !self.a.trim().is_empty() => Test::EndsWith(self.a.trim().into()),
             (FieldKind::Number, "above") => Test::Above(num(&self.a)?),
             (FieldKind::Number, "below") => Test::Below(num(&self.a)?),
             (FieldKind::Number, "between") => Test::Between(num(&self.a)?, num(&self.b)?),
