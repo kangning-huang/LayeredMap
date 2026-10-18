@@ -415,9 +415,12 @@ fn basemap_chooser(shell: &mut Shell, ui: &mut Ui, anchor: Rect) {
                     }
                 });
                 ui.add_space(4.0);
+                if lm_net::offline() {
+                    ui.label(egui::RichText::new("Working offline: online backgrounds are off").size(CAPTION).color(t.text_secondary));
+                }
                 ui.label(egui::RichText::new("Background strength").size(CAPTION).color(t.text_secondary));
                 let mut pct = (shell.prefs.strength * 100.0).round();
-                let online = lm_core::basemap::provider(&shell.prefs.basemap).source != Source::Offline;
+                let online = lm_core::basemap::provider(&shell.prefs.basemap).source != Source::Offline && !lm_net::offline();
                 let resp = ui.add_enabled(online, egui::Slider::new(&mut pct, 40.0..=100.0).suffix("%").step_by(5.0).fixed_decimals(0));
                 if resp.changed() {
                     shell.prefs.strength = pct / 100.0;
@@ -548,7 +551,9 @@ fn notices(shell: &mut Shell, ui: &Ui, map: Rect) {
     let t = *shell.theme();
     let now = ui.input(|i| i.time);
     let p = lm_core::basemap::provider(&shell.prefs.basemap);
-    let offline_text = if p.source == Source::Offline {
+    let offline_text = if lm_net::offline() && p.source != Source::Offline {
+        (shell.map_view().zoom() > OFFLINE_MAX_ZOOM).then_some("Working offline: the detailed background is off".to_string())
+    } else if p.source == Source::Offline {
         (shell.map_view().zoom() > OFFLINE_MAX_ZOOM).then_some("Detailed background unavailable offline".to_string())
     } else if p.source == Source::Imagery && shell.map_view().zoom() > f64::from(p.max_zoom) + 1.0 {
         Some("Satellite imagery is sharpest further out (10 m per pixel)".to_string())

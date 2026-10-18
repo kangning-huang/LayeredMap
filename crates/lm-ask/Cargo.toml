@@ -12,6 +12,7 @@ workspace = true
 [dependencies]
 lm-core = { path = "../lm-core" }
 lm-jobs = { path = "../lm-jobs" }
+lm-net = { path = "../lm-net" }
 log = { workspace = true }
 serde_json = { workspace = true }
 

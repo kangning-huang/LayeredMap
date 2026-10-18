@@ -10,6 +10,7 @@ description = "LayeredMap: the map widget"
 workspace = true
 
 [dependencies]
+lm-net = { path = "../lm-net" }
 rustgis-geom = { workspace = true }
 rustgis-map = { workspace = true }
 rustgis-tiles = { workspace = true }

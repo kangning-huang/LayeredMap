@@ -40,7 +40,8 @@ pub const LABEL_LANGUAGE: &str = "en";
 
 /// Sets the map's backdrop and tile layer for `prefs.basemap` and `prefs.strength`.
 pub fn apply(map: &mut Map, prefs: &Prefs, dark_ui: bool) {
-    let p = provider(&prefs.basemap);
+    // Offline mode draws the offline outline whatever basemap is chosen, so no tile is asked for.
+    let p = if lm_net::offline() { provider("offline") } else { provider(&prefs.basemap) };
     let dark = look_dark(&p, dark_ui);
     map.basemap = quiet(dark);
     map.graticule = false;

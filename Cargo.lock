@@ -675,7 +675,7 @@ dependencies = [
  "log",
  "quick-xml",
  "serde",
- "zip",
+ "zip 8.6.0",
 ]
 
 [[package]]
@@ -2489,6 +2489,7 @@ dependencies = [
  "eframe",
  "egui",
  "lm-core",
+ "lm-net",
  "lm-ui",
  "log",
  "muda",
@@ -2630,6 +2631,7 @@ version = "0.2.0"
 dependencies = [
  "lm-core",
  "lm-jobs",
+ "lm-net",
  "log",
  "serde_json",
  "ureq",
@@ -2659,7 +2661,7 @@ dependencies = [
  "serde_json",
  "sha2",
  "thiserror 2.0.21",
- "zip",
+ "zip 8.6.0",
 ]
 
 [[package]]
@@ -2688,6 +2690,7 @@ version = "0.2.0"
 dependencies = [
  "ab_glyph",
  "egui",
+ "lm-net",
  "log",
  "rstar",
  "rustgis-geom",
@@ -2698,6 +2701,14 @@ dependencies = [
  "tiny-skia",
  "ureq",
  "web-time",
+]
+
+[[package]]
+name = "lm-net"
+version = "0.2.0"
+dependencies = [
+ "log",
+ "ureq",
 ]
 
 [[package]]
@@ -2741,6 +2752,7 @@ dependencies = [
  "lm-doc",
  "lm-jobs",
  "lm-mapview",
+ "lm-net",
  "log",
  "serde_json",
 ]
@@ -2913,6 +2925,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ee6cda3051665f1fb8d9e08fc35c96d5a244fb1be711a03b71118828afc9a873"
 dependencies = [
  "jni-sys 0.3.1",
+]
+
+[[package]]
+name = "nix"
+version = "0.31.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cf20d2fde8ff38632c426f1165ed7436270b44f199fc55284c38276f9db47c3d"
+dependencies = [
+ "bitflags 2.13.2",
+ "cfg-if",
+ "cfg_aliases",
+ "libc",
 ]
 
 [[package]]
@@ -4136,7 +4160,7 @@ dependencies = [
  "sha2",
  "tar",
  "ureq",
- "zip",
+ "zip 9.0.5",
 ]
 
 [[package]]
@@ -4176,7 +4200,7 @@ dependencies = [
  "ureq",
  "wasmi",
  "wat",
- "zip",
+ "zip 9.0.5",
 ]
 
 [[package]]
@@ -4290,9 +4314,9 @@ dependencies = [
 
 [[package]]
 name = "rustls"
-version = "0.23.45"
+version = "0.23.46"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0d41d731c7d2f962d1ccc364cec258de3c0e93b38c2fb3ba97ac74513048d634"
+checksum = "48e13bd8c0e9365c43cfa5c9e8f9ad49d3c8444926c9aac819e0e4dc503c8fdf"
 dependencies = [
  "log",
  "once_cell",
@@ -4774,7 +4798,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd"
 dependencies = [
  "fastrand",
- "getrandom 0.3.4",
+ "getrandom 0.4.3",
  "once_cell",
  "rustix 1.1.5",
  "windows-sys 0.61.2",
@@ -6209,6 +6233,7 @@ name = "xtask"
 version = "0.2.0"
 dependencies = [
  "miniz_oxide 0.9.1",
+ "serde_json",
  "tiff",
 ]
 
@@ -6431,6 +6456,21 @@ dependencies = [
  "flate2",
  "indexmap",
  "memchr",
+ "typed-path",
+ "zopfli",
+]
+
+[[package]]
+name = "zip"
+version = "9.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6e04976da629d3b04204ba8105b396a193af8ad2583b2c79bfb3ab8af580a11e"
+dependencies = [
+ "crc32fast",
+ "flate2",
+ "indexmap",
+ "memchr",
+ "nix",
  "typed-path",
  "zopfli",
 ]

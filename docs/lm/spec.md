@@ -180,11 +180,13 @@ The only direct line from the interface to RustGIS is the map view's drawing pat
 | `lm-jobs` | Plans, previews, background execution, cancellation, stale-result guard, atomic commit, compound undo | `lm-core`, `lm-analysis`, `rustgis-engine`, `rustgis-analysis` |
 | `lm-analysis` | Certified algorithms where upstream lacks the needed meaning: fractional-coverage zonal summary, boundary-aware point counts, geodesic buffers, GCJ-02/BD-09 conversion | `rustgis-geom`, `rustgis-data` |
 | `lm-doc` | Document format, autosave, recovery journal, source fingerprints, relinking | `lm-core`, rustgis-data (to write FlatGeobuf and GeoTIFF) |
+| `lm-net` | The one network gate: strict offline mode (WP6.6), counts for the network-blocking harness, a gated HTTPS helper. Added in Phase 5 | — (used by `lm-mapview`, `lm-ask`, `lm-ui`, the app; `lm-jobs` may use it) |
 
 `lm-mapview` starts as an extraction of the map view inside RustGIS's `ui-egui` crate. It is the first candidate to offer upstream as a pull request, because any second front end needs it.
 **Rules enforced in CI.** Extend RustGIS's `cargo xtask layers` check to cover the new crates.
 - Below `lm-ui`, only `lm-mapview` may depend on egui, and nothing depends on eframe or rfd.
 - `lm-ui` never calls `rustgis-data` or `rustgis-analysis` directly. All work goes through `lm-jobs`.
+- Every network request asks `lm-net`'s gate first; a LayeredMap source file that uses `ureq` without it fails the check (added in Phase 5).
 - Numbers never come from the renderer. Counts and means are computed from data, never from drawn pixels or visible symbols.
 - Every `lm-` crate except `lm-ui`, `lm-mapview` and the app builds for `wasm32-unknown-unknown`, matching upstream's rule. This keeps a future web version possible; it is not a tested fallback.
 - Upstream rules carry over: no `unwrap()`, `expect()`, `panic!` or `unsafe` outside tests, and every interface string is wrapped for translation. One exception: unsafe code is allowed in the app's macOS module for native macOS hooks (Open With, Dock drops, the Edited state), with a SAFETY comment on each block and a second review.

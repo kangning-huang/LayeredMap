@@ -3,6 +3,7 @@
 //! map-first shell from `lm-ui`.
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
+mod diagnostics;
 mod feel;
 // The spec's one exception to "no unsafe" (Architecture › Rules enforced in CI): native macOS
 // hooks live in the app's macOS module, with a SAFETY comment on each block and a second review.
@@ -84,6 +85,7 @@ fn load_prefs(storage: Option<&dyn eframe::Storage>) -> Prefs {
     if let Some(v) = s.get_string("lm.strength").and_then(|v| v.parse::<f32>().ok()) {
         p.strength = v.clamp(0.4, 1.0);
     }
+    p.offline = s.get_string("lm.offline").as_deref() == Some("on");
     p.view = s.get_string("lm.view").and_then(|v| {
         let n: Vec<f64> = v.split(',').filter_map(|x| x.trim().parse().ok()).collect();
         match n.as_slice() {
@@ -154,6 +156,20 @@ impl eframe::App for App {
                     menu::Action::Shell(cmd) => self.shell.command(ctx, cmd),
                     menu::Action::SaveDocument => self.shell.command(ctx, Command::RequestSaveDocument),
                     menu::Action::OpenDocument => self.shell.command(ctx, Command::RequestOpenDocument),
+                    menu::Action::ToggleOffline => {
+                        let on = !self.shell.prefs.offline;
+                        self.shell.command(ctx, Command::SetOffline(on));
+                    }
+                    menu::Action::ExportDiagnostics => {
+                        let settings = diagnostics::Settings {
+                            app: self.shell.app_name(),
+                            basemap: self.shell.prefs.basemap.clone(),
+                            offline: self.shell.prefs.offline,
+                            layers: self.shell.ws.doc.layers.len(),
+                        };
+                        let report = diagnostics::report(&settings, &diagnostics::logs_dir());
+                        self.shell.command(ctx, Command::ReviewDiagnostics(report));
+                    }
                     menu::Action::ExportQuestionLog => {
                         let log = question_log_path();
                         if let Some(out) =
@@ -260,6 +276,7 @@ impl eframe::App for App {
         storage.set_string("lm.units", if p.units == Units::Imperial { "imperial" } else { "metric" }.into());
         storage.set_string(BASEMAP_KEY, p.basemap);
         storage.set_string("lm.strength", p.strength.to_string());
+        storage.set_string("lm.offline", if p.offline { "on" } else { "off" }.into());
         if let Some((lon, lat, z)) = p.view {
             storage.set_string("lm.view", format!("{lon},{lat},{z}"));
         }
@@ -379,6 +396,9 @@ fn main() -> eframe::Result {
     let developer = cfg!(debug_assertions) || std::env::var_os("LM_DEV").is_some();
     let pro = is_pro();
     let app_name = if pro { "LayeredMap Pro" } else { "LayeredMap" };
+    // Crash logs and the log file stay on this Mac (~/Library/Logs/LayeredMap).
+    diagnostics::install_logger();
+    diagnostics::install_panic_hook(app_name);
     let mut options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_title(app_name)
@@ -418,6 +438,8 @@ fn main() -> eframe::Result {
             if !ephemeral {
                 shell.set_question_log(question_log_path());
                 shell.start_autosave(&autosave_dir());
+                // The update feed (off unless built with LM_UPDATE_FEED_URL), on its own thread.
+                lm_ui::update::start(&cc.egui_ctx, pro);
             }
             // Files passed on the command line (and, through macOS, Open With) are opened.
             let files: Vec<std::path::PathBuf> =

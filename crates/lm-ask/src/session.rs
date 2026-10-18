@@ -160,7 +160,7 @@ fn system_message(req: &Request) -> Json {
         let first = req.layers.iter().filter(|l| context::kind_word(l).is_some()).count() + 1;
         let lines = r.context_lines(first, &taken);
         if !lines.is_empty() {
-            map.push_str("\nBuilt-in reference layers (Natural Earth, WorldClim; not on the map): use one when the request needs countries, provinces, cities, rivers, lakes, coastline, land, islands, regions, seas or elevation and no open layer has them; prefer the user's own layers. Name them in a plan like any layer.\n");
+            map.push_str("\nBuilt-in reference layers (Natural Earth, NOAA ETOPO; not on the map): use one when the request needs countries, provinces, cities, rivers, lakes, coastline, land, islands, regions, seas or elevation and no open layer has them; prefer the user's own layers. Name them in a plan like any layer.\n");
             map.push_str(&lines.join("\n"));
         }
     }

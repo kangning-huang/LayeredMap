@@ -14,6 +14,8 @@ pub enum Action {
     SaveDocument,
     OpenDocument,
     ExportQuestionLog,
+    ToggleOffline,
+    ExportDiagnostics,
 }
 
 pub struct MenuBar {
@@ -22,6 +24,7 @@ pub struct MenuBar {
     theme: [CheckMenuItem; 3],
     units: [CheckMenuItem; 2],
     debug: CheckMenuItem,
+    offline: CheckMenuItem,
 }
 
 fn cmd(key: Code) -> Option<Accelerator> {
@@ -132,6 +135,8 @@ impl MenuBar {
             false,
             Some(Accelerator::new(Modifiers::META | Modifiers::ALT, Code::KeyF)),
         );
+        // Strict offline mode (WP6.6): one switch for every network request.
+        let offline = CheckMenuItem::with_id("offline", "Work Offline", true, false, None);
         let view = Submenu::with_items(
             "View",
             true,
@@ -147,6 +152,8 @@ impl MenuBar {
                 &units[0],
                 &units[1],
                 &PredefinedMenuItem::separator(),
+                &offline,
+                &PredefinedMenuItem::separator(),
                 &debug,
                 &PredefinedMenuItem::fullscreen(None),
             ],
@@ -161,7 +168,11 @@ impl MenuBar {
                 &PredefinedMenuItem::bring_all_to_front(None),
             ],
         )?;
-        let help = Submenu::with_items("Help", true, &[&MenuItem::with_id("credits", "Credits", true, None)])?;
+        let help = Submenu::with_items(
+            "Help",
+            true,
+            &[&MenuItem::with_id("credits", "Credits", true, None), &MenuItem::with_id("diagnostics", "Export Diagnostics…", true, None)],
+        )?;
         for m in [&app, &file, &edit, &view, &window, &help] {
             menu.append(m)?;
         }
@@ -173,7 +184,7 @@ impl MenuBar {
             let _ = tx.send(e);
             ctx.request_repaint();
         }));
-        Ok(MenuBar { _menu: menu, events, theme, units, debug })
+        Ok(MenuBar { _menu: menu, events, theme, units, debug, offline })
     }
 
     /// The actions the menu asked for since the last poll.
@@ -206,6 +217,8 @@ impl MenuBar {
                 "units-imperial" => Action::Shell(Command::SetUnits(Units::Imperial)),
                 "debug" => Action::Shell(Command::ToggleDebugOverlay),
                 "credits" => Action::Shell(Command::ShowCredits),
+                "offline" => Action::ToggleOffline,
+                "diagnostics" => Action::ExportDiagnostics,
                 _ => continue,
             };
             out.push(a);
@@ -229,6 +242,9 @@ impl MenuBar {
         }
         if self.debug.is_checked() != shell.debug_overlay() {
             self.debug.set_checked(shell.debug_overlay());
+        }
+        if self.offline.is_checked() != shell.prefs.offline {
+            self.offline.set_checked(shell.prefs.offline);
         }
     }
 }

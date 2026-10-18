@@ -12,15 +12,17 @@ use std::collections::BTreeMap;
 /// Crate directory (under `crates/`, or `apps/` for the app) and the internal crates it may use.
 pub const ALLOWED: &[(&str, &[&str])] = &[
     ("lm-core", &[]),
+    // The network gate (WP6.6): no internal dependencies, so anything that goes online can ask it.
+    ("lm-net", &[]),
     ("lm-profile", &["lm-core", "rustgis-data", "rustgis-geom"]),
     ("lm-actions", &["lm-core", "lm-profile"]),
-    ("lm-jobs", &["lm-core", "lm-profile", "lm-analysis", "rustgis-engine", "rustgis-analysis"]),
+    ("lm-jobs", &["lm-core", "lm-profile", "lm-analysis", "lm-net", "rustgis-engine", "rustgis-analysis"]),
     ("lm-analysis", &["rustgis-geom", "rustgis-data"]),
     ("lm-doc", &["lm-core", "rustgis-data"]),
-    ("lm-mapview", &["rustgis-map", "rustgis-tiles", "rustgis-render", "rustgis-geom"]),
-    ("lm-ask", &["lm-core", "lm-jobs"]),
-    ("lm-ui", &["lm-core", "lm-actions", "lm-jobs", "lm-doc", "lm-mapview", "lm-ask"]),
-    ("layeredmap", &["lm-ui", "lm-core"]),
+    ("lm-mapview", &["lm-net", "rustgis-map", "rustgis-tiles", "rustgis-render", "rustgis-geom"]),
+    ("lm-ask", &["lm-core", "lm-jobs", "lm-net"]),
+    ("lm-ui", &["lm-core", "lm-actions", "lm-jobs", "lm-doc", "lm-mapview", "lm-ask", "lm-net"]),
+    ("layeredmap", &["lm-ui", "lm-core", "lm-net"]),
 ];
 
 /// The crates that may depend on egui (and its companions).

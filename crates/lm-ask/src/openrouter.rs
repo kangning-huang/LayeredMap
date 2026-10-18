@@ -11,6 +11,9 @@ const URL: &str = "https://openrouter.ai/api/v1/chat/completions";
 const SERVICE: &str = "openrouter";
 const ACCOUNT: &str = "layeredmap";
 
+/// What the assistant says while LayeredMap works offline.
+pub const OFFLINE: &str = "LayeredMap is working offline, so the assistant can't be reached. Turn off View › Work Offline to ask.";
+
 pub struct OpenRouter {
     key: String,
 }
@@ -23,6 +26,8 @@ impl OpenRouter {
 
 impl crate::session::Transport for OpenRouter {
     fn complete(&self, body: &Json) -> Result<Json, String> {
+        // Strict offline mode (WP6.6): nothing is sent; the Ask box says why.
+        lm_net::check(lm_net::Purpose::Assistant).map_err(|_| OFFLINE.to_string())?;
         let agent: ureq::Agent =
             ureq::Agent::config_builder().timeout_global(Some(Duration::from_secs(90))).http_status_as_error(false).build().into();
         let mut resp = agent
@@ -92,6 +97,19 @@ fn keychain_key() -> Option<String> {
 
 #[cfg(test)]
 mod tests {
+    use crate::session::Transport as _;
+
+    /// Offline, the request never leaves: the gate refuses it and the user is told why.
+    #[test]
+    fn offline_sends_nothing() {
+        lm_net::set_offline(true);
+        let before = lm_net::counts();
+        let r = super::OpenRouter::new("sk-or-not-a-key".into()).complete(&serde_json::json!({}));
+        lm_net::set_offline(false);
+        assert_eq!(r.unwrap_err(), super::OFFLINE);
+        assert_eq!(lm_net::counts().allowed_total(), before.allowed_total());
+    }
+
     #[test]
     fn a_built_in_key_unscrambles() {
         // As packaging/lm/bundle-macos.sh writes it: key bytes XOR the pad, as hex.
