@@ -1,7 +1,7 @@
 <!--
   docs/lm/spec.md — the LayeredMap build plan, exported as Markdown for agents to read.
   Source: the Claude Docs document "LayeredMap Build Plan"
-  (https://claude.ai/artifact/VRu8z2LFG6YcXodK1Z48Yg), revision 128, exported 2026-10-15; the "Who it's for" paragraph (revision 142) and WP6.12 NetCDF (revision 144) were added on 2026-10-18.
+  (https://claude.ai/artifact/VRu8z2LFG6YcXodK1Z48Yg), revision 128, exported 2026-10-15; the "Who it's for" paragraph (revision 142) WP6.12 NetCDF (revision 144) and WP5.3 automatic layout (revision 145) were added on 2026-10-18.
   Refreshed at every phase start (build plan › Working with coding agents). Do not edit here:
   change the plan, then re-export. Diagrams are not exported; their captions mark where they sit.
 -->
@@ -1265,6 +1265,12 @@ Excluded: 6 schools with no usable location
     - A legend that places itself bottom left, keeps clear of the data, and can be dragged.
     - A scale bar and mandatory attribution.
     - An editable caption, generated automatically: "Data: Districts (…); Heat (…). Made with LayeredMap."
+
+- **Automatic layout** (owner's direction, 2026-10-18): the sheet does the cartography, and the user only picks a size.
+    - **Framing:** by default the map fits the visible layers (only the shown objects of a filtered layer), with a 5% margin, at the chosen size. A switch, "Current view", keeps the map as the user sees it.
+    - **Map furniture by ground width** (measured across the map's centre): up to about 1,500 km (a city, a province), a north arrow and a scale bar. From about 1,500 to 6,000 km (China, the United States), latitude and longitude labels on the frame, and a scale bar only if the map spans less than about 25° of latitude. Over about 6,000 km (a continent, the world), only the latitude and longitude labels. On a web map north is up everywhere, but at these scales distances stretch with latitude, so one scale bar misleads and an arrow adds nothing.
+    - **Latitude and longitude labels:** on the map's frame, longitudes along the top and bottom and latitudes along the sides (30°N, 120°E), with tick marks. The interval gives 3–6 labels per side (from 0.1° up to 30°). Faint grid lines across the map are available, off by default.
+    - **Overrides:** north arrow, scale bar and the labels each have Auto, On and Off; Auto follows the rules above.
 
 - **Export warnings:**
     - a color scale has no legend
