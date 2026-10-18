@@ -1,0 +1,237 @@
+{
+  "files": [
+    {
+      "file": "r8_classic.nc",
+      "layers": [
+        {
+          "assumptions": [
+            {
+              "chosen": "measured",
+              "kind": "RasterCellMeaning",
+              "line": "Treated as measured values (averaged, not summed).",
+              "treatment": "Visible"
+            }
+          ],
+          "bands": [
+            {
+              "cell_meaning": "Measured (Likely)",
+              "index": 1,
+              "nodata": null,
+              "offset": null,
+              "scale": null,
+              "unit": "°C"
+            }
+          ],
+          "count": 48,
+          "crs": "Wgs84",
+          "crs_confidence": "Certain",
+          "encoding": null,
+          "exclusions": 0,
+          "extent": [
+            -180.0,
+            -60.0,
+            180.0,
+            60.0
+          ],
+          "fields": {},
+          "format": "NetCDF-3",
+          "grid": {
+            "first": "June 2023",
+            "last": "August 2023",
+            "level": 0,
+            "lines": [],
+            "range": [
+              9.325,
+              29.125
+            ],
+            "sampled": 3,
+            "shown": "t2m",
+            "steps": 3,
+            "variables": [
+              {
+                "label": "2 m temperature (°C)",
+                "levels": null,
+                "name": "t2m",
+                "time": "time"
+              },
+              {
+                "label": "Air temperature (K)",
+                "levels": [
+                  850.0,
+                  500.0
+                ],
+                "name": "ta",
+                "time": "time"
+              },
+              {
+                "label": "Surface height (m)",
+                "levels": null,
+                "name": "orog",
+                "time": null
+              }
+            ]
+          },
+          "kind": "Raster",
+          "member": null,
+          "name": "r8_classic",
+          "notices": [
+            "NetCDF-3 file with 3 variables on a latitude–longitude grid of 8 × 6 cells."
+          ],
+          "status": "Complete"
+        }
+      ]
+    },
+    {
+      "error": {
+        "kind": "Refused",
+        "message": "r8_curvilinear.nc uses a curvilinear grid (latitude and longitude that vary in two directions), which LayeredMap can't draw yet. Your file has not been changed."
+      },
+      "file": "r8_curvilinear.nc"
+    },
+    {
+      "file": "r8_lon360.nc",
+      "layers": [
+        {
+          "assumptions": [
+            {
+              "chosen": "measured",
+              "kind": "RasterCellMeaning",
+              "line": "Treated as measured values (averaged, not summed).",
+              "treatment": "Visible"
+            }
+          ],
+          "bands": [
+            {
+              "cell_meaning": "Measured (Likely)",
+              "index": 1,
+              "nodata": null,
+              "offset": null,
+              "scale": null,
+              "unit": "mm/day"
+            }
+          ],
+          "count": 80,
+          "crs": "Wgs84",
+          "crs_confidence": "Certain",
+          "encoding": null,
+          "exclusions": 0,
+          "extent": [
+            -180.0,
+            -75.0,
+            168.75,
+            75.0
+          ],
+          "fields": {},
+          "format": "NetCDF-3",
+          "grid": {
+            "first": "2000",
+            "last": "2003",
+            "level": 0,
+            "lines": [
+              "Longitudes 0–360 shown as −180–180.",
+              "Time: 360-day calendar (twelve 30-day months)."
+            ],
+            "range": [
+              4.0,
+              9.248076
+            ],
+            "sampled": 4,
+            "shown": "pr",
+            "steps": 4,
+            "variables": [
+              {
+                "label": "Precipitation (mm/day)",
+                "levels": null,
+                "name": "pr",
+                "time": "time"
+              }
+            ]
+          },
+          "kind": "Raster",
+          "member": null,
+          "name": "r8_lon360",
+          "notices": [
+            "NetCDF-3 file with 1 variable on a latitude–longitude grid of 16 × 5 cells."
+          ],
+          "status": "Complete"
+        }
+      ]
+    },
+    {
+      "file": "r8_packed_noleap.nc",
+      "layers": [
+        {
+          "assumptions": [
+            {
+              "chosen": "measured",
+              "kind": "RasterCellMeaning",
+              "line": "Treated as measured values (averaged, not summed).",
+              "treatment": "Visible"
+            }
+          ],
+          "bands": [
+            {
+              "cell_meaning": "Measured (Likely)",
+              "index": 1,
+              "nodata": null,
+              "offset": null,
+              "scale": null,
+              "unit": "°C"
+            }
+          ],
+          "count": 90,
+          "crs": "Wgs84",
+          "crs_confidence": "Certain",
+          "encoding": null,
+          "exclusions": 0,
+          "extent": [
+            -180.0,
+            -45.0,
+            180.0,
+            45.0
+          ],
+          "fields": {},
+          "format": "NetCDF-4",
+          "grid": {
+            "first": "27 Feb 2004",
+            "last": "2 Mar 2004",
+            "level": 0,
+            "lines": [
+              "Time: noleap calendar (no leap days; every year has 365 days).",
+              "Values unpacked with the file's scale_factor (0.01) and add_offset (20)."
+            ],
+            "range": [
+              13.48,
+              30.77
+            ],
+            "sampled": 4,
+            "shown": "sst",
+            "steps": 4,
+            "variables": [
+              {
+                "label": "Sea surface temperature (°C)",
+                "levels": null,
+                "name": "sst",
+                "time": "time"
+              },
+              {
+                "label": "Sea surface temperature anomaly (K)",
+                "levels": null,
+                "name": "sst_anom",
+                "time": "time"
+              }
+            ]
+          },
+          "kind": "Raster",
+          "member": null,
+          "name": "r8_packed_noleap",
+          "notices": [
+            "NetCDF-4 file with 2 variables on a latitude–longitude grid of 10 × 9 cells."
+          ],
+          "status": "Complete"
+        }
+      ]
+    }
+  ],
+  "fixture": "R8"
+}

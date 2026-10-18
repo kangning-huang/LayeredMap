@@ -363,6 +363,10 @@ pub struct LayerProfile {
     /// Tables joined to this layer (WP3.11), oldest first: their fields come after the layer's own.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub joins: Vec<JoinRecord>,
+    /// A gridded file's variables, time axes and levels (WP6.12, NetCDF); None for every other
+    /// layer. Older builds ignore it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub grid: Option<crate::grid::GridProfile>,
 }
 
 /// A table joined to a layer (WP3.11), as the document keeps it. The join itself (keys, match
@@ -389,6 +393,16 @@ impl LayerProfile {
     /// The assumptions shown as lines (Visible ones), in catalog order.
     pub fn visible_assumptions(&self) -> impl Iterator<Item = &Assumption> {
         self.assumptions.iter().filter(|a| a.treatment == Treatment::Visible)
+    }
+
+    /// Every visible assumption line: the catalog's (Visible ones) and a grid's own
+    /// ("Longitudes 0–360 shown as −180–180."), which have nothing to change to.
+    pub fn assumption_lines(&self) -> Vec<String> {
+        let mut out: Vec<String> = self.visible_assumptions().map(|a| a.line.clone()).collect();
+        if let Some(g) = &self.grid {
+            out.extend(g.lines.iter().cloned());
+        }
+        out
     }
 
     /// Questions still waiting for an answer.
@@ -439,6 +453,7 @@ mod tests {
             notices: vec![],
             data_rev: 0,
             joins: Vec::new(),
+            grid: None,
         };
         assert_eq!(p.subtitle(), "248 points · schools.csv");
     }

@@ -169,6 +169,13 @@ cat > "$app/Contents/Info.plist" <<PLIST
       <key>LSItemContentTypes</key><array><string>com.topografix.gpx</string></array>
       <key>CFBundleTypeExtensions</key><array><string>gpx</string></array>
     </dict>
+    <dict>
+      <key>CFBundleTypeName</key><string>NetCDF grid</string>
+      <key>CFBundleTypeRole</key><string>Viewer</string>
+      <key>LSHandlerRank</key><string>Alternate</string>
+      <key>LSItemContentTypes</key><array><string>edu.ucar.unidata.netcdf</string></array>
+      <key>CFBundleTypeExtensions</key><array><string>nc</string><string>nc4</string><string>cdf</string></array>
+    </dict>
   </array>
   <!-- The .lmap type, which LayeredMap owns and declares (docs/lm/format-v1.md). -->
   <key>UTExportedTypeDeclarations</key>
@@ -219,6 +226,12 @@ cat > "$app/Contents/Info.plist" <<PLIST
       <key>UTTypeDescription</key><string>GPX</string>
       <key>UTTypeConformsTo</key><array><string>public.xml</string></array>
       <key>UTTypeTagSpecification</key><dict><key>public.filename-extension</key><array><string>gpx</string></array><key>public.mime-type</key><string>application/gpx+xml</string></dict>
+    </dict>
+    <dict>
+      <key>UTTypeIdentifier</key><string>edu.ucar.unidata.netcdf</string>
+      <key>UTTypeDescription</key><string>NetCDF</string>
+      <key>UTTypeConformsTo</key><array><string>public.data</string></array>
+      <key>UTTypeTagSpecification</key><dict><key>public.filename-extension</key><array><string>nc</string><string>nc4</string><string>cdf</string></array><key>public.mime-type</key><string>application/x-netcdf</string></dict>
     </dict>
   </array>
 </dict>

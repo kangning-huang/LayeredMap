@@ -9,6 +9,7 @@ pub mod basemap;
 pub mod document;
 pub mod filter;
 pub mod format;
+pub mod grid;
 pub mod model;
 pub mod palette;
 pub mod phase;

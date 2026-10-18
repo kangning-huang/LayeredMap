@@ -50,6 +50,7 @@ without them they print "skipped".
 | R5 | `generated/R5/` | — | generated (`cargo xtask fixtures`) |
 | R6 | `R6/` | scale/offset, -9999 edges, no NoData tag | present |
 | R7 | `generated/R7/` | geographic raster 10°S–70°N, unequal cell areas (N4) | generated (`cargo xtask fixtures`) |
+| R8 | `R8/` | NetCDF grids (WP6.12): NetCDF-3 (CDF-1, CDF-2) and NetCDF-4 with deflate and shuffle; scale/offset, fill values, levels; standard, noleap and 360_day calendars; 0–360 longitudes; a curvilinear refusal; checked against xarray | present |
 | N1 | `N1/` | count rules: shared boundary, overlap, zero-count area | present |
 | N2 | `N2/` | count rules: holes, multipolygons | present |
 | N3 | `N3/` | 4×4 area-weighted mean and coverage (with hand calculation) | present |

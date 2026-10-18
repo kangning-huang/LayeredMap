@@ -4,7 +4,8 @@
 //! row. A canceled import leaves nothing behind; source files are only ever read.
 //!
 //! Formats sit behind [`FormatAdapter`] (WP2.2): GeoJSON, Shapefile (also zipped), CSV/TSV and
-//! GeoTIFF/COG (P0), GeoPackage and Excel (P1, behind [`P1_FORMATS`]), KML, KMZ and GPX (WP6.7), wrapping the upstream `rustgis-data` readers where they fit and streaming where
+//! GeoTIFF/COG (P0), GeoPackage and Excel (P1, behind [`P1_FORMATS`]), KML, KMZ and GPX (WP6.7), NetCDF
+//! grids (WP6.12), wrapping the upstream `rustgis-data` readers where they fit and streaming where
 //! they don't (large GeoJSON and CSV are scanned as streams, never read whole to learn a name or
 //! bounds).
 
@@ -15,6 +16,7 @@ mod gpkg;
 mod gpx;
 mod kml;
 pub mod limits;
+pub mod netcdf;
 pub mod progress;
 mod raster;
 mod shapefile;
@@ -321,6 +323,7 @@ fn adapters(p1: bool) -> Vec<&'static dyn FormatAdapter> {
     }
     v.extend([&kml::Kml as &'static dyn FormatAdapter, &kml::Kmz, &gpx::Gpx]);
     v.push(&shapefile::ZippedShapefile);
+    v.push(&netcdf::NetCdf);
     v.push(&raster::GeoTiff);
     v
 }
@@ -502,6 +505,7 @@ fn vector_profile(
         notices,
         data_rev: 0,
         joins: Vec::new(),
+        grid: None,
     }
 }
 
@@ -683,7 +687,7 @@ pub fn fresh_read(source: &lm_core::model::SourceRef) -> Result<ImportedLayer, I
 }
 
 /// Applies every confirmed choice of `saved` to `fresh` (a new read of the same source), in the
-/// order they depend on each other: the sheet, the coordinate columns, the chosen coordinate
+/// order they depend on each other: a grid's variable and level, the sheet, the coordinate columns, the chosen coordinate
 /// system, raster choices (NoData, Landsat scale, kelvin, unit), and a GCJ-02/BD-09 conversion.
 /// Answers that change no data (cell meaning, ID fields…) are carried over with their lines.
 /// The text encoding is not applied here: it needs a re-read (`read_in_encoding`).
@@ -691,6 +695,12 @@ pub fn reapply_choices(fresh: ImportedLayer, saved: &LayerProfile) -> Result<Imp
     use lm_core::model::AssumptionKind as K;
     let confirmed = |k: K| saved.assumptions.iter().find(|a| a.kind == k && a.confirmed_by_user).map(|a| a.chosen.clone());
     let mut layer = fresh;
+    // A grid's variable and level (its time step is the document layer's, read afterwards).
+    if let (Some(sg), Some(fg)) = (&saved.grid, &layer.profile.grid)
+        && (sg.variable != fg.variable || sg.level != fg.level)
+    {
+        layer = netcdf::choose_variable(&layer, &sg.variable, sg.level, 0)?;
+    }
     if let Some(c) = confirmed(K::ExcelSheet).filter(|c| c.id.starts_with("sheet:")) {
         layer = choose_sheet(&layer, &c)?;
     }

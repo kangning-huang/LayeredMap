@@ -31,6 +31,7 @@ mod screenshots;
 pub mod search;
 pub mod table;
 pub mod theme;
+pub mod time_ui;
 pub mod update;
 pub mod workspace;
 
@@ -266,6 +267,8 @@ pub struct Shell {
     pub(crate) diagnostics: Option<String>,
     /// The data library (WP5.4).
     pub(crate) library: library::LibraryState,
+    /// The time slider playing (WP6.12).
+    pub(crate) playing: Option<time_ui::Playing>,
 }
 
 impl Shell {
@@ -306,6 +309,7 @@ impl Shell {
             data_export: None,
             diagnostics: None,
             library: Default::default(),
+            playing: None,
             find: find_ui::FindState::default(),
             drawing: None,
             ws: workspace::Workspace::with_waker(ctx),
@@ -674,12 +678,17 @@ impl Shell {
         }
     }
 
-    /// A raster band's whole range.
+    /// A raster band's whole range; for a grid, over the sampled time steps and the one shown.
     pub(crate) fn raster_full_range(&self, id: lm_core::model::LayerId) -> Option<(f64, f64)> {
         let l = self.ws.doc.layer(id)?;
-        match &self.ws.data(id)?.data {
+        let shown = match &self.ws.data(id)?.data {
             lm_jobs::import::LayerData::Raster(r) => lm_jobs::inspect::raster_full_range(r, lm_jobs::inspect::style_band(r, &l.style)),
-            lm_jobs::import::LayerData::Vector(_) => None,
+            lm_jobs::import::LayerData::Vector(_) => return None,
+        };
+        let sampled = l.profile.grid.as_ref().and(l.profile.bands.first()).and_then(|b| b.min.zip(b.max));
+        match (shown, sampled) {
+            (Some((a, b)), Some((c, d))) => Some((a.min(c), b.max(d))),
+            (x, y) => x.or(y).filter(|(a, b)| b > a),
         }
     }
 
@@ -830,6 +839,8 @@ impl Shell {
         let map_rect = egui::Rect::from_min_max(egui::pos2(full.min.x, toolbar.max.y), full.max);
         self.last_map_size = map_rect.size();
 
+        // ← → step a time layer (before the map, which would pan with them), and Play advances.
+        time_ui::frame(self, &ctx);
         // The map first, so the chrome draws over it.
         let keyboard = ctx.memory(|m| m.focused().is_none());
         let drawing = self.drawing.is_some();
@@ -881,7 +892,12 @@ impl Shell {
         panels::change_popover(self, ui);
         panels::review(self, &ctx);
         panels::compare_banner(self, ui, overlay_rect);
-        ask::ask_box(self, ui, map_rect);
+        // The time slider sits in the Ask box (above its field) when that shows, else alone.
+        if ask::shows(self, map_rect) {
+            ask::ask_box(self, ui, map_rect);
+        } else {
+            time_ui::bar(self, ui, map_rect);
+        }
         update::notice(self, ui, overlay_rect);
         chrome::toolbar(self, ui, toolbar, system);
         if self.credits_open {
