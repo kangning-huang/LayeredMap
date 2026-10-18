@@ -5,6 +5,7 @@
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
 pub mod analysis;
+pub mod ask;
 pub mod basemap;
 mod chrome;
 pub mod draw;
@@ -101,6 +102,9 @@ pub enum Command {
     ComposeAction(String, Vec<(String, String)>),
     /// Developer surface: keep the composer's preview.
     KeepResult,
+    /// Pro's Ask box (scripts and tests): send a request, keep its plan.
+    Ask(String),
+    KeepAsk,
 }
 
 /// A file dialog the shell asks the app to show (the shell itself never opens dialogs).
@@ -204,6 +208,10 @@ pub struct Shell {
     pub(crate) composer: Option<analysis::Composer>,
     /// "Summarize in an area I draw": the raster to summarize once the area is drawn.
     pub(crate) after_drawing: Option<lm_core::model::LayerId>,
+    /// The Ask box (Pro, early test build of WP7.1).
+    pub(crate) ask: ask::AskState,
+    /// Starts the system's dictation into the focused field (set by the app on macOS).
+    pub start_dictation: Option<fn()>,
 }
 
 impl Shell {
@@ -236,6 +244,8 @@ impl Shell {
             pro: false,
             composer: None,
             after_drawing: None,
+            ask: ask::AskState::default(),
+            start_dictation: None,
             find: find_ui::FindState::default(),
             drawing: None,
             ws: workspace::Workspace::with_waker(ctx),
@@ -345,6 +355,8 @@ impl Shell {
             Command::KeepResult => {
                 analysis::keep(self);
             }
+            Command::Ask(text) => ask::submit(self, ctx, text),
+            Command::KeepAsk => ask::keep_shown(self),
             Command::Find(text) => {
                 if let Some(id) = self.ws.selected() {
                     self.find.layer = Some(id);
@@ -368,7 +380,7 @@ impl Shell {
                 }
             }
             Command::Escape => {
-                if self.drawing.take().is_some() {
+                if self.drawing.take().is_some() || self.ask.escape() {
                 } else if let Some(id) = self.find.layer.filter(|id| self.find.active_for(*id)) {
                     self.find.clear();
                     self.ws.selection = lm_core::selection::SelectionContext::layer(id);
@@ -553,7 +565,7 @@ impl Shell {
     }
 
     /// How much of the map the layer shelf (left) and the inspector (right) cover.
-    fn panel_insets(&self) -> (f32, f32) {
+    pub(crate) fn panel_insets(&self) -> (f32, f32) {
         let left = if self.shelf_open && !self.ws.doc.layers.is_empty() { panels::SHELF_WIDTH + theme::PANEL_MARGIN } else { 0.0 };
         let right = if self.ws.selected().is_some() { panels::INSPECTOR_WIDTH + theme::PANEL_MARGIN } else { 0.0 };
         (left, right)
@@ -563,6 +575,7 @@ impl Shell {
     fn update_workspace(&mut self, ctx: &egui::Context) {
         let t = ctx.input(|i| i.time);
         analysis::poll(self);
+        ask::poll(self);
         // Files dropped on the window (Open With and the Dock icon arrive through the app).
         let dropped: Vec<PathBuf> =
             ctx.input(|i| i.raw.dropped_files.iter().map(|f| f.path().to_path_buf()).filter(|p| !p.as_os_str().is_empty()).collect());
@@ -704,6 +717,7 @@ impl Shell {
         panels::change_popover(self, ui);
         panels::review(self, &ctx);
         panels::compare_banner(self, ui, overlay_rect);
+        ask::ask_box(self, ui, map_rect);
         chrome::toolbar(self, ui, toolbar, system);
         if self.credits_open {
             chrome::credits(self, &ctx);

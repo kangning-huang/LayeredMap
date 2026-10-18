@@ -335,3 +335,11 @@ def test_layer_alone_names_its_only_shown_object():
     errs = chk.Checker("world", None, "Which towns are in it?").check_plan(plan)[1]
     assert errs and "is selected" in errs[0]
     assert not chk.Checker("world", None, "Which towns are in it?", single_shown={"Countries"}).check_plan(plan)[1]
+
+
+def test_the_apps_assistant_assets_match_the_harness():
+    # crates/lm-ask ships the harness's prompt and tools; re-export after changing either.
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "assistant"))
+    import export_assets
+
+    assert export_assets.main(["--check"]) == 0

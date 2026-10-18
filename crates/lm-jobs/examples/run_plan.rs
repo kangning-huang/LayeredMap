@@ -57,9 +57,9 @@ fn main() {
             .iter()
             .enumerate()
             .map(|(i, s)| match s {
-                StepOutcome::Filtered { layer, shown, of } => json!({"filtered": layer, "shown": shown, "of": of}),
+                StepOutcome::Filtered { layer, shown, of, .. } => json!({"filtered": layer, "shown": shown, "of": of}),
                 StepOutcome::Display => json!({"display": true}),
-                StepOutcome::NewLayer { name, card } => {
+                StepOutcome::NewLayer { name, card, .. } => {
                     // The new layer answers to "#k" (k = the step's position, from 1).
                     let alias = format!("#{}", i + 1);
                     let rows = layers.iter().find(|l| l.alias.as_deref() == Some(alias.as_str())).and_then(|l| match &l.data {
@@ -68,8 +68,10 @@ fn main() {
                     });
                     json!({"new_layer": name, "alias": alias, "rows": rows, "summary": card.summary})
                 }
-                StepOutcome::NewFields { layer, fields, card } => json!({"new_fields": fields, "layer": layer, "summary": card.summary}),
-                StepOutcome::Card { card, highlight } => {
+                StepOutcome::NewFields { layer, fields, card, .. } => {
+                    json!({"new_fields": fields, "layer": layer, "summary": card.summary})
+                }
+                StepOutcome::Card { card, highlight, .. } => {
                     json!({"card": card.title, "summary": card.summary, "answer": format!("{:?}", card.answer), "highlight": highlight})
                 }
                 StepOutcome::Asked(q) => json!({"asked": q}),

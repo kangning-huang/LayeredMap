@@ -1,0 +1,366 @@
+[
+ {
+  "type": "function",
+  "function": {
+   "name": "submit_plan",
+   "description": "Submit the whole plan at once: the steps in order. Nothing runs until the user approves it. A step that makes a new layer (buffer, count_in, find_where, keep_inside, remove_inside, split_parts, summarize_each) is referred to by later steps as \"#k\" (k = its position, from 1). Steps:\n- count_in(points, areas, stat?, field?): Count points in each area of an area layer, or take a statistic of a numeric point field per area (stat sum|mean|median|min|max with field, e.g. total students per district: stat 'sum', field 'students'). New layer: the areas with field '<points layer, lowercase>' (Schools: 'schools') and, with a statistic, '<stat> <field>' ('sum students', 'mean students', 'median students', 'minimum students', 'maximum students').\n- count_here(points, area): Count points inside one area (a selected, named or drawn area).\n- which_container(point, areas): Which area (of an area layer) one point is in.\n- whats_inside(area, layer): Show the objects of a layer that lie inside one area (lists them). Not for counting per area.\n- summarize_data_here(area, layer): Counts and value summaries of a layer's objects inside one area.\n- buffer(layer, object?, merge?, distance): The area within a distance of a whole layer, or of one object of it (give object: a named object, or {layer} alone for the selected object). New area layer. merge false keeps each object's buffer separate.\n- measure_area(area): Measure one area object (geodesic).\n- measure_length(line): Measure one line object (geodesic).\n- summarize_each(raster, areas, band?, stat?): Summarize a raster in each area of an area layer. New layer: the areas with fields '<raster> mean', '<raster> median', '<raster> minimum', '<raster> maximum', '<raster> sum', '<raster> std dev' (Heat: 'Heat mean'); stat picks the headline (default mean). A category raster (e.g. land cover) gives each class's share of every area instead.\n- summarize_here(raster, area, band?, stat?): Summarize a raster inside one area (stat default mean). A category raster gives class shares.\n- summarize_drawn(raster, area?, band?, stat?): Summarize a raster in an area the user will draw (omit area), or in a drawn area.\n- add_raster_values(raster, points, band?): Add the raster's value at each (shown) point as a field named after the raster (Heat: 'Heat'); hidden points stay blank. Changes the points layer; no new layer.\n- rank_by_value(layer, field): Rank a layer's objects by a numeric field (highest first).\n- calculate_field(layer, first, op, second, name?): Add a number field calculated from two values: first (a number field) op (add|subtract|multiply|divide) second (a number field or a number), e.g. density = population divide area_km2. Blank inputs or division by zero give blanks. Adds the field 'name' (default 'first op second') to the layer; no new layer.\n- split_parts(layer): Split a line or area layer's multi-part features into one feature per part (e.g. separate islands). New layer with a 'part' field.\n- find_where(raster, conditions?): Find the areas where every raster condition holds (e.g. elevation at least 3000 and rainfall at least 500). raster: the first raster; conditions: [{field: <raster name>, op: at_least | at_most | between, value, value2}] in the raster's unit. New area layer, one area per connected group of cells, largest first, with fields name, area_km2, cells and '<raster> mean'.\n- keep_inside(layer, areas): Keep only the part of a layer inside an area layer's (shown) areas (clip). New layer with the same fields (an area_km2 field is copied, not recomputed).\n- remove_inside(layer, areas): Remove the part of a layer inside an area layer's (shown) areas (erase; 'away from', 'outside'). New layer with the same fields.\n- nearest_distance(layer, other): Add to each object of a layer the geodesic distance in km to the nearest (shown) object of another layer (other), and that object's name. Adds fields 'km to nearest <other, singular>' and 'nearest <other, singular>' (other Rivers: 'km to nearest river'). Changes the layer; no new layer.\n- nearest_other(layer): Add to each object the distance in km to the nearest other object of the same layer (isolation), and its name: fields 'km to nearest other <layer, singular>' ('km to nearest other hospital'). Only the shown objects count as others, so run it before filtering that layer. Changes the layer; no new layer.\n- join_by_location(layer, areas): Add to each object of a layer the fields of the area it lies in (spatial join; lines and areas use a point on them): layer, areas, fields (comma list of the areas' fields; all by default). The new fields keep the areas' field names. Changes the layer; no new layer.\n- add_measurements(layer): Add area_km2 and perimeter_km (areas), length_km (lines), and longitude and latitude (degrees, of a point on each object) as fields. A field name the layer already has gets ' 2' (area_km2 2). Changes the layer; no new layer.\n- filter(layer, conditions): show only objects meeting all conditions (it replaces the layer's earlier filter, so repeat earlier conditions to keep them); changes the layer, no new layer. Ops: is, is_not, contains, starts_with, ends_with, is_empty, above (>), below (<), at_least (>=), at_most (<=), between (inclusive), before, after, any_of.\n- color_by(layer, field) / view_data(layer) / zoom_to(layer, field?, value?): only when asked for.\n- ask_user(question, choices?): one question, only when needed. Alone in the plan.\n- cannot_do(reason): the tools can't answer. Alone in the plan.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+       "type": "object",
+       "properties": {
+        "action": {
+         "type": "string",
+         "enum": [
+          "count_in",
+          "count_here",
+          "which_container",
+          "whats_inside",
+          "summarize_data_here",
+          "buffer",
+          "measure_area",
+          "measure_length",
+          "summarize_each",
+          "summarize_here",
+          "summarize_drawn",
+          "add_raster_values",
+          "rank_by_value",
+          "calculate_field",
+          "split_parts",
+          "find_where",
+          "keep_inside",
+          "remove_inside",
+          "nearest_distance",
+          "nearest_other",
+          "join_by_location",
+          "add_measurements",
+          "filter",
+          "color_by",
+          "view_data",
+          "zoom_to",
+          "ask_user",
+          "cannot_do"
+         ]
+        },
+        "points": {
+         "type": "string",
+         "enum": [
+          "__POINTS__"
+         ]
+        },
+        "areas": {
+         "type": "string",
+         "enum": [
+          "__AREAS__",
+          "#1",
+          "#2",
+          "#3",
+          "#4",
+          "#5",
+          "#6"
+         ]
+        },
+        "raster": {
+         "type": "string",
+         "enum": [
+          "__RASTER__"
+         ]
+        },
+        "layer": {
+         "type": "string",
+         "enum": [
+          "__POINTS__",
+          "__LINES__",
+          "__AREAS__",
+          "#1",
+          "#2",
+          "#3",
+          "#4",
+          "#5",
+          "#6"
+         ]
+        },
+        "point": {
+         "type": "object",
+         "properties": {
+          "layer": {
+           "type": "string",
+           "enum": [
+            "__POINTS__"
+           ]
+          },
+          "field": {
+           "type": "string"
+          },
+          "value": {
+           "type": "string"
+          }
+         },
+         "required": [
+          "layer"
+         ],
+         "additionalProperties": false,
+         "description": "One object: {layer, field, value} with value as stored (resolve_feature finds it); omit field and value for the selected object, a drawn area, or the layer's only shown object."
+        },
+        "line": {
+         "type": "object",
+         "properties": {
+          "layer": {
+           "type": "string",
+           "enum": [
+            "__LINES__"
+           ]
+          },
+          "field": {
+           "type": "string"
+          },
+          "value": {
+           "type": "string"
+          }
+         },
+         "required": [
+          "layer"
+         ],
+         "additionalProperties": false,
+         "description": "One object: {layer, field, value} with value as stored (resolve_feature finds it); omit field and value for the selected object, a drawn area, or the layer's only shown object."
+        },
+        "area": {
+         "type": "object",
+         "properties": {
+          "layer": {
+           "type": "string",
+           "enum": [
+            "__AREAS__",
+            "#1",
+            "#2",
+            "#3",
+            "#4",
+            "#5",
+            "#6"
+           ]
+          },
+          "field": {
+           "type": "string"
+          },
+          "value": {
+           "type": "string"
+          }
+         },
+         "required": [
+          "layer"
+         ],
+         "additionalProperties": false,
+         "description": "One object: {layer, field, value} with value as stored (resolve_feature finds it); omit field and value for the selected object, a drawn area, or the layer's only shown object."
+        },
+        "object": {
+         "type": "object",
+         "properties": {
+          "layer": {
+           "type": "string",
+           "enum": [
+            "__POINTS__",
+            "__LINES__",
+            "__AREAS__",
+            "#1",
+            "#2",
+            "#3",
+            "#4",
+            "#5",
+            "#6"
+           ]
+          },
+          "field": {
+           "type": "string"
+          },
+          "value": {
+           "type": "string"
+          }
+         },
+         "required": [
+          "layer"
+         ],
+         "additionalProperties": false,
+         "description": "One object: {layer, field, value} with value as stored (resolve_feature finds it); omit field and value for the selected object, a drawn area, or the layer's only shown object. Optional."
+        },
+        "distance": {
+         "type": "string",
+         "description": "number and unit: '500 m', '2 km', '3 mi', '100 ft'"
+        },
+        "merge": {
+         "type": "boolean",
+         "description": "merge overlapping buffers (default true)"
+        },
+        "band": {
+         "type": "integer",
+         "description": "1-based, default 1"
+        },
+        "stat": {
+         "type": "string",
+         "enum": [
+          "count",
+          "max",
+          "mean",
+          "median",
+          "min",
+          "std",
+          "sum"
+         ],
+         "description": "count_in: count|sum|mean|median|min|max; summarize_*: mean|median|min|max|sum|std"
+        },
+        "field": {
+         "type": "string"
+        },
+        "other": {
+         "type": "string",
+         "enum": [
+          "__POINTS__",
+          "__LINES__",
+          "__AREAS__",
+          "#1",
+          "#2",
+          "#3",
+          "#4",
+          "#5",
+          "#6"
+         ],
+         "description": "nearest_distance: the layer to measure to"
+        },
+        "fields": {
+         "type": "string",
+         "description": "join_by_location: comma list of the areas' fields to add (all by default)"
+        },
+        "first": {
+         "type": "string",
+         "description": "calculate_field: the first value, a number field of the layer (first op second)"
+        },
+        "op": {
+         "type": "string",
+         "enum": [
+          "add",
+          "subtract",
+          "multiply",
+          "divide"
+         ]
+        },
+        "second": {
+         "type": "string",
+         "description": "calculate_field: the second value, a number field or a number"
+        },
+        "name": {
+         "type": "string",
+         "description": "calculate_field: the new field's name"
+        },
+        "conditions": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "field": {
+            "type": "string"
+           },
+           "op": {
+            "type": "string",
+            "enum": [
+             "is",
+             "is_not",
+             "contains",
+             "starts_with",
+             "ends_with",
+             "is_empty",
+             "above",
+             "below",
+             "at_least",
+             "at_most",
+             "between",
+             "before",
+             "after",
+             "any_of"
+            ]
+           },
+           "value": {
+            "type": "string",
+            "description": "number (in the field's unit) or a stored text/category value"
+           },
+           "value2": {
+            "type": "string",
+            "description": "upper end for between"
+           },
+           "values": {
+            "type": "array",
+            "items": {
+             "type": "string"
+            },
+            "description": "for any_of"
+           }
+          },
+          "required": [
+           "field",
+           "op"
+          ],
+          "additionalProperties": false
+         }
+        },
+        "value": {
+         "type": "string"
+        },
+        "question": {
+         "type": "string"
+        },
+        "choices": {
+         "type": "array",
+         "items": {
+          "type": "string"
+         }
+        },
+        "reason": {
+         "type": "string"
+        }
+       },
+       "required": [
+        "action"
+       ],
+       "additionalProperties": false
+      }
+     }
+    },
+    "additionalProperties": false,
+    "required": [
+     "steps"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "resolve_feature",
+   "description": "Look up how a layer stores a name or category the user wrote (another language, abbreviation, nickname): returns up to 5 stored values with their field. A lookup, not a plan step; it doesn't take a step number.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "layer": {
+      "type": "string",
+      "enum": [
+       "__POINTS__",
+       "__LINES__",
+       "__AREAS__"
+      ]
+     },
+     "text": {
+      "type": "string",
+      "description": "the user's words"
+     }
+    },
+    "additionalProperties": false,
+    "required": [
+     "layer",
+     "text"
+    ]
+   }
+  }
+ }
+]

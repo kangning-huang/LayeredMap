@@ -18,7 +18,8 @@ pub const ALLOWED: &[(&str, &[&str])] = &[
     ("lm-analysis", &["rustgis-geom", "rustgis-data"]),
     ("lm-doc", &["lm-core", "rustgis-data"]),
     ("lm-mapview", &["rustgis-map", "rustgis-tiles", "rustgis-render", "rustgis-geom"]),
-    ("lm-ui", &["lm-core", "lm-actions", "lm-jobs", "lm-doc", "lm-mapview"]),
+    ("lm-ask", &["lm-core", "lm-jobs"]),
+    ("lm-ui", &["lm-core", "lm-actions", "lm-jobs", "lm-doc", "lm-mapview", "lm-ask"]),
     ("layeredmap", &["lm-ui", "lm-core"]),
 ];
 
