@@ -34,16 +34,17 @@ fn cmd(key: Code) -> Option<Accelerator> {
 impl MenuBar {
     /// Builds the menu bar and installs it in the app (macOS). `None` if that fails, or on other
     /// platforms for now (Windows packaging is Phase 6).
-    /// `export`: File › Export Map Image… and Export Data… are shown (WP5.3).
-    pub fn install(developer: bool, export: bool, ctx: &egui::Context) -> Option<MenuBar> {
+    /// `export`: File › Export Map Image… and Export Data… are shown (WP5.3); `library`: File ›
+    /// Browse data library… (WP5.4).
+    pub fn install(developer: bool, export: bool, library: bool, ctx: &egui::Context) -> Option<MenuBar> {
         #[cfg(not(target_os = "macos"))]
         {
-            let _ = (developer, export, ctx);
+            let _ = (developer, export, library, ctx);
             None
         }
         #[cfg(target_os = "macos")]
         {
-            match Self::build(developer, export, ctx) {
+            match Self::build(developer, export, library, ctx) {
                 Ok(m) => {
                     m._menu.init_for_nsapp();
                     Some(m)
@@ -57,7 +58,7 @@ impl MenuBar {
     }
 
     #[cfg(target_os = "macos")]
-    fn build(developer: bool, export: bool, ctx: &egui::Context) -> muda::Result<MenuBar> {
+    fn build(developer: bool, export: bool, library: bool, ctx: &egui::Context) -> muda::Result<MenuBar> {
         let menu = Menu::new();
         let about = AboutMetadata {
             name: Some("LayeredMap".into()),
@@ -83,6 +84,9 @@ impl MenuBar {
         let file = Submenu::new("File", true);
         file.append(&MenuItem::with_id("open", "Open…", true, cmd(Code::KeyO)))?;
         file.append(&MenuItem::with_id("open-examples", "Open example data", true, None))?;
+        if library {
+            file.append(&MenuItem::with_id("library", "Browse data library…", true, None))?;
+        }
         file.append(&PredefinedMenuItem::separator())?;
         file.append(&MenuItem::with_id("save", "Save", true, cmd(Code::KeyS)))?;
         file.append(&MenuItem::with_id(
@@ -200,6 +204,7 @@ impl MenuBar {
                 "save-as" => Action::Shell(Command::SaveAs),
                 "export-image" => Action::Shell(Command::ExportMapImage),
                 "export-data" => Action::Shell(Command::ExportData),
+                "library" => Action::Shell(Command::OpenLibrary),
                 "undo" => Action::Shell(Command::Undo),
                 "redo" => Action::Shell(Command::Redo),
                 "save-document" => Action::SaveDocument,

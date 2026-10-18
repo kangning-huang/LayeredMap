@@ -321,6 +321,13 @@ impl Workspace {
                 // A style from the file (a KML's colours) replaces the palette's default.
                 if let Some(style) = &layer.style {
                     l.style = style.clone();
+                } else if l.profile.kind == lm_core::model::LayerKind::Lines
+                    && let LayerData::Vector(ds) = &layer.data
+                    && let Some((alpha, width)) = lm_jobs::inspect::line_overlap(ds).and_then(lm_jobs::inspect::dense_lines_style)
+                {
+                    // Lines that pile up (storm tracks) start faint, so overlaps show density.
+                    l.style.stroke[3] = alpha;
+                    l.style.line_width = width;
                 }
                 added.push((l.id, l.profile.data_rev));
             }

@@ -21,6 +21,7 @@ pub mod illustrations;
 pub mod insight;
 pub mod inspect;
 pub mod join_ui;
+pub mod library;
 #[cfg(test)]
 mod offline_harness;
 pub mod panels;
@@ -133,6 +134,10 @@ pub enum Command {
     SetOffline(bool),
     /// Help › Export Diagnostics…: show the app's report for review before it is saved.
     ReviewDiagnostics(String),
+    /// Open the data library (WP5.4: the welcome card, File › Browse data library).
+    OpenLibrary,
+    /// Add a library dataset to the map by its id (scripts and tests; the panel's Add to map).
+    AddFromLibrary(String),
 }
 
 /// A file dialog the shell asks the app to show (the shell itself never opens dialogs).
@@ -257,6 +262,8 @@ pub struct Shell {
     pub(crate) data_export: Option<export_data::DataDialog>,
     /// A diagnostics report open for review (Help › Export Diagnostics…).
     pub(crate) diagnostics: Option<String>,
+    /// The data library (WP5.4).
+    pub(crate) library: library::LibraryState,
 }
 
 impl Shell {
@@ -296,6 +303,7 @@ impl Shell {
             export_sheet: None,
             data_export: None,
             diagnostics: None,
+            library: Default::default(),
             find: find_ui::FindState::default(),
             drawing: None,
             ws: workspace::Workspace::with_waker(ctx),
@@ -446,6 +454,8 @@ impl Shell {
                 self.notice = Some((msg.into(), t));
             }
             Command::ReviewDiagnostics(report) => diagnostics::open(self, report),
+            Command::OpenLibrary => library::open(self, ctx),
+            Command::AddFromLibrary(id) => library::add(self, ctx, &id),
             Command::Find(text) => {
                 if let Some(id) = self.ws.selected() {
                     self.find.layer = Some(id);
@@ -583,6 +593,16 @@ impl Shell {
         std::mem::take(&mut self.file_requests)
     }
 
+    /// The data library's catalog (`library::catalog_url`); `None` hides the library.
+    pub fn set_library_catalog(&mut self, url: Option<String>) {
+        self.library.url = url;
+    }
+
+    /// Whether the data library is offered (the app shows File › Browse data library).
+    pub fn library_available(&self) -> bool {
+        library::available(self)
+    }
+
     /// Where answered question cards are logged (the app's support folder).
     pub fn set_question_log(&mut self, path: PathBuf) {
         self.question_log = Some(path);
@@ -704,6 +724,7 @@ impl Shell {
         let t = ctx.input(|i| i.time);
         analysis::poll(self);
         ask::poll(self);
+        library::poll(self, ctx);
         // Files dropped on the window (Open With and the Dock icon arrive through the app).
         let dropped: Vec<PathBuf> =
             ctx.input(|i| i.raw.dropped_files.iter().map(|f| f.path().to_path_buf()).filter(|p| !p.as_os_str().is_empty()).collect());
@@ -862,6 +883,7 @@ impl Shell {
         }
         export_data::dialog(self, &ctx);
         diagnostics::window(self, &ctx);
+        library::panel(self, &ctx);
         panels::drop_overlay(self, ui, full);
         saving::recovery_prompt(self, ui, map_rect);
         saving::close_prompt(self, ui, map_rect);

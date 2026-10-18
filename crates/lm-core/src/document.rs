@@ -180,9 +180,12 @@ impl Style {
         s
     }
 
-    /// The colour that identifies the layer in the palette (lines: stroke; others: fill).
+    /// The colour that identifies the layer in the palette (lines: stroke; others: fill), at
+    /// full strength: faint dense lines (storm tracks) still get a visible swatch.
     pub fn key_color(&self, kind: LayerKind) -> Rgba {
-        if kind == LayerKind::Lines { self.stroke } else { self.fill }
+        let mut c = if kind == LayerKind::Lines { self.stroke } else { self.fill };
+        c[3] = 255;
+        c
     }
 }
 

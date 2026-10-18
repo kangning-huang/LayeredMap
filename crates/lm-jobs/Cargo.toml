@@ -13,6 +13,7 @@ workspace = true
 lm-core = { path = "../lm-core" }
 lm-profile = { path = "../lm-profile" }
 lm-analysis = { path = "../lm-analysis" }
+lm-net = { path = "../lm-net" }
 rustgis-engine = { workspace = true }
 rustgis-analysis = { workspace = true }
 log = { workspace = true }
@@ -23,10 +24,11 @@ serde_json = { workspace = true }
 tiff = { workspace = true }
 # KML, KMZ and GPX (import::kml, import::gpx).
 roxmltree = { workspace = true }
+# The data library's checksums (WP5.4).
+sha2 = { workspace = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 # Settling a copy of a GeoPackage whose changes are still in its -wal or -journal (import::gpkg).
 rusqlite = { workspace = true }
-
-[dev-dependencies]
-sha2 = { workspace = true }
+# The data library's downloads (WP5.4). Already in the build through rustgis-tiles.
+ureq = { version = "3", default-features = false, features = ["rustls", "gzip"] }

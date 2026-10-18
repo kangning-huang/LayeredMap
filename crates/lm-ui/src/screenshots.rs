@@ -1095,3 +1095,77 @@ fn export_data_dialog() {
     h.snapshot("export_data_dialog");
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+/// A fresh library cache for a test.
+fn library_cache(tag: &str) -> std::path::PathBuf {
+    let p = std::env::temp_dir().join(format!("lm-ui-library-{tag}-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&p);
+    p
+}
+
+/// WP5.4: the welcome card offers the data library when a catalog is set (developer surface
+/// until Phase 5).
+#[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+fn library_welcome_card() {
+    let cache = library_cache("welcome");
+    let c = cache.clone();
+    let mut h = harness_phase(3, false, WORLD, move |s| {
+        s.developer = true;
+        s.set_library_catalog(crate::library::catalog_url(None, true));
+        s.library.cache = Some(c.clone());
+    });
+    h.run_steps(5);
+    assert!(h.state().as_ref().is_some_and(|s| s.library_available()));
+    h.snapshot("library_welcome_card");
+    let _ = std::fs::remove_dir_all(cache);
+}
+
+/// WP5.4: the library panel over the local test catalog (thumbnails, titles in both languages,
+/// size and licence); then Add to map downloads into the cache, opens the file through the normal
+/// import pipeline and closes the panel.
+#[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+fn library_panel() {
+    let cache = library_cache("panel");
+    let c = cache.clone();
+    let mut h = harness_phase(3, false, WORLD, move |s| {
+        s.developer = true;
+        s.set_library_catalog(crate::library::catalog_url(None, true));
+        s.library.cache = Some(c.clone());
+    });
+    let ctx = h.ctx.clone();
+    if let Some(s) = h.state_mut().as_mut() {
+        s.command(&ctx, crate::Command::OpenLibrary);
+    }
+    for _ in 0..300 {
+        h.step();
+        if h.state().as_ref().is_some_and(|s| s.library.catalog.is_some() && s.library.thumbs_loaded() == 3) {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+    h.run_steps(10);
+    let n = h.state().as_ref().and_then(|s| s.library.catalog.as_ref().map(|c| c.datasets.len()));
+    assert_eq!(n, Some(3));
+    h.snapshot("library_panel");
+
+    if let Some(s) = h.state_mut().as_mut() {
+        s.command(&ctx, crate::Command::AddFromLibrary("shanghai-districts-test".into()));
+    }
+    for _ in 0..500 {
+        h.step();
+        if h.state().as_ref().is_some_and(|s| !s.ws.doc.layers.is_empty() && s.ws.idle()) {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+    let s = h.state().as_ref().expect("shell");
+    assert_eq!(s.ws.doc.layers.len(), 1);
+    let l = &s.ws.doc.layers[0];
+    assert_eq!(l.profile.kind, lm_core::model::LayerKind::Areas);
+    assert_eq!(l.profile.count, 17);
+    assert!(cache.join("datasets/shanghai-districts-test/districts.geojson").is_file());
+    assert!(!s.library.open, "the panel steps aside once the layer is on its way");
+    let _ = std::fs::remove_dir_all(cache);
+}

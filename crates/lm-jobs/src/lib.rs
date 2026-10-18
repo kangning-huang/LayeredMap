@@ -13,6 +13,7 @@ pub mod import;
 pub mod inspect;
 pub mod jobs;
 pub mod join;
+pub mod library;
 pub mod plan_exec;
 
 use std::path::{Path, PathBuf};

@@ -2672,6 +2672,7 @@ dependencies = [
  "encoding_rs",
  "lm-analysis",
  "lm-core",
+ "lm-net",
  "lm-profile",
  "log",
  "roxmltree",
@@ -2682,6 +2683,7 @@ dependencies = [
  "serde_json",
  "sha2",
  "tiff",
+ "ureq",
 ]
 
 [[package]]

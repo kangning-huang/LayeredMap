@@ -336,10 +336,16 @@ pub fn map_overlays(shell: &mut Shell, ui: &mut Ui, map: Rect, system: System) {
         debug_overlay(shell, ui, map);
     }
     let empty = shell.ws.doc.layers.is_empty() && shell.ws.imports.is_empty();
-    if shell.flags.shows(WELCOME_PHASE) && WELCOME_PHASE <= lm_core::phase::BUILD_PHASE && empty && !shell.welcome_closed {
-        match welcome(&t, ui, map) {
+    if shell.flags.shows(WELCOME_PHASE)
+        && WELCOME_PHASE <= lm_core::phase::BUILD_PHASE
+        && empty
+        && !shell.welcome_closed
+        && !shell.library.open
+    {
+        match welcome(&t, ui, map, crate::library::available(shell)) {
             Some(Welcome::Open) => shell.command(ui.ctx(), crate::Command::RequestOpen),
             Some(Welcome::Example) => shell.command(ui.ctx(), crate::Command::OpenExamples),
+            Some(Welcome::Library) => shell.command(ui.ctx(), crate::Command::OpenLibrary),
             Some(Welcome::Close) => shell.welcome_closed = true,
             None => {}
         }
@@ -604,11 +610,13 @@ fn debug_overlay(shell: &Shell, ui: &Ui, map: Rect) {
 enum Welcome {
     Open,
     Example,
+    Library,
     Close,
 }
 
-/// The first-launch card (Screen states › First launch). "Try an example" opens the WP2.9 data.
-fn welcome(t: &theme::Theme, ui: &mut Ui, map: Rect) -> Option<Welcome> {
+/// The first-launch card (Screen states › First launch). "Try an example" opens the WP2.9 data;
+/// "Browse data library" (WP5.4) shows when a library catalog is set.
+fn welcome(t: &theme::Theme, ui: &mut Ui, map: Rect, library: bool) -> Option<Welcome> {
     let pos = pos2(map.center().x, map.bottom() - 48.0);
     let mut out = None;
     egui::Area::new(egui::Id::new("lm-welcome")).pivot(Align2::CENTER_BOTTOM).fixed_pos(pos).show(ui.ctx(), |ui| {
@@ -629,6 +637,9 @@ fn welcome(t: &theme::Theme, ui: &mut Ui, map: Rect) -> Option<Welcome> {
                 }
                 if ui.button("Try an example").on_hover_text("World cities, countries and elevation").clicked() {
                     out = Some(Welcome::Example);
+                }
+                if library && ui.button("Browse data library").on_hover_text("Course datasets to add to the map").clicked() {
+                    out = Some(Welcome::Library);
                 }
             });
         });
