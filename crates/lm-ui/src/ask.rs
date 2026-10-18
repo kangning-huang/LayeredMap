@@ -372,6 +372,7 @@ fn field(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, width: f32) {
                 .desired_width(width - 28.0 - 24.0 - 2.0 * 34.0 - 16.0)
                 .id(egui::Id::new("lm-ask-field"));
             let r = ui.add_enabled(!busy && !empty, edit);
+            crate::a11y::label(&r, "Ask about your layers");
             if shell.ask.focus {
                 r.request_focus();
                 shell.ask.focus = false;
@@ -389,6 +390,7 @@ fn field(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, width: f32) {
                     egui::Button::new(RichText::new(glyph).font(theme::icon_font(18.0)).color(color)).frame(false),
                 )
                 .on_hover_text(tip);
+            crate::a11y::button(&mic, tip);
             if mic.clicked() {
                 dictate(shell, ui.ctx());
             }
@@ -398,6 +400,7 @@ fn field(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, width: f32) {
                     egui::Button::new(RichText::new(icon::ARROW_CIRCLE_UP).font(theme::icon_font(24.0)).color(t.accent)).frame(false),
                 )
                 .on_hover_text("Ask (Return)");
+            crate::a11y::button(&send, "Ask");
             if (enter || send.clicked()) && !shell.ask.text.trim().is_empty() {
                 let text = shell.ask.text.clone();
                 submit(shell, ui.ctx(), text);
@@ -413,6 +416,7 @@ fn answer_panel(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, width: f32, ma
             ui.horizontal(|ui| {
                 ui.spinner();
                 ui.label(RichText::new(format!("Planning “{}”…", short(&request, 60))).color(t.text_secondary));
+                crate::a11y::live(ui.ctx(), egui::Id::new("lm-result-live"), "Planning…");
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     if ui.button("Cancel").clicked() {
                         shell.ask.escape();
@@ -461,6 +465,11 @@ fn answer_panel(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, width: f32, ma
                         })
                         .rev() // the last step's card is the answer: first
                         .collect();
+                    // The answer is read once when it arrives: the first card's summary.
+                    if let Some((card, _)) = cards.first() {
+                        let said = crate::a11y::spoken(&format!("{}. {}", card.title, card.summary));
+                        crate::a11y::live(ui.ctx(), egui::Id::new("lm-result-live"), &said);
+                    }
                     for (card, recipe) in cards {
                         ui.add_space(10.0);
                         crate::analysis::result_card(shell, ui, t, &card, &recipe, None);

@@ -46,7 +46,9 @@ pub fn frame(shell: &mut Shell, ctx: &egui::Context) {
         shell.playing = None;
         return;
     };
-    if ctx.memory(|m| m.focused().is_none()) {
+    // Nothing has the keyboard, or the map does (it would pan with the arrows otherwise).
+    let map_focused = shell.a11y.map_id.is_some_and(|m| ctx.memory(|mem| mem.has_focus(m)));
+    if map_focused || ctx.memory(|m| m.focused().is_none()) {
         let (left, right) = ctx.input_mut(|i| {
             if i.modifiers.is_none() {
                 (i.consume_key(egui::Modifiers::NONE, egui::Key::ArrowLeft), i.consume_key(egui::Modifiers::NONE, egui::Key::ArrowRight))
@@ -210,6 +212,16 @@ fn track(ui: &mut Ui, t: &Theme, width: f32, time: usize, steps: usize) -> Optio
     p.circle(pos2(at, y), 8.0, Color32::WHITE, Stroke::new(1.0, if hovered { t.accent } else { t.control_stroke }));
     resp.widget_info(|| egui::WidgetInfo::slider(true, time as f64 + 1.0, "Time step"));
     let pointer = resp.interact_pointer_pos().filter(|_| resp.clicked() || resp.dragged());
-    let picked = pointer.map(|pos| (((pos.x - x0) / (x1 - x0)).clamp(0.0, 1.0) * n as f32).round() as usize);
+    let mut picked = pointer.map(|pos| (((pos.x - x0) / (x1 - x0)).clamp(0.0, 1.0) * n as f32).round() as usize);
+    // With the keyboard on the track, ← → step through time as they do elsewhere on the map.
+    if resp.has_focus() {
+        ui.memory_mut(|m| m.set_focus_lock_filter(resp.id, egui::EventFilter { horizontal_arrows: true, ..Default::default() }));
+        let (left, right) = ui.input(|i| (i.key_pressed(egui::Key::ArrowLeft), i.key_pressed(egui::Key::ArrowRight)));
+        if left {
+            picked = Some(time.saturating_sub(1));
+        } else if right {
+            picked = Some(time + 1);
+        }
+    }
     picked.filter(|s| *s != time && *s < steps)
 }

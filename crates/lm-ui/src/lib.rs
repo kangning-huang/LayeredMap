@@ -4,6 +4,7 @@
 //! `rustgis-data` or `rustgis-analysis`: all work goes through `lm-jobs`.
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
+pub mod a11y;
 pub mod analysis;
 pub mod ask;
 pub mod basemap;
@@ -198,6 +199,8 @@ pub struct Shell {
     theme_applied: Option<Theme>,
     pub(crate) search: search::Search,
     debug_overlay: bool,
+    /// Screen readers and the keyboard (WP5.6, WP6.3).
+    pub(crate) a11y: a11y::A11y,
     credits_open: bool,
     basemap_open: bool,
     focus_search: bool,
@@ -297,6 +300,7 @@ impl Shell {
             loading: None,
             reduce_motion: system.reduce_motion,
             notice: None,
+            a11y: a11y::A11y::default(),
             last_map_size: egui::vec2(1280.0, 748.0),
             archive_url: None,
             developer: false,
@@ -469,6 +473,7 @@ impl Shell {
                 }
             }
             Command::ToggleTable => {
+                self.table.focus = self.table_for.is_none();
                 self.table_for = match self.table_for {
                     Some(_) => None,
                     None => self.ws.selected().or_else(|| {
@@ -820,6 +825,7 @@ impl Shell {
             self.archive_url = Some(u);
             self.basemap_changed();
         }
+        a11y::begin(self, &ctx);
         // The map image sheet takes the whole window (and the keyboard) while it is open.
         if self.export_sheet.is_none() {
             self.shortcuts(&ctx);
@@ -830,6 +836,7 @@ impl Shell {
         saving::close_if_saved(self, &ctx);
         if self.export_sheet.is_some() {
             export::sheet(self, ui, ctx.content_rect());
+            a11y::end(self, &ctx);
             return;
         }
 
@@ -856,11 +863,25 @@ impl Shell {
             }
         }
 
-        // The map first, so the chrome draws over it.
-        let keyboard = ctx.memory(|m| m.focused().is_none());
+        // Tab order follows the regions (Keyboard › Moving between regions): toolbar, shelf, map,
+        // inspector, drawer. The toolbar, the welcome card and the shelf are areas above the map,
+        // so drawing them first changes the order, not the picture.
+        egui::Area::new(egui::Id::new("lm-toolbar"))
+            .order(egui::Order::Middle)
+            .fixed_pos(toolbar.min)
+            .constrain(false)
+            .show(&ctx, |ui| chrome::toolbar(self, ui, toolbar, system));
+        chrome::welcome_card(self, ui, map_rect);
+        panels::shelf(self, ui, map_rect);
+        // The map under the chrome.
+        let map_focused = self.a11y.map_id.is_some_and(|id| ctx.memory(|m| m.has_focus(id)));
+        let keyboard = map_focused || ctx.memory(|m| m.focused().is_none());
         let drawing = self.drawing.is_some();
         let out =
             self.map.show(ui, map_rect, ViewOptions { backdrop: self.backdrop, reduce_motion: system.reduce_motion, keyboard, drawing });
+        if let Some(id) = out.id {
+            a11y::map_canvas(self, &ctx, id);
+        }
         if drawing {
             draw::frame(self, ui, map_rect, &out);
         } else if let Some(lonlat) = out.clicked.filter(|_| self.flags.shows(3)) {
@@ -897,7 +918,6 @@ impl Shell {
             overlay_rect
         };
         chrome::notices_in(self, ui, notice_rect);
-        panels::shelf(self, ui, map_rect);
         panels::inspector(self, ui, map_rect);
         {
             let (left, right) = self.panel_insets();
@@ -914,7 +934,6 @@ impl Shell {
             time_ui::bar(self, ui, map_rect);
         }
         update::notice(self, ui, overlay_rect);
-        chrome::toolbar(self, ui, toolbar, system);
         if self.credits_open {
             chrome::credits(self, &ctx);
         }
@@ -924,6 +943,7 @@ impl Shell {
         panels::drop_overlay(self, ui, full);
         saving::recovery_prompt(self, ui, map_rect);
         saving::close_prompt(self, ui, map_rect);
+        a11y::end(self, &ctx);
     }
 
     fn shortcuts(&mut self, ctx: &egui::Context) {

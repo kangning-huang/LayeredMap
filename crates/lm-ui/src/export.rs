@@ -586,7 +586,8 @@ pub fn sheet(shell: &mut Shell, ui: &mut Ui, full: Rect) {
     // Everything else is covered: the sheet takes the whole window.
     let p = ui.painter_at(full);
     p.rect_filled(full, 0.0, t.surface_raised);
-    ui.allocate_rect(full, Sense::click_and_drag());
+    // A blocker for the map underneath, not a control: it never takes the keyboard.
+    ui.allocate_rect(full, Sense::CLICK | Sense::DRAG);
     let side = Rect::from_min_max(pos2(full.right() - SIDEBAR_W, full.top()), full.max);
     let canvas = Rect::from_min_max(full.min, pos2(side.left(), full.bottom()));
     p.rect_filled(side, 0.0, t.surface);
@@ -619,7 +620,8 @@ pub fn sheet(shell: &mut Shell, ui: &mut Ui, full: Rect) {
         ui.add_space(8.0);
         form::heading(ui, "Caption");
         let before = s.caption.clone();
-        ui.add(egui::TextEdit::multiline(&mut s.caption).desired_rows(3).desired_width(f32::INFINITY));
+        let caption = ui.add(egui::TextEdit::multiline(&mut s.caption).desired_rows(3).desired_width(f32::INFINITY));
+        crate::a11y::label(&caption, "Caption");
         if s.caption != before {
             s.caption_edited = true;
         }
@@ -768,6 +770,7 @@ fn preview(shell: &Shell, s: &mut ImageSheet, ui: &mut Ui, canvas: Rect, t: &The
             let k = img.width() / (w as f32 / s.preset.ppp());
             let r = Rect::from_min_size(img.min + vec2(a.x * k, a.y * k), vec2(a.w * k, a.h * k));
             let resp = ui.interact(r, egui::Id::new("lm-export-legend"), Sense::drag()).on_hover_cursor(egui::CursorIcon::Grab);
+            crate::a11y::name(&resp, egui::WidgetType::Other, "Legend: drag to move it");
             if resp.dragged() {
                 let d = resp.drag_delta() / k;
                 s.legend_at = Some((a.x + d.x, a.y + d.y));

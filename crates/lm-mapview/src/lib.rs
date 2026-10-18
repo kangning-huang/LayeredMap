@@ -74,6 +74,8 @@ pub struct MapOutput {
     /// While drawing: a drag from its start to the pointer now, and whether it was released this
     /// frame.
     pub drag: Option<(Coord, Coord, bool)>,
+    /// The map's widget, for its accessible name and keyboard focus.
+    pub id: Option<egui::Id>,
 }
 
 /// LayeredMap's selection highlight (Visual specification › Default symbols › Selected): the
@@ -334,7 +336,7 @@ impl MapView {
         self.last_t = Some(t);
         self.stats.frame(t);
         let (w, h) = (f64::from(rect.width()), f64::from(rect.height()));
-        let mut out = MapOutput::default();
+        let mut out = MapOutput { id: Some(resp.id), ..MapOutput::default() };
         if w < 4.0 || h < 4.0 {
             return out;
         }

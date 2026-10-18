@@ -722,6 +722,11 @@ pub fn composer(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
         let record = shell.ws.doc.results.iter().find(|r| r.id == id).cloned();
         if let Some(r) = record {
             ui.label(RichText::new("Kept").size(CAPTION).color(t.text_secondary));
+            crate::a11y::live(
+                ui.ctx(),
+                egui::Id::new("lm-result-live"),
+                &crate::a11y::spoken(&format!("Kept: {}. {}", r.card.title, r.card.summary)),
+            );
             result_card(shell, ui, t, &r.card, &r.recipe.text(), Some(&r));
         }
         if ui.button("Done").clicked() {
@@ -732,6 +737,7 @@ pub fn composer(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
     match c.result.clone() {
         Some(r) if !c.stale => {
             ui.label(RichText::new(&r.card.summary).font(semibold(BODY)));
+            crate::a11y::live(ui.ctx(), egui::Id::new("lm-result-live"), &crate::a11y::spoken(&format!("Preview: {}", r.card.summary)));
             if shell.ws.has_preview() {
                 ui.label(RichText::new("Preview — not saved").size(CAPTION).color(t.accent));
             }
@@ -789,8 +795,11 @@ pub fn result_card(
             // Bar length by size, so negative values (cold temperatures) still show.
             let max = rows.iter().filter_map(|r| r.value.map(f64::abs)).fold(0.0_f64, f64::max);
             let w = ui.available_width();
-            for r in rows.iter().take(if show_all { usize::MAX } else { 5 }) {
-                let (rect, _) = ui.allocate_exact_size(vec2(w, 22.0), egui::Sense::hover());
+            for (k, r) in rows.iter().take(if show_all { usize::MAX } else { 5 }).enumerate() {
+                let (rect, resp) = ui.allocate_exact_size(vec2(w, 22.0), egui::Sense::hover());
+                // Drawn, so read out as text: "1. Pudong: 34".
+                let value = r.value.map_or_else(|| "No data".to_string(), number);
+                crate::a11y::text(&resp, &crate::a11y::spoken(&format!("{}. {}: {value} {unit}", k + 1, r.label)));
                 let p = ui.painter();
                 let label_w = w * 0.42;
                 // The label is clipped to its column so it never runs into the bar.

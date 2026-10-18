@@ -15,7 +15,12 @@ fn harness(dark: bool, view: (f64, f64, f64), setup: impl Fn(&mut Shell) + 'stat
     harness_phase(1, dark, view, setup)
 }
 
-fn harness_phase(phase: u8, dark: bool, view: (f64, f64, f64), setup: impl Fn(&mut Shell) + 'static) -> Harness<'static, Option<Shell>> {
+pub(crate) fn harness_phase(
+    phase: u8,
+    dark: bool,
+    view: (f64, f64, f64),
+    setup: impl Fn(&mut Shell) + 'static,
+) -> Harness<'static, Option<Shell>> {
     harness_sized(SIZE, 1.0, phase, dark, view, setup)
 }
 
@@ -58,7 +63,7 @@ fn harness_sized(
     h
 }
 
-const WORLD: (f64, f64, f64) = (15.0, 30.0, 2.2);
+pub(crate) const WORLD: (f64, f64, f64) = (15.0, 30.0, 2.2);
 
 #[test]
 #[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
@@ -286,7 +291,11 @@ fn double_clicking_a_layer_zooms_to_it() {
 
 /// Phase 3: a harness with fixtures opened and every background job (map layers, hit indexes,
 /// insight indexes, styles) finished.
-fn phase3(files: &'static [&'static str], view: (f64, f64, f64), setup: impl Fn(&mut Shell) + 'static) -> Harness<'static, Option<Shell>> {
+pub(crate) fn phase3(
+    files: &'static [&'static str],
+    view: (f64, f64, f64),
+    setup: impl Fn(&mut Shell) + 'static,
+) -> Harness<'static, Option<Shell>> {
     let mut h = harness_phase(3, false, view, move |s| {
         let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../fixtures");
         for (i, f) in files.iter().enumerate() {
@@ -303,7 +312,7 @@ fn phase3(files: &'static [&'static str], view: (f64, f64, f64), setup: impl Fn(
 }
 
 /// Steps until the workspace has no background work and the map has drawn it.
-fn settle(h: &mut Harness<'static, Option<Shell>>) {
+pub(crate) fn settle(h: &mut Harness<'static, Option<Shell>>) {
     for _ in 0..600 {
         h.step();
         if h.state().as_ref().is_some_and(|s| s.ws.idle() && !s.table.busy() && !s.map_view().tiles_pending()) {
@@ -314,14 +323,14 @@ fn settle(h: &mut Harness<'static, Option<Shell>>) {
     h.run_steps(30);
 }
 
-fn click(h: &mut Harness<'static, Option<Shell>>, lon: f64, lat: f64) {
+pub(crate) fn click(h: &mut Harness<'static, Option<Shell>>, lon: f64, lat: f64) {
     if let Some(s) = h.state_mut().as_mut() {
         s.command(&egui::Context::default(), crate::Command::Click(lon, lat, false));
     }
     settle(h);
 }
 
-const SHANGHAI: (f64, f64, f64) = (121.5, 31.2, 9.6);
+pub(crate) const SHANGHAI: (f64, f64, f64) = (121.5, 31.2, 9.6);
 
 /// An object card: a district clicked, with its insight rows and facts.
 #[test]
@@ -883,7 +892,7 @@ fn phase5_relink_question() {
 // Export (WP5.3)
 
 /// Steps until the map image sheet has drawn the map for its settings.
-fn wait_for_export(h: &mut Harness<'static, Option<Shell>>) {
+pub(crate) fn wait_for_export(h: &mut Harness<'static, Option<Shell>>) {
     for _ in 0..3000 {
         h.step();
         if h.state().as_ref().is_some_and(|s| s.export_sheet.as_ref().is_some_and(|e| !e.busy())) {
@@ -896,7 +905,7 @@ fn wait_for_export(h: &mut Harness<'static, Option<Shell>>) {
 
 /// Districts coloured by population in groups, with the schools over them; the developer flag
 /// shows export ahead of its phase.
-fn export_scene(setup: impl Fn(&mut Shell) + 'static) -> Harness<'static, Option<Shell>> {
+pub(crate) fn export_scene(setup: impl Fn(&mut Shell) + 'static) -> Harness<'static, Option<Shell>> {
     let mut h = phase3(&["V1/districts.geojson", "T1/schools.csv"], SHANGHAI, move |s| {
         s.developer = true;
         if let Some(id) = s.ws.doc.layers.iter().find(|l| l.profile.kind == lm_core::model::LayerKind::Areas).map(|l| l.id) {
