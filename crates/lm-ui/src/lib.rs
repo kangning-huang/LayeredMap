@@ -508,9 +508,13 @@ impl Shell {
                 }
             }
             Command::ToggleTable => {
-                self.table.focus = self.table_for.is_none();
+                // Open but without the keyboard (say, still in a find field): ⌘T moves the keyboard
+                // to the rows rather than closing the table.
+                let close = self.table_for.is_some() && self.table.has_keyboard;
+                self.table.focus = !close;
                 self.table_for = match self.table_for {
-                    Some(_) => None,
+                    Some(_) if close => None,
+                    Some(open) => Some(self.ws.selected().unwrap_or(open)),
                     None => self.ws.selected().or_else(|| {
                         self.ws.doc.layers.iter().rev().find(|l| l.profile.kind != lm_core::model::LayerKind::Raster).map(|l| l.id)
                     }),

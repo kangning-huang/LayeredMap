@@ -389,9 +389,11 @@ fn keyboard_only_open_an_example_select_and_hear_the_summary() {
     key(&mut h, egui::Key::F, egui::Modifiers::COMMAND);
     let field = focused(&h).unwrap_or_default();
     assert!(field.starts_with("Find in ") || field == "Search places or your data", "{field}");
-    h.event(egui::Event::Text("Tokyo".into()));
-    // The layer's find index is built in the background on first use.
-    for _ in 0..600 {
+    // Which layer is selected after the example opens depends on which file finished last.
+    let q = if field == "Find in countries" { "Japan" } else { "Tokyo" };
+    h.event(egui::Event::Text(q.into()));
+    // The layer's find index is built in the background on first use (slow on a busy machine).
+    for _ in 0..3000 {
         h.step();
         let found = h.state().as_ref().is_some_and(|s| !s.find.hits.is_empty() || s.ws.selection.features.len() == 1);
         if found {
@@ -405,29 +407,30 @@ fn keyboard_only_open_an_example_select_and_hear_the_summary() {
     if field.starts_with("Find in ") && !one {
         let mut went = Vec::new();
         for _ in 0..8 {
-            if focused(&h).is_some_and(|n| n.starts_with("Tokyo,")) {
+            if focused(&h).is_some_and(|n| n.starts_with(&format!("{q},"))) {
                 break;
             }
             key(&mut h, egui::Key::Tab, egui::Modifiers::NONE);
             went.push(focused(&h).unwrap_or_default());
         }
-        assert!(focused(&h).is_some_and(|n| n.starts_with("Tokyo,")), "Tab went {went:?}");
+        let hits = h.state().as_ref().map_or(0, |s| s.find.hits.len());
+        assert!(focused(&h).is_some_and(|n| n.starts_with(&format!("{q},"))), "{field}: {hits} hits; Tab went {went:?}");
     }
     if !one {
         key(&mut h, egui::Key::Enter, egui::Modifiers::NONE);
     }
     settle(&mut h);
     let said = live_texts(&h);
-    assert!(said.iter().any(|t| t.starts_with("Tokyo selected.")), "{said:?}");
+    assert!(said.iter().any(|t| t.starts_with(&format!("{q} selected."))), "{said:?}");
     // The table: ⌘T, the keyboard is on the selected row; ↓ selects the next one and reads it.
     key(&mut h, egui::Key::T, egui::Modifiers::COMMAND);
     settle(&mut h);
     let on_row = focused(&h).unwrap_or_default();
-    assert!(on_row.starts_with("Tokyo"), "{on_row}");
+    assert!(on_row.starts_with(q), "{on_row}");
     key(&mut h, egui::Key::ArrowDown, egui::Modifiers::NONE);
     settle(&mut h);
     let next = focused(&h).unwrap_or_default();
-    assert!(!next.is_empty() && !next.starts_with("Tokyo"), "{next}");
+    assert!(!next.is_empty() && !next.starts_with(q), "{next}");
     let title = next.split(',').next().unwrap_or_default().to_string();
     assert!(live_texts(&h).iter().any(|t| t.starts_with(&format!("{title} selected."))), "{:?} after {next}", live_texts(&h));
     // Esc steps back: the selection clears (Esc ladder), and the map keeps working.

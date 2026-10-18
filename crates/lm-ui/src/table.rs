@@ -179,6 +179,8 @@ pub struct TableView {
     computing: Option<(String, std::sync::mpsc::Receiver<Vec<usize>>)>,
     /// The keyboard goes to the rows once they are drawn (⌘T).
     pub(crate) focus: bool,
+    /// A row had the keyboard last frame.
+    pub(crate) has_keyboard: bool,
 }
 
 impl TableView {
@@ -454,6 +456,7 @@ pub fn drawer(shell: &mut Shell, ui: &mut Ui, map: egui::Rect, left: f32, right:
     }
     // ↑ ↓ (and Home, End) move through the rows while one has the keyboard, selecting as they go
     // like a list, and the row scrolls into view.
+    shell.table.has_keyboard = focus_at.is_some();
     if let Some(i) = focus_at {
         let fid = rows.get(i).map(|r| row_id(id, *r));
         if let Some(fid) = fid {
