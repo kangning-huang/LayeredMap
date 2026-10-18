@@ -339,6 +339,7 @@ impl Step {
             "keep" => Step::Other(Command::KeepResult),
             "ask" => Step::Other(Command::Ask(rest.trim().to_string())),
             "keep-ask" => Step::Other(Command::KeepAsk),
+            "example" => Step::Other(Command::OpenExample(rest.trim().to_string())),
             "dictate" => Step::Other(Command::Dictate),
             "undo" => Step::Other(Command::Undo),
             "redo" => Step::Other(Command::Redo),

@@ -14,7 +14,7 @@ const OPEN_PHASE: u8 = 2;
 const LAYERS_PHASE: u8 = 2;
 const UNDO_PHASE: u8 = 2;
 const SHARE_PHASE: u8 = crate::export::EXPORT_PHASE;
-/// The welcome card appears once Open file and Try an example work.
+/// The welcome card appears once Open file and the Examples menu work.
 const WELCOME_PHASE: u8 = 2;
 
 pub(crate) fn panel_frame(t: &theme::Theme) -> egui::Frame {
@@ -344,7 +344,7 @@ pub fn map_overlays(shell: &mut Shell, ui: &mut Ui, map: Rect, system: System) {
     {
         match welcome(&t, ui, map, crate::library::available(shell)) {
             Some(Welcome::Open) => shell.command(ui.ctx(), crate::Command::RequestOpen),
-            Some(Welcome::Example) => shell.command(ui.ctx(), crate::Command::OpenExamples),
+            Some(Welcome::Example(id)) => shell.command(ui.ctx(), crate::Command::OpenExample(id.to_string())),
             Some(Welcome::Library) => shell.command(ui.ctx(), crate::Command::OpenLibrary),
             Some(Welcome::Close) => shell.welcome_closed = true,
             None => {}
@@ -609,12 +609,12 @@ fn debug_overlay(shell: &Shell, ui: &Ui, map: Rect) {
 /// First launch (Screen states): "Open a file to see your data on the map." Phase 2 onwards.
 enum Welcome {
     Open,
-    Example,
+    Example(&'static str),
     Library,
     Close,
 }
 
-/// The first-launch card (Screen states › First launch). "Try an example" opens the WP2.9 data;
+/// The first-launch card (Screen states › First launch). "Examples" lists the example datasets;
 /// "Browse data library" (WP5.4) shows when a library catalog is set.
 fn welcome(t: &theme::Theme, ui: &mut Ui, map: Rect, library: bool) -> Option<Welcome> {
     let pos = pos2(map.center().x, map.bottom() - 48.0);
@@ -635,9 +635,27 @@ fn welcome(t: &theme::Theme, ui: &mut Ui, map: Rect, library: bool) -> Option<We
                 if ui.add(egui::Button::new(egui::RichText::new("Open file…").color(t.on_accent)).fill(t.accent)).clicked() {
                     out = Some(Welcome::Open);
                 }
-                if ui.button("Try an example").on_hover_text("World cities, countries and elevation").clicked() {
-                    out = Some(Welcome::Example);
-                }
+                // Examples ▾: a list to choose from (owner's request, 2026-10-18).
+                // The caret is an icon glyph: it must be set in the icon font, the word in the text font.
+                let mut label = egui::text::LayoutJob::default();
+                label.append(
+                    "Examples ",
+                    0.0,
+                    egui::TextFormat { font_id: theme::regular(theme::BODY), color: t.text_primary, ..Default::default() },
+                );
+                label.append(
+                    icon::CARET_DOWN,
+                    0.0,
+                    egui::TextFormat { font_id: theme::icon_font(12.0), color: t.text_secondary, ..Default::default() },
+                );
+                ui.menu_button(label, |ui| {
+                    for e in crate::examples::EXAMPLES {
+                        if example_row(ui, t, e).clicked() {
+                            out = Some(Welcome::Example(e.id));
+                            ui.close();
+                        }
+                    }
+                });
                 if library && ui.button("Browse data library").on_hover_text("Course datasets to add to the map").clicked() {
                     out = Some(Welcome::Library);
                 }
@@ -645,6 +663,27 @@ fn welcome(t: &theme::Theme, ui: &mut Ui, map: Rect, library: bool) -> Option<We
         });
     });
     out
+}
+
+/// One row of the Examples menu: the example's icon on a soft tile of its tint, then its title
+/// and a line about it. The whole row is one button.
+fn example_row(ui: &mut Ui, t: &theme::Theme, e: &crate::examples::Example) -> egui::Response {
+    let (rect, r) = ui.allocate_exact_size(vec2(344.0, 46.0), Sense::click());
+    let r = r.on_hover_cursor(egui::CursorIcon::PointingHand);
+    r.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, e.title));
+    let p = ui.painter();
+    if r.hovered() {
+        p.rect_filled(rect, CornerRadius::same(theme::RADIUS_CONTROL), t.accent.gamma_multiply(0.10));
+    }
+    let [cr, cg, cb] = e.tint;
+    let tint = Color32::from_rgb(cr, cg, cb);
+    let tile = Rect::from_min_size(pos2(rect.left() + 6.0, rect.center().y - 16.0), vec2(32.0, 32.0));
+    p.rect_filled(tile, CornerRadius::same(8), tint.gamma_multiply(if t.dark { 0.30 } else { 0.16 }));
+    p.text(tile.center(), Align2::CENTER_CENTER, e.icon, theme::icon_font(20.0), tint);
+    let x = tile.right() + 10.0;
+    p.text(pos2(x, rect.center().y - 9.0), Align2::LEFT_CENTER, e.title, theme::regular(theme::BODY), t.text_primary);
+    p.text(pos2(x, rect.center().y + 9.0), Align2::LEFT_CENTER, e.blurb, theme::regular(theme::CAPTION), t.text_secondary);
+    r
 }
 
 #[cfg(test)]

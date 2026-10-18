@@ -83,7 +83,11 @@ impl MenuBar {
         )?;
         let file = Submenu::new("File", true);
         file.append(&MenuItem::with_id("open", "Open…", true, cmd(Code::KeyO)))?;
-        file.append(&MenuItem::with_id("open-examples", "Open example data", true, None))?;
+        let examples = Submenu::new("Open Example", true);
+        for e in lm_ui::examples::EXAMPLES {
+            examples.append(&MenuItem::with_id(format!("example:{}", e.id), e.title, true, None))?;
+        }
+        file.append(&examples)?;
         if library {
             file.append(&MenuItem::with_id("library", "Browse data library…", true, None))?;
         }
@@ -200,6 +204,7 @@ impl MenuBar {
                 "load-fixture" => Action::LoadFixture,
                 "open" => Action::Shell(Command::RequestOpen),
                 "open-examples" => Action::Shell(Command::OpenExamples),
+                id if id.starts_with("example:") => Action::Shell(Command::OpenExample(id["example:".len()..].to_string())),
                 "save" => Action::Shell(Command::Save),
                 "save-as" => Action::Shell(Command::SaveAs),
                 "export-image" => Action::Shell(Command::ExportMapImage),

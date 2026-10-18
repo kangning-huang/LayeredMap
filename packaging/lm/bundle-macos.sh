@@ -30,10 +30,9 @@ app="$out/$name.app"
 rm -rf "$app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 cp "$target_dir/release/layeredmap" "$app/Contents/MacOS/layeredmap"
-# Try an example (WP2.9): the app looks in Contents/Resources/examples.
+# The Examples menu (WP2.9): the app looks in Contents/Resources/examples.
 mkdir -p "$app/Contents/Resources/examples"
-cp "$root/assets/examples/cities.geojson" "$root/assets/examples/countries.geojson" \
-  "$root/assets/examples/elevation.tif" "$root/assets/examples/README.md" "$app/Contents/Resources/examples/"
+rsync -a --exclude '._*' "$root/assets/examples/" "$app/Contents/Resources/examples/"
 # The app icon (the Strata logo; tools/lm/make_app_icon.py builds it from design/logo).
 cp "$root/packaging/lm/AppIcon.icns" "$app/Contents/Resources/AppIcon.icns"
 echo "$tier" > "$app/Contents/Resources/tier"

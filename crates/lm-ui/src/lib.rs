@@ -72,8 +72,10 @@ pub enum Command {
     Open(Vec<PathBuf>),
     /// Ask the app for the Open dialog (⌘O, the Open button).
     RequestOpen,
-    /// Open the three example files (Try an example, File › Open example data).
+    /// Open the world basics (cities, countries, elevation).
     OpenExamples,
+    /// Open one entry of the Examples menu, by id ("storms").
+    OpenExample(String),
     Undo,
     Redo,
     /// Show or hide the layer shelf (⌘L, the Layers button).
@@ -511,6 +513,10 @@ impl Shell {
             Command::OpenExamples => {
                 let waker = ctx.clone();
                 self.ws.open(examples::paths(), move || waker.request_repaint());
+            }
+            Command::OpenExample(id) => {
+                let waker = ctx.clone();
+                self.ws.open(examples::paths_of(&id), move || waker.request_repaint());
             }
             Command::RequestSaveDocument => self.file_requests.push(FileRequest::SaveDocument),
             Command::RequestOpenDocument => self.file_requests.push(FileRequest::OpenDocument),

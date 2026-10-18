@@ -1,10 +1,85 @@
-//! The example data behind "Try an example" (WP2.9): Natural Earth places and countries, and ETOPO
-//! 2022 elevation. Sources and licences: `assets/examples/README.md`.
+//! The example data behind the Examples menu (WP2.9; owner's request 2026-10-18 for a list to
+//! choose from): world basics, plus datasets a map app usually can't show (storm tracks, walled
+//! cities, big earthquakes, volcanoes, airports, power plants). Sources and licences:
+//! `assets/examples/README.md`.
 
 use std::path::{Path, PathBuf};
 
-/// The example files, opened together as one batch.
-pub const FILES: [&str; 3] = ["cities.geojson", "countries.geojson", "elevation.tif"];
+/// One entry of the Examples menu: its files open together as one batch.
+pub struct Example {
+    pub id: &'static str,
+    pub title: &'static str,
+    /// One line under the title.
+    pub blurb: &'static str,
+    /// A Phosphor icon that hints at the subject, and its tint (owner's request, 2026-10-18).
+    pub icon: &'static str,
+    pub tint: [u8; 3],
+    pub files: &'static [&'static str],
+}
+
+pub const EXAMPLES: &[Example] = &[
+    Example {
+        id: "world",
+        icon: egui_phosphor::regular::GLOBE_HEMISPHERE_EAST,
+        tint: [0, 114, 178],
+        title: "World basics",
+        blurb: "Cities, countries and elevation",
+        files: &["cities.geojson", "countries.geojson", "elevation.tif"],
+    },
+    Example {
+        id: "storms",
+        icon: egui_phosphor::regular::HURRICANE,
+        tint: [86, 180, 233],
+        title: "Typhoons and hurricanes",
+        blurb: "4,999 storm tracks since 1980",
+        files: &["storm tracks.gpkg"],
+    },
+    Example {
+        id: "walls",
+        icon: egui_phosphor::regular::CASTLE_TURRET,
+        tint: [166, 118, 29],
+        title: "Walled cities of China, 1866",
+        blurb: "1,789 city walls of late imperial China",
+        files: &["walled cities 1866.geojson"],
+    },
+    Example {
+        id: "earthquakes",
+        icon: egui_phosphor::regular::PULSE,
+        tint: [213, 94, 0],
+        title: "Big earthquakes",
+        blurb: "14,537 of magnitude 6 or more since 1900",
+        files: &["earthquakes.csv"],
+    },
+    Example {
+        id: "volcanoes",
+        icon: egui_phosphor::regular::MOUNTAINS,
+        tint: [204, 51, 17],
+        title: "Volcanoes",
+        blurb: "1,609 volcanoes and their status",
+        files: &["volcanoes.csv"],
+    },
+    Example {
+        id: "airports",
+        icon: egui_phosphor::regular::AIRPLANE_TILT,
+        tint: [0, 158, 115],
+        title: "Airports",
+        blurb: "5,280 large and medium airports, with elevation",
+        files: &["airports.csv"],
+    },
+    Example {
+        id: "power",
+        icon: egui_phosphor::regular::LIGHTNING,
+        tint: [230, 159, 0],
+        title: "Power plants",
+        blurb: "34,936 plants by fuel and capacity",
+        files: &["power plants.csv"],
+    },
+];
+
+/// Every example file (the bundle must hold them all to be used).
+fn all_files() -> impl Iterator<Item = &'static str> {
+    EXAMPLES.iter().flat_map(|e| e.files.iter().copied())
+}
 
 /// Where the files are in a development checkout.
 const DEV_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../assets/examples");
@@ -17,14 +92,20 @@ fn bundle_dir(exe: &Path) -> Option<PathBuf> {
 
 /// The examples folder: the bundle's when it holds the files, otherwise the checkout's.
 fn resolve(exe: Option<&Path>, exists: impl Fn(&Path) -> bool) -> PathBuf {
-    exe.and_then(bundle_dir).filter(|d| FILES.iter().all(|f| exists(&d.join(f)))).unwrap_or_else(|| PathBuf::from(DEV_DIR))
+    exe.and_then(bundle_dir).filter(|d| all_files().all(|f| exists(&d.join(f)))).unwrap_or_else(|| PathBuf::from(DEV_DIR))
 }
 
-/// The three example files to open.
-pub fn paths() -> Vec<PathBuf> {
+/// The files of the example `id` ("world" when unknown).
+pub fn paths_of(id: &str) -> Vec<PathBuf> {
     let exe = std::env::current_exe().ok();
     let dir = resolve(exe.as_deref(), |p| p.is_file());
-    FILES.iter().map(|f| dir.join(f)).collect()
+    let e = EXAMPLES.iter().find(|e| e.id == id).unwrap_or(&EXAMPLES[0]);
+    e.files.iter().map(|f| dir.join(f)).collect()
+}
+
+/// The world basics (cities, countries, elevation).
+pub fn paths() -> Vec<PathBuf> {
+    paths_of("world")
 }
 
 #[cfg(test)]
@@ -51,8 +132,30 @@ mod tests {
 
     #[test]
     fn the_checkout_holds_every_file() {
-        for p in paths() {
-            assert!(p.is_file(), "{} is missing", p.display());
+        for e in EXAMPLES {
+            for p in paths_of(e.id) {
+                assert!(p.is_file(), "{} is missing", p.display());
+            }
+        }
+    }
+
+    /// The datasets beyond the world basics open with their kinds and sizes.
+    #[test]
+    fn every_menu_example_imports() {
+        use lm_core::model::LayerKind;
+        use lm_jobs::import::{Ctx, Ticket, import_path};
+        for (id, kind, lo, hi) in [
+            ("storms", LayerKind::Lines, 4_000, 6_000),
+            ("walls", LayerKind::Areas, 1_500, 2_000),
+            ("earthquakes", LayerKind::Points, 10_000, 20_000),
+            ("volcanoes", LayerKind::Points, 1_000, 3_000),
+            ("airports", LayerKind::Points, 4_000, 7_000),
+            ("power", LayerKind::Points, 30_000, 40_000),
+        ] {
+            let p = paths_of(id).remove(0);
+            let ls = import_path(&p, &Ctx::detached(Ticket::default())).unwrap_or_else(|e| panic!("{id}: {e}"));
+            assert_eq!(ls[0].profile.kind, kind, "{id}");
+            assert!((lo..hi).contains(&ls[0].profile.count), "{id}: {}", ls[0].profile.count);
         }
     }
 

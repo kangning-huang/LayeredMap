@@ -1169,3 +1169,24 @@ fn library_panel() {
     assert!(!s.library.open, "the panel steps aside once the layer is on its way");
     let _ = std::fs::remove_dir_all(cache);
 }
+
+/// The welcome card's Examples menu lists the example datasets (owner's request, 2026-10-18);
+/// choosing one opens its files.
+#[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+fn welcome_examples_menu() {
+    use egui_kittest::kittest::Queryable as _;
+    let mut h = harness_phase(3, false, WORLD, |_| {});
+    h.run_steps(5);
+    h.get_by_label_contains("Examples").click();
+    h.run_steps(5);
+    assert!(h.query_by_label("Typhoons and hurricanes").is_some());
+    assert!(h.query_by_label("Walled cities of China, 1866").is_some());
+    h.snapshot("welcome_examples_menu");
+    h.get_by_label("Typhoons and hurricanes").click();
+    h.run_steps(3);
+    let s = h.state().as_ref().unwrap();
+    assert!(
+        s.ws.imports.iter().any(|i| i.name().contains("storm tracks")) || s.ws.doc.layers.iter().any(|l| l.display_name == "storm tracks")
+    );
+}

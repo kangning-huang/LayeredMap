@@ -1,4 +1,4 @@
-# Example data (Try an example)
+# Example data (the Examples menu)
 
 The three files LayeredMap opens from the welcome card's **Try an example** button and
 **File › Open example data** (build plan, WP2.9). Built by `tools/lm/make_examples.py` from the
@@ -82,3 +82,20 @@ mamba run -n layeredmap-ref python -I tools/lm/make_examples.py \
   --etopo "$d/ETOPO_2022_v1_60s_N90W180_surface.tif" \
   --out assets/examples
 ```
+
+
+## The Examples menu (added 2026-10-18)
+
+Besides the world basics above, the Examples menu offers datasets an everyday map app doesn't show
+(owner's request; chosen from the survey in `docs/lm/example-data-survey.md`). Each was trimmed to a
+few readable columns; no values were changed. Prepared from the copies documented in
+`/Volumes/LaCie/data/layeredmap-example-survey/README.md` (download dates, URLs, SHA-256).
+
+| File | What | Size | Source | Licence and credit |
+|---|---|---|---|---|
+| `storm tracks.gpkg` | 4,999 tropical cyclone tracks 1980–2026, all ocean basins, one line per storm: name, season, basin, max wind (kt), Saffir–Simpson strength, start and end time | 7.5 MB | NOAA NCEI IBTrACS v04r01 "since 1980" lines, segments merged per storm (SID) | NOAA/WMO "full and open access"; commercial use guided by WMO Resolution 40 (**owner to confirm before a paid release**). Cite Knapp et al. 2010, BAMS, doi:10.1175/2009BAMS2755.1, and Gahtan et al. 2024, doi:10.25921/82ty-9e16 |
+| `walled cities 1866.geojson` | 1,789 city-wall areas of late imperial China as of 1866: name (pinyin), type (Capital, Provincial Capital, Fu, Zhou, County, Ting, Wei, Suo, Manchu garrison), walled (no = reliability D, no wall), reliability, area (km²) | 0.8 MB | Xue et al. 2021, CUED 1866 snapshot, figshare doi:10.6084/m9.figshare.14112968.v3 | CC BY 4.0. Credit: Xue, Q., Jin, X., Cheng, Y., Yang, X., Zhou, Y.: The dataset of walled cities and urban extent in late imperial China in the 15th–19th centuries, Earth Syst. Sci. Data 13, 5071–5085 (2021), doi:10.5194/essd-13-5071-2021. Changed: fields renamed, `walled` added, `REFERENCES` dropped, areas rounded to 0.001 km² |
+| `earthquakes.csv` | 14,537 earthquakes of magnitude 6+, 1900 to 2026-10-18: date, latitude, longitude, depth (km), magnitude, place | 1.0 MB | USGS ComCat (FDSN event query, minmagnitude 6) | Public domain (US Government). Credit "U.S. Geological Survey" |
+| `volcanoes.csv` | 1,609 volcano locations: name, country, latitude, longitude, elevation (m), morphology, status | 0.1 MB | NOAA NCEI Global Volcano Locations (hazard service API) | US Government work, no restriction stated. Cite NCEI/WDS Global Significant Volcanic Eruptions Database, doi:10.7289/V5JW8BSH |
+| `airports.csv` | 5,280 large and medium airports: name, IATA code, type, latitude, longitude, elevation (m), country (ISO 2-letter), city | 0.4 MB | OurAirports | Public domain ("All data is released to the Public Domain") |
+| `power plants.csv` | 34,936 power plants: name, country, primary fuel, capacity (MW), commissioning year, latitude, longitude | 2.2 MB | WRI Global Power Plant Database v1.3.0 (2021) | CC BY 4.0. Credit: Global Energy Observatory, Google, KTH Royal Institute of Technology, Enipedia, World Resources Institute (2019), Global Power Plant Database, Published on Resource Watch and Google Earth Engine |
