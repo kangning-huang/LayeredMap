@@ -1,7 +1,7 @@
 <!--
   docs/lm/spec.md — the LayeredMap build plan, exported as Markdown for agents to read.
   Source: the Claude Docs document "LayeredMap Build Plan"
-  (https://claude.ai/artifact/VRu8z2LFG6YcXodK1Z48Yg), revision 128, exported 2026-10-15; the "Who it's for" paragraph was added from revision 142 (2026-10-18).
+  (https://claude.ai/artifact/VRu8z2LFG6YcXodK1Z48Yg), revision 128, exported 2026-10-15; the "Who it's for" paragraph (revision 142) and WP6.12 NetCDF (revision 144) were added on 2026-10-18.
   Refreshed at every phase start (build plan › Working with coding agents). Do not edit here:
   change the plan, then re-export. Diagrams are not exported; their captions mark where they sit.
 -->
@@ -1395,6 +1395,13 @@ Record wrong interpretations as well as completions. Ask each student to explain
 - **WP6.9 Upstream contributions.** Offer `lm-mapview`, the GCJ-02 conversion and the fractional-coverage zonal summary to RustGIS as pull requests.
 - **WP6.10 Website and help.** A landing page, a searchable glossary, and three complete workflows.
 - **WP6.11 Optional experiment** (P3, off by default). An "Ask about this layer" box that maps a typed question onto an existing action. It shows exactly what would be sent to the model, and still runs through the composer and preview. It is judged on 50 real student questions collected during the pilot.
+- **WP6.12 NetCDF with a time slider and variables** (P2; owner's request, 2026-10-18). Climate and ocean grids (ERA5, CMIP6, sea-surface temperature) open like any raster, with their time and variables.
+    - **Reading:** NetCDF-3 and NetCDF-4 (.nc, .nc4, .cdf) through a pure-Rust reader (`netcdf-reader`, MIT/Apache), so no C libraries ship. A two-day spike first checks it on real files: deflate and shuffle compression, chunking, and files over 2 GB. If it fails, use the `netcdf` crate with its static build instead.
+    - **CF conventions:** latitude and longitude from the coordinate variables; longitudes of 0–360 shown as −180–180; latitude that runs south to north is flipped. `_FillValue`, `missing_value`, `scale_factor` and `add_offset` are applied, and `units` and `long_name` are read. Dates come from the time units and calendar (standard, noleap, 360_day). A variable with more dimensions (depth, pressure level) shows its first level, with a level picker under the variable dropdown.
+    - **Variable dropdown in the Layers panel:** the layer row shows the variable in use (long name and unit, e.g. "2 m temperature (°C)"). Picking another redraws the layer and is one undo step. The default is the first variable on the lat–lon grid that has a time dimension.
+    - **Time slider on the map:** shown while a visible layer has a time dimension. It sits at the bottom of the map, above the Ask box in Pro, with the date of the step shown ("July 2023"), back and forward buttons, Play, and ← → keys. One time step is drawn at a time. The colour range stays fixed across all steps, so a change in colour is a change in value; it is taken from a sample of steps and can be changed in Style. Steps are read lazily and a few are cached, so multi-GB files open.
+    - **Analysis and the assistant:** actions work on the variable and time step shown, and the recipe names both ("2 m temperature, July 2023"). The assistant's map description lists the variables and the time range, and a plan can set them. Summaries across time ("mean of all Julys") are a P3 follow-up.
+    - **Tests:** reference values against xarray on small fixtures: a synthetic NetCDF-3 file, a NetCDF-4 file with compression, scaling and a noleap calendar, and a 0–360 longitude grid. Undo of variable and time changes, and a pixel test of the slider.
 
 ### Gate 6 — the beta gate
 **Automated**
@@ -1433,7 +1440,7 @@ P3 items are built only with evidence: at least three independent user requests,
 
 Candidates, in likely order:
 - raster comparison (side by side, swipe, change after alignment checks)
-- a time slider for dated data
+- a time slider for dated points and lines (NetCDF grids get one in WP6.12)
 - natural-language questions, if WP6.11 succeeds
 - travel time over a street network
 - 3D
