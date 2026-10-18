@@ -330,8 +330,9 @@ pub fn lat_range(camera: Camera, size: (f32, f32)) -> (f64, f64) {
 }
 
 /// The lon/lat extent of the visible data: the union of `boxes` (lon/lat), kept within the world.
-/// The map draws data once, between −180° and 180°, so data crossing the antimeridian (spanning
-/// both ends) gets the world's whole width, with its own latitudes.
+/// The extent is kept between −180° and 180° (an exported map is at most one world wide), so data
+/// crossing the antimeridian (spanning both ends) gets the world's whole width, with its own
+/// latitudes.
 pub fn data_extent(boxes: impl IntoIterator<Item = Extent>) -> Option<Extent> {
     let mut all = Extent::EMPTY;
     for b in boxes {
@@ -1446,6 +1447,50 @@ mod tests {
         assert!(!img.tiles_missing);
         // No data layers: nothing occupied.
         assert_eq!(img.occupancy.share(Area::new(0.0, 0.0, 600.0, 400.0), Area::new(0.0, 0.0, 600.0, 400.0)), 0.0);
+    }
+
+    /// Walled cities of China, 1866 (1,789 city walls, most 1–3 km across) exported for the whole
+    /// country: every wall still shows, at least as a dot, though each is under a pixel wide.
+    #[test]
+    fn walled_cities_survive_a_whole_china_export() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets/examples/walled cities 1866.geojson");
+        let text = std::fs::read_to_string(path).unwrap();
+        let (ds, _) = rustgis_render::rustgis_data::io::read_geojson(&text, "walls").unwrap();
+        let centres: Vec<rustgis_geom::Coord> = ds.features.iter().filter_map(|f| f.geometry.as_ref()?.label_point()).collect();
+        assert!(centres.len() > 1700);
+        let mut map = Map::new("t");
+        map.basemap = rustgis_map::Basemap::Paper;
+        map.graticule = false;
+        let id = map.add_dataset(ds);
+        let red = rustgis_map::Rgba::rgb(230, 20, 20);
+        if let Some(l) = map.layer_mut(id) {
+            l.renderer = rustgis_map::Renderer::Single(rustgis_map::Symbol {
+                fill: red.with_alpha(115),
+                stroke: red,
+                stroke_width: 1.0,
+                size: 0.0,
+                marker: Default::default(),
+            });
+        }
+        // The slide preset (1920 × 1080 at 1.5 pixels per point), fitted to China's walls.
+        let p = plan((1280.0, 720.0), false, &Framing::Data(Extent::new(73.0, 18.0, 135.0, 53.0)), Overrides::default());
+        let ppp = 1.5;
+        let pixels = map_pixels(p.area, ppp);
+        let img = render_map(map, p.camera, pixels, ppp).unwrap();
+        let (w, h) = (f64::from(pixels.0) / f64::from(ppp), f64::from(pixels.1) / f64::from(ppp));
+        let reddish = |x: i64, y: i64| {
+            let px = u32::try_from(x).ok().zip(u32::try_from(y).ok()).and_then(|(x, y)| img.pixmap.pixel(x, y));
+            px.is_some_and(|q| i32::from(q.red()) - i32::from(q.green()) > 40)
+        };
+        let shown = centres
+            .iter()
+            .filter(|c| {
+                let (sx, sy) = p.camera.to_screen(rustgis_geom::lonlat_to_merc(**c), w, h);
+                let (px, py) = ((sx * f64::from(ppp)).round() as i64, (sy * f64::from(ppp)).round() as i64);
+                (-1..=1).any(|dx| (-1..=1).any(|dy| reddish(px + dx, py + dy)))
+            })
+            .count();
+        assert!(shown * 100 >= centres.len() * 99, "{shown} of {} walls drawn", centres.len());
     }
 
     #[test]

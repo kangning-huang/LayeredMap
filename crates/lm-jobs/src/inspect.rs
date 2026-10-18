@@ -36,12 +36,11 @@ pub fn cell(ds: &Dataset, row: usize, field: usize) -> Cell<'_> {
 /// stay distinct).
 pub fn cell_text(ds: &Dataset, row: usize, field: usize) -> Option<String> {
     // A year reads as "2019", never "2,019".
-    if ds.fields.get(field).is_some_and(|f| is_year_name(&f.name))
+    if let Some(f) = ds.fields.get(field)
         && let Some(v) = cell_number(ds, row, field)
-        && v.fract() == 0.0
-        && (1000.0..=9999.0).contains(&v)
+        && lm_core::format::is_year(&f.name, v)
     {
-        return Some(format!("{v:.0}"));
+        return Some(lm_core::format::year(v));
     }
     match ds.value(row, field) {
         Value::Null => None,
@@ -57,10 +56,16 @@ pub fn cell_text(ds: &Dataset, row: usize, field: usize) -> Option<String> {
     }
 }
 
-/// Whether a field name says it holds years: "year", "gdp_year", "YearBuilt", "yr", "fiscal_yr".
+/// Whether a field name says it holds years: "year", "gdp_year", "YearBuilt", "season", "yr",
+/// "fiscal_yr" ([`lm_core::format::is_year_name`]).
 pub fn is_year_name(name: &str) -> bool {
-    let n = name.to_lowercase();
-    n.contains("year") || n.split(|c: char| !c.is_ascii_alphanumeric()).any(|w| w == "yr" || w == "yyyy")
+    lm_core::format::is_year_name(name)
+}
+
+/// A value of the field `field` for cards, legends and rankings: a year as "2013"
+/// ([`lm_core::format::is_year`]), any other number by [`number_text`].
+pub fn field_number_text(field: &str, v: f64) -> String {
+    if lm_core::format::is_year(field, v) { lm_core::format::year(v) } else { number_text(v) }
 }
 
 /// A number for cards: thousands separators, up to the precision that matters (at most 4
@@ -536,10 +541,12 @@ pub fn row_classes(
                 values.iter().enumerate().filter(|(r, _)| counted(*r) && in_view.is_none_or(|f| f(*r))).filter_map(|(_, v)| *v).collect();
             sorted.sort_by(f64::total_cmp);
             legend.fitted_to_view = cb.fit_to_view && in_view.is_some();
+            // Years read "1980 – 1995" (a density per km² is no year).
+            let num = |v: f64| if cb.per_km2 { number_text(v) } else { field_number_text(&cb.field, v) };
             if let (Some(lo), Some(hi)) = (sorted.first().copied(), sorted.last().copied()) {
                 let s = match cb.classes {
                     Classes::Smooth => {
-                        legend.items.push(LegendItem::Ramp { palette: cb.palette.clone(), low: number_text(lo), high: number_text(hi) });
+                        legend.items.push(LegendItem::Ramp { palette: cb.palette.clone(), low: num(lo), high: num(hi) });
                         ColorScale::Smooth { palette: cb.palette.clone(), lo, hi }
                     }
                     Classes::Groups { count, equal_steps } => {
@@ -548,9 +555,7 @@ pub fn row_classes(
                         let colors = palette::classes(&cb.palette, breaks.len());
                         let mut prev = lo;
                         for (b, c) in breaks.iter().zip(&colors) {
-                            legend
-                                .items
-                                .push(LegendItem::Swatch { color: *c, label: format!("{} – {}", number_text(prev), number_text(*b)) });
+                            legend.items.push(LegendItem::Swatch { color: *c, label: format!("{} – {}", num(prev), num(*b)) });
                             prev = *b;
                         }
                         ColorScale::Groups { breaks, colors }
@@ -588,7 +593,7 @@ pub fn row_classes(
                 legend.title = Some(label_of(&sb.field, unit.as_deref(), false));
             }
             for v in [vmax, nice(vmax / 2.0), nice(vmax / 10.0)] {
-                legend.items.push(LegendItem::Size { diameter: diameter(v), label: number_text(v) });
+                legend.items.push(LegendItem::Size { diameter: diameter(v), label: field_number_text(&sb.field, v) });
             }
         }
     }
@@ -772,10 +777,18 @@ pub fn insight_rows(layer: &DocLayer, ds: &Dataset, index: &LayerIndex, row: usi
             let fi = field_index(ds, &name)?;
             if let Some(ix) = index.measures.get(&name) {
                 let unit = layer.field(&name).and_then(|p| p.unit.value.clone());
-                let m = lm_analysis::insight::measure_row(ix, cell_number(ds, row, fi), unit.as_deref(), &noun);
+                let x = cell_number(ds, row, fi);
+                let m = lm_analysis::insight::measure_row(ix, x, unit.as_deref(), &noun);
+                // A year reads "2013" here as on the card.
+                let value = match x {
+                    Some(v) if lm_core::format::is_year(&name, v) => {
+                        lm_analysis::insight::with_unit(&lm_core::format::year(v), unit.as_deref())
+                    }
+                    _ => m.value,
+                };
                 Some(InsightRow {
                     field: name,
-                    value: m.value,
+                    value,
                     phrase: m.rank,
                     comparison: m.median,
                     strip: m.strip.map(|s| Strip { value: s.value, median: Some(s.median), ticks: s.ticks }),
@@ -810,7 +823,7 @@ pub fn ranking(layer: &DocLayer, ds: &Dataset, field: &str, mask: Option<&[bool]
             let name = title
                 .and_then(|i| cell_text(ds, r, i))
                 .unwrap_or_else(|| format!("{} {}", layer.display_name, lm_core::model::group_thousands(r as u64 + 1)));
-            (r, name, lm_analysis::insight::with_unit(&number_text(x), unit.as_deref()), x)
+            (r, name, lm_analysis::insight::with_unit(&field_number_text(field, x), unit.as_deref()), x)
         })
         .collect()
 }
@@ -821,11 +834,10 @@ pub fn field_summary(index: &LayerIndex, field: &str, unit: Option<&str>) -> Opt
     let (lo, hi) = ix.range()?;
     let h = ix.histogram(lm_analysis::insight::HISTOGRAM_BINS)?;
     let fd = Some(ix.decimals());
-    let range = format!(
-        "{} to {}",
-        lm_analysis::insight::format_number(lo, fd),
-        lm_analysis::insight::with_unit(&lm_analysis::insight::format_number(hi, fd), unit)
-    );
+    let num = |v: f64| {
+        if lm_core::format::is_year(field, v) { lm_core::format::year(v) } else { lm_analysis::insight::format_number(v, fd) }
+    };
+    let range = format!("{} to {}", num(lo), lm_analysis::insight::with_unit(&num(hi), unit));
     Some((range, h.counts.iter().map(|c| *c as u64).collect()))
 }
 
@@ -1246,6 +1258,48 @@ mod example_tests {
         let rc = classes_for(&layer, ds, None, None).unwrap();
         eprintln!("{name}: {:?}", rc.legend);
         assert!(rc.legend.items.len() >= 3);
+    }
+
+    /// The IBTrACS storms' `season` reads "2013" on cards and in the table, the legend, the
+    /// ranking, the field summary and the insight rows; wind speeds keep their own format.
+    #[test]
+    fn storm_seasons_read_as_years_everywhere() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets/examples/storm tracks.gpkg");
+        let layers = crate::import::import_path(&path, &crate::import::Ctx::detached(crate::import::Ticket::default())).unwrap();
+        let l = &layers[0];
+        let crate::import::LayerData::Vector(ds) = &l.data else { panic!() };
+        assert!(l.profile.fields.iter().find(|f| f.name == "season").is_some_and(|f| f.is_year()), "the profile hints a year");
+        assert!(!l.profile.fields.iter().find(|f| f.name == "max_wind_kt").is_some_and(|f| f.is_year()));
+        let season = field_index(ds, "season").unwrap();
+        let text = cell_text(ds, 0, season).unwrap();
+        assert!(text.len() == 4 && !text.contains(','), "{text}");
+        let mut style = lm_core::document::Style::for_profile(&l.profile, OKABE_ITO[0]);
+        style.color_by = Some(lm_core::document::ColorBy {
+            field: "season".into(),
+            categories: false,
+            classes: Classes::Groups { count: 4, equal_steps: true },
+            palette: "viridis".into(),
+            per_km2: false,
+            fit_to_view: false,
+        });
+        let layer = DocLayer::new(lm_core::model::LayerId(1), "storms".into(), l.profile.clone(), style);
+        let c = row_classes(&layer, ds, None, None, &|_| None).unwrap();
+        let labels: Vec<String> = c
+            .legend
+            .items
+            .iter()
+            .filter_map(|i| if let LegendItem::Swatch { label, .. } = i { Some(label.clone()) } else { None })
+            .collect();
+        assert_eq!(labels.first().map(String::as_str), Some("1980 – 1991.5"), "{labels:?}");
+        assert!(labels.iter().all(|l| !l.contains(',')), "{labels:?}");
+        let r = ranking(&layer, ds, "season", None);
+        assert!(r.first().is_some_and(|(_, _, v, _)| v == "2026"), "{:?}", r.first());
+        let index = build_index(&layer, ds, None);
+        assert_eq!(field_summary(&index, "season", None).map(|s| s.0).as_deref(), Some("1980 to 2026"));
+        let rows = insight_rows(&layer, ds, &index, 0, 6);
+        let row = rows.iter().find(|r| r.field == "season").unwrap();
+        assert!(row.value.len() == 4 && !row.value.contains(','), "{}", row.value);
+        assert_eq!(field_number_text("max_wind_kt", 1250.0), "1,250");
     }
 
     /// Years read as "2019", never "2,019"; other numbers keep their separators.

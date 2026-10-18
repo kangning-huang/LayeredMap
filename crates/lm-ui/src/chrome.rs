@@ -533,15 +533,10 @@ fn scale_bar(shell: &Shell, ui: &Ui, map: Rect) {
 
 fn attribution(shell: &mut Shell, ui: &mut Ui, map: Rect) {
     let t = *shell.theme();
-    let mut credits: Vec<String> = shell.map_view().attribution().iter().filter(|s| !s.trim().is_empty()).cloned().collect();
-    let p = lm_core::basemap::provider(&shell.prefs.basemap);
-    if credits.is_empty() {
-        credits.push(p.attribution.into());
-    }
-    if !credits.iter().any(|c| c.contains("Natural Earth")) {
-        credits.push("Natural Earth".into());
-    }
-    let text = credits.join(" · ");
+    // Only the layers drawn at this zoom, each credit once (the satellite basemap's close-up map
+    // is hidden at world zoom; its labels and close-up map both credit OpenStreetMap).
+    let view = shell.map_view();
+    let text = crate::basemap::credits_line(view.map(), view.zoom(), view.attribution());
     let galley = ui.painter().layout_no_wrap(text.clone(), regular(CAPTION), t.text_secondary);
     let r = Rect::from_min_size(map.right_bottom() - galley.size() - vec2(PANEL_MARGIN + 6.0, PANEL_MARGIN - 2.0), galley.size())
         .expand2(vec2(6.0, 3.0));

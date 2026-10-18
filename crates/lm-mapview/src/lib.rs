@@ -128,7 +128,10 @@ pub struct MapView {
 
 impl MapView {
     /// A map view of `map`, rendering on its own thread.
-    pub fn new(map: Map, ctx: &egui::Context) -> MapView {
+    pub fn new(mut map: Map, ctx: &egui::Context) -> MapView {
+        // The tile basemap repeats east–west, so data is drawn in each copy of the world too:
+        // storm tracks across the antimeridian read continuously (decisions, 2026-10-18).
+        map.view.world_copies = true;
         let camera = map.camera;
         let waker = ctx.clone();
         rustgis_tiles::cache::set_waker(move || waker.request_repaint());

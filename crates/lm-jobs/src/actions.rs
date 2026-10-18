@@ -1271,7 +1271,13 @@ fn rank_by_value(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError
         ranked[..with].reverse();
     }
     let summary = match ranked.first() {
-        Some(RankRow { label, value: Some(v), .. }) => format!("{}: {label}, {}", if lowest { "Lowest" } else { "Highest" }, number(*v)),
+        Some(RankRow { label, value: Some(v), .. }) => {
+            format!(
+                "{}: {label}, {}",
+                if lowest { "Lowest" } else { "Highest" },
+                if lm_core::format::is_year(field, *v) { lm_core::format::year(*v) } else { number(*v) }
+            )
+        }
         _ => "No values to rank".into(),
     };
     let mut notices = Vec::new();

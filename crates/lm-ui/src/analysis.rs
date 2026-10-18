@@ -819,7 +819,8 @@ pub fn result_card(
                     p.text(
                         egui::pos2(bar.right() + 6.0, rect.center().y),
                         egui::Align2::LEFT_CENTER,
-                        number(v),
+                        // A ranking by a year field reads "2013" (its unit is the field's name).
+                        if lm_core::format::is_year(unit, v) { lm_core::format::year(v) } else { number(v) },
                         theme::regular(CAPTION),
                         t.text_secondary,
                     );

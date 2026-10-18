@@ -14,7 +14,7 @@ use std::sync::mpsc::Receiver;
 
 use egui::{Align2, Color32, CornerRadius, Rect, RichText, Sense, Stroke, Ui, pos2, vec2};
 use egui_phosphor::regular as icon;
-use lm_core::basemap::{Provider, Source};
+use lm_core::basemap::Provider;
 use lm_core::document::DocLayer;
 use lm_core::model::{LayerId, LayerKind};
 use lm_core::palette;
@@ -200,6 +200,8 @@ pub struct ImageSheet {
     texture: Option<(String, egui::TextureHandle, ex::Layout)>,
     /// The longest side of the preview, in pixels.
     preview_px: f32,
+    /// The interface is dark (the satellite basemap's close-up map follows it).
+    dark: bool,
 }
 
 impl ImageSheet {
@@ -240,6 +242,7 @@ impl ImageSheet {
             drawn: None,
             texture: None,
             preview_px: 1400.0,
+            dark: shell.theme().dark,
         };
         s.caption = auto_caption(shell);
         s
@@ -273,25 +276,17 @@ impl ImageSheet {
         format!("{:?}|{:?}|{:?}", self.preset, p.area, p.camera)
     }
 
-    /// The credits: the basemap's, the tile layers' and Natural Earth (always drawn beneath).
+    /// The credits: those of the tile layers drawn at the export's zoom (the satellite basemap's
+    /// imagery and labels, or its close-up map), any the renderer reported, and Natural Earth
+    /// (always drawn beneath), each once.
     pub fn attribution(&self) -> String {
-        let mut credits: Vec<String> = Vec::new();
-        let mut add = |c: &str| {
-            let c = c.trim();
-            if !c.is_empty() && !credits.iter().any(|x| x == c) {
-                credits.push(c.to_string());
-            }
+        let zoom = lm_mapview::zoom_of(self.plan().camera.res);
+        let key = self.draw_key();
+        let drawn: &[String] = match &self.drawn {
+            Some(d) if d.key == key => &d.attribution,
+            _ => &[],
         };
-        if let Some(d) = &self.drawn {
-            d.attribution.iter().for_each(|c| add(c));
-        }
-        add(self.basemap.attribution);
-        // Satellite imagery carries OpenStreetMap place names and boundaries.
-        if self.basemap.source == Source::Imagery {
-            add(lm_core::basemap::provider("light").attribution);
-        }
-        add("Natural Earth");
-        credits.join(" · ")
+        crate::basemap::credits_line(&self.map, zoom, drawn)
     }
 
     /// Starts drawing the map at full size when what it is drawn for changed.
@@ -307,11 +302,15 @@ impl ImageSheet {
         let k = (self.preview_px / w.max(h) as f32).min(1.0);
         let small = (((pixels.0 as f32) * k).round().max(1.0) as u32, ((pixels.1 as f32) * k).round().max(1.0) as u32);
         let map = self.map.clone();
+        let dark = self.dark;
         let (tx, rx) = std::sync::mpsc::channel();
         let waker = ctx.clone();
         let job_key = key.clone();
         let spawned = std::thread::Builder::new().name("lm-export".into()).spawn(move || {
-            let out = ex::render_map((*map).clone(), camera, pixels, ppp).and_then(|img| {
+            let mut map = (*map).clone();
+            // The satellite basemap's imagery or close-up map, as the export's own zoom decides.
+            crate::basemap::imagery_fallback_for_zoom(&mut map, lm_mapview::zoom_of(camera.res), dark);
+            let out = ex::render_map(map, camera, pixels, ppp).and_then(|img| {
                 let small = ex::downsample(&img.pixmap, small.0, small.1)?;
                 Some(Drawn {
                     key: job_key,

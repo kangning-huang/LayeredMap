@@ -102,7 +102,13 @@ impl Test {
 
     /// The test in words, for chips ("is Primary", "above 500,000").
     pub fn words(&self) -> String {
-        let n = crate::format::number;
+        self.words_for("")
+    }
+
+    /// [`Test::words`] for a test on the field `field`: a year field's years read "after 2000",
+    /// not "2,000" ([`crate::format::field_number`]).
+    pub fn words_for(&self, field: &str) -> String {
+        let n = |v: f64| crate::format::field_number(field, v);
         match self {
             Test::Is(v) => format!("is {v}"),
             Test::IsNot(v) => format!("is not {v}"),
@@ -128,7 +134,7 @@ impl Test {
 impl Condition {
     /// The chip text: "Type is Primary".
     pub fn chip(&self) -> String {
-        format!("{} {}", self.field, self.test.words())
+        format!("{} {}", self.field, self.test.words_for(&self.field))
     }
 }
 
@@ -200,5 +206,7 @@ mod tests {
         let c = Condition { field: "population".into(), test: Test::Above(500_000.0) };
         assert_eq!(c.chip(), "population above 500,000");
         assert_eq!(Condition { field: "Type".into(), test: Test::Is("Primary".into()) }.chip(), "Type is Primary");
+        let y = Condition { field: "season".into(), test: Test::Between(2000.0, 2013.0) };
+        assert_eq!(y.chip(), "season between 2000 and 2013");
     }
 }

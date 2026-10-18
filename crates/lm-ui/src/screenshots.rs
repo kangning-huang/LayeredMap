@@ -1154,10 +1154,17 @@ fn export_warnings_name_what_the_image_leaves_out() {
     assert!(!w.contains("schools is colored"), "single-colour layers need no legend: {w}");
     // The Satellite basemap (NASA Blue Marble) carries no extra terms, only its credit.
     s.prefs.basemap = "satellite".into();
+    s.basemap_changed();
     let sat = crate::export::ImageSheet::new(s);
     assert!(!sat.warnings(s).iter().any(|w| w.contains("licensed")), "{:?}", sat.warnings(s));
-    assert!(sat.attribution().contains("NASA Blue Marble") && sat.attribution().contains("OpenStreetMap"));
+    // Credits name only the layers drawn at the export's zoom, OpenStreetMap once: the imagery
+    // and its labels out to zoom 9.5, the close-up map (no imagery) past it.
+    let credits = sat.attribution();
+    assert_eq!(credits.matches("OpenStreetMap").count(), 1, "{credits}");
+    let zoom = lm_mapview::zoom_of(sat.plan().camera.res);
+    assert_eq!(credits.contains("NASA Blue Marble"), zoom <= crate::basemap::IMAGERY_MAX_ZOOM, "zoom {zoom}: {credits}");
     s.prefs.basemap = "offline".into();
+    s.basemap_changed();
     s.export_sheet = Some(e);
 }
 

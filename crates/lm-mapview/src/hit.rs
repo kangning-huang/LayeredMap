@@ -11,9 +11,10 @@
 //!
 //! The tolerance is 4 px, or 6 px for points drawn under 5 px. Distances are measured in Web
 //! Mercator, the plane the map is drawn in, so a hit is exactly what the eye sees. The map draws
-//! each feature once, at its own longitudes (no world copies), and the click is tested where it
-//! is: a click beyond the antimeridian, over the empty side of the world, hits nothing rather
-//! than something a world away.
+//! each feature at its own longitudes and again in the neighbouring copies of the world
+//! (`ViewSettings::world_copies`, turned on by [`crate::MapView`]), so a click is tested where it
+//! is and one and two worlds east and west of it: a storm track drawn past the antimeridian is hit
+//! in whichever copy it was clicked.
 //!
 //! Hit testing reads features, never pixels; the basemap (and its labels) is never tested.
 
@@ -338,13 +339,26 @@ pub fn hit_test_merc(layers: &[HitLayer<'_>], at: Coord, mpp: f64) -> Vec<Hit> {
             log::warn!("hit index for layer {} is stale; skipping it", l.id);
             continue;
         }
-        out.extend(l.index.query(l.data, &l.symbol, at, mpp).into_iter().map(|h| Hit { layer: l.id, row: h.row }));
+        // The click where it is first, then in the world copies (each object once).
+        let start = out.len();
+        for k in [0.0, -1.0, 1.0, -2.0, 2.0] {
+            let p = Coord::new(at.x + k * WORLD_WIDTH, at.y);
+            for h in l.index.query(l.data, &l.symbol, p, mpp) {
+                let hit = Hit { layer: l.id, row: h.row };
+                if !out[start..].contains(&hit) {
+                    out.push(hit);
+                }
+            }
+        }
     }
     out
 }
 
+/// The width of the Web Mercator world, metres (the distance between world copies).
+const WORLD_WIDTH: f64 = 2.0 * std::f64::consts::PI * rustgis_geom::MERCATOR_R;
+
 /// [`hit_test_merc`] for a click in longitude/latitude (as `MapOutput::clicked` gives it).
-/// Longitudes are not wrapped: the map draws each feature at its own longitudes only.
+/// The click is also tested in the neighbouring world copies ([`hit_test_merc`]).
 pub fn hit_test(layers: &[HitLayer<'_>], click: Coord, mpp: f64) -> Vec<Hit> {
     hit_test_merc(layers, lonlat_to_merc(click), mpp)
 }
@@ -516,6 +530,19 @@ mod tests {
         let all = idx.query_limited(&d, &HitSymbol::default(), lonlat_to_merc(BASE), MPP, usize::MAX);
         assert_eq!(all.len(), 400);
         assert_eq!(&all[..100], &hits[..]);
+    }
+
+    #[test]
+    fn a_track_past_the_antimeridian_is_hit_in_the_world_copy_it_is_drawn_in() {
+        // An IBTrACS-style track stored unwrapped, 175°E to 183°E (= 177°W).
+        let d = ds(vec![Geometry::Line(vec![vec![Coord::new(175.0, 20.0), Coord::new(183.0, 21.0)]])]);
+        let idx = HitIndex::build(&d);
+        let layers = [HitLayer { id: 0, index: &idx, data: &d, symbol: HitSymbol::default() }];
+        let mpp = 2000.0;
+        // Clicked east of 180° in the main world, and in the western copy (at 178°W).
+        assert_eq!(hit_test(&layers, Coord::new(182.0, 20.875), mpp).len(), 1);
+        assert_eq!(hit_test(&layers, Coord::new(-178.0, 20.875), mpp), vec![Hit { layer: 0, row: 0 }]);
+        assert!(hit_test(&layers, Coord::new(-150.0, 20.875), mpp).is_empty());
     }
 
     #[test]
