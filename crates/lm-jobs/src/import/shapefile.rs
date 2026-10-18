@@ -177,7 +177,7 @@ fn read_parts(
         }),
     );
     let display = ds.name.clone();
-    Ok(ImportedLayer { name: display, status: status_of(&profile), profile, data: LayerData::Vector(Arc::new(ds)), raw: None })
+    Ok(ImportedLayer { name: display, status: status_of(&profile), profile, data: LayerData::Vector(Arc::new(ds)), raw: None, style: None })
 }
 
 impl FormatAdapter for Shapefile {

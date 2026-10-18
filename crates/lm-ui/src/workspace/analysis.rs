@@ -146,6 +146,7 @@ impl Workspace {
                     data: LayerData::Vector(data.clone()),
                     status: lm_core::model::ImportStatus::Complete,
                     raw: None,
+                    style: None,
                 };
                 self.data.insert((*layer, rev), Arc::new(imported));
                 ops.extend(self.doc.set_profile_tx(*layer, profile)?.ops);
@@ -242,6 +243,7 @@ impl Workspace {
             data: l.data.clone(),
             status: lm_core::model::ImportStatus::Complete,
             raw: None,
+            style: None,
         });
         self.analysis.preview_generation += 1;
         let generation = (1 << 40) + self.analysis.preview_generation;
@@ -297,6 +299,7 @@ impl Workspace {
                     data: l.data.clone(),
                     status: lm_core::model::ImportStatus::Complete,
                     raw: None,
+                    style: None,
                 };
                 changed.push((id, rev, Arc::new(imported)));
                 match self.doc.set_profile_tx(id, profile) {
@@ -346,6 +349,7 @@ impl Workspace {
                     data: l.data.clone(),
                     status: lm_core::model::ImportStatus::Complete,
                     raw: None,
+                    style: None,
                 };
                 new_data.push((dl.id.0 as usize, Arc::new(imported)));
             }

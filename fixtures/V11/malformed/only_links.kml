@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2"><Document>
+  <NetworkLink><name>Feed</name><Link><href>https://example.com/feed.kml</href></Link></NetworkLink>
+  <NetworkLink><name>Feed 2</name><Link><href>https://example.com/feed2.kml</href></Link></NetworkLink>
+  <GroundOverlay><name>Scan</name><Icon><href>scan.jpg</href></Icon>
+    <LatLonBox><north>1</north><south>0</south><east>1</east><west>0</west></LatLonBox></GroundOverlay>
+</Document></kml>

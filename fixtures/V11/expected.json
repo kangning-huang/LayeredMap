@@ -1,0 +1,251 @@
+{
+  "fixture": "V11",
+  "files": [
+    "places.kml",
+    "trail.kmz"
+  ],
+  "kind": "vector",
+  "gdal": {
+    "version": "3.13.3",
+    "places.kml": [
+      {
+        "layer": "Field trip",
+        "count": 1,
+        "vertices": 1,
+        "bounds": [
+          121.47,
+          31.23,
+          121.47,
+          31.23
+        ],
+        "sum_xy": [
+          121.47,
+          31.23
+        ]
+      },
+      {
+        "layer": "Schools",
+        "count": 3,
+        "vertices": 3,
+        "bounds": [
+          121.44,
+          31.19,
+          121.5,
+          31.26
+        ],
+        "sum_xy": [
+          364.39,
+          93.7
+        ]
+      },
+      {
+        "layer": "Rivers",
+        "count": 2,
+        "vertices": 8,
+        "bounds": [
+          121.38,
+          31.19,
+          121.5,
+          31.245
+        ],
+        "sum_xy": [
+          971.715,
+          249.845
+        ]
+      },
+      {
+        "layer": "Parks",
+        "count": 3,
+        "vertices": 23,
+        "bounds": [
+          121.4,
+          31.2,
+          121.55,
+          31.235
+        ],
+        "sum_xy": [
+          2793.73,
+          717.85
+        ]
+      },
+      {
+        "layer": "Survey",
+        "count": 2,
+        "vertices": 5,
+        "bounds": [
+          121.4,
+          31.3,
+          121.45,
+          31.31
+        ],
+        "sum_xy": [
+          607.1,
+          156.52
+        ]
+      }
+    ],
+    "trail.kmz": [
+      {
+        "layer": "Trail",
+        "count": 3,
+        "vertices": 5,
+        "bounds": [
+          116.39,
+          39.9,
+          116.4,
+          39.908
+        ],
+        "sum_xy": [
+          581.975,
+          199.521
+        ]
+      }
+    ]
+  },
+  "layeredmap": {
+    "places.kml": {
+      "crs": {
+        "epsg": 4326,
+        "source": "declared (KML is WGS 84 by definition)"
+      },
+      "notice": "network link",
+      "layers": [
+        {
+          "name": "places",
+          "group": "Field trip",
+          "geometry": "point",
+          "count": 1,
+          "style": null
+        },
+        {
+          "name": "Schools",
+          "group": "Schools",
+          "geometry": "point",
+          "count": 3,
+          "excluded": 1,
+          "style": {
+            "fill": [
+              255,
+              0,
+              0,
+              255
+            ]
+          },
+          "fields": [
+            "name",
+            "description",
+            "pupils",
+            "district"
+          ]
+        },
+        {
+          "name": "Rivers",
+          "group": "Rivers",
+          "geometry": "line",
+          "count": 2,
+          "style": {
+            "stroke": [
+              0,
+              0,
+              255,
+              255
+            ],
+            "line_width": 3
+          }
+        },
+        {
+          "name": "Parks",
+          "group": "Parks",
+          "geometry": "area",
+          "count": 3,
+          "style": {
+            "fill": [
+              0,
+              255,
+              0,
+              255
+            ],
+            "fill_opacity": 0.5019607843137255,
+            "stroke": [
+              0,
+              100,
+              0,
+              255
+            ],
+            "stroke_width": 2
+          }
+        },
+        {
+          "name": "Survey (points)",
+          "group": "Survey",
+          "geometry": "point",
+          "count": 1,
+          "style": null
+        },
+        {
+          "name": "Survey (lines)",
+          "group": "Survey",
+          "geometry": "line",
+          "count": 2,
+          "style": {
+            "stroke": [
+              0,
+              0,
+              255,
+              255
+            ],
+            "line_width": 3
+          },
+          "mixed_styles": [
+            "riverLine",
+            "line #FF0000"
+          ]
+        }
+      ]
+    },
+    "trail.kmz": {
+      "layers": [
+        {
+          "name": "trail (points)",
+          "group": "Trail",
+          "geometry": "point",
+          "count": 2,
+          "style": {
+            "fill": [
+              128,
+              0,
+              128,
+              255
+            ]
+          }
+        },
+        {
+          "name": "trail (lines)",
+          "group": "Trail",
+          "geometry": "line",
+          "count": 1,
+          "style": {
+            "stroke": [
+              255,
+              165,
+              0,
+              255
+            ],
+            "line_width": 4
+          }
+        }
+      ]
+    }
+  },
+  "malformed": {
+    "truncated.kml": "error: isn't valid KML",
+    "not_kml.kml": "error: isn't a KML file",
+    "only_links.kml": "unsupported: holds no places",
+    "bad_coords.kml": {
+      "count": 1,
+      "excluded": 5
+    },
+    "dtd.kml": "error: DTD",
+    "no_kml.kmz": "unsupported: holds no KML document"
+  }
+}

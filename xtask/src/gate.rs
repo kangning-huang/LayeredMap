@@ -5,7 +5,7 @@
 //!   fixtures. Each check prints a `STRESS` line (fixture, measured value, threshold, pass/fail);
 //!   the run ends with them as a table for the gate report.
 //! - `fuzz [--secs N] [--target T]`: `cargo fuzz` on each import adapter (CSV, GeoJSON,
-//!   Shapefile, DBF, GeoTIFF header), seeded from the fixtures, all targets at once for N seconds
+//!   Shapefile, DBF, GeoTIFF header, KML, KMZ, GPX), seeded from the fixtures, all targets at once for N seconds
 //!   each (default 3600, Gate 2's hour). Logs go to `fuzz/logs/<target>.log`, findings to
 //!   `fuzz/artifacts/<target>/`. Needs a nightly toolchain and cargo-fuzz.
 
@@ -114,7 +114,7 @@ pub fn stress_table(rows: &[StressRow]) -> String {
 }
 
 /// The fuzz targets (`fuzz/fuzz_targets/*.rs`).
-pub const FUZZ_TARGETS: &[&str] = &["csv", "geojson", "shapefile", "dbf", "geotiff_header"];
+pub const FUZZ_TARGETS: &[&str] = &["csv", "geojson", "shapefile", "dbf", "geotiff_header", "kml", "kmz", "gpx"];
 
 /// Seed inputs for a target: (seed file name, prefix byte for the Shapefile target's mode, source).
 fn seeds(root: &Path, target: &str) -> Vec<(String, Option<u8>, PathBuf)> {
@@ -156,6 +156,19 @@ fn seeds(root: &Path, target: &str) -> Vec<(String, Option<u8>, PathBuf)> {
             v.push((Some(3), gen_dir.join("X1/x1_bomb.zip")));
         }
         "dbf" => v.extend(all("dbf").into_iter().map(|p| (None, p))),
+        "kml" | "kmz" | "gpx" => {
+            v.extend(all(target).into_iter().map(|p| (None, p)));
+            let malformed = fx.join(if target == "gpx" { "V12/malformed" } else { "V11/malformed" });
+            let mut extra: Vec<PathBuf> = std::fs::read_dir(&malformed)
+                .into_iter()
+                .flatten()
+                .flatten()
+                .map(|e| e.path())
+                .filter(|p| p.extension().is_some_and(|e| e.eq_ignore_ascii_case(target)))
+                .collect();
+            extra.sort();
+            v.extend(extra.into_iter().map(|p| (None, p)));
+        }
         "geotiff_header" => {
             v.extend(all("tif").into_iter().map(|p| (None, p)));
             v.push((None, gen_dir.join("X4/x4_billion.tif")));

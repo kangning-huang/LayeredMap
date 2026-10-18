@@ -33,6 +33,8 @@ without them they print "skipped".
 | V8 | `generated/V8/` | — | generated (`cargo xtask fixtures`) |
 | V9 | `V9/` | Shapefile in a nested zip folder, and a 3-layer GeoPackage | present |
 | V10 | `V10/` | geometry edge cases and honest errors | present |
+| V11 | `V11/` | KML with folders, styles and MultiGeometry; KMZ; malformed KML/KMZ (WP6.7), checked against GDAL | present |
+| V12 | `V12/` | GPX waypoints, tracks and routes; GPX 1.0 in ISO-8859-1; malformed GPX (WP6.7), checked against GDAL | present |
 | T1 | `T1/` | lon/lat CSV with 242 located and 6 excluded | present |
 | T2 | `T2/` | ambiguous coordinate columns: question card | present |
 | T3 | `generated/T3/` | — | generated (`cargo xtask fixtures`) |

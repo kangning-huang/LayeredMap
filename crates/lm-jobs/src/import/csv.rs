@@ -374,7 +374,7 @@ fn build_with(
         data_rev: 0,
         joins: Vec::new(),
     };
-    Ok(ImportedLayer { name, status: status_of(&profile), profile, data: LayerData::Vector(Arc::new(ds)), raw: None })
+    Ok(ImportedLayer { name, status: status_of(&profile), profile, data: LayerData::Vector(Arc::new(ds)), raw: None, style: None })
 }
 
 /// Rebuilds a CSV (or Excel sheet) layer with the columns the user chose (`columns:x,y`), or as a

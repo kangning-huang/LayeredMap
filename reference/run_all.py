@@ -26,7 +26,8 @@ FIX = HERE.parent / "fixtures"
 SCRIPTS = ["make_handmade.py", "make_summary_fixtures.py", "coord_vectors.py", "count_in_areas.py", "which_area.py",
            "zonal_mean.py", "category_shares.py", "zonal_totals.py", "zonal_r7.py", "n7_sample.py", "geodesic.py",
            "raster_sample.py", "rank_check.py", "make_where_clip_fixtures.py", "find_where.py", "clip_erase.py",
-           "make_vector_ops.py", "nearest_distance.py", "join_by_location.py", "measure_features.py"]
+           "make_vector_ops.py", "nearest_distance.py", "join_by_location.py", "measure_features.py",
+           "make_kml_gpx_fixtures.py"]
 
 
 def run_once():

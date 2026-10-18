@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="LayeredMap fixtures" xmlns="http://www.topografix.com/GPX/1/1">
+  <metadata><name>Hike</name><time>2024-04-20T06:00:00Z</time></metadata>
+  <wpt lat="46.5000" lon="7.9000"><ele>1034.5</ele><time>2024-04-20T06:05:00Z</time><name>Car park</name><sym>Parking Area</sym></wpt>
+  <wpt lat="46.5200" lon="7.9300"><ele>1620</ele><time>2024-04-20T08:30:00Z</time><name>Hut</name><desc>Water and food</desc><sym>Lodge</sym></wpt>
+  <wpt lat="46.5350" lon="7.9500"><ele>2105.2</ele><name>Summit</name><sym>Summit</sym></wpt>
+  <rte>
+    <name>Planned route</name>
+    <rtept lat="46.5000" lon="7.9000"/>
+    <rtept lat="46.5100" lon="7.9150"/>
+    <rtept lat="46.5200" lon="7.9300"/>
+    <rtept lat="46.5350" lon="7.9500"/>
+  </rte>
+  <trk>
+    <name>Ascent</name>
+    <type>hiking</type>
+    <trkseg>
+      <trkpt lat="46.5000" lon="7.9000"><ele>1034.5</ele><time>2024-04-20T06:10:00Z</time></trkpt>
+      <trkpt lat="46.5040" lon="7.9060"><ele>1150.0</ele><time>2024-04-20T06:40:00Z</time></trkpt>
+      <trkpt lat="46.5090" lon="7.9120"><ele>1290.2</ele><time>2024-04-20T07:10:00Z</time></trkpt>
+      <trkpt lat="46.5140" lon="7.9190"><ele>1420.8</ele><time>2024-04-20T07:40:00Z</time></trkpt>
+      <trkpt lat="46.5170" lon="7.9240"><ele>1510.0</ele><time>2024-04-20T08:00:00Z</time></trkpt>
+    </trkseg>
+    <trkseg>
+      <trkpt lat="46.5180" lon="7.9260"><ele>1540.3</ele><time>2024-04-20T08:10:00Z</time></trkpt>
+      <trkpt lat="46.5200" lon="7.9300"><ele>1620.0</ele><time>2024-04-20T08:30:00Z</time></trkpt>
+      <trkpt lat="46.5280" lon="7.9400"><ele>1880.4</ele><time>2024-04-20T09:30:00Z</time></trkpt>
+      <trkpt lat="46.5350" lon="7.9500"><ele>2105.2</ele><time>2024-04-20T10:40:00Z</time></trkpt>
+    </trkseg>
+  </trk>
+  <trk>
+    <name>Descent (no clock)</name>
+    <trkseg>
+      <trkpt lat="46.5350" lon="7.9500"><ele>2105.2</ele></trkpt>
+      <trkpt lat="46.5250" lon="7.9450"><ele>1750.0</ele></trkpt>
+      <trkpt lat="46.5000" lon="7.9000"><ele>1034.5</ele></trkpt>
+    </trkseg>
+  </trk>
+</gpx>

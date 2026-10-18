@@ -153,6 +153,20 @@ cat > "$app/Contents/Info.plist" <<PLIST
       <key>LSItemContentTypes</key><array><string>org.openxmlformats.spreadsheetml.sheet</string></array>
       <key>CFBundleTypeExtensions</key><array><string>xlsx</string></array>
     </dict>
+    <dict>
+      <key>CFBundleTypeName</key><string>KML or KMZ</string>
+      <key>CFBundleTypeRole</key><string>Viewer</string>
+      <key>LSHandlerRank</key><string>Alternate</string>
+      <key>LSItemContentTypes</key><array><string>com.google.earth.kml</string><string>com.google.earth.kmz</string></array>
+      <key>CFBundleTypeExtensions</key><array><string>kml</string><string>kmz</string></array>
+    </dict>
+    <dict>
+      <key>CFBundleTypeName</key><string>GPX track</string>
+      <key>CFBundleTypeRole</key><string>Viewer</string>
+      <key>LSHandlerRank</key><string>Alternate</string>
+      <key>LSItemContentTypes</key><array><string>com.topografix.gpx</string></array>
+      <key>CFBundleTypeExtensions</key><array><string>gpx</string></array>
+    </dict>
   </array>
   <!-- The .lmap type, which LayeredMap owns and declares (docs/lm/format-v1.md). -->
   <key>UTExportedTypeDeclarations</key>
@@ -185,6 +199,24 @@ cat > "$app/Contents/Info.plist" <<PLIST
       <key>UTTypeDescription</key><string>GeoPackage</string>
       <key>UTTypeConformsTo</key><array><string>public.database</string><string>public.data</string></array>
       <key>UTTypeTagSpecification</key><dict><key>public.filename-extension</key><array><string>gpkg</string></array><key>public.mime-type</key><string>application/geopackage+sqlite3</string></dict>
+    </dict>
+    <dict>
+      <key>UTTypeIdentifier</key><string>com.google.earth.kml</string>
+      <key>UTTypeDescription</key><string>KML</string>
+      <key>UTTypeConformsTo</key><array><string>public.xml</string></array>
+      <key>UTTypeTagSpecification</key><dict><key>public.filename-extension</key><array><string>kml</string></array><key>public.mime-type</key><string>application/vnd.google-earth.kml+xml</string></dict>
+    </dict>
+    <dict>
+      <key>UTTypeIdentifier</key><string>com.google.earth.kmz</string>
+      <key>UTTypeDescription</key><string>KMZ</string>
+      <key>UTTypeConformsTo</key><array><string>public.zip-archive</string></array>
+      <key>UTTypeTagSpecification</key><dict><key>public.filename-extension</key><array><string>kmz</string></array><key>public.mime-type</key><string>application/vnd.google-earth.kmz</string></dict>
+    </dict>
+    <dict>
+      <key>UTTypeIdentifier</key><string>com.topografix.gpx</string>
+      <key>UTTypeDescription</key><string>GPX</string>
+      <key>UTTypeConformsTo</key><array><string>public.xml</string></array>
+      <key>UTTypeTagSpecification</key><dict><key>public.filename-extension</key><array><string>gpx</string></array><key>public.mime-type</key><string>application/gpx+xml</string></dict>
     </dict>
   </array>
 </dict>
