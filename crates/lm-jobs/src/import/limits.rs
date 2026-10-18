@@ -23,6 +23,9 @@ pub const XML_MAX_NODES: u32 = 20_000_000;
 pub const RASTER_PREPARE_SIDE: u64 = 8192;
 /// A raster side longer than this is refused.
 pub const RASTER_MAX_SIDE: u64 = 200_000;
+/// Most cells in one 2-D slice of a NetCDF grid (one time step of one variable): a 0.02° global
+/// grid. Larger grids are refused before any cell is read.
+pub const NETCDF_MAX_CELLS: u64 = 18_000 * 9_000;
 
 /// One entry of an archive's central directory.
 #[derive(Clone, Debug, PartialEq)]

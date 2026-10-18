@@ -73,6 +73,9 @@ struct PendingEdit {
     /// is dropped rather than committed over the newer state.
     base_rev: u32,
     fit: bool,
+    /// Another variable of a grid (WP6.12): the colour range follows the new variable, and the
+    /// time step is clamped to its steps, in the same undo step.
+    restyle: bool,
     rx: std::sync::mpsc::Receiver<Result<ImportedLayer, String>>,
 }
 
@@ -83,6 +86,8 @@ type Finish = Box<dyn FnOnce(&mut Workspace) + Send>;
 struct ReadyLayer {
     id: LayerId,
     rev: u32,
+    /// The time step it shows (0 for layers without time).
+    step: usize,
     map_id: u32,
     hit: Option<Arc<lm_mapview::hit::HitIndex>>,
     for_view: lm_mapview::map::Layer,
@@ -95,6 +100,7 @@ struct Synced {
     id: LayerId,
     map_id: u32,
     rev: u32,
+    step: usize,
 }
 
 /// The Compare view for China offsets (WP2.5): a layer's points as in the file, and the same
@@ -115,6 +121,7 @@ const COMPARE_MAP_ID: u32 = MAP_ID_BASE - 1;
 const MAP_ID_BASE: u32 = 1_000_000;
 
 mod analysis;
+mod grid;
 mod join;
 pub use analysis::RunOutcome;
 pub use join::{JoinOffer, JoinQuestion, JoinReport, Sublayer};
@@ -151,8 +158,8 @@ pub struct Workspace {
     /// Each job's layer (`None` for work that doesn't make the layer busy: map layers, the
     /// Compare preview) and what to do if it fails.
     jobs: Vec<(Option<LayerId>, std::sync::mpsc::Receiver<Finish>)>,
-    /// Map layers being built, and built.
-    building: Vec<(LayerId, u32)>,
+    /// Map layers being built (layer, data revision, time step), and built.
+    building: Vec<(LayerId, u32, usize)>,
     ready: Vec<ReadyLayer>,
     next_rev: u32,
     next_map_id: u32,
@@ -180,6 +187,10 @@ pub struct Workspace {
     pub(crate) analysis: analysis::Analysis,
     /// Layers whose source file was missing when the document was reopened (WP5.2).
     pub missing: Vec<LayerId>,
+    /// The time step each grid layer's data holds, by layer and data revision (absent: the first).
+    grid_time: HashMap<(LayerId, u32), usize>,
+    /// Grid slices being read off the interface thread: (layer, revision, step).
+    grid_reading: Vec<(LayerId, u32, usize)>,
 }
 
 /// Drawing state derived from a layer's data (WP3.5, WP3.7).
@@ -196,7 +207,7 @@ pub struct Derived {
 impl Workspace {
     /// Whether no background work is running (tests wait for this).
     pub fn idle(&self) -> bool {
-        self.jobs.is_empty() && self.building.is_empty() && self.pending.is_empty() && self.ready.is_empty()
+        self.jobs.is_empty() && self.building.is_empty() && self.pending.is_empty() && self.ready.is_empty() && self.grid_reading.is_empty()
     }
 
     /// The layer the inspector shows (the selection's layer).
@@ -590,7 +601,7 @@ impl Workspace {
             }
         });
         if spawned.is_ok() {
-            self.pending.push(PendingEdit { id, label, rev, base_rev, fit, rx });
+            self.pending.push(PendingEdit { id, label, rev, base_rev, fit, restyle: false, rx });
         }
     }
 
@@ -626,8 +637,10 @@ impl Workspace {
                     new.profile.data_rev = p.rev;
                     let fit = new.profile.extent_wgs84.filter(|_| p.fit);
                     self.data.insert((p.id, p.rev), Arc::new(new.clone()));
+                    let restyle = if p.restyle { self.grid_restyle(p.id, p.rev, &new.profile) } else { Vec::new() };
                     let tx = self.doc.set_profile_tx(p.id, new.profile).map(|mut t| {
                         t.label = p.label.clone();
+                        t.ops.extend(restyle);
                         t
                     });
                     if self.commit(tx) && fit.is_some() {
@@ -1000,32 +1013,46 @@ impl Workspace {
         self.index_layers();
         self.try_joins();
         self.prune_data();
-        let wanted: Vec<(LayerId, u32)> = self
+        self.sync_grids();
+        let wanted: Vec<(LayerId, u32, usize)> = self
             .doc
             .layers
             .iter()
             .filter(|l| drawable(&l.profile))
             .filter(|l| self.data.contains_key(&(l.id, l.profile.data_rev)))
-            .map(|l| (l.id, l.profile.data_rev))
+            .map(|l| (l.id, l.profile.data_rev, self.grid_time.get(&(l.id, l.profile.data_rev)).copied().unwrap_or(0)))
             .collect();
-        // Remove what's gone or changed revision.
-        let stale: Vec<u32> = self.synced.iter().filter(|s| !wanted.contains(&(s.id, s.rev))).map(|s| s.map_id).collect();
+        // Remove what's gone or changed revision. A layer whose replacement is still being built
+        // (another time step) keeps its old picture until the new one arrives, so stepping
+        // through time never flashes an empty map.
+        let replacing = |id: LayerId, building: &[(LayerId, u32, usize)], ready: &[ReadyLayer]| {
+            wanted.iter().any(|w| w.0 == id) && (building.iter().any(|b| b.0 == id) || ready.iter().any(|r| r.id == id))
+        };
+        let stale: Vec<u32> = self
+            .synced
+            .iter()
+            .filter(|s| !wanted.contains(&(s.id, s.rev, s.step)) && !replacing(s.id, &self.building, &self.ready))
+            .map(|s| s.map_id)
+            .collect();
         if !stale.is_empty() {
-            view.edit_map(move |m: &mut Map| m.layers.retain(|l| !stale.contains(&l.id)));
-            self.synced.retain(|s| wanted.contains(&(s.id, s.rev)));
+            view.edit_map({
+                let stale = stale.clone();
+                move |m: &mut Map| m.layers.retain(|l| !stale.contains(&l.id))
+            });
+            self.synced.retain(|s| !stale.contains(&s.map_id));
         }
         // Add what's new: map layers are built in both copies off the interface thread, then
         // handed to the map without copying here.
-        for (id, rev) in &wanted {
-            if self.synced.iter().any(|s| s.id == *id && s.rev == *rev) || self.building.contains(&(*id, *rev)) {
+        for (id, rev, step) in &wanted {
+            if self.synced.iter().any(|s| s.id == *id && s.rev == *rev && s.step == *step) || self.building.contains(&(*id, *rev, *step)) {
                 continue;
             }
             let Some(data) = self.data.get(&(*id, *rev)).cloned() else { continue };
             self.next_map_id += 1;
             let map_id = MAP_ID_BASE + self.next_map_id;
-            let (id, rev) = (*id, *rev);
-            self.building.push((id, rev));
-            self.spawn_job(None, Box::new(move |w: &mut Workspace| w.building.retain(|b| *b != (id, rev))), move || {
+            let (id, rev, step) = (*id, *rev, *step);
+            self.building.push((id, rev, step));
+            self.spawn_job(None, Box::new(move |w: &mut Workspace| w.building.retain(|b| *b != (id, rev, step))), move || {
                 let for_view = map_layer(map_id, &data);
                 let for_render = for_view.clone();
                 // The hit-testing index (WP3.1), built here with the map layer, off the
@@ -1035,21 +1062,27 @@ impl Workspace {
                     LayerData::Raster(_) => None,
                 };
                 Box::new(move |w: &mut Workspace| {
-                    w.building.retain(|b| *b != (id, rev));
-                    w.ready.push(ReadyLayer { id, rev, map_id, hit, for_view, for_render });
+                    w.building.retain(|b| *b != (id, rev, step));
+                    w.ready.push(ReadyLayer { id, rev, step, map_id, hit, for_view, for_render });
                 })
             });
         }
         for r in std::mem::take(&mut self.ready) {
-            if !wanted.contains(&(r.id, r.rev)) || self.synced.iter().any(|s| s.id == r.id && s.rev == r.rev) {
+            if !wanted.contains(&(r.id, r.rev, r.step)) || self.synced.iter().any(|s| s.id == r.id && s.rev == r.rev && s.step == r.step) {
                 continue;
+            }
+            // The picture it replaces (another time step or revision) goes in the same frame.
+            let old: Vec<u32> = self.synced.iter().filter(|s| s.id == r.id).map(|s| s.map_id).collect();
+            if !old.is_empty() {
+                view.edit_map(move |m: &mut Map| m.layers.retain(|l| !old.contains(&l.id)));
+                self.synced.retain(|s| s.id != r.id);
             }
             view.add_layer_pair(r.for_view, r.for_render);
             if let Some(h) = r.hit {
                 self.hits.retain(|(id, _), _| *id != r.id);
                 self.hits.insert((r.id, r.rev), h);
             }
-            self.synced.push(Synced { id: r.id, map_id: r.map_id, rev: r.rev });
+            self.synced.push(Synced { id: r.id, map_id: r.map_id, rev: r.rev, step: r.step });
             self.order_key.clear();
         }
         // The Compare view's converted points.
@@ -1359,6 +1392,8 @@ impl Workspace {
             keep.insert((p.id, p.base_rev));
         }
         self.data.retain(|k, _| keep.contains(k));
+        let data = &self.data;
+        self.grid_time.retain(|k, _| data.contains_key(k));
     }
 
     /// Starts working out colour classes and filter masks for layers whose key changed.
@@ -1925,5 +1960,166 @@ mod third_review_tests {
         let after = p.extent_wgs84.unwrap();
         assert!((before.min_x - after.min_x).abs() < 1e-9, "still converted: {before:?} vs {after:?}");
         let _ = std::fs::remove_dir_all(dir);
+    }
+}
+
+#[cfg(test)]
+mod grid_tests {
+    use super::*;
+
+    fn open(name: &str) -> (Workspace, LayerId) {
+        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/R8").join(name);
+        let layers = lm_jobs::import::import_path(&path, &lm_jobs::import::Ctx::detached(Default::default())).unwrap();
+        let mut w = Workspace::default();
+        w.add_imported(layers, 1);
+        let id = w.doc.layers[0].id;
+        (w, id)
+    }
+
+    fn mean(w: &Workspace, id: LayerId) -> f64 {
+        let LayerData::Raster(r) = &w.data(id).unwrap().data else { panic!("not a raster") };
+        r.bands[0].stats.mean
+    }
+
+    /// Brings the cells in step with the document, as each frame does.
+    fn settle(w: &mut Workspace) {
+        for _ in 0..500 {
+            w.sync_grids();
+            w.wait_pending();
+            if w.grid_reading.is_empty() {
+                w.sync_grids();
+                return;
+            }
+        }
+    }
+
+    /// The owner's heatwave file (JRC, 365 days in 92-day chunks), played day by day as the time
+    /// slider does: each day's cells arrive and the steps fold into one undo step. Runs when the
+    /// LaCie drive is mounted.
+    #[test]
+    #[ignore = "needs the JRC heatwave file on the LaCie drive"]
+    fn the_jrc_heatwave_file_plays() {
+        let path = PathBuf::from("/Volumes/LaCie/data/layeredmap-netcdf-test/jrc_warm_spell/hwi2a_m_gdo_20230101_20231231_d.nc");
+        let layers = lm_jobs::import::import_path(&path, &lm_jobs::import::Ctx::detached(Default::default())).unwrap();
+        let mut w = Workspace::default();
+        w.add_imported(layers, 1);
+        let id = w.doc.layers[0].id;
+        let t = std::time::Instant::now();
+        for day in 1..=40 {
+            w.prefetch(id, day + 1);
+            assert!(w.step_time(id, 1, true));
+            settle(&mut w);
+            assert!(w.time_ready(id), "day {day}");
+            assert_eq!(w.shown_time(id), day);
+        }
+        let per_day = t.elapsed().as_secs_f64() / 40.0;
+        assert!(per_day < 0.5, "{per_day} s per day: slower than Play's two steps a second");
+        assert_eq!(w.undo.undo.len(), 2, "open, then the 40 days as one step");
+    }
+
+    #[test]
+    fn a_grid_opens_with_one_colour_range_for_every_step() {
+        let (w, id) = open("r8_classic.nc");
+        let l = w.doc.layer(id).unwrap();
+        let g = l.profile.grid.as_ref().unwrap();
+        assert_eq!(l.style.stretch, g.range, "the sampled steps' range, not the first step's");
+        assert_eq!(l.time, 0);
+    }
+
+    #[test]
+    fn choosing_another_variable_is_one_undo_step() {
+        let (mut w, id) = open("r8_classic.nc");
+        let before = w.doc.clone();
+        let t2m_mean = mean(&w, id);
+        w.choose_variable(id, "ta", 1).unwrap();
+        w.wait_pending();
+        let l = w.doc.layer(id).unwrap().clone();
+        let g = l.profile.grid.as_ref().unwrap();
+        assert_eq!((g.variable.as_str(), g.level), ("ta", 1));
+        assert_eq!(l.style.stretch, g.range, "the colour range follows the variable");
+        assert_eq!(w.undo.undo_label(), Some("Show Air temperature in r8_classic"));
+        // ta at 500 hPa in June 2023 (xarray: expected_slices.csv).
+        assert!((mean(&w, id) - 256.0).abs() < 1e-4, "{}", mean(&w, id));
+        assert_eq!(w.undo.undo.len(), 2, "open, then one step");
+        w.undo();
+        assert_eq!(w.doc, before, "undo restores the variable, its range and its cells");
+        assert!((mean(&w, id) - t2m_mean).abs() < 1e-9);
+        w.redo();
+        assert_eq!(w.doc.layer(id).unwrap().profile.grid.as_ref().unwrap().variable, "ta");
+    }
+
+    #[test]
+    fn time_steps_fold_into_one_undo_step_and_redraw() {
+        let (mut w, id) = open("r8_classic.nc");
+        let first = mean(&w, id);
+        assert!(w.step_time(id, 1, false));
+        assert!(w.step_time(id, 1, false));
+        assert!(!w.step_time(id, 1, false), "the last step is the last");
+        settle(&mut w);
+        assert_eq!((w.doc.layer(id).unwrap().time, w.shown_time(id)), (2, 2));
+        assert!(w.time_ready(id));
+        // August 2023's t2m (xarray: expected_slices.csv).
+        assert!((mean(&w, id) - 20.136_702_131_7).abs() < 1e-4, "{}", mean(&w, id));
+        assert_eq!(w.undo.undo.len(), 2, "both steps are one undo step");
+        w.undo();
+        settle(&mut w);
+        assert_eq!(w.doc.layer(id).unwrap().time, 0);
+        assert!((mean(&w, id) - first).abs() < 1e-9);
+        // Play wraps from the last step to the first.
+        w.set_time(id, 2);
+        assert!(w.step_time(id, 1, true));
+        assert_eq!(w.doc.layer(id).unwrap().time, 0);
+    }
+
+    #[test]
+    fn a_variable_without_time_resets_the_step_in_the_same_undo_step() {
+        let (mut w, id) = open("r8_classic.nc");
+        w.set_time(id, 2);
+        settle(&mut w);
+        w.end_gesture();
+        w.choose_variable(id, "orog", 0).unwrap();
+        w.wait_pending();
+        settle(&mut w);
+        assert_eq!(w.doc.layer(id).unwrap().time, 0);
+        assert!(!w.doc.layer(id).unwrap().profile.grid.as_ref().unwrap().has_time());
+        w.undo();
+        settle(&mut w);
+        let l = w.doc.layer(id).unwrap();
+        assert_eq!((l.profile.grid.as_ref().unwrap().variable.as_str(), l.time), ("t2m", 2));
+        assert_eq!(w.shown_time(id), 2);
+    }
+
+    #[test]
+    fn actions_name_the_variable_and_the_step_they_ran_on() {
+        let (mut w, id) = open("r8_packed_noleap.nc");
+        w.set_time(id, 2);
+        settle(&mut w);
+        let input = w.plan_input(id, None).unwrap();
+        assert_eq!(input.layer.time, 2);
+        let g = input.layer.profile.grid.as_ref().unwrap();
+        assert_eq!(g.caption(input.layer.time), "Sea surface temperature (°C), 1 Mar 2004");
+        // While a step is being read, the input still says the step its cells hold.
+        w.doc.layers[0].time = 3;
+        assert_eq!(w.plan_input(id, None).unwrap().layer.time, 2);
+    }
+
+    #[test]
+    fn a_saved_grid_reopens_with_its_variable_level_and_step() {
+        let (mut w, id) = open("r8_classic.nc");
+        w.choose_variable(id, "ta", 1).unwrap();
+        w.wait_pending();
+        w.set_time(id, 1);
+        settle(&mut w);
+        let saved = w.doc.clone();
+        let mut w2 = Workspace::default();
+        w2.restore(saved.clone());
+        w2.wait_pending();
+        settle(&mut w2);
+        assert_eq!(w2.doc, saved);
+        let l = w2.doc.layer(id).unwrap();
+        assert_eq!(l.profile.grid.as_ref().unwrap().variable, "ta");
+        assert_eq!(w2.shown_time(id), 1);
+        // ta at 500 hPa in July 2023 (xarray: expected_slices.csv).
+        assert!((mean(&w2, id) - 256.5).abs() < 1e-4, "{}", mean(&w2, id));
     }
 }

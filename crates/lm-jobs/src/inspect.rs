@@ -1091,6 +1091,7 @@ mod tests {
             notices: vec![],
             data_rev: 0,
             joins: Vec::new(),
+            grid: None,
         };
         let style = Style::for_profile(&profile, OKABE_ITO[0]);
         (DocLayer::new(LayerId(1), "Districts".into(), profile, style), ds)

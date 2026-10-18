@@ -86,6 +86,14 @@ test = false
 doc = false
 bench = false
 
+# WP6.12: NetCDF grids.
+[[bin]]
+name = "netcdf"
+path = "fuzz_targets/netcdf.rs"
+test = false
+doc = false
+bench = false
+
 # Not part of the LayeredMap workspace.
 [workspace]
 members = ["."]

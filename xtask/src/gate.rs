@@ -114,7 +114,7 @@ pub fn stress_table(rows: &[StressRow]) -> String {
 }
 
 /// The fuzz targets (`fuzz/fuzz_targets/*.rs`).
-pub const FUZZ_TARGETS: &[&str] = &["csv", "geojson", "shapefile", "dbf", "geotiff_header", "gpkg", "xlsx", "kml", "kmz", "gpx"];
+pub const FUZZ_TARGETS: &[&str] = &["csv", "geojson", "shapefile", "dbf", "geotiff_header", "gpkg", "xlsx", "kml", "kmz", "gpx", "netcdf"];
 
 /// Seed inputs for a target: (seed file name, prefix byte for the Shapefile target's mode, source).
 fn seeds(root: &Path, target: &str) -> Vec<(String, Option<u8>, PathBuf)> {
@@ -171,6 +171,8 @@ fn seeds(root: &Path, target: &str) -> Vec<(String, Option<u8>, PathBuf)> {
         }
         "gpkg" => v.extend(all("gpkg").into_iter().map(|p| (None, p))),
         "xlsx" => v.extend(all("xlsx").into_iter().map(|p| (None, p))),
+        // R8's grids: NetCDF-3 (CDF-1 and CDF-2), NetCDF-4 with deflate and shuffle, a refusal.
+        "netcdf" => v.extend(all("nc").into_iter().map(|p| (None, p))),
         "geotiff_header" => {
             v.extend(all("tif").into_iter().map(|p| (None, p)));
             v.push((None, gen_dir.join("X4/x4_billion.tif")));
@@ -363,6 +365,7 @@ mod tests {
             ("kml::Kml", "kml"),
             ("kml::Kmz", "kmz"),
             ("gpx::Gpx", "gpx"),
+            ("netcdf::NetCdf", "netcdf"),
         ];
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
         let src = std::fs::read_to_string(root.join("crates/lm-jobs/src/import/mod.rs")).unwrap();

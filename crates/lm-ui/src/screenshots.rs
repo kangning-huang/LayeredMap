@@ -1317,3 +1317,65 @@ fn welcome_examples_menu() {
         s.ws.imports.iter().any(|i| i.name().contains("storm tracks")) || s.ws.doc.layers.iter().any(|l| l.display_name == "storm tracks")
     );
 }
+
+/// WP6.12: a NetCDF grid with time: the time slider at the bottom of the map ("July 2023", step
+/// 2 of 3), and the variable pop-up in the layer's row.
+#[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+fn netcdf_time_slider() {
+    use egui_kittest::kittest::Queryable as _;
+    let mut h = phase3(&["R8/r8_classic.nc"], WORLD, |s| {
+        let id = s.ws.doc.layers[0].id;
+        s.ws.set_time(id, 1);
+    });
+    settle(&mut h);
+    let s = h.state().as_ref().unwrap();
+    let id = s.ws.doc.layers[0].id;
+    assert_eq!((s.ws.doc.layers[0].time, s.ws.shown_time(id)), (1, 1));
+    assert!(h.query_by_label("Play").is_some() && h.query_by_label("Variable shown").is_some());
+    h.snapshot("netcdf_time_slider");
+    // → steps forward while the map has the keyboard; ← steps back.
+    h.key_press(egui::Key::ArrowRight);
+    settle(&mut h);
+    assert_eq!(h.state().as_ref().unwrap().ws.doc.layers[0].time, 2);
+    h.key_press(egui::Key::ArrowLeft);
+    h.key_press(egui::Key::ArrowLeft);
+    settle(&mut h);
+    assert_eq!(h.state().as_ref().unwrap().ws.doc.layers[0].time, 0);
+    // Play steps about twice a second and loops; Pause stops.
+    h.get_by_label("Play").click();
+    h.run_steps(2);
+    assert!(h.state().as_ref().unwrap().playing.is_some());
+    h.get_by_label("Pause").click();
+    h.run_steps(2);
+    assert!(h.state().as_ref().unwrap().playing.is_none());
+}
+
+/// WP6.12: the variable pop-up open, listing the grid's variables with their units, the shown one
+/// checked; picking one redraws the layer as one undo step.
+#[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+fn netcdf_variable_dropdown() {
+    use egui_kittest::kittest::Queryable as _;
+    let mut h = phase3(&["R8/r8_classic.nc"], WORLD, |_| {});
+    h.get_by_label("Variable shown").click();
+    h.run_steps(4);
+    h.snapshot("netcdf_variable_dropdown");
+    h.get_by_label("Air temperature (K)").click();
+    settle(&mut h);
+    let s = h.state().as_ref().unwrap();
+    let g = s.ws.doc.layers[0].profile.grid.as_ref().unwrap();
+    assert_eq!(g.variable, "ta");
+    assert_eq!(s.ws.undo.undo_label(), Some("Show Air temperature in r8_classic"));
+    // A variable with levels gets the level pop-up under it.
+    assert!(h.query_by_label("Level shown").is_some());
+}
+
+/// WP6.12 in Pro: the time slider sits just above the Ask field, never over it.
+#[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+fn netcdf_time_slider_above_ask() {
+    let mut h = phase3(&["R8/r8_lon360.nc"], WORLD, |s| s.pro = true);
+    settle(&mut h);
+    h.snapshot("netcdf_time_slider_pro");
+}

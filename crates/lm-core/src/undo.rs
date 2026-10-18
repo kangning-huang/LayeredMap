@@ -141,6 +141,10 @@ fn merge_op(ops: &mut Vec<Op>, op: Op) {
                 *to = new.clone();
                 return;
             }
+            (Op::SetTime { id: a, to, .. }, Op::SetTime { id: b, to: new, .. }) if a == b => {
+                *to = *new;
+                return;
+            }
             _ => {}
         }
     }

@@ -156,7 +156,10 @@ fn raster_legend(shell: &Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
     let band = l.profile.bands.get((l.style.band.max(1) - 1) as usize).or(l.profile.bands.first());
     let unit = band.and_then(|b| b.unit.value.clone());
     let (lo, hi) = shell.raster_range(l.id).or(l.style.stretch).unwrap_or((0.0, 1.0));
-    if let Some(b) = band {
+    if let Some(g) = &l.profile.grid {
+        // A grid names its variable, level and date (WP6.12).
+        ui.label(RichText::new(g.caption(shell.ws.shown_time(l.id))).size(CAPTION).color(t.text_secondary));
+    } else if let Some(b) = band {
         let u = unit.as_deref().map(|u| format!(" ({u})")).unwrap_or_default();
         ui.label(RichText::new(format!("Band {}{u}", b.index)).size(CAPTION).color(t.text_secondary));
     }
@@ -584,13 +587,33 @@ fn raster_style(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
         if r1.drag_stopped() || r2.drag_stopped() {
             shell.ws.end_gesture();
         }
-        form::indented(ui, |ui| {
-            if s.stretch.is_some() {
-                if ui.link("Reset to the middle 96% of cells").clicked() {
-                    s.stretch = None;
+        form::indented(ui, |ui| match &l.profile.grid {
+            // A grid keeps one range for every time step (WP6.12), so a change in colour is a
+            // change in value; reset goes back to the range of the sampled steps.
+            Some(g) => {
+                let default = lm_jobs::import::netcdf::default_stretch(&l.profile);
+                let steps = if g.sampled == 1 { "the time step".to_string() } else { format!("{} time steps", g.sampled) };
+                if s.stretch != default && default.is_some() {
+                    if ui.link(format!("Reset to the middle 96% of {steps}")).clicked() {
+                        s.stretch = default;
+                    }
+                } else {
+                    let what = if g.has_time() {
+                        format!("Same for every time step: the middle 96% of {steps}")
+                    } else {
+                        "Covers the middle 96% of cells".into()
+                    };
+                    ui.label(RichText::new(what).size(CAPTION).color(t.text_secondary));
                 }
-            } else {
-                ui.label(RichText::new("Covers the middle 96% of cells").size(CAPTION).color(t.text_secondary));
+            }
+            None => {
+                if s.stretch.is_some() {
+                    if ui.link("Reset to the middle 96% of cells").clicked() {
+                        s.stretch = None;
+                    }
+                } else {
+                    ui.label(RichText::new("Covers the middle 96% of cells").size(CAPTION).color(t.text_secondary));
+                }
             }
         });
         // Show only values above…

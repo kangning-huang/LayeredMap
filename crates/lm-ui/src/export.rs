@@ -513,8 +513,13 @@ pub fn legend_blocks(shell: &Shell, ids: &[LayerId]) -> Vec<LegendBlock> {
             let unit = band.and_then(|b| b.unit.value.clone()).map(|u| format!(" {u}")).unwrap_or_default();
             let (lo, hi) = shell.raster_range(*id).or(l.style.stretch).unwrap_or((0.0, 1.0));
             let n = |v: f64| format!("{}{unit}", lm_jobs::inspect::number_text(v));
+            // A grid's legend names the variable and date shown (WP6.12).
+            let title = match &l.profile.grid {
+                Some(g) => format!("{}: {}", l.display_name, g.caption(shell.ws.shown_time(*id))),
+                None => l.display_name.clone(),
+            };
             out.push(LegendBlock {
-                title: l.display_name.clone(),
+                title,
                 entries: vec![
                     Entry::Ramp { stops: ramp_stops(&l.style.ramp), low: n(lo), high: n(hi) },
                     Entry::Item { swatch: Swatch::NoData, label: "No data".into() },

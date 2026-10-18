@@ -43,7 +43,7 @@ pub struct Analysis {
 impl Workspace {
     /// The plan input for a document layer: its current data and the rows in scope.
     pub fn plan_input(&self, id: LayerId, rows: Option<Vec<usize>>) -> Option<PlanInput> {
-        let layer = self.doc.layer(id)?.clone();
+        let layer = self.as_shown(self.doc.layer(id)?);
         let data = self.data(id)?.data.clone();
         let path = std::path::PathBuf::from(&layer.profile.source.path);
         let path = path.exists().then_some(path);
@@ -219,7 +219,7 @@ impl Workspace {
             layers.push(lm_jobs::plan_exec::PlanLayer {
                 name: l.display_name.clone(),
                 alias: None,
-                layer: l.clone(),
+                layer: self.as_shown(l),
                 data: d.data.clone(),
                 rows,
                 path: path.exists().then_some(path),

@@ -292,10 +292,22 @@ fn step_words(o: &StepOutcome) -> Option<String> {
     }
 }
 
-/// The box and what it shows, at the bottom of `map` between the side panels.
-pub fn ask_box(shell: &mut Shell, ui: &mut Ui, map: egui::Rect) {
+/// Whether the Ask box shows: in Pro, once a layer is open, when the map leaves room for it.
+pub fn shows(shell: &Shell, map: egui::Rect) -> bool {
     // Nothing to ask about until a layer is open; the welcome card has that space.
     if !shell.pro || shell.ws.doc.layers.is_empty() {
+        return false;
+    }
+    let (left, right) = shell.panel_insets();
+    let x0 = map.left() + left + theme::PANEL_MARGIN;
+    let x1 = map.right() - right - theme::PANEL_MARGIN;
+    (x1 - x0).min(MAX_WIDTH) >= 240.0
+}
+
+/// The box and what it shows, at the bottom of `map` between the side panels. The time slider
+/// (WP6.12), when a visible layer has time, sits between the answer and the field.
+pub fn ask_box(shell: &mut Shell, ui: &mut Ui, map: egui::Rect) {
+    if !shows(shell, map) {
         return;
     }
     let t = *shell.theme();
@@ -303,9 +315,6 @@ pub fn ask_box(shell: &mut Shell, ui: &mut Ui, map: egui::Rect) {
     let x0 = map.left() + left + theme::PANEL_MARGIN;
     let x1 = map.right() - right - theme::PANEL_MARGIN;
     let width = (x1 - x0).min(MAX_WIDTH);
-    if width < 240.0 {
-        return;
-    }
     let bottom = egui::pos2((x0 + x1) / 2.0, map.bottom() - 34.0);
     egui::Area::new(egui::Id::new("lm-ask")).order(egui::Order::Foreground).pivot(Align2::CENTER_BOTTOM).fixed_pos(bottom).show(
         ui.ctx(),
@@ -314,6 +323,10 @@ pub fn ask_box(shell: &mut Shell, ui: &mut Ui, map: egui::Rect) {
             ui.vertical(|ui| {
                 if shell.ask.shown.is_some() || shell.ask.pending.is_some() {
                     answer_panel(shell, ui, &t, width, map.height() * 0.55);
+                    ui.add_space(8.0);
+                }
+                if crate::time_ui::time_layer(shell).is_some() {
+                    crate::time_ui::controls(shell, ui, width);
                     ui.add_space(8.0);
                 }
                 field(shell, ui, &t, width);

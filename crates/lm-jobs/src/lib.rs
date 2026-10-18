@@ -21,6 +21,8 @@ use std::sync::mpsc::{Receiver, channel};
 
 pub use import::Value;
 pub use rustgis_engine::data::GeometryType;
+/// A layer's cells (a grid's time step, WP6.12).
+pub use rustgis_engine::data::raster::Raster;
 pub use rustgis_engine::map::Layer;
 
 /// The vector files directly in `dir` (a fixture folder such as `fixtures/generated/F1`), or

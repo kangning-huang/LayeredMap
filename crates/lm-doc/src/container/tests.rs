@@ -22,6 +22,7 @@ fn profile(path: &str, kind: LayerKind, size: u64, mtime: i64) -> LayerProfile {
         notices: vec![],
         data_rev: 0,
         joins: Vec::new(),
+        grid: None,
     }
 }
 

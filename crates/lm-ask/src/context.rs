@@ -1,5 +1,5 @@
-//! The map as the assistant sees it: each layer's name, kind, size and fields with their types,
-//! the filter on it with its count, and what is selected. Never feature values (WP7.2); the one
+//! The map as the assistant sees it: each layer's name, kind, size and fields with their types
+//! (a grid's variables and time range), the filter on it with its count, and what is selected. Never feature values (WP7.2); the one
 //! exception is [`crate::resolve`], which answers for the user's own words.
 
 use lm_core::filter::{Filter, Test};
@@ -86,6 +86,26 @@ pub fn layer_line(i: usize, l: &PlanLayer, filter: Option<&Filter>) -> Option<St
     let kind = kind_word(l)?;
     match &l.data {
         LayerData::Raster(_) => {
+            // A grid (NetCDF, WP6.12): its variables, the one shown, and the time range.
+            if let Some(g) = &l.layer.profile.grid {
+                let mut vars: Vec<String> = g
+                    .variables
+                    .iter()
+                    .take(MAX_FIELDS)
+                    .map(|v| if v.name == g.variable { format!("{} [shown]", v.label()) } else { v.label() })
+                    .collect();
+                if g.variables.len() > MAX_FIELDS {
+                    vars.push(format!("and {} more", g.variables.len() - MAX_FIELDS));
+                }
+                let mut s = format!("{i}. {}: raster grid. Variables: {}", l.name, vars.join("; "));
+                if let Some(v) = g.shown().filter(|v| v.levels.as_ref().is_some_and(|lv| lv.values.len() > 1)) {
+                    s.push_str(&format!(". Level shown: {}", v.level_label(g.level)));
+                }
+                if let Some(range) = g.time_range() {
+                    s.push_str(&format!(". Time: {range}, showing {}", g.date_label(l.layer.time)));
+                }
+                return Some(s);
+            }
             let bands = l.layer.profile.bands.len().max(1);
             let unit = l.layer.profile.fields.first().and_then(|f| f.unit.value.clone());
             Some(format!(

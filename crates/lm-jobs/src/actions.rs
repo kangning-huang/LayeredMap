@@ -64,6 +64,15 @@ impl PlanInput {
         &self.layer.display_name
     }
 
+    /// The name with what a grid shows (WP6.12): "sst (Sea surface temperature (°C), July
+    /// 2023)", so a recipe names the variable and the date it was computed on.
+    fn shown_as(&self) -> String {
+        match &self.layer.profile.grid {
+            Some(g) => format!("{} ({})", self.name(), g.caption(self.layer.time)),
+            None => self.name().to_string(),
+        }
+    }
+
     fn vector(&self) -> Result<&Arc<Dataset>, ActionError> {
         match &self.data {
             LayerData::Vector(ds) => Ok(ds),
@@ -377,7 +386,7 @@ fn recipe_input(i: &PlanInput) -> RecipeInput {
     let (one, many) = i.nouns();
     let n = i.count();
     RecipeInput {
-        name: i.name().to_string(),
+        name: i.shown_as(),
         file: i.layer.profile.source.file_name().to_string(),
         fingerprint,
         count: n,
@@ -386,6 +395,10 @@ fn recipe_input(i: &PlanInput) -> RecipeInput {
 }
 
 fn assumptions(i: &PlanInput) -> Vec<RecipeAssumption> {
+    let grid = i.layer.profile.grid.iter().flat_map(|g| g.lines.iter()).map(|line| RecipeAssumption {
+        text: format!("{}: {}", i.name(), lower_first(line.trim().trim_end_matches('.'))),
+        confidence: Confidence::Certain,
+    });
     i.layer
         .profile
         .visible_assumptions()
@@ -393,6 +406,7 @@ fn assumptions(i: &PlanInput) -> Vec<RecipeAssumption> {
             text: format!("{}: {}", i.name(), lower_first(a.line.trim().trim_end_matches('.'))),
             confidence: if a.confirmed_by_user { Confidence::Certain } else { a.confidence },
         })
+        .chain(grid)
         .collect()
 }
 
@@ -413,7 +427,7 @@ fn exclusions(i: &PlanInput) -> Vec<String> {
 
 fn scope_words(i: &PlanInput) -> String {
     if i.layer.profile.kind == LayerKind::Raster {
-        return format!("all of {}", i.name());
+        return format!("all of {}", i.shown_as());
     }
     let name = i.plural_noun();
     match &i.rows {
@@ -430,7 +444,7 @@ fn input_line(inputs: &[&PlanInput]) -> String {
     inputs
         .iter()
         .map(|i| match i.layer.profile.kind {
-            LayerKind::Raster => i.name().to_string(),
+            LayerKind::Raster => i.shown_as(),
             _ => format!("{}, {}", capitalized(i.name()), group_thousands(i.count())),
         })
         .collect::<Vec<_>>()

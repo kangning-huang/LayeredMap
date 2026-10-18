@@ -383,6 +383,10 @@ fn layer_rows(shell: &mut Shell, ui: &mut Ui, t: &Theme) {
         });
         // Joined tables, indented under the layer (owner's request, 2026-10-18).
         let mut block = r;
+        // A grid's variable (and level) pop-ups under its name (WP6.12).
+        if l.profile.grid.is_some() {
+            block = block.union(grid_pickers(shell, ui, t, &l));
+        }
         if open {
             for s in &subs {
                 block = block.union(sublayer_row(shell, ui, t, &l, s));
@@ -420,6 +424,103 @@ fn layer_rows(shell: &mut Shell, ui: &mut Ui, t: &Theme) {
             }
         }
     }
+}
+
+/// A macOS pop-up button: the current choice at the left, the up–down chevron at the right, on
+/// the raised fill with the control edge. Clicking opens its menu (see [`grid_pickers`]).
+fn popup_button(ui: &mut Ui, t: &Theme, text: &str, tip: &str, width: f32, enabled: bool) -> egui::Response {
+    let (r, resp) = ui.allocate_exact_size(vec2(width, 24.0), if enabled { Sense::click() } else { Sense::hover() });
+    let p = ui.painter();
+    let edge = if enabled && resp.hovered() { t.text_secondary } else { t.control_stroke };
+    p.rect(r, CornerRadius::same(theme::RADIUS_CONTROL), t.surface, Stroke::new(1.0, edge), egui::StrokeKind::Inside);
+    let color = if enabled { t.text_primary } else { t.text_secondary };
+    let galley = p.layout_no_wrap(middle_truncate(text, ((width - 34.0) / 6.6) as usize), egui::FontId::proportional(CAPTION + 1.0), color);
+    p.galley(pos2(r.left() + 8.0, r.center().y - galley.size().y / 2.0), galley, color);
+    if enabled {
+        p.text(pos2(r.right() - 11.0, r.center().y), Align2::CENTER_CENTER, icon::CARET_UP_DOWN, theme::icon_font(12.0), t.text_secondary);
+    }
+    resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::ComboBox, enabled, tip));
+    resp.on_hover_text(tip)
+}
+
+/// One item of a pop-up's menu, `width` wide: a checkmark before the current choice, as macOS
+/// menus show it (the other items keep its space, so the labels line up).
+fn choice_item(ui: &mut Ui, t: &Theme, label: &str, on: bool, width: f32) -> egui::Response {
+    let mut job = egui::text::LayoutJob::default();
+    let format = |font, color| egui::TextFormat { font_id: font, color, valign: egui::Align::Center, ..Default::default() };
+    job.append(icon::CHECK, 0.0, format(theme::icon_font(13.0), if on { t.text_primary } else { Color32::TRANSPARENT }));
+    job.append(label, 8.0, format(egui::FontId::proportional(BODY), t.text_primary));
+    let resp = ui.add(egui::Button::new(job).frame(false).min_size(vec2(width, 24.0)));
+    resp.widget_info(|| egui::WidgetInfo::selected(egui::WidgetType::SelectableLabel, true, on, label));
+    resp
+}
+
+/// The width of a pop-up's menu: its widest choice, at least the button's width.
+fn menu_width(ui: &Ui, labels: impl Iterator<Item = String>, min: f32) -> f32 {
+    let widest =
+        labels.map(|l| ui.painter().layout_no_wrap(l, egui::FontId::proportional(BODY), Color32::WHITE).size().x).fold(0.0, f32::max);
+    (widest + 13.0 + 8.0 + 2.0 * ui.spacing().button_padding.x + 4.0).max(min).min(420.0)
+}
+
+/// A grid layer's variable pop-up ("2 m temperature (°C)") under its name, and, for a variable
+/// with levels, the level pop-up under it. Picking redraws the layer, as one undo step.
+fn grid_pickers(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &lm_core::document::DocLayer) -> Rect {
+    let Some(g) = l.profile.grid.clone() else { return Rect::NOTHING };
+    let id = l.id;
+    let busy = shell.ws.is_busy(id);
+    let width = (ui.available_width() - 58.0).max(80.0);
+    let shown = g.shown().cloned();
+    let label = shown.as_ref().map_or_else(|| g.variable.clone(), |v| v.label());
+    let mut out = Rect::NOTHING;
+    let mut pick: Option<(String, usize)> = None;
+    let r = ui.horizontal(|ui| {
+        ui.add_space(50.0);
+        // A file with one variable just names it.
+        if g.variables.len() < 2 {
+            ui.label(RichText::new(middle_truncate(&label, 34)).size(CAPTION).color(t.text_secondary)).on_hover_text("Variable shown");
+            return;
+        }
+        let resp = popup_button(ui, t, &label, "Variable shown", width, !busy);
+        let w = menu_width(ui, g.variables.iter().map(|v| v.label()), width);
+        egui::Popup::menu(&resp).show(|ui| {
+            ui.set_width(w);
+            for v in &g.variables {
+                if choice_item(ui, t, &v.label(), v.name == g.variable, w).clicked() && v.name != g.variable {
+                    pick = Some((v.name.clone(), 0));
+                    ui.close();
+                }
+            }
+        });
+    });
+    out = out.union(r.response.rect);
+    if let Some(v) = shown.filter(|v| v.levels.as_ref().is_some_and(|lv| lv.values.len() > 1)) {
+        let n = v.levels.as_ref().map_or(0, |lv| lv.values.len());
+        let r = ui.horizontal(|ui| {
+            ui.add_space(50.0);
+            let resp = popup_button(ui, t, &v.level_label(g.level), "Level shown", width, !busy);
+            let w = menu_width(ui, (0..n.min(200)).map(|k| v.level_label(k)), width);
+            egui::Popup::menu(&resp).show(|ui| {
+                ui.set_width(w);
+                egui::ScrollArea::vertical().max_height(320.0).show(ui, |ui| {
+                    for k in 0..n {
+                        if choice_item(ui, t, &v.level_label(k), k == g.level, w).clicked() && k != g.level {
+                            pick = Some((v.name.clone(), k));
+                            ui.close();
+                        }
+                    }
+                });
+            });
+        });
+        out = out.union(r.response.rect);
+    }
+    if let Some((var, level)) = pick
+        && let Err(e) = shell.ws.choose_variable(id, &var, level)
+    {
+        let now = ui.input(|i| i.time);
+        shell.set_notice(e, now);
+    }
+    ui.add_space(2.0);
+    out
 }
 
 /// A joined table's row under its layer: the table glyph, its name and how many of the layer's
@@ -721,11 +822,17 @@ fn pixel_body(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &lm_core::document::
     let Some(lm_jobs::import::LayerData::Raster(r)) = shell.ws.data(l.id).map(|d| d.data.clone()) else { return };
     let band = lm_jobs::inspect::style_band(&r, &l.style);
     let unit = l.profile.bands.get(band).and_then(|b| b.unit.value.clone());
-    match p.value {
+    // A grid's cell is read again from the time step shown now (WP6.12), and named by its
+    // variable and date rather than a band number.
+    let (value, what) = match &l.profile.grid {
+        Some(g) => (lm_jobs::inspect::raster_value_at(&r, band, p.lon, p.lat).unwrap_or(None), g.caption(shell.ws.shown_time(l.id))),
+        None => (p.value, format!("Band {}", band + 1)),
+    };
+    match value {
         Some(v) => {
             let (value, phrase) = lm_jobs::inspect::pixel_insight(&r, band, v, unit.as_deref());
             ui.label(RichText::new(value).font(semibold(theme::TITLE)));
-            ui.label(RichText::new(format!("Band {}", band + 1)).size(CAPTION).color(t.text_secondary));
+            ui.label(RichText::new(what).size(CAPTION).color(t.text_secondary));
             if let Some(ph) = phrase {
                 ui.label(ph);
             }
@@ -989,6 +1096,14 @@ fn overview(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, l: &lm_core:
             ui.data_mut(|d| d.insert_temp(expanded_key, true));
         }
     }
+    // A grid's own assumption lines (WP6.12): visible, with nothing to change to.
+    for line in l.profile.grid.iter().flat_map(|g| g.lines.iter()) {
+        ui.horizontal_wrapped(|ui| {
+            let (r, _) = ui.allocate_exact_size(vec2(10.0, 14.0), Sense::hover());
+            ui.painter().circle_filled(r.center(), 4.0, t.assumption);
+            ui.label(line);
+        });
+    }
     for n in &l.profile.notices {
         ui.label(RichText::new(n).size(CAPTION).color(t.text_secondary));
     }
@@ -1038,7 +1153,25 @@ fn overview(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, l: &lm_core:
             }
         }
     }
-    for b in &l.profile.bands {
+    if let Some(g) = &l.profile.grid
+        && let Some(b) = l.profile.bands.first()
+        && let (Some(lo), Some(hi)) = (b.min, b.max)
+    {
+        // A grid's range is over the sampled time steps (WP6.12), with the time span.
+        let unit = b.unit.value.clone().map(|u| format!(" {u}")).unwrap_or_default();
+        let over =
+            if g.has_time() { format!(" over {} of {} time steps", g.sampled, group_thousands(g.steps() as u64)) } else { String::new() };
+        ui.label(format!(
+            "{}: {} to {}{unit}{over}",
+            g.shown().map_or_else(|| b.name.clone(), |v| v.long_name.clone().unwrap_or_else(|| v.name.clone())),
+            fmt_num(lo),
+            fmt_num(hi)
+        ));
+        if let Some(range) = g.time_range() {
+            ui.label(RichText::new(format!("Time: {range}")).size(CAPTION).color(t.text_secondary));
+        }
+    }
+    for b in l.profile.bands.iter().filter(|_| l.profile.grid.is_none()) {
         if let (Some(lo), Some(hi)) = (b.min, b.max) {
             let unit = b.unit.value.clone().map(|u| format!(" {u}")).unwrap_or_default();
             let name = if b.name.is_empty() || b.name.eq_ignore_ascii_case(&format!("band {}", b.index)) {
