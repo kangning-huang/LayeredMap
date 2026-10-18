@@ -34,10 +34,11 @@ use crate::source::{SourceState, check_source};
 pub const EXTENSION: &str = "lmap";
 /// The first entry of every `.lmap` file.
 pub const MIMETYPE: &str = "application/vnd.layeredmap.map+zip";
-/// The container version written by this build. A newer number is refused on open.
+/// The container version of a map written by this build. A map package is container 2
+/// (`package::PACKAGE_CONTAINER`); anything newer than that is refused on open.
 pub const CONTAINER_VERSION: u32 = 1;
 /// A manifest holds references and profiles, not data; anything larger is not ours.
-const MAX_MANIFEST_BYTES: u64 = 256 * 1024 * 1024;
+pub(crate) const MAX_MANIFEST_BYTES: u64 = 256 * 1024 * 1024;
 /// The largest owned result read back (8 GiB inflated).
 const MAX_RESULT_BYTES: u64 = 8 << 30;
 /// Temporary files left by a save that never finished are removed once they are this old.
@@ -52,50 +53,60 @@ pub enum OwnedData {
 
 /// A source file, as the manifest's `sources` table records it.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-struct SourceEntry {
+pub(crate) struct SourceEntry {
     /// The layers read from it.
-    layers: Vec<LayerId>,
-    /// Absolute path when saved.
-    path: String,
+    pub(crate) layers: Vec<LayerId>,
+    /// Absolute path when saved (in a package: the file's entry, `data/1/schools.csv`).
+    pub(crate) path: String,
     /// Path relative to the folder holding the document, `/`-separated.
     #[serde(default)]
-    relative: Option<String>,
-    size: u64,
-    mtime: i64,
+    pub(crate) relative: Option<String>,
+    pub(crate) size: u64,
+    pub(crate) mtime: i64,
     #[serde(default)]
-    sha256: Option<String>,
+    pub(crate) sha256: Option<String>,
+    /// Package only (container 2): the ZIP entries holding the file and its companions, the
+    /// file first.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub(crate) embedded: Vec<String>,
+    /// Package only: the dataset's licence when known ("CC BY 4.0").
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(crate) license: Option<String>,
 }
 
 /// An owned result, as the manifest's `owned` table records it.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-struct OwnedEntry {
-    layer: LayerId,
+pub(crate) struct OwnedEntry {
+    pub(crate) layer: LayerId,
     /// The ZIP entry holding the data (`results/layer-3.fgb`).
-    entry: String,
+    pub(crate) entry: String,
     /// `FlatGeobuf`, `GeoJSON` or `GeoTIFF`.
-    format: String,
+    pub(crate) format: String,
     /// The dataset's own name, given back on reading.
     #[serde(default)]
-    name: String,
+    pub(crate) name: String,
 }
 
 #[derive(Serialize, Deserialize)]
-struct LmapManifest {
-    format: String,
-    container: u32,
+pub(crate) struct LmapManifest {
+    pub(crate) format: String,
+    pub(crate) container: u32,
     /// Seconds since the Unix epoch.
     #[serde(default)]
-    saved_at: i64,
+    pub(crate) saved_at: i64,
     /// "LayeredMap 0.5.0".
     #[serde(default)]
-    software: String,
+    pub(crate) software: String,
     #[serde(default)]
-    sources: Vec<SourceEntry>,
+    pub(crate) sources: Vec<SourceEntry>,
     #[serde(default)]
-    owned: Vec<OwnedEntry>,
+    pub(crate) owned: Vec<OwnedEntry>,
+    /// Package only (container 2): what packaging changed.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(crate) package: Option<crate::package::PackageInfo>,
     /// The document's fields, `version` among them (the same as a v0 manifest).
     #[serde(flatten)]
-    document: Document,
+    pub(crate) document: Document,
 }
 
 /// What a save left out.
@@ -113,8 +124,11 @@ pub struct Loaded {
     pub owned: Vec<(LayerId, OwnedData)>,
     /// Sources found next to the document by their relative path (old path, new path).
     pub relinked: Vec<(String, String)>,
-    /// Owned results that could not be read, in plain words.
+    /// Owned results (or packaged files) that could not be read, in plain words.
     pub notes: Vec<String>,
+    /// The file is a map package (container 2): its sources were unpacked from it, and saving
+    /// it again keeps it a package.
+    pub package: bool,
 }
 
 /// Whether a layer's source is a file (LayeredMap's own layers record no size and no time).
@@ -129,12 +143,44 @@ pub fn now_secs() -> i64 {
 
 /// Saves `doc` and its owned results as a `.lmap` file at `path`, atomically.
 pub fn save_lmap(doc: &Document, owned: &[(LayerId, OwnedData)], path: &Path) -> Result<SaveReport> {
+    let abs_dir = folder_of(path);
+    let mut report = SaveReport::default();
+    let entries = encode_owned(doc, owned, &mut report);
+    let mut document = doc.clone();
+    document.version = DOCUMENT_VERSION;
+    let manifest = LmapManifest {
+        format: FORMAT_NAME.into(),
+        container: CONTAINER_VERSION,
+        saved_at: now_secs(),
+        software: software(),
+        sources: sources_of(doc, &abs_dir),
+        owned: entries.iter().map(|(e, _)| e.clone()).collect(),
+        package: None,
+        document,
+    };
+    let json =
+        serde_json::to_vec_pretty(&manifest).map_err(|e| DocError::write(path, std::io::Error::new(std::io::ErrorKind::InvalidData, e)))?;
+    write_container(path, &json, &entries, &[])?;
+    Ok(report)
+}
+
+/// "LayeredMap 0.5.0".
+pub(crate) fn software() -> String {
+    format!("LayeredMap {}", env!("CARGO_PKG_VERSION"))
+}
+
+/// The absolute folder that holds `path`.
+pub(crate) fn folder_of(path: &Path) -> PathBuf {
     let dir = match path.parent() {
         Some(d) if !d.as_os_str().is_empty() => d.to_path_buf(),
         _ => PathBuf::from("."),
     };
-    let abs_dir = std::path::absolute(&dir).unwrap_or_else(|_| dir.clone());
-    let mut report = SaveReport::default();
+    std::path::absolute(&dir).unwrap_or(dir)
+}
+
+/// The owned results of layers still in `doc`, encoded as ZIP entries; those that can't be are
+/// reported.
+pub(crate) fn encode_owned(doc: &Document, owned: &[(LayerId, OwnedData)], report: &mut SaveReport) -> Vec<(OwnedEntry, Vec<u8>)> {
     let mut entries: Vec<(OwnedEntry, Vec<u8>)> = Vec::new();
     for (id, data) in owned {
         if doc.layer(*id).is_none() || entries.iter().any(|(e, _)| e.layer == *id) {
@@ -145,19 +191,17 @@ pub fn save_lmap(doc: &Document, owned: &[(LayerId, OwnedData)], path: &Path) ->
             Err(why) => report.skipped.push((*id, why)),
         }
     }
-    let mut document = doc.clone();
-    document.version = DOCUMENT_VERSION;
-    let manifest = LmapManifest {
-        format: FORMAT_NAME.into(),
-        container: CONTAINER_VERSION,
-        saved_at: now_secs(),
-        software: format!("LayeredMap {}", env!("CARGO_PKG_VERSION")),
-        sources: sources_of(doc, &abs_dir),
-        owned: entries.iter().map(|(e, _)| e.clone()).collect(),
-        document,
+    entries
+}
+
+/// Writes the container atomically: `mimetype`, the manifest `json`, the owned results, then
+/// `files` (ZIP entry, file on disk), copied from disk as they are written. The whole file goes
+/// to a temporary file in the same folder, synced, and is renamed over `path`.
+pub(crate) fn write_container(path: &Path, json: &[u8], entries: &[(OwnedEntry, Vec<u8>)], files: &[(String, PathBuf)]) -> Result<()> {
+    let dir = match path.parent() {
+        Some(d) if !d.as_os_str().is_empty() => d.to_path_buf(),
+        _ => PathBuf::from("."),
     };
-    let json =
-        serde_json::to_vec_pretty(&manifest).map_err(|e| DocError::write(path, std::io::Error::new(std::io::ErrorKind::InvalidData, e)))?;
     remove_stale_temps(path);
     let tmp = temp_beside(path);
     let written = (|| -> std::io::Result<()> {
@@ -168,12 +212,19 @@ pub fn save_lmap(doc: &Document, owned: &[(LayerId, OwnedData)], path: &Path) ->
         zip.start_file("mimetype", stored).map_err(zip_io)?;
         zip.write_all(MIMETYPE.as_bytes())?;
         zip.start_file(MANIFEST_FILE, deflated).map_err(zip_io)?;
-        zip.write_all(&json)?;
-        for (e, bytes) in &entries {
+        zip.write_all(json)?;
+        for (e, bytes) in entries {
             // FlatGeobuf and GeoTIFF are already compact; Deflate still helps their attributes.
             let opts = deflated.large_file(bytes.len() as u64 >= u64::from(u32::MAX));
             zip.start_file(e.entry.as_str(), opts).map_err(zip_io)?;
             zip.write_all(bytes)?;
+        }
+        for (entry, src) in files {
+            let mut f = std::fs::File::open(src).map_err(|e| std::io::Error::new(e.kind(), format!("{}: {e}", src.display())))?;
+            let len = f.metadata()?.len();
+            let opts = deflated.large_file(len >= u64::from(u32::MAX));
+            zip.start_file(entry.as_str(), opts).map_err(zip_io)?;
+            std::io::copy(&mut f, &mut zip)?;
         }
         let file = zip.finish().map_err(zip_io)?.into_inner().map_err(|e| e.into_error())?;
         file.sync_all()
@@ -190,7 +241,7 @@ pub fn save_lmap(doc: &Document, owned: &[(LayerId, OwnedData)], path: &Path) ->
     if let Ok(d) = std::fs::File::open(&dir) {
         let _ = d.sync_all();
     }
-    Ok(report)
+    Ok(())
 }
 
 /// Opens a `.lmap` file. Unknown fields are ignored; a newer container or document version is
@@ -212,18 +263,36 @@ pub fn load_lmap(path: &Path) -> Result<Loaded> {
             Err(why) => notes.push(format!("{name} could not be read from this map: {why}")),
         }
     }
+    let package = manifest.container >= crate::package::PACKAGE_CONTAINER || manifest.package.is_some();
+    if manifest.sources.iter().any(|s| !s.embedded.is_empty()) {
+        notes.extend(crate::package::unpack(&mut zip, &bytes, &manifest.sources, &mut doc));
+    }
     let base = path.parent().map(|p| std::path::absolute(p).unwrap_or_else(|_| p.to_path_buf()));
     let relinked = match base {
-        Some(base) => relink_moved(&mut doc, &manifest.sources, &base),
-        None => Vec::new(),
+        Some(base) if !package => relink_moved(&mut doc, &manifest.sources, &base),
+        _ => Vec::new(),
     };
-    Ok(Loaded { doc, owned, relinked, notes })
+    Ok(Loaded { doc, owned, relinked, notes, package })
+}
+
+/// Whether the `.lmap` file at `path` is a map package (its manifest says container 2 or
+/// carries a package section). False for anything unreadable.
+pub fn is_package(path: &Path) -> bool {
+    let Ok(file) = std::fs::File::open(path) else { return false };
+    let Ok(mut zip) = zip::ZipArchive::new(std::io::BufReader::new(file)) else { return false };
+    let Ok(bytes) = read_entry(&mut zip, MANIFEST_FILE, MAX_MANIFEST_BYTES) else { return false };
+    serde_json::from_slice::<serde_json::Value>(&bytes).is_ok_and(|v| {
+        v.get("container").and_then(serde_json::Value::as_u64).is_some_and(|c| c >= u64::from(crate::package::PACKAGE_CONTAINER))
+            || v.get("package").is_some_and(|p| !p.is_null())
+    })
 }
 
 /// Opens any document: a `.lmap` file, a v0 document folder, or a v0 `manifest.json`. A v0
 /// document opens as it was saved, with no owned results (`docs/lm/format-v1.md` › Migration).
 pub fn open_any(path: &Path) -> Result<Loaded> {
-    let v0 = |dir: &Path| crate::manifest::load(dir).map(|doc| Loaded { doc, owned: Vec::new(), relinked: Vec::new(), notes: Vec::new() });
+    let v0 = |dir: &Path| {
+        crate::manifest::load(dir).map(|doc| Loaded { doc, owned: Vec::new(), relinked: Vec::new(), notes: Vec::new(), package: false })
+    };
     if path.is_dir() {
         return v0(path);
     }
@@ -240,8 +309,8 @@ fn parse_manifest(bytes: &[u8], path: &Path) -> Result<LmapManifest> {
         return Err(DocError::NotADocument { path: shown() });
     }
     let container = value.get("container").and_then(|v| v.as_u64()).ok_or(DocError::NotADocument { path: shown() })?;
-    if container > u64::from(CONTAINER_VERSION) {
-        return Err(DocError::TooNew { found: container, supported: CONTAINER_VERSION });
+    if container > u64::from(crate::package::PACKAGE_CONTAINER) {
+        return Err(DocError::TooNew { found: container, supported: crate::package::PACKAGE_CONTAINER });
     }
     let version = value.get("version").and_then(|v| v.as_u64()).ok_or(DocError::NotADocument { path: shown() })?;
     if version > u64::from(DOCUMENT_VERSION) {
@@ -250,7 +319,7 @@ fn parse_manifest(bytes: &[u8], path: &Path) -> Result<LmapManifest> {
     serde_json::from_value(value).map_err(|e| DocError::Damaged { path: shown(), detail: e.to_string() })
 }
 
-fn read_entry<R: Read + Seek>(zip: &mut zip::ZipArchive<R>, name: &str, max: u64) -> std::result::Result<Vec<u8>, String> {
+pub(crate) fn read_entry<R: Read + Seek>(zip: &mut zip::ZipArchive<R>, name: &str, max: u64) -> std::result::Result<Vec<u8>, String> {
     let f = zip.by_name(name).map_err(|e| format!("{name}: {e}"))?;
     if f.size() > max {
         return Err(format!("{name} is too large"));
@@ -264,7 +333,7 @@ fn read_entry<R: Read + Seek>(zip: &mut zip::ZipArchive<R>, name: &str, max: u64
 }
 
 /// One owned result as a ZIP entry.
-fn encode(id: LayerId, data: &OwnedData) -> std::result::Result<(OwnedEntry, Vec<u8>), String> {
+pub(crate) fn encode(id: LayerId, data: &OwnedData) -> std::result::Result<(OwnedEntry, Vec<u8>), String> {
     match data {
         OwnedData::Vector(ds) => {
             let all_located = ds.geometry_type != rustgis_data::GeometryType::None && ds.features.iter().all(|f| f.geometry.is_some());
@@ -324,6 +393,8 @@ fn sources_of(doc: &Document, dir: &Path) -> Vec<SourceEntry> {
                 size: s.size,
                 mtime: s.mtime,
                 sha256: s.sha256.clone(),
+                embedded: Vec::new(),
+                license: None,
             }),
         }
     }
@@ -370,7 +441,7 @@ pub fn relative_path(from: &Path, to: &Path) -> Option<String> {
 }
 
 /// Removes `.` and folds `..` lexically (the paths are only compared and joined).
-fn normalize(p: &Path) -> PathBuf {
+pub(crate) fn normalize(p: &Path) -> PathBuf {
     let mut out = PathBuf::new();
     for c in p.components() {
         match c {
@@ -422,3 +493,11 @@ fn zip_io(e: zip::result::ZipError) -> std::io::Error {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+pub(crate) mod tests_support {
+    /// Reads a manifest as `load_lmap` does (version checks included).
+    pub fn parse(bytes: &[u8]) -> crate::Result<()> {
+        super::parse_manifest(bytes, std::path::Path::new("test.lmap")).map(|_| ())
+    }
+}

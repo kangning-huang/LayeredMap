@@ -110,7 +110,8 @@ pub fn toolbar(shell: &mut Shell, ui: &mut Ui, rect: Rect, _system: System) {
     }
 }
 
-/// Share's menu: Map image… and Data… (Interaction specification › Screen states › Export).
+/// Share's menu: Map image…, Data… and Map package… (Interaction specification › Screen states ›
+/// Export; WP6.5).
 fn share_menu(shell: &mut Shell, resp: &egui::Response) {
     let ctx = resp.ctx.clone();
     let has_data = !shell.ws.doc.layers.is_empty();
@@ -121,6 +122,9 @@ fn share_menu(shell: &mut Shell, resp: &egui::Response) {
         }
         if ui.add_enabled(has_data, egui::Button::new("Data…")).on_disabled_hover_text("Open a file first").clicked() {
             shell.command(&ctx, crate::Command::ExportData);
+        }
+        if ui.add_enabled(has_data, egui::Button::new("Map package…")).on_disabled_hover_text("Open a file first").clicked() {
+            shell.command(&ctx, crate::Command::ExportPackage);
         }
     });
 }

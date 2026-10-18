@@ -26,6 +26,8 @@ pub const AUTOSAVE_SECS: f64 = 30.0;
 pub struct DocFile {
     /// The user's file, once saved or opened.
     pub path: Option<PathBuf>,
+    /// The file is a map package (WP6.5): saving it again writes a package, with the data.
+    pub package: bool,
     /// The document as last saved or opened: what Edited compares with.
     saved: Document,
     /// Set after a restore from an autosave: edited whatever the comparison says.
@@ -175,6 +177,10 @@ impl Workspace {
 pub(crate) fn start(shell: &mut Shell, dir: &Path) {
     match lm_doc::Journal::begin(dir) {
         Ok((j, r)) => {
+            // Opened packages unpack beside the autosaves, so a restored autosave finds them.
+            if let Some(parent) = dir.parent() {
+                lm_doc::package::set_unpack_dir(parent.join("Packages"));
+            }
             shell.doc_file.journal = Some(j);
             shell.doc_file.recovery = r;
             shell.doc_file.confirm_close = true;
@@ -227,7 +233,18 @@ pub(crate) fn save_to(shell: &mut Shell, path: PathBuf, t: f64) {
     };
     let doc = current(shell);
     let owned = owned(&shell.ws);
-    match lm_doc::save_lmap(&doc, &owned, &path) {
+    let written = if shell.doc_file.package {
+        // A package stays a package: its data goes back in, with the licences known.
+        let licenses = lm_doc::package::sources(&doc, &owned.iter().map(|(id, _)| *id).collect::<Vec<_>>())
+            .iter()
+            .filter_map(|p| crate::package::license_of(shell, Path::new(&p.path)).map(|l| (p.path.clone(), l)))
+            .collect();
+        let opts = lm_doc::package::PackageOptions { dropped: Vec::new(), licenses };
+        lm_doc::package::save_package(&doc, &owned, &opts, &path).map(|r| r.save)
+    } else {
+        lm_doc::save_lmap(&doc, &owned, &path)
+    };
+    match written {
         Ok(report) => {
             let f = &mut shell.doc_file;
             f.path = Some(path);
@@ -259,8 +276,10 @@ pub(crate) fn open(shell: &mut Shell, ctx: &egui::Context, path: &Path, t: f64) 
     match lm_doc::open_any(path) {
         Ok(loaded) => {
             let is_lmap = path.is_file() && path.extension().is_some_and(|e| e.eq_ignore_ascii_case(lm_doc::EXTENSION));
+            let package = loaded.package;
             install(shell, ctx, loaded, t);
             shell.doc_file.path = is_lmap.then(|| path.to_path_buf());
+            shell.doc_file.package = is_lmap && package;
             shell.doc_file.restored = !is_lmap;
         }
         Err(e) => shell.notice = Some((e.to_string(), t)),
@@ -309,6 +328,8 @@ pub(crate) fn answer_recovery(shell: &mut Shell, ctx: &egui::Context, restore: b
             Ok(loaded) => {
                 install(shell, ctx, loaded, t);
                 shell.doc_file.path = r.document.clone();
+                // The autosave is a plain map; the user's file says whether it was a package.
+                shell.doc_file.package = r.document.as_deref().is_some_and(lm_doc::is_package);
                 shell.doc_file.restored = true;
                 shell.doc_file.edited = true;
             }
@@ -758,6 +779,125 @@ mod tests {
         assert!(ws.data(id).is_some());
         assert_eq!(ws.data(id).map(|d| d.profile.count), Some(ws.doc.layers[0].profile.count));
         assert_eq!(ws.result_status(&ws.doc.results[0]).as_deref(), Some("Source changed: schools.csv"));
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    fn shell(ctx: &egui::Context) -> Shell {
+        Shell::new(
+            ctx,
+            lm_core::phase::Flags::default(),
+            crate::Prefs { basemap: "offline".into(), ..Default::default() },
+            crate::System::default(),
+        )
+    }
+
+    /// WP6.5: a map package opens on "another computer" — the original files moved away — with
+    /// the same layers, styles and results; undo, Edited and autosave keep working on it, and
+    /// saving it keeps it a package.
+    #[test]
+    fn a_package_reopens_elsewhere_with_the_same_map() {
+        let dir = temp("package");
+        let csv = dir.join("Downloads").join("schools.csv");
+        std::fs::create_dir_all(csv.parent().unwrap()).unwrap();
+        std::fs::write(&csv, CSV).unwrap();
+        let ctx = egui::Context::default();
+        let mut s = shell(&ctx);
+        let ctx_i = lm_jobs::import::Ctx::detached(Default::default());
+        s.ws.add_imported(lm_jobs::import::import_path(&csv, &ctx_i).unwrap(), 1);
+        let schools = s.ws.doc.layers[0].id;
+        let mut style = s.ws.doc.layers[0].style.clone();
+        style.fill = [200, 30, 30, 255];
+        style.point_size = 11.0;
+        let tx = s.ws.doc.set_style_tx(schools, style).unwrap();
+        assert!(s.ws.commit(Some(tx)));
+        let area = lm_jobs::import::drawn_area("Area 1", &[(121.0, 31.0), (122.0, 31.0), (122.0, 32.0)]).unwrap();
+        s.ws.add_imported(vec![area], 2);
+        let fp = lm_jobs::fingerprint::of_path(&csv).unwrap();
+        s.ws.doc.results.push(ResultRecord {
+            id: 1,
+            layer: None,
+            recipe: Recipe {
+                title: "Schools above 200".into(),
+                action: "filter".into(),
+                params: Default::default(),
+                computed_at: 0,
+                software: "LayeredMap".into(),
+                inputs: vec![RecipeInput {
+                    name: "schools".into(),
+                    file: "schools.csv".into(),
+                    fingerprint: fp,
+                    count: 2,
+                    noun: "points".into(),
+                }],
+                scope: String::new(),
+                method: String::new(),
+                decisions: vec![],
+                assumptions: vec![],
+                coordinates: None,
+                excluded: vec![],
+            },
+            version: 1,
+            history: vec![],
+            card: Default::default(),
+            about: Some(schools),
+        });
+        wait(&mut s.ws);
+        let before = s.ws.doc.clone();
+
+        // Share › Map package…, written in the background.
+        let d = crate::package::PackageDialog::new(&s);
+        assert_eq!(d.sources.len(), 1);
+        s.package_inputs = Some(d.inputs(&s).unwrap());
+        let path = dir.join("Out").join("Schools (package).lmap");
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        crate::package::write_to(&mut s, path.clone(), 0.0);
+        for _ in 0..500 {
+            crate::package::poll(&mut s, 0.0);
+            if s.package_job.is_none() {
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        }
+        assert!(s.package_job.is_none() && path.is_file(), "{:?}", s.notice);
+        assert_eq!(s.ws.doc, before, "packaging leaves the user's map as it was");
+
+        // "Another computer": the user's folder is gone.
+        std::fs::remove_dir_all(dir.join("Downloads")).unwrap();
+        let mut other = shell(&ctx);
+        open(&mut other, &ctx, &path, 0.0);
+        wait(&mut other.ws);
+        assert!(other.doc_file.package && !other.doc_file.edited());
+        assert!(other.ws.missing.is_empty(), "{:?}", other.notice);
+        assert_eq!(other.ws.doc.layers.len(), before.layers.len());
+        for (a, b) in other.ws.doc.layers.iter().zip(&before.layers) {
+            assert_eq!((&a.display_name, &a.style, a.profile.count), (&b.display_name, &b.style, b.profile.count));
+            assert_eq!(other.ws.data(a.id).map(|d| d.profile.count), s.ws.data(b.id).map(|d| d.profile.count), "{}", a.display_name);
+        }
+        assert_eq!(other.ws.doc.results, before.results);
+        assert_eq!(other.ws.result_status(&other.ws.doc.results[0]), None, "the packaged file matches the recipe");
+
+        // Undo and Edited work on the opened package.
+        let mut style = other.ws.doc.layer(schools).unwrap().style.clone();
+        style.point_size = 4.0;
+        let tx = other.ws.doc.set_style_tx(schools, style).unwrap();
+        assert!(other.ws.commit(Some(tx)));
+        assert!(other.ws.undo().is_some());
+        assert_eq!(other.ws.doc.layer(schools).unwrap().style.point_size, 11.0);
+
+        // An autosave of it is a plain map pointing at the unpacked files, and opens whole.
+        let autosave = dir.join("autosave.lmap");
+        lm_doc::save_lmap(&other.ws.doc, &owned(&other.ws), &autosave).unwrap();
+        let mut restored = Workspace::default();
+        let loaded = lm_doc::load_lmap(&autosave).unwrap();
+        assert!(!loaded.package);
+        restored.restore_owned(loaded.doc, Vec::new());
+        wait(&mut restored);
+        assert!(restored.data(schools).is_some());
+
+        // ⌘S keeps it a package.
+        let again = dir.join("Out").join("again.lmap");
+        save_to(&mut other, again.clone(), 0.0);
+        assert!(lm_doc::is_package(&again), "{:?}", other.notice);
         let _ = std::fs::remove_dir_all(dir);
     }
 

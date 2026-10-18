@@ -258,9 +258,9 @@ fn newer_junk_and_damaged_files_are_refused() {
         w.write_all(&serde_json::to_vec(manifest).unwrap()).unwrap();
         std::fs::write(&path, w.finish().unwrap().into_inner()).unwrap();
     };
-    write(&serde_json::json!({"format": "layeredmap", "container": 2, "version": 0, "layers": [], "next_layer_id": 1}));
+    write(&serde_json::json!({"format": "layeredmap", "container": 3, "version": 0, "layers": [], "next_layer_id": 1}));
     let e = load_lmap(&path).err().unwrap();
-    assert!(matches!(e, DocError::TooNew { found: 2, supported: 1 }), "{e}");
+    assert!(matches!(e, DocError::TooNew { found: 3, supported: 2 }), "{e}");
     write(&serde_json::json!({"format": "layeredmap", "container": 1, "version": 7, "layers": [], "next_layer_id": 1}));
     assert!(matches!(load_lmap(&path), Err(DocError::TooNew { found: 7, .. })));
     write(&serde_json::json!({"format": "other", "container": 1, "version": 0}));
@@ -284,6 +284,7 @@ fn an_unreadable_owned_result_is_a_note_not_a_failure() {
         software: String::new(),
         sources: vec![],
         owned: vec![OwnedEntry { layer: LayerId(2), entry: "results/layer-2.fgb".into(), format: "FlatGeobuf".into(), name: "x".into() }],
+        package: None,
         document: d.clone(),
     };
     w.start_file("manifest.json", zip::write::SimpleFileOptions::default()).unwrap();
