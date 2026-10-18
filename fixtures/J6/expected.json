@@ -5,7 +5,8 @@
     "wards.geojson",
     "wards_split.geojson",
     "ward_population.csv",
-    "ward_population_by_year.csv"
+    "ward_population_by_year.csv",
+    "ward_people.csv"
   ],
   "layers": [
     {
@@ -27,9 +28,13 @@
     {
       "name": "ward_population_by_year",
       "rows": 21
+    },
+    {
+      "name": "ward_people",
+      "rows": 12
     }
   ],
-  "rule": "pandas merge(how='left', validate=...) with the layer on the left, keyed on ward_code; blank keys dropped",
+  "rule": "pandas merge(how='left', validate=...) with the layer on the left, left_on/right_on the key columns; blank keys dropped",
   "expected_files": [
     "expected_join.csv",
     "expected_join_values.csv"

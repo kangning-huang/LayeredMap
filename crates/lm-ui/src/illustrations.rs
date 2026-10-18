@@ -300,8 +300,8 @@ pub fn paint(p: &Painter, rect: Rect, id: &str, t: &Theme) {
             pen.dot(47.0, 18.0, t.accent);
             pen.dot(38.0, 23.0, t.accent);
         }
-        // Match to another layer by a code: two lists joined.
-        "match_by_code" => {
+        // Match a table to a layer: two lists joined.
+        "match_table" => {
             for y in [8.0, 15.0, 22.0] {
                 p.line_segment([pen.at(6.0, y), pen.at(20.0, y)], pen.soft());
                 p.line_segment([pen.at(36.0, y), pen.at(50.0, y)], pen.soft());
@@ -362,7 +362,7 @@ mod tests {
         ("threshold", "Show only values above…"),
         ("similar_values", "Show where values are like this"),
         ("map_coordinates", "Map using coordinate columns"),
-        ("match_by_code", "Match to another layer by code"),
+        ("match_table", "Match to another layer"),
     ];
 
     /// Renders every illustration as a button, light and dark, at 2×

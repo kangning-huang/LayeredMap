@@ -114,10 +114,13 @@ def j6():
     years.insert(12, ["W98", 2023, 99])
     years.append(["W12", 2023, 12023])
     write_table(d / "ward_population_by_year.csv", ["ward_code", "year", "population"], years)
+    # Different column names: the key is `ward`, not `ward_code` (the action names both).
+    people = [[f"W{i:02d}", 500 * i + 3] for i in range(12, 0, -1) if i != 5] + [["W77", 7]]
+    write_table(d / "ward_people.csv", ["ward", "people"], people)
     write_json(d / "expected.json", {
         "fixture": "J6",
         "kind": "vector + table",
-        "files": ["wards.geojson", "wards_split.geojson", "ward_population.csv", "ward_population_by_year.csv"],
+        "files": ["wards.geojson", "wards_split.geojson", "ward_population.csv", "ward_population_by_year.csv", "ward_people.csv"],
         "layers": [
             {"name": "wards", "geometry": "area", "count": len(wards)},
             {"name": "wards_split", "geometry": "area", "count": len(split)},
@@ -125,8 +128,9 @@ def j6():
         "tables": [
             {"name": "ward_population", "rows": len(pop)},
             {"name": "ward_population_by_year", "rows": len(years)},
+            {"name": "ward_people", "rows": len(people)},
         ],
-        "rule": "pandas merge(how='left', validate=...) with the layer on the left, keyed on ward_code; blank keys dropped",
+        "rule": "pandas merge(how='left', validate=...) with the layer on the left, left_on/right_on the key columns; blank keys dropped",
         "expected_files": ["expected_join.csv", "expected_join_values.csv"],
         "assumptions": [],
     })
@@ -142,10 +146,13 @@ to a layer). Twelve square wards near 121° E, 31° N.
   plus W99 (no such ward) and a row with a blank key.
 - `ward_population_by_year.csv` ({len(years)} rows): W01–W06 for 2021–2023 (W02's rows out of
   order), W98 twice (no such ward, repeated) and W12 for 2023 only.
+- `ward_people.csv` ({len(people)} rows): the key column is `ward` (not `ward_code`) and the value
+  `people`; every ward but W05, in reverse order, plus W77 (no such ward).
 
 The four pairings cover pandas `validate`'s four cases: wards × one row each is one-to-one,
 wards × by year one-to-many, split wards × one row each many-to-one, split wards × by year
-many-to-many.
+many-to-many. Wards × people (keys `ward_code` ↔ `ward`) is the different-names case, matched
+through the action `match_table` with both columns named.
 
 Expected (from `tools/lm/reference_tests/join_validate.py`):
 
@@ -153,8 +160,8 @@ Expected (from `tools/lm/reference_tests/join_validate.py`):
   pandas accepts), the rows of a plain left merge (`merge_rows`) and an inner merge (`pairs`),
   layer records with data, table rows with a place, the unmatched keys in table order and the
   unmatched rows (1-based data rows, `|` between them), and the blank keys.
-- `expected_join_values.csv`: the population each layer record gets (blank: none). With one
-  row per ward it is the merge's value; with several, the row with the latest year.
+- `expected_join_values.csv`: the value (population or people) each layer record gets (blank:
+  none). With one row per ward it is the merge's value; with several, the row with the latest year.
 
 Keys are compared exactly; blank keys never match (pandas would match a blank with a blank) and
 are left out of the cardinality check. Tolerances: everything exact.

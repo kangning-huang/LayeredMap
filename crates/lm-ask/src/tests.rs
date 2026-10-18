@@ -77,7 +77,13 @@ fn request(text: &str, layers: Vec<PlanLayer>, filters: Vec<Option<Filter>>) -> 
 fn the_tools_name_the_maps_layers_by_kind() {
     let t = tools::tools(&map(), &[]);
     let s = t.to_string();
-    assert!(!s.contains("__POINTS__") && !s.contains("__AREAS__") && !s.contains("__RASTER__") && !s.contains("__LINES__"));
+    assert!(
+        !s.contains("__POINTS__")
+            && !s.contains("__AREAS__")
+            && !s.contains("__RASTER__")
+            && !s.contains("__LINES__")
+            && !s.contains("__TABLES__")
+    );
     let props = &t[0]["function"]["parameters"]["properties"]["steps"]["items"]["properties"];
     // count_in counts any layer, so "points" lists every point, line and area layer.
     assert_eq!(props["points"]["enum"][0], json!("Schools"));
@@ -292,4 +298,20 @@ fn chinas_view_folds_taiwan_into_china() {
     let (cn_twn, n_cn) = has_twn(Some("CN"));
     assert!(default_twn && !cn_twn, "default {default_twn}, CN {cn_twn}");
     assert!(n_cn < n_default, "{n_cn} vs {n_default}");
+}
+
+/// A table without locations is on the assistant's map ("table, 12 rows") and in the tools'
+/// `table` enum, never among the map layers (WP6.4's `match_table`).
+#[test]
+fn tables_are_offered_for_match_table_only() {
+    let mut layers = map();
+    layers.push(layer("fixtures/J6/ward_people.csv", "Ward people", 3));
+    let s = context::map_text(&layers, &[None, None, None], None, &[]);
+    assert!(s.contains("3. Ward people: table, 12 rows. Fields: ward (text); people (integer)"), "{s}");
+    let t = tools::tools(&layers, &[]);
+    let props = &t[0]["function"]["parameters"]["properties"]["steps"]["items"]["properties"];
+    assert_eq!(props["table"]["enum"], json!(["Ward people"]));
+    assert!(!props["layer"]["enum"].as_array().unwrap().contains(&json!("Ward people")));
+    let s = t.to_string();
+    assert!(s.contains("match_table") && s.contains("table_field"));
 }

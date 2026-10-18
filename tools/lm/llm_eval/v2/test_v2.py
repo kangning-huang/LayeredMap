@@ -353,3 +353,25 @@ def test_a_ranking_can_be_lowest_first_and_count_in_counts_areas():
     plan = [{"name": "buffer", "args": {"layer": "Populated places", "distance": "100 km", "merge": False}},
             {"name": "count_in", "args": {"points": "Countries", "areas": "#1"}}]
     assert not chk.Checker("world", None, "countries near each city").check_plan(plan)[1]
+
+
+def test_match_table_takes_a_table_and_two_named_columns():
+    import context as ctxmod
+
+    ctxmod.LAYERS["District stats"] = {"kind": "table", "count": 16, "fields": [("district", "text", None, None), ("clinics", "integer", None, None)]}
+    ctxmod.CONTEXTS["shanghai_table"] = ctxmod.CONTEXTS["shanghai"] + ["District stats"]
+    try:
+        tools = tools_v2.submit_plan_tools("shanghai_table")
+        props = tools[0]["function"]["parameters"]["properties"]["steps"]["items"]["properties"]
+        assert props["table"]["enum"] == ["District stats"]
+        assert "District stats" not in props["layer"]["enum"], "a table is not a map layer"
+        k = chk.Checker("shanghai_table", None, "")
+        v = k.check(C("match_table", layer="Districts", table="District stats", layer_field="name_en", table_field="district"))
+        assert v.ok and v.call["args"] == {"layer": "Districts", "table": "District stats", "layer_field": "name_en", "table_field": "district"}, v.errors
+        k.add(v.call)
+        assert "clinics" in k.fields_of("Districts") and "district" not in k.fields_of("Districts")
+        assert not k.check(C("match_table", layer="District stats", table="Districts")).ok
+        assert not k.check(C("match_table", layer="Districts", table="District stats", table_field="nope")).ok
+        assert not k.check(C("match_table", layer="Districts", table="District stats", repeats="first")).ok
+    finally:
+        del ctxmod.CONTEXTS["shanghai_table"], ctxmod.LAYERS["District stats"]

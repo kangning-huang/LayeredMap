@@ -354,6 +354,10 @@ fn layer_rows(shell: &mut Shell, ui: &mut Ui, t: &Theme) {
                 shell.table_for = Some(*id);
                 ui.close();
             }
+            if l.profile.kind == LayerKind::Table && menu_item(ui, t, icon::LINK, "Match to a layer…").clicked() {
+                crate::join_ui::open_picker(shell, *id);
+                ui.close();
+            }
             if menu_item(ui, t, icon::PAINT_BRUSH, "Style…").clicked() {
                 shell.ws.select_layer(*id);
                 shell.inspector_tab = 1;
@@ -776,6 +780,8 @@ pub fn inspector(shell: &mut Shell, ui: &mut Ui, map: Rect) {
                         crate::analysis::composer(shell, ui, &t, &l);
                     } else if finding {
                         crate::find_ui::results(shell, ui, &t, &l);
+                    } else if shell.match_draft.as_ref().is_some_and(|d| d.table == id) {
+                        crate::join_ui::picker(shell, ui, &t, &l);
                     } else if let Some((cid, field)) = shell.compare_peers.clone().filter(|(c, _)| *c == id) {
                         ranking(shell, ui, &t, &l, field.as_deref(), rows.first().copied());
                         if ui.link("Back").clicked() {
@@ -811,6 +817,8 @@ pub fn inspector(shell: &mut Shell, ui: &mut Ui, map: Rect) {
             }
         } else if shell.compare_peers.is_some() {
             shell.compare_peers = None;
+        } else if shell.match_draft.is_some() {
+            shell.match_draft = None;
         } else {
             shell.ws.selection.step_back();
         }

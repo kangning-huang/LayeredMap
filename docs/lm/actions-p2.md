@@ -6,12 +6,13 @@ in Python with the library the plan names, and Rust tests that compare the two w
 tolerances. Most of the machinery came earlier: the join is WP3.11's (`lm_jobs::join`), and
 nearest and clip are Phase 4's actions A3 and A2 (`lm_analysis::nearest`, `lm_analysis::clip`,
 run by `lm_jobs::actions` as `nearest_distance`, `nearest_other`, `keep_inside` and
-`remove_inside`). WP6.4 added the join's cardinality check and expected row count, and the
+`remove_inside`). WP6.4 added the join's cardinality check and expected row count, the question
+a join whose keys repeat asks first, the action `match_table` with its column picker, and the
 references against pandas `merge`, GeoPandas `sjoin_nearest` and GeoPandas `clip`.
 
 | Action | Code | Reference | Fixture | Rust test |
 |---|---|---|---|---|
-| Match a table to a layer | `lm_jobs::join::{expect, apply}` | pandas `merge(validate=…)` (`tools/lm/reference_tests/join_validate.py`) | `fixtures/J6/` | `join::tests::j6_matches_pandas_merge_validate` |
+| Match a table to a layer | `lm_jobs::join::{expect, apply}`; action `match_table` (`lm_jobs::actions`) | pandas `merge(validate=…)` (`tools/lm/reference_tests/join_validate.py`) | `fixtures/J6/` | `join::tests::j6_matches_pandas_merge_validate`, `actions::tests::match_table_matches_pandas_with_named_columns` |
 | Nearest feature | `lm_analysis::nearest::nearest_distance` | GeoPandas `sjoin_nearest` in UTM 51N, pyproj `Geod` (`nearest_sjoin.py`) | `fixtures/N14/` | `nearest::tests::n14_matches_sjoin_nearest_and_pyproj` |
 | Keep data inside an area | `lm_analysis::clip::keep_inside` | GeoPandas `clip(keep_geom_type=True)` (`clip_gpd.py`) | `fixtures/N15/` | `clip::tests::n15_matches_geopandas_clip` |
 
@@ -22,9 +23,12 @@ including the antimeridian and high latitudes) and N12 (keep and remove, against
 
 ## Match a table to a layer
 
-**Inputs.** A table (no geometry) and a map layer, a key field on each, and how loosely keys
-are compared (WP3.11's ladder: exact, folded, stripped, codes, crosswalks). Normally the join
-finds these itself (WP3.11); the definition below is about what happens once they are chosen.
+**Inputs.** A table (no geometry) and a map layer, a key field on each (the two may have
+different names), how loosely keys are compared (WP3.11's ladder: exact, folded, stripped,
+codes, crosswalks), and what several table rows for one record become (`repeats`: auto, latest
+or combine). The join finds the fields and the level itself when it can (WP3.11); the action and
+the picker let the user, or the assistant, name the two columns. With named columns the level
+is the tightest one that matches the most table rows.
 
 **Output.** The layer with the table's fields added after its own. The layer keeps exactly one
 row per record, whatever the table looks like: a record matching several table rows takes the
@@ -55,7 +59,18 @@ about the keys, and the card says how many rows share one.
   left merge gives. This is the number that surprises people in other tools when a key repeats;
 - *rows kept*: the layer's own row count, always.
 
-**What the user sees.** The result card has one line under "how it matched", for example:
+**When it asks.** A join whose pairing is clear and one-to-one is made without a question
+(WP3.11). A clear join whose keys repeat (one-to-many, many-to-one or many-to-many) asks first
+(owner's choice, 2026-10-18): "Join population_by_year.csv to districts?", the pairing and its
+match count, the expected row count line below, how the repeats are handled, and Join / Keep as
+a table, with "Choose other columns…" to open the picker. How the repeats are handled reads:
+
+- "Several rows for one district: the one with the latest year is used." (a year or date column)
+- "Several rows for one district: counts are summed and other numbers averaged." (none)
+- "Districts that share a key each take its row." (keys repeat in the layer)
+
+**What the user sees.** The question, each choice of the which-columns question, the picker's
+preview and the result card show one line about the cardinality and the rows, for example:
 
 - "One-to-one: no key repeats. The layer keeps its 17 rows."
 - "One-to-many: a key repeats in the table (up to 5 rows). A plain merge would give 85 rows; the
@@ -63,9 +78,20 @@ about the keys, and the card says how many rows share one.
 - "Many-to-one: a key repeats in the layer (up to 2 areas), and each gets the row. The layer
   keeps its 14 rows."
 
-When the join has to ask (no clear pairing), each choice shows the same line under it, so the
-count is seen before anything is joined. A clear join asks nothing (WP3.11); its line is on the
-card right after, beside Undo.
+A one-to-one join that asked nothing shows its line on the card right after, beside Undo.
+
+**The action and the picker.** "Match to [layer]" on a table's card, and "Match to a layer…" in
+the table's right-click menu, open the picker in the table's panel: the layer, a column of the
+layer and a column of the table (any names; the automatic pairing preselected), "Several rows
+for one place" (Automatic, Latest year or date, Combine) when a key repeats in the table, and a
+live preview ("11 of 12 areas match · 11 of 12 rows find a place", the cardinality line, how the
+repeats are handled) before anything is joined. Join makes WP3.11's join (one undo step "Join
+ward_people.csv", the join card, Unjoin); the card names both columns ("ward ↔ ward_code,
+exactly."). While the picker is open the automatic join leaves the table alone. The assistant
+calls the same runner as `match_table(layer, table, layer_field?, table_field?, repeats?)`; its
+result card is titled "ward_people matched to wards by ward ↔ ward_code", its summary and recipe
+name both columns, and its notices give the cardinality line, how repeats were handled and the
+rows that found no place. Undo removes the fields in one step.
 
 **Unmatched rows.** Listed for review from the card: "Show the 3 not matched" lists the
 unmatched keys as written, in table order (up to 20, then "and N more"). When a key repeats or
@@ -76,13 +102,17 @@ included), for the table drawer or an export.
 **Reference.** pandas `merge` with `validate`: the cardinality is the tightest of `one_to_one`,
 `one_to_many`, `many_to_one`, `many_to_many` that pandas accepts; plain merge rows are
 `len(merge(how="left"))`, pairs `len(merge(how="inner"))`; each record's value is the merge's
-(with one row per record) or the latest year's. Deliberate differences: rows with a blank key
+(with one row per record) or the latest year's. The key columns are `left_on` and `right_on`, so
+J6's `ward_people.csv` (key `ward`, against the layer's `ward_code`) is the different-names case;
+it runs through the action with both columns named, and through `join::apply`. Deliberate
+differences: rows with a blank key
 are dropped before merging (pandas matches a blank with a blank, and counts two blanks as a
 repeated key); keys are compared exactly in the reference, while LayeredMap compares them at the
 join's level (the ladder is tested separately, J1–J5).
 
 **Tolerance.** Everything exact: the cardinality, all five counts, the unmatched keys and rows
-(in order), the blank keys, and the value of every record (52 values over four pairings).
+(in order), the blank keys, and the value of every record (64 values over five pairings, once
+through `join::apply` and once through the action).
 
 ## Nearest feature
 
@@ -157,7 +187,7 @@ Run on 2026-10-18 (macOS, `cargo test`):
 
 | Test | Compared | Largest difference | Tolerance |
 |---|---|---|---|
-| J6, join | 4 pairings: cardinality, 5 counts, unmatched keys and rows, blank keys; 52 record values | none | exact |
+| J6, join | 5 pairings (one with different column names): cardinality, 5 counts, unmatched keys and rows, blank keys; 64 record values, through `join::apply` and through the action `match_table` | none | exact |
 | N14, sources → facilities | 16 nearest targets and distances | 0.0000 m | 1 mm |
 | N14, sources → roads | 16 (1 touching) | 0.029 m | 10 cm |
 | N14, sources → parks | 16 (1 inside, 1 in a hole) | 0.004 m | 10 cm |
@@ -173,6 +203,7 @@ dropped by LayeredMap too.
 ## Decisions
 
 Recorded in `decisions.md` (2026-10-18): records whose key repeats in the layer now all take the
-row; the cardinality follows pandas (all keys, blank keys left out); a clear join still asks
-nothing, so its expected row count is on the card right after, and on the question card before
-when the join asks.
+row; the cardinality follows pandas (all keys, blank keys left out; the owner kept that
+wording); a join whose keys repeat asks first (owner's choice); "Match a table to a layer" is the
+action `match_table` with a column picker, a card action in the app because joining is Free,
+and the assistant sees tables (owner's choice).

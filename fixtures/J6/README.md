@@ -10,10 +10,13 @@ to a layer). Twelve square wards near 121° E, 31° N.
   plus W99 (no such ward) and a row with a blank key.
 - `ward_population_by_year.csv` (21 rows): W01–W06 for 2021–2023 (W02's rows out of
   order), W98 twice (no such ward, repeated) and W12 for 2023 only.
+- `ward_people.csv` (12 rows): the key column is `ward` (not `ward_code`) and the value
+  `people`; every ward but W05, in reverse order, plus W77 (no such ward).
 
 The four pairings cover pandas `validate`'s four cases: wards × one row each is one-to-one,
 wards × by year one-to-many, split wards × one row each many-to-one, split wards × by year
-many-to-many.
+many-to-many. Wards × people (keys `ward_code` ↔ `ward`) is the different-names case, matched
+through the action `match_table` with both columns named.
 
 Expected (from `tools/lm/reference_tests/join_validate.py`):
 
@@ -21,8 +24,8 @@ Expected (from `tools/lm/reference_tests/join_validate.py`):
   pandas accepts), the rows of a plain left merge (`merge_rows`) and an inner merge (`pairs`),
   layer records with data, table rows with a place, the unmatched keys in table order and the
   unmatched rows (1-based data rows, `|` between them), and the blank keys.
-- `expected_join_values.csv`: the population each layer record gets (blank: none). With one
-  row per ward it is the merge's value; with several, the row with the latest year.
+- `expected_join_values.csv`: the value (population or people) each layer record gets (blank:
+  none). With one row per ward it is the merge's value; with several, the row with the latest year.
 
 Keys are compared exactly; blank keys never match (pandas would match a blank with a blank) and
 are left out of the cardinality check. Tolerances: everything exact.

@@ -25,6 +25,7 @@
 //! | `nearest_other` | the layer |
 //! | `join_by_location` | the layer, the areas |
 //! | `add_measurements` | the layer |
+//! | `match_table` | the layer, the table (parameters `layer_field`, `table_field`, `repeats`) |
 //!
 //! Parameters: `distance` ("1 km", "500 m"), `merge` ("yes"/"no"), `band` (1-based), `field`;
 //! `stat` on `count_in` (count, sum, mean, median, min, max; with `field`, a numeric field of the
@@ -32,7 +33,10 @@
 //! number field), `op` (add, subtract, multiply, divide), `b` (a number field or a number) and
 //! `name` (the new field's name); for `find_where`, `conditions`: `k|test|a|b` items joined by
 //! `;`, where `k` is the raster's input position (0 first), `test` is at_least, at_most, between
-//! or any_of (`a` a comma list of codes).
+//! or any_of (`a` a comma list of codes). For `match_table`, `layer_field` and `table_field` (the
+//! key columns, which may have different names; left out, the best pairing is found as the
+//! automatic join does) and `repeats` (auto, latest or combine: what several table rows for one
+//! record become; auto picks the latest by a year or date column, otherwise combines).
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;
@@ -262,6 +266,7 @@ pub const ACTIONS: &[&str] = &[
     "nearest_other",
     "join_by_location",
     "add_measurements",
+    "match_table",
 ];
 
 /// Runs a plan. Checks `ctl` throughout; a cancelled run returns [`ActionError::Cancelled`] and
@@ -285,6 +290,7 @@ pub fn run(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
         "nearest_distance" | "nearest_other" => nearest_action(plan, ctl),
         "join_by_location" => join_action(plan, ctl),
         "add_measurements" => measure_fields(plan, ctl),
+        "match_table" => match_table(plan, ctl),
         other => Err(ActionError::Input(format!("LayeredMap can't run “{other}” yet."))),
     }
 }
@@ -1913,6 +1919,82 @@ fn measure_fields(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionErro
             Vec::new(),
         ),
         output: ActionOutput::NewFields { layer: input.layer.id, data: Arc::new(out), fields },
+        highlight: None,
+    })
+}
+
+// ---------------------------------------------------------------------------------------------
+// Match a table to a layer (WP6.4): the WP3.11 join with the key columns named
+
+fn match_table(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
+    use crate::join;
+    let (layer_in, table_in) = (plan.input(0)?, plan.input(1)?);
+    let (layer, table) = (layer_in.vector()?, table_in.vector()?);
+    ctl.check()?;
+    let lf = plan.param("layer_field").map(str::trim).filter(|f| !f.is_empty());
+    let tf = plan.param("table_field").map(str::trim).filter(|f| !f.is_empty());
+    for (f, ds, input) in [(lf, layer, layer_in), (tf, table, table_in)] {
+        if let Some(f) = f
+            && ds.field_index(f).is_none()
+        {
+            return Err(ActionError::Input(format!("{} has no field “{f}”.", input.name())));
+        }
+    }
+    let table_name = table_in.name().to_string();
+    let spec = match (tf, lf) {
+        (Some(t), Some(l)) => join::spec_for_fields(table, layer, t, l, &table_name),
+        _ => join::best_pairing(table, layer, tf, lf).map(|p| join::spec_for(table, layer, &p, &table_name)),
+    }
+    .ok_or_else(|| {
+        ActionError::Input(format!("No column of {} matches one of {}; name the two key columns.", table_in.name(), layer_in.name()))
+    })?;
+    let spec = join::with_repeats(table, &spec, plan.param("repeats").unwrap_or("auto")).map_err(ActionError::Input)?;
+    ctl.check()?;
+    let joined = join::apply(table, layer, &spec).ok_or_else(|| ActionError::Failed("The join couldn't be made.".into()))?;
+    let e = &joined.expected;
+    let keys = format!("{} ↔ {}", spec.table_field, spec.layer_field);
+    let title = format!("{} matched to {} by {keys}", table_name, layer_in.name());
+    let mut notices = vec![e.line(layer_in.nouns())];
+    if let Some(h) = e.handling(layer_in.nouns()) {
+        notices.push(h);
+    }
+    if !joined.unmatched_rows.is_empty() {
+        let shown: Vec<&str> = joined.unmatched.iter().take(5).map(String::as_str).collect();
+        let more = if joined.unmatched.len() > 5 { ", …" } else { "" };
+        let blank = if joined.blank_keys > 0 { format!(" ({} with no {})", joined.blank_keys, spec.table_field) } else { String::new() };
+        notices.push(format!(
+            "{} of {} rows found no {}{blank}{}",
+            group_thousands(joined.unmatched_rows.len() as u64),
+            group_thousands(e.table_rows as u64),
+            layer_in.singular_noun(),
+            if shown.is_empty() { ".".to_string() } else { format!(": {}{more}.", shown.join(", ")) }
+        ));
+    }
+    let inputs = [layer_in, table_in];
+    let mut decisions = vec![format!("keys {keys}, compared {}", spec.level.describe())];
+    if let Some(h) = e.handling(layer_in.nouns()) {
+        decisions.push(lower_first(h.trim_end_matches('.')));
+    }
+    Ok(ActionResult {
+        label: format!("Join {table_name}"),
+        card: ResultCard {
+            title: title.clone(),
+            summary: format!(
+                "{} of {} {} matched · {keys}",
+                group_thousands(joined.layer_matched as u64),
+                group_thousands(e.layer_rows as u64),
+                layer_in.plural_noun()
+            ),
+            answer: Answer::Number {
+                value: joined.layer_matched as f64,
+                unit: layer_in.plural_noun(),
+                detail: format!("now carry {}", joined.new_fields.join(", ")),
+            },
+            context: context(&inputs, &[]),
+            notices,
+        },
+        recipe: recipe(plan, &title, &inputs, "", decisions, Vec::new()),
+        output: ActionOutput::NewFields { layer: layer_in.layer.id, data: Arc::new(joined.data), fields: joined.new_fields },
         highlight: None,
     })
 }

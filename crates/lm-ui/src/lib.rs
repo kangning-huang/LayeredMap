@@ -234,6 +234,8 @@ pub struct Shell {
     pub(crate) filter_draft: Option<table::FilterDraft>,
     /// "Compare with other [Districts]": the ranking chart open for a layer and field.
     pub(crate) compare_peers: Option<(lm_core::model::LayerId, Option<String>)>,
+    /// "Match to a layer" (WP6.4): the column picker shown in the table's panel.
+    pub match_draft: Option<workspace::MatchDraft>,
     /// Find in a layer (WP3.10).
     pub(crate) find: find_ui::FindState,
     /// An area being drawn (WP4.4).
@@ -331,6 +333,7 @@ impl Shell {
             table: Default::default(),
             filter_draft: None,
             compare_peers: None,
+            match_draft: None,
             chooser: None,
             chooser_hover: None,
             data_search: Default::default(),
@@ -489,7 +492,7 @@ impl Shell {
                 } else if let Some(id) = self.find.layer.filter(|id| self.find.active_for(*id)) {
                     self.find.clear();
                     self.ws.selection = lm_core::selection::SelectionContext::layer(id);
-                } else if self.chooser.take().is_none() && self.compare_peers.take().is_none() {
+                } else if self.chooser.take().is_none() && self.compare_peers.take().is_none() && self.match_draft.take().is_none() {
                     self.ws.selection.step_back();
                 }
             }

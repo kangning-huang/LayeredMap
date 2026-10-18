@@ -337,24 +337,37 @@ pub fn decide(pairings: &[Pairing]) -> Decision {
 #[derive(Clone, Debug, PartialEq)]
 pub enum Plan {
     /// Join to each of these layers (by index), the best match first: each one's decision is a
-    /// clear join on its own.
+    /// clear one-to-one join on its own.
     Join(Vec<(usize, Pairing)>),
+    /// The pairing is clear but keys repeat (one-to-many, many-to-one, many-to-many): ask
+    /// before joining, showing the row counts and how the repeats are handled.
+    Confirm(usize, Pairing),
     /// No layer is clear: ask once about the best layer's pairings.
     Ask(usize, Vec<Pairing>),
     Nothing,
 }
 
 /// The rule over several layers (shelf order, top first): the table joins every layer whose
-/// decision is a clear join, with no question; only when none is clear does it ask, about the
-/// layer that matches best. Ties go to the layer higher on the shelf. The rule for each layer
+/// decision is a clear join and whose keys don't repeat (one-to-one), with no question. A clear
+/// join whose keys repeat asks first (owner's choice, 2026-10-18), about the best such layer,
+/// when no layer joins on its own. Only when no layer is clear does it ask which pairing, about
+/// the layer that matches best. Ties go to the layer higher on the shelf. The rule for each layer
 /// is `decide`'s, unchanged: a layer whose key field repeats (cities with a country field) is
 /// never a target, so a table of country codes joins countries and leaves cities alone.
 pub fn plan(table: &Dataset, layers: &[&Dataset]) -> Plan {
     let mut joins: Vec<(usize, Pairing)> = Vec::new();
+    let mut confirm: Option<(usize, Pairing)> = None;
     let mut ask: Option<(usize, Vec<Pairing>)> = None;
     for (i, l) in layers.iter().enumerate() {
         match decide(&score(table, l)) {
-            Decision::Join(p) => joins.push((i, p)),
+            Decision::Join(p) => {
+                let repeats = expect(table, l, &spec_for(table, l, &p, "")).is_some_and(|e| e.asks_first());
+                if !repeats {
+                    joins.push((i, p));
+                } else if confirm.as_ref().is_none_or(|(_, best)| p.rate() > best.rate()) {
+                    confirm = Some((i, p));
+                }
+            }
             Decision::Ask(ps) => {
                 if ask.as_ref().is_none_or(|(_, best)| ps[0].rate() > best[0].rate()) {
                     ask = Some((i, ps));
@@ -368,10 +381,62 @@ pub fn plan(table: &Dataset, layers: &[&Dataset]) -> Plan {
         joins.sort_by(|a, b| b.1.rate().total_cmp(&a.1.rate()));
         return Plan::Join(joins);
     }
+    if let Some((i, p)) = confirm {
+        return Plan::Confirm(i, p);
+    }
     match ask {
         Some((i, ps)) => Plan::Ask(i, ps),
         None => Plan::Nothing,
     }
+}
+
+/// The pairing to start from when the user picks the columns: the best one for `layer`, among
+/// those using the given fields (by name; None: any). None when no column pair shares a key.
+pub fn best_pairing(table: &Dataset, layer: &Dataset, table_field: Option<&str>, layer_field: Option<&str>) -> Option<Pairing> {
+    score(table, layer).into_iter().find(|p| {
+        table_field.is_none_or(|f| table.fields[p.table_field].name == f)
+            && layer_field.is_none_or(|f| layer.fields[p.layer_field].name == f)
+    })
+}
+
+/// The spec for two named columns: the tightest level of the ladder that matches most of the
+/// table's keys (exact when nothing matches at all).
+pub fn spec_for_fields(table: &Dataset, layer: &Dataset, table_field: &str, layer_field: &str, table_name: &str) -> Option<JoinSpec> {
+    if !table.fields.iter().any(|f| f.name == table_field) || !layer.fields.iter().any(|f| f.name == layer_field) {
+        return None;
+    }
+    let at = |level: Level| JoinSpec {
+        table_name: table_name.to_string(),
+        table_field: table_field.to_string(),
+        layer_field: layer_field.to_string(),
+        level,
+        rows: Rows::One,
+        aliases: Vec::new(),
+    };
+    let mut best: Option<(usize, Level)> = None;
+    for level in Level::ALL {
+        let m = matching(table, layer, &at(level))?.expected.table_matched;
+        if best.is_none_or(|(n, _)| m > n) {
+            best = Some((m, level));
+        }
+    }
+    best.map(|(_, level)| at(level))
+}
+
+/// `spec` with the rule for several rows per record named as the action's `repeats` parameter
+/// says: "auto" (or empty) leaves it to the join (latest by a year or date column, otherwise
+/// combined), "latest" needs such a column, "combine" sums counts and averages other numbers.
+pub fn with_repeats(table: &Dataset, spec: &JoinSpec, repeats: &str) -> Result<JoinSpec, String> {
+    let rows = match repeats.trim() {
+        "" | "auto" => Rows::One,
+        "combine" => Rows::Combine,
+        "latest" => match time_field(table, table.fields.iter().position(|f| f.name == spec.table_field).unwrap_or(usize::MAX)) {
+            Some(t) => Rows::Latest { field: table.fields[t].name.clone() },
+            None => return Err(format!("{} has no year or date column to take the latest from.", spec.table_name)),
+        },
+        other => return Err(format!("“{other}” isn't a way to handle repeats; use auto, latest or combine.")),
+    };
+    Ok(JoinSpec { rows, ..spec.clone() })
 }
 
 /// The layer's data without fields a join added (separating a joined table).
@@ -386,7 +451,7 @@ pub fn separate(layer: &Dataset, fields: &[String]) -> Dataset {
 }
 
 /// What to do when the table has several rows for one place.
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Rows {
     /// One row per place.
     One,
@@ -475,6 +540,8 @@ pub struct Expected {
     /// The most table rows that share one key, and the most records that share one key.
     pub table_most: usize,
     pub layer_most: usize,
+    /// What happens to several table rows for one record (`Rows::One` when none has several).
+    pub rows_rule: Rows,
 }
 
 impl Expected {
@@ -508,6 +575,29 @@ impl Expected {
             }
         };
         format!("{}: {why}. {keeps}", self.cardinality.words())
+    }
+
+    /// How repeated keys are handled, in words; None for a one-to-one join. "Several rows for
+    /// one district: the one with the latest year is used."
+    pub fn handling(&self, nouns: (&str, &str)) -> Option<String> {
+        let mut parts = Vec::new();
+        match &self.rows_rule {
+            Rows::One => {}
+            Rows::Latest { field } => parts.push(format!("Several rows for one {}: the one with the latest {field} is used.", nouns.0)),
+            Rows::Combine => parts.push(format!("Several rows for one {}: counts are summed and other numbers averaged.", nouns.0)),
+        }
+        if self.layer_most > 1 {
+            let mut n = nouns.1.chars();
+            let cap = n.next().map(|c| c.to_uppercase().collect::<String>() + n.as_str()).unwrap_or_default();
+            parts.push(format!("{cap} that share a key each take its row."));
+        }
+        (!parts.is_empty()).then(|| parts.join(" "))
+    }
+
+    /// Whether this join asks before it is made (owner's choice, 2026-10-18): every join whose
+    /// keys repeat on either side does, because how the repeats are handled is a choice.
+    pub fn asks_first(&self) -> bool {
+        self.cardinality != Cardinality::OneToOne
     }
 }
 
@@ -660,6 +750,10 @@ fn matching(table: &Dataset, layer: &Dataset, spec: &JoinSpec) -> Option<Matchin
         merge_rows: layer_rows - groups.len() + pairs,
         table_most,
         layer_most,
+        rows_rule: match &spec.rows {
+            Rows::One => rows_rule(table, &groups, tf),
+            r => r.clone(),
+        },
     };
     Some(Matching { tf, lf, groups, unmatched, unmatched_rows, blank_keys, expected })
 }
@@ -687,10 +781,7 @@ fn edit_distance(a: &str, b: &str) -> usize {
 /// Joins `table` to `layer` as `spec` says.
 pub fn apply(table: &Dataset, layer: &Dataset, spec: &JoinSpec) -> Option<Joined> {
     let Matching { tf, lf, groups, unmatched, unmatched_rows, blank_keys, expected } = matching(table, layer, spec)?;
-    let rule = match &spec.rows {
-        Rows::One => rows_rule(table, &groups, tf),
-        r => r.clone(),
-    };
+    let rule = expected.rows_rule.clone();
     let most_rows = groups.values().map(Vec::len).max().unwrap_or(0);
     // New fields: every table field but the key, renamed if the layer has the name already.
     let added: Vec<usize> = (0..table.fields.len()).filter(|&f| f != tf).collect();

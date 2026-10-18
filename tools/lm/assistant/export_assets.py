@@ -9,7 +9,7 @@ The app's Ask box (Phase 7, early test build) uses the same prompt, rules, worke
 
 The tools depend on the map's layers (each layer argument is an enum of layer names). They are
 exported for a template map whose layers are the placeholders ``__POINTS__``, ``__LINES__``,
-``__AREAS__`` and ``__RASTER__``. The app replaces each placeholder in an enum with the names of
+``__AREAS__``, ``__RASTER__`` and ``__TABLES__``. The app replaces each placeholder in an enum with the names of
 its layers of that kind (``lm_ask::tools``).
 """
 
@@ -26,7 +26,7 @@ sys.path.insert(0, str(ROOT / "tools/lm/puzzles"))
 import pro_e2e as pe  # noqa: E402
 
 OUT = ROOT / "crates/lm-ask/assets"
-PLACEHOLDERS = {"__POINTS__": "points", "__LINES__": "lines", "__AREAS__": "areas", "__RASTER__": "raster"}
+PLACEHOLDERS = {"__POINTS__": "points", "__LINES__": "lines", "__AREAS__": "areas", "__RASTER__": "raster", "__TABLES__": "table"}
 
 
 def build() -> dict[str, str]:

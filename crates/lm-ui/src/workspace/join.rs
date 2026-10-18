@@ -54,11 +54,24 @@ pub struct JoinOffer {
     spec: JoinSpec,
 }
 
-/// "Which places does population.csv describe?"
+/// "Which places does population.csv describe?", or, for a clear join whose keys repeat,
+/// "Join population.csv to districts?" (`confirm`, one offer: Join / Keep as a table).
 #[derive(Clone, Debug)]
 pub struct JoinQuestion {
     pub table_name: String,
     pub offers: Vec<JoinOffer>,
+    pub confirm: bool,
+}
+
+/// The column picker of "Match to a layer" (WP6.4): the layer and the two key columns, which
+/// may have different names, and what to do with repeats ("auto", "latest", "combine").
+#[derive(Clone, Debug, PartialEq)]
+pub struct MatchDraft {
+    pub table: LayerId,
+    pub target: LayerId,
+    pub layer_field: String,
+    pub table_field: String,
+    pub repeats: String,
 }
 
 /// A table joined to a layer, as the session remembers it: the table as it stood on the shelf
@@ -161,6 +174,19 @@ impl Workspace {
                         Plan::Join(v) => {
                             Outcome::Join(v.iter().map(|(i, p)| (sets[*i].0, join::spec_for(&tds, &sets[*i].1, p, &name))).collect())
                         }
+                        Plan::Confirm(i, p) => {
+                            let (id, lds) = &sets[i];
+                            let spec = join::spec_for(&tds, lds, &p, &name);
+                            Outcome::Confirm(
+                                *id,
+                                Box::new((
+                                    format!("{} ↔ {}", tds.fields[p.table_field].name, lds.fields[p.layer_field].name),
+                                    format!("{} of {} match", p.matched_keys, p.table_keys),
+                                    join::expect(&tds, lds, &spec),
+                                    spec,
+                                )),
+                            )
+                        }
                         Plan::Ask(i, ps) => {
                             let (id, lds) = &sets[i];
                             Outcome::Ask(
@@ -196,7 +222,14 @@ impl Workspace {
                                     .into_iter()
                                     .map(|(label, detail, expected, spec)| JoinOffer { label, detail, expected, target, spec })
                                     .collect();
-                                w.joins.questions.insert(table, JoinQuestion { table_name: name, offers });
+                                w.joins.questions.insert(table, JoinQuestion { table_name: name, offers, confirm: false });
+                                w.select_layer(table);
+                            }
+                            Outcome::Confirm(target, offer) => {
+                                let (label, detail, expected, spec) = *offer;
+                                let name = table_name(w, table);
+                                let offers = vec![JoinOffer { label, detail, expected, target, spec }];
+                                w.joins.questions.insert(table, JoinQuestion { table_name: name, offers, confirm: true });
                                 w.select_layer(table);
                             }
                             Outcome::Nothing => {}
@@ -207,8 +240,8 @@ impl Workspace {
         }
     }
 
-    /// Joins `table` to `target` as `spec` says (the question's answer).
-    pub(super) fn perform_join(&mut self, table: LayerId, target: LayerId, spec: JoinSpec, style: bool) -> bool {
+    /// Joins `table` to `target` as `spec` says (the question's answer, or the column picker's).
+    pub fn perform_join(&mut self, table: LayerId, target: LayerId, spec: JoinSpec, style: bool) -> bool {
         self.perform_joins(table, vec![(target, spec)], style)
     }
 
@@ -494,6 +527,84 @@ impl Workspace {
         self.joins.questions.get(&table)
     }
 
+    /// The map layers a table can be matched to (points, lines, areas), top of the shelf first.
+    pub fn match_targets(&self) -> Vec<LayerId> {
+        self.doc
+            .layers
+            .iter()
+            .rev()
+            .filter(|l| drawable(&l.profile) && matches!(l.profile.kind, LayerKind::Areas | LayerKind::Points | LayerKind::Lines))
+            .map(|l| l.id)
+            .collect()
+    }
+
+    /// The column picker for `table`, preset to the best pairing over the map layers (the one the
+    /// automatic join would choose), or the first layer's first fields when nothing matches.
+    pub fn match_draft(&self, table: LayerId) -> Option<MatchDraft> {
+        let tds = vector(self, table)?;
+        let targets = self.match_targets();
+        let mut best: Option<(f64, MatchDraft)> = None;
+        for id in &targets {
+            let Some(lds) = vector(self, *id) else { continue };
+            if let Some(p) = join::best_pairing(&tds, &lds, None, None)
+                && best.as_ref().is_none_or(|(r, _)| p.rate() > *r)
+            {
+                let d = MatchDraft {
+                    table,
+                    target: *id,
+                    layer_field: lds.fields[p.layer_field].name.clone(),
+                    table_field: tds.fields[p.table_field].name.clone(),
+                    repeats: "auto".into(),
+                };
+                best = Some((p.rate(), d));
+            }
+        }
+        if let Some((_, d)) = best {
+            return Some(d);
+        }
+        let target = *targets.first()?;
+        let lds = vector(self, target)?;
+        Some(MatchDraft {
+            table,
+            target,
+            layer_field: lds.fields.first()?.name.clone(),
+            table_field: tds.fields.first()?.name.clone(),
+            repeats: "auto".into(),
+        })
+    }
+
+    /// The field names of a vector layer or table (for the picker's lists).
+    pub fn field_names(&self, id: LayerId) -> Vec<String> {
+        vector(self, id).map(|d| d.fields.iter().map(|f| f.name.clone()).collect()).unwrap_or_default()
+    }
+
+    /// The spec and what it would give, for the picker's live preview; Err says why not.
+    pub fn match_preview(&self, d: &MatchDraft) -> Result<(JoinSpec, join::Expected), String> {
+        let (Some(tds), Some(lds)) = (vector(self, d.table), vector(self, d.target)) else {
+            return Err("The layer isn't loaded yet.".into());
+        };
+        let name = table_name(self, d.table);
+        let spec = join::spec_for_fields(&tds, &lds, &d.table_field, &d.layer_field, &name).ok_or("Pick a column on each side.")?;
+        let spec = join::with_repeats(&tds, &spec, &d.repeats)?;
+        let e = join::expect(&tds, &lds, &spec).ok_or("Pick a column on each side.")?;
+        Ok((spec, e))
+    }
+
+    /// The user is matching `table` by hand: it isn't joined on its own any more (as after
+    /// Unjoin), and a join being worked out for it is dropped. A question it asked stays, for
+    /// when the picker is cancelled.
+    pub fn hold_join(&mut self, table: LayerId) {
+        self.joins.unjoined.insert(table);
+        self.joins.working.remove(&table);
+    }
+
+    /// Joins as the picker says: one undo step ("Join population.csv"), with the join's card.
+    pub fn match_join(&mut self, d: &MatchDraft) -> bool {
+        let Ok((spec, _)) = self.match_preview(d) else { return false };
+        self.joins.questions.remove(&d.table);
+        self.perform_join(d.table, d.target, spec, true)
+    }
+
     /// Whether a table is being matched to the map layers right now.
     pub fn join_working(&self, table: LayerId) -> bool {
         self.joins.working.contains_key(&table)
@@ -504,6 +615,7 @@ impl Workspace {
 enum Outcome {
     Join(Vec<(LayerId, JoinSpec)>),
     Ask(LayerId, Vec<(String, String, Option<join::Expected>, JoinSpec)>),
+    Confirm(LayerId, Box<(String, String, Option<join::Expected>, JoinSpec)>),
     Nothing,
 }
 
@@ -658,5 +770,56 @@ mod tests {
         assert!(w.unjoin(b, "gdp_growth_iso3.csv"));
         assert_eq!(w.doc.layers.len(), 3, "the last unjoin brings it back");
         assert!(w.doc.layer(b).unwrap().style.color_by.is_none());
+    }
+
+    /// A clear join whose keys repeat asks first (owner's choice, 2026-10-18): J3's one row per
+    /// district per year waits on the shelf with a Join / Keep as a table question; Join is one
+    /// undo step.
+    #[test]
+    fn a_join_whose_keys_repeat_asks_first() {
+        let mut w = Workspace::default();
+        open(&mut w, "fixtures/V1/districts.geojson", 1);
+        open(&mut w, "fixtures/J3/population_by_year.csv", 2);
+        let before = w.doc.clone();
+        join(&mut w);
+        assert_eq!(w.doc.layers.len(), 2, "nothing joined yet");
+        let table = w.doc.layers.iter().find(|l| l.profile.kind == LayerKind::Table).unwrap().id;
+        let q = w.join_question(table).expect("a question").clone();
+        assert!(q.confirm && q.offers.len() == 1);
+        let e = q.offers[0].expected.as_ref().unwrap();
+        assert_eq!((e.cardinality, e.merge_rows, e.rows()), (join::Cardinality::OneToMany, 85, 17));
+        w.answer_join(table, Some(0));
+        assert_eq!(w.doc.layers.len(), 1, "joined: the table went under the layer");
+        assert_eq!(w.undo.undo_label(), Some("Join population_by_year.csv"));
+        w.undo();
+        assert_eq!(w.doc.layers, before.layers);
+    }
+
+    /// "Match to a layer" with columns of different names (J6's `ward` ↔ `ward_code`): the
+    /// picker starts from the best pairing, previews before joining, and joins in one undo step
+    /// with a card that names both columns.
+    #[test]
+    fn the_column_picker_joins_columns_with_different_names() {
+        let mut w = Workspace::default();
+        open(&mut w, "fixtures/J6/wards.geojson", 1);
+        open(&mut w, "fixtures/J6/ward_people.csv", 2);
+        let before = w.doc.clone();
+        let wards = w.doc.layers.iter().find(|l| l.profile.kind == LayerKind::Areas).unwrap().id;
+        let table = w.doc.layers.iter().find(|l| l.profile.kind == LayerKind::Table).unwrap().id;
+        let mut d = w.match_draft(table).unwrap();
+        assert_eq!((d.target, d.layer_field.as_str(), d.table_field.as_str()), (wards, "ward_code", "ward"));
+        let (_, e) = w.match_preview(&d).unwrap();
+        assert_eq!((e.layer_matched, e.table_matched, e.cardinality), (11, 11, join::Cardinality::OneToOne));
+        // A column that matches nothing previews as nothing, and isn't joined.
+        d.layer_field = "name".into();
+        assert_eq!(w.match_preview(&d).unwrap().1.layer_matched, 0);
+        d.layer_field = "ward_code".into();
+        assert!(w.match_join(&d));
+        assert_eq!(w.undo.undo_label(), Some("Join ward_people.csv"));
+        let r = w.join_report(wards).unwrap();
+        assert_eq!(r.how(), "ward ↔ ward_code, exactly.");
+        assert_eq!(r.matched, 11);
+        w.undo();
+        assert_eq!(w.doc.layers, before.layers, "one undo step");
     }
 }

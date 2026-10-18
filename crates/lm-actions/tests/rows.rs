@@ -255,11 +255,11 @@ fn row_cases() -> Vec<Case> {
             p3: "top: Change colors and range | Show only values above…",
         },
         Case {
-            name: "row 16: table, layer with a shared code open",
+            name: "row 16: table, a layer open",
             rows: &[16],
             ctx: Context::new(lyr(TABLE), vec![table(1), districts(2)]),
-            dev6: "top: Match to Districts by geoid | Map using coordinate columns | View data\nMeasure: Add a field calculated from two values",
-            p3: "top: View data",
+            dev6: "top: Match to Districts | Map using coordinate columns | View data\nMeasure: Add a field calculated from two values",
+            p3: "top: Match to Districts | View data",
         },
         Case {
             name: "row 17: drawn area, point and area layers open",

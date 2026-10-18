@@ -569,7 +569,7 @@ input_reason = "Pick a point."
         assert_eq!(phase("open_file"), Some((2, Surface::Card)));
         assert_eq!(phase("try_example"), Some((2, Surface::Card)));
         assert_eq!(phase("browse_library"), Some((5, Surface::Card)));
-        assert_eq!(phase("match_by_code"), Some((6, Surface::Card)));
+        assert_eq!(phase("match_table"), Some((3, Surface::Card)));
         for a in r.actions() {
             if a.surface == Surface::Assistant {
                 assert_eq!(a.min_phase, 4, "{}", a.id);

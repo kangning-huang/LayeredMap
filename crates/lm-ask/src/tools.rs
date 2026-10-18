@@ -9,8 +9,8 @@ use lm_jobs::plan_exec::PlanLayer;
 pub const SYSTEM: &str = include_str!("../assets/system.txt");
 const TOOLS: &str = include_str!("../assets/tools.json");
 
-const PLACEHOLDERS: [(&str, &str); 4] =
-    [("__POINTS__", "points"), ("__LINES__", "lines"), ("__AREAS__", "areas"), ("__RASTER__", "raster")];
+const PLACEHOLDERS: [(&str, &str); 5] =
+    [("__POINTS__", "points"), ("__LINES__", "lines"), ("__AREAS__", "areas"), ("__RASTER__", "raster"), ("__TABLES__", "table")];
 
 /// The tools for these layers: every enum's placeholders replaced by the names of the layers of
 /// that kind. An enum left empty becomes a plain string (some providers reject empty enums).
