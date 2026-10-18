@@ -7,7 +7,7 @@ Assets, data and fonts are listed in [ATTRIBUTION.md](ATTRIBUTION.md).
 
 | Licence | Crates |
 |---|---|
-| MIT License | 305 |
+| MIT License | 307 |
 | Apache License 2.0 | 40 |
 | ISC License | 20 |
 | BSD 3-Clause "New" or "Revised" License | 12 |
@@ -7098,7 +7098,7 @@ SOFTWARE.
 
 ### MIT License
 
-Used by: color 0.3.3, half 2.7.1, linebender_resource_handle 0.1.1
+Used by: color 0.3.3, half 2.7.1, linebender_resource_handle 0.1.1, pdf-writer 0.15.0, subsetter 0.2.6
 
 ```text
 MIT License

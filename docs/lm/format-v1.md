@@ -6,7 +6,8 @@ be emailed, put on a USB drive or handed in as coursework. Code: `crates/lm-doc/
 (save and open), `crates/lm-doc/src/autosave.rs` (autosave and recovery).
 
 Source data files are **referenced, never copied**. The data the map made itself (results) is
-stored inside.
+stored inside. A **map package** (container 2, below) is the exception: the same file with its
+source files inside, so the map opens on another computer.
 
 ## Container
 
@@ -150,9 +151,61 @@ in CI (`container::tests::fixture_documents_migrate_and_round_trip`).
 Going back: a v1 `manifest.json` taken out of the ZIP still opens in a Phase 4 build, which
 ignores `container`, `sources` and `owned` (its layers made by LayeredMap then have no data).
 
+## Map packages (container 2, WP6.5)
+
+Share › Map package… (File › Export Map Package…) writes a `.lmap` that carries its data. Code:
+`crates/lm-doc/src/package.rs`; the dialog is `crates/lm-ui/src/package.rs`.
+
+**Layout.** The container above, plus the source files:
+
+| Entry | Compression | Contents |
+|---|---|---|
+| `data/<n>/<file>` | Deflate | The `n`-th source file (1-based, in `sources` order), byte for byte, with its companions beside it: files of the same name in its folder with a known sidecar extension (a Shapefile's `.shx` `.dbf` `.prj` `.cpg` and indexes, world files `.tfw` `.wld` `.jgw` `.pgw`, `.aux.xml`, `.ovr`, `.hdr`, …). |
+| `data/<n>/<folder>/…` | Deflate | A source that is a folder (a folder-based format): its files, macOS `._*` and `.DS_Store` left out. |
+
+**Manifest.**
+
+- `container` is **2**. A build that reads only container 1 refuses the file ("saved by a newer
+  version of LayeredMap") instead of opening layers with no data. Plain maps are still written as
+  container 1, so older builds keep opening them.
+- Each packaged `sources` row has `embedded`, the ZIP entries holding the file and its
+  companions (the file first), and `license` when LayeredMap knows it (the examples'; the data
+  library's from its catalog). Its `path` is the file's entry (`data/1/schools.csv`) and
+  `relative` is absent.
+- Layers read from a packaged file have `profile.source.path` = that entry.
+- `package`: `{ "dropped": [ { "layer": 4, "fields": ["phone"] } ], "paths_removed": 3 }`.
+
+**What packaging removes.**
+
+- **Absolute paths.** Every string in the manifest that is an absolute path (`/…/…`, `C:\…`,
+  `\\server\…`) — a joined table's source, a layer kept as a result, anything else — is replaced by
+  its file name; packaged sources by their entry. The dialog lists each path before saving.
+- **Personal fields the user leaves out.** Fields that look like people's names, emails, phone
+  or ID numbers (`lm_jobs::export::sensitive`) are listed, checked to be left out. A field the
+  style (colour, size, labels) or the filter uses can't be left out, so the map still looks the
+  same. A layer that loses fields is stored as an owned result (`results/`) without them, and its
+  profile, field roles and starred fields lose them too; its source file is then not carried
+  (unless another layer reads it), and its `profile.source` keeps only the file name, with no
+  size or time.
+- Layers already stored as owned results never carry their source file.
+
+**Opening.** A package's files are unpacked into a folder of the app's own,
+`~/Library/Application Support/LayeredMap/Packages/<hash>/<n>/…` (beside the autosaves; `<hash>`
+is the first 16 hex digits of the manifest's SHA-256, so opening the same package again reuses
+it), through a temporary file and a rename. Entry names are checked (`data/<digits>/` then plain
+names only: no `..`, no absolute parts, no `\` or `:`). Each file's modification time is set
+to the recorded `mtime`, so the source reads as unchanged and kept results still match their
+recipes. The layers are pointed at the unpacked files, and the document is then like any other:
+undo starts fresh, autosaves are plain container-1 maps referencing the unpacked files (which
+stay where they are), and ⌘S writes the user's file as a package again (the app remembers that
+the file is one; after a crash it asks the file).
+
+Not relinked: a package never looks for its sources beside itself.
+
 ## Compatibility rules
 
 - Readers ignore unknown fields and entries.
 - Additions that older readers can safely ignore keep `container` at 1 and `version` at 0.
 - A change older readers would misread raises `container` (layout) or `version` (document
   schema); older builds then refuse the file with a message saying a newer LayeredMap saved it.
+  Map packages are the first such change: container 2 (above).

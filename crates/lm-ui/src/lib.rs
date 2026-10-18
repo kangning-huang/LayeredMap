@@ -25,6 +25,7 @@ pub mod join_ui;
 pub mod library;
 #[cfg(test)]
 mod offline_harness;
+pub mod package;
 pub mod panels;
 pub mod saving;
 #[cfg(test)]
@@ -140,6 +141,10 @@ pub enum Command {
     ExportMapImage,
     /// Share › Data… (File › Export Data…): the data export dialog (WP5.3).
     ExportData,
+    /// Share › Map package… (File › Export Map Package…): the package dialog (WP6.5).
+    ExportPackage,
+    /// Write the map package here (the save dialog's result).
+    SavePackageTo(PathBuf),
     /// View › Work Offline: strict offline mode (WP6.6) on or off.
     SetOffline(bool),
     /// Help › Export Diagnostics…: show the app's report for review before it is saved.
@@ -167,6 +172,8 @@ pub enum FileRequest {
     SaveAs { suggested_name: String },
     /// Pick the file a missing layer's source moved to.
     Locate { layer: lm_core::model::LayerId, file_name: String },
+    /// Pick where to save a map package (a `.lmap` file; WP6.5).
+    SavePackage { suggested_name: String },
 }
 
 /// What the shell remembers between launches (the app stores it).
@@ -274,6 +281,11 @@ pub struct Shell {
     /// The map image sheet and the data export dialog, while open (WP5.3).
     pub(crate) export_sheet: Option<export::ImageSheet>,
     pub(crate) data_export: Option<export_data::DataDialog>,
+    /// The map package dialog (WP6.5), what a package will be written from once the user picks
+    /// where, and a package being written.
+    pub(crate) package_dialog: Option<package::PackageDialog>,
+    pub(crate) package_inputs: Option<package::PackageInputs>,
+    pub(crate) package_job: Option<package::PackageJob>,
     /// A diagnostics report open for review (Help › Export Diagnostics…).
     pub(crate) diagnostics: Option<String>,
     /// The data library (WP5.4).
@@ -319,6 +331,9 @@ impl Shell {
             doc_file: saving::DocFile::default(),
             export_sheet: None,
             data_export: None,
+            package_dialog: None,
+            package_inputs: None,
+            package_job: None,
             diagnostics: None,
             library: Default::default(),
             playing: None,
@@ -482,6 +497,17 @@ impl Shell {
                     self.export_sheet = Some(export::ImageSheet::new(self));
                 }
             }
+            Command::ExportPackage => {
+                if self.export_shown() {
+                    if self.ws.doc.layers.is_empty() {
+                        self.notice = Some(("Open a file first: there is no map to package.".into(), t));
+                    } else {
+                        self.data_export = None;
+                        self.package_dialog = Some(package::PackageDialog::new(self));
+                    }
+                }
+            }
+            Command::SavePackageTo(path) => package::write_to(self, path, t),
             Command::ExportData => {
                 if self.export_shown() {
                     match export_data::DataDialog::new(self, None) {
@@ -876,6 +902,7 @@ impl Shell {
         self.update_workspace(&ctx);
         saving::frame(self, &ctx);
         saving::close_if_saved(self, &ctx);
+        package::poll(self, ctx.input(|i| i.time));
         if self.export_sheet.is_some() {
             export::sheet(self, ui, ctx.content_rect());
             a11y::end(self, &ctx);
@@ -980,6 +1007,7 @@ impl Shell {
             chrome::credits(self, &ctx);
         }
         export_data::dialog(self, &ctx);
+        package::dialog(self, &ctx);
         diagnostics::window(self, &ctx);
         library::panel(self, &ctx);
         panels::drop_overlay(self, ui, full);

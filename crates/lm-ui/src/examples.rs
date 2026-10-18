@@ -84,6 +84,31 @@ pub const EXAMPLES: &[Example] = &[
     },
 ];
 
+/// Each example file's licence, as `assets/examples/README.md` records it (shown in the map
+/// package dialog, WP6.5).
+pub const LICENSES: &[(&str, &str)] = &[
+    ("cities.geojson", "Public domain (Natural Earth)"),
+    ("countries.geojson", "Public domain (Natural Earth)"),
+    ("elevation.tif", "Public domain, CC0 (NOAA ETOPO 2022)"),
+    ("heatwaves summer 2023.nc", "CC BY 4.0, © European Union (Copernicus GDO)"),
+    ("storm tracks.gpkg", "NOAA/WMO open access (IBTrACS); cite Knapp et al. 2010"),
+    ("walled cities 1866.geojson", "CC BY 4.0 (Xue et al. 2021, ESSD)"),
+    ("earthquakes.csv", "Public domain (U.S. Geological Survey)"),
+    ("volcanoes.csv", "US Government work (NOAA NCEI)"),
+    ("airports.csv", "Public domain (OurAirports)"),
+    ("power plants.csv", "CC BY 4.0 (WRI Global Power Plant Database)"),
+];
+
+/// The licence of `path` when it is one of the example files (in an `examples` folder: the app
+/// bundle's or the checkout's).
+pub fn license_of(path: &Path) -> Option<&'static str> {
+    let name = path.file_name()?.to_str()?;
+    if path.parent()?.file_name()?.to_str()? != "examples" {
+        return None;
+    }
+    LICENSES.iter().find(|(f, _)| *f == name).map(|(_, l)| *l)
+}
+
 /// Every example file (the bundle must hold them all to be used).
 fn all_files() -> impl Iterator<Item = &'static str> {
     EXAMPLES.iter().flat_map(|e| e.files.iter().copied())
@@ -136,6 +161,14 @@ mod tests {
         // A bundle missing one file is not used.
         let app = Path::new("/A.app/Contents/MacOS/layeredmap");
         assert_eq!(resolve(Some(app), |p| !p.ends_with("elevation.tif")), PathBuf::from(DEV_DIR));
+    }
+
+    #[test]
+    fn every_example_file_has_a_licence() {
+        for f in all_files() {
+            assert!(license_of(&PathBuf::from(DEV_DIR).join(f)).is_some(), "{f}");
+        }
+        assert_eq!(license_of(Path::new("/Users/ana/Downloads/airports.csv")), None, "a user's file of the same name");
     }
 
     #[test]

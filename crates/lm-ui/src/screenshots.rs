@@ -988,9 +988,13 @@ fn exported_images_have_exact_sizes_a_legend_credits_and_the_maps_colors() {
         let (pm, lay) = e.image(s).expect("the image");
         assert_eq!((pm.width(), pm.height()), preset.pixels(), "{preset:?}");
         // `LM_EXPORT_OUT=dir` keeps the images for a look.
+        // The same sheet as PDF (WP6.5): one page of the preset's paper, the title as text.
+        let pdf = e.pdf(s).expect("the map is drawn").expect("the PDF");
+        assert!(pdf.starts_with(b"%PDF-") && pdf.windows(9).any(|w| w == b"/Identity"), "{preset:?}");
         if let Some(dir) = std::env::var_os("LM_EXPORT_OUT").map(std::path::PathBuf::from) {
             std::fs::create_dir_all(&dir).unwrap();
             std::fs::write(dir.join(format!("{preset:?}.png")), lm_mapview::export::encode_png(&pm).unwrap()).unwrap();
+            std::fs::write(dir.join(format!("{preset:?}.pdf")), &pdf).unwrap();
         }
         // The credits, in the footer's right part, and never empty.
         assert!(sheet.attribution.contains("Natural Earth"), "{}", sheet.attribution);
@@ -1259,6 +1263,50 @@ fn export_data_dialog() {
     assert_eq!(on("email"), Some((false, Some("Looks like email addresses"))));
     assert_eq!(on("name"), Some((true, None)));
     h.snapshot("export_data_dialog");
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+/// WP6.5: the map package dialog shows its size estimate, the sources with their licences (an
+/// example's known, a user's file unknown), the folder paths it removes and the personal fields,
+/// checked to be left out.
+#[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+fn package_dialog() {
+    // A fixed folder: the dialog shows the paths it removes. The example is copied into an
+    // `examples` folder there, where its licence is recognised.
+    let dir = std::path::PathBuf::from("/tmp/lm-ui-package-shot");
+    let _ = std::fs::create_dir_all(dir.join("examples"));
+    let airports = dir.join("examples").join("airports.csv");
+    std::fs::copy(std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../assets/examples/airports.csv"), &airports).unwrap();
+    let csv = dir.join("pupils.csv");
+    std::fs::write(
+        &csv,
+        "school,full_name,phone,lon,lat\n\
+         Fudan Primary,Li Wei,021-6564-2222,121.50,31.30\n\
+         Xuhui Middle,Wang Fang,+86 21 6438 1111,121.43,31.19\n\
+         Pudong High,Zhang Min,138 0013 8000,121.55,31.22\n",
+    )
+    .unwrap();
+    let path = csv.clone();
+    let mut h = harness_phase(3, false, SHANGHAI, move |s| {
+        s.developer = true;
+        let airports = airports.clone();
+        let ctx = lm_jobs::import::Ctx::detached(Default::default());
+        s.ws.add_imported(lm_jobs::import::import_path(&airports, &ctx).unwrap_or_default(), 400);
+        s.ws.add_imported(lm_jobs::import::import_path(&path, &ctx).unwrap_or_default(), 401);
+        s.ws.clear_selection();
+        s.ws.new_data = None;
+    });
+    settle(&mut h);
+    let ctx = h.ctx.clone();
+    if let Some(s) = h.state_mut().as_mut() {
+        s.command(&ctx, crate::Command::ExportPackage);
+    }
+    h.run_steps(10);
+    let d = h.state().as_ref().and_then(|s| s.package_dialog.as_ref().map(|d| (d.sources.clone(), d.fields.clone()))).unwrap();
+    assert_eq!(d.0.iter().map(|r| r.file.as_str()).collect::<Vec<_>>(), ["airports.csv"]);
+    assert!(d.1.iter().all(|f| f.drop) && d.1.len() == 2);
+    h.snapshot("package_dialog");
     let _ = std::fs::remove_dir_all(&dir);
 }
 

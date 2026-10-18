@@ -6,7 +6,8 @@
 //! preview is the same drawing at a smaller scale, so what the preview shows is what is saved.
 //!
 //! Everything is laid out in points; `ppp` (pixels per point) turns points into the output's
-//! pixels. The output is PNG; [`encode_pdf`] wraps the same pixels in a page for Phase 6.
+//! pixels. The output is PNG, or PDF ([`compose_pdf`], WP6.5): the same drawing on a page of the
+//! sheet's paper size, the map an embedded image and the rest vector shapes and selectable text.
 
 use ab_glyph::{Font, FontArc, FontRef, GlyphId, PxScale, ScaleFont};
 use rustgis_geom::Extent;
@@ -15,6 +16,8 @@ use rustgis_map::camera::Camera;
 pub use rustgis_render::Pixmap;
 use rustgis_render::View;
 use tiny_skia::{Color, FillRule, Paint, PathBuilder, PixmapPaint, Rect, Stroke, Transform};
+
+mod pdf;
 
 /// Space between the map's edge and a card on it (points).
 pub const MARGIN: f32 = 16.0;
@@ -633,31 +636,56 @@ struct Face {
     fallback: Option<FontArc>,
 }
 
+/// One glyph of a line, placed: which of the sheet's fonts (0 regular, 1 semibold, 2 fallback),
+/// the glyph, its pen position on the baseline (pixels) and the character it shows.
+#[derive(Clone, Copy, Debug)]
+struct Placed {
+    slot: usize,
+    id: GlyphId,
+    x: f32,
+    y: f32,
+    ch: char,
+}
+
 impl Face {
     fn new(f: &Fonts) -> Face {
         let load = |b: &'static [u8]| FontRef::try_from_slice(b).ok().map(FontArc::new);
         Face { regular: load(f.regular), semibold: load(f.semibold), fallback: load(f.fallback) }
     }
 
-    fn primary(&self, bold: bool) -> Option<&FontArc> {
-        if bold { self.semibold.as_ref().or(self.regular.as_ref()) } else { self.regular.as_ref() }
+    /// The font in `slot` (0 regular, 1 semibold, 2 fallback).
+    fn font(&self, slot: usize) -> Option<&FontArc> {
+        match slot {
+            0 => self.regular.as_ref(),
+            1 => self.semibold.as_ref(),
+            _ => self.fallback.as_ref(),
+        }
     }
 
-    /// The font and glyph for `c`: the primary font's, else the fallback's, else the primary's
-    /// missing-glyph box.
-    fn pick(&self, c: char, bold: bool) -> Option<(&FontArc, GlyphId)> {
-        let first = self.primary(bold)?;
+    fn primary_slot(&self, bold: bool) -> Option<usize> {
+        if bold && self.semibold.is_some() { Some(1) } else { self.regular.as_ref().map(|_| 0) }
+    }
+
+    fn primary(&self, bold: bool) -> Option<&FontArc> {
+        self.primary_slot(bold).and_then(|s| self.font(s))
+    }
+
+    /// The font slot and glyph for `c`: the primary font's, else the fallback's, else the
+    /// primary's missing-glyph box.
+    fn pick(&self, c: char, bold: bool) -> Option<(usize, &FontArc, GlyphId)> {
+        let slot = self.primary_slot(bold)?;
+        let first = self.font(slot)?;
         let g = first.glyph_id(c);
         if g.0 != 0 {
-            return Some((first, g));
+            return Some((slot, first, g));
         }
         if let Some(f) = &self.fallback {
             let g = f.glyph_id(c);
             if g.0 != 0 {
-                return Some((f, g));
+                return Some((2, f, g));
             }
         }
-        Some((first, g))
+        Some((slot, first, g))
     }
 
     /// The scale giving `font` an em `px` pixels tall.
@@ -669,43 +697,49 @@ impl Face {
 
     fn width(&self, text: &str, px: f32, bold: bool) -> f32 {
         let mut w = 0.0;
-        let mut prev: Option<(*const FontArc, GlyphId)> = None;
+        let mut prev: Option<(usize, GlyphId)> = None;
         for c in text.chars() {
-            let Some((f, g)) = self.pick(c, bold) else { return text.chars().count() as f32 * px * 0.55 };
+            let Some((slot, f, g)) = self.pick(c, bold) else { return text.chars().count() as f32 * px * 0.55 };
             let sf = f.as_scaled(Self::scale(f, px));
-            if let Some((pf, pg)) = prev
-                && std::ptr::eq(pf, f)
+            if let Some((ps, pg)) = prev
+                && ps == slot
             {
                 w += sf.kern(pg, g);
             }
             w += sf.h_advance(g);
-            prev = Some((f as *const FontArc, g));
+            prev = Some((slot, g));
         }
         w
     }
 
-    /// Draws one line with its left end at `x` and its middle at `y` (pixels).
-    fn draw(&self, pm: &mut Pixmap, text: &str, x: f32, y: f32, px: f32, color: [u8; 4], bold: bool) {
-        let Some(first) = self.primary(bold) else { return };
+    /// The glyphs of one line with its left end at `x` and its middle at `y` (pixels).
+    fn place(&self, text: &str, x: f32, y: f32, px: f32, bold: bool) -> Vec<Placed> {
+        let Some(first) = self.primary(bold) else { return Vec::new() };
         let sf = first.as_scaled(Self::scale(first, px));
         let base = y + (sf.ascent() + sf.descent()) / 2.0;
         let mut pen = x;
-        let mut prev: Option<(*const FontArc, GlyphId)> = None;
+        let mut prev: Option<(usize, GlyphId)> = None;
+        let mut out = Vec::with_capacity(text.len());
         for c in text.chars() {
-            let Some((f, g)) = self.pick(c, bold) else { return };
+            let Some((slot, f, g)) = self.pick(c, bold) else { break };
             let scaled = f.as_scaled(Self::scale(f, px));
-            if let Some((pf, pg)) = prev
-                && std::ptr::eq(pf, f)
+            if let Some((ps, pg)) = prev
+                && ps == slot
             {
                 pen += scaled.kern(pg, g);
             }
-            let glyph = g.with_scale_and_position(Self::scale(f, px), ab_glyph::point(pen, base));
+            out.push(Placed { slot, id: g, x: pen, y: base, ch: c });
             pen += scaled.h_advance(g);
-            prev = Some((f as *const FontArc, g));
-            if let Some(og) = f.outline_glyph(glyph) {
-                let bb = og.px_bounds();
-                og.draw(|gx, gy, cov| blend(pm, bb.min.x as i32 + gx as i32, bb.min.y as i32 + gy as i32, color, cov));
-            }
+            prev = Some((slot, g));
+        }
+        out
+    }
+
+    /// Draws one line with its left end at `x` and its middle at `y` (pixels).
+    fn draw(&self, cv: &mut dyn Canvas, text: &str, x: f32, y: f32, px: f32, color: [u8; 4], bold: bool) {
+        let glyphs = self.place(text, x, y, px, bold);
+        if !glyphs.is_empty() {
+            cv.glyphs(self, &glyphs, px, color);
         }
     }
 
@@ -782,6 +816,50 @@ fn blend(pm: &mut Pixmap, x: i32, y: i32, c: [u8; 4], cov: f32) {
 // ---------------------------------------------------------------------------------------------
 // Drawing
 
+/// What the sheet is drawn on, in the output's pixels: the pixels themselves (PNG, the preview) or
+/// a PDF page (`pdf`), where the same drawing becomes vector shapes and text around the map's
+/// image.
+trait Canvas {
+    fn fill_path(&mut self, path: &tiny_skia::Path, c: [u8; 4]);
+    fn stroke_path(&mut self, path: &tiny_skia::Path, c: [u8; 4], stroke: &Stroke);
+    fn fill_rect(&mut self, r: Rect, c: [u8; 4]);
+    /// One line of text, placed by [`Face::place`], `px` pixels to the em.
+    fn glyphs(&mut self, face: &Face, glyphs: &[Placed], px: f32, c: [u8; 4]);
+    /// `pm` (the map) scaled into `r`.
+    fn image(&mut self, pm: &Pixmap, r: Rect);
+}
+
+impl Canvas for Pixmap {
+    fn fill_path(&mut self, path: &tiny_skia::Path, c: [u8; 4]) {
+        Pixmap::fill_path(self, path, &paint(c), FillRule::Winding, Transform::identity(), None);
+    }
+
+    fn stroke_path(&mut self, path: &tiny_skia::Path, c: [u8; 4], stroke: &Stroke) {
+        Pixmap::stroke_path(self, path, &paint(c), stroke, Transform::identity(), None);
+    }
+
+    fn fill_rect(&mut self, r: Rect, c: [u8; 4]) {
+        Pixmap::fill_rect(self, r, &paint(c), Transform::identity(), None);
+    }
+
+    fn glyphs(&mut self, face: &Face, glyphs: &[Placed], px: f32, c: [u8; 4]) {
+        for p in glyphs {
+            let Some(f) = face.font(p.slot) else { continue };
+            let glyph = p.id.with_scale_and_position(Face::scale(f, px), ab_glyph::point(p.x, p.y));
+            if let Some(og) = f.outline_glyph(glyph) {
+                let bb = og.px_bounds();
+                og.draw(|gx, gy, cov| blend(self, bb.min.x as i32 + gx as i32, bb.min.y as i32 + gy as i32, c, cov));
+            }
+        }
+    }
+
+    fn image(&mut self, pm: &Pixmap, r: Rect) {
+        let (sx, sy) = (r.width() / pm.width() as f32, r.height() / pm.height() as f32);
+        let paint = PixmapPaint { quality: tiny_skia::FilterQuality::Bilinear, ..PixmapPaint::default() };
+        self.draw_pixmap(0, 0, pm.as_ref(), &paint, Transform::from_row(sx, 0.0, 0.0, sy, r.left(), r.top()), None);
+    }
+}
+
 fn paint(c: [u8; 4]) -> Paint<'static> {
     let mut p = Paint::default();
     p.set_color(Color::from_rgba8(c[0], c[1], c[2], c[3]));
@@ -807,31 +885,31 @@ fn rounded(r: Rect, radius: f32) -> Option<tiny_skia::Path> {
 }
 
 /// A card on the map: white, a hairline edge, 8 pt corners.
-fn card(pm: &mut Pixmap, a: Area, ppp: f32) {
+fn card(pm: &mut dyn Canvas, a: Area, ppp: f32) {
     let Some(r) = a.px(ppp) else { return };
     if let Some(path) = rounded(r, 8.0 * ppp) {
-        pm.fill_path(&path, &paint(CARD), FillRule::Winding, Transform::identity(), None);
-        pm.stroke_path(&path, &paint(BORDER), &Stroke { width: ppp.max(1.0), ..Stroke::default() }, Transform::identity(), None);
+        pm.fill_path(&path, CARD);
+        pm.stroke_path(&path, BORDER, &Stroke { width: ppp.max(1.0), ..Stroke::default() });
     }
 }
 
-fn fill_rect(pm: &mut Pixmap, x: f32, y: f32, w: f32, h: f32, c: [u8; 4]) {
+fn fill_rect(pm: &mut dyn Canvas, x: f32, y: f32, w: f32, h: f32, c: [u8; 4]) {
     if let Some(r) = Rect::from_xywh(x, y, w.max(0.5), h.max(0.5)) {
-        pm.fill_rect(r, &paint(c), Transform::identity(), None);
+        pm.fill_rect(r, c);
     }
 }
 
-fn line(pm: &mut Pixmap, a: (f32, f32), b: (f32, f32), width: f32, c: [u8; 4]) {
+fn line(pm: &mut dyn Canvas, a: (f32, f32), b: (f32, f32), width: f32, c: [u8; 4]) {
     let mut pb = PathBuilder::new();
     pb.move_to(a.0, a.1);
     pb.line_to(b.0, b.1);
     if let Some(p) = pb.finish() {
-        pm.stroke_path(&p, &paint(c), &Stroke { width, ..Stroke::default() }, Transform::identity(), None);
+        pm.stroke_path(&p, c, &Stroke { width, ..Stroke::default() });
     }
 }
 
 /// A legend swatch, 14 points square, its middle at (`x` + 7, `y`) in points.
-fn swatch(pm: &mut Pixmap, s: &Swatch, x: f32, y: f32, ppp: f32, ground: [u8; 4]) {
+fn swatch(pm: &mut dyn Canvas, s: &Swatch, x: f32, y: f32, ppp: f32, ground: [u8; 4]) {
     let (x, y, k) = (x * ppp, y * ppp, ppp);
     let side = 14.0 * k;
     let (left, top) = (x, y - side / 2.0);
@@ -841,14 +919,14 @@ fn swatch(pm: &mut Pixmap, s: &Swatch, x: f32, y: f32, ppp: f32, ground: [u8; 4]
             fill_rect(pm, left, top, side, side, *fill);
             if let Some(r) = Rect::from_xywh(left + 0.5 * k, top + 0.5 * k, side - k, side - k) {
                 let path = PathBuilder::from_rect(r);
-                pm.stroke_path(&path, &paint(*stroke), &Stroke { width: k, ..Stroke::default() }, Transform::identity(), None);
+                pm.stroke_path(&path, *stroke, &Stroke { width: k, ..Stroke::default() });
             }
         }
         Swatch::Point { fill, stroke, diameter } => {
             let d = diameter.clamp(4.0, 16.0) * k;
             if let Some(c) = PathBuilder::from_circle(x + side / 2.0, y, d / 2.0) {
-                pm.fill_path(&c, &paint(*fill), FillRule::Winding, Transform::identity(), None);
-                pm.stroke_path(&c, &paint(*stroke), &Stroke { width: 1.5 * k, ..Stroke::default() }, Transform::identity(), None);
+                pm.fill_path(&c, *fill);
+                pm.stroke_path(&c, *stroke, &Stroke { width: 1.5 * k, ..Stroke::default() });
             }
         }
         Swatch::Line { color, width } => line(pm, (left, y), (left + side, y), width.clamp(1.0, 4.0) * k, *color),
@@ -895,7 +973,7 @@ fn legend_size(face: &Face, blocks: &[LegendBlock], max_w: f32) -> (f32, f32) {
     ((w + 24.0).min(max_w), h + 12.0)
 }
 
-fn draw_legend(pm: &mut Pixmap, face: &Face, blocks: &[LegendBlock], a: Area, ppp: f32, ground: [u8; 4]) {
+fn draw_legend(pm: &mut dyn Canvas, face: &Face, blocks: &[LegendBlock], a: Area, ppp: f32, ground: [u8; 4]) {
     card(pm, a, ppp);
     let px = TEXT * ppp;
     let inner = a.w - 24.0;
@@ -1030,67 +1108,96 @@ fn footer_lines(face: &Face, sheet: &Sheet, width: f32) -> (Vec<String>, String,
 pub fn compose(map: &Pixmap, sheet: &Sheet, fonts: &Fonts, occupancy: Option<&Occupancy>) -> Option<(Pixmap, Layout)> {
     let face = Face::new(fonts);
     let lay = layout_with(sheet, &face, occupancy);
-    let ppp = sheet.ppp;
     let mut pm = Pixmap::new(sheet.width, sheet.height)?;
     pm.fill(Color::WHITE);
+    draw_sheet(&mut pm, map, sheet, &face, &lay);
+    Some((pm, lay))
+}
+
+/// The sheet as a one-page PDF `page_mm` (width, height) large: the map as an image at the
+/// sheet's full resolution, and everything around and on it — title, caption, credits, legend,
+/// scale bar, north arrow, the latitude and longitude frame — as vector shapes and selectable
+/// text in the sheet's fonts (subsets embedded, Chinese included). `title` is the document's
+/// title in the PDF's properties.
+pub fn compose_pdf(
+    map: &Pixmap,
+    sheet: &Sheet,
+    fonts: &Fonts,
+    occupancy: Option<&Occupancy>,
+    page_mm: (f64, f64),
+    title: &str,
+) -> Result<Vec<u8>, String> {
+    let face = Face::new(fonts);
+    let lay = layout_with(sheet, &face, occupancy);
+    let mut page = pdf::PdfCanvas::new(sheet.width, sheet.height, page_mm);
+    page.fill_rect(
+        Rect::from_xywh(0.0, 0.0, sheet.width as f32, sheet.height as f32).ok_or("The sheet has no size.")?,
+        [255, 255, 255, 255],
+    );
+    draw_sheet(&mut page, map, sheet, &face, &lay);
+    page.finish(&face, fonts, title)
+}
+
+/// Draws the sheet on `pm` (cleared to white): `map` (the map area's pixels at the sheet's scale)
+/// and everything around and on it.
+fn draw_sheet(pm: &mut dyn Canvas, map: &Pixmap, sheet: &Sheet, face: &Face, lay: &Layout) {
+    let lay = *lay;
+    let ppp = sheet.ppp;
     // The map, scaled to its area when its pixel size differs by rounding.
     if let Some(r) = lay.map.px(ppp) {
-        let (sx, sy) = (r.width() / map.width() as f32, r.height() / map.height() as f32);
-        let paint = PixmapPaint { quality: tiny_skia::FilterQuality::Bilinear, ..PixmapPaint::default() };
-        pm.draw_pixmap(0, 0, map.as_ref(), &paint, Transform::from_row(sx, 0.0, 0.0, sy, r.left(), r.top()), None);
+        pm.image(map, r);
     }
     if let Some(t) = lay.title {
         let px = TITLE * ppp;
         let text = face.fit(sheet.title.trim(), px, true, (t.w - 2.0 * SIDE) * ppp);
-        face.draw(&mut pm, &text, SIDE * ppp, (t.y + t.h / 2.0 + 2.0) * ppp, px, PRIMARY, true);
+        face.draw(pm, &text, SIDE * ppp, (t.y + t.h / 2.0 + 2.0) * ppp, px, PRIMARY, true);
         // A framed map has its neatline: the band's rule would only double it.
         if sheet.graticule.is_none() {
-            line(&mut pm, (0.0, t.bottom() * ppp), (t.w * ppp, t.bottom() * ppp), ppp.max(1.0), BORDER);
+            line(pm, (0.0, t.bottom() * ppp), (t.w * ppp, t.bottom() * ppp), ppp.max(1.0), BORDER);
         }
     }
     // Footer: caption at the left, credits at the right of the last caption line (or a line of
     // their own when long).
     let f = lay.footer;
     if sheet.graticule.is_none() {
-        line(&mut pm, (0.0, f.y * ppp), (f.w * ppp, f.y * ppp), ppp.max(1.0), BORDER);
+        line(pm, (0.0, f.y * ppp), (f.w * ppp, f.y * ppp), ppp.max(1.0), BORDER);
     }
     if let Some(g) = sheet.graticule.filter(|g| g.grid) {
-        draw_grid(&mut pm, &g, lay.map, ppp);
+        draw_grid(pm, &g, lay.map, ppp);
     }
-    let (caption, credits, credit_row) = footer_lines(&face, sheet, f.w);
+    let (caption, credits, credit_row) = footer_lines(face, sheet, f.w);
     let rows = caption.len().max(credit_row + 1).max(1);
     let top = f.y + (f.h - rows as f32 * LINE) / 2.0;
     let px = TEXT * ppp;
     for (i, l) in caption.iter().enumerate() {
-        face.draw(&mut pm, l, SIDE * ppp, (top + (i as f32 + 0.5) * LINE) * ppp, px, SECONDARY, false);
+        face.draw(pm, l, SIDE * ppp, (top + (i as f32 + 0.5) * LINE) * ppp, px, SECONDARY, false);
     }
     let cw = face.width(&credits, px, false);
-    face.draw(&mut pm, &credits, (f.w - SIDE) * ppp - cw, (top + (credit_row as f32 + 0.5) * LINE) * ppp, px, SECONDARY, false);
+    face.draw(pm, &credits, (f.w - SIDE) * ppp - cw, (top + (credit_row as f32 + 0.5) * LINE) * ppp, px, SECONDARY, false);
     // Scale bar: a line with end ticks and its distance, as on screen.
     if let (Some(a), Some((len, label))) = (lay.scale, sheet.scale.as_ref()) {
-        card(&mut pm, a, ppp);
+        card(pm, a, ppp);
         let (x0, y) = ((a.x + 6.0) * ppp, (a.bottom() - 6.0) * ppp);
         let x1 = x0 + len * ppp;
         let w = 1.5 * ppp;
-        line(&mut pm, (x0, y), (x1, y), w, PRIMARY);
-        line(&mut pm, (x0, y + w / 2.0), (x0, y - 5.0 * ppp), w, PRIMARY);
-        line(&mut pm, (x1, y + w / 2.0), (x1, y - 5.0 * ppp), w, PRIMARY);
-        face.draw(&mut pm, label, x0, y - 13.0 * ppp, px, PRIMARY, false);
+        line(pm, (x0, y), (x1, y), w, PRIMARY);
+        line(pm, (x0, y + w / 2.0), (x0, y - 5.0 * ppp), w, PRIMARY);
+        line(pm, (x1, y + w / 2.0), (x1, y - 5.0 * ppp), w, PRIMARY);
+        face.draw(pm, label, x0, y - 13.0 * ppp, px, PRIMARY, false);
     }
     if let Some(a) = lay.legend {
-        draw_legend(&mut pm, &face, &sheet.legend, a, ppp, sheet.ground);
+        draw_legend(pm, face, &sheet.legend, a, ppp, sheet.ground);
     }
     if let Some(a) = lay.north {
-        draw_north(&mut pm, &face, a, ppp);
+        draw_north(pm, face, a, ppp);
     }
     if let Some(g) = &sheet.graticule {
-        draw_frame(&mut pm, &face, g, lay.map, ppp, sheet.size_pt());
+        draw_frame(pm, face, g, lay.map, ppp, sheet.size_pt());
     }
-    Some((pm, lay))
 }
 
 /// Faint grid lines across the map at the frame's ticks.
-fn draw_grid(pm: &mut Pixmap, g: &Graticule, map: Area, ppp: f32) {
+fn draw_grid(pm: &mut dyn Canvas, g: &Graticule, map: Area, ppp: f32) {
     let t = frame_ticks(g.camera, (map.w, map.h));
     let w = (0.5 * ppp).max(1.0);
     for (_, x) in &t.lons {
@@ -1106,17 +1213,11 @@ fn draw_grid(pm: &mut Pixmap, g: &Graticule, map: Area, ppp: f32) {
 /// The frame: a thin neatline around the map, ticks pointing in, longitudes above and below,
 /// latitudes at the sides, each label left out where it would crowd its neighbour or leave the
 /// sheet.
-fn draw_frame(pm: &mut Pixmap, face: &Face, g: &Graticule, map: Area, ppp: f32, sheet: (f32, f32)) {
+fn draw_frame(pm: &mut dyn Canvas, face: &Face, g: &Graticule, map: Area, ppp: f32, sheet: (f32, f32)) {
     let t = frame_ticks(g.camera, (map.w, map.h));
     let lw = (0.75 * ppp).max(1.0);
     if let Some(r) = Rect::from_ltrb(map.x * ppp, map.y * ppp, map.right() * ppp, map.bottom() * ppp) {
-        pm.stroke_path(
-            &PathBuilder::from_rect(r),
-            &paint(NEATLINE),
-            &Stroke { width: lw, ..Stroke::default() },
-            Transform::identity(),
-            None,
-        );
+        pm.stroke_path(&PathBuilder::from_rect(r), NEATLINE, &Stroke { width: lw, ..Stroke::default() });
     }
     let px = FRAME_TEXT * ppp;
     let gap = 5.0;
@@ -1156,7 +1257,7 @@ fn draw_frame(pm: &mut Pixmap, face: &Face, g: &Graticule, map: Area, ppp: f32, 
 
 /// The north arrow on its card: an "N" over a slender split dart, its west half solid and its east
 /// half open, as on a printed map.
-fn draw_north(pm: &mut Pixmap, face: &Face, a: Area, ppp: f32) {
+fn draw_north(pm: &mut dyn Canvas, face: &Face, a: Area, ppp: f32) {
     card(pm, a, ppp);
     let cx = a.x + a.w / 2.0;
     let px = 11.0 * ppp;
@@ -1175,14 +1276,14 @@ fn draw_north(pm: &mut Pixmap, face: &Face, a: Area, ppp: f32) {
     };
     let (t, l, n, r) = (pt(cx, tip), pt(cx - half, base), pt(cx, notch), pt(cx + half, base));
     if let Some(east) = shape(&[t, r, n]) {
-        pm.fill_path(&east, &paint([0xFF, 0xFF, 0xFF, 0xFF]), FillRule::Winding, Transform::identity(), None);
+        pm.fill_path(&east, [0xFF, 0xFF, 0xFF, 0xFF]);
     }
     if let Some(west) = shape(&[t, n, l]) {
-        pm.fill_path(&west, &paint(PRIMARY), FillRule::Winding, Transform::identity(), None);
+        pm.fill_path(&west, PRIMARY);
     }
     if let Some(outline) = shape(&[t, r, n, l]) {
         let stroke = Stroke { width: ppp.max(1.0), line_join: tiny_skia::LineJoin::Round, ..Stroke::default() };
-        pm.stroke_path(&outline, &paint(PRIMARY), &stroke, Transform::identity(), None);
+        pm.stroke_path(&outline, PRIMARY, &stroke);
     }
 }
 
@@ -1192,11 +1293,6 @@ fn draw_north(pm: &mut Pixmap, face: &Face, a: Area, ppp: f32) {
 /// The image as PNG bytes.
 pub fn encode_png(pm: &Pixmap) -> Result<Vec<u8>, String> {
     pm.encode_png().map_err(|e| e.to_string())
-}
-
-/// The image as a one-page PDF `width_mm` × `height_mm` (PDF export arrives in Phase 6).
-pub fn encode_pdf(pm: &Pixmap, width_mm: f64, height_mm: f64, title: &str) -> Vec<u8> {
-    rustgis_render::pdf::write(&[rustgis_render::pdf::Page::new(pm, width_mm, height_mm)], title)
 }
 
 /// The image for an egui texture.
@@ -1556,10 +1652,131 @@ mod tests {
     }
 
     #[test]
-    fn png_and_pdf_come_out() {
+    fn png_comes_out() {
         let pm = blank(30, 20);
         let png = encode_png(&pm).unwrap();
         assert_eq!(&png[1..4], b"PNG");
-        assert!(encode_pdf(&pm, 297.0, 210.0, "t").starts_with(b"%PDF"));
+    }
+
+    /// A map with something in every pixel: a gradient with a checker over it.
+    fn painted(w: u32, h: u32) -> Pixmap {
+        let mut p = Pixmap::new(w, h).unwrap();
+        for (i, px) in p.pixels_mut().iter_mut().enumerate() {
+            let (x, y) = (i as u32 % w, i as u32 / w);
+            let check = if (x / 7 + y / 5) % 2 == 0 { 40 } else { 0 };
+            *px = tiny_skia::PremultipliedColorU8::from_rgba((x * 255 / w) as u8, (y * 255 / h) as u8, 200 - check, 255).unwrap();
+        }
+        p
+    }
+
+    /// The PDF's one page: its size in points, its text and its images (width, height, RGB).
+    fn read_pdf(bytes: &[u8]) -> ((f32, f32), String, Vec<(i64, i64, Vec<u8>)>) {
+        let doc = lopdf::Document::load_mem(bytes).expect("the PDF parses");
+        let pages = doc.get_pages();
+        assert_eq!(pages.len(), 1);
+        let (&n, &id) = pages.iter().next().unwrap();
+        let page = doc.get_dictionary(id).unwrap();
+        let mb = page.get(b"MediaBox").unwrap().as_array().unwrap();
+        let num = |o: &lopdf::Object| o.as_float().or_else(|_| o.as_i64().map(|v| v as f32)).unwrap();
+        let size = (num(&mb[2]) - num(&mb[0]), num(&mb[3]) - num(&mb[1]));
+        let text = doc.extract_text(&[n]).unwrap();
+        let images = doc
+            .get_page_images(id)
+            .unwrap()
+            .iter()
+            .map(|img| {
+                let stream = doc.get_object(img.id).unwrap().as_stream().unwrap();
+                (img.width, img.height, stream.decompressed_content().unwrap())
+            })
+            .collect();
+        (size, text, images)
+    }
+
+    /// WP6.5: the PDF is the PNG's sheet on paper — the page is the preset's paper size, the
+    /// title, caption, credits and legend are text (Chinese included), and the embedded map is the
+    /// PNG's map pixel for pixel.
+    #[test]
+    fn the_pdf_is_the_png_sheet_on_paper() {
+        // Square, nothing over the map, so the whole map area can be compared.
+        let mut s = sheet(1080, 1080, 1.5);
+        s.title = "Heat study 城市热岛".into();
+        s.legend.clear();
+        s.scale = None;
+        let lay = layout(&s, &FONTS, None);
+        let (mw, mh) = map_pixels(lay.map, s.ppp);
+        let map = painted(mw, mh);
+        let (png, _) = compose(&map, &s, &FONTS, None).unwrap();
+        let pdf = compose_pdf(&map, &s, &FONTS, None, (190.5, 190.5), &s.title).unwrap();
+        assert!(pdf.starts_with(b"%PDF-"));
+        let ((w, h), text, images) = read_pdf(&pdf);
+        assert!((w - 540.0).abs() < 0.05 && (h - 540.0).abs() < 0.05, "7.5 in square: {w} × {h}");
+        assert!(text.contains("Heat study") && text.contains("城市热岛"), "{text}");
+        assert!(text.contains("Natural Earth") && text.contains("Made with LayeredMap"), "{text}");
+        assert_eq!(images.len(), 1);
+        let (iw, ih, rgb) = &images[0];
+        assert_eq!((*iw, *ih), (i64::from(mw), i64::from(mh)));
+        let r = lay.map.px(s.ppp).unwrap();
+        let (x0, y0) = (r.left() as u32, r.top() as u32);
+        // The PNG's bilinear draw softens the map's outermost pixels against the white sheet; the
+        // rest is the map itself.
+        let mut worst = 0i32;
+        for y in 1..mh - 1 {
+            for x in 1..mw - 1 {
+                let p = pixel(&png, x0 + x, y0 + y).unwrap();
+                let i = ((y * mw + x) * 3) as usize;
+                for k in 0..3 {
+                    worst = worst.max((i32::from(p[k]) - i32::from(rgb[i + k])).abs());
+                }
+            }
+        }
+        assert!(worst <= 1, "the embedded map differs from the PNG's by up to {worst}");
+    }
+
+    /// A4 comes out as A4 (210 × 297 mm), with every piece of furniture, and its fonts embedded
+    /// as small subsets: Inter for Latin, Noto Sans SC (CFF) for Chinese.
+    #[test]
+    fn an_a4_pdf_has_the_paper_size_furniture_and_font_subsets() {
+        let mut s = sheet(2480, 3508, 300.0 / 96.0);
+        s.title = "Districts 区县".into();
+        s.north_arrow = true;
+        s.legend[0]
+            .entries
+            .push(Entry::Ramp { stops: vec![[0, 0, 255, 255], [255, 0, 0, 255]], low: "1 °C".into(), high: "9 °C".into() });
+        let lay = layout(&s, &FONTS, None);
+        let (mw, mh) = map_pixels(lay.map, s.ppp);
+        let pdf = compose_pdf(&blank(mw, mh), &s, &FONTS, None, (210.0, 297.0), "Districts").unwrap();
+        // `LM_EXPORT_OUT=dir` keeps it for a look.
+        if let Some(dir) = std::env::var_os("LM_EXPORT_OUT").map(std::path::PathBuf::from) {
+            std::fs::create_dir_all(&dir).unwrap();
+            std::fs::write(dir.join("a4-furniture.pdf"), &pdf).unwrap();
+        }
+        let ((w, h), text, images) = read_pdf(&pdf);
+        assert!((w - 595.28).abs() < 0.05 && (h - 841.89).abs() < 0.05, "A4: {w} × {h}");
+        for want in ["Districts", "区县", "Population", "Over 1,000,000", "No data", "10 km", "N", "9 °C"] {
+            assert!(text.contains(want), "{want} in {text}");
+        }
+        assert_eq!(images.len(), 1);
+        let raw = String::from_utf8_lossy(&pdf);
+        assert!(raw.contains("/Identity-H") && raw.contains("/ToUnicode") && raw.contains("/CIDFontType0C"));
+        assert!(raw.contains("+Inter-Regular") && raw.contains("+Inter-SemiBold") && raw.contains("+NotoSansSC"));
+        // Subsets, not the 8 MB Chinese font: the whole page stays small.
+        assert!(pdf.len() < 600_000, "{} bytes", pdf.len());
+    }
+
+    /// The frame's labels and the slide's size.
+    #[test]
+    fn a_slide_pdf_carries_the_frame_labels() {
+        let mut s = sheet(1920, 1080, 1.5);
+        let cam = Camera { center: rustgis_geom::lonlat_to_merc(rustgis_geom::Coord::new(105.0, 35.0)), res: 6_000.0 };
+        s.graticule = Some(Graticule { camera: cam, grid: true });
+        s.scale = None;
+        let lay = layout(&s, &FONTS, None);
+        let (mw, mh) = map_pixels(lay.map, s.ppp);
+        let pdf = compose_pdf(&blank(mw, mh), &s, &FONTS, None, (338.667, 190.5), "").unwrap();
+        let ((w, h), text, _) = read_pdf(&pdf);
+        assert!((w - 960.0).abs() < 0.05 && (h - 540.0).abs() < 0.05, "13.33 × 7.5 in: {w} × {h}");
+        let t = frame_ticks(cam, (lay.map.w, lay.map.h));
+        let first = degree_label(t.lons[0].0, t.lon_step, false);
+        assert!(text.contains(&first), "{first} in {text}");
     }
 }

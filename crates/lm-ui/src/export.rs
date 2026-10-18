@@ -2,6 +2,8 @@
 //! image…: a full-window sheet showing the exact output · Save, or Cancel") and, in
 //! `export_data`, the data export dialog.
 //!
+//! The sheet saves as PNG or, since WP6.5, PDF: the same sheet on paper of the preset's size.
+//!
 //! The image is drawn offscreen at its output size by `lm_mapview::export` on a background thread
 //! (the renderer waits for basemap tiles there); the sheet's preview is the same picture composed
 //! at a smaller scale, so the preview is what gets saved. Previews of actions are left out, and a
@@ -81,6 +83,24 @@ impl Preset {
         }
     }
 
+    /// The paper the PDF is printed on (width, height in mm): A4 is 210 × 297 mm; a slide is a
+    /// 16:9 presentation page, 13.33 × 7.5 in (as PowerPoint and Keynote make them, 144 dpi for
+    /// its 1920 × 1080 pixels); the square 7.5 in on a side, at the same density.
+    pub fn page_mm(self) -> (f64, f64) {
+        match self {
+            Preset::Slide => (1920.0 / 144.0 * 25.4, 1080.0 / 144.0 * 25.4),
+            Preset::A4 => (210.0, 297.0),
+            Preset::Square => (1080.0 / 144.0 * 25.4, 1080.0 / 144.0 * 25.4),
+        }
+    }
+
+    /// "210 × 297 mm".
+    pub fn paper(self) -> String {
+        let (w, h) = self.page_mm();
+        let mm = |v: f64| if (v - v.round()).abs() < 0.05 { format!("{v:.0}") } else { format!("{v:.1}") };
+        format!("{} × {} mm", mm(w), mm(h))
+    }
+
     fn file_suffix(self) -> &'static str {
         match self {
             Preset::Slide => "slide",
@@ -103,6 +123,26 @@ pub fn fonts() -> ex::Fonts {
 /// offline map). The second value is the provider replaced, if any.
 pub fn export_basemap(shown: &Provider) -> (Provider, Option<Provider>) {
     if shown.export_allowed { (shown.clone(), None) } else { (lm_core::basemap::provider("offline"), Some(shown.clone())) }
+}
+
+/// The file the sheet is saved as.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum Format {
+    /// The picture at the preset's pixel size.
+    #[default]
+    Png,
+    /// The same sheet on paper of the preset's size (WP6.5): the map an image at full resolution,
+    /// text and symbols as vectors, the text selectable.
+    Pdf,
+}
+
+impl Format {
+    pub fn extension(self) -> &'static str {
+        match self {
+            Format::Png => "png",
+            Format::Pdf => "pdf",
+        }
+    }
 }
 
 /// What frames the exported map (Automatic layout).
@@ -130,6 +170,7 @@ pub struct Drawn {
 /// The map image sheet.
 pub struct ImageSheet {
     pub preset: Preset,
+    pub format: Format,
     pub title: String,
     pub caption: String,
     /// The caption was typed over; otherwise it follows the layers.
@@ -180,6 +221,7 @@ impl ImageSheet {
         let legend = shell.ws.doc.layers.iter().rev().filter(|l| l.visible).map(|l| (l.id, true)).collect();
         let mut s = ImageSheet {
             preset: Preset::Slide,
+            format: Format::Png,
             title: String::new(),
             caption: String::new(),
             caption_edited: false,
@@ -340,6 +382,30 @@ impl ImageSheet {
     pub fn image(&self, shell: &Shell) -> Option<(ex::Pixmap, ex::Layout)> {
         let d = self.drawn.as_ref().filter(|d| d.key == self.draw_key())?;
         ex::compose(&d.full, &self.sheet(shell), &fonts(), Some(&d.occupancy))
+    }
+
+    /// The finished sheet as PDF (`None` while the map is still being drawn).
+    pub fn pdf(&self, shell: &Shell) -> Option<Result<Vec<u8>, String>> {
+        let d = self.drawn.as_ref().filter(|d| d.key == self.draw_key())?;
+        let title = if self.has_title() { self.title.trim().to_string() } else { "Map".to_string() };
+        Some(ex::compose_pdf(&d.full, &self.sheet(shell), &fonts(), Some(&d.occupancy), self.preset.page_mm(), &title))
+    }
+
+    /// The finished file's bytes in the chosen format (`None` while the map is still being
+    /// drawn).
+    pub fn file(&self, shell: &Shell) -> Option<Result<Vec<u8>, String>> {
+        match self.format {
+            Format::Png => self.image(shell).map(|(pm, _)| ex::encode_png(&pm)),
+            Format::Pdf => self.pdf(shell),
+        }
+    }
+
+    /// The line under the size choice: "1920 × 1080 px · PNG", "338.7 × 190.5 mm · PDF".
+    pub fn size_line(&self) -> String {
+        match self.format {
+            Format::Png => format!("{} · PNG", self.preset.detail()),
+            Format::Pdf => format!("{} · PDF, text and symbols as vectors", self.preset.paper()),
+        }
     }
 
     /// What the reader should know before saving (Export warnings).
@@ -611,7 +677,11 @@ pub fn sheet(shell: &mut Shell, ui: &mut Ui, full: Rect) {
             s.preset = *p;
             s.legend_at = None;
         }
-        ui.label(RichText::new(format!("{} · PNG", s.preset.detail())).size(CAPTION).color(t.text_secondary));
+        let fmt = if s.format == Format::Pdf { 1 } else { 0 };
+        if let Some(k) = choice(ui, &t, "Format", fmt, &["PNG", "PDF"]) {
+            s.format = if k == 0 { Format::Png } else { Format::Pdf };
+        }
+        ui.label(RichText::new(s.size_line()).size(CAPTION).color(t.text_secondary));
         form::divider(ui, &t);
         map_settings(ui, &t, &mut s);
         form::divider(ui, &t);
@@ -687,12 +757,12 @@ pub fn sheet(shell: &mut Shell, ui: &mut Ui, full: Rect) {
         close = true;
     }
     if save {
-        match s.image(shell).map(|(pm, _)| ex::encode_png(&pm)) {
+        match s.file(shell) {
             Some(Ok(bytes)) => {
                 let name = if s.title.trim().is_empty() { "Map".to_string() } else { s.title.trim().replace(['/', ':', '\\'], "-") };
                 shell.push_file_request(FileRequest::SaveBytes {
                     title: "Export map image".into(),
-                    suggested_name: format!("{name} ({}).png", s.preset.file_suffix()),
+                    suggested_name: format!("{name} ({}).{}", s.preset.file_suffix(), s.format.extension()),
                     bytes,
                 });
                 close = true;
@@ -787,7 +857,10 @@ fn preview(shell: &Shell, s: &mut ImageSheet, ui: &mut Ui, canvas: Rect, t: &The
         p.rect_filled(pill, CornerRadius::same(18), t.surface.gamma_multiply(0.95));
         p.text(pill.center(), Align2::CENTER_CENTER, "Drawing the map at full size…", theme::regular(BODY), t.text_primary);
     }
-    let note = format!("{} · exactly as saved", s.preset.detail());
+    let note = match s.format {
+        Format::Png => format!("{} · exactly as saved", s.preset.detail()),
+        Format::Pdf => format!("{} · exactly as saved", s.preset.paper()),
+    };
     p.text(pos2(img.center().x, img.bottom() + 16.0), Align2::CENTER_TOP, note, theme::regular(CAPTION), t.text_secondary);
 }
 
@@ -803,6 +876,20 @@ mod tests {
         // A4 at 300 dpi: 210 × 297 mm.
         let (w, h) = Preset::A4.pixels();
         assert!((f64::from(w) / 300.0 * 25.4 - 210.0).abs() < 0.5 && (f64::from(h) / 300.0 * 25.4 - 297.0).abs() < 0.5);
+    }
+
+    #[test]
+    fn pdf_pages_are_the_presets_paper() {
+        assert_eq!(Preset::A4.page_mm(), (210.0, 297.0));
+        assert_eq!(Preset::A4.paper(), "210 × 297 mm");
+        // Slides and squares print at 144 dpi: 13.33 × 7.5 in and 7.5 in square, the pixels' shape.
+        for p in Preset::ALL {
+            let (w, h) = p.page_mm();
+            let (pw, ph) = p.pixels();
+            assert!((w / h - f64::from(pw) / f64::from(ph)).abs() < 1e-3, "{p:?}");
+        }
+        assert_eq!(Preset::Slide.paper(), "338.7 × 190.5 mm");
+        assert_eq!(Preset::Square.paper(), "190.5 × 190.5 mm");
     }
 
     #[test]

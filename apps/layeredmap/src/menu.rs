@@ -104,6 +104,7 @@ impl MenuBar {
         if export {
             file.append(&MenuItem::with_id("export-image", "Export Map Image…", true, cmd(Code::KeyE)))?;
             file.append(&MenuItem::with_id("export-data", "Export Data…", true, None))?;
+            file.append(&MenuItem::with_id("export-package", "Export Map Package…", true, None))?;
             file.append(&PredefinedMenuItem::separator())?;
         }
         if developer {
@@ -216,6 +217,7 @@ impl MenuBar {
                 "save-as" => Action::Shell(Command::SaveAs),
                 "export-image" => Action::Shell(Command::ExportMapImage),
                 "export-data" => Action::Shell(Command::ExportData),
+                "export-package" => Action::Shell(Command::ExportPackage),
                 "library" => Action::Shell(Command::OpenLibrary),
                 "undo" => Action::Shell(Command::Undo),
                 "redo" => Action::Shell(Command::Redo),

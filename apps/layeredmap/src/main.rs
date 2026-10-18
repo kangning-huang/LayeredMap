@@ -242,6 +242,16 @@ impl eframe::App for App {
                         self.shell.command(ctx, Command::Relink(layer, path));
                     }
                 }
+                FileRequest::SavePackage { suggested_name } => {
+                    if let Some(path) = rfd::FileDialog::new()
+                        .set_title("Save map package")
+                        .set_file_name(suggested_name)
+                        .add_filter("LayeredMap map", &["lmap"])
+                        .save_file()
+                    {
+                        self.shell.command(ctx, Command::SavePackageTo(path));
+                    }
+                }
             }
         }
     }
@@ -296,7 +306,8 @@ impl eframe::App for App {
 /// layer (developer surface; `with=NAME` picks the second layer); `keep` keeps its preview;
 /// `ask TEXT` sends a request to Pro's Ask box (waits 15 s); `keep-ask` keeps its plan;
 /// `card ID [FIELD]` runs a card's display action (`filter strength`, `style_by_value`, …) on the
-/// selected layer (`card apply_filter` presses the filter's Apply); `time N` shows the n-th time step; `export` opens the map image sheet.
+/// selected layer (`card apply_filter` presses the filter's Apply); `time N` shows the n-th time step;
+/// `export` or `export-image` opens the map image sheet; `package` opens the map package dialog.
 #[derive(Clone, Debug, PartialEq)]
 enum Step {
     Fly(f64, f64, f64),
@@ -352,6 +363,8 @@ impl Step {
             "example" => Step::Other(Command::OpenExample(rest.trim().to_string())),
             "dictate" => Step::Other(Command::Dictate),
             "undo" => Step::Other(Command::Undo),
+            "export-image" => Step::Other(Command::ExportMapImage),
+            "package" => Step::Other(Command::ExportPackage),
             "redo" => Step::Other(Command::Redo),
             _ => match nums(s).as_slice() {
                 [lon, lat, z] => Step::Fly(*lon, *lat, *z),
