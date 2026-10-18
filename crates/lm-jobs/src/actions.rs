@@ -338,8 +338,11 @@ pub fn number(v: f64) -> String {
         1
     } else if a >= 1.0 {
         2
+    } else if a == 0.0 {
+        0
     } else {
-        3
+        // Small values keep three significant digits (0.00012 plants per person, not "0").
+        ((-a.log10()).ceil() as usize + 2).clamp(3, 12)
     };
     let s = format!("{:.*}", decimals, v);
     let (int, frac) = s.split_once('.').map_or((s.as_str(), None), |(i, f)| (i, Some(f)));
