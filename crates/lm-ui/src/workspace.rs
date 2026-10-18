@@ -178,6 +178,8 @@ pub struct Workspace {
     joins: join::JoinState,
     /// Actions as jobs, previews and kept results (Phase 4).
     pub(crate) analysis: analysis::Analysis,
+    /// Layers whose source file was missing when the document was reopened (WP5.2).
+    pub missing: Vec<LayerId>,
 }
 
 /// Drawing state derived from a layer's data (WP3.5, WP3.7).
@@ -873,8 +875,28 @@ impl Workspace {
     /// layer's data is derived again from it by the choices the document records. A file that is
     /// missing or has changed is said in a notice.
     pub fn restore(&mut self, doc: Document) {
+        self.restore_owned(doc, Vec::new());
+    }
+
+    /// [`Workspace::restore`] with the data of the layers the document owns (WP5.1): those layers
+    /// take it as it is and read no file. A layer whose source is missing is listed in
+    /// `missing` (the missing-source card) and the first one is selected.
+    pub fn restore_owned(&mut self, doc: Document, owned: Vec<(LayerId, LayerData)>) {
+        // Data of a document shown before is never taken for this one's layers.
+        self.data.clear();
         let mut by_path: Vec<(String, Vec<lm_core::document::DocLayer>)> = Vec::new();
         for l in &doc.layers {
+            if let Some((_, data)) = owned.iter().find(|(id, _)| *id == l.id) {
+                let layer = ImportedLayer {
+                    name: l.display_name.clone(),
+                    profile: l.profile.clone(),
+                    data: data.clone(),
+                    status: lm_core::model::ImportStatus::Complete,
+                    raw: None,
+                };
+                self.data.insert((l.id, l.profile.data_rev), Arc::new(layer));
+                continue;
+            }
             match by_path.iter_mut().find(|(p, _)| *p == l.profile.source.path) {
                 Some((_, v)) => v.push(l.clone()),
                 None => by_path.push((l.profile.source.path.clone(), vec![l.clone()])),
@@ -883,66 +905,78 @@ impl Workspace {
         self.next_rev = doc.layers.iter().map(|l| l.profile.data_rev).max().unwrap_or(0);
         self.doc = doc;
         self.undo = UndoStack::new();
+        self.missing.clear();
         self.clear_selection();
         for (path, layers) in by_path {
-            let Some(first) = layers.first().map(|l| l.id) else { continue };
-            self.spawn_job(Some(first), Box::new(|_| {}), move || {
-                // The source check may hash the file: here, off the interface thread.
-                let state = lm_doc::check_source(&layers[0].profile.source);
-                let file = layers[0].profile.source.file_name().to_string();
-                let mut notes = Vec::new();
-                let mut out = Vec::new();
-                match state {
-                    lm_doc::SourceState::Missing => {
-                        let folder = std::path::Path::new(&path)
-                            .parent()
-                            .and_then(|p| p.file_name())
-                            .and_then(|n| n.to_str())
-                            .unwrap_or("its folder")
-                            .to_string();
-                        notes.push(format!("Can't find {file}. It was last seen in {folder}."));
+            self.read_saved(path, layers);
+        }
+    }
+
+    /// Reads one source file off the interface thread and derives its layers' data by the choices
+    /// the document records.
+    pub(crate) fn read_saved(&mut self, path: String, layers: Vec<lm_core::document::DocLayer>) {
+        let Some(first) = layers.first().map(|l| l.id) else { return };
+        let ids: Vec<LayerId> = layers.iter().map(|l| l.id).collect();
+        self.spawn_job(Some(first), Box::new(|_| {}), move || {
+            // The source check may hash the file: here, off the interface thread.
+            let state = lm_doc::check_source(&layers[0].profile.source);
+            let file = layers[0].profile.source.file_name().to_string();
+            let mut notes = Vec::new();
+            let mut out = Vec::new();
+            let missing = state == lm_doc::SourceState::Missing;
+            match state {
+                lm_doc::SourceState::Missing => {
+                    notes.push(missing_line(&layers[0].profile.source));
+                }
+                other => {
+                    if other == lm_doc::SourceState::Changed {
+                        notes.push(format!("{file} has changed since this document was saved; it was read as it is now."));
                     }
-                    other => {
-                        if other == lm_doc::SourceState::Changed {
-                            notes.push(format!("{file} has changed since this document was saved; it was read as it is now."));
-                        }
-                        match lm_jobs::import::import_path(std::path::Path::new(&path), &lm_jobs::import::Ctx::detached(Default::default()))
-                        {
-                            Err(e) => notes.push(e.to_string()),
-                            Ok(read) => {
-                                for dl in layers {
-                                    // The layer's own part of the file; a part that's gone is said.
-                                    let base = match &dl.profile.source.member {
-                                        Some(m) => read.iter().find(|r| r.profile.source.member.as_ref() == Some(m)),
-                                        None => read.first().filter(|_| read.len() == 1),
-                                    };
-                                    let Some(base) = base else {
-                                        notes.push(format!("{} is no longer in {file}.", dl.display_name));
-                                        continue;
-                                    };
-                                    match derive_saved(base, &dl) {
-                                        Ok(mut layer) => {
-                                            layer.name = dl.display_name.clone();
-                                            layer.profile = dl.profile.clone();
-                                            out.push((dl.id, dl.profile.data_rev, layer));
-                                        }
-                                        Err(e) => notes.push(format!("{}: {e}", dl.display_name)),
+                    match lm_jobs::import::import_path(std::path::Path::new(&path), &lm_jobs::import::Ctx::detached(Default::default())) {
+                        Err(e) => notes.push(e.to_string()),
+                        Ok(read) => {
+                            for dl in layers {
+                                // The layer's own part of the file; a part that's gone is said.
+                                let base = match &dl.profile.source.member {
+                                    Some(m) => read.iter().find(|r| r.profile.source.member.as_ref() == Some(m)),
+                                    None => read.first().filter(|_| read.len() == 1),
+                                };
+                                let Some(base) = base else {
+                                    notes.push(format!("{} is no longer in {file}.", dl.display_name));
+                                    continue;
+                                };
+                                match derive_saved(base, &dl) {
+                                    Ok(mut layer) => {
+                                        layer.name = dl.display_name.clone();
+                                        layer.profile = dl.profile.clone();
+                                        out.push((dl.id, dl.profile.data_rev, layer));
                                     }
+                                    Err(e) => notes.push(format!("{}: {e}", dl.display_name)),
                                 }
                             }
                         }
                     }
                 }
-                Box::new(move |w: &mut Workspace| {
-                    for (id, rev, layer) in out {
-                        w.data.insert((id, rev), Arc::new(layer));
+            }
+            Box::new(move |w: &mut Workspace| {
+                for (id, rev, layer) in out {
+                    w.data.insert((id, rev), Arc::new(layer));
+                }
+                if missing {
+                    for id in &ids {
+                        if !w.missing.contains(id) {
+                            w.missing.push(*id);
+                        }
                     }
-                    if let Some(n) = notes.into_iter().next() {
-                        w.notice = Some(n);
+                    if w.selected().is_none() {
+                        w.select_layer(ids[0]);
                     }
-                })
-            });
-        }
+                }
+                if let Some(n) = notes.into_iter().next() {
+                    w.notice = Some(n);
+                }
+            })
+        });
     }
 
     /// Brings the map's layers in line with the document: adds and removes only what changed,
@@ -1411,6 +1445,12 @@ fn line_for(kind: AssumptionKind, choice: &Choice) -> Option<String> {
 /// A saved layer's data derived again from a fresh read of its source, by the choices the
 /// document records: another Excel sheet, other coordinate columns, a chosen coordinate system,
 /// a GCJ-02/BD-09 conversion.
+/// "Can't find heat_july.tif. It was last seen in Downloads." (Error and status copy).
+pub fn missing_line(src: &lm_core::model::SourceRef) -> String {
+    let folder = std::path::Path::new(&src.path).parent().and_then(|p| p.file_name()).and_then(|n| n.to_str()).unwrap_or("its folder");
+    format!("Can't find {}. It was last seen in {folder}.", src.file_name())
+}
+
 fn derive_saved(base: &ImportedLayer, saved: &lm_core::document::DocLayer) -> Result<ImportedLayer, String> {
     // A chosen text encoding needs the file read again in it; every other choice is re-applied.
     let encoding =

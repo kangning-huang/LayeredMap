@@ -792,3 +792,89 @@ fn pro_find_where_on_the_elevation_example() {
     assert_eq!(s.ws.doc.layers.len(), 2);
     assert!(s.ws.doc.layers.iter().any(|l| l.display_name.starts_with("Where elevation")));
 }
+
+/// Phase 5: the launch after a crash offers the autosave (WP5.2).
+#[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+fn phase5_recovery_prompt() {
+    use egui_kittest::kittest::Queryable as _;
+    let mut h = phase3(&["V1/districts.geojson"], SHANGHAI, |s| {
+        s.doc_file.recovery = Some(lm_doc::Recovery {
+            name: "Heat study".into(),
+            saved_at: lm_doc::container::now_secs() - 125,
+            autosave: std::env::temp_dir().join("lm-no-such-autosave.lmap"),
+            document: None,
+        });
+    });
+    settle(&mut h);
+    assert!(h.query_by_label_contains("LayeredMap quit unexpectedly. Restore 'Heat study' from 2 minutes ago?").is_some());
+    h.snapshot("phase5_recovery_prompt");
+    // Discard closes the prompt and keeps the map as it is.
+    h.get_by_label("Discard").click();
+    settle(&mut h);
+    let s = h.state().as_ref().unwrap();
+    assert!(s.doc_file.recovery.is_none());
+    assert_eq!(s.ws.doc.layers.len(), 1);
+}
+
+/// A reopened map whose raster moved: heat_july.tif is missing, districts are there.
+fn with_missing_source(setup: impl Fn(&mut Shell) + 'static) -> Harness<'static, Option<Shell>> {
+    let mut h = phase3(&["V1/districts.geojson", "../assets/examples/elevation.tif"], SHANGHAI, move |s| {
+        let mut doc = s.ws.doc.clone();
+        if let Some(l) = doc.layers.iter_mut().find(|l| l.profile.kind == lm_core::model::LayerKind::Raster) {
+            l.profile.source.path = "/Users/student/Downloads/heat_july.tif".into();
+            l.display_name = "heat_july".into();
+        }
+        s.ws.restore(doc);
+        setup(s);
+    });
+    settle(&mut h);
+    h
+}
+
+/// Phase 5: the missing-source card on the layer's overview (Error and status copy).
+#[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+fn phase5_missing_source() {
+    use egui_kittest::kittest::Queryable as _;
+    let mut h = with_missing_source(|_| {});
+    let s = h.state().as_ref().unwrap();
+    assert_eq!(s.ws.missing.len(), 1);
+    assert_eq!(s.ws.selected(), s.ws.missing.first().copied());
+    assert!(h.query_by_label_contains("Can't find heat_july.tif. It was last seen in Downloads.").is_some());
+    assert!(h.query_by_label("Locate…").is_some());
+    h.snapshot("phase5_missing_source");
+    // Locate… asks the app for the file.
+    h.get_by_label("Locate…").click();
+    h.run_steps(3);
+    let reqs = h.state_mut().as_mut().unwrap().take_file_requests();
+    assert!(matches!(reqs.as_slice(), [crate::FileRequest::Locate { file_name, .. }] if file_name == "heat_july.tif"), "{reqs:?}");
+}
+
+/// Phase 5: the chosen file doesn't match the fingerprint, so the card asks first.
+#[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+fn phase5_relink_question() {
+    use egui_kittest::kittest::Queryable as _;
+    let mut h = with_missing_source(|_| {});
+    let elevation = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../assets/examples/elevation.tif");
+    let tmp = std::env::temp_dir().join(format!("lm-relink-{}", std::process::id()));
+    let _ = std::fs::create_dir_all(&tmp);
+    let moved = tmp.join("heat_july.tif");
+    let mut bytes = std::fs::read(&elevation).unwrap();
+    bytes.extend_from_slice(b"different");
+    std::fs::write(&moved, &bytes).unwrap();
+    let ctx = h.ctx.clone();
+    let id = h.state().as_ref().and_then(|s| s.ws.missing.first().copied()).unwrap();
+    h.state_mut().as_mut().unwrap().command(&ctx, crate::Command::Relink(id, moved.clone()));
+    settle(&mut h);
+    assert!(h.query_by_label_contains("This file looks different (its size changed). Use it anyway?").is_some());
+    h.snapshot("phase5_relink_question");
+    // Cancel keeps the layer missing.
+    h.get_by_label("Cancel").click();
+    settle(&mut h);
+    let s = h.state().as_ref().unwrap();
+    assert!(s.doc_file.relink.is_none());
+    assert_eq!(s.ws.missing, vec![id]);
+    let _ = std::fs::remove_dir_all(tmp);
+}

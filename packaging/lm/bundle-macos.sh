@@ -98,10 +98,19 @@ cat > "$app/Contents/Info.plist" <<PLIST
   <key>NSMicrophoneUsageDescription</key><string>LayeredMap Pro listens when you click the microphone in the Ask box, to turn your request into text.</string>
   <key>NSSpeechRecognitionUsageDescription</key><string>LayeredMap Pro turns what you say in the Ask box into text, on this Mac when it can.</string>
   <key>LSApplicationCategoryType</key><string>public.app-category.education</string>
-  <!-- Open With (WP2.1): LayeredMap can open these, but never claims to be their default app
-       (LSHandlerRank Alternate) and only views them (role Viewer). -->
+  <!-- Open With (WP2.1): LayeredMap can open data files, but never claims to be their default
+       app (LSHandlerRank Alternate) and only views them (role Viewer). -->
   <key>CFBundleDocumentTypes</key>
   <array>
+    <!-- LayeredMap's own map files (WP5.1): its type, opened for editing. -->
+    <dict>
+      <key>CFBundleTypeName</key><string>LayeredMap map</string>
+      <key>CFBundleTypeRole</key><string>Editor</string>
+      <key>LSHandlerRank</key><string>Owner</string>
+      <key>LSItemContentTypes</key><array><string>app.layeredmap.map</string></array>
+      <key>CFBundleTypeExtensions</key><array><string>lmap</string></array>
+      <key>CFBundleTypeIconFile</key><string>AppIcon</string>
+    </dict>
     <dict>
       <key>CFBundleTypeName</key><string>CSV or TSV table</string>
       <key>CFBundleTypeRole</key><string>Viewer</string>
@@ -143,6 +152,17 @@ cat > "$app/Contents/Info.plist" <<PLIST
       <key>LSHandlerRank</key><string>Alternate</string>
       <key>LSItemContentTypes</key><array><string>org.openxmlformats.spreadsheetml.sheet</string></array>
       <key>CFBundleTypeExtensions</key><array><string>xlsx</string></array>
+    </dict>
+  </array>
+  <!-- The .lmap type, which LayeredMap owns and declares (docs/lm/format-v1.md). -->
+  <key>UTExportedTypeDeclarations</key>
+  <array>
+    <dict>
+      <key>UTTypeIdentifier</key><string>app.layeredmap.map</string>
+      <key>UTTypeDescription</key><string>LayeredMap map</string>
+      <key>UTTypeConformsTo</key><array><string>public.data</string><string>public.content</string></array>
+      <key>UTTypeIconFile</key><string>AppIcon</string>
+      <key>UTTypeTagSpecification</key><dict><key>public.filename-extension</key><array><string>lmap</string></array><key>public.mime-type</key><string>application/vnd.layeredmap.map+zip</string></dict>
     </dict>
   </array>
   <!-- Types macOS has no system UTI for. Imported, not exported: LayeredMap does not own them. -->

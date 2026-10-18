@@ -19,6 +19,7 @@ pub mod insight;
 pub mod inspect;
 pub mod join_ui;
 pub mod panels;
+pub mod saving;
 #[cfg(test)]
 mod screenshots;
 pub mod search;
@@ -108,6 +109,16 @@ pub enum Command {
     Ask(String),
     KeepAsk,
     Dictate,
+    /// ⌘S: save the map to its file (Save As the first time).
+    Save,
+    /// ⇧⌘S: save the map to a file the user picks.
+    SaveAs,
+    /// Save the map as a `.lmap` file here (the Save As dialog's result).
+    SaveTo(PathBuf),
+    /// Use this file for a layer whose source is missing (the Locate… dialog's result).
+    Relink(lm_core::model::LayerId, PathBuf),
+    /// The recovery prompt's answer: Restore (true) or Discard.
+    Restore(bool),
 }
 
 /// A file dialog the shell asks the app to show (the shell itself never opens dialogs).
@@ -121,6 +132,10 @@ pub enum FileRequest {
     SaveDocument,
     /// Developer: pick a document folder to open.
     OpenDocument,
+    /// Pick where to save the map (a `.lmap` file).
+    SaveAs { suggested_name: String },
+    /// Pick the file a missing layer's source moved to.
+    Locate { layer: lm_core::model::LayerId, file_name: String },
 }
 
 /// What the shell remembers between launches (the app stores it).
@@ -217,6 +232,8 @@ pub struct Shell {
     pub(crate) after_drawing: Option<lm_core::model::LayerId>,
     /// The Ask box (Pro, early test build of WP7.1).
     pub(crate) ask: ask::AskState,
+    /// The map's file, autosave and recovery (WP5.1, WP5.2).
+    pub doc_file: saving::DocFile,
 }
 
 impl Shell {
@@ -250,6 +267,7 @@ impl Shell {
             composer: None,
             after_drawing: None,
             ask: ask::AskState::default(),
+            doc_file: saving::DocFile::default(),
             find: find_ui::FindState::default(),
             drawing: None,
             ws: workspace::Workspace::with_waker(ctx),
@@ -399,9 +417,22 @@ impl Shell {
                 self.map.fly_to(lm_mapview::Coord::new(lon, lat), zoom, t, self.last_map_size, self.reduce_motion);
             }
             Command::Open(paths) => {
-                let waker = ctx.clone();
-                self.ws.open(paths, move || waker.request_repaint());
+                // A map file opens as the document; other files as data.
+                let (maps, paths): (Vec<PathBuf>, Vec<PathBuf>) =
+                    paths.into_iter().partition(|p| p.extension().is_some_and(|e| e.eq_ignore_ascii_case(lm_doc::EXTENSION)));
+                if let Some(m) = maps.first() {
+                    saving::open(self, ctx, m, t);
+                }
+                if !paths.is_empty() {
+                    let waker = ctx.clone();
+                    self.ws.open(paths, move || waker.request_repaint());
+                }
             }
+            Command::Save => saving::save(self, t),
+            Command::SaveAs => saving::save_as(self),
+            Command::SaveTo(path) => saving::save_to(self, path, t),
+            Command::Relink(id, path) => saving::relink(self, id, &path, t),
+            Command::Restore(yes) => saving::answer_recovery(self, ctx, yes, t),
             Command::RequestOpen => self.file_requests.push(FileRequest::Open),
             Command::OpenExamples => {
                 let waker = ctx.clone();
@@ -442,23 +473,45 @@ impl Shell {
                 };
                 self.notice = Some((msg, t));
             }
-            Command::OpenDocument(dir) => match lm_doc::load(&dir) {
-                Ok(doc) => {
-                    self.notice = Some((format!("Opened a document with {} layers; reading their files again.", doc.layers.len()), t));
-                    let view = doc.view;
-                    self.ws = workspace::Workspace::with_waker(ctx);
-                    self.ws.restore(doc);
-                    if let Some((lon, lat, zoom)) = view {
-                        self.map.fly_to(lm_mapview::Coord::new(lon, lat), zoom, t, self.last_map_size, self.reduce_motion);
-                    }
-                }
-                Err(e) => self.notice = Some((e.to_string(), t)),
-            },
+            Command::OpenDocument(path) => saving::open(self, ctx, &path, t),
             Command::LoadFixture(path) => {
                 self.notice = Some((format!("Loading {}…", path.display()), t));
                 self.loading = Some(lm_jobs::load_fixture(path));
             }
         }
+    }
+
+    /// The window title: the map's name, with "— Edited" where the system shows no Edited state
+    /// of its own (macOS shows it from [`Shell::edited`]).
+    pub fn window_title(&self) -> String {
+        let name = self.doc_file.name();
+        if self.doc_file.edited() && !cfg!(target_os = "macos") { format!("{name} — Edited") } else { name }
+    }
+
+    /// Whether the map has changes its file doesn't have.
+    pub fn edited(&self) -> bool {
+        self.doc_file.edited()
+    }
+
+    /// The map's file, once saved or opened.
+    pub fn document_path(&self) -> Option<&std::path::Path> {
+        self.doc_file.path.as_deref()
+    }
+
+    /// Starts autosave and the recovery journal in `dir` (the app's Autosave folder); after a
+    /// crash the recovery prompt shows. Also makes closing ask about unsaved changes.
+    pub fn start_autosave(&mut self, dir: &std::path::Path) {
+        saving::start(self, dir);
+    }
+
+    /// The window asked to close: false while "Save changes?" needs an answer.
+    pub fn may_close(&mut self) -> bool {
+        saving::may_close(self)
+    }
+
+    /// A clean quit (the journal is marked clean).
+    pub fn shutdown(&mut self) {
+        saving::shutdown(self);
     }
 
     /// File dialogs the app should show, oldest first.
@@ -666,6 +719,8 @@ impl Shell {
         self.shortcuts(&ctx);
         self.poll_loading(&ctx);
         self.update_workspace(&ctx);
+        saving::frame(self, &ctx);
+        saving::close_if_saved(self, &ctx);
 
         // Full-bleed: the whole window, whatever margins the host's panel has.
         let full = ctx.content_rect();
@@ -730,6 +785,8 @@ impl Shell {
             chrome::credits(self, &ctx);
         }
         panels::drop_overlay(self, ui, full);
+        saving::recovery_prompt(self, ui, map_rect);
+        saving::close_prompt(self, ui, map_rect);
     }
 
     fn shortcuts(&mut self, ctx: &egui::Context) {
@@ -777,6 +834,21 @@ impl Shell {
         }
         if zero {
             self.command(ctx, Command::ZoomToAll);
+        }
+        // ⌘S and ⇧⌘S come from the menu bar on macOS; elsewhere the shell takes them.
+        #[cfg(not(target_os = "macos"))]
+        {
+            let (save_as, save) = ctx.input_mut(|i| {
+                (
+                    i.consume_key(egui::Modifiers::COMMAND | egui::Modifiers::SHIFT, egui::Key::S),
+                    i.consume_key(egui::Modifiers::COMMAND, egui::Key::S),
+                )
+            });
+            if save_as {
+                self.command(ctx, Command::SaveAs);
+            } else if save {
+                self.command(ctx, Command::Save);
+            }
         }
     }
 

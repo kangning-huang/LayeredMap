@@ -9,6 +9,9 @@
 //! `application:openURLs:` to the delegate's class, and it queues file paths here. The app drains
 //! the queue every frame into `Command::Open`, the same pipeline as the Open button, so files that
 //! arrive before the window exists are opened once the shell is up.
+//!
+//! The Edited state (WP5.1): the window's `documentEdited` (the dot in the close button and
+//! "Edited" after the title) and its represented file (the title's proxy icon).
 
 use std::path::PathBuf;
 use std::ptr::NonNull;
@@ -19,7 +22,7 @@ use objc2::rc::Retained;
 use objc2::runtime::{AnyClass, AnyObject, Bool, Sel};
 use objc2::{ffi, sel};
 use objc2_app_kit::NSApplication;
-use objc2_foundation::{MainThreadMarker, NSArray, NSNotification, NSNotificationCenter, NSURL};
+use objc2_foundation::{MainThreadMarker, NSArray, NSNotification, NSNotificationCenter, NSString, NSURL};
 
 /// Paths macOS asked us to open that the app has not taken yet.
 static PENDING: Mutex<Vec<PathBuf>> = Mutex::new(Vec::new());
@@ -58,6 +61,19 @@ pub fn set_context(ctx: &egui::Context) {
 /// Files macOS asked us to open since the last call.
 pub fn take_opened() -> Vec<PathBuf> {
     std::mem::take(&mut *PENDING.lock().unwrap_or_else(std::sync::PoisonError::into_inner))
+}
+
+/// Shows the document's Edited state and file on the app's windows (main thread only).
+pub fn set_edited(edited: bool, file: Option<&std::path::Path>) {
+    let Some(mtm) = MainThreadMarker::new() else { return };
+    let app = NSApplication::sharedApplication(mtm);
+    let name = NSString::from_str(&file.map(|p| p.display().to_string()).unwrap_or_default());
+    for window in app.windows().iter() {
+        window.setDocumentEdited(edited);
+        // SAFETY: called on the main thread (checked above) with a valid NSString; an empty
+        // string clears the represented file, as AppKit documents.
+        unsafe { window.setRepresentedFilename(&name) };
+    }
 }
 
 /// Adds `application:openURLs:` to the class of the current application delegate (winit's).

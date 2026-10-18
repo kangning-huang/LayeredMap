@@ -858,13 +858,7 @@ pub fn result_card(
         ui.label(RichText::new(c).size(CAPTION).color(t.text_secondary));
     }
     if let Some(r) = kept {
-        let status = r.status(|i| {
-            if i.fingerprint == "drawn" {
-                return Some(i.fingerprint.clone());
-            }
-            let layer = shell.ws.doc.layers.iter().find(|l| l.profile.source.file_name() == i.file)?;
-            lm_jobs::fingerprint::of_path(std::path::Path::new(&layer.profile.source.path))
-        });
+        let status = shell.ws.result_status(r);
         if let Some(s) = status {
             ui.label(RichText::new(s).size(CAPTION).color(t.warning));
         }

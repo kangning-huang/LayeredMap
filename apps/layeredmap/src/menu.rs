@@ -80,6 +80,14 @@ impl MenuBar {
         file.append(&MenuItem::with_id("open", "Open…", true, cmd(Code::KeyO)))?;
         file.append(&MenuItem::with_id("open-examples", "Open example data", true, None))?;
         file.append(&PredefinedMenuItem::separator())?;
+        file.append(&MenuItem::with_id("save", "Save", true, cmd(Code::KeyS)))?;
+        file.append(&MenuItem::with_id(
+            "save-as",
+            "Save As…",
+            true,
+            Some(Accelerator::new(Modifiers::META | Modifiers::SHIFT, Code::KeyS)),
+        ))?;
+        file.append(&PredefinedMenuItem::separator())?;
         if developer {
             file.append(&MenuItem::with_id("load-fixture", "Load fixture…", true, None))?;
             file.append(&MenuItem::with_id("save-document", "Save document (developer)…", true, None))?;
@@ -171,6 +179,8 @@ impl MenuBar {
                 "load-fixture" => Action::LoadFixture,
                 "open" => Action::Shell(Command::RequestOpen),
                 "open-examples" => Action::Shell(Command::OpenExamples),
+                "save" => Action::Shell(Command::Save),
+                "save-as" => Action::Shell(Command::SaveAs),
                 "undo" => Action::Shell(Command::Undo),
                 "redo" => Action::Shell(Command::Redo),
                 "save-document" => Action::SaveDocument,

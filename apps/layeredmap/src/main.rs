@@ -21,6 +21,12 @@ fn question_log_path() -> std::path::PathBuf {
     home.join("Library/Application Support/LayeredMap/question-log.jsonl")
 }
 
+/// Where autosaves and the recovery journal live (WP5.1).
+fn autosave_dir() -> std::path::PathBuf {
+    let home = std::env::var_os("HOME").map(std::path::PathBuf::from).unwrap_or_default();
+    home.join("Library/Application Support/LayeredMap/Autosave")
+}
+
 fn lm_doc_export(log: &std::path::Path, out: &std::path::Path) -> Result<usize, String> {
     lm_ui::export_question_log(log, out)
 }
@@ -39,6 +45,8 @@ struct App {
     /// what a search jump looks like without driving the keyboard).
     tour: Vec<Step>,
     tour_next: Option<f64>,
+    /// The window title and Edited state last set.
+    title: (String, bool),
 }
 
 /// The system's Reduce Motion setting (macOS), read once at launch.
@@ -122,6 +130,18 @@ impl eframe::App for App {
             }
             ctx.request_repaint_after(std::time::Duration::from_millis(100));
         }
+        // The map's name in the title bar, and the Edited state (WP5.1).
+        let title = (self.shell.window_title(), self.shell.edited());
+        if title != self.title {
+            ctx.send_viewport_cmd(egui::ViewportCommand::Title(title.0.clone()));
+            #[cfg(target_os = "macos")]
+            macos::set_edited(title.1, self.shell.document_path());
+            self.title = title;
+        }
+        // Closing with unsaved changes asks first.
+        if ctx.input(|i| i.viewport().close_requested()) && !self.shell.may_close() {
+            ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
+        }
         if let Some(m) = &self.menu {
             for action in m.poll() {
                 match action {
@@ -181,6 +201,22 @@ impl eframe::App for App {
                         self.shell.command(ctx, Command::OpenDocument(dir));
                     }
                 }
+                FileRequest::SaveAs { suggested_name } => {
+                    if let Some(path) = rfd::FileDialog::new()
+                        .set_title("Save")
+                        .set_file_name(suggested_name)
+                        .add_filter("LayeredMap map", &["lmap"])
+                        .save_file()
+                    {
+                        self.shell.command(ctx, Command::SaveTo(path));
+                    }
+                }
+                FileRequest::Locate { layer, file_name } => {
+                    if let Some(path) = rfd::FileDialog::new().set_title(format!("Locate {file_name}")).set_file_name(file_name).pick_file()
+                    {
+                        self.shell.command(ctx, Command::Relink(layer, path));
+                    }
+                }
             }
         }
     }
@@ -194,6 +230,10 @@ impl eframe::App for App {
             self.probe = None;
             ui.ctx().send_viewport_cmd(egui::ViewportCommand::Close);
         }
+    }
+
+    fn on_exit(&mut self) {
+        self.shell.shutdown();
     }
 
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
@@ -370,6 +410,7 @@ fn main() -> eframe::Result {
             lm_ui::basemap::start_archive_lookup(&cc.egui_ctx);
             if !ephemeral {
                 shell.set_question_log(question_log_path());
+                shell.start_autosave(&autosave_dir());
             }
             // Files passed on the command line (and, through macOS, Open With) are opened.
             let files: Vec<std::path::PathBuf> =
@@ -384,7 +425,17 @@ fn main() -> eframe::Result {
             #[cfg(target_os = "macos")]
             macos::set_context(&cc.egui_ctx);
             let menu = menu::MenuBar::install(developer, &cc.egui_ctx);
-            Ok(Box::new(App { shell, menu, system, feel, probe: probe.then_some(started), ephemeral, tour, tour_next: None }))
+            Ok(Box::new(App {
+                shell,
+                menu,
+                system,
+                feel,
+                probe: probe.then_some(started),
+                ephemeral,
+                tour,
+                tour_next: None,
+                title: (app_name.to_string(), false),
+            }))
         }),
     )
 }
