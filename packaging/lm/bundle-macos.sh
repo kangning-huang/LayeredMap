@@ -37,6 +37,9 @@ cp "$root/assets/examples/cities.geojson" "$root/assets/examples/countries.geojs
 # The app icon (the Strata logo; tools/lm/make_app_icon.py builds it from design/logo).
 cp "$root/packaging/lm/AppIcon.icns" "$app/Contents/Resources/AppIcon.icns"
 echo "$tier" > "$app/Contents/Resources/tier"
+# Licences (Gate 5 licence audit): the assets' sources and every Rust crate's licence text.
+cp "$root/LICENSE" "$root/ATTRIBUTION.md" "$app/Contents/Resources/"
+[[ -f "$root/ATTRIBUTION-crates.md" ]] && cp "$root/ATTRIBUTION-crates.md" "$app/Contents/Resources/"
 if [[ "$tier" == "pro" ]]; then
   # The Ask box's microphone (WP7.1): Apple's speech recognizer, in a small Swift helper.
   # It carries its own Info.plist (usage texts), as macOS asks of any process that listens.
@@ -180,6 +183,11 @@ if [[ -n "${LM_SIGN_IDENTITY:-}" ]]; then
   fi
   codesign --force --options runtime --timestamp "${ent[@]}" --sign "$LM_SIGN_IDENTITY" "$app"
   codesign --verify --strict --verbose=2 "$app"
+  # The hardened runtime (WP5.7), which notarization requires: the signature must carry it.
+  if ! codesign --display --verbose=2 "$app" 2>&1 | grep -q 'flags=.*runtime'; then
+    echo "bundle-macos: $app is signed without the hardened runtime" >&2
+    exit 1
+  fi
   if [[ -n "${LM_NOTARY_APPLE_ID:-}" ]]; then
     zip="$out/LayeredMap-notarize.zip"
     ditto -c -k --keepParent "$app" "$zip"

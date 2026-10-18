@@ -1,0 +1,17 @@
+[package]
+name = "lm-net"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+description = "LayeredMap: the one network gate (strict offline mode, WP6.6) and the gated HTTP helper"
+
+[lints]
+workspace = true
+
+[dependencies]
+log = { workspace = true }
+
+# The gated helper (`get_text`). Already in the build through rustgis-tiles.
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+ureq = { version = "3", default-features = false, features = ["rustls", "gzip"] }

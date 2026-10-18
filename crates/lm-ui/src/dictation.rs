@@ -35,6 +35,8 @@ impl Dictation {
     pub fn start(wake: impl Fn() + Send + 'static) -> Result<Dictation, String> {
         let path = helper().ok_or("Speaking needs the LayeredMap Pro app (its speech helper isn't here).")?;
         let mut child = Command::new(path)
+            // Offline, the helper refuses to fall back to Apple's server recognizer.
+            .env("LM_OFFLINE", if lm_net::offline() { "1" } else { "0" })
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::null())

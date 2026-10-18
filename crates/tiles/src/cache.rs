@@ -108,6 +108,27 @@ pub fn set_fetcher(f: impl Fn(String, Done) + Send + Sync + 'static) {
     *fetcher().lock().unwrap_or_else(|e| e.into_inner()) = Some(Arc::new(Box::new(f)));
 }
 
+/// The error of a request the gate refused (see [`set_gate`]).
+pub const OFFLINE: &str = "offline: network access is turned off";
+
+fn gate() -> &'static OnceLock<Box<dyn Fn(&str) -> bool + Send + Sync>> {
+    static G: OnceLock<Box<dyn Fn(&str) -> bool + Send + Sync>> = OnceLock::new();
+    &G
+}
+
+/// LayeredMap (strict offline mode, WP6.6): installs a gate asked right before each network
+/// request with its address; `false` refuses the request with [`OFFLINE`]. Local files are never
+/// asked. Set once per process; returns whether this call set it.
+pub fn set_gate(allow: impl Fn(&str) -> bool + Send + Sync + 'static) -> bool {
+    gate().set(Box::new(allow)).is_ok()
+}
+
+/// Whether the gate lets a request to `url` go out (no gate: yes).
+#[cfg(not(target_arch = "wasm32"))]
+fn gate_allows(url: &str) -> bool {
+    gate().get().is_none_or(|g| g(url))
+}
+
 /// Sets what is called whenever a fetch finishes (the app asks for a repaint).
 pub fn set_waker(f: impl Fn() + Send + Sync + 'static) {
     *waker().lock().unwrap_or_else(|e| e.into_inner()) = Some(Arc::new(f));
@@ -598,6 +619,9 @@ mod native {
             let (a, b) = range.ok_or("a local read without a range")?;
             return crate::pmtiles::read_file(path, a, b - a + 1);
         }
+        if !super::gate_allows(url) {
+            return Err(super::OFFLINE.into());
+        }
         let (url, whole) = super::split_download(url);
         let max = if whole { super::MAX_DOWNLOAD } else { MAX_BYTES };
         let (url, tail) = super::split_tail(url);
@@ -774,6 +798,20 @@ mod tests {
         // Too many.
         let base = serve((0..7).map(|_| redirect("/again")).collect());
         assert!(native::get(&agent, &format!("{base}/x")).unwrap_err().contains("too many"));
+    }
+
+    /// LayeredMap: the gate is asked before a request goes out, and a refusal never reaches the
+    /// server.
+    #[cfg(not(target_arch = "wasm32"))]
+    #[test]
+    fn the_gate_refuses_before_connecting() {
+        set_gate(|url| !url.contains("/gate-refused/"));
+        let ok = "HTTP/1.1 200 OK\r\nContent-Length: 4\r\nConnection: close\r\n\r\ntile".to_string();
+        let base = serve(vec![ok]);
+        let agent = native::agent();
+        assert_eq!(native::get(&agent, &format!("{base}/gate-refused/0/0/0.png")).unwrap_err(), OFFLINE);
+        // The one answer the server has is still there: the refused request never connected.
+        assert_eq!(native::get(&agent, &format!("{base}/allowed.png")).unwrap(), b"tile");
     }
 
     #[test]

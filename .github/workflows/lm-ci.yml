@@ -1,6 +1,7 @@
-# LayeredMap CI (build plan WP0.1): `cargo xtask ci` and a LayeredMap.app on macOS arm64 for every
-# push to a phase or task branch, and for pull requests. Signing and notarization run when the
-# Apple Developer secrets are present (docs/lm/signing.md); otherwise the app is ad-hoc signed.
+# LayeredMap CI (build plan WP0.1): `cargo xtask ci` and a LayeredMap.app and .dmg on macOS arm64
+# for every push to a phase or task branch, and for pull requests. Signing and notarization run
+# when the Apple Developer secrets are present (docs/lm/signing.md); otherwise the app is ad-hoc
+# signed. `security` runs cargo audit and cargo deny and writes the SBOM (WP6.8, docs/lm/security.md).
 name: LayeredMap CI
 
 on:
@@ -39,7 +40,7 @@ jobs:
           targets: wasm32-unknown-unknown
       - uses: Swatinem/rust-cache@v2
       - name: Build lm-* (except lm-ui, lm-mapview) for the browser
-        run: cargo build --locked --target wasm32-unknown-unknown -p lm-core -p lm-profile -p lm-actions -p lm-jobs -p lm-analysis -p lm-doc
+        run: cargo build --locked --target wasm32-unknown-unknown -p lm-core -p lm-profile -p lm-actions -p lm-jobs -p lm-analysis -p lm-doc -p lm-net
 
   app:
     name: LayeredMap.app (macOS arm64)
@@ -65,18 +66,43 @@ jobs:
           security import "$RUNNER_TEMP/cert.p12" -P "$CERT_PASSWORD" -A -t cert -f pkcs12 -k "$kc"
           security set-key-partition-list -S apple-tool:,apple: -k "$kcpw" "$kc"
           security list-keychain -d user -s "$kc"
-      - name: Bundle (sign and notarize when configured)
+      - name: Bundle and disk image (sign, notarize and staple when configured)
         env:
           LM_BUILD_NUMBER: ${{ github.run_number }}
           LM_SIGN_IDENTITY: ${{ secrets.LM_SIGN_IDENTITY }}
           LM_NOTARY_APPLE_ID: ${{ secrets.LM_NOTARY_APPLE_ID }}
           LM_NOTARY_TEAM_ID: ${{ secrets.LM_NOTARY_TEAM_ID }}
           LM_NOTARY_PASSWORD: ${{ secrets.LM_NOTARY_PASSWORD }}
-        run: packaging/lm/bundle-macos.sh dist/lm
+          LM_DOWNLOAD_BASE: ${{ vars.LM_DOWNLOAD_BASE }}
+        run: packaging/lm/build-dmg.sh dist/lm
       - uses: actions/upload-artifact@v7
         with:
           name: LayeredMap-macos-arm64
-          path: dist/lm/*.zip
+          path: |
+            dist/lm/*.zip
+            dist/lm/*.dmg
+            dist/lm/update-feed.json
+          if-no-files-found: warn
+
+  security:
+    name: cargo audit, cargo deny, SBOM
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Install cargo-audit and cargo-deny
+        run: cargo install --locked cargo-audit cargo-deny
+      - name: cargo audit (RustSec advisories; exceptions in .cargo/audit.toml)
+        run: cargo audit
+      - name: cargo deny check (advisories, licences, bans, sources; deny.toml)
+        run: cargo deny check
+      - name: Software bill of materials (CycloneDX)
+        run: cargo xtask sbom --out dist/lm/layeredmap.cdx.json
+      - uses: actions/upload-artifact@v7
+        with:
+          name: LayeredMap-sbom
+          path: dist/lm/layeredmap.cdx.json
 
   spike:
     name: Rendering spike build (Phase 0)

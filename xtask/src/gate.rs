@@ -114,7 +114,7 @@ pub fn stress_table(rows: &[StressRow]) -> String {
 }
 
 /// The fuzz targets (`fuzz/fuzz_targets/*.rs`).
-pub const FUZZ_TARGETS: &[&str] = &["csv", "geojson", "shapefile", "dbf", "geotiff_header"];
+pub const FUZZ_TARGETS: &[&str] = &["csv", "geojson", "shapefile", "dbf", "geotiff_header", "gpkg", "xlsx"];
 
 /// Seed inputs for a target: (seed file name, prefix byte for the Shapefile target's mode, source).
 fn seeds(root: &Path, target: &str) -> Vec<(String, Option<u8>, PathBuf)> {
@@ -156,6 +156,8 @@ fn seeds(root: &Path, target: &str) -> Vec<(String, Option<u8>, PathBuf)> {
             v.push((Some(3), gen_dir.join("X1/x1_bomb.zip")));
         }
         "dbf" => v.extend(all("dbf").into_iter().map(|p| (None, p))),
+        "gpkg" => v.extend(all("gpkg").into_iter().map(|p| (None, p))),
+        "xlsx" => v.extend(all("xlsx").into_iter().map(|p| (None, p))),
         "geotiff_header" => {
             v.extend(all("tif").into_iter().map(|p| (None, p)));
             v.push((None, gen_dir.join("X4/x4_billion.tif")));
@@ -331,6 +333,32 @@ mod tests {
                 .map(|s| s.to_string())
                 .collect();
         assert_eq!(parse_fuzz(&crash).crash.as_deref(), Some("fuzz/artifacts/csv/crash-ab12"));
+    }
+
+    /// WP6.8: each import adapter (`lm_jobs::import::adapters`) is fuzzed by a target. A new
+    /// adapter fails here until it has one (add it to `fuzz/`, `FUZZ_TARGETS` and this table).
+    #[test]
+    fn every_import_adapter_has_a_fuzz_target() {
+        const COVERED: &[(&str, &str)] = &[
+            ("geojson::GeoJson", "geojson"),
+            ("csv::Delimited", "csv"),
+            ("shapefile::Shapefile", "shapefile"),
+            ("shapefile::ZippedShapefile", "shapefile"),
+            ("gpkg::GeoPackage", "gpkg"),
+            ("excel::Excel", "xlsx"),
+            ("raster::GeoTiff", "geotiff_header"),
+        ];
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
+        let src = std::fs::read_to_string(root.join("crates/lm-jobs/src/import/mod.rs")).unwrap();
+        let body = src.split("fn adapters(").nth(1).and_then(|b| b.split("\n}").next()).unwrap();
+        let adapters: Vec<&str> =
+            body.split('&').skip(1).filter_map(|a| a.split([',', ']', ')', ';', ' ']).next()).filter(|a| a.contains("::")).collect();
+        assert!(adapters.len() >= 7, "{adapters:?}");
+        for a in adapters {
+            let target = COVERED.iter().find(|(k, _)| *k == a).map(|(_, t)| *t);
+            let target = target.unwrap_or_else(|| panic!("import adapter {a} has no fuzz target"));
+            assert!(FUZZ_TARGETS.contains(&target), "{a}: {target} is not in FUZZ_TARGETS");
+        }
     }
 
     #[test]

@@ -8,6 +8,7 @@ pub mod analysis;
 pub mod ask;
 pub mod basemap;
 mod chrome;
+pub mod diagnostics;
 #[cfg(not(target_arch = "wasm32"))]
 mod dictation;
 pub mod draw;
@@ -18,12 +19,15 @@ pub mod illustrations;
 pub mod insight;
 pub mod inspect;
 pub mod join_ui;
+#[cfg(test)]
+mod offline_harness;
 pub mod panels;
 #[cfg(test)]
 mod screenshots;
 pub mod search;
 pub mod table;
 pub mod theme;
+pub mod update;
 pub mod workspace;
 
 use std::path::PathBuf;
@@ -108,6 +112,10 @@ pub enum Command {
     Ask(String),
     KeepAsk,
     Dictate,
+    /// View › Work Offline: strict offline mode (WP6.6) on or off.
+    SetOffline(bool),
+    /// Help › Export Diagnostics…: show the app's report for review before it is saved.
+    ReviewDiagnostics(String),
 }
 
 /// A file dialog the shell asks the app to show (the shell itself never opens dialogs).
@@ -133,11 +141,13 @@ pub struct Prefs {
     pub strength: f32,
     /// The last view: centre longitude, latitude and zoom. `None` on first launch.
     pub view: Option<(f64, f64, f64)>,
+    /// Strict offline mode (View › Work Offline): no network request of any kind.
+    pub offline: bool,
 }
 
 impl Default for Prefs {
     fn default() -> Self {
-        Prefs { theme: ThemePref::System, units: Units::Metric, basemap: "auto".into(), strength: 1.0, view: None }
+        Prefs { theme: ThemePref::System, units: Units::Metric, basemap: "auto".into(), strength: 1.0, view: None, offline: false }
     }
 }
 
@@ -217,6 +227,8 @@ pub struct Shell {
     pub(crate) after_drawing: Option<lm_core::model::LayerId>,
     /// The Ask box (Pro, early test build of WP7.1).
     pub(crate) ask: ask::AskState,
+    /// A diagnostics report open for review (Help › Export Diagnostics…).
+    pub(crate) diagnostics: Option<String>,
 }
 
 impl Shell {
@@ -226,6 +238,8 @@ impl Shell {
         if !lm_mapview::add_label_font(theme::NOTO_SC_REGULAR.to_vec()) {
             log::warn!("the bundled Chinese font could not be registered for map labels");
         }
+        // Offline mode is set before the map exists, so not even its first frame asks for tiles.
+        lm_net::set_offline(prefs.offline);
         let dark = basemap::dark_for(prefs.theme, system.dark_mode);
         let map = basemap::initial_map(&prefs, dark);
         let backdrop = basemap::backdrop(&map);
@@ -250,6 +264,7 @@ impl Shell {
             composer: None,
             after_drawing: None,
             ask: ask::AskState::default(),
+            diagnostics: None,
             find: find_ui::FindState::default(),
             drawing: None,
             ws: workspace::Workspace::with_waker(ctx),
@@ -364,6 +379,18 @@ impl Shell {
             Command::Ask(text) => ask::submit(self, ctx, text),
             Command::KeepAsk => ask::keep_shown(self),
             Command::Dictate => ask::dictate(self, ctx),
+            Command::SetOffline(on) => {
+                self.prefs.offline = on;
+                lm_net::set_offline(on);
+                self.basemap_changed();
+                // The daily-build lookup put off at launch runs once back online.
+                if !on && lm_mapview::archive::wanted() {
+                    basemap::start_archive_lookup(ctx);
+                }
+                let msg = if on { "Working offline: LayeredMap won't use the network." } else { "Back online." };
+                self.notice = Some((msg.into(), t));
+            }
+            Command::ReviewDiagnostics(report) => diagnostics::open(self, report),
             Command::Find(text) => {
                 if let Some(id) = self.ws.selected() {
                     self.find.layer = Some(id);
@@ -725,10 +752,12 @@ impl Shell {
         panels::review(self, &ctx);
         panels::compare_banner(self, ui, overlay_rect);
         ask::ask_box(self, ui, map_rect);
+        update::notice(self, ui, overlay_rect);
         chrome::toolbar(self, ui, toolbar, system);
         if self.credits_open {
             chrome::credits(self, &ctx);
         }
+        diagnostics::window(self, &ctx);
         panels::drop_overlay(self, ui, full);
     }
 

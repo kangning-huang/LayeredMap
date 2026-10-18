@@ -1,5 +1,5 @@
-//! `cargo xtask ci | layers | web-pwa <dir>` (LayeredMap adds `fixtures`, `feel`, `launch`, `stress` and
-//! `fuzz`; see `lm.rs`, `fixtures.rs` and `gate.rs`).
+//! `cargo xtask ci | layers | web-pwa <dir>` (LayeredMap adds `fixtures`, `feel`, `launch`, `stress`,
+//! `fuzz`, `audit`, `licenses` and `sbom`; see `lm.rs`, `fixtures.rs`, `gate.rs` and `security.rs`).
 //!
 //! - `layers`: enforces the crate layering (nothing below L6 may depend on egui/eframe/rfd).
 //! - `ci`: fmt check, clippy -D warnings, tests and the layer check.
@@ -11,6 +11,7 @@ use std::process::{Command, ExitCode};
 mod fixtures;
 mod gate;
 mod lm;
+mod security;
 
 const LAYERS: &[(&str, u8)] = &[
     ("geom", 0),
@@ -147,19 +148,23 @@ fn web_pwa(dir: Option<String>) -> Result<(), String> {
 fn main() -> ExitCode {
     let task = std::env::args().nth(1).unwrap_or_default();
     let r = match task.as_str() {
-        "layers" => layers().and_then(|_| lm::layers(&root())),
+        "layers" => layers().and_then(|_| lm::layers(&root())).and_then(|_| security::net_lint(&root())),
         "ci" => cargo(&["fmt", "--all", "--check"])
             .and_then(|_| cargo(&["clippy", "--workspace", "--all-targets", "--", "-D", "warnings"]))
             .and_then(|_| cargo(&["test", "--workspace", "-q"]))
             .and_then(|_| layers())
-            .and_then(|_| lm::layers(&root())),
+            .and_then(|_| lm::layers(&root()))
+            .and_then(|_| security::net_lint(&root())),
         "web-pwa" => web_pwa(std::env::args().nth(2)),
         "fixtures" => fixtures::run(&root(), &std::env::args().skip(2).collect::<Vec<_>>()),
         "feel" => lm::feel(&root(), &std::env::args().skip(2).collect::<Vec<_>>()),
         "launch" => lm::launch(&root(), &std::env::args().skip(2).collect::<Vec<_>>()),
         "stress" => gate::stress(&root(), &std::env::args().skip(2).collect::<Vec<_>>()),
         "fuzz" => gate::fuzz(&root(), &std::env::args().skip(2).collect::<Vec<_>>()),
-        _ => Err("usage: cargo xtask ci | layers | web-pwa <dir> | fixtures [--out DIR] [--only IDS] [--large] | feel [--runs N] [--out DIR] | launch [--n N] | stress | fuzz [--secs N] [--target T]".into()),
+        "audit" => security::audit(&root()),
+        "licenses" => security::licenses(&root()),
+        "sbom" => security::sbom(&root(), &std::env::args().skip(2).collect::<Vec<_>>()),
+        _ => Err("usage: cargo xtask ci | layers | web-pwa <dir> | fixtures [--out DIR] [--only IDS] [--large] | feel [--runs N] [--out DIR] | launch [--n N] | stress | fuzz [--secs N] [--target T] | audit | licenses | sbom [--out FILE] [--target TRIPLE]".into()),
     };
     match r {
         Ok(()) => ExitCode::SUCCESS,
