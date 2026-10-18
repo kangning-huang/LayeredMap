@@ -194,6 +194,9 @@ pub fn apply(ctx: &egui::Context, t: &Theme) {
         v.widgets.inactive.bg_stroke = Stroke::NONE;
         // The focus ring is the accent.
         v.widgets.active.bg_stroke = Stroke::new(2.0, t.accent);
+        // Text isn't selectable: a selectable label takes focus, so Tab would stop on every line
+        // of text (WP5.6). Values to copy have their own Copy buttons.
+        s.interaction.selectable_labels = false;
         s.spacing.item_spacing = egui::vec2(SPACE[1], SPACE[1]);
         s.spacing.button_padding = egui::vec2(SPACE[2], SPACE[0] + 2.0);
         s.spacing.interact_size.y = ROW_HEIGHT;

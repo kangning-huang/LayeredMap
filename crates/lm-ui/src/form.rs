@@ -17,7 +17,11 @@ pub fn row<R>(ui: &mut Ui, t: &Theme, label: &str, add: impl FnOnce(&mut Ui) -> 
     ui.horizontal(|ui| {
         let (r, _) = ui.allocate_exact_size(vec2(LABEL_W, ROW_H), Sense::hover());
         ui.painter().text(r.left_center(), egui::Align2::LEFT_CENTER, label, theme::regular(BODY), t.text_secondary);
-        add(ui)
+        // The row's label is drawn, so its controls take it as their name.
+        let mark = crate::a11y::widget_mark(ui);
+        let out = add(ui);
+        crate::a11y::name_new_controls(ui, mark, label);
+        out
     })
     .inner
 }
@@ -57,6 +61,7 @@ pub fn segmented(ui: &mut Ui, t: &Theme, selected: usize, labels: &[&str], width
         let seg = Rect::from_min_size(pos2(r.left() + k as f32 * w, r.top()), vec2(w, r.height()));
         let resp = ui.interact(seg, ui.id().with(("segment", label, k)), Sense::click()).on_hover_cursor(egui::CursorIcon::PointingHand);
         let on = k == selected;
+        crate::a11y::choice(&resp, *label, on);
         let p = ui.painter();
         if on {
             p.rect(

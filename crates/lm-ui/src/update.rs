@@ -225,8 +225,9 @@ pub(crate) fn notice(shell: &Shell, ui: &egui::Ui, map: egui::Rect) {
                     label.on_hover_text(format!("LayeredMap {}: {n}", u.version));
                 }
                 ui.hyperlink_to(RichText::new(format!("Download {}", u.version)).size(CAPTION), &u.url);
-                let close = egui::Button::new(RichText::new(icon::X).font(theme::icon_font(11.0))).frame(false);
-                if ui.add(close).on_hover_text("Close").clicked() {
+                let close = ui.add(egui::Button::new(RichText::new(icon::X).font(theme::icon_font(11.0))).frame(false));
+                crate::a11y::button(&close, "Close the update notice");
+                if close.on_hover_text("Close").clicked() {
                     ui.ctx().data_mut(|d| d.insert_temp(closed_id, u.version.clone()));
                 }
             });
