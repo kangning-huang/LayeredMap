@@ -348,7 +348,8 @@ def map_context(ctx: str) -> str:
 EXTRA_RULES = """11. Numbers in the request: "at least", "or more", "or warmer", "不低于", "至少" -> at_least; "at most", "or less", "or colder", "不超过", "不高于" -> at_most; "more than", "over", "超过" -> above; "less than", "below" -> below; "between a and b", "a to b" -> between. Write numbers in the field's or raster's unit, digits only ("two million" = 2000000, "一亿" = 100000000, "a million" = 1000000).
 12. Which action gives which value: a raster's value at each point -> add_raster_values; details of the area each object lies in (its country, continent, country population) -> join_by_location; distance to the nearest object of another layer -> nearest_distance; distance to the nearest other object of the same layer -> nearest_other; a value computed from two values (a difference, a ratio) -> calculate_field; one object per island or part of a multi-part area -> split_parts; area, length and coordinates -> add_measurements; places where raster conditions hold -> find_where; the part of a layer inside some areas -> keep_inside; the objects of a layer inside one area -> whats_inside.
 13. Steps that add values fill them only for the objects shown at that moment; hidden objects stay blank. To answer "which one", end the plan with the filter that leaves only the objects meeting every condition.
-14. Well-known geographic terms have standard definitions: use them without asking. Tropical / in the tropics: latitude between -23.44 and 23.44; northern / southern hemisphere: latitude above / below 0; Arctic: latitude at least 66.56; Antarctic: latitude at most -66.56; a latitude needs the layer's latitude field (add_measurements adds one)."""
+14. Well-known geographic terms have standard definitions: use them without asking. Tropical / in the tropics: latitude between -23.44 and 23.44; northern / southern hemisphere: latitude above / below 0; Arctic: latitude at least 66.56; Antarctic: latitude at most -66.56; a latitude needs the layer's latitude field (add_measurements adds one).
+15. "Which <point> has the highest / lowest <raster value>" (the coldest city, the wettest hospital) asks about the points themselves: add_raster_values to the points, then rank_by_value on that field (order "lowest" for the lowest, coldest, driest, least). summarize_each is for areas (each country's average), never for "which city"."""
 
 EXTRA_MAP = """More example layers on the same invented map: Temperature: raster, °C. Lakes: areas, 1 object with many parts; fields name (text)."""
 
@@ -368,6 +369,9 @@ EXTRA_EXAMPLES = [
       '{field: "Rainfall", op: "between", value: "600", value2: "900"}])',
       'filter(layer="Wards", conditions=[{field: "name", op: "is", value: "Riverside"}])',
       'keep_inside(layer="#1", areas="Wards")']),
+    ("Which hospital gets the least rain?", [],
+     ['add_raster_values(raster="Rainfall", points="Hospitals")',
+      'rank_by_value(layer="Hospitals", field="Rainfall", order="lowest")']),
     ("Which hospitals are more than 3 km from any other hospital?", [],
      ['nearest_other(layer="Hospitals")',
       'filter(layer="Hospitals", conditions=[{field: "km to nearest other hospital", op: "above", value: "3"}])']),

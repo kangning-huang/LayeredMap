@@ -531,6 +531,9 @@ fn range_words(lo: f64, hi: f64) -> String {
 fn count_in(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
     let (pts_in, areas_in) = (plan.input(0)?, plan.input(1)?);
     let (pts, _) = pts_in.scoped()?;
+    // Areas and lines (islands, roads) are counted by a point inside each: their label point.
+    let by_point_inside = matches!(pts_in.layer.profile.kind, LayerKind::Areas | LayerKind::Lines);
+    let pts = if by_point_inside { Arc::new(label_points(&pts)) } else { pts };
     let (areas, area_rows) = areas_in.scoped()?;
     let stat = plan.param("stat").unwrap_or("count");
     let value_field = plan.param("field").filter(|_| stat != "count");
@@ -611,6 +614,12 @@ fn count_in(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
     let summary =
         format!("{} · {range} {summary_what} · {} with none", areas_in.things(areas.features.len() as u64), group_thousands(none));
     let mut decisions = Vec::new();
+    if by_point_inside {
+        decisions.push(format!(
+            "each of the {things} counts by one point inside it (its label point), in the {} that holds that point",
+            plural(&area_one)
+        ));
+    }
     if let Some(f) = value_field {
         decisions.push(format!("{} of {f} over the {things} in each {area_one}", stat_label(POINT_STATS, stat).to_lowercase()));
     }
@@ -1224,17 +1233,24 @@ fn rank_by_value(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError
         }
         ranked.push(RankRow { label: input.title(full, rows[i]), value: f.attrs.get(k).and_then(Value::as_f64), row: rows[i] });
     }
-    let title = format!("{} ranked by {field}", capitalized(&input.plural_noun()));
+    // `order` "lowest" ranks lowest first ("the coldest cities"); blanks stay last either way.
+    let lowest = plan.param("order") == Some("lowest");
+    let title = format!("{} ranked by {field}{}", capitalized(&input.plural_noun()), if lowest { ", lowest first" } else { "" });
     let with = ranked.iter().filter(|r| r.value.is_some()).count();
     let inputs = [input];
-    let ranked = ranking(ranked);
+    let mut ranked = ranking(ranked);
+    if lowest {
+        ranked[..with].reverse();
+    }
     let summary = match ranked.first() {
-        Some(RankRow { label, value: Some(v), .. }) => format!("Highest: {label}, {}", number(*v)),
+        Some(RankRow { label, value: Some(v), .. }) => format!("{}: {label}, {}", if lowest { "Lowest" } else { "Highest" }, number(*v)),
         _ => "No values to rank".into(),
     };
     let mut notices = Vec::new();
-    if with < ranked.len() {
-        notices.push(format!("{} have no {field} value and are listed last.", input.things((ranked.len() - with) as u64)));
+    let blank = ranked.len() - with;
+    if blank > 0 {
+        let (has, are) = if blank == 1 { ("has", "is") } else { ("have", "are") };
+        notices.push(format!("{} {has} no {field} value and {are} listed last.", input.things(blank as u64)));
     }
     Ok(ActionResult {
         label: title.clone(),
@@ -1577,6 +1593,17 @@ fn clip_action(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> 
 }
 
 /// A point on a geometry (the certified label point), for tools that list objects.
+/// The dataset with each geometry replaced by its label point (a point inside an area, on a
+/// line), for counting areas and lines like points. Attributes stay.
+fn label_points(ds: &Dataset) -> Dataset {
+    let mut out = ds.clone();
+    out.geometry_type = crate::GeometryType::Point;
+    for f in &mut out.features {
+        f.geometry = f.geometry.as_ref().and_then(label_point).map(Geometry::Point);
+    }
+    out
+}
+
 pub fn label_point(g: &Geometry) -> Option<Coord> {
     lm_analysis::measure::label_point(g)
 }

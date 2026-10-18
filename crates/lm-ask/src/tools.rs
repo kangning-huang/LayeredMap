@@ -14,10 +14,16 @@ const PLACEHOLDERS: [(&str, &str); 4] =
 
 /// The tools for these layers: every enum's placeholders replaced by the names of the layers of
 /// that kind. An enum left empty becomes a plain string (some providers reject empty enums).
-pub fn tools(layers: &[PlanLayer]) -> Json {
+/// `extra`: built-in layers (name, kind) the plan may name too.
+pub fn tools(layers: &[PlanLayer], extra: &[(String, String)]) -> Json {
     let mut t: Json = serde_json::from_str(TOOLS).expect("tools.json is valid JSON (export_assets.py)");
     let names = |kind: &str| -> Vec<String> {
-        layers.iter().filter(|l| crate::context::kind_word(l) == Some(kind)).map(|l| l.name.clone()).collect()
+        layers
+            .iter()
+            .filter(|l| crate::context::kind_word(l) == Some(kind))
+            .map(|l| l.name.clone())
+            .chain(extra.iter().filter(|(_, k)| k == kind).map(|(n, _)| n.clone()))
+            .collect()
     };
     let by_kind: Vec<(&str, Vec<String>)> = PLACEHOLDERS.iter().map(|(p, k)| (*p, names(k))).collect();
     fill(&mut t, &by_kind);

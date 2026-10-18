@@ -37,6 +37,49 @@ cp "$root/assets/examples/cities.geojson" "$root/assets/examples/countries.geojs
 # The app icon (the Strata logo; tools/lm/make_app_icon.py builds it from design/logo).
 cp "$root/packaging/lm/AppIcon.icns" "$app/Contents/Resources/AppIcon.icns"
 echo "$tier" > "$app/Contents/Resources/tier"
+if [[ "$tier" == "pro" ]]; then
+  # The Ask box's microphone (WP7.1): Apple's speech recognizer, in a small Swift helper.
+  # It carries its own Info.plist (usage texts), as macOS asks of any process that listens.
+  dictate_plist="$(mktemp -t lm-dictate-plist)"
+  cat > "$dictate_plist" <<DPLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>CFBundleIdentifier</key><string>${bundle_id}.dictate</string>
+  <key>CFBundleName</key><string>${name}</string>
+  <key>NSMicrophoneUsageDescription</key><string>LayeredMap Pro listens when you click the microphone in the Ask box, to turn your request into text.</string>
+  <key>NSSpeechRecognitionUsageDescription</key><string>LayeredMap Pro turns what you say in the Ask box into text, on this Mac when it can.</string>
+</dict></plist>
+DPLIST
+  swiftc -O -o "$app/Contents/MacOS/lm-dictate" "$root/packaging/lm/dictate.swift" \
+    -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __info_plist -Xlinker "$dictate_plist"
+  rm -f "$dictate_plist"
+  # Built-in reference layers (Natural Earth 1:10m, WorldClim elevation; hidden, used by the
+  # assistant): tools/lm/reference/build_reference.py writes them to LM_REFERENCE_DATA.
+  ref="${LM_REFERENCE_DATA:-/Volumes/LaCie/data/layeredmap-reference}"
+  if [[ -f "$ref/manifest.json" ]]; then
+    mkdir -p "$app/Contents/Resources/reference"
+    rsync -a --exclude raw --exclude '._*' "$ref/" "$app/Contents/Resources/reference/"
+  else
+    echo "bundle-macos: no reference data at $ref (built-in layers left out)" >&2
+  fi
+  # Test builds: the owner's OpenRouter key from this Mac's keychain, built into the bundle
+  # (scrambled, not secret: anyone determined can recover it). Never in the repo. The release
+  # talks to LayeredMap's assistant service instead (WP7.3). LM_NO_KEY=1 leaves it out.
+  if [[ -z "${LM_NO_KEY:-}" ]]; then
+    python3 - "$app/Contents/Resources/assistant.dat" <<'PY'
+import subprocess, sys
+key = subprocess.run(["/usr/bin/security", "find-generic-password", "-s", "openrouter", "-a", "layeredmap", "-w"],
+                     capture_output=True, text=True).stdout.strip()
+if not key:
+    sys.exit("bundle-macos: no OpenRouter key in the keychain (service openrouter, account layeredmap); LM_NO_KEY=1 to build without")
+pad = b"LayeredMap Pro test build: not a secret store."
+data = bytes(b ^ pad[i % len(pad)] for i, b in enumerate(key.encode()))
+open(sys.argv[1], "w").write(data.hex())
+print("bundle-macos: assistant key built in")
+PY
+  fi
+fi
 cat > "$app/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -52,6 +95,8 @@ cat > "$app/Contents/Info.plist" <<PLIST
   <key>CFBundleVersion</key><string>${build}</string>
   <key>LSMinimumSystemVersion</key><string>13.0</string>
   <key>NSHighResolutionCapable</key><true/>
+  <key>NSMicrophoneUsageDescription</key><string>LayeredMap Pro listens when you click the microphone in the Ask box, to turn your request into text.</string>
+  <key>NSSpeechRecognitionUsageDescription</key><string>LayeredMap Pro turns what you say in the Ask box into text, on this Mac when it can.</string>
   <key>LSApplicationCategoryType</key><string>public.app-category.education</string>
   <!-- Open With (WP2.1): LayeredMap can open these, but never claims to be their default app
        (LSHandlerRank Alternate) and only views them (role Viewer). -->
@@ -127,7 +172,13 @@ cat > "$app/Contents/Info.plist" <<PLIST
 PLIST
 
 if [[ -n "${LM_SIGN_IDENTITY:-}" ]]; then
-  codesign --force --options runtime --timestamp --sign "$LM_SIGN_IDENTITY" "$app"
+  # Pro's microphone needs the audio-input entitlement under the hardened runtime.
+  ent=()
+  if [[ "$tier" == "pro" ]]; then
+    ent=(--entitlements "$root/packaging/lm/pro.entitlements")
+    codesign --force --options runtime --timestamp "${ent[@]}" --sign "$LM_SIGN_IDENTITY" "$app/Contents/MacOS/lm-dictate"
+  fi
+  codesign --force --options runtime --timestamp "${ent[@]}" --sign "$LM_SIGN_IDENTITY" "$app"
   codesign --verify --strict --verbose=2 "$app"
   if [[ -n "${LM_NOTARY_APPLE_ID:-}" ]]; then
     zip="$out/LayeredMap-notarize.zip"
@@ -141,6 +192,7 @@ if [[ -n "${LM_SIGN_IDENTITY:-}" ]]; then
   fi
 else
   echo "bundle-macos: no LM_SIGN_IDENTITY; ad-hoc signing (will warn on other Macs)" >&2
+  [[ -f "$app/Contents/MacOS/lm-dictate" ]] && codesign --force --sign - "$app/Contents/MacOS/lm-dictate"
   codesign --force --sign - "$app"
 fi
 ditto -c -k --keepParent "$app" "$out/${name// /-}-${version}-${build}-macos-arm64.zip"

@@ -343,3 +343,13 @@ def test_the_apps_assistant_assets_match_the_harness():
     import export_assets
 
     assert export_assets.main(["--check"]) == 0
+
+
+def test_a_ranking_can_be_lowest_first_and_count_in_counts_areas():
+    # Owner's tests: "cities with the lowest July temperature"; "islands within 100 km of each city".
+    k = chk.Checker("world", None, "the least populated countries")
+    fixed, errs, _ = k.check_plan([{"name": "rank_by_value", "args": {"layer": "Countries", "field": "pop_est", "order": "lowest"}}])
+    assert not errs and fixed[0]["args"]["order"] == "lowest"
+    plan = [{"name": "buffer", "args": {"layer": "Populated places", "distance": "100 km", "merge": False}},
+            {"name": "count_in", "args": {"points": "Countries", "areas": "#1"}}]
+    assert not chk.Checker("world", None, "countries near each city").check_plan(plan)[1]

@@ -74,7 +74,10 @@ DESCRIPTIONS = {
         "Count points in each area of an area layer, or take a statistic of a numeric point field per area "
         "(stat sum|mean|median|min|max with field, e.g. total students per district: stat 'sum', field 'students'). "
         "New layer: the areas with field '<points layer, lowercase>' (Schools: 'schools') and, with a statistic, "
-        "'<stat> <field>' ('sum students', 'mean students', 'median students', 'minimum students', 'maximum students')."
+        "'<stat> <field>' ('sum students', 'mean students', 'median students', 'minimum students', 'maximum students'). "
+        "It counts any layer's objects: areas and lines (islands, lakes, roads) count by a point inside each. "
+        "To count what lies near each point (islands within 100 km of each city), first buffer the points with merge false, "
+        "then count_in(points=<the layer to count>, areas='#k')."
     ),
     "count_here": "Count points inside one area (a selected, named or drawn area).",
     "which_container": "Which area (of an area layer) one point is in.",
@@ -96,7 +99,7 @@ DESCRIPTIONS = {
     "summarize_here": "Summarize a raster inside one area (stat default mean). A category raster gives class shares.",
     "summarize_drawn": "Summarize a raster in an area the user will draw (omit area), or in a drawn area.",
     "add_raster_values": "Add the raster's value at each (shown) point as a field named after the raster (Heat: 'Heat'); hidden points stay blank. Changes the points layer; no new layer.",
-    "rank_by_value": "Rank a layer's objects by a numeric field (highest first).",
+    "rank_by_value": "Rank a layer's objects by a numeric field: highest first, or with order 'lowest' lowest first (the coldest, smallest, fewest, lowest).",
     "calculate_field": (
         "Add a number field calculated from two values: a (a number field) op (add|subtract|multiply|divide) b "
         "(a number field or a number), e.g. density = population divide area_km2. Blank inputs or division by "
@@ -173,6 +176,8 @@ def slot_schema(role: str, kind: str, action: str, L: dict) -> dict:
     """Schema of one runner input."""
     if kind == "layer":
         pool = {"points": L["points"], "areas": L["areas"], "raster": L["raster"]}.get(role, L["vector"])
+        if (action, role) == ("count_in", "points"):
+            pool = L["vector"]
         return _enum(pool)
     obj_pool = {"point": L["points"], "line": L["lines"], "area": L["areas"]}.get(role, L["vector"])
     return _object(obj_pool, optional=kind.endswith("?"))
@@ -297,7 +302,7 @@ def submit_plan_tools(context: str, with_resolve: bool = True) -> list[dict]:
     all_actions = [a["id"] for a in table] + DISPLAY + META
     step_props = {
         "action": {"type": "string", "enum": all_actions},
-        "points": _enum(L["points"]),
+        "points": {**_enum(L["vector"]), "description": "count_in: the layer to count (points; areas and lines, e.g. islands, count by a point inside each); add_raster_values: a point layer"},
         "areas": {"type": "string", "enum": L["areas"]},
         "raster": _enum(L["raster"]),
         "layer": {"type": "string", "enum": L["vector"]},
@@ -310,6 +315,7 @@ def submit_plan_tools(context: str, with_resolve: bool = True) -> list[dict]:
         "band": param_schema("band", "summarize_each", stats),
         "stat": {"type": "string", "enum": sorted(set(POINT_STATS) | set(RASTER_STATS)), "description": "count_in: count|sum|mean|median|min|max; summarize_*: mean|median|min|max|sum|std"},
         "field": S,
+        "order": {"type": "string", "enum": ["highest", "lowest"], "description": "rank_by_value: highest first (default) or lowest first"},
         "other": {"type": "string", "enum": L["vector"], "description": "nearest_distance: the layer to measure to"},
         "fields": {"type": "string", "description": "join_by_location: comma list of the areas' fields to add (all by default)"},
         "first": {"type": "string", "description": "calculate_field: the first value, a number field of the layer (first op second)"},

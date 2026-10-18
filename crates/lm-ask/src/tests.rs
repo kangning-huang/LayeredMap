@@ -61,16 +61,27 @@ fn call(id: &str, name: &str, args: Json) -> Json {
 }
 
 fn request(text: &str, layers: Vec<PlanLayer>, filters: Vec<Option<Filter>>) -> Request {
-    Request { text: text.into(), layers, filters, selected: None, history: Vec::new(), previous: Vec::new(), model: crate::MODEL.into() }
+    Request {
+        text: text.into(),
+        layers,
+        filters,
+        selected: None,
+        history: Vec::new(),
+        previous: Vec::new(),
+        model: crate::MODEL.into(),
+        reference: None,
+    }
 }
 
 #[test]
 fn the_tools_name_the_maps_layers_by_kind() {
-    let t = tools::tools(&map());
+    let t = tools::tools(&map(), &[]);
     let s = t.to_string();
     assert!(!s.contains("__POINTS__") && !s.contains("__AREAS__") && !s.contains("__RASTER__") && !s.contains("__LINES__"));
     let props = &t[0]["function"]["parameters"]["properties"]["steps"]["items"]["properties"];
-    assert_eq!(props["points"]["enum"], json!(["Schools"]));
+    // count_in counts any layer, so "points" lists every point, line and area layer.
+    assert_eq!(props["points"]["enum"][0], json!("Schools"));
+    assert_eq!(props["points"]["enum"][1], json!("Districts"));
     assert_eq!(props["areas"]["enum"][0], json!("Districts"));
     // No raster on this map: a plain string, never an empty enum.
     assert!(props["raster"].get("enum").is_none());
@@ -212,4 +223,73 @@ fn real_request() {
         Ok(Answer::CannotDo(r)) => panic!("refused: {r}"),
         Err(e) => panic!("{e}"),
     }
+}
+
+#[test]
+fn a_filter_that_leaves_nothing_goes_back_with_the_stored_values() {
+    // Owner's test: "cities in Japan, China and the United States" filtered the city name.
+    let t = Script::new(vec![
+        call(
+            "c1",
+            "submit_plan",
+            json!({"steps": [{"action": "filter", "layer": "Districts", "conditions": [{"field": "name_zh", "op": "is", "value": "Jiading"}]}]}),
+        ),
+        call(
+            "c2",
+            "submit_plan",
+            json!({"steps": [{"action": "filter", "layer": "Districts", "conditions": [{"field": "name_en", "op": "is", "value": "Jiading"}]}]}),
+        ),
+    ]);
+    let turn = ask(&t, &request("Only Jiading", map(), vec![None, None]), &Control::none());
+    assert!(matches!(turn.answer, Ok(Answer::Plan(_))));
+    let seen = t.seen.borrow();
+    let back = seen[1]["messages"].as_array().unwrap().last().unwrap()["content"].as_str().unwrap().to_string();
+    assert!(back.contains("leaves no Districts") && back.contains(r#"name_en = "Jiading""#), "{back}");
+}
+
+#[test]
+fn a_locale_gives_its_region() {
+    use crate::reference::region_of_locale;
+    assert_eq!(region_of_locale("en_CN").as_deref(), Some("CN"));
+    assert_eq!(region_of_locale("zh-Hans-CN").as_deref(), Some("CN"));
+    assert_eq!(region_of_locale("en_US@calendar=gregorian").as_deref(), Some("US"));
+    assert_eq!(region_of_locale("fr").as_deref(), None);
+}
+
+/// Network and the builder's reference data: only the schools are open, and the provinces come
+/// from the built-in layers (`cargo test -p lm-ask builtin_layers -- --ignored --nocapture`).
+#[test]
+#[ignore]
+#[cfg(not(target_arch = "wasm32"))]
+fn builtin_layers_answer_without_opening_them() {
+    let dir = crate::reference::default_dir().expect("reference data");
+    let reference = crate::reference::Reference::open(&dir, Some("CN")).map(std::sync::Arc::new);
+    let key = crate::openrouter::read_key().expect("an OpenRouter key");
+    let t = crate::openrouter::OpenRouter::new(key);
+    let mut r = request("Which province has the most schools?", vec![layer("fixtures/T1/schools.csv", "Schools", 1)], vec![None]);
+    r.reference = reference;
+    let turn = ask(&t, &r, &Control::none());
+    eprintln!("usage {:?}", turn.usage);
+    let Ok(Answer::Plan(p)) = turn.answer else { panic!("a plan: {:?}", turn.answer.err()) };
+    eprintln!("plan {:?}", p.steps);
+    assert!(p.steps.iter().any(|s| s.args.to_string().contains("World states and provinces")), "{:?}", p.steps);
+}
+
+/// The builder's reference data: China's view folds Taiwan into China; the default keeps it
+/// separate (`cargo test -p lm-ask chinas_view -- --ignored`).
+#[test]
+#[ignore]
+fn chinas_view_folds_taiwan_into_china() {
+    let dir = crate::reference::default_dir().expect("reference data");
+    let has_twn = |region: Option<&str>| {
+        let r = crate::reference::Reference::open(&dir, region).expect("manifest");
+        let l = r.layer("World countries").expect("countries");
+        let lm_jobs::import::LayerData::Vector(ds) = &l.data else { panic!() };
+        let k = ds.field_index("iso_a3").unwrap();
+        (ds.features.iter().any(|f| f.attrs[k].to_string() == "TWN"), ds.features.len())
+    };
+    let (default_twn, n_default) = has_twn(None);
+    let (cn_twn, n_cn) = has_twn(Some("CN"));
+    assert!(default_twn && !cn_twn, "default {default_twn}, CN {cn_twn}");
+    assert!(n_cn < n_default, "{n_cn} vs {n_default}");
 }

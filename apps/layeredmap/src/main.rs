@@ -275,6 +275,7 @@ impl Step {
             "keep" => Step::Other(Command::KeepResult),
             "ask" => Step::Other(Command::Ask(rest.trim().to_string())),
             "keep-ask" => Step::Other(Command::KeepAsk),
+            "dictate" => Step::Other(Command::Dictate),
             "undo" => Step::Other(Command::Undo),
             "redo" => Step::Other(Command::Redo),
             _ => match nums(s).as_slice() {
@@ -366,10 +367,6 @@ fn main() -> eframe::Result {
             let mut shell = Shell::new(&cc.egui_ctx, flags, prefs, system);
             shell.developer = developer;
             shell.pro = pro;
-            #[cfg(target_os = "macos")]
-            {
-                shell.start_dictation = Some(macos::start_dictation);
-            }
             lm_ui::basemap::start_archive_lookup(&cc.egui_ctx);
             if !ephemeral {
                 shell.set_question_log(question_log_path());

@@ -461,6 +461,62 @@ fn phase3_join_card() {
     assert!(l.style.color_by.is_none());
 }
 
+/// A joined table stays on the shelf, indented under its layer (owner's request, 2026-10-18):
+/// ISO3 codes join countries, not cities (their country field repeats), and the table shows as
+/// a child row of countries, expanded right after the join, with how many countries matched.
+#[test]
+fn phase3_joined_sublayer() {
+    use egui_kittest::kittest::Queryable as _;
+    let mut h =
+        phase3(&["../assets/examples/cities.geojson", "../assets/examples/countries.geojson", "J1/gdp_growth_iso3.csv"], WORLD, |_| {});
+    settle(&mut h);
+    let s = h.state().as_ref().unwrap();
+    assert_eq!(s.ws.doc.layers.len(), 2, "the table left the top level");
+    let countries = s.ws.doc.layers.iter().find(|l| l.display_name == "countries").unwrap().id;
+    let cities = s.ws.doc.layers.iter().find(|l| l.display_name == "cities").unwrap().id;
+    assert!(s.ws.sublayers(cities).is_empty());
+    let subs = s.ws.sublayers(countries);
+    assert_eq!(subs.len(), 1);
+    assert_eq!(subs[0].table, "gdp_growth_iso3.csv");
+    assert!(s.ws.sublayers_open(countries));
+    h.snapshot("phase3_joined_sublayer");
+    // A click on the child row selects countries and shows the join's card; its menu's Unjoin
+    // puts the table back on the shelf, and Undo joins it again.
+    let row = egui::pos2(170.0, 226.0);
+    h.input_mut().events.push(egui::Event::PointerMoved(row));
+    h.run_steps(2);
+    for (button, pressed) in [(egui::PointerButton::Primary, true), (egui::PointerButton::Primary, false)] {
+        h.input_mut().events.push(egui::Event::PointerButton { pos: row, button, pressed, modifiers: egui::Modifiers::NONE });
+        h.run_steps(2);
+    }
+    let s = h.state().as_ref().unwrap();
+    assert_eq!(s.ws.selected(), Some(countries));
+    assert_eq!(s.join_focus, Some((countries, "gdp_growth_iso3.csv".to_string())));
+    assert_eq!(s.inspector_tab, 0, "the join's card is on Overview");
+    for pressed in [true, false] {
+        h.input_mut().events.push(egui::Event::PointerButton {
+            pos: row,
+            button: egui::PointerButton::Secondary,
+            pressed,
+            modifiers: egui::Modifiers::NONE,
+        });
+        h.run_steps(2);
+    }
+    h.run_steps(4);
+    h.get_by_label_contains("Unjoin").click();
+    h.run_steps(4);
+    let s = h.state().as_ref().unwrap();
+    assert_eq!(s.ws.doc.layers.len(), 3, "the table is back");
+    assert!(s.ws.sublayers(countries).is_empty());
+    let ctx = h.ctx.clone();
+    if let Some(s) = h.state_mut().as_mut() {
+        s.command(&ctx, crate::Command::Undo);
+    }
+    h.run_steps(4);
+    let s = h.state().as_ref().unwrap();
+    assert_eq!((s.ws.doc.layers.len(), s.ws.sublayers(countries).len()), (2, 1));
+}
+
 /// A table whose places aren't clear asks one question (J4).
 #[test]
 fn phase3_join_question() {

@@ -1,7 +1,7 @@
 <!--
   docs/lm/spec.md — the LayeredMap build plan, exported as Markdown for agents to read.
   Source: the Claude Docs document "LayeredMap Build Plan"
-  (https://claude.ai/artifact/VRu8z2LFG6YcXodK1Z48Yg), revision 128, exported 2026-10-15.
+  (https://claude.ai/artifact/VRu8z2LFG6YcXodK1Z48Yg), revision 128, exported 2026-10-15; the "Who it's for" paragraph was added from revision 142 (2026-10-18).
   Refreshed at every phase start (build plan › Working with coding agents). Do not edit here:
   change the plan, then re-export. Diagrams are not exported; their captions mark where they sit.
 -->
@@ -11,6 +11,7 @@
 2026-10-15 · Kangning Huang
 
 ## Summary
+**Who it's for.** LayeredMap's target users are global, with China as a specific focus (owner's direction, 2026-10-18). Everything must work for users in China: a basemap reachable from mainland China, a Chinese interface and Chinese place names, China's coordinate offsets (GCJ-02, BD-09), and country borders that follow the user's system region (China's point of view on a Mac set to mainland China, each country's own view elsewhere).
 LayeredMap is built in seven phases. Phases 0–5 (about 22 effort-weeks) end in a classroom pilot. Phase 6 (about 6 more) ends in a public beta.
 Every phase ends at a gate. A gate has four parts: automated checks, a debug pass, a hands-on validation session with you, and stress tests. A gate passes only when all four pass. Otherwise the product rolls back to the last passing tag, and work resumes from there.
 1. **Phase 0 — Foundation and risk spikes.** Decide whether RustGIS's rendering and UI stack can feel like a consumer map. Settle this before writing product code. Also build the test fixtures and set up signed builds.
@@ -398,9 +399,10 @@ These targets are measured on the reference Mac at 2× display scale, with the o
     - broken link: source file missing
 
 - **Click** the row to select the layer. **Click the eye** to toggle visibility only. **Double-click** the row to zoom to the layer (rename is in the right-click menu; owner decision, 2026-10-16). **Drag** to reorder, with an insertion line.
-- **Right-click:** View data, Style…, Zoom to layer, Rename, then Remove from map below a divider. Each item has a leading symbol, Apple's standard one where it exists (table, paintbrush, framing corners, pencil, minus in a circle; minus rather than trash because the file is not deleted).
+- **Right-click:** View data, Style…, Zoom to layer, Rename, then Remove from map below a divider (a joined table's child row has its own menu: see *Joined tables*). Each item has a leading symbol, Apple's standard one where it exists (table, paintbrush, framing corners, pencil, minus in a circle; minus rather than trash because the file is not deleted).
 - **Remove all** (the shelf header, with two or more layers; also Edit › Remove All Layers) removes every layer in one step; the notice says how many and Undo brings them all back.
 - **Nesting:** results nest under their main input, indented 16 px, with a "Result" tag. A file with several layers (a GeoPackage) becomes one collapsible group.
+- **Joined tables** (owner's request, 2026-10-18): a table joined to a layer stays on the shelf as a child row under that layer, indented 20 px: the table glyph, the table's name, and the caption "joined · 172 of 177 matched" (just "joined" when the count isn't known this session). A chevron at the right of the parent row, shown only when it has joined tables, folds or unfolds them; it is unfolded right after a join, and the state is remembered per layer for the session, not in the document. A table joined to several layers shows under each. Clicking a child row selects the parent layer and shows the join: its result card on Overview while it is the layer's latest join, otherwise its fields in Details under "From [table]", scrolled to and in the accent colour. Right-click: Show joined fields, then Unjoin below a divider (link-break symbol). Unjoin removes that join (the fields, and any colours, filter conditions, roles and stars that used them) and puts the table back on the shelf just below the layer, as one undo step; a table still joined to another layer stays under that one instead. An unjoined table is not joined again on its own.
 - **Dropping files:** a "+ Open file" row closes the list. Dragging files over the window shows a full-window overlay: "Drop to add to the map".
 
 ### Inspector: object card
@@ -478,7 +480,7 @@ The join should ask nothing when the answer is clear, and ask at most one questi
 4. **No clear winner: one question.** "Which places does population.csv describe?" with up to three choices, each showing its pairing and match count ("district ↔ name · 15 of 17"), and "None of these", which keeps the table as a table.
 5. **Leftovers are shown, never hidden.** Unmatched rows are listed with near-miss suggestions to accept in one click. Places without data show as No data.
 
-The joined fields behave like the layer's own fields in cards, insight rows, the Style tab, filters, the table and search. In Details they are grouped under the table's name, with Separate to undo the join at any time.
+The joined fields behave like the layer's own fields in cards, insight rows, the Style tab, filters, the table and search. In Details they are grouped under the table's name. The table stays on the shelf as a row under the layer, with Unjoin to undo the join at any time.
 
 ### Keyboard
 - **Files and history:** ⌘O open, ⌘S save, ⌘Z undo, ⇧⌘Z redo, ⌘E export a map image.
@@ -1048,8 +1050,9 @@ There is nothing to roll back yet. If no strategy passes, change stack and repea
 - A normalization ladder, recorded with the join: exact match; then trimmed, case-folded and space-collapsed; then accents and punctuation removed ("Côte d'Ivoire" = "Cote dIvoire"); then codes without leading zeros or ".0" ("06037" = "6037"); then bundled crosswalks (country names, ISO 3166 alpha-2, alpha-3 and numeric codes, US state names, abbreviations and FIPS codes, Chinese provinces in English and Chinese).
 - The join is automatic, with no question, when the best pairing matches at least 80% of the table's keys, beats the next by at least 20 points, and needs nothing looser than a crosswalk. Otherwise one question card offers the top three pairings with their match counts, plus "None of these". Near-misses (edit distance 2 or less) are never matched automatically; they are offered afterwards in one click: "3 names look like typos: Shangai → Shanghai… Use these?"
 - Several rows per key: when a date or year column varies within a key, the latest is used and a chip says "Showing 2023 · Change". Otherwise counts are summed and other values averaged per key, and a chip says so ("Summed per district, 3 rows each · Change"). Nothing is aggregated silently.
+- Several layers: when the table clearly matches more than one open layer (each passes the rule above on its own), it joins every one of them in one undo step and shows under each on the shelf. Only the best match (then the higher on the shelf) is recoloured; the others gain the fields and keep their look. The question is asked only when no layer is clear, about the layer that matches best. A layer whose key field repeats is never a target, so a table of country codes joins countries and not cities with a country field.
 - The result: the layer gains the table's fields, grouped in Details under "From population.csv". No file is written and the sources are untouched. The join is one undo step ("Join population.csv"), is saved in the document and is applied again on open. A single-colour layer is coloured by the first joined measure, with "Keep the original colors" on the card.
-- A result card in the inspector: "Joined population.csv to districts by name: 16 of 17 districts matched. Show the 1 not matched · Undo." Records without data are hatched as No data on the map and in the legend. Unmatched table rows are listed with any near-miss suggestions. The layer row on the shelf shows a link chip (+ population.csv) whose menu has Separate.
+- A result card in the inspector: "Joined population.csv to districts by name: 16 of 17 districts matched. Show the 1 not matched · Undo." Records without data are hatched as No data on the map and in the legend. Unmatched table rows are listed with any near-miss suggestions. The card says where the table went: "population.csv now appears under districts in Layers." The table shows as a child row under the layer on the shelf, whose menu has Unjoin (see *Layer shelf › Joined tables*).
 - Performance: a 1,000,000-row table against 100,000 records joins in under 1 s, as a background job with progress; the map never stalls.
 
 ### Gate 3

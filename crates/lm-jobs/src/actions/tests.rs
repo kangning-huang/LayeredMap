@@ -434,3 +434,41 @@ fn points_just_outside_take_the_nearest_area_within_25_km() {
     assert!(matches!(data.features[1].attrs[k], Value::Null), "100 km out stays blank");
     assert!(r.card.notices.iter().any(|n| n.contains("just outside")), "{:?}", r.card.notices);
 }
+
+/// Areas are counted by a point inside each (owner's test: islands within 100 km of each city):
+/// every V1 district's label point lies in that district, so counting the districts in
+/// themselves gives each district exactly 1, and the recipe says how areas were counted.
+#[test]
+fn areas_are_counted_by_a_point_inside_each() {
+    let r =
+        run(&plan("count_in", vec![input("V1/districts.geojson", 1), input("V1/districts.geojson", 2)], &[]), &Control::none()).unwrap();
+    let LayerData::Vector(ds) = &new_layer(&r).data else { panic!("vector") };
+    let k = ds.fields.len() - 1; // the count, added last
+    assert!(
+        ds.features.iter().all(|f| f.attrs[k].as_f64() == Some(1.0)),
+        "{:?}",
+        ds.features.iter().map(|f| f.attrs[k].to_string()).collect::<Vec<_>>()
+    );
+    assert!(r.recipe.text().contains("by one point inside it"), "{}", r.recipe.text());
+}
+
+/// "Which district has the fewest people?": order lowest ranks lowest first (owner's test:
+/// "cities with the lowest July temperature" came back hottest first).
+#[test]
+fn a_ranking_can_put_the_lowest_first() {
+    let high = run(&plan("rank_by_value", vec![input("V1/districts.geojson", 3)], &[("field", "population")]), &Control::none()).unwrap();
+    let low = run(
+        &plan("rank_by_value", vec![input("V1/districts.geojson", 3)], &[("field", "population"), ("order", "lowest")]),
+        &Control::none(),
+    )
+    .unwrap();
+    let (Answer::Ranking { rows: h, .. }, Answer::Ranking { rows: l, .. }) = (&high.card.answer, &low.card.answer) else {
+        panic!("rankings")
+    };
+    let values = |r: &[lm_core::recipe::RankRow]| r.iter().filter_map(|x| x.value).collect::<Vec<f64>>();
+    let (vh, vl) = (values(h), values(l));
+    assert!(vl.windows(2).all(|w| w[0] <= w[1]), "{vl:?}");
+    assert_eq!(vl.first(), vh.last());
+    assert!(low.card.title.ends_with("lowest first"), "{}", low.card.title);
+    assert!(low.card.summary.starts_with("Lowest:"), "{}", low.card.summary);
+}

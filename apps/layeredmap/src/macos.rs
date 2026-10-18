@@ -111,21 +111,3 @@ unsafe extern "C" fn open_urls(_this: *mut AnyObject, _cmd: Sel, _app: *mut AnyO
         ctx.request_repaint();
     }
 }
-
-/// Starts macOS Dictation into the focused text field: the same action as Edit › Start
-/// Dictation… (`startDictation:`), sent up the responder chain. The recognised text arrives
-/// through the window's text input like typing (the Ask box, WP7.1).
-pub fn start_dictation() {
-    let Some(mtm) = MainThreadMarker::new() else { return };
-    let app = NSApplication::sharedApplication(mtm);
-    // SAFETY: on the main thread (checked above). `sendAction:to:from:` is NSApplication's public
-    // method; `startDictation:` is AppKit's standard action selector; a nil target sends it to the
-    // first responder (then the application), and a nil sender is allowed. It returns whether
-    // some responder handled it, which is only logged.
-    let handled: Bool = unsafe {
-        objc2::msg_send![&app, sendAction: sel!(startDictation:), to: std::ptr::null::<AnyObject>(), from: std::ptr::null::<AnyObject>()]
-    };
-    if !handled.as_bool() {
-        log::info!("dictation: no responder took startDictation:");
-    }
-}

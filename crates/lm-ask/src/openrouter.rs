@@ -48,9 +48,35 @@ impl crate::session::Transport for OpenRouter {
     }
 }
 
-/// The key from the keychain, if one is saved.
-#[cfg(target_os = "macos")]
+/// The key: the one built into a Pro test bundle (`Contents/Resources/assistant.dat`, written by
+/// `packaging/lm/bundle-macos.sh` from the builder's keychain), else this Mac's keychain.
 pub fn read_key() -> Option<String> {
+    bundled_key().or_else(keychain_key)
+}
+
+/// An internal test build: one with the owner's key built in (the release has none and talks to
+/// LayeredMap's assistant service). Such builds show each request's cost; the release never does.
+pub fn internal_build() -> bool {
+    bundled_key().is_some()
+}
+
+/// Scrambled so it isn't plain text in the bundle; not a secret store (see the bundle script).
+const PAD: &[u8] = b"LayeredMap Pro test build: not a secret store.";
+
+fn bundled_key() -> Option<String> {
+    let exe = std::env::current_exe().ok()?;
+    decode(&std::fs::read_to_string(exe.parent()?.parent()?.join("Resources").join("assistant.dat")).ok()?)
+}
+
+fn decode(hex: &str) -> Option<String> {
+    let hex = hex.trim();
+    let bytes: Vec<u8> = (0..hex.len() / 2).filter_map(|i| u8::from_str_radix(hex.get(2 * i..2 * i + 2)?, 16).ok()).collect();
+    let key: Vec<u8> = bytes.iter().enumerate().map(|(i, b)| b ^ PAD[i % PAD.len()]).collect();
+    String::from_utf8(key).ok().filter(|k| k.starts_with("sk-or-"))
+}
+
+#[cfg(target_os = "macos")]
+fn keychain_key() -> Option<String> {
     let out = std::process::Command::new("/usr/bin/security")
         .args(["find-generic-password", "-s", SERVICE, "-a", ACCOUNT, "-w"])
         .output()
@@ -59,27 +85,19 @@ pub fn read_key() -> Option<String> {
     (out.status.success() && !k.is_empty()).then_some(k)
 }
 
-/// Saves the key in the login keychain (replacing an earlier one).
-#[cfg(target_os = "macos")]
-pub fn save_key(key: &str) -> Result<(), String> {
-    let key = key.trim();
-    if !key.starts_with("sk-or-") || key.len() < 20 {
-        return Err("That doesn't look like an OpenRouter key (they start with sk-or-).".into());
-    }
-    let ok = std::process::Command::new("/usr/bin/security")
-        .args(["add-generic-password", "-U", "-s", SERVICE, "-a", ACCOUNT, "-l", "LayeredMap Pro: OpenRouter key", "-w", key])
-        .status()
-        .map(|s| s.success())
-        .unwrap_or(false);
-    if ok { Ok(()) } else { Err("Couldn't save the key in the keychain.".into()) }
-}
-
 #[cfg(not(target_os = "macos"))]
-pub fn read_key() -> Option<String> {
+fn keychain_key() -> Option<String> {
     std::env::var("OPENROUTER_API_KEY").ok().filter(|k| !k.is_empty())
 }
 
-#[cfg(not(target_os = "macos"))]
-pub fn save_key(_key: &str) -> Result<(), String> {
-    Err("Set OPENROUTER_API_KEY in the environment.".into())
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn a_built_in_key_unscrambles() {
+        // As packaging/lm/bundle-macos.sh writes it: key bytes XOR the pad, as hex.
+        let key = "sk-or-v1-0123456789abcdef";
+        let hex: String = key.bytes().enumerate().map(|(i, b)| format!("{:02x}", b ^ super::PAD[i % super::PAD.len()])).collect();
+        assert_eq!(super::decode(&hex).as_deref(), Some(key));
+        assert_eq!(super::decode("zz"), None);
+    }
 }

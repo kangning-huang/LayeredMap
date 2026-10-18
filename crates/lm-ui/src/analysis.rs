@@ -786,7 +786,8 @@ pub fn result_card(
     match &card.answer {
         Answer::Ranking { rows, unit } => {
             let show_all = ui.data(|d| d.get_temp::<bool>(all_key)).unwrap_or(false);
-            let max = rows.iter().filter_map(|r| r.value).fold(0.0_f64, f64::max);
+            // Bar length by size, so negative values (cold temperatures) still show.
+            let max = rows.iter().filter_map(|r| r.value.map(f64::abs)).fold(0.0_f64, f64::max);
             let w = ui.available_width();
             for r in rows.iter().take(if show_all { usize::MAX } else { 5 }) {
                 let (rect, _) = ui.allocate_exact_size(vec2(w, 22.0), egui::Sense::hover());
@@ -803,7 +804,7 @@ pub fn result_card(
                 );
                 let bar_max = w - label_w - 64.0;
                 if let Some(v) = r.value {
-                    let bw = if max > 0.0 { (v / max).clamp(0.0, 1.0) as f32 * bar_max } else { 0.0 };
+                    let bw = if max > 0.0 { (v.abs() / max).clamp(0.0, 1.0) as f32 * bar_max } else { 0.0 };
                     let bar = egui::Rect::from_min_size(egui::pos2(rect.left() + label_w, rect.center().y - 6.0), vec2(bw.max(1.0), 12.0));
                     p.rect_filled(bar, 2.0, t.accent);
                     p.text(
