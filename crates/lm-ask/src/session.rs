@@ -132,6 +132,40 @@ fn system_message(req: &Request) -> Json {
     ]})
 }
 
+/// Messages for filter steps that leave no object, with the stored values that match the text
+/// conditions' words in any field of that layer.
+fn empty_filters(steps: &[Step], outcomes: &[StepOutcome], layers: &[PlanLayer]) -> Vec<String> {
+    let mut out = Vec::new();
+    for (i, (s, o)) in steps.iter().zip(outcomes).enumerate() {
+        let StepOutcome::Filtered { layer, shown: 0, of, .. } = o else { continue };
+        if *of == 0 {
+            continue;
+        }
+        let mut words: Vec<String> = Vec::new();
+        for c in s.args.get("conditions").and_then(Json::as_array).into_iter().flatten() {
+            let op = c.get("op").and_then(Json::as_str).unwrap_or("");
+            if matches!(op, "is" | "any_of" | "contains" | "starts_with" | "ends_with") {
+                words.extend(c.get("value").and_then(Json::as_str).map(str::to_string));
+                words.extend(c.get("values").and_then(Json::as_array).into_iter().flatten().filter_map(|v| v.as_str().map(str::to_string)));
+            }
+        }
+        let mut hints: Vec<String> = Vec::new();
+        for w in words.iter().take(6) {
+            let r = resolve::resolve_feature(layers, layer, w);
+            for c in r["candidates"].as_array().into_iter().flatten().take(2) {
+                hints.push(format!("{} = {:?}", c["field"].as_str().unwrap_or(""), c["value"].as_str().unwrap_or("")));
+            }
+        }
+        let mut m = format!("step {}: the filter leaves no {layer} (0 of {of}). Check the field and the values.", i + 1);
+        if !hints.is_empty() {
+            hints.dedup();
+            m.push_str(&format!(" Stored values like the words used: {}.", hints.join("; ")));
+        }
+        out.push(m);
+    }
+    out
+}
+
 fn now() -> i64 {
     std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_secs() as i64)
 }
@@ -284,7 +318,18 @@ fn judge(steps: &[Step], req: &Request, current: &[(String, Vec<String>)], repai
     }
     let mut layers = req.layers.clone();
     match plan_exec::execute(&mut layers, steps, now(), ctl) {
-        Ok(outcomes) => Judged::Done(Ok(Answer::Plan(Box::new(PlanResult { steps: steps.to_vec(), layers, outcomes, notes })))),
+        Ok(outcomes) => {
+            // A filter that leaves nothing almost always means a wrong field or value ("name is
+            // Japan" on cities, whose country is in "country"): send it back once with the stored
+            // values closest to the words used.
+            if repairs < MAX_REPAIRS {
+                let empty = empty_filters(steps, &outcomes, &layers);
+                if !empty.is_empty() {
+                    return Judged::Repair(empty);
+                }
+            }
+            Judged::Done(Ok(Answer::Plan(Box::new(PlanResult { steps: steps.to_vec(), layers, outcomes, notes }))))
+        }
         Err(e) if e.message == "cancelled" => Judged::Done(Err("Cancelled.".into())),
         Err(e) if repairs < MAX_REPAIRS => Judged::Repair(vec![format!("step {}: {}", e.step, e.message)]),
         Err(e) => Judged::Done(Err(format!("The plan didn't run: step {}: {}", e.step, e.message))),

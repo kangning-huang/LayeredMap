@@ -70,7 +70,9 @@ fn the_tools_name_the_maps_layers_by_kind() {
     let s = t.to_string();
     assert!(!s.contains("__POINTS__") && !s.contains("__AREAS__") && !s.contains("__RASTER__") && !s.contains("__LINES__"));
     let props = &t[0]["function"]["parameters"]["properties"]["steps"]["items"]["properties"];
-    assert_eq!(props["points"]["enum"], json!(["Schools"]));
+    // count_in counts any layer, so "points" lists every point, line and area layer.
+    assert_eq!(props["points"]["enum"][0], json!("Schools"));
+    assert_eq!(props["points"]["enum"][1], json!("Districts"));
     assert_eq!(props["areas"]["enum"][0], json!("Districts"));
     // No raster on this map: a plain string, never an empty enum.
     assert!(props["raster"].get("enum").is_none());
@@ -212,4 +214,26 @@ fn real_request() {
         Ok(Answer::CannotDo(r)) => panic!("refused: {r}"),
         Err(e) => panic!("{e}"),
     }
+}
+
+#[test]
+fn a_filter_that_leaves_nothing_goes_back_with_the_stored_values() {
+    // Owner's test: "cities in Japan, China and the United States" filtered the city name.
+    let t = Script::new(vec![
+        call(
+            "c1",
+            "submit_plan",
+            json!({"steps": [{"action": "filter", "layer": "Districts", "conditions": [{"field": "name_zh", "op": "is", "value": "Jiading"}]}]}),
+        ),
+        call(
+            "c2",
+            "submit_plan",
+            json!({"steps": [{"action": "filter", "layer": "Districts", "conditions": [{"field": "name_en", "op": "is", "value": "Jiading"}]}]}),
+        ),
+    ]);
+    let turn = ask(&t, &request("Only Jiading", map(), vec![None, None]), &Control::none());
+    assert!(matches!(turn.answer, Ok(Answer::Plan(_))));
+    let seen = t.seen.borrow();
+    let back = seen[1]["messages"].as_array().unwrap().last().unwrap()["content"].as_str().unwrap().to_string();
+    assert!(back.contains("leaves no Districts") && back.contains(r#"name_en = "Jiading""#), "{back}");
 }

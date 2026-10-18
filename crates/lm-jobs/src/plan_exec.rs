@@ -278,7 +278,7 @@ fn plan_inputs(action: &str, a: &Json, layers: &[PlanLayer], n: usize) -> Result
         object_row(layers, a.get(key).ok_or_else(|| err(n, format!("missing {key}")))?, n)
     };
     let mut params = BTreeMap::new();
-    for k in ["distance", "band", "field", "stat", "a", "op", "b", "name", "fields"] {
+    for k in ["distance", "band", "field", "stat", "a", "op", "b", "name", "fields", "order"] {
         if let Some(v) = arg(a, k) {
             params.insert(k.to_string(), v);
         }

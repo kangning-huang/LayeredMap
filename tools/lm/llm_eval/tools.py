@@ -114,7 +114,7 @@ PARAMS_OF_ACTION = {
     "summarize_here": ["band"],
     "summarize_drawn": ["band"],
     "add_raster_values": ["band"],
-    "rank_by_value": ["field"],
+    "rank_by_value": ["field", "order"],
     "calculate_field": ["a", "op", "b", "name"],
     "find_where": ["conditions"],
 }
@@ -171,6 +171,7 @@ OBJECT = {
     "required": ["layer"],
 }
 PARAM_SCHEMA = {
+    "order": {"type": "string", "enum": ["highest", "lowest"], "description": "rank_by_value: highest first (default) or lowest first (coldest, smallest, fewest)"},
     "distance": {"type": "string", "description": "e.g. '500 m', '2 km', '3 mi'"},
     "merge": {"type": "boolean", "description": "merge overlaps (default true)"},
     "band": {"type": "integer", "description": "1-based, default 1"},

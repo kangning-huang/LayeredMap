@@ -36,8 +36,17 @@ pub fn toolbar(shell: &mut Shell, ui: &mut Ui, rect: Rect, _system: System) {
     let painter = ui.painter_at(rect);
     painter.rect_filled(rect, 0.0, t.surface);
     painter.line_segment([rect.left_bottom(), rect.right_bottom()], Stroke::new(1.0, t.border));
-    let name =
-        painter.text(rect.left_center() + vec2(16.0, 0.0), Align2::LEFT_CENTER, "LayeredMap", semibold(theme::HEADLINE), t.text_primary);
+    // The app icon before the name (owner's request, 2026-10-18).
+    let icon_size = 26.0;
+    let icon_rect = Rect::from_min_size(pos2(rect.left() + 14.0, rect.center().y - icon_size / 2.0), vec2(icon_size, icon_size));
+    let name_x = match app_icon(ui.ctx()) {
+        Some(tex) => {
+            painter.image(tex.id(), icon_rect, Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)), egui::Color32::WHITE);
+            icon_rect.right() + 8.0
+        }
+        None => rect.left() + 16.0,
+    };
+    let name = painter.text(pos2(name_x, rect.center().y), Align2::LEFT_CENTER, "LayeredMap", semibold(theme::HEADLINE), t.text_primary);
     if shell.pro {
         // "Pro" as a small accent badge after the name.
         let g = painter.layout_no_wrap("PRO".into(), semibold(10.0), t.on_accent);
@@ -93,6 +102,20 @@ pub fn toolbar(shell: &mut Shell, ui: &mut Ui, rect: Rect, _system: System) {
             }
         }
     }
+}
+
+/// The app icon (the same picture as the Dock's), as a texture made once.
+fn app_icon(ctx: &egui::Context) -> Option<egui::TextureHandle> {
+    let id = egui::Id::new("lm-app-icon");
+    if let Some(tex) = ctx.data(|d| d.get_temp::<egui::TextureHandle>(id)) {
+        return Some(tex);
+    }
+    let bytes = include_bytes!("../../../assets/icon/icon-256.png");
+    let img = image::load_from_memory_with_format(bytes, image::ImageFormat::Png).ok()?.to_rgba8();
+    let size = [img.width() as usize, img.height() as usize];
+    let tex = ctx.load_texture("app-icon", egui::ColorImage::from_rgba_unmultiplied(size, img.as_raw()), egui::TextureOptions::LINEAR);
+    ctx.data_mut(|d| d.insert_temp(id, tex.clone()));
+    Some(tex)
 }
 
 fn lower_first(s: &str) -> String {

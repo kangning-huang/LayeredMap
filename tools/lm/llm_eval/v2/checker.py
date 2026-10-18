@@ -515,7 +515,8 @@ class Checker:
         for role, kind in a["roles"]:
             given = args.get(role)
             if kind == "layer":
-                need = SLOT_NEEDS.get(role, "vector")
+                # count_in counts any layer's objects: areas and lines by a point inside each.
+                need = "vector" if (name, role) == ("count_in", "points") else SLOT_NEEDS.get(role, "vector")
                 if given in (None, ""):
                     v.errors.append(f"{name}: {role} is missing.")
                     continue
@@ -596,6 +597,11 @@ class Checker:
             f = self.field(out["layer"], args.get("field"), name, v, numeric=True)
             if f:
                 out["field"] = f
+            order = str(args.get("order") or "highest").strip().lower()
+            if order not in ("highest", "lowest"):
+                v.errors.append(f"rank_by_value: order is 'highest' or 'lowest', not {args.get('order')!r}.")
+            elif order == "lowest":
+                out["order"] = "lowest"
         if name == "calculate_field" and out.get("layer"):
             self._check_calculate(out, args, v)
         if name == "join_by_location" and out.get("areas") and args.get("fields") not in (None, ""):

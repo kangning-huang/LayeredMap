@@ -33,6 +33,9 @@ pub struct AskState {
     history: Vec<String>,
     pub spent_usd: f64,
     focus: bool,
+    /// Counts answers: each new one opens at the top, with rankings collapsed.
+    answer_no: u64,
+    drawn_no: u64,
     /// Listening (the microphone): the helper, and the field's text before speaking began.
     #[cfg(not(target_arch = "wasm32"))]
     listening: Option<(crate::dictation::Dictation, String)>,
@@ -144,6 +147,7 @@ pub fn poll(shell: &mut Shell) {
         return;
     }
     shell.ask.conversation.clear();
+    shell.ask.answer_no += 1;
     shell.ask.shown = Some(match turn.answer {
         Ok(Answer::Plan(plan)) => {
             shell.ws.preview_plan(Some(&plan));
@@ -381,76 +385,93 @@ fn answer_panel(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, width: f32, ma
         let mut action = None;
         let mut pick = None;
         let shown = shell.ask.shown.take();
-        egui::ScrollArea::vertical().max_height(max_h).auto_shrink([false, true]).show(ui, |ui| match &shown {
-            Some(Shown::Plan { request, plan, usage, seconds }) => {
-                ui.label(RichText::new(request).font(semibold(HEADLINE)));
-                ui.add_space(6.0);
-                let words: Vec<String> = plan.outcomes.iter().filter_map(step_words).collect();
-                for (i, w) in words.iter().enumerate() {
-                    ui.label(RichText::new(format!("{}. {w}", i + 1)).size(BODY));
-                }
-                if plan.layers.iter().any(|l| l.alias.is_some()) {
-                    ui.label(RichText::new("Preview on the map — not saved").size(CAPTION).color(t.text_secondary));
-                }
-                for n in &plan.notes {
-                    ui.label(RichText::new(n).size(CAPTION).color(t.warning));
-                }
-                let cards: Vec<(lm_core::recipe::ResultCard, String)> = plan
-                    .outcomes
-                    .iter()
-                    .filter_map(|o| match o {
-                        StepOutcome::Card { card, recipe, .. } => Some(((**card).clone(), recipe.text())),
-                        StepOutcome::NewLayer { card, recipe, .. } => Some(((**card).clone(), recipe.text())),
-                        _ => None,
-                    })
-                    .collect();
-                let show_cost = shell.developer || internal_build();
-                let caption = format!(
-                    "{} model call{} · US${:.4} · {seconds:.1} s",
-                    usage.calls,
-                    if usage.calls == 1 { "" } else { "s" },
-                    usage.cost_usd
-                );
-                for (card, recipe) in cards {
-                    ui.add_space(10.0);
-                    crate::analysis::result_card(shell, ui, t, &card, &recipe, None);
-                }
-                ui.add_space(10.0);
-                ui.horizontal(|ui| {
-                    if ui.add(egui::Button::new(RichText::new("Keep").color(egui::Color32::WHITE)).fill(t.accent)).clicked() {
-                        action = Some(true);
+        // A new answer starts collapsed ("Show all" off) and scrolled to its top.
+        if shell.ask.drawn_no != shell.ask.answer_no {
+            shell.ask.drawn_no = shell.ask.answer_no;
+            if let Some(Shown::Plan { plan, .. }) = &shown {
+                for o in &plan.outcomes {
+                    if let StepOutcome::Card { card, .. } | StepOutcome::NewLayer { card, .. } = o {
+                        ui.ctx().data_mut(|d| d.remove::<bool>(egui::Id::new(("lm-result-all", &card.title))));
                     }
-                    if ui.button("Discard").clicked() {
+                }
+            }
+        }
+        egui::ScrollArea::vertical().id_salt(("lm-ask-answer", shell.ask.answer_no)).max_height(max_h).auto_shrink([false, true]).show(
+            ui,
+            |ui| match &shown {
+                Some(Shown::Plan { request, plan, .. }) => {
+                    ui.label(RichText::new(request).font(semibold(HEADLINE)));
+                    ui.add_space(6.0);
+                    let words: Vec<String> = plan.outcomes.iter().filter_map(step_words).collect();
+                    for (i, w) in words.iter().enumerate() {
+                        ui.label(RichText::new(format!("{}. {w}", i + 1)).size(BODY));
+                    }
+                    if plan.layers.iter().any(|l| l.alias.is_some()) {
+                        ui.label(RichText::new("Preview on the map — not saved").size(CAPTION).color(t.text_secondary));
+                    }
+                    for n in &plan.notes {
+                        ui.label(RichText::new(n).size(CAPTION).color(t.warning));
+                    }
+                    let cards: Vec<(lm_core::recipe::ResultCard, String)> = plan
+                        .outcomes
+                        .iter()
+                        .filter_map(|o| match o {
+                            StepOutcome::Card { card, recipe, .. } => Some(((**card).clone(), recipe.text())),
+                            StepOutcome::NewLayer { card, recipe, .. } => Some(((**card).clone(), recipe.text())),
+                            _ => None,
+                        })
+                        .rev() // the last step's card is the answer: first
+                        .collect();
+                    for (card, recipe) in cards {
+                        ui.add_space(10.0);
+                        crate::analysis::result_card(shell, ui, t, &card, &recipe, None);
+                    }
+                }
+                Some(Shown::Question { text, choices }) => {
+                    ui.label(RichText::new(text).size(BODY));
+                    ui.add_space(6.0);
+                    ui.horizontal_wrapped(|ui| {
+                        for c in choices {
+                            if ui.button(c).clicked() {
+                                pick = Some(c.clone());
+                            }
+                        }
+                    });
+                }
+                Some(Shown::Message { text, warning }) => {
+                    ui.label(RichText::new(text).color(if *warning { t.warning } else { t.text_primary }));
+                    ui.add_space(6.0);
+                    if ui.button("OK").clicked() {
                         action = Some(false);
                     }
-                    // The cost shows only in internal builds (owner's decision, 2026-10-18).
-                    if show_cost {
-                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                            ui.label(RichText::new(caption).size(CAPTION).color(t.text_secondary));
-                        });
-                    }
-                });
-            }
-            Some(Shown::Question { text, choices }) => {
-                ui.label(RichText::new(text).size(BODY));
-                ui.add_space(6.0);
-                ui.horizontal_wrapped(|ui| {
-                    for c in choices {
-                        if ui.button(c).clicked() {
-                            pick = Some(c.clone());
-                        }
-                    }
-                });
-            }
-            Some(Shown::Message { text, warning }) => {
-                ui.label(RichText::new(text).color(if *warning { t.warning } else { t.text_primary }));
-                ui.add_space(6.0);
-                if ui.button("OK").clicked() {
+                }
+                None => {}
+            },
+        );
+        // Keep and Discard stay in view below the scrolling plan and cards.
+        if let Some(Shown::Plan { usage, seconds, .. }) = &shown {
+            ui.add_space(10.0);
+            ui.horizontal(|ui| {
+                if ui.add(egui::Button::new(RichText::new("Keep").color(egui::Color32::WHITE)).fill(t.accent)).clicked() {
+                    action = Some(true);
+                }
+                if ui.button("Discard").clicked() {
                     action = Some(false);
                 }
-            }
-            None => {}
-        });
+                // The cost shows only in internal builds (owner's decision, 2026-10-18).
+                if shell.developer || internal_build() {
+                    let caption = format!(
+                        "{} model call{} · US${:.4} · {seconds:.1} s",
+                        usage.calls,
+                        if usage.calls == 1 { "" } else { "s" },
+                        usage.cost_usd
+                    );
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        ui.label(RichText::new(caption).size(CAPTION).color(t.text_secondary));
+                    });
+                }
+            });
+        }
         shell.ask.shown = shown;
         match action {
             Some(true) => keep(shell),
