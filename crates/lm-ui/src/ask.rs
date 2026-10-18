@@ -100,6 +100,7 @@ pub fn submit(shell: &mut Shell, ctx: &egui::Context, text: String) {
         history: shell.ask.history.clone(),
         previous,
         model: lm_ask::MODEL.into(),
+        reference: reference(),
     };
     discard(shell);
     let control = Control::default();
@@ -117,6 +118,17 @@ pub fn submit(shell: &mut Shell, ctx: &egui::Context, text: String) {
     let _ = (key, req, tx, c, ctx);
     shell.ask.pending = Some(Pending { rx, control, request: text, started: Instant::now() });
     shell.ask.text.clear();
+}
+
+/// Pro's built-in reference layers, opened once, with the borders of this Mac's region.
+fn reference() -> Option<std::sync::Arc<lm_ask::reference::Reference>> {
+    static REF: std::sync::OnceLock<Option<std::sync::Arc<lm_ask::reference::Reference>>> = std::sync::OnceLock::new();
+    REF.get_or_init(|| {
+        let dir = lm_ask::reference::default_dir()?;
+        let region = lm_ask::reference::system_region();
+        lm_ask::reference::Reference::open(&dir, region.as_deref()).map(std::sync::Arc::new)
+    })
+    .clone()
 }
 
 /// The selected object as `(layer, title field, value)`, when one object is selected.

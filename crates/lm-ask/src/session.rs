@@ -31,6 +31,35 @@ pub struct Request {
     /// The messages of an exchange this request answers (a reply to the assistant's question).
     pub previous: Vec<Json>,
     pub model: String,
+    /// Built-in reference layers (Pro), named in the context and loaded when a plan uses them.
+    pub reference: Option<std::sync::Arc<crate::reference::Reference>>,
+}
+
+impl Request {
+    /// Built-in layers whose names no open layer uses: (name, kind).
+    fn builtin(&self) -> Vec<(String, String)> {
+        let Some(r) = &self.reference else { return Vec::new() };
+        r.catalogue()
+            .into_iter()
+            .filter(|b| !self.layers.iter().any(|l| l.name.eq_ignore_ascii_case(&b.name)))
+            .map(|b| (b.name, b.kind))
+            .collect()
+    }
+
+    /// The open layers plus the built-in ones a plan or lookup names.
+    fn layers_with(&self, names: &[String]) -> Vec<PlanLayer> {
+        let mut layers = self.layers.clone();
+        if let Some(r) = &self.reference {
+            for (b, _) in self.builtin() {
+                if names.iter().any(|n| n.trim().eq_ignore_ascii_case(&b))
+                    && let Some(l) = r.layer(&b)
+                {
+                    layers.push(l);
+                }
+            }
+        }
+        layers
+    }
 }
 
 /// A plan that checked and ran: the preview.
@@ -125,7 +154,16 @@ fn system_message(req: &Request) -> Json {
     let selected = req.selected.as_ref().map(|(l, f, v)| {
         format!("one object of {l} ({f} = {v:?}); for \"this\", \"selected\" or \"here\" pass it as {{layer: {l:?}, field: {f:?}, value: {v:?}}}")
     });
-    let map = context::map_text(&req.layers, &req.filters, selected.as_deref(), &req.history);
+    let mut map = context::map_text(&req.layers, &req.filters, selected.as_deref(), &req.history);
+    if let Some(r) = &req.reference {
+        let taken: Vec<String> = req.layers.iter().map(|l| l.name.clone()).collect();
+        let first = req.layers.iter().filter(|l| context::kind_word(l).is_some()).count() + 1;
+        let lines = r.context_lines(first, &taken);
+        if !lines.is_empty() {
+            map.push_str("\nBuilt-in reference layers (Natural Earth, WorldClim; not on the map): use one when the request needs countries, provinces, cities, rivers, lakes, coastline, land, islands, regions, seas or elevation and no open layer has them; prefer the user's own layers. Name them in a plan like any layer.\n");
+            map.push_str(&lines.join("\n"));
+        }
+    }
     json!({"role": "system", "content": [
         {"type": "text", "text": tools::SYSTEM, "cache_control": {"type": "ephemeral"}},
         {"type": "text", "text": map},
@@ -172,7 +210,7 @@ fn now() -> i64 {
 
 /// Runs one request to an answer.
 pub fn ask(t: &dyn Transport, req: &Request, ctl: &lm_jobs::jobs::Control) -> Turn {
-    let tool_list = tools::tools(&req.layers);
+    let tool_list = tools::tools(&req.layers, &req.builtin());
     let mut messages: Vec<Json> = req.previous.clone();
     messages.push(json!({"role": "user", "content": req.text}));
     let system = system_message(req);
@@ -249,11 +287,14 @@ pub fn ask(t: &dyn Transport, req: &Request, ctl: &lm_jobs::jobs::Control) -> Tu
                 _ => c["function"]["arguments"].clone(),
             };
             let result = match name {
-                "resolve_feature" => resolve::result_text(&resolve::resolve_feature(
-                    &req.layers,
-                    args["layer"].as_str().unwrap_or(""),
-                    args["text"].as_str().unwrap_or(""),
-                )),
+                "resolve_feature" => {
+                    let layer = args["layer"].as_str().unwrap_or("");
+                    resolve::result_text(&resolve::resolve_feature(
+                        &req.layers_with(&[layer.to_string()]),
+                        layer,
+                        args["text"].as_str().unwrap_or(""),
+                    ))
+                }
                 "submit_plan" if answer.is_none() => {
                     let steps = steps_from_submit(&args["steps"]);
                     match judge(&steps, req, &current, repairs, ctl) {
@@ -316,7 +357,11 @@ fn judge(steps: &[Step], req: &Request, current: &[(String, Vec<String>)], repai
     if !notes.is_empty() && repairs < MAX_REPAIRS {
         return Judged::Repair(notes);
     }
-    let mut layers = req.layers.clone();
+    let mut names = Vec::new();
+    for s in steps {
+        crate::reference::names_in(&s.args, &mut names);
+    }
+    let mut layers = req.layers_with(&names);
     match plan_exec::execute(&mut layers, steps, now(), ctl) {
         Ok(outcomes) => {
             // A filter that leaves nothing almost always means a wrong field or value ("name is

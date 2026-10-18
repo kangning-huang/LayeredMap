@@ -54,6 +54,15 @@ DPLIST
   swiftc -O -o "$app/Contents/MacOS/lm-dictate" "$root/packaging/lm/dictate.swift" \
     -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __info_plist -Xlinker "$dictate_plist"
   rm -f "$dictate_plist"
+  # Built-in reference layers (Natural Earth 1:10m, WorldClim elevation; hidden, used by the
+  # assistant): tools/lm/reference/build_reference.py writes them to LM_REFERENCE_DATA.
+  ref="${LM_REFERENCE_DATA:-/Volumes/LaCie/data/layeredmap-reference}"
+  if [[ -f "$ref/manifest.json" ]]; then
+    mkdir -p "$app/Contents/Resources/reference"
+    rsync -a --exclude raw --exclude '._*' "$ref/" "$app/Contents/Resources/reference/"
+  else
+    echo "bundle-macos: no reference data at $ref (built-in layers left out)" >&2
+  fi
   # Test builds: the owner's OpenRouter key from this Mac's keychain, built into the bundle
   # (scrambled, not secret: anyone determined can recover it). Never in the repo. The release
   # talks to LayeredMap's assistant service instead (WP7.3). LM_NO_KEY=1 leaves it out.

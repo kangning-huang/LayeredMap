@@ -8,6 +8,8 @@
 pub mod context;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod openrouter;
+mod pov;
+pub mod reference;
 pub mod resolve;
 pub mod session;
 pub mod tools;
