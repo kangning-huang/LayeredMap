@@ -316,6 +316,10 @@ impl Workspace {
             // ones are in, so apply as we go and gather the ops for one undo step.
             if let Some(Op::AddLayer { layer: l, .. }) = tx.ops.first_mut() {
                 l.display_name = layer.name.clone();
+                // A style from the file (a KML's colours) replaces the palette's default.
+                if let Some(style) = &layer.style {
+                    l.style = style.clone();
+                }
                 added.push((l.id, l.profile.data_rev));
             }
             if let Some(e) = layer.profile.extent_wgs84 {
@@ -723,6 +727,7 @@ impl Workspace {
                 data: LayerData::Vector(Arc::new(ds)),
                 status: ImportStatus::Complete,
                 raw: None,
+                style: None,
             }),
         );
         let mut ops = add.ops;
@@ -814,6 +819,7 @@ impl Workspace {
                         data: LayerData::Vector(Arc::new(converted)),
                         status: ImportStatus::Complete,
                         raw: None,
+                        style: None,
                     };
                     let a = map_layer(COMPARE_MAP_ID, &preview);
                     let b = a.clone();

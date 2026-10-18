@@ -403,6 +403,7 @@ fn read_table(path: &Path, bytes: &Arc<Vec<u8>>, catalog: &Catalog, table: &str,
             profile,
             data: LayerData::Vector(Arc::new(part)),
             raw: None,
+            style: None,
         });
     }
     Ok(out)

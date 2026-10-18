@@ -1,0 +1,238 @@
+{
+  "files": [
+    {
+      "file": "places.kml",
+      "layers": [
+        {
+          "assumptions": [],
+          "count": 1,
+          "crs": "Wgs84",
+          "crs_confidence": "Certain",
+          "encoding": null,
+          "exclusions": 0,
+          "extent": [
+            121.47,
+            31.23,
+            121.47,
+            31.23
+          ],
+          "fields": {
+            "name": "Name (Likely)"
+          },
+          "format": "KML",
+          "kind": "Points",
+          "member": "places",
+          "name": "places",
+          "notices": [
+            "This file also has 1 link to another file (a network link) and 1 picture laid over the map (a ground overlay), which LayeredMap doesn't open."
+          ],
+          "status": "Complete"
+        },
+        {
+          "assumptions": [],
+          "count": 3,
+          "crs": "Wgs84",
+          "crs_confidence": "Certain",
+          "encoding": null,
+          "exclusions": 1,
+          "extent": [
+            121.44,
+            31.19,
+            121.5,
+            31.26
+          ],
+          "fields": {
+            "description": "Category (Likely)",
+            "district": "Text (Likely)",
+            "name": "Name (Likely)",
+            "pupils": "Measure(Unknown) (Likely)"
+          },
+          "format": "KML",
+          "kind": "Points",
+          "member": "Schools",
+          "name": "Schools",
+          "notices": [],
+          "status": "CompleteWithExclusions"
+        },
+        {
+          "assumptions": [],
+          "count": 2,
+          "crs": "Wgs84",
+          "crs_confidence": "Certain",
+          "encoding": null,
+          "exclusions": 0,
+          "extent": [
+            121.38,
+            31.19,
+            121.5,
+            31.245
+          ],
+          "fields": {
+            "begin": "Date (Likely)",
+            "end": "Date (Likely)",
+            "name": "Name (Likely)"
+          },
+          "format": "KML",
+          "kind": "Lines",
+          "member": "Rivers",
+          "name": "Rivers",
+          "notices": [],
+          "status": "Complete"
+        },
+        {
+          "assumptions": [],
+          "count": 3,
+          "crs": "Wgs84",
+          "crs_confidence": "Certain",
+          "encoding": null,
+          "exclusions": 0,
+          "extent": [
+            121.4,
+            31.2,
+            121.55,
+            31.235
+          ],
+          "fields": {
+            "name": "Name (Likely)"
+          },
+          "format": "KML",
+          "kind": "Areas",
+          "member": "Parks",
+          "name": "Parks",
+          "notices": [],
+          "status": "Complete"
+        },
+        {
+          "assumptions": [
+            {
+              "chosen": "split",
+              "kind": "MixedGeometrySplit",
+              "line": "Split into 2 layers: points, lines",
+              "treatment": "Silent"
+            }
+          ],
+          "count": 1,
+          "crs": "Wgs84",
+          "crs_confidence": "Certain",
+          "encoding": null,
+          "exclusions": 0,
+          "extent": [
+            121.4,
+            31.3,
+            121.4,
+            31.3
+          ],
+          "fields": {
+            "name": "Name (Likely)",
+            "style": "Category (Likely)"
+          },
+          "format": "KML",
+          "kind": "Points",
+          "member": "Survey (points)",
+          "name": "Survey (points)",
+          "notices": [],
+          "status": "Complete"
+        },
+        {
+          "assumptions": [
+            {
+              "chosen": "split",
+              "kind": "MixedGeometrySplit",
+              "line": "Split into 2 layers: points, lines",
+              "treatment": "Silent"
+            }
+          ],
+          "count": 2,
+          "crs": "Wgs84",
+          "crs_confidence": "Certain",
+          "encoding": null,
+          "exclusions": 0,
+          "extent": [
+            121.4,
+            31.3,
+            121.45,
+            31.31
+          ],
+          "fields": {
+            "name": "Name (Likely)",
+            "style": "Category (Likely)"
+          },
+          "format": "KML",
+          "kind": "Lines",
+          "member": "Survey (lines)",
+          "name": "Survey (lines)",
+          "notices": [
+            "The places in this layer have 2 different styles in the file; the layer is drawn in the most common one, and each place's style is in the field style."
+          ],
+          "status": "Complete"
+        }
+      ]
+    },
+    {
+      "file": "trail.kmz",
+      "layers": [
+        {
+          "assumptions": [
+            {
+              "chosen": "split",
+              "kind": "MixedGeometrySplit",
+              "line": "Split into 2 layers: points, lines",
+              "treatment": "Silent"
+            }
+          ],
+          "count": 2,
+          "crs": "Wgs84",
+          "crs_confidence": "Certain",
+          "encoding": null,
+          "exclusions": 0,
+          "extent": [
+            116.39,
+            39.9,
+            116.4,
+            39.908
+          ],
+          "fields": {
+            "name": "Name (Likely)"
+          },
+          "format": "KMZ",
+          "kind": "Points",
+          "member": "trail (points)",
+          "name": "trail (points)",
+          "notices": [],
+          "status": "Complete"
+        },
+        {
+          "assumptions": [
+            {
+              "chosen": "split",
+              "kind": "MixedGeometrySplit",
+              "line": "Split into 2 layers: points, lines",
+              "treatment": "Silent"
+            }
+          ],
+          "count": 1,
+          "crs": "Wgs84",
+          "crs_confidence": "Certain",
+          "encoding": null,
+          "exclusions": 0,
+          "extent": [
+            116.39,
+            39.9,
+            116.4,
+            39.908
+          ],
+          "fields": {
+            "name": "Name (Likely)"
+          },
+          "format": "KMZ",
+          "kind": "Lines",
+          "member": "trail (lines)",
+          "name": "trail (lines)",
+          "notices": [],
+          "status": "Complete"
+        }
+      ]
+    }
+  ],
+  "fixture": "V11"
+}

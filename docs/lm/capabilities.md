@@ -28,7 +28,7 @@ the renderer drops Chinese basemap labels.
 API. `apps/layeredmap/src/macos.rs` adds `application:openURLs:` to winit's delegate class when
 `NSApplicationWillFinishLaunchingNotification` fires, queues the paths, and the app opens them
 through `Command::Open` (the Open button's pipeline). `packaging/lm/bundle-macos.sh` registers
-CSV/TSV, GeoJSON/JSON, Shapefile (.shp, .zip), GeoTIFF, GeoPackage and .xlsx as a Viewer with
+CSV/TSV, GeoJSON/JSON, Shapefile (.shp, .zip), GeoTIFF, GeoPackage, .xlsx, and (WP6.7) KML/KMZ and GPX as a Viewer with
 `LSHandlerRank` Alternate (never the default app).
 
 Verified on the bundled app with `open -a LayeredMap.app <files>` (the same Apple event as a Dock

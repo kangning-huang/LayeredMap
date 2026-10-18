@@ -15,6 +15,10 @@ pub const GEOJSON_MAX_BYTES: u64 = 2 << 30;
 pub const GEOPACKAGE_MAX_BYTES: u64 = 2 << 30;
 /// A workbook larger than this is refused: the spreadsheet reader holds it in memory.
 pub const WORKBOOK_MAX_BYTES: u64 = 1 << 30;
+/// A KML or GPX larger than this is refused: the XML is parsed into memory whole.
+pub const XML_MAX_BYTES: u64 = 256 << 20;
+/// Most XML nodes (elements, text, attributes aside) read from one KML or GPX.
+pub const XML_MAX_NODES: u32 = 20_000_000;
 /// A raster side longer than this, without overviews, goes through the preparation step.
 pub const RASTER_PREPARE_SIDE: u64 = 8192;
 /// A raster side longer than this is refused.

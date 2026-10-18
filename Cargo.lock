@@ -2671,6 +2671,7 @@ dependencies = [
  "lm-core",
  "lm-profile",
  "log",
+ "roxmltree",
  "rusqlite",
  "rustgis-analysis",
  "rustgis-engine",

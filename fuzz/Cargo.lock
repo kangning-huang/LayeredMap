@@ -67,9 +67,6 @@ name = "arbitrary"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3bc62ac97cc33321f50863d514c3bc38a453947a8f9e781137e47c7401020aed"
-dependencies = [
- "derive_arbitrary",
-]
 
 [[package]]
 name = "arrayref"
@@ -98,12 +95,6 @@ name = "autocfg"
 version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f2032f911046de80f0a198e0901378627c33f59ea0ac00e363d481118bd70a53"
-
-[[package]]
-name = "base64"
-version = "0.22.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6"
 
 [[package]]
 name = "base64"
@@ -182,7 +173,7 @@ dependencies = [
  "log",
  "quick-xml",
  "serde",
- "zip 8.6.0",
+ "zip",
 ]
 
 [[package]]
@@ -377,17 +368,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7cd812cc2bc1d69d4764bd80df88b4317eaef9e773c75226407d9bc0876b211c"
 
 [[package]]
-name = "derive_arbitrary"
-version = "1.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1b034bd7d5f032402a2479444dcc6f74e36a03f31854d41680fb240ef682a1ac"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 3.0.7",
-]
-
-[[package]]
 name = "digest"
 version = "0.10.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -395,17 +375,6 @@ checksum = "9ed9a281f7bc9b7576e61468ba615a66a5c8cfdff42420a70aa82701a3b1e292"
 dependencies = [
  "block-buffer",
  "crypto-common",
-]
-
-[[package]]
-name = "displaydoc"
-version = "0.2.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c6232dd377dcc64799954cbd3a9bb882e9cdc1308ccd87b1c098f1fb2eaf82a8"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 3.0.7",
 ]
 
 [[package]]
@@ -964,9 +933,15 @@ checksum = "32a66949e030da00e8c7d4434b251670a91556f4144941d37452769c25d58a53"
 name = "lm-analysis"
 version = "0.2.0"
 dependencies = [
+ "geo",
  "geographiclib-rs",
+ "miniz_oxide 0.9.1",
+ "robust",
+ "rstar",
  "rustgis-data",
  "rustgis-geom",
+ "tiff",
+ "weezl",
 ]
 
 [[package]]
@@ -994,6 +969,7 @@ dependencies = [
  "lm-core",
  "lm-profile",
  "log",
+ "roxmltree",
  "rusqlite",
  "rustgis-analysis",
  "rustgis-engine",
@@ -1387,7 +1363,7 @@ dependencies = [
 name = "rustgis-data"
 version = "0.2.0"
 dependencies = [
- "base64 0.22.1",
+ "base64",
  "bytes",
  "calamine",
  "crs-definitions",
@@ -1398,7 +1374,7 @@ dependencies = [
  "image",
  "laz",
  "lz4_flex",
- "miniz_oxide 0.8.9",
+ "miniz_oxide 0.9.1",
  "parquet",
  "proj4rs",
  "roxmltree",
@@ -1416,7 +1392,7 @@ dependencies = [
 name = "rustgis-engine"
 version = "0.2.0"
 dependencies = [
- "base64 0.22.1",
+ "base64",
  "iana-time-zone",
  "log",
  "rustgis-analysis",
@@ -1443,7 +1419,7 @@ dependencies = [
 name = "rustgis-map"
 version = "0.2.0"
 dependencies = [
- "base64 0.22.1",
+ "base64",
  "crs-definitions",
  "proj4rs",
  "roxmltree",
@@ -1458,7 +1434,7 @@ dependencies = [
 name = "rustgis-plugins"
 version = "0.2.0"
 dependencies = [
- "base64 0.22.1",
+ "base64",
  "log",
  "rustgis-analysis",
  "rustgis-data",
@@ -1468,7 +1444,7 @@ dependencies = [
  "sha2",
  "ureq",
  "wasmi",
- "zip 2.4.2",
+ "zip",
 ]
 
 [[package]]
@@ -1476,11 +1452,11 @@ name = "rustgis-render"
 version = "0.2.0"
 dependencies = [
  "ab_glyph",
- "base64 0.22.1",
+ "base64",
  "epaint_default_fonts",
  "image",
  "log",
- "miniz_oxide 0.8.9",
+ "miniz_oxide 0.9.1",
  "rustgis-data",
  "rustgis-geom",
  "rustgis-map",
@@ -1495,7 +1471,7 @@ version = "0.2.0"
 dependencies = [
  "image",
  "log",
- "miniz_oxide 0.8.9",
+ "miniz_oxide 0.9.1",
  "roxmltree",
  "rustgis-data",
  "rustgis-geom",
@@ -1958,7 +1934,7 @@ version = "3.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9a7ac20be9b7726e0bbdbf974c059676d9acb1cd414961f570a4e8231cacd7fc"
 dependencies = [
- "base64 0.23.1",
+ "base64",
  "flate2",
  "log",
  "percent-encoding",
@@ -1975,7 +1951,7 @@ version = "0.6.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f86fd172ccca569e458f61b6bdd6220965a9ef36e672a6852953b51a0e1583be"
 dependencies = [
- "base64 0.23.1",
+ "base64",
  "http",
  "httparse",
  "log",
@@ -2329,23 +2305,6 @@ name = "zeroize"
 version = "1.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e13084392c5e4bc371903e2935a5eaeed24905a7511356b883835e18a78f6879"
-
-[[package]]
-name = "zip"
-version = "2.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fabe6324e908f85a1c52063ce7aa26b68dcb7eb6dbc83a2d148403c9bc3eba50"
-dependencies = [
- "arbitrary",
- "crc32fast",
- "crossbeam-utils",
- "displaydoc",
- "flate2",
- "indexmap",
- "memchr",
- "thiserror 2.0.21",
- "zopfli",
-]
 
 [[package]]
 name = "zip"

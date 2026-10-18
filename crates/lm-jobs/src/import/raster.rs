@@ -181,7 +181,14 @@ impl FormatAdapter for GeoTiff {
         };
         // The choices (NoData, Landsat scale, kelvin) are applied to the data and the numbers.
         let r = apply_raster_choices(&r, &mut profile, &metas)?;
-        Ok(vec![ImportedLayer { name: stem, status: status_of(&profile), profile, data: LayerData::Raster(Arc::new(r)), raw: None }])
+        Ok(vec![ImportedLayer {
+            name: stem,
+            status: status_of(&profile),
+            profile,
+            data: LayerData::Raster(Arc::new(r)),
+            raw: None,
+            style: None,
+        }])
     }
 }
 

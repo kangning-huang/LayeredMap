@@ -141,7 +141,7 @@ fn every_hand_made_fixture_opens_and_stays_byte_identical() {
                 || n.starts_with("expected")
                 || n.contains("TODO")
                 || n == "vectors.csv"
-                || !matches!(ext.as_str(), "csv" | "geojson" | "shp" | "zip" | "tif" | "gpkg" | "xlsx")
+                || !matches!(ext.as_str(), "csv" | "geojson" | "shp" | "zip" | "tif" | "gpkg" | "xlsx" | "kml" | "kmz" | "gpx")
             {
                 continue;
             }
@@ -621,7 +621,9 @@ fn zip_based_documents_are_not_taken_for_zipped_shapefiles() {
     assert!(head.starts_with(b"PK\x03\x04"));
     assert_eq!(pick_adapter(&xlsx, &head, true).map(|a| a.name()).ok(), Some("Excel"));
     assert_eq!(pick_adapter(std::path::Path::new("Survey.XLSX"), b"PK\x03\x04", true).map(|a| a.name()).ok(), Some("Excel"));
-    for f in ["report.docx", "places.kmz", "slides.pptx", "sheet.ods"] {
+    // A KMZ has its own adapter.
+    assert_eq!(pick_adapter(std::path::Path::new("places.kmz"), b"PK\x03\x04", true).map(|a| a.name()).ok(), Some("KMZ"));
+    for f in ["report.docx", "slides.pptx", "sheet.ods"] {
         let ext = f.rsplit('.').next().unwrap();
         let e = pick_adapter(std::path::Path::new(f), b"PK\x03\x04", true).err().map(|e| e.to_string());
         assert_eq!(e, Some(format!("LayeredMap can't open .{ext} files yet.")), "{f}");

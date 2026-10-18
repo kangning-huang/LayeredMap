@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2">
+<Document>
+  <name>Field trip</name>
+  <Style id="schoolIcon"><IconStyle><color>ff0000ff</color><scale>1.1</scale></IconStyle></Style>
+  <Style id="schoolIconHi"><IconStyle><color>ff00ffff</color><scale>1.4</scale></IconStyle></Style>
+  <StyleMap id="schoolMap">
+    <Pair><key>normal</key><styleUrl>#schoolIcon</styleUrl></Pair>
+    <Pair><key>highlight</key><styleUrl>#schoolIconHi</styleUrl></Pair>
+  </StyleMap>
+  <Style id="riverLine"><LineStyle><color>ffff0000</color><width>3</width></LineStyle></Style>
+  <Style id="parkPoly">
+    <LineStyle><color>ff006400</color><width>2</width></LineStyle>
+    <PolyStyle><color>8000ff00</color></PolyStyle>
+  </Style>
+  <Schema name="info" id="info"><SimpleField type="string" name="district"/></Schema>
+  <Placemark>
+    <name>Visitor centre</name>
+    <Point><coordinates>121.4700,31.2300,0</coordinates></Point>
+  </Placemark>
+  <Folder>
+    <name>Schools</name>
+    <Placemark>
+      <name>North school</name>
+      <description><![CDATA[<b>Open</b> 8:00-16:00]]></description>
+      <styleUrl>#schoolMap</styleUrl>
+      <ExtendedData>
+        <Data name="pupils"><value>420</value></Data>
+        <SchemaData schemaUrl="#info"><SimpleData name="district">Jing'an</SimpleData></SchemaData>
+      </ExtendedData>
+      <Point><coordinates>121.4500,31.2500</coordinates></Point>
+    </Placemark>
+    <Placemark>
+      <name>East school</name>
+      <styleUrl>#schoolMap</styleUrl>
+      <ExtendedData>
+        <Data name="pupils"><value>385</value></Data>
+        <SchemaData schemaUrl="#info"><SimpleData name="district">Hongkou</SimpleData></SchemaData>
+      </ExtendedData>
+      <Point><coordinates>121.5000,31.2600</coordinates></Point>
+    </Placemark>
+    <Placemark>
+      <name>South school</name>
+      <styleUrl>#schoolMap</styleUrl>
+      <ExtendedData>
+        <Data name="pupils"><value>512</value></Data>
+        <SchemaData schemaUrl="#info"><SimpleData name="district">Xuhui</SimpleData></SchemaData>
+      </ExtendedData>
+      <Point><coordinates>121.4400,31.1900</coordinates></Point>
+    </Placemark>
+    <Placemark>
+      <name>Planned school</name>
+      <description>Site not chosen yet</description>
+      <styleUrl>#schoolMap</styleUrl>
+    </Placemark>
+  </Folder>
+  <Folder>
+    <name>Rive

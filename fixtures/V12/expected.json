@@ -1,0 +1,164 @@
+{
+  "fixture": "V12",
+  "files": [
+    "hike.gpx",
+    "old_garmin.gpx"
+  ],
+  "kind": "vector",
+  "gdal": {
+    "version": "3.13.3",
+    "hike.gpx": [
+      {
+        "layer": "waypoints",
+        "count": 3,
+        "vertices": 3,
+        "bounds": [
+          7.9,
+          46.5,
+          7.95,
+          46.535
+        ],
+        "sum_xy": [
+          23.78,
+          139.555
+        ]
+      },
+      {
+        "layer": "routes",
+        "count": 1,
+        "vertices": 4,
+        "bounds": [
+          7.9,
+          46.5,
+          7.95,
+          46.535
+        ],
+        "sum_xy": [
+          31.695,
+          186.065
+        ]
+      },
+      {
+        "layer": "tracks",
+        "count": 2,
+        "vertices": 12,
+        "bounds": [
+          7.9,
+          46.5,
+          7.95,
+          46.535
+        ],
+        "sum_xy": [
+          95.102,
+          558.205
+        ]
+      }
+    ],
+    "old_garmin.gpx": [
+      {
+        "layer": "waypoints",
+        "count": 2,
+        "vertices": 2,
+        "bounds": [
+          2.2945,
+          48.8584,
+          2.3376,
+          48.8606
+        ],
+        "sum_xy": [
+          4.6321,
+          97.719
+        ]
+      },
+      {
+        "layer": "routes",
+        "count": 0,
+        "vertices": 0,
+        "bounds": null,
+        "sum_xy": null
+      },
+      {
+        "layer": "tracks",
+        "count": 0,
+        "vertices": 0,
+        "bounds": null,
+        "sum_xy": null
+      }
+    ]
+  },
+  "layeredmap": {
+    "hike.gpx": {
+      "layers": [
+        {
+          "name": "hike (waypoints)",
+          "group": "waypoints",
+          "geometry": "point",
+          "count": 3,
+          "fields": [
+            "name",
+            "sym",
+            "ele",
+            "time",
+            "desc"
+          ]
+        },
+        {
+          "name": "hike (tracks)",
+          "group": "tracks",
+          "geometry": "line",
+          "count": 2,
+          "fields": [
+            "name",
+            "type",
+            "start_time",
+            "end_time",
+            "min_ele",
+            "max_ele"
+          ],
+          "first": {
+            "start_time": "2024-04-20T06:10:00Z",
+            "end_time": "2024-04-20T10:40:00Z",
+            "min_ele": 1034.5,
+            "max_ele": 2105.2,
+            "parts": 2
+          }
+        },
+        {
+          "name": "hike (routes)",
+          "group": "routes",
+          "geometry": "line",
+          "count": 1
+        }
+      ]
+    },
+    "old_garmin.gpx": {
+      "layers": [
+        {
+          "name": "old_garmin",
+          "group": "waypoints",
+          "geometry": "point",
+          "count": 2,
+          "names": [
+            "Café de la Tour",
+            "Musée"
+          ]
+        }
+      ]
+    }
+  },
+  "malformed": {
+    "truncated.gpx": "error: isn't valid GPX",
+    "bad_points.gpx": {
+      "waypoints": {
+        "count": 1,
+        "excluded": 2
+      },
+      "routes": "no layer; notice on the first layer",
+      "tracks": {
+        "count": 1,
+        "vertices": 2,
+        "notice": "left out"
+      }
+    }
+  }
+}

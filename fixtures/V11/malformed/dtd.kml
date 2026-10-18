@@ -1,0 +1,3 @@
+<?xml version="1.0"?>
+<!DOCTYPE kml [<!ENTITY a "aaaaaaaaaa"><!ENTITY b "&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;"><!ENTITY c "&b;&b;&b;&b;&b;&b;&b;&b;&b;&b;">]>
+<kml xmlns="http://www.opengis.net/kml/2.2"><Placemark><name>&c;</name><Point><coordinates>1,1</coordinates></Point></Placemark></kml>

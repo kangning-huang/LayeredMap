@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="fixtures" xmlns="http://www.topografix.com/GPX/1/1">
+  <wpt lat="10.0" lon="20.0"><name>ok</name></wpt>
+  <wpt lon="20.0"><name>no latitude</name></wpt>
+  <wpt lat="north" lon="20.0"><name>words</name></wpt>
+  <rte><name>one point</name><rtept lat="10.0" lon="20.0"/></rte>
+  <trk><name>one bad point</name><trkseg>
+    <trkpt lat="10.0" lon="20.0"/><trkpt lat="999" lon="20.1"/><trkpt lat="10.2" lon="20.2"/>
+  </trkseg></trk>
+</gpx>

@@ -4,7 +4,7 @@
 //! row. A canceled import leaves nothing behind; source files are only ever read.
 //!
 //! Formats sit behind [`FormatAdapter`] (WP2.2): GeoJSON, Shapefile (also zipped), CSV/TSV and
-//! GeoTIFF/COG (P0), GeoPackage and Excel (P1, behind [`P1_FORMATS`]), wrapping the upstream `rustgis-data` readers where they fit and streaming where
+//! GeoTIFF/COG (P0), GeoPackage and Excel (P1, behind [`P1_FORMATS`]), KML, KMZ and GPX (WP6.7), wrapping the upstream `rustgis-data` readers where they fit and streaming where
 //! they don't (large GeoJSON and CSV are scanned as streams, never read whole to learn a name or
 //! bounds).
 
@@ -12,11 +12,14 @@ mod csv;
 mod excel;
 mod geojson;
 mod gpkg;
+mod gpx;
+mod kml;
 pub mod limits;
 pub mod progress;
 mod raster;
 mod shapefile;
 pub mod snapshot;
+mod xmlfile;
 
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{Receiver, Sender, channel};
@@ -101,6 +104,9 @@ pub struct ImportedLayer {
     pub status: ImportStatus,
     /// For a CSV: its raw cells (to rerun location with other columns).
     pub raw: Option<Arc<RawRows>>,
+    /// The style the file gives the layer (a KML's colours), used instead of the palette's
+    /// default when the layer is added.
+    pub style: Option<lm_core::document::Style>,
 }
 
 /// The stages, in order (WP2.1).
@@ -305,7 +311,7 @@ pub const P1_FORMATS: bool = true;
 /// File extensions of the P1 formats.
 const P1_EXTENSIONS: &[&str] = &["gpkg", "xlsx", "xlsm", "xls"];
 
-/// Every adapter, in sniffing order (the P1 ones only when `p1`). GeoPackage and Excel come
+/// Every adapter, in sniffing order (the P1 ones only when `p1`). GeoPackage, Excel and KMZ come
 /// before the zipped Shapefile, which claims anything starting like a ZIP (as an `.xlsx` does).
 fn adapters(p1: bool) -> Vec<&'static dyn FormatAdapter> {
     let mut v: Vec<&'static dyn FormatAdapter> = vec![&geojson::GeoJson, &csv::Delimited, &shapefile::Shapefile];
@@ -313,6 +319,7 @@ fn adapters(p1: bool) -> Vec<&'static dyn FormatAdapter> {
         v.push(&gpkg::GeoPackage);
         v.push(&excel::Excel);
     }
+    v.extend([&kml::Kml as &'static dyn FormatAdapter, &kml::Kmz, &gpx::Gpx]);
     v.push(&shapefile::ZippedShapefile);
     v.push(&raster::GeoTiff);
     v
@@ -445,7 +452,14 @@ pub fn derived_layer(name: &str, format: &str, ds: Dataset) -> ImportedLayer {
     let path = Path::new(name);
     let mut profile = vector_profile(path, None, format, &ds, Some(Crs::Wgs84), Vec::new(), Vec::new(), None, Vec::new(), &[]);
     profile.source = SourceRef { path: name.to_string(), member: None, size: 0, mtime: 0, sha256: None };
-    ImportedLayer { name: name.to_string(), profile, data: LayerData::Vector(Arc::new(ds)), status: ImportStatus::Complete, raw: None }
+    ImportedLayer {
+        name: name.to_string(),
+        profile,
+        data: LayerData::Vector(Arc::new(ds)),
+        status: ImportStatus::Complete,
+        raw: None,
+        style: None,
+    }
 }
 
 /// Builds the profile of a vector layer read in longitude/latitude (or raw coordinates when the
@@ -747,3 +761,5 @@ pub fn convert_offset(ds: &Dataset, from_bd09: bool) -> Result<(Dataset, String)
 mod gate2_tests;
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod xml_tests;
