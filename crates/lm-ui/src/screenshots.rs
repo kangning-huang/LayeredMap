@@ -1094,11 +1094,11 @@ fn export_warnings_name_what_the_image_leaves_out() {
     let w = e.warnings(s).join("\n");
     assert!(w.contains("districts is colored by value but has no legend."), "{w}");
     assert!(!w.contains("schools is colored"), "single-colour layers need no legend: {w}");
-    // The Satellite basemap carries its licence's terms.
+    // The Satellite basemap (NASA Blue Marble) carries no extra terms, only its credit.
     s.prefs.basemap = "satellite".into();
     let sat = crate::export::ImageSheet::new(s);
-    assert!(sat.warnings(s).iter().any(|w| w.contains("CC BY-NC-SA 4.0")));
-    assert!(sat.attribution().contains("Sentinel-2") && sat.attribution().contains("OpenStreetMap"));
+    assert!(!sat.warnings(s).iter().any(|w| w.contains("licensed")), "{:?}", sat.warnings(s));
+    assert!(sat.attribution().contains("NASA Blue Marble") && sat.attribution().contains("OpenStreetMap"));
     s.prefs.basemap = "offline".into();
     s.export_sheet = Some(e);
 }

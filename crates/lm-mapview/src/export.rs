@@ -1332,10 +1332,7 @@ mod tests {
         assert!(lines[1].ends_with('…'));
         let zh = face.wrap("数据：上海市各区人口与夏季地表温度，由某某大学提供。使用 LayeredMap 制作。", TEXT, false, 120.0, 3);
         assert!(zh.len() >= 2);
-        let s = Sheet {
-            attribution: "Sentinel-2 cloudless by EOX (Copernicus Sentinel data 2024) · Natural Earth".into(),
-            ..sheet(1080, 1080, 1.5)
-        };
+        let s = Sheet { attribution: "NASA Blue Marble (NASA Earth Observatory, GIBS) · Natural Earth".into(), ..sheet(1080, 1080, 1.5) };
         let (_, _, row) = footer_lines(&face, &s, 400.0);
         assert_eq!(row, 1);
     }

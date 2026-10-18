@@ -339,6 +339,14 @@ impl Workspace {
                     // Lines that pile up (storm tracks) start faint, so overlaps show density.
                     l.style.stroke[3] = alpha;
                     l.style.line_width = width;
+                } else if l.profile.kind == lm_core::model::LayerKind::Raster
+                    && l.profile.bands.first().is_some_and(|b| {
+                        let n = b.name.to_lowercase();
+                        n.contains("heat") || n.contains("temperature")
+                    })
+                {
+                    // Heat and temperature grids (a heatwave NetCDF) open in the heat ramp.
+                    l.style.ramp = "heat".into();
                 }
                 added.push((l.id, l.profile.data_rev));
             }

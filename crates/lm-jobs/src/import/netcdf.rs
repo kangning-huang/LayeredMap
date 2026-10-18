@@ -860,10 +860,17 @@ fn layer_for(o: &Opened, path: &Path, variable: &str, level: usize, time: usize,
     };
     let stem = path.file_stem().and_then(|s| s.to_str()).unwrap_or("grid").to_string();
     // One colour range for every time step, from the sampled steps (editable in Style).
-    let style = lm_core::document::Style {
+    let mut style = lm_core::document::Style {
         stretch: default_stretch(&profile),
         ..lm_core::document::Style::for_profile(&profile, lm_core::document::OKABE_ITO[0])
     };
+    // Heat and temperature grids (a heatwave index, air temperature) open in the heat ramp.
+    if profile.bands.first().is_some_and(|b| {
+        let n = b.name.to_lowercase();
+        n.contains("heat") || n.contains("temperature")
+    }) {
+        style.ramp = "heat".into();
+    }
     Ok(ImportedLayer { name: stem, status: status_of(&profile), profile, data: LayerData::Raster(raster), raw: None, style: Some(style) })
 }
 

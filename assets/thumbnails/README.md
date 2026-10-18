@@ -9,6 +9,6 @@ in code.
 | --- | --- | --- |
 | light.png | Light | © OpenStreetMap contributors (ODbL), via Protomaps |
 | dark.png | Dark | © OpenStreetMap contributors (ODbL), via Protomaps |
-| satellite.png | Satellite | Sentinel-2 cloudless 2024 by EOX (CC BY-NC-SA 4.0; Copernicus Sentinel data 2024), labels © OpenStreetMap contributors |
+| `satellite.png` | NASA Blue Marble Next Generation (NASA GIBS, zoom-4 tiles over the Mediterranean, Black Sea and Caspian), stitched and scaled to 288 × 192 on 2026-10-18 | NASA imagery, not subject to US copyright; credit NASA |
 
 The credits match the ones the map shows when each basemap is on.
