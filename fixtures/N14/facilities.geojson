@@ -1,0 +1,10 @@
+{"type": "FeatureCollection", "name": "facilities", "features": [
+{"type": "Feature", "properties": {"facility_id": "F01"}, "geometry": {"type": "Point", "coordinates": [121.4, 31.18]}},
+{"type": "Feature", "properties": {"facility_id": "F02"}, "geometry": {"type": "Point", "coordinates": [121.475, 31.195]}},
+{"type": "Feature", "properties": {"facility_id": "F03"}, "geometry": {"type": "Point", "coordinates": [121.53, 31.24]}},
+{"type": "Feature", "properties": {"facility_id": "F04"}, "geometry": {"type": "Point", "coordinates": [121.43, 31.26]}},
+{"type": "Feature", "properties": {"facility_id": "F05"}, "geometry": {"type": "Point", "coordinates": [121.365, 31.235]}},
+{"type": "Feature", "properties": {"facility_id": "F06"}, "geometry": {"type": "Point", "coordinates": [121.5, 31.3]}},
+{"type": "Feature", "properties": {"facility_id": "F07"}, "geometry": {"type": "Point", "coordinates": [121.56, 31.17]}},
+{"type": "Feature", "properties": {"facility_id": "F08"}, "geometry": {"type": "Point", "coordinates": [121.445, 31.215]}}
+]}

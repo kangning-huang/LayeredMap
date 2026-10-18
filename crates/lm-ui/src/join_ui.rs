@@ -35,6 +35,7 @@ pub fn report(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
             ui.add(egui::Label::new(RichText::new(r.line(&l.display_name, l.profile.kind.nouns())).size(BODY)).wrap());
         });
         ui.label(RichText::new(r.how()).size(CAPTION).color(t.text_secondary));
+        ui.add(egui::Label::new(RichText::new(r.expected.line(l.profile.kind.nouns())).size(CAPTION).color(t.text_secondary)).wrap());
         // The table left the shelf's top level: say where it went.
         ui.label(
             RichText::new(format!("{} now appears under {} in Layers.", r.table_name, l.display_name))
@@ -68,9 +69,8 @@ pub fn report(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
         let open = ui.data(|d| d.get_temp::<bool>(key)).unwrap_or(false);
         ui.add_space(4.0);
         ui.horizontal_wrapped(|ui| {
-            let u = r.unmatched.len();
-            if u > 0 {
-                let label = if open { "Hide the rows not matched".to_string() } else { format!("Show the {u} not matched") };
+            if let Some(show) = r.unmatched_label() {
+                let label = if open { "Hide the rows not matched".to_string() } else { show };
                 if ui.link(RichText::new(label).size(CAPTION)).clicked() {
                     ui.data_mut(|d| d.insert_temp(key, !open));
                 }
@@ -96,6 +96,10 @@ pub fn report(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
             }
             if r.unmatched.len() > 20 {
                 ui.label(RichText::new(format!("and {} more", r.unmatched.len() - 20)).size(CAPTION).color(t.text_secondary));
+            }
+            if r.blank_keys > 0 {
+                let rows = if r.blank_keys == 1 { "row" } else { "rows" };
+                ui.label(RichText::new(format!("{} {rows} with no {}", r.blank_keys, r.table_field)).size(CAPTION).color(t.text_secondary));
             }
         }
     });
@@ -123,6 +127,14 @@ pub fn table_status(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId) -> b
             let text = format!("{target}: {}  ·  {}", o.label, o.detail);
             if ui.radio(choice == i, text).clicked() {
                 choice = i;
+            }
+            // What this answer would give, before anything is joined.
+            if let Some(e) = &o.expected {
+                let nouns = shell.ws.doc.layer(o.target).map_or(("record", "records"), |l| l.profile.kind.nouns());
+                ui.horizontal(|ui| {
+                    ui.add_space(ui.spacing().icon_width + ui.spacing().icon_spacing);
+                    ui.add(egui::Label::new(RichText::new(e.line(nouns)).size(CAPTION).color(t.text_secondary)).wrap());
+                });
             }
         }
         if ui.radio(choice == q.offers.len(), "None of these: keep it as a table").clicked() {

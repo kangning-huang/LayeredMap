@@ -1,0 +1,9 @@
+{"type": "FeatureCollection", "name": "lines", "features": [
+{"type": "Feature", "properties": {"id": "L1", "note": "across Z1 and Z2, with a gap between them"}, "geometry": {"type": "LineString", "coordinates": [[115.96875, 39.84375], [116.3125, 39.84375]]}},
+{"type": "Feature", "properties": {"id": "L2", "note": "along Z1's south edge"}, "geometry": {"type": "LineString", "coordinates": [[116.015625, 39.75], [116.078125, 39.75]]}},
+{"type": "Feature", "properties": {"id": "L3", "note": "ends on Z1's corner"}, "geometry": {"type": "LineString", "coordinates": [[115.96875, 39.71875], [116.0, 39.75]]}},
+{"type": "Feature", "properties": {"id": "L4", "note": "through the hole"}, "geometry": {"type": "LineString", "coordinates": [[116.0625, 39.734375], [116.0625, 39.890625]]}},
+{"type": "Feature", "properties": {"id": "L5", "note": "two parts, one inside Z3"}, "geometry": {"type": "MultiLineString", "coordinates": [[[116.234375, 39.765625], [116.265625, 39.796875]], [[116.3125, 39.765625], [116.34375, 39.796875]]]}},
+{"type": "Feature", "properties": {"id": "L6", "note": "outside"}, "geometry": {"type": "LineString", "coordinates": [[115.921875, 39.90625], [115.984375, 39.9375]]}},
+{"type": "Feature", "properties": {"id": "L7", "note": "leaves Z1 and comes back"}, "geometry": {"type": "LineString", "coordinates": [[116.03125, 39.765625], [116.03125, 39.71875], [116.09375, 39.71875], [116.09375, 39.765625]]}}
+]}

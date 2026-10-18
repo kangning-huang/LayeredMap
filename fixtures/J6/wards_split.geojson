@@ -1,0 +1,16 @@
+{"type": "FeatureCollection", "name": "wards_split", "features": [
+{"type": "Feature", "properties": {"ward_code": "W01", "name": "Ward 1"}, "geometry": {"type": "Polygon", "coordinates": [[[121.0, 31.0], [121.05, 31.0], [121.05, 31.05], [121.0, 31.05], [121.0, 31.0]]]}},
+{"type": "Feature", "properties": {"ward_code": "W02", "name": "Ward 2"}, "geometry": {"type": "Polygon", "coordinates": [[[121.0625, 31.0], [121.1125, 31.0], [121.1125, 31.05], [121.0625, 31.05], [121.0625, 31.0]]]}},
+{"type": "Feature", "properties": {"ward_code": "W03", "name": "Ward 3"}, "geometry": {"type": "Polygon", "coordinates": [[[121.125, 31.0], [121.175, 31.0], [121.175, 31.05], [121.125, 31.05], [121.125, 31.0]]]}},
+{"type": "Feature", "properties": {"ward_code": "W04", "name": "Ward 4"}, "geometry": {"type": "Polygon", "coordinates": [[[121.1875, 31.0], [121.2375, 31.0], [121.2375, 31.05], [121.1875, 31.05], [121.1875, 31.0]]]}},
+{"type": "Feature", "properties": {"ward_code": "W05", "name": "Ward 5"}, "geometry": {"type": "Polygon", "coordinates": [[[121.25, 31.0], [121.3, 31.0], [121.3, 31.05], [121.25, 31.05], [121.25, 31.0]]]}},
+{"type": "Feature", "properties": {"ward_code": "W06", "name": "Ward 6"}, "geometry": {"type": "Polygon", "coordinates": [[[121.3125, 31.0], [121.3625, 31.0], [121.3625, 31.05], [121.3125, 31.05], [121.3125, 31.0]]]}},
+{"type": "Feature", "properties": {"ward_code": "W07", "name": "Ward 7"}, "geometry": {"type": "Polygon", "coordinates": [[[121.375, 31.0], [121.425, 31.0], [121.425, 31.05], [121.375, 31.05], [121.375, 31.0]]]}},
+{"type": "Feature", "properties": {"ward_code": "W08", "name": "Ward 8"}, "geometry": {"type": "Polygon", "coordinates": [[[121.4375, 31.0], [121.4875, 31.0], [121.4875, 31.05], [121.4375, 31.05], [121.4375, 31.0]]]}},
+{"type": "Feature", "properties": {"ward_code": "W09", "name": "Ward 9"}, "geometry": {"type": "Polygon", "coordinates": [[[121.5, 31.0], [121.55, 31.0], [121.55, 31.05], [121.5, 31.05], [121.5, 31.0]]]}},
+{"type": "Feature", "properties": {"ward_code": "W10", "name": "Ward 10"}, "geometry": {"type": "Polygon", "coordinates": [[[121.5625, 31.0], [121.6125, 31.0], [121.6125, 31.05], [121.5625, 31.05], [121.5625, 31.0]]]}},
+{"type": "Feature", "properties": {"ward_code": "W11", "name": "Ward 11"}, "geometry": {"type": "Polygon", "coordinates": [[[121.625, 31.0], [121.675, 31.0], [121.675, 31.05], [121.625, 31.05], [121.625, 31.0]]]}},
+{"type": "Feature", "properties": {"ward_code": "W12", "name": "Ward 12"}, "geometry": {"type": "Polygon", "coordinates": [[[121.6875, 31.0], [121.7375, 31.0], [121.7375, 31.05], [121.6875, 31.05], [121.6875, 31.0]]]}},
+{"type": "Feature", "properties": {"ward_code": "W03", "name": "Ward 3 (island)"}, "geometry": {"type": "Polygon", "coordinates": [[[121.125, 30.9], [121.15, 30.9], [121.15, 30.925], [121.125, 30.925], [121.125, 30.9]]]}},
+{"type": "Feature", "properties": {"ward_code": "W07", "name": "Ward 7 (island)"}, "geometry": {"type": "Polygon", "coordinates": [[[121.375, 30.9], [121.4, 30.9], [121.4, 30.925], [121.375, 30.925], [121.375, 30.9]]]}}
+]}

@@ -1,0 +1,38 @@
+{
+  "fixture": "J6",
+  "kind": "vector + table",
+  "files": [
+    "wards.geojson",
+    "wards_split.geojson",
+    "ward_population.csv",
+    "ward_population_by_year.csv"
+  ],
+  "layers": [
+    {
+      "name": "wards",
+      "geometry": "area",
+      "count": 12
+    },
+    {
+      "name": "wards_split",
+      "geometry": "area",
+      "count": 14
+    }
+  ],
+  "tables": [
+    {
+      "name": "ward_population",
+      "rows": 13
+    },
+    {
+      "name": "ward_population_by_year",
+      "rows": 21
+    }
+  ],
+  "rule": "pandas merge(how='left', validate=...) with the layer on the left, keyed on ward_code; blank keys dropped",
+  "expected_files": [
+    "expected_join.csv",
+    "expected_join_values.csv"
+  ],
+  "assumptions": []
+}
