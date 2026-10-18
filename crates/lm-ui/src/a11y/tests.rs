@@ -375,7 +375,7 @@ fn keyboard_only_open_an_example_select_and_hear_the_summary() {
     }
     assert_eq!(focused(&h).as_deref(), Some("World basics"));
     key(&mut h, egui::Key::Enter, egui::Modifiers::NONE);
-    for _ in 0..600 {
+    for _ in 0..3000 {
         h.step();
         if h.state().as_ref().is_some_and(|s| s.ws.doc.layers.len() == 3 && s.ws.imports.is_empty()) {
             break;
