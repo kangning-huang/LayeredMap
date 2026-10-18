@@ -155,6 +155,8 @@ def trim(layer, df):
         f["gdp_musd"] = integer(df, "GDP_MD")
         f["pop_year"] = integer(df, "POP_YEAR")
         f["gdp_year"] = integer(df, "GDP_YEAR")
+        f["type"] = text(df, "TYPE")
+        f["sovereign"] = text(df, "SOVEREIGNT")
     elif layer == "states_provinces":
         f["name"] = text(df, "name")
         f["name_zh"] = text(df, "name_zh")
@@ -190,6 +192,10 @@ def trim(layer, df):
     else:  # land, minor_islands, coastline
         f["kind"] = text(df, "featurecla")
     out = gpd.GeoDataFrame(f, geometry=df.geometry.values, crs="EPSG:4326")
+    if layer == "countries":
+        # Antarctica is no country: no state owns it and nobody lives there for good (owner's
+        # decision, 2026-10-18). It stays in `land`.
+        out = out[out["name"] != "Antarctica"].reset_index(drop=True)
     return out
 
 
@@ -216,6 +222,7 @@ LAYERS = [  # (output name, source, kind, description)
 ]
 
 FIELD_DOC = {
+    "sovereign": ("the sovereign state the area belongs to", None),
     "name": ("English name", None),
     "name_zh": ("Chinese (Simplified) name; empty when Natural Earth has none", None),
     "iso_a3": ("ISO 3166-1 alpha-3 country code (Natural Earth ADM0_A3 where ISO has none, e.g. "
@@ -247,8 +254,11 @@ FIELD_OVERRIDE = {
     ("regions", "kind"): ("Range/mtn, Desert, Plateau, Island, Plain, Basin, ...", None),
     ("seas", "kind"): ("ocean, sea, gulf, bay, strait, channel, sound, ...", None),
     ("cities", "country"): ("English name of the country (ADM0NAME)", None),
-    ("countries", "region"): ("UN region (Africa, Americas, Asia, Europe, Oceania, Antarctica)",
-                              None),
+    ("countries", "region"): ("UN region (Africa, Americas, Asia, Europe, Oceania)", None),
+    ("countries", "type"): ("Natural Earth TYPE: Sovereign country, Country, Dependency, Disputed, "
+                            "Indeterminate or Lease", None),
+    ("countries", "sovereign"): ("the sovereign state the area belongs to (SOVEREIGNT), e.g. "
+                                 "Denmark for Greenland, United Kingdom for Dhekelia", None),
     ("regions", "region"): ("broad world region (Asia, Africa, Europe, North America...)", None),
 }
 
@@ -724,7 +734,7 @@ FIELD_SOURCES = {
     "countries": {"name": "ADMIN", "name_zh": "NAME_ZH", "iso_a3": "ISO_A3 / ADM0_A3",
                   "continent": "CONTINENT", "region": "REGION_UN", "subregion": "SUBREGION",
                   "population": "POP_EST", "gdp_musd": "GDP_MD", "pop_year": "POP_YEAR",
-                  "gdp_year": "GDP_YEAR"},
+                  "gdp_year": "GDP_YEAR", "type": "TYPE", "sovereign": "SOVEREIGNT"},
     "states_provinces": {"name": "name", "name_zh": "name_zh", "country": "admin",
                          "iso_a3": "adm0_a3", "type": "type_en"},
     "cities": {"name": "NAME", "name_zh": "NAME_ZH", "country": "ADM0NAME", "iso_a3": "ADM0_A3",
