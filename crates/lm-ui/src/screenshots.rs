@@ -994,8 +994,82 @@ fn exported_images_have_exact_sizes_a_legend_credits_and_the_maps_colors() {
             y += 20.0;
         }
         assert!(checked >= 4, "{checked} classes checked");
+        // Shanghai, about 100 km across: a north arrow with its N and dart, clear of the legend.
+        let north = lay.north.expect("a north arrow");
+        assert!(sheet.north_arrow && sheet.graticule.is_none() && sheet.scale.is_some());
+        assert!(dark_pixels(&pm, sheet.ppp, north) as f32 > 40.0 * sheet.ppp * sheet.ppp, "{preset:?} north arrow");
+        assert!(
+            north.x + north.w <= legend.x
+                || legend.x + legend.w <= north.x
+                || north.y + north.h <= legend.y
+                || legend.y + legend.h <= north.y
+        );
         let _ = &ctx;
     }
+}
+
+/// Automatic layout: the map fits the visible data (the shown objects of a filtered layer); the
+/// overrides switch the north arrow off and the lat/lon frame on, and the image follows.
+#[test]
+fn export_layout_fits_the_data_and_follows_the_overrides() {
+    use lm_mapview::export::{Area, Show};
+    let mut h = export_scene(|s| {
+        let id = s.ws.doc.layers.iter().find(|l| l.profile.kind == lm_core::model::LayerKind::Areas).map(|l| l.id).unwrap();
+        let f = lm_core::filter::Filter {
+            conditions: vec![lm_core::filter::Condition { field: "population".into(), test: lm_core::filter::Test::Above(1_000_000.0) }],
+        };
+        let tx = s.ws.doc.set_filter_tx(id, Some(f));
+        s.ws.commit(tx);
+        // The schools are hidden: only the ten districts frame the map.
+        if let Some(l) = s.ws.doc.layers.iter_mut().find(|l| l.profile.kind != lm_core::model::LayerKind::Areas) {
+            l.visible = false;
+        }
+    });
+    let s = h.state().as_ref().unwrap();
+    let e = s.export_sheet.as_ref().unwrap();
+    assert_eq!(e.fit, crate::export::Fit::Data);
+    let plan = e.plan();
+    let (w, hh) = (f64::from(plan.area.w), f64::from(plan.area.h));
+    let id = s.ws.doc.layers.iter().find(|l| l.profile.kind == lm_core::model::LayerKind::Areas).map(|l| l.id).unwrap();
+    let ds = crate::inspect::dataset(s, id).unwrap();
+    let mask = s.ws.derived(id).and_then(|d| d.mask.clone()).expect("the filter's mask");
+    let (mut lo, mut hi) = ((f64::INFINITY, f64::INFINITY), (f64::NEG_INFINITY, f64::NEG_INFINITY));
+    for (row, on) in mask.iter().enumerate() {
+        let Some(b) = lm_jobs::inspect::row_extent(&ds, row).filter(|_| *on) else { continue };
+        for (lon, lat) in [(b.min_x, b.min_y), (b.max_x, b.max_y)] {
+            let (x, y) = plan.camera.to_screen(lm_mapview::lonlat_to_merc(lm_mapview::Coord::new(lon, lat)), w, hh);
+            assert!(x >= 0.0 && x <= w && y >= 0.0 && y <= hh, "shown district {row} at {x},{y}");
+            lo = (lo.0.min(x), lo.1.min(y));
+            hi = (hi.0.max(x), hi.1.max(y));
+        }
+    }
+    // Fitted, not merely contained: the shown districts fill one side but for the 5% margins.
+    let fill = ((hi.0 - lo.0) / w).max((hi.1 - lo.1) / hh);
+    assert!(fill > 0.88, "fills {fill}");
+    // Overrides: no arrow, the frame on, with grid lines.
+    let s = h.state_mut().as_mut().unwrap();
+    if let Some(e) = s.export_sheet.as_mut() {
+        e.overrides.north_arrow = Show::Off;
+        e.overrides.labels = Show::On;
+        e.grid = true;
+    }
+    wait_for_export(&mut h);
+    let s = h.state().as_ref().unwrap();
+    let e = s.export_sheet.as_ref().unwrap();
+    let sheet = e.sheet(s);
+    let (pm, lay) = e.image(s).expect("the image");
+    assert!(lay.north.is_none() && sheet.graticule.is_some_and(|g| g.grid));
+    let m = lay.map;
+    let fr = lm_mapview::export::FRAME_TB;
+    let top = Area::new(m.x, m.y - fr + 1.0, m.w, fr - 3.0);
+    assert!(dark_pixels(&pm, sheet.ppp, top) > (sheet.ppp * sheet.ppp * 40.0) as usize, "longitude labels above the map");
+    // Current view: the camera is the one the user saw, refitted.
+    let s = h.state_mut().as_mut().unwrap();
+    if let Some(e) = s.export_sheet.as_mut() {
+        e.fit = crate::export::Fit::View;
+    }
+    let e = s.export_sheet.as_ref().unwrap();
+    assert_ne!(e.plan().camera, plan.camera);
 }
 
 /// Export warnings: a colour scale without a legend, a filtered layer ("10 of 17"); previews
@@ -1055,6 +1129,59 @@ fn export_sheet() {
     wait_for_export(&mut h);
     h.run_steps(5);
     h.snapshot("export_sheet");
+}
+
+/// The map image sheet at the scale of a country: cities across the contiguous United States, Key
+/// West to Bellingham (the current view is Shanghai; Fit to data frames the cities). About 6,000 km across and over
+/// 25° of latitude: latitude and longitude on the frame, no north arrow, no scale bar.
+#[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+fn export_sheet_us() {
+    let dir = std::env::temp_dir().join(format!("lm-export-us-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let csv = dir.join("us_cities.csv");
+    std::fs::write(
+        &csv,
+        "name,population,lon,lat\n\
+         New York,8336817,-74.006,40.713\nLos Angeles,3979576,-118.244,34.052\nChicago,2693976,-87.630,41.878\n\
+         Houston,2320268,-95.370,29.760\nPhoenix,1680992,-112.074,33.448\nPhiladelphia,1584064,-75.165,39.953\n\
+         San Antonio,1547253,-98.494,29.424\nSan Diego,1423851,-117.161,32.716\nDallas,1343573,-96.797,32.777\n\
+         Seattle,753675,-122.332,47.606\nDenver,727211,-104.990,39.739\nBoston,692600,-71.059,42.360\n\
+         Miami,467963,-80.192,25.762\nMinneapolis,429954,-93.265,44.978\nPortland,654741,-122.676,45.523\n\
+         Atlanta,506811,-84.388,33.749\nSalt Lake City,200567,-111.891,40.761\nKansas City,495327,-94.579,39.100\n\
+         Bellingham,92314,-122.479,48.752\nKey West,26444,-81.780,24.555\nBangor,31753,-68.772,44.801\n",
+    )
+    .unwrap();
+    let path = csv.clone();
+    let mut h = harness_phase(3, false, SHANGHAI, move |s| {
+        s.developer = true;
+        let layers = lm_jobs::import::import_path(&path, &lm_jobs::import::Ctx::detached(Default::default())).unwrap_or_default();
+        s.ws.add_imported(layers, 500);
+        s.ws.clear_selection();
+        s.ws.new_data = None;
+    });
+    settle(&mut h);
+    let ctx = h.ctx.clone();
+    if let Some(s) = h.state_mut().as_mut() {
+        s.command(&ctx, crate::Command::ExportMapImage);
+        if let Some(e) = s.export_sheet.as_mut() {
+            e.title = "Cities of the contiguous United States".into();
+        }
+    }
+    wait_for_export(&mut h);
+    let s = h.state().as_ref().unwrap();
+    let plan = s.export_sheet.as_ref().unwrap().plan();
+    assert!(plan.width_km > lm_mapview::export::ARROW_MAX_KM, "{}", plan.width_km);
+    assert_eq!(plan.furniture, lm_mapview::export::Furniture { north_arrow: false, scale_bar: false, labels: true });
+    if let Some(out) = std::env::var_os("LM_EXPORT_OUT").map(std::path::PathBuf::from)
+        && let Some((pm, _)) = s.export_sheet.as_ref().and_then(|e| e.image(s))
+    {
+        std::fs::create_dir_all(&out).unwrap();
+        std::fs::write(out.join("us.png"), lm_mapview::export::encode_png(&pm).unwrap()).unwrap();
+    }
+    h.run_steps(5);
+    h.snapshot("export_sheet_us");
+    let _ = std::fs::remove_dir_all(&dir);
 }
 
 /// The data dialog for a points layer with personal fields: phone and email start unchecked,
