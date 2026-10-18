@@ -9,7 +9,7 @@
 Sources, versions and download commands: assets/examples/README.md. Run in the
 `layeredmap-ref` mamba environment (geopandas, rasterio, numpy).
 
-- populated_places.geojson: Natural Earth 1:50m populated places, five fields.
+- cities.geojson: Natural Earth 1:50m populated places (cities and towns), five fields.
 - countries.geojson: Natural Earth 1:110m admin-0 countries, eight fields, not simplified.
 - elevation.tif: ETOPO 2022 60 arc-second surface elevation, averaged to 30 arc-minutes
   (720 x 360 cells, each the mean of the 30 x 30 source cells inside it, computed as a block
@@ -77,7 +77,7 @@ def places(src, out):
         }
         for r in g.itertuples()
     ]
-    write_geojson(out / "populated_places.geojson", g, props)
+    write_geojson(out / "cities.geojson", g, props)
     return len(g)
 
 

@@ -402,9 +402,9 @@ fn phase3_style_tab() {
 /// the evidence is, frame after frame (owner's Phase 3 recording: it used to grow off the window).
 #[test]
 fn phase3_details_tab() {
-    let mut h = phase3(&["../assets/examples/populated_places.geojson"], (100.0, 35.0, 3.0), |s| {
+    let mut h = phase3(&["../assets/examples/cities.geojson"], (100.0, 35.0, 3.0), |s| {
         // The same source text on every machine.
-        s.ws.doc.layers[0].profile.source.path = "examples/populated_places.geojson".into();
+        s.ws.doc.layers[0].profile.source.path = "examples/cities.geojson".into();
         let id = s.ws.doc.layers[0].id;
         s.ws.select_layer(id);
         s.inspector_tab = 2;
@@ -541,7 +541,7 @@ fn style_gallery() {
         ("areas-by-value", "countries.geojson", false, |s| s.command(&egui::Context::default(), crate::Command::ApplyPreset(2))),
         ("areas-by-value-dark", "countries.geojson", true, |s| s.command(&egui::Context::default(), crate::Command::ApplyPreset(2))),
         ("areas-by-category", "countries.geojson", false, |s| s.command(&egui::Context::default(), crate::Command::ApplyPreset(1))),
-        ("points-size", "populated_places.geojson", false, |s| s.command(&egui::Context::default(), crate::Command::ApplyPreset(3))),
+        ("points-size", "cities.geojson", false, |s| s.command(&egui::Context::default(), crate::Command::ApplyPreset(3))),
         ("raster", "elevation.tif", false, |_| {}),
     ];
     for (name, file, dark, setup) in scenes {
@@ -627,7 +627,7 @@ fn phase3_filter_between() {
 #[ignore = "prints the developer surface's actions for the testing guide"]
 fn developer_actions_on_examples() {
     let _h = phase3(
-        &["../assets/examples/countries.geojson", "../assets/examples/populated_places.geojson", "../assets/examples/elevation.tif"],
+        &["../assets/examples/countries.geojson", "../assets/examples/cities.geojson", "../assets/examples/elevation.tif"],
         WORLD,
         |s| {
             s.developer = true;
@@ -688,7 +688,7 @@ fn phase4_summarize_in_a_drawn_area() {
 fn pro_offers_analysis_actions() {
     use egui_kittest::kittest::Queryable as _;
     for pro in [false, true] {
-        let mut h = phase3(&["../assets/examples/countries.geojson", "../assets/examples/populated_places.geojson"], WORLD, move |s| {
+        let mut h = phase3(&["../assets/examples/countries.geojson", "../assets/examples/cities.geojson"], WORLD, move |s| {
             s.pro = pro;
             let id = s.ws.doc.layers.iter().find(|l| l.display_name == "countries").map(|l| l.id);
             if let Some(id) = id {
@@ -696,7 +696,7 @@ fn pro_offers_analysis_actions() {
             }
         });
         settle(&mut h);
-        let offered = h.query_by_label("Count populated places in each country").is_some();
+        let offered = h.query_by_label("Count cities in each country").is_some();
         assert_eq!(offered, pro, "pro = {pro}");
         if pro {
             h.snapshot("pro_layer_panel");

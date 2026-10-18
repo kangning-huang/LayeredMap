@@ -2,12 +2,12 @@
 
 The three files LayeredMap opens from the welcome card's **Try an example** button and
 **File › Open example data** (build plan, WP2.9). Built by `tools/lm/make_examples.py` from the
-sources below; nothing else was changed. The macOS bundle copies this folder to
+sources below; nothing else was changed. `cities.geojson` was called `populated_places.geojson` until 18 Oct 2026 (renamed, contents unchanged): "populated places" is Natural Earth's term, and the layer's name is what people see. The macOS bundle copies this folder to
 `LayeredMap.app/Contents/Resources/examples/`.
 
 | File | What | Size |
 |---|---|---|
-| `populated_places.geojson` | 1,251 populated places (points) | 239 KB |
+| `cities.geojson` | 1,251 cities and towns (points) | 239 KB |
 | `countries.geojson` | 177 countries (areas) | 250 KB |
 | `elevation.tif` | Land and sea-floor elevation, 720 × 360 cells of 0.5° (raster) | 354 KB |
 
@@ -17,7 +17,7 @@ All sources were downloaded on 2026-10-16.
 
 | File | Source | Version | Licence |
 |---|---|---|---|
-| `populated_places.geojson` | Natural Earth 1:50m Cultural Vectors, *Populated Places*: <https://naciscdn.org/naturalearth/50m/cultural/ne_50m_populated_places.zip> (SHA-256 `9022c3be867be79c44bd6fc6ff4dcc210e85ffee13b033bf4d1d87d83c9ee6b4`) | 5.1.2 | Public domain ([Natural Earth terms of use](https://www.naturalearthdata.com/about/terms-of-use/)) |
+| `cities.geojson` | Natural Earth 1:50m Cultural Vectors, *Populated Places*: <https://naciscdn.org/naturalearth/50m/cultural/ne_50m_populated_places.zip> (SHA-256 `9022c3be867be79c44bd6fc6ff4dcc210e85ffee13b033bf4d1d87d83c9ee6b4`) | 5.1.2 | Public domain ([Natural Earth terms of use](https://www.naturalearthdata.com/about/terms-of-use/)) |
 | `countries.geojson` | Natural Earth 1:110m Cultural Vectors, *Admin 0 – Countries*: <https://naciscdn.org/naturalearth/110m/cultural/ne_110m_admin_0_countries.zip> (SHA-256 `0f243aeac8ac6cf26f0417285b0bd33ac47f1b5bdb719fd3e0df37d03ea37110`) | 5.1.1 | Public domain |
 | `elevation.tif` | ETOPO 2022 Global Relief Model, 60 arc-second ice-surface elevation GeoTIFF `ETOPO_2022_v1_60s_N90W180_surface.tif`: <https://www.ngdc.noaa.gov/mgg/global/relief/ETOPO2022/data/60s/60s_surface_elev_gtif/ETOPO_2022_v1_60s_N90W180_surface.tif> (465,969,062 bytes, last modified 2022-10-04, SHA-256 `9d27d4b8ea8e76977e2988bca667d7c8fa68b927355feffcddd6b4875a7fd08e`); product page <https://www.ncei.noaa.gov/products/etopo-global-relief-model> | ETOPO 2022 v1 | Public domain: "These data were produced by NOAA and are not subject to copyright protection in the United States. NOAA waives any potential copyright and related rights in these data worldwide through the Creative Commons Zero 1.0 Universal Public Domain Dedication (CC0-1.0)." (ETOPO 2022 ISO metadata) |
 
@@ -29,7 +29,7 @@ ETOPO 2022 citation, as NOAA asks:
 
 ## Fields
 
-`populated_places.geojson` (sorted by population, largest first):
+`cities.geojson` (sorted by population, largest first):
 
 | Field | From | Meaning |
 |---|---|---|
