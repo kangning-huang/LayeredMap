@@ -1398,7 +1398,7 @@ Record wrong interpretations as well as completions. Ask each student to explain
 - **WP6.6 Strict offline mode** (P2). One switch blocks every network request: basemaps, search, library, update check. The Phase 5 network-blocking harness verifies that zero requests are made.
 - **WP6.7 Deferred formats.** KML/KMZ (with styles) and GPX, plus any P1 format cut earlier.
 - **WP6.8 Security hardening.** 24 hours of fuzzing per adapter, in 6-hour shards on Linux runners, `cargo audit` in CI, and a software bill of materials.
-- **WP6.9 Upstream contributions.** Offer `lm-mapview`, the GCJ-02 conversion and the fractional-coverage zonal summary to RustGIS as pull requests.
+- **WP6.9 Upstream contributions.** *Dropped (owner, 2026-10-18): no code is offered back to RustGIS.* Was: offer `lm-mapview`, the GCJ-02 conversion and the fractional-coverage zonal summary to RustGIS as pull requests.
 - **WP6.10 Website and help.** A landing page, a searchable glossary, and three complete workflows.
 - **WP6.11 Optional experiment** (P3, off by default). An "Ask about this layer" box that maps a typed question onto an existing action. It shows exactly what would be sent to the model, and still runs through the composer and preview. It is judged on 50 real student questions collected during the pilot.
 - **WP6.12 NetCDF with a time slider and variables** (P2; owner's request, 2026-10-18). Climate and ocean grids (ERA5, CMIP6, sea-surface temperature) open like any raster, with their time and variables.

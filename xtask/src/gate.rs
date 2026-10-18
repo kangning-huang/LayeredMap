@@ -380,6 +380,18 @@ mod tests {
         }
     }
 
+    /// The nightly-class fuzz workflow shards every target, so each gets its 24 hours (Gate 6).
+    #[test]
+    fn the_fuzz_workflow_runs_every_target() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
+        let yml = std::fs::read_to_string(root.join(".github/workflows/lm-fuzz.yml")).unwrap();
+        let line = yml.lines().find(|l| l.trim_start().starts_with("target: [")).unwrap();
+        let listed: Vec<&str> = line.split(['[', ']']).nth(1).unwrap().split(',').map(str::trim).collect();
+        for t in FUZZ_TARGETS {
+            assert!(listed.contains(t), "lm-fuzz.yml doesn't fuzz {t}");
+        }
+    }
+
     #[test]
     fn every_target_has_a_source_and_seeds() {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();

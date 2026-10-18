@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [csv, geojson, shapefile, dbf, geotiff_header, gpkg, xlsx]
+        target: [csv, geojson, shapefile, dbf, geotiff_header, gpkg, xlsx, kml, kmz, gpx, netcdf]
         shard: [1, 2, 3, 4, 5]
     steps:
       - uses: actions/checkout@v7
