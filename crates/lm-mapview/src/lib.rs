@@ -10,6 +10,7 @@
 
 pub mod archive;
 pub mod camera;
+pub mod export;
 pub mod hit;
 mod labels;
 pub mod script;

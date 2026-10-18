@@ -792,3 +792,220 @@ fn pro_find_where_on_the_elevation_example() {
     assert_eq!(s.ws.doc.layers.len(), 2);
     assert!(s.ws.doc.layers.iter().any(|l| l.display_name.starts_with("Where elevation")));
 }
+
+// ---------------------------------------------------------------------------------------------
+// Export (WP5.3)
+
+/// Steps until the map image sheet has drawn the map for its settings.
+fn wait_for_export(h: &mut Harness<'static, Option<Shell>>) {
+    for _ in 0..3000 {
+        h.step();
+        if h.state().as_ref().is_some_and(|s| s.export_sheet.as_ref().is_some_and(|e| !e.busy())) {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+    h.run_steps(5);
+}
+
+/// Districts coloured by population in groups, with the schools over them; the developer flag
+/// shows export ahead of its phase.
+fn export_scene(setup: impl Fn(&mut Shell) + 'static) -> Harness<'static, Option<Shell>> {
+    let mut h = phase3(&["V1/districts.geojson", "T1/schools.csv"], SHANGHAI, move |s| {
+        s.developer = true;
+        if let Some(id) = s.ws.doc.layers.iter().find(|l| l.profile.kind == lm_core::model::LayerKind::Areas).map(|l| l.id) {
+            s.ws.select_layer(id);
+            s.command(&egui::Context::default(), crate::Command::ApplyPreset(1));
+            s.ws.clear_selection();
+        }
+        setup(s);
+    });
+    settle(&mut h);
+    let ctx = h.ctx.clone();
+    if let Some(s) = h.state_mut().as_mut() {
+        s.command(&ctx, crate::Command::ExportMapImage);
+    }
+    wait_for_export(&mut h);
+    h
+}
+
+/// How many pixels in `area` (points on the sheet) are dark, like text.
+fn dark_pixels(pm: &lm_mapview::export::Pixmap, ppp: f32, a: lm_mapview::export::Area) -> usize {
+    let (x0, y0, x1, y1) = ((a.x * ppp) as u32, (a.y * ppp) as u32, (a.right() * ppp) as u32, (a.bottom() * ppp) as u32);
+    let mut dark = 0usize;
+    for y in y0..y1.min(pm.height()) {
+        for x in x0..x1.min(pm.width()) {
+            if lm_mapview::export::pixel(pm, x, y).is_some_and(|c| u32::from(c[0]) + u32::from(c[1]) + u32::from(c[2]) < 3 * 120) {
+                dark += 1;
+            }
+        }
+    }
+    dark
+}
+
+/// Gate 5 export pixel tests: each preset comes out at exactly its size, with a legend and the
+/// credits in it, and every colour in the legend is a colour the map draws.
+#[test]
+fn exported_images_have_exact_sizes_a_legend_credits_and_the_maps_colors() {
+    use lm_mapview::export::{Entry, Swatch};
+    let mut h = export_scene(|_| {});
+    let ctx = h.ctx.clone();
+    for preset in [crate::export::Preset::Slide, crate::export::Preset::Square, crate::export::Preset::A4] {
+        if let Some(s) = h.state_mut().as_mut()
+            && let Some(e) = s.export_sheet.as_mut()
+        {
+            e.preset = preset;
+            e.title = "Schools and districts".into();
+        }
+        wait_for_export(&mut h);
+        let s = h.state().as_ref().unwrap();
+        let e = s.export_sheet.as_ref().unwrap();
+        let sheet = e.sheet(s);
+        let (pm, lay) = e.image(s).expect("the image");
+        assert_eq!((pm.width(), pm.height()), preset.pixels(), "{preset:?}");
+        // `LM_EXPORT_OUT=dir` keeps the images for a look.
+        if let Some(dir) = std::env::var_os("LM_EXPORT_OUT").map(std::path::PathBuf::from) {
+            std::fs::create_dir_all(&dir).unwrap();
+            std::fs::write(dir.join(format!("{preset:?}.png")), lm_mapview::export::encode_png(&pm).unwrap()).unwrap();
+        }
+        // The credits, in the footer's right part, and never empty.
+        assert!(sheet.attribution.contains("Natural Earth"), "{}", sheet.attribution);
+        let f = lay.footer;
+        let text = (sheet.ppp * sheet.ppp * 20.0) as usize;
+        assert!(
+            dark_pixels(&pm, sheet.ppp, lm_mapview::export::Area::new(f.w * 0.75, f.y, f.w * 0.25 - 8.0, f.h)) > text,
+            "{preset:?} credits"
+        );
+        assert!(dark_pixels(&pm, sheet.ppp, lay.title.unwrap()) > text, "{preset:?} title");
+        // The legend: inside the map, with text in it.
+        let legend = lay.legend.expect("a legend");
+        assert!(lay.map.contains(legend.x, legend.y) && lay.map.contains(legend.right(), legend.bottom()));
+        assert!(dark_pixels(&pm, sheet.ppp, legend) > 4 * text, "{preset:?} legend text");
+        // Each class swatch's colour, read from the image, is drawn on the map.
+        let block = sheet.legend.iter().find(|b| b.title.starts_with("districts")).expect("the districts' legend");
+        let mut y = legend.y + 12.0 + 16.0 + 4.0;
+        let mut checked = 0;
+        let map_px = |x: u32, y: u32| {
+            lay.map.contains(x as f32 / sheet.ppp, y as f32 / sheet.ppp) && !legend.contains(x as f32 / sheet.ppp, y as f32 / sheet.ppp)
+        };
+        for entry in &block.entries {
+            let Entry::Item { swatch, label } = entry else { continue };
+            if let Swatch::Area { .. } = swatch {
+                let at = (((legend.x + 12.0 + 7.0) * sheet.ppp) as u32, ((y + 10.0) * sheet.ppp) as u32);
+                let c = lm_mapview::export::pixel(&pm, at.0, at.1).unwrap();
+                let close = |p: [u8; 4]| (0..3).all(|k| (i32::from(p[k]) - i32::from(c[k])).abs() <= 3);
+                let mut on_map = 0;
+                for py in (0..pm.height()).step_by(2) {
+                    for px in (0..pm.width()).step_by(2) {
+                        if map_px(px, py) && lm_mapview::export::pixel(&pm, px, py).is_some_and(close) {
+                            on_map += 1;
+                        }
+                    }
+                }
+                assert!(on_map > 20, "{preset:?}: legend colour {c:?} for {label} found at {on_map} map pixels");
+                checked += 1;
+            }
+            y += 20.0;
+        }
+        assert!(checked >= 4, "{checked} classes checked");
+        let _ = &ctx;
+    }
+}
+
+/// Export warnings: a colour scale without a legend, a filtered layer ("10 of 17"); previews
+/// left out; a basemap whose terms forbid export is replaced by the offline map, in the preview.
+#[test]
+fn export_warnings_name_what_the_image_leaves_out() {
+    let mut h = export_scene(|s| {
+        let id = s.ws.doc.layers.iter().find(|l| l.profile.kind == lm_core::model::LayerKind::Areas).map(|l| l.id).unwrap();
+        let f = lm_core::filter::Filter {
+            conditions: vec![lm_core::filter::Condition { field: "population".into(), test: lm_core::filter::Test::Above(1_000_000.0) }],
+        };
+        let tx = s.ws.doc.set_filter_tx(id, Some(f));
+        s.ws.commit(tx);
+    });
+    let s = h.state_mut().as_mut().unwrap();
+    let mut e = s.export_sheet.take().unwrap();
+    let w = e.warnings(s).join("\n");
+    assert!(w.contains("districts is filtered: the image shows 10 of 17 areas."), "{w}");
+    for l in e.legend.iter_mut() {
+        l.1 = false;
+    }
+    let w = e.warnings(s).join("\n");
+    assert!(w.contains("districts is colored by value but has no legend."), "{w}");
+    assert!(!w.contains("schools is colored"), "single-colour layers need no legend: {w}");
+    // The Satellite basemap carries its licence's terms.
+    s.prefs.basemap = "satellite".into();
+    let sat = crate::export::ImageSheet::new(s);
+    assert!(sat.warnings(s).iter().any(|w| w.contains("CC BY-NC-SA 4.0")));
+    assert!(sat.attribution().contains("Sentinel-2") && sat.attribution().contains("OpenStreetMap"));
+    s.prefs.basemap = "offline".into();
+    s.export_sheet = Some(e);
+}
+
+#[test]
+fn previews_are_left_out_of_exports() {
+    let mut map = lm_mapview::map::Map::new("t");
+    let ds = lm_jobs::import::Dataset::new("p", lm_jobs::GeometryType::Point, Vec::new());
+    for id in [5, 999_998, 999_999, 1_000_001] {
+        let mut l = lm_mapview::map::Layer::new(id, ds.clone());
+        l.selection = vec![0];
+        map.layers.push(l);
+    }
+    let out = crate::workspace::map_for_export(&map);
+    assert_eq!(out.layers.iter().map(|l| l.id).collect::<Vec<_>>(), vec![5, 1_000_001]);
+    assert!(out.layers.iter().all(|l| l.selection.is_empty()));
+}
+
+/// The map image sheet: the preview at the slide's exact proportions, with the legend bottom
+/// left, the scale bar, title, caption and credits; the settings at the right.
+#[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+fn export_sheet() {
+    let mut h = export_scene(|_| {});
+    if let Some(e) = h.state_mut().as_mut().and_then(|s| s.export_sheet.as_mut()) {
+        e.title = "Schools and districts of Shanghai".into();
+    }
+    wait_for_export(&mut h);
+    h.run_steps(5);
+    h.snapshot("export_sheet");
+}
+
+/// The data dialog for a points layer with personal fields: phone and email start unchecked,
+/// each with its note.
+#[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+fn export_data_dialog() {
+    let dir = std::env::temp_dir().join(format!("lm-export-dialog-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let csv = dir.join("contacts.csv");
+    std::fs::write(
+        &csv,
+        "name,phone,email,students,lon,lat\n\
+         Fudan Primary,021-6564-2222,office@fudan-primary.example,640,121.50,31.30\n\
+         Xuhui Middle,+86 21 6438 1111,info@xuhui-middle.example,1210,121.43,31.19\n\
+         Pudong High,138 0013 8000,admin@pudong-high.example,980,121.55,31.22\n",
+    )
+    .unwrap();
+    let path = csv.clone();
+    let mut h = harness_phase(3, false, SHANGHAI, move |s| {
+        s.developer = true;
+        let layers = lm_jobs::import::import_path(&path, &lm_jobs::import::Ctx::detached(Default::default())).unwrap_or_default();
+        s.ws.add_imported(layers, 400);
+        s.ws.clear_selection();
+        s.ws.new_data = None;
+    });
+    settle(&mut h);
+    let ctx = h.ctx.clone();
+    if let Some(s) = h.state_mut().as_mut() {
+        s.command(&ctx, crate::Command::ExportData);
+    }
+    h.run_steps(10);
+    let fields = h.state().as_ref().and_then(|s| s.data_export.as_ref().map(|d| d.fields.clone())).unwrap();
+    let on = |n: &str| fields.iter().find(|f| f.name == n).map(|f| (f.on, f.note));
+    assert_eq!(on("phone"), Some((false, Some("Looks like phone numbers"))));
+    assert_eq!(on("email"), Some((false, Some("Looks like email addresses"))));
+    assert_eq!(on("name"), Some((true, None)));
+    h.snapshot("export_data_dialog");
+    let _ = std::fs::remove_dir_all(&dir);
+}

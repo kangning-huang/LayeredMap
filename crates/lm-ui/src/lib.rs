@@ -12,6 +12,8 @@ mod chrome;
 mod dictation;
 pub mod draw;
 pub mod examples;
+pub mod export;
+pub mod export_data;
 pub mod find_ui;
 pub mod form;
 pub mod illustrations;
@@ -108,6 +110,10 @@ pub enum Command {
     Ask(String),
     KeepAsk,
     Dictate,
+    /// Share › Map image… (File › Export Map Image…, ⌘E): the map image sheet (WP5.3).
+    ExportMapImage,
+    /// Share › Data… (File › Export Data…): the data export dialog (WP5.3).
+    ExportData,
 }
 
 /// A file dialog the shell asks the app to show (the shell itself never opens dialogs).
@@ -117,6 +123,8 @@ pub enum FileRequest {
     Open,
     /// Save text to a file the user picks.
     SaveText { title: String, suggested_name: String, contents: String },
+    /// Save bytes (an exported image or data file) to a file the user picks.
+    SaveBytes { title: String, suggested_name: String, bytes: Vec<u8> },
     /// Developer: pick a folder to save the document into.
     SaveDocument,
     /// Developer: pick a document folder to open.
@@ -217,6 +225,9 @@ pub struct Shell {
     pub(crate) after_drawing: Option<lm_core::model::LayerId>,
     /// The Ask box (Pro, early test build of WP7.1).
     pub(crate) ask: ask::AskState,
+    /// The map image sheet and the data export dialog, while open (WP5.3).
+    pub(crate) export_sheet: Option<export::ImageSheet>,
+    pub(crate) data_export: Option<export_data::DataDialog>,
 }
 
 impl Shell {
@@ -250,6 +261,8 @@ impl Shell {
             composer: None,
             after_drawing: None,
             ask: ask::AskState::default(),
+            export_sheet: None,
+            data_export: None,
             find: find_ui::FindState::default(),
             drawing: None,
             ws: workspace::Workspace::with_waker(ctx),
@@ -281,6 +294,16 @@ impl Shell {
     /// Whether analysis actions are offered: in Pro, and on the developer surface.
     pub fn analysis_actions(&self) -> bool {
         self.pro || self.developer
+    }
+
+    /// Whether export (Share, File › Export…) is offered (WP5.3; see [`export::shown`]).
+    pub fn export_shown(&self) -> bool {
+        export::shown(self.flags, self.developer, self.pro)
+    }
+
+    /// The map image sheet is open.
+    pub fn exporting_image(&self) -> bool {
+        self.export_sheet.is_some()
     }
 
     /// "LayeredMap" or "LayeredMap Pro".
@@ -364,6 +387,20 @@ impl Shell {
             Command::Ask(text) => ask::submit(self, ctx, text),
             Command::KeepAsk => ask::keep_shown(self),
             Command::Dictate => ask::dictate(self, ctx),
+            Command::ExportMapImage => {
+                if self.export_shown() && self.export_sheet.is_none() {
+                    self.data_export = None;
+                    self.export_sheet = Some(export::ImageSheet::new(self));
+                }
+            }
+            Command::ExportData => {
+                if self.export_shown() {
+                    match export_data::DataDialog::new(self, None) {
+                        Some(d) => self.data_export = Some(d),
+                        None => self.notice = Some(("Open a file first: there is no data to export.".into(), t)),
+                    }
+                }
+            }
             Command::Find(text) => {
                 if let Some(id) = self.ws.selected() {
                     self.find.layer = Some(id);
@@ -469,6 +506,10 @@ impl Shell {
     /// Where answered question cards are logged (the app's support folder).
     pub fn set_question_log(&mut self, path: PathBuf) {
         self.question_log = Some(path);
+    }
+
+    pub(crate) fn push_file_request(&mut self, r: FileRequest) {
+        self.file_requests.push(r);
     }
 
     pub(crate) fn set_notice(&mut self, text: String, t: f64) {
@@ -663,9 +704,16 @@ impl Shell {
             self.archive_url = Some(u);
             self.basemap_changed();
         }
-        self.shortcuts(&ctx);
+        // The map image sheet takes the whole window (and the keyboard) while it is open.
+        if self.export_sheet.is_none() {
+            self.shortcuts(&ctx);
+        }
         self.poll_loading(&ctx);
         self.update_workspace(&ctx);
+        if self.export_sheet.is_some() {
+            export::sheet(self, ui, ctx.content_rect());
+            return;
+        }
 
         // Full-bleed: the whole window, whatever margins the host's panel has.
         let full = ctx.content_rect();
@@ -729,10 +777,15 @@ impl Shell {
         if self.credits_open {
             chrome::credits(self, &ctx);
         }
+        export_data::dialog(self, &ctx);
         panels::drop_overlay(self, ui, full);
     }
 
     fn shortcuts(&mut self, ctx: &egui::Context) {
+        let export_image = ctx.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::E));
+        if export_image {
+            self.command(ctx, Command::ExportMapImage);
+        }
         let (find, zero, debug, open, layers, table_key) = ctx.input_mut(|i| {
             (
                 i.consume_key(egui::Modifiers::COMMAND, egui::Key::F),

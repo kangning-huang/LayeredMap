@@ -171,6 +171,13 @@ impl eframe::App for App {
                         log::warn!("could not write {}: {e}", path.display());
                     }
                 }
+                FileRequest::SaveBytes { title, suggested_name, bytes } => {
+                    if let Some(path) = rfd::FileDialog::new().set_title(title).set_file_name(suggested_name).save_file()
+                        && let Err(e) = std::fs::write(&path, bytes)
+                    {
+                        log::warn!("could not write {}: {e}", path.display());
+                    }
+                }
                 FileRequest::SaveDocument => {
                     if let Some(dir) = rfd::FileDialog::new().set_title("Save document into a folder").pick_folder() {
                         self.shell.command(ctx, Command::SaveDocument(dir));
@@ -383,7 +390,7 @@ fn main() -> eframe::Result {
             let feel = feel_out.map(|out| feel::Feel::new(out, runs, shell.map_view().camera()));
             #[cfg(target_os = "macos")]
             macos::set_context(&cc.egui_ctx);
-            let menu = menu::MenuBar::install(developer, &cc.egui_ctx);
+            let menu = menu::MenuBar::install(developer, shell.export_shown(), &cc.egui_ctx);
             Ok(Box::new(App { shell, menu, system, feel, probe: probe.then_some(started), ephemeral, tour, tour_next: None }))
         }),
     )

@@ -2684,6 +2684,7 @@ dependencies = [
 name = "lm-mapview"
 version = "0.2.0"
 dependencies = [
+ "ab_glyph",
  "egui",
  "log",
  "rstar",
@@ -2692,6 +2693,7 @@ dependencies = [
  "rustgis-render",
  "rustgis-tiles",
  "serde_json",
+ "tiny-skia",
  "ureq",
  "web-time",
 ]

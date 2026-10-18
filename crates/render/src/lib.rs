@@ -1302,6 +1302,17 @@ pub(crate) fn render_complete(map: &mut Map, view: &View) -> Option<Rendered> {
     Some(r)
 }
 
+/// Draws the map for an exported image: tiles and streamed layers waited for (up to a minute),
+/// rasters at full resolution, labels drawn in. No scale bar, north arrow or credits: the caller
+/// lays those out around the map (LayeredMap's export sheet).
+pub fn render_export(map: &mut Map, view: &View) -> Option<Rendered> {
+    let mut r = render_complete(map, view)?;
+    for l in r.unplaced.iter().chain(&r.labels) {
+        text::draw(&mut r.pixmap, l, view.pixels_per_point as f32);
+    }
+    Some(r)
+}
+
 /// Renders a map with its labels, a scale bar and a north arrow to PNG bytes.
 pub fn render_png(map: &mut Map, view: &View) -> Result<Vec<u8>, String> {
     let mut r = render_complete(map, view).ok_or("could not allocate the image")?;

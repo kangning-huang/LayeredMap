@@ -64,7 +64,8 @@ without them they print "skipped".
 | K1 | — | — | owner-supplied |
 | D1–D4 | — | — | TBD |
 | B1–B20 | — | — | owner-supplied |
-| X1–X5 | `generated/X1/` … `generated/X5/` | — | generated (`cargo xtask fixtures`) |
+| X1–X4 | `generated/X1/` … `generated/X4/` | — | generated (`cargo xtask fixtures`) |
+| X5 | `X5/` (also `generated/X5/`) | CSV cells beginning with =, +, - or @: no formula injection on export | present |
 
 ## `expected.json` conventions
 
