@@ -128,6 +128,7 @@ fn pick_companion(ctx: &Context, kind: CompanionKind) -> Option<Companion<'_>> {
                 CompanionKind::Areas => l.kind == LayerKind::Areas,
                 CompanionKind::Raster => l.kind == LayerKind::Raster,
                 CompanionKind::Any => l.kind != LayerKind::Table,
+                CompanionKind::Vector => matches!(l.kind, LayerKind::Points | LayerKind::Lines | LayerKind::Areas),
                 CompanionKind::SharedCode => {
                     let code = selected.filter(|_| l.kind != LayerKind::Table).and_then(|s| shared_code(s, l));
                     return code.map(|code| Companion { layer: l, code: Some(code) });

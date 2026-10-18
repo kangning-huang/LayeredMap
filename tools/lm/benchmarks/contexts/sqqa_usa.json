@@ -1,0 +1,63 @@
+{
+  "name": "sqqa_usa",
+  "description": "A US spatial database like SpatialQueryQA's PostGIS schema: points of interest, roads, census and administrative areas, protected areas, time zones and weather-station readings. Value-free.",
+  "layers": [
+    {"name": "POIs", "kind": "points", "count": 129440, "fields": [
+      ["gid", "integer", null, null],
+      ["name", "text", null, null],
+      ["fclass", "category", null, ["bench", "convenience", "restaurant", "school", "pharmacy", "supermarket", "fuel", "other"]]
+    ]},
+    {"name": "Roads", "kind": "lines", "count": 412000, "fields": [
+      ["gid", "integer", null, null],
+      ["name", "text", null, null],
+      ["fclass", "category", null, ["motorway", "primary", "secondary", "tertiary", "residential", "service", "track"]],
+      ["maxspeed", "integer", "mph", null],
+      ["bridge", "yes/no", null, ["true", "false"]],
+      ["tunnel", "yes/no", null, ["true", "false"]]
+    ]},
+    {"name": "States", "kind": "areas", "count": 56, "fields": [
+      ["name", "text", null, null],
+      ["stusps", "text", null, null],
+      ["statefp", "text", null, null],
+      ["region", "text", null, null],
+      ["aland", "integer", "m²", null],
+      ["awater", "integer", "m²", null]
+    ]},
+    {"name": "Counties", "kind": "areas", "count": 3234, "fields": [
+      ["name", "text", null, null],
+      ["geoid", "text", null, null],
+      ["state", "text", null, null]
+    ]},
+    {"name": "Tracts", "kind": "areas", "count": 85190, "fields": [
+      ["gid", "integer", null, null],
+      ["geoid", "text", null, null]
+    ]},
+    {"name": "Block groups", "kind": "areas", "count": 242300, "fields": [
+      ["gid", "integer", null, null],
+      ["geoid", "text", null, null],
+      ["state", "text", null, null],
+      ["county", "text", null, null]
+    ]},
+    {"name": "Protected areas", "kind": "areas", "count": 410, "fields": [
+      ["name", "text", null, null],
+      ["unit_code", "text", null, null],
+      ["unit_type", "category", null, ["National Park", "National Monument", "National Preserve", "National Lakeshore", "Other"]],
+      ["nps_region", "category", null, ["Alaska", "Intermountain", "Midwest", "National Capital", "Northeast", "Pacific West", "Southeast"]]
+    ]},
+    {"name": "Time zones", "kind": "areas", "count": 120, "fields": [
+      ["name", "text", null, null],
+      ["zone", "number", "hours", null],
+      ["tz_name1st", "text", null, null],
+      ["places", "text", null, null]
+    ]},
+    {"name": "Weather stations", "kind": "points", "count": 54800, "fields": [
+      ["station_id", "text", null, null],
+      ["name", "text", null, null],
+      ["state", "text", null, null],
+      ["elev", "number", "m", null],
+      ["element", "category", null, ["TMAX", "TMIN", "PRCP", "SNOW"]],
+      ["value", "number", null, null],
+      ["date", "date", null, null]
+    ]}
+  ]
+}

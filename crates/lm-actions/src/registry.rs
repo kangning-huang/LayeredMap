@@ -78,6 +78,8 @@ pub enum CompanionKind {
     Raster,
     /// Any visible layer with locations.
     Any,
+    /// Any visible point, line or area layer (not a raster).
+    Vector,
     /// A visible layer with an identifier column named like one of the selected table's.
     SharedCode,
 }
@@ -181,6 +183,9 @@ pub struct ActionSpec {
     /// The first phase whose build offers the action.
     pub min_phase: u8,
     pub surface: Surface,
+    /// Offered under More actions and to the assistant only, never in a row's top three, so no
+    /// row of the spec's table needs to name it.
+    pub more_only: bool,
 }
 
 impl ActionSpec {
@@ -335,6 +340,8 @@ struct RawAction {
     group: Group,
     min_phase: u8,
     surface: Surface,
+    #[serde(default)]
+    more_only: bool,
     inputs: Vec<SelectionKey>,
     input_reason: String,
     #[serde(default)]
@@ -377,6 +384,7 @@ impl From<RawAction> for ActionSpec {
             output,
             min_phase: a.min_phase,
             surface: a.surface,
+            more_only: a.more_only,
         }
     }
 }
@@ -547,7 +555,7 @@ input_reason = "Pick a point."
     fn every_action_is_used_by_a_row() {
         let r = registry();
         for a in r.actions() {
-            assert!(r.rows().iter().any(|row| row.actions.contains(&a.id)), "{} is in no row", a.id);
+            assert!(a.more_only || r.rows().iter().any(|row| row.actions.contains(&a.id)), "{} is in no row", a.id);
         }
     }
 

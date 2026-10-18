@@ -1,0 +1,40 @@
+{
+  "fixture": "N9",
+  "files": [
+    "islands.geojson",
+    "points.geojson",
+    "lines.geojson"
+  ],
+  "kind": "vector",
+  "layers": [
+    {
+      "name": "islands",
+      "geometry": "area",
+      "count": 14
+    },
+    {
+      "name": "points",
+      "geometry": "point",
+      "count": 12
+    },
+    {
+      "name": "lines",
+      "geometry": "line",
+      "count": 6
+    }
+  ],
+  "crs": {
+    "epsg": 4326,
+    "source": "declared (GeoJSON RFC 7946 default)"
+  },
+  "rule": "shortest geodesic (WGS 84) distance to the nearest target, 0 when touching; same layer excludes the feature's own row (all its parts)",
+  "expected_files": [
+    "expected_nearest_islands_same.csv",
+    "expected_nearest_points_same.csv",
+    "expected_nearest_points_to_islands.csv",
+    "expected_nearest_points_to_lines.csv",
+    "expected_nearest_lines_to_islands.csv",
+    "expected_nearest_islands_to_points.csv"
+  ],
+  "assumptions": []
+}

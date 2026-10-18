@@ -1,0 +1,22 @@
+{"puzzle": "P6", "limit": 10,
+ "layers": [{"name": "Populated places", "path": "/Volumes/LaCie/data/layeredmap-puzzles/naturalearth/ne_10m_populated_places/ne_10m_populated_places.shp"}, {"name": "Countries", "path": "/Volumes/LaCie/data/layeredmap-puzzles/naturalearth/ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp"},
+  {"name": "Coastline", "path": "/Volumes/LaCie/data/layeredmap-puzzles/naturalearth/ne_10m_coastline/ne_10m_coastline.shp"},
+  {"name": "Elevation", "path": "/Volumes/LaCie/data/layeredmap-puzzles/worldclim/wc2.1_10m_elev.tif"},
+  {"name": "January mean temperature", "path": "/Volumes/LaCie/data/layeredmap-puzzles/worldclim/wc2.1_10m_tavg_01.tif"},
+  {"name": "July mean temperature", "path": "/Volumes/LaCie/data/layeredmap-puzzles/worldclim/wc2.1_10m_tavg_07.tif"},
+  {"name": "Active faults", "path": "/Volumes/LaCie/data/layeredmap-puzzles/gem/gem_active_faults_harmonized.geojson"}],
+ "steps": [
+  {"name": "join_by_location", "args": {"layer": "Populated places", "areas": "Countries", "fields": "CONTINENT"}},
+  {"name": "filter", "args": {"layer": "Populated places", "conditions": [{"field": "CONTINENT", "op": "is", "value": "Africa"}]}},
+  {"name": "filter", "args": {"layer": "Populated places", "conditions": [{"field": "CONTINENT", "op": "is", "value": "Africa"}, {"field": "POP_MAX", "op": "at_least", "value": "1000000"}]}},
+  {"name": "add_raster_values", "args": {"raster": "Elevation", "points": "Populated places"}},
+  {"name": "filter", "args": {"layer": "Populated places", "conditions": [{"field": "CONTINENT", "op": "is", "value": "Africa"}, {"field": "POP_MAX", "op": "at_least", "value": "1000000"}, {"field": "Elevation", "op": "at_least", "value": "1500"}]}},
+  {"name": "add_raster_values", "args": {"raster": "January mean temperature", "points": "Populated places"}},
+  {"name": "add_raster_values", "args": {"raster": "July mean temperature", "points": "Populated places"}},
+  {"name": "calculate_field", "args": {"layer": "Populated places", "a": "July mean temperature", "op": "subtract", "b": "January mean temperature", "name": "July minus January"}},
+  {"name": "filter", "args": {"layer": "Populated places", "conditions": [{"field": "CONTINENT", "op": "is", "value": "Africa"}, {"field": "POP_MAX", "op": "at_least", "value": "1000000"}, {"field": "Elevation", "op": "at_least", "value": "1500"}, {"field": "July minus January", "op": "at_most", "value": "-1"}]}},
+  {"name": "nearest_distance", "args": {"layer": "Populated places", "other": "Coastline"}},
+  {"name": "filter", "args": {"layer": "Populated places", "conditions": [{"field": "CONTINENT", "op": "is", "value": "Africa"}, {"field": "POP_MAX", "op": "at_least", "value": "1000000"}, {"field": "Elevation", "op": "at_least", "value": "1500"}, {"field": "July minus January", "op": "at_most", "value": "-1"}, {"field": "km to nearest coastline", "op": "at_least", "value": "300"}]}},
+  {"name": "nearest_distance", "args": {"layer": "Populated places", "other": "Active faults"}},
+  {"name": "filter", "args": {"layer": "Populated places", "conditions": [{"field": "CONTINENT", "op": "is", "value": "Africa"}, {"field": "POP_MAX", "op": "at_least", "value": "1000000"}, {"field": "Elevation", "op": "at_least", "value": "1500"}, {"field": "July minus January", "op": "at_most", "value": "-1"}, {"field": "km to nearest coastline", "op": "at_least", "value": "300"}, {"field": "km to nearest active fault", "op": "at_most", "value": "50"}]}}
+ ]}

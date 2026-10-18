@@ -1,0 +1,8 @@
+{
+  "name": "city_drawn",
+  "description": "The city context with an area the user has drawn.",
+  "base": "city",
+  "layers": [
+    {"name": "Area 1", "kind": "drawn area", "count": 1, "fields": []}
+  ]
+}

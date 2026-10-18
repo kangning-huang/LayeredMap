@@ -234,3 +234,203 @@ fn layer_names_read_as_words_or_fall_back_to_the_kind() {
     assert_eq!(r.card.title, "Populated places in each area of GUB_Global_2018");
     assert!(r.card.summary.starts_with("4 areas · "), "{}", r.card.summary);
 }
+
+/// A field from two others: districts' people per km², blanks stay blank.
+#[test]
+fn calculated_fields_divide_and_keep_blanks_blank() {
+    let r = run(
+        &plan(
+            "calculate_field",
+            vec![input("V1/districts.geojson", 1)],
+            &[("a", "population"), ("op", "divide"), ("b", "area_km2"), ("name", "density")],
+        ),
+        &Control::none(),
+    )
+    .unwrap();
+    let ActionOutput::NewFields { data, fields, .. } = &r.output else { panic!() };
+    assert_eq!(fields, &vec!["density".to_string()]);
+    let (k, p, a) = (data.field_index("density").unwrap(), data.field_index("population").unwrap(), data.field_index("area_km2").unwrap());
+    for f in &data.features {
+        match f.attrs[p].as_f64() {
+            Some(pop) => {
+                let want = pop / f.attrs[a].as_f64().unwrap();
+                assert!((f.attrs[k].as_f64().unwrap() - want).abs() < 1e-9 * want);
+            }
+            // V1 has one district with a blank population: its density is blank, not 0.
+            None => assert!(f.attrs[k].as_f64().is_none()),
+        }
+    }
+    assert!(r.card.notices.iter().any(|n| n.contains("blank")), "{:?}", r.card.notices);
+    let r = run(
+        &plan("calculate_field", vec![input("V1/districts.geojson", 1)], &[("a", "population"), ("op", "divide"), ("b", "0")]),
+        &Control::none(),
+    )
+    .unwrap();
+    assert!(r.card.notices.iter().any(|n| n.contains("divide by zero")));
+    let e =
+        run(&plan("calculate_field", vec![input("V1/districts.geojson", 1)], &[("a", "population"), ("b", "nonsense")]), &Control::none());
+    assert!(matches!(e, Err(ActionError::Input(_))));
+}
+
+/// Splitting N2's multipolygon areas gives one feature per part, holes kept with their part.
+#[test]
+fn multipart_areas_split_into_parts() {
+    let areas = input("N2/areas.geojson", 1);
+    let LayerData::Vector(ds) = &areas.data else { panic!() };
+    let parts: usize = ds
+        .features
+        .iter()
+        .map(|f| match &f.geometry {
+            Some(Geometry::Polygon(p)) => p.len(),
+            _ => 1,
+        })
+        .sum();
+    let r = run(&plan("split_parts", vec![areas.clone()], &[]), &Control::none()).unwrap();
+    let out = match &new_layer(&r).data {
+        LayerData::Vector(d) => d.clone(),
+        _ => panic!(),
+    };
+    assert_eq!(out.features.len(), parts);
+    assert!(out.features.iter().all(|f| matches!(&f.geometry, Some(Geometry::Polygon(p)) if p.len() == 1)));
+    assert!(out.field_index("part").is_some());
+}
+
+fn assets(rel: &str, id: u64) -> PlanInput {
+    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets/examples").join(rel);
+    let mut layers = import_path(&path, &Ctx::detached(Default::default())).unwrap_or_default();
+    let l = layers.remove(0);
+    let style = Style::for_profile(&l.profile, [0, 0, 0, 255]);
+    PlanInput { layer: DocLayer::new(LayerId(id), l.name.clone(), l.profile.clone(), style), data: l.data, rows: None, path: Some(path) }
+}
+
+/// "Find areas where elevation is at least 3,000 m": areas appear, largest first, with their
+/// area on the ellipsoid; a looser condition finds more cells; nonsense conditions are refused.
+#[test]
+fn find_where_turns_raster_conditions_into_areas() {
+    let run_with = |c: &str| run(&plan("find_where", vec![assets("elevation.tif", 1)], &[("conditions", c)]), &Control::none());
+    let high = run_with("0|at_least|3000").unwrap();
+    let LayerData::Vector(ds) = &new_layer(&high).data else { panic!() };
+    assert!(!ds.features.is_empty());
+    let k = ds.field_index("area_km2").unwrap();
+    let areas: Vec<f64> = ds.features.iter().map(|f| f.attrs[k].as_f64().unwrap()).collect();
+    assert!(areas.windows(2).all(|w| w[0] >= w[1]), "largest first");
+    assert!(high.card.title.contains("at least 3,000"), "{}", high.card.title);
+    let low = run_with("0|at_least|1000").unwrap();
+    let LayerData::Vector(ds2) = &new_layer(&low).data else { panic!() };
+    let total = |d: &Dataset| d.features.iter().map(|f| f.attrs[k].as_f64().unwrap()).sum::<f64>();
+    assert!(total(ds2) > total(ds));
+    let between = run_with("0|between|1000|3000").unwrap();
+    assert!(matches!(between.output, ActionOutput::NewLayer { .. }));
+    assert!(matches!(run_with("0|above|3"), Err(ActionError::Input(_))));
+    assert!(matches!(run_with(""), Err(ActionError::Input(_))));
+    assert_eq!(parse_conditions("1|any_of|1,2,3").unwrap()[0].input, 1);
+}
+
+/// Keep / remove the part inside: through the runner, on the clip fixture.
+#[test]
+fn keep_and_remove_inside_split_a_layer_between_them() {
+    let dir = fixtures().join("N12");
+    let files: Vec<String> = std::fs::read_dir(&dir)
+        .unwrap()
+        .filter_map(|e| e.ok())
+        .map(|e| e.file_name().to_string_lossy().to_string())
+        .filter(|n| n.ends_with(".geojson") && !n.starts_with("._"))
+        .collect();
+    let mask_name = files.iter().find(|n| n.contains("mask")).expect("a mask file in N12").clone();
+    let layer_name = files.iter().find(|n| !n.contains("mask") && !n.contains("expected")).expect("a layer in N12").clone();
+    let keep = run(
+        &plan("keep_inside", vec![input(&format!("N12/{layer_name}"), 1), input(&format!("N12/{mask_name}"), 2)], &[]),
+        &Control::none(),
+    )
+    .unwrap();
+    let remove = run(
+        &plan("remove_inside", vec![input(&format!("N12/{layer_name}"), 1), input(&format!("N12/{mask_name}"), 2)], &[]),
+        &Control::none(),
+    )
+    .unwrap();
+    for r in [&keep, &remove] {
+        assert!(matches!(r.output, ActionOutput::NewLayer { .. }));
+    }
+    assert!(keep.card.title.contains("inside") && remove.card.title.contains("outside"));
+}
+
+/// Distances to the nearest other point (N9-style isolation) and to another layer; every
+/// feature gets a distance and a name, and the distances are positive and sorted on the card.
+#[test]
+fn nearest_distances_become_fields() {
+    let r = run(&plan("nearest_other", vec![input("N1/points.geojson", 1)], &[]), &Control::none()).unwrap();
+    let ActionOutput::NewFields { data, fields, .. } = &r.output else { panic!() };
+    assert_eq!(fields.len(), 2);
+    let k = data.field_index(&fields[0]).unwrap();
+    assert!(data.features.iter().all(|f| f.attrs[k].as_f64().is_some_and(|d| d >= 0.0)));
+    let r =
+        run(&plan("nearest_distance", vec![input("N1/points.geojson", 1), input("N1/areas.geojson", 2)], &[]), &Control::none()).unwrap();
+    let ActionOutput::NewFields { data, fields, .. } = &r.output else { panic!() };
+    let k = data.field_index(&fields[0]).unwrap();
+    // Points inside an area are 0 km from it.
+    assert!(data.features.iter().any(|f| f.attrs[k].as_f64() == Some(0.0)));
+    let Answer::Ranking { rows, .. } = &r.card.answer else { panic!() };
+    assert!(rows.windows(2).all(|w| w[0].value >= w[1].value));
+}
+
+/// Area details by location: N1 points take their area's id; points in no area get blanks.
+#[test]
+fn points_take_the_details_of_their_area() {
+    let r = run(
+        &plan("join_by_location", vec![input("N1/points.geojson", 1), input("N1/areas.geojson", 2)], &[("fields", "area_id")]),
+        &Control::none(),
+    )
+    .unwrap();
+    let ActionOutput::NewFields { data, fields, .. } = &r.output else { panic!() };
+    assert_eq!(fields, &vec!["area_id".to_string()]);
+    let k = data.field_index("area_id").unwrap();
+    // P17 and P18 lie outside every area but within 25 km of one: they take the nearest area,
+    // and the card says so (owner's decision, 2026-10-17).
+    assert!(data.features.iter().all(|f| !matches!(f.attrs[k], Value::Null)));
+    assert!(r.card.notices.iter().any(|n| n.contains("just outside")), "{:?}", r.card.notices);
+}
+
+/// Measurements: areas get area, perimeter and coordinates; points just coordinates.
+#[test]
+fn measurements_become_fields() {
+    let r = run(&plan("add_measurements", vec![input("V1/districts.geojson", 1)], &[]), &Control::none()).unwrap();
+    let ActionOutput::NewFields { fields, .. } = &r.output else { panic!() };
+    // V1 already has area_km2: it is overwritten, and the card says so.
+    assert_eq!(fields, &vec!["area_km2".to_string(), "perimeter_km".to_string(), "longitude".to_string(), "latitude".to_string()]);
+    assert!(r.card.notices.iter().any(|n| n.contains("Replaced the existing area_km2")), "{:?}", r.card.notices);
+    let r = run(&plan("add_measurements", vec![input("N1/points.geojson", 1)], &[]), &Control::none()).unwrap();
+    let ActionOutput::NewFields { fields, .. } = &r.output else { panic!() };
+    assert_eq!(fields, &vec!["longitude".to_string(), "latitude".to_string()]);
+}
+
+/// Points just outside every area take the nearest one within 25 km; farther ones stay blank.
+#[test]
+fn points_just_outside_take_the_nearest_area_within_25_km() {
+    use rustgis_engine::data::GeometryType;
+    let areas = input("N1/areas.geojson", 2);
+    let LayerData::Vector(a) = &areas.data else { panic!() };
+    // Two points east of the areas' eastern edge: ~5 km and ~100 km out.
+    let east = a
+        .features
+        .iter()
+        .filter_map(|f| f.geometry.as_ref())
+        .flat_map(|g| match g {
+            Geometry::Polygon(p) => p.iter().flatten().flatten().map(|c| c.x).collect::<Vec<_>>(),
+            _ => vec![],
+        })
+        .fold(f64::MIN, f64::max);
+    let lat = 31.2;
+    let mut ds = Dataset::new("near", GeometryType::Point, vec![Field::new("id", FieldType::Integer)]);
+    ds.push_next(Some(Geometry::Point(Coord::new(east + 0.05, lat))), vec![Value::Int(1)]);
+    ds.push_next(Some(Geometry::Point(Coord::new(east + 1.0, lat))), vec![Value::Int(2)]);
+    let pts = PlanInput { layer: areas.layer.clone(), data: LayerData::Vector(Arc::new(ds)), rows: None, path: None };
+    let mut pts = pts;
+    pts.layer.id = LayerId(9);
+    pts.layer.display_name = "near".into();
+    let r = run(&plan("join_by_location", vec![pts, areas], &[("fields", "area_id")]), &Control::none()).unwrap();
+    let ActionOutput::NewFields { data, .. } = &r.output else { panic!() };
+    let k = data.field_index("area_id").unwrap();
+    assert!(!matches!(data.features[0].attrs[k], Value::Null), "5 km out takes the nearest area");
+    assert!(matches!(data.features[1].attrs[k], Value::Null), "100 km out stays blank");
+    assert!(r.card.notices.iter().any(|n| n.contains("just outside")), "{:?}", r.card.notices);
+}

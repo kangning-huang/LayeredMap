@@ -1,0 +1,85 @@
+{
+  "name": "copilot_us",
+  "description": "A US county-and-city project like the test data of GIS Copilot, GeoJSON Agent and ShapefileGPT: counties with census and health figures, points of interest, street-level lines and features, and two rasters. Value-free.",
+  "layers": [
+    {"name": "Counties", "kind": "areas", "count": 3143, "fields": [
+      ["name", "text", null, null],
+      ["state", "text", null, null],
+      ["population", "integer", "people", null],
+      ["median_income", "integer", "US$", null],
+      ["obesity_rate", "number", "%", null],
+      ["covid_death_rate", "number", "per 100,000", null],
+      ["annual_rain_in", "number", "inches per year", null],
+      ["area_km2", "number", "km²", null]
+    ]},
+    {"name": "Census tracts", "kind": "areas", "count": 72538, "fields": [
+      ["geoid", "text", null, null],
+      ["county", "text", null, null],
+      ["population", "integer", "people", null],
+      ["poverty_ratio", "number", null, null]
+    ]},
+    {"name": "Fast food restaurants", "kind": "points", "count": 4116, "fields": [
+      ["id", "integer", null, null],
+      ["name", "text", null, null],
+      ["chain", "text", null, null]
+    ]},
+    {"name": "Hospitals", "kind": "points", "count": 7596, "fields": [
+      ["name", "text", null, null],
+      ["beds", "integer", "beds", null]
+    ]},
+    {"name": "Coffee shops", "kind": "points", "count": 1802, "fields": [
+      ["name", "text", null, null]
+    ]},
+    {"name": "Bus stops", "kind": "points", "count": 15900, "fields": [
+      ["stop_id", "text", null, null],
+      ["name", "text", null, null]
+    ]},
+    {"name": "Schools", "kind": "points", "count": 412, "fields": [
+      ["name", "text", null, null]
+    ]},
+    {"name": "Street trees", "kind": "points", "count": 68540, "fields": [
+      ["species", "text", null, null]
+    ]},
+    {"name": "Weather stations", "kind": "points", "count": 1218, "fields": [
+      ["station", "text", null, null],
+      ["precip_mm", "number", "mm per year", null]
+    ]},
+    {"name": "Flood events", "kind": "points", "count": 312, "fields": [
+      ["event_id", "integer", null, null],
+      ["near_dist", "number", "m", null]
+    ]},
+    {"name": "Damaged houses", "kind": "points", "count": 1150, "fields": [
+      ["address", "text", null, null],
+      ["damage", "category", null, ["minor", "major", "destroyed"]]
+    ]},
+    {"name": "HIV points", "kind": "points", "count": 2950, "fields": [
+      ["hiv_rate", "number", "per 100,000", null]
+    ]},
+    {"name": "Streets", "kind": "lines", "count": 9120, "fields": [
+      ["name", "text", null, null],
+      ["class", "category", null, ["primary", "secondary", "residential"]]
+    ]},
+    {"name": "Sidewalks", "kind": "lines", "count": 21400, "fields": [
+      ["sidewalk_id", "integer", null, null]
+    ]},
+    {"name": "Rivers", "kind": "lines", "count": 640, "fields": [
+      ["name", "text", null, null]
+    ]},
+    {"name": "Railways", "kind": "lines", "count": 3120, "fields": [
+      ["name", "text", null, null]
+    ]},
+    {"name": "Buildings", "kind": "areas", "count": 45120, "fields": [
+      ["height_m", "number", "m", null],
+      ["use", "category", null, ["residential", "commercial", "industrial", "other"]]
+    ]},
+    {"name": "Fault zones", "kind": "areas", "count": 54, "fields": [
+      ["name", "text", null, null]
+    ]},
+    {"name": "Protected areas", "kind": "areas", "count": 410, "fields": [
+      ["name", "text", null, null]
+    ]},
+    {"name": "Elevation", "kind": "raster", "desc": "1 band, 30 m cells, metres above sea level"},
+    {"name": "Land cover", "kind": "raster", "desc": "1 band, 30 m cells, categories (NLCD classes)"},
+    {"name": "Population", "kind": "raster", "desc": "1 band, 100 m cells, people per cell"}
+  ]
+}

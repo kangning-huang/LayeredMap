@@ -1,0 +1,16 @@
+{
+  "name": "geoquery_usa",
+  "description": "The usa context plus the extra layers GeoQuery-style questions need (mountains and lakes). Value-free.",
+  "base": "usa",
+  "layers": [
+    {"name": "Mountains", "kind": "points", "count": 340, "fields": [
+      ["name", "text", null, null],
+      ["state", "text", null, null],
+      ["elevation_m", "number", "m", null]
+    ]},
+    {"name": "Lakes", "kind": "areas", "count": 420, "fields": [
+      ["name", "text", null, null],
+      ["area_km2", "number", "km²", null]
+    ]}
+  ]
+}

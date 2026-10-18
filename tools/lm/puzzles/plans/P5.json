@@ -1,0 +1,11 @@
+{"puzzle": "P5", "limit": 10,
+ "layers": [{"name": "Populated places", "path": "/Volumes/LaCie/data/layeredmap-puzzles/naturalearth/ne_10m_populated_places/ne_10m_populated_places.shp"}, {"name": "Countries", "path": "/Volumes/LaCie/data/layeredmap-puzzles/naturalearth/ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp"},
+  {"name": "Annual precipitation", "path": "/Volumes/LaCie/data/layeredmap-puzzles/worldclim/wc2.1_10m_bio_12.tif"}],
+ "steps": [
+  {"name": "join_by_location", "args": {"layer": "Populated places", "areas": "Countries", "fields": "CONTINENT"}},
+  {"name": "filter", "args": {"layer": "Populated places", "conditions": [{"field": "CONTINENT", "op": "is", "value": "Europe"}]}},
+  {"name": "filter", "args": {"layer": "Populated places", "conditions": [{"field": "CONTINENT", "op": "is", "value": "Europe"}, {"field": "NAME", "op": "starts_with", "value": "Z"}]}},
+  {"name": "filter", "args": {"layer": "Populated places", "conditions": [{"field": "CONTINENT", "op": "is", "value": "Europe"}, {"field": "NAME", "op": "starts_with", "value": "Z"}, {"field": "POP_MAX", "op": "at_least", "value": "300000"}]}},
+  {"name": "add_raster_values", "args": {"raster": "Annual precipitation", "points": "Populated places"}},
+  {"name": "filter", "args": {"layer": "Populated places", "conditions": [{"field": "CONTINENT", "op": "is", "value": "Europe"}, {"field": "NAME", "op": "starts_with", "value": "Z"}, {"field": "POP_MAX", "op": "at_least", "value": "300000"}, {"field": "Annual precipitation", "op": "at_most", "value": "400"}]}}
+ ]}

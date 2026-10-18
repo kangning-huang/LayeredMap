@@ -1,0 +1,8 @@
+{"type": "FeatureCollection", "name": "polygons", "features": [
+{"type": "Feature", "properties": {"feature_id": "G01", "note": "C shape around A4's hole, in A4's ring"}, "geometry": {"type": "Polygon", "coordinates": [[[3.125, 0.125], [4.875, 0.125], [4.875, 0.375], [3.375, 0.375], [3.375, 1.625], [4.875, 1.625], [4.875, 1.875], [3.125, 1.875], [3.125, 0.125]]]}},
+{"type": "Feature", "properties": {"feature_id": "G02", "note": "thin frame with a hole, in A2 only"}, "geometry": {"type": "Polygon", "coordinates": [[[1.0625, 0.0625], [1.4375, 0.0625], [1.4375, 0.9375], [1.0625, 0.9375], [1.0625, 0.0625]], [[1.125, 0.125], [1.125, 0.875], [1.375, 0.875], [1.375, 0.125], [1.125, 0.125]]]}},
+{"type": "Feature", "properties": {"feature_id": "G03", "note": "largest part in A5, small part outside"}, "geometry": {"type": "MultiPolygon", "coordinates": [[[[7.0625, 0.0625], [7.4375, 0.0625], [7.4375, 0.4375], [7.0625, 0.4375], [7.0625, 0.0625]]], [[[8.0, 0.0], [8.0625, 0.0], [8.0625, 0.0625], [8.0, 0.0625], [8.0, 0.0]]]]}},
+{"type": "Feature", "properties": {"feature_id": "G05", "note": "split at 180, in A7"}, "geometry": {"type": "MultiPolygon", "coordinates": [[[[179.75, -0.5], [180.0, -0.5], [180.0, 0.5], [179.75, 0.5], [179.75, -0.5]]], [[[-180.0, -0.5], [-179.875, -0.5], [-179.875, 0.5], [-180.0, 0.5], [-180.0, -0.5]]]]}},
+{"type": "Feature", "properties": {"feature_id": "G06", "note": "Arctic"}, "geometry": {"type": "Polygon", "coordinates": [[[-10.0, 81.0], [10.0, 81.0], [10.0, 84.0], [-10.0, 84.0], [-10.0, 81.0]]]}},
+{"type": "Feature", "properties": {"feature_id": "G07", "note": "outside"}, "geometry": {"type": "Polygon", "coordinates": [[[20.0, 20.0], [21.0, 20.0], [21.0, 21.0], [20.0, 21.0], [20.0, 20.0]]]}}
+]}

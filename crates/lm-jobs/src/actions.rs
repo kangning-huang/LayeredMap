@@ -17,8 +17,22 @@
 //! | `summarize_here`, `summarize_drawn` | raster, the area (one row) |
 //! | `add_raster_values` | raster, points |
 //! | `rank_by_value` | the layer; parameter `field` |
+//! | `calculate_field` | the layer (parameters `a`, `op`, `b`, `name`) |
+//! | `split_parts` | the layer |
+//! | `find_where` | the rasters (parameter `conditions`) |
+//! | `keep_inside`, `remove_inside` | the layer, the areas |
+//! | `nearest_distance` | the layer, the other layer |
+//! | `nearest_other` | the layer |
+//! | `join_by_location` | the layer, the areas |
+//! | `add_measurements` | the layer |
 //!
-//! Parameters: `distance` ("1 km", "500 m"), `merge` ("yes"/"no"), `band` (1-based), `field`.
+//! Parameters: `distance` ("1 km", "500 m"), `merge` ("yes"/"no"), `band` (1-based), `field`;
+//! `stat` on `count_in` (count, sum, mean, median, min, max; with `field`, a numeric field of the
+//! points) and on the summaries (mean, median, min, max, sum, std); for `calculate_field`, `a` (a
+//! number field), `op` (add, subtract, multiply, divide), `b` (a number field or a number) and
+//! `name` (the new field's name); for `find_where`, `conditions`: `k|test|a|b` items joined by
+//! `;`, where `k` is the raster's input position (0 first), `test` is at_least, at_most, between
+//! or any_of (`a` a comma list of codes).
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;
@@ -230,6 +244,15 @@ pub const ACTIONS: &[&str] = &[
     "summarize_drawn",
     "add_raster_values",
     "rank_by_value",
+    "calculate_field",
+    "split_parts",
+    "find_where",
+    "keep_inside",
+    "remove_inside",
+    "nearest_distance",
+    "nearest_other",
+    "join_by_location",
+    "add_measurements",
 ];
 
 /// Runs a plan. Checks `ctl` throughout; a cancelled run returns [`ActionError::Cancelled`] and
@@ -246,6 +269,13 @@ pub fn run(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
         "summarize_here" | "summarize_drawn" => summarize_one(plan, ctl),
         "add_raster_values" => add_raster_values(plan, ctl),
         "rank_by_value" => rank_by_value(plan, ctl),
+        "calculate_field" => calculate_field(plan, ctl),
+        "split_parts" => split_parts(plan, ctl),
+        "find_where" => find_where(plan, ctl),
+        "keep_inside" | "remove_inside" => clip_action(plan, ctl),
+        "nearest_distance" | "nearest_other" => nearest_action(plan, ctl),
+        "join_by_location" => join_action(plan, ctl),
+        "add_measurements" => measure_fields(plan, ctl),
         other => Err(ActionError::Input(format!("LayeredMap can't run “{other}” yet."))),
     }
 }
@@ -1217,6 +1247,623 @@ fn rank_by_value(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError
         },
         recipe: recipe(plan, &title, &inputs, "", Vec::new(), Vec::new()),
         output: ActionOutput::Card,
+        highlight: None,
+    })
+}
+
+// ---------------------------------------------------------------------------------------------
+// Fields and parts
+
+/// The operations of "Add a field calculated from two values".
+pub const FIELD_OPS: &[(&str, &str, &str)] =
+    &[("subtract", "minus", "−"), ("add", "plus", "+"), ("multiply", "times", "×"), ("divide", "divided by", "÷")];
+
+fn calculate_field(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
+    let input = plan.input(0)?;
+    let full = input.vector()?;
+    let a = plan.param("a").ok_or_else(|| ActionError::Input("Choose the first value.".into()))?;
+    let ka = full.field_index(a).ok_or_else(|| ActionError::Input(format!("{} has no field “{a}”.", input.name())))?;
+    let op = plan.param("op").unwrap_or("subtract");
+    let (_, op_words, op_sign) = FIELD_OPS
+        .iter()
+        .find(|(k, _, _)| *k == op)
+        .copied()
+        .ok_or_else(|| ActionError::Input(format!("“{op}” isn't an operation LayeredMap knows.")))?;
+    let b_text = plan.param("b").ok_or_else(|| ActionError::Input("Choose the second value: a field or a number.".into()))?;
+    // The second value: a field of the layer, or a number.
+    let b = match full.field_index(b_text) {
+        Some(kb) => Err(kb),
+        None => Ok(b_text
+            .trim()
+            .replace(',', "")
+            .parse::<f64>()
+            .map_err(|_| ActionError::Input(format!("“{b_text}” is neither a field of {} nor a number.", input.name())))?),
+    };
+    let rows: Vec<usize> = input.rows.clone().unwrap_or_else(|| (0..full.features.len()).collect());
+    let mut out = (**full).clone();
+    let default_name = format!("{a} {op_sign} {b_text}");
+    let name = free_field(&out, plan.param("name").filter(|n| !n.trim().is_empty()).unwrap_or(&default_name));
+    let k = out.ensure_field(&name, FieldType::Double);
+    let (mut blank, mut by_zero) = (0u64, 0u64);
+    let mut values = Vec::with_capacity(rows.len());
+    for (i, r) in rows.iter().enumerate() {
+        if i % 4096 == 0 {
+            ctl.check()?;
+        }
+        let Some(f) = out.features.get_mut(*r) else { continue };
+        let x = f.attrs.get(ka).and_then(Value::as_f64);
+        let y = match b {
+            Ok(v) => Some(v),
+            Err(kb) => f.attrs.get(kb).and_then(Value::as_f64),
+        };
+        let v = match (x, y) {
+            (Some(x), Some(y)) => match op {
+                "add" => Some(x + y),
+                "multiply" => Some(x * y),
+                "divide" if y == 0.0 => {
+                    by_zero += 1;
+                    None
+                }
+                "divide" => Some(x / y),
+                _ => Some(x - y),
+            },
+            _ => {
+                blank += 1;
+                None
+            }
+        };
+        let v = v.filter(|v| v.is_finite());
+        f.attrs[k] = v.map_or(Value::Null, Value::Float);
+        values.push(v);
+    }
+    let with: Vec<f64> = values.iter().flatten().copied().collect();
+    let range = match (with.iter().copied().reduce(f64::min), with.iter().copied().reduce(f64::max)) {
+        (Some(lo), Some(hi)) => range_words(lo, hi),
+        _ => "no values".into(),
+    };
+    let mut notices = Vec::new();
+    if blank > 0 {
+        notices.push(format!("{} had a blank value, so their result is blank, not 0.", input.things(blank)));
+    }
+    if by_zero > 0 {
+        notices.push(format!("{} would divide by zero, so their result is blank.", input.things(by_zero)));
+    }
+    let title = format!("{a} {op_words} {b_text}");
+    let inputs = [input];
+    Ok(ActionResult {
+        label: format!("Add “{name}” to {}", input.name()),
+        card: ResultCard {
+            title: capitalized(&title),
+            summary: format!("{} · “{name}” {range}", input.things(rows.len() as u64)),
+            answer: Answer::Number {
+                value: with.len() as f64, unit: input.plural_noun(), detail: format!("now have “{name}” ({range})")
+            },
+            context: context(&inputs, &[]),
+            notices,
+        },
+        recipe: recipe(
+            plan,
+            &capitalized(&title),
+            &inputs,
+            "",
+            vec![format!("“{name}” = {a} {op_sign} {b_text}; a blank input or a division by zero gives a blank")],
+            Vec::new(),
+        ),
+        output: ActionOutput::NewFields { layer: input.layer.id, data: Arc::new(out), fields: vec![name] },
+        highlight: None,
+    })
+}
+
+/// One feature per part of a multi-part line or area (holes stay with their part).
+pub fn split_dataset(ds: &Dataset, rows: &[usize]) -> (Dataset, Vec<usize>) {
+    let mut out = Dataset::new(ds.name.clone(), ds.geometry_type, ds.fields.clone());
+    let kp = out.ensure_field("part", FieldType::Integer);
+    let mut source = Vec::new();
+    for &r in rows {
+        let Some(f) = ds.features.get(r) else { continue };
+        let parts: Vec<Geometry> = match &f.geometry {
+            Some(Geometry::Polygon(ps)) => ps.iter().map(|p| Geometry::Polygon(vec![p.clone()])).collect(),
+            Some(Geometry::Line(ls)) => ls.iter().map(|l| Geometry::Line(vec![l.clone()])).collect(),
+            Some(Geometry::MultiPoint(cs)) => cs.iter().map(|c| Geometry::Point(*c)).collect(),
+            Some(g) => vec![g.clone()],
+            None => Vec::new(),
+        };
+        for (i, g) in parts.into_iter().enumerate() {
+            let mut attrs = f.attrs.clone();
+            attrs.resize(out.fields.len(), Value::Null);
+            attrs[kp] = Value::Int(i as i64 + 1);
+            out.push_next(Some(g), attrs);
+            source.push(r);
+        }
+    }
+    (out, source)
+}
+
+fn split_parts(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
+    let input = plan.input(0)?;
+    let full = input.vector()?;
+    ctl.check()?;
+    let rows: Vec<usize> = input.rows.clone().unwrap_or_else(|| (0..full.features.len()).collect());
+    let (out, _source_rows) = split_dataset(full, &rows);
+    ctl.check()?;
+    let n_in = rows.len() as u64;
+    let n_out = out.features.len() as u64;
+    let title = format!("{} in separate parts", capitalized(&input.plural_noun()));
+    let inputs = [input];
+    Ok(ActionResult {
+        label: format!("Split {} into separate parts", input.name()),
+        card: ResultCard {
+            title: title.clone(),
+            summary: format!("{} → {} parts", input.things(n_in), group_thousands(n_out)),
+            answer: Answer::Number { value: n_out as f64, unit: "parts".into(), detail: format!("from {}", input.things(n_in)) },
+            context: context(&inputs, &[]),
+            notices: Vec::new(),
+        },
+        recipe: recipe(plan, &title, &inputs, "", Vec::new(), Vec::new()),
+        output: ActionOutput::NewLayer { layer: layer_from(&title, "Result", out), color_by: None },
+        highlight: None,
+    })
+}
+
+// ---------------------------------------------------------------------------------------------
+// Finding areas, and cutting layers
+
+/// One condition of "Find areas where…": the raster's input position and the test.
+#[derive(Clone, Debug, PartialEq)]
+pub struct WhereCondition {
+    pub input: usize,
+    pub test: lm_analysis::where_areas::Test,
+}
+
+/// Reads the `conditions` parameter (see the module notes).
+pub fn parse_conditions(s: &str) -> Result<Vec<WhereCondition>, String> {
+    use lm_analysis::where_areas::Test;
+    let num = |t: &str| t.trim().replace(',', "").parse::<f64>().map_err(|_| format!("“{t}” isn't a number"));
+    let mut out = Vec::new();
+    for item in s.split(';').map(str::trim).filter(|i| !i.is_empty()) {
+        let parts: Vec<&str> = item.split('|').collect();
+        let input = parts.first().and_then(|k| k.trim().parse::<usize>().ok()).ok_or_else(|| format!("“{item}” names no raster"))?;
+        let a = parts.get(2).copied().unwrap_or("");
+        let test = match parts.get(1).map(|t| t.trim()) {
+            Some("at_least") => Test::AtLeast(num(a)?),
+            Some("at_most") => Test::AtMost(num(a)?),
+            Some("between") => Test::Between(num(a)?, num(parts.get(3).copied().unwrap_or(""))?),
+            Some("any_of") => Test::AnyOf(a.split(',').map(num).collect::<Result<Vec<_>, _>>()?),
+            other => return Err(format!("“{}” isn't a condition LayeredMap knows", other.unwrap_or(""))),
+        };
+        out.push(WhereCondition { input, test });
+    }
+    if out.is_empty() {
+        return Err("Add at least one condition.".into());
+    }
+    Ok(out)
+}
+
+/// "at least 1,500 m", "between 10 and 20 °C".
+pub fn condition_words(t: &lm_analysis::where_areas::Test, unit: &str) -> String {
+    use lm_analysis::where_areas::Test;
+    let u = if unit.is_empty() { String::new() } else { format!(" {unit}") };
+    match t {
+        Test::AtLeast(v) => format!("at least {}{u}", number(*v)),
+        Test::AtMost(v) => format!("at most {}{u}", number(*v)),
+        Test::Between(a, b) => format!("between {} and {}{u}", number(a.min(*b)), number(a.max(*b))),
+        Test::AnyOf(vs) => format!("one of {}", vs.iter().map(|v| number(*v)).collect::<Vec<_>>().join(", ")),
+    }
+}
+
+fn find_where(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
+    let conds = parse_conditions(plan.param("conditions").unwrap_or("")).map_err(ActionError::Input)?;
+    // Each condition's raster as a band (scale and offset applied), in condition order.
+    let mut bands = Vec::with_capacity(conds.len());
+    let mut words = Vec::with_capacity(conds.len());
+    let mut decisions = Vec::new();
+    for c in &conds {
+        let input = plan.input(c.input)?;
+        let b = band(plan, input)?;
+        words.push(format!("{} {}", input.name(), condition_words(&c.test, &b.unit)));
+        decisions.extend(b.decisions.clone());
+        bands.push((b.src, input.name().to_string()));
+    }
+    let names: Vec<String> = bands.iter().map(|(_, n)| n.clone()).collect();
+    let mut conditions: Vec<lm_analysis::where_areas::Condition<'_>> = bands
+        .into_iter()
+        .zip(&conds)
+        .map(|((src, _), c)| lm_analysis::where_areas::Condition { band: src, test: c.test.clone() })
+        .collect();
+    let res = lm_analysis::where_areas::find_where(&mut conditions, ctl)?;
+    let total_m2: f64 = res.areas.iter().map(|a| a.area_m2).sum();
+    let title = format!("Where {}", words.join(" and "));
+    let mut fields =
+        vec![Field::new("name", FieldType::Text), Field::new("area_km2", FieldType::Double), Field::new("cells", FieldType::Integer)];
+    for name in &names {
+        fields.push(Field::new(format!("{name} mean"), FieldType::Double));
+    }
+    let mut layer = Dataset::new(title.clone(), rustgis_engine::data::GeometryType::Polygon, fields);
+    let mut order: Vec<usize> = (0..res.areas.len()).collect();
+    order.sort_by(|a, b| res.areas[*b].area_m2.total_cmp(&res.areas[*a].area_m2));
+    for (rank, i) in order.iter().enumerate() {
+        let a = &res.areas[*i];
+        let mut attrs = vec![Value::Text(format!("Area {}", rank + 1)), Value::Float(a.area_m2 / 1e6), Value::Int(a.cells as i64)];
+        attrs.extend(a.means.iter().map(|m| m.map_or(Value::Null, Value::Float)));
+        layer.push_next(Some(a.geometry.clone()), attrs);
+    }
+    let (v, unit) = area_words(total_m2);
+    let n = res.areas.len() as u64;
+    let rows: Vec<RankRow> = layer
+        .features
+        .iter()
+        .enumerate()
+        .take(200)
+        .map(|(i, f)| RankRow { label: format!("Area {}", i + 1), value: f.attrs.get(1).and_then(Value::as_f64), row: i })
+        .collect();
+    let mut notices = Vec::new();
+    if n == 0 {
+        notices.push("No place meets every condition. Try loosening one of them.".into());
+    }
+    if names.len() > 1 {
+        decisions.push(format!("other rasters read at the centre of each cell of {}'s grid (nearest cell, no interpolation)", names[0]));
+    }
+    let inputs: Vec<&PlanInput> = conds.iter().filter_map(|c| plan.inputs.get(c.input)).collect();
+    Ok(ActionResult {
+        label: "Find areas where conditions hold".into(),
+        card: ResultCard {
+            title: title.clone(),
+            summary: format!("{} {} · {} {unit} in all", group_thousands(n), if n == 1 { "area" } else { "areas" }, number(v)),
+            answer: Answer::Ranking { rows, unit: "km²".into() },
+            context: vec![
+                format!("Conditions: {}", words.join("; ")),
+                format!("Cells that qualify: {} of {}", group_thousands(res.cells_in), group_thousands(res.grid_cells)),
+            ],
+            notices,
+        },
+        recipe: recipe(plan, &title, &inputs, CELL_AREAS, decisions, Vec::new()),
+        output: ActionOutput::NewLayer { layer: layer_from(&title, "Result", layer), color_by: None },
+        highlight: None,
+    })
+}
+
+fn clip_action(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
+    let (layer_in, mask_in) = (plan.input(0)?, plan.input(1)?);
+    let (ds, _) = layer_in.scoped()?;
+    let (mask, _) = mask_in.scoped()?;
+    let keep = plan.action == "keep_inside";
+    let res = if keep { lm_analysis::clip::keep_inside(&ds, &mask, ctl)? } else { lm_analysis::clip::remove_inside(&ds, &mask, ctl)? };
+    let what = layer_in.plural_noun();
+    let title = if keep {
+        format!("{} inside {}", capitalized(&what), mask_in.name())
+    } else {
+        format!("{} outside {}", capitalized(&what), mask_in.name())
+    };
+    let n = res.dataset.features.len() as u64;
+    let mut notices = Vec::new();
+    if res.dropped > 0 {
+        notices.push(format!(
+            "{} had nothing left and {} dropped.",
+            layer_in.things(res.dropped),
+            if res.dropped == 1 { "was" } else { "were" }
+        ));
+    }
+    let mut out = res.dataset;
+    out.name = title.clone();
+    let inputs = [layer_in, mask_in];
+    let decision = if keep {
+        "the part inside the other layer's areas is kept; edges straight in longitude and latitude; points on a boundary are kept"
+            .to_string()
+    } else {
+        "the part inside the other layer's areas is removed; edges straight in longitude and latitude; points on a boundary are removed"
+            .to_string()
+    };
+    Ok(ActionResult {
+        label: if keep {
+            format!("Keep {} inside {}", layer_in.name(), mask_in.name())
+        } else {
+            format!("Remove {} inside {}", layer_in.name(), mask_in.name())
+        },
+        card: ResultCard {
+            title: title.clone(),
+            summary: format!("{} kept · {} dropped", group_thousands(n), group_thousands(res.dropped)),
+            answer: Answer::Number {
+                value: n as f64,
+                unit: what.clone(),
+                detail: format!("{} {}", if keep { "inside" } else { "outside" }, mask_in.name()),
+            },
+            context: context(&inputs, &[]),
+            notices,
+        },
+        recipe: recipe(plan, &title, &inputs, "", vec![decision], Vec::new()),
+        output: ActionOutput::NewLayer { layer: layer_from(&title, "Result", out), color_by: None },
+        highlight: None,
+    })
+}
+
+/// A point on a geometry (the certified label point), for tools that list objects.
+pub fn label_point(g: &Geometry) -> Option<Coord> {
+    lm_analysis::measure::label_point(g)
+}
+
+// ---------------------------------------------------------------------------------------------
+// Distances, details by location, measurements (new fields on the layer)
+
+/// The layer with fields set from `values[i]` for the scoped row `rows[i]`.
+fn with_fields(full: &Dataset, rows: &[usize], columns: Vec<(String, FieldType, Vec<Value>)>) -> (Dataset, Vec<String>) {
+    with_fields_mode(full, rows, columns, false).0
+}
+
+/// [`with_fields`], or (`overwrite`) writing into fields of the same name when they exist, and
+/// saying which.
+fn with_fields_mode(
+    full: &Dataset,
+    rows: &[usize],
+    columns: Vec<(String, FieldType, Vec<Value>)>,
+    overwrite: bool,
+) -> ((Dataset, Vec<String>), Vec<String>) {
+    let mut out = full.clone();
+    let mut names = Vec::new();
+    let mut replaced = Vec::new();
+    for (name, ty, values) in columns {
+        if overwrite && out.field_index(&name).is_some() {
+            replaced.push(name.clone());
+        }
+        let name = if overwrite { name } else { free_field(&out, &name) };
+        let k = out.ensure_field(&name, ty);
+        for (r, v) in rows.iter().zip(values) {
+            if let Some(f) = out.features.get_mut(*r) {
+                f.attrs[k] = v;
+            }
+        }
+        names.push(name);
+    }
+    ((out, names), replaced)
+}
+
+fn nearest_action(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
+    let same = plan.action == "nearest_other";
+    let layer_in = plan.input(0)?;
+    let (ds, rows) = layer_in.scoped()?;
+    // "Nearest other" measures to every object of the layer, even when a filter shows only some
+    // (owner's decision, 2026-10-17); each object skips only itself.
+    let (targets_in, res, target_rows) = if same {
+        let whole = layer_in.vector()?;
+        let skip: Vec<Option<usize>> = rows.iter().map(|r| Some(*r)).collect();
+        let res = lm_analysis::nearest::nearest_distance_skipping(&ds, whole, &skip, ctl)?;
+        (layer_in, res, (0..whole.features.len()).collect::<Vec<usize>>())
+    } else {
+        let t = plan.input(1)?;
+        let (targets, trows) = t.scoped()?;
+        (t, lm_analysis::nearest::nearest_distance(&ds, &targets, false, ctl)?, trows)
+    };
+    let tfull = targets_in.vector()?;
+    let km: Vec<Value> = res.nearest.iter().map(|n| n.as_ref().map_or(Value::Null, |n| Value::Float(n.distance_m / 1000.0))).collect();
+    let names: Vec<Value> = res
+        .nearest
+        .iter()
+        .map(|n| {
+            n.as_ref().map_or(Value::Null, |n| {
+                Value::Text(targets_in.title(tfull, target_rows.get(n.target_row).copied().unwrap_or(n.target_row)))
+            })
+        })
+        .collect();
+    let other_words =
+        if same { format!("nearest other {}", layer_in.singular_noun()) } else { format!("nearest {}", targets_in.singular_noun()) };
+    let (out, fields) = with_fields(
+        layer_in.vector()?,
+        &rows,
+        vec![(format!("km to {other_words}"), FieldType::Double, km), (other_words.clone(), FieldType::Text, names)],
+    );
+    let dist: Vec<f64> = res.nearest.iter().flatten().map(|n| n.distance_m / 1000.0).collect();
+    let range = match (dist.iter().copied().reduce(f64::min), dist.iter().copied().reduce(f64::max)) {
+        (Some(lo), Some(hi)) => format!("{}–{} km", number(lo), number(hi)),
+        _ => "no distances".into(),
+    };
+    let ranked: Vec<RankRow> = res
+        .nearest
+        .iter()
+        .enumerate()
+        .map(|(i, n)| RankRow {
+            label: layer_in.title(layer_in.vector().map(|d| &**d).unwrap_or(&ds), rows[i]),
+            value: n.as_ref().map(|n| n.distance_m / 1000.0),
+            row: rows[i],
+        })
+        .collect();
+    let mut notices = Vec::new();
+    if !res.without_geometry.is_empty() {
+        notices.push(format!("{} have no location and get no distance.", layer_in.things(res.without_geometry.len() as u64)));
+    }
+    let title = format!("Distance from each {} to the {other_words}", layer_in.singular_noun());
+    let inputs: Vec<&PlanInput> = if same { vec![layer_in] } else { vec![layer_in, targets_in] };
+    Ok(ActionResult {
+        label: format!("Add the distance to the {other_words}"),
+        card: ResultCard {
+            title: title.clone(),
+            summary: format!("{} · {range}", layer_in.things(rows.len() as u64)),
+            answer: Answer::Ranking { rows: ranking(ranked), unit: "km".into() },
+            context: context(&inputs, &[]),
+            notices,
+        },
+        recipe: recipe(
+            plan,
+            &title,
+            &inputs,
+            GEODESIC,
+            vec![format!("the other layer's edges followed at least every {} m", number(res.densify_m))],
+            Vec::new(),
+        ),
+        output: ActionOutput::NewFields { layer: layer_in.layer.id, data: Arc::new(out), fields },
+        highlight: None,
+    })
+}
+
+fn join_action(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
+    let (layer_in, areas_in) = (plan.input(0)?, plan.input(1)?);
+    let (ds, rows) = layer_in.scoped()?;
+    let (areas, _) = areas_in.scoped()?;
+    let mut res = lm_analysis::overlay::join_by_location(&ds, &areas, ctl)?;
+    // Points just outside every area (a coastline drawn a little inland) take the nearest area
+    // within JOIN_NEAR_M, counted and stated (owner's decision, 2026-10-17).
+    let missing: Vec<usize> = (0..ds.features.len()).filter(|i| res.area_of[*i].is_none() && !res.without_geometry.contains(i)).collect();
+    let mut nearby = 0u64;
+    if !missing.is_empty() {
+        let mut sub = Dataset::new(ds.name.clone(), ds.geometry_type, ds.fields.clone());
+        for i in &missing {
+            sub.features.push(ds.features[*i].clone());
+        }
+        let near = lm_analysis::nearest::nearest_distance(&sub, &areas, false, ctl)?;
+        for (k, n) in near.nearest.iter().enumerate() {
+            if let Some(n) = n.as_ref().filter(|n| n.distance_m <= JOIN_NEAR_M) {
+                res.area_of[missing[k]] = Some(n.target_row);
+                nearby += 1;
+            }
+        }
+        res.outside = res.outside.saturating_sub(nearby);
+    }
+    // Which of the areas' fields to add (parameter `fields`, comma-separated; all by default).
+    let wanted: Vec<usize> = match plan.param("fields").filter(|f| !f.trim().is_empty()) {
+        Some(list) => list.split(',').filter_map(|f| areas.field_index(f.trim())).collect(),
+        None => (0..areas.fields.len()).collect(),
+    };
+    if wanted.is_empty() {
+        return Err(ActionError::Input(format!("{} has none of those fields.", areas_in.name())));
+    }
+    let columns: Vec<(String, FieldType, Vec<Value>)> = wanted
+        .iter()
+        .map(|k| {
+            let f = &areas.fields[*k];
+            let vals = res
+                .area_of
+                .iter()
+                .map(|a| a.and_then(|a| areas.features.get(a)).and_then(|af| af.attrs.get(*k)).cloned().unwrap_or(Value::Null))
+                .collect();
+            (f.name.clone(), f.ty, vals)
+        })
+        .collect();
+    let (out, fields) = with_fields(layer_in.vector()?, &rows, columns);
+    let matched = res.area_of.iter().filter(|a| a.is_some()).count() as u64;
+    let mut notices = Vec::new();
+    if res.outside > 0 {
+        notices.push(format!("{} are in no {} and get blanks.", layer_in.things(res.outside), areas_in.singular_noun()));
+    }
+    if res.on_boundary > 0 {
+        notices.push(format!(
+            "{} lie on a shared boundary and take the first {} listed.",
+            layer_in.things(res.on_boundary),
+            areas_in.singular_noun()
+        ));
+    }
+    if nearby > 0 {
+        notices.push(format!(
+            "{} lie just outside every {} (within {} km) and take the nearest one.",
+            layer_in.things(nearby),
+            areas_in.singular_noun(),
+            number(JOIN_NEAR_M / 1000.0)
+        ));
+    }
+    let title = format!("{} details added to {}", capitalized(&areas_in.singular_noun()), layer_in.name());
+    let inputs = [layer_in, areas_in];
+    Ok(ActionResult {
+        label: format!("Add {} details to {}", areas_in.name(), layer_in.name()),
+        card: ResultCard {
+            title: title.clone(),
+            summary: format!(
+                "{} of {} matched · {} fields added",
+                group_thousands(matched),
+                group_thousands(rows.len() as u64),
+                fields.len()
+            ),
+            answer: Answer::Number {
+                value: matched as f64,
+                unit: layer_in.plural_noun(),
+                detail: format!("now carry {}", fields.join(", ")),
+            },
+            context: context(&inputs, &[]),
+            notices,
+        },
+        recipe: recipe(
+            plan,
+            &title,
+            &inputs,
+            PLANAR,
+            if nearby > 0 {
+                vec![format!(
+                    "{} in no area took the nearest area within {} km (geodesic)",
+                    layer_in.things(nearby),
+                    number(JOIN_NEAR_M / 1000.0)
+                )]
+            } else {
+                Vec::new()
+            },
+            Vec::new(),
+        ),
+        output: ActionOutput::NewFields { layer: layer_in.layer.id, data: Arc::new(out), fields },
+        highlight: None,
+    })
+}
+
+/// How far outside every area a feature may be and still take the nearest one's details.
+pub const JOIN_NEAR_M: f64 = 25_000.0;
+
+fn measure_fields(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
+    let input = plan.input(0)?;
+    let (ds, rows) = input.scoped()?;
+    let mut area = Vec::with_capacity(rows.len());
+    let mut perim = Vec::with_capacity(rows.len());
+    let mut length = Vec::with_capacity(rows.len());
+    let mut lon = Vec::with_capacity(rows.len());
+    let mut lat = Vec::with_capacity(rows.len());
+    for (i, f) in ds.features.iter().enumerate() {
+        if i % 1024 == 0 {
+            ctl.check()?;
+        }
+        let m = f.geometry.as_ref().map(lm_analysis::measure::measurements);
+        let v = |x: Option<f64>| x.map_or(Value::Null, Value::Float);
+        area.push(v(m.as_ref().and_then(|m| m.area_km2)));
+        perim.push(v(m.as_ref().and_then(|m| m.perimeter_km)));
+        length.push(v(m.as_ref().and_then(|m| m.length_km)));
+        lon.push(v(m.as_ref().and_then(|m| m.lon)));
+        lat.push(v(m.as_ref().and_then(|m| m.lat)));
+    }
+    let mut columns = Vec::new();
+    match input.layer.profile.kind {
+        LayerKind::Areas => {
+            columns.push(("area_km2".to_string(), FieldType::Double, area));
+            columns.push(("perimeter_km".to_string(), FieldType::Double, perim));
+        }
+        LayerKind::Lines => columns.push(("length_km".to_string(), FieldType::Double, length)),
+        _ => {}
+    }
+    columns.push(("longitude".to_string(), FieldType::Double, lon));
+    columns.push(("latitude".to_string(), FieldType::Double, lat));
+    // Its own fields are overwritten, so a clipped layer's stale area is replaced (owner's
+    // decision, 2026-10-17).
+    let ((out, fields), replaced) = with_fields_mode(input.vector()?, &rows, columns, true);
+    let notices = if replaced.is_empty() {
+        Vec::new()
+    } else {
+        vec![format!("Replaced the existing {} with new measurements.", replaced.join(", "))]
+    };
+    let title = format!("Measurements added to {}", input.name());
+    let inputs = [input];
+    Ok(ActionResult {
+        label: format!("Add measurements to {}", input.name()),
+        card: ResultCard {
+            title: title.clone(),
+            summary: format!("{} · {}", input.things(rows.len() as u64), fields.join(", ")),
+            answer: Answer::Number {
+                value: rows.len() as f64,
+                unit: input.plural_noun(),
+                detail: format!("now carry {}", fields.join(", ")),
+            },
+            context: context(&inputs, &[]),
+            notices,
+        },
+        recipe: recipe(
+            plan,
+            &title,
+            &inputs,
+            GEODESIC,
+            vec!["coordinates of each point, or of a point guaranteed to lie on each line or area".into()],
+            Vec::new(),
+        ),
+        output: ActionOutput::NewFields { layer: input.layer.id, data: Arc::new(out), fields },
         highlight: None,
     })
 }

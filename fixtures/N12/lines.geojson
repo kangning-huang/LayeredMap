@@ -1,0 +1,8 @@
+{"type": "FeatureCollection", "name": "lines", "features": [
+{"type": "Feature", "properties": {"id": "L1", "name": "across M1 and M3"}, "geometry": {"type": "LineString", "coordinates": [[119.0, 30.5], [130.0, 30.5]]}},
+{"type": "Feature", "properties": {"id": "L2", "name": "through the hole"}, "geometry": {"type": "LineString", "coordinates": [[120.5, 32.0], [123.5, 32.0]]}},
+{"type": "Feature", "properties": {"id": "L3", "name": "diagonal"}, "geometry": {"type": "LineString", "coordinates": [[119.0, 29.5], [125.0, 35.5]]}},
+{"type": "Feature", "properties": {"id": "L4", "name": "outside"}, "geometry": {"type": "LineString", "coordinates": [[131.0, 35.0], [132.0, 36.0]]}},
+{"type": "Feature", "properties": {"id": "L5", "name": "two parts"}, "geometry": {"type": "MultiLineString", "coordinates": [[[128.5, 32.5], [130.0, 32.5]], [[132.0, 30.0], [133.0, 31.0]]]}},
+{"type": "Feature", "properties": {"id": "L6", "name": "bent, in and out"}, "geometry": {"type": "LineString", "coordinates": [[125.0, 32.0], [127.0, 32.0], [127.0, 30.5], [128.5, 30.5]]}}
+]}

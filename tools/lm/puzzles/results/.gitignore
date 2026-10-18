@@ -1,0 +1,6 @@
+tmp/
+dryrun-*/
+spend-dryrun.json
+._*
+pro-e2e-dev*/*.jsonl
+pro-e2e-smoke/*.jsonl

@@ -1,0 +1,63 @@
+{
+  "name": "world_plus",
+  "description": "A world project like the benchmark data of GeoBenchX and GTChain: countries with development indicators, places, infrastructure points and lines, and three global rasters. Value-free: names, kinds, counts and field types only.",
+  "layers": [
+    {"name": "Countries", "kind": "areas", "count": 177, "fields": [
+      ["name", "text", null, null],
+      ["name_zh", "text, Chinese", null, null],
+      ["iso_a3", "text", null, null],
+      ["continent", "category", null, ["Africa", "Antarctica", "Asia", "Europe", "North America", "Oceania", "Seven seas (open ocean)", "South America"]],
+      ["region", "category", null, ["Eastern Africa", "Western Africa", "Northern Africa", "South America", "Central America", "Southern Asia", "South-Eastern Asia", "Western Europe", "Eastern Europe"]],
+      ["pop_est", "integer", "people", null],
+      ["gdp_md", "integer", "million US$", null],
+      ["gdp_per_capita", "number", "US$", null],
+      ["life_expectancy", "number", "years", null],
+      ["net_migration", "integer", "people", null],
+      ["pop_growth", "number", "% per year", null],
+      ["co2_per_capita", "number", "t", null],
+      ["internet_users", "number", "% of population", null]
+    ]},
+    {"name": "Populated places", "kind": "points", "count": 1251, "fields": [
+      ["name", "text", null, null],
+      ["name_zh", "text, Chinese", null, null],
+      ["country", "text", null, null],
+      ["population", "integer", "people", null],
+      ["capital", "yes/no", null, ["true", "false"]]
+    ]},
+    {"name": "Seaports", "kind": "points", "count": 3630, "fields": [
+      ["name", "text", null, null],
+      ["country", "text", null, null],
+      ["harbor_size", "category", null, ["Large", "Medium", "Small", "Very small"]]
+    ]},
+    {"name": "Power plants", "kind": "points", "count": 34936, "fields": [
+      ["name", "text", null, null],
+      ["country", "text", null, null],
+      ["fuel", "category", null, ["Coal", "Gas", "Oil", "Hydro", "Nuclear", "Solar", "Wind", "Biomass", "Geothermal", "Other"]],
+      ["capacity_mw", "number", "MW", null],
+      ["year_built", "integer", "year", null]
+    ]},
+    {"name": "Airports", "kind": "points", "count": 891, "fields": [
+      ["name", "text", null, null],
+      ["iata", "text", null, null],
+      ["country", "text", null, null],
+      ["type", "category", null, ["major", "mid", "small"]]
+    ]},
+    {"name": "Earthquakes", "kind": "points", "count": 4210, "fields": [
+      ["place", "text", null, null],
+      ["magnitude", "number", null, null],
+      ["depth_km", "number", "km", null],
+      ["year", "integer", "year", null]
+    ]},
+    {"name": "Rivers", "kind": "lines", "count": 1455, "fields": [
+      ["name", "text", null, null],
+      ["name_zh", "text, Chinese", null, null]
+    ]},
+    {"name": "Railways", "kind": "lines", "count": 25890, "fields": [
+      ["country", "text", null, null],
+      ["status", "category", null, ["open", "under construction", "abandoned"]]
+    ]},
+    {"name": "Elevation", "kind": "raster", "desc": "1 band, 0.5° cells, metres above sea level"},
+    {"name": "Population", "kind": "raster", "desc": "1 band, 1 km cells, people per cell"},
+    {"name": "Precipitation", "kind": "raster", "desc": "1 band, 5 km cells, mm per year"}
+  ]
+}

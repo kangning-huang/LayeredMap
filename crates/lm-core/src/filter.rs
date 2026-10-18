@@ -22,6 +22,9 @@ pub enum Test {
     Is(String),
     IsNot(String),
     Contains(String),
+    /// Text begins / ends with (trimmed, Unicode lowercase on both sides).
+    StartsWith(String),
+    EndsWith(String),
     IsEmpty,
     Above(f64),
     Below(f64),
@@ -81,6 +84,8 @@ impl Test {
             Test::Is(v) => text_of(c).is_some_and(|t| t.eq_ignore_ascii_case(v.trim())),
             Test::IsNot(v) => text_of(c).is_some_and(|t| !t.eq_ignore_ascii_case(v.trim())),
             Test::Contains(v) => text_of(c).is_some_and(|t| t.to_lowercase().contains(&v.trim().to_lowercase())),
+            Test::StartsWith(v) => text_of(c).is_some_and(|t| t.to_lowercase().starts_with(&v.trim().to_lowercase())),
+            Test::EndsWith(v) => text_of(c).is_some_and(|t| t.to_lowercase().ends_with(&v.trim().to_lowercase())),
             Test::Above(x) => number_of(c).is_some_and(|v| v > *x),
             Test::Below(x) => number_of(c).is_some_and(|v| v < *x),
             Test::Between(a, b) => number_of(c).is_some_and(|v| v >= a.min(*b) && v <= a.max(*b)),
@@ -102,6 +107,8 @@ impl Test {
             Test::Is(v) => format!("is {v}"),
             Test::IsNot(v) => format!("is not {v}"),
             Test::Contains(v) => format!("contains “{v}”"),
+            Test::StartsWith(v) => format!("starts with “{v}”"),
+            Test::EndsWith(v) => format!("ends with “{v}”"),
             Test::IsEmpty => "is empty".into(),
             Test::Above(x) => format!("above {}", n(*x)),
             Test::Below(x) => format!("below {}", n(*x)),
@@ -169,6 +176,10 @@ mod tests {
         assert!(Test::IsEmpty.matches(Cell::Text("  ")));
         assert!(!Test::IsEmpty.matches(Cell::Number(0.0)));
         assert!(Test::Below(1.0).matches(Cell::Number(0.0)));
+        assert!(Test::StartsWith("za".into()).matches(Cell::Text(" Zaragoza")));
+        assert!(Test::EndsWith("DAN".into()).matches(Cell::Text("Jordan")));
+        assert!(!Test::StartsWith("x".into()).matches(Cell::Empty));
+        assert!(Test::StartsWith("Ü".into()).matches(Cell::Text("über")));
         assert!(!Test::IsNot("a".into()).matches(Cell::Empty));
     }
 

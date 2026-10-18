@@ -1,0 +1,64 @@
+{
+  "name": "city",
+  "description": "One city's open data, like the urban tasks of GeoAnalystBench, GeoAgentBench and GIS Copilot: neighbourhoods with census figures, points of interest, streets, buildings, and city rasters. Value-free.",
+  "layers": [
+    {"name": "Neighbourhoods", "kind": "areas", "count": 96, "fields": [
+      ["name", "text", null, null],
+      ["population", "integer", "people", null],
+      ["pop_over65", "integer", "people", null],
+      ["median_income", "integer", "US$", null],
+      ["households", "integer", "households", null],
+      ["area_km2", "number", "km²", null]
+    ]},
+    {"name": "Hospitals", "kind": "points", "count": 21, "fields": [
+      ["name", "text", null, null],
+      ["beds", "integer", "beds", null],
+      ["emergency", "yes/no", null, ["true", "false"]]
+    ]},
+    {"name": "Schools", "kind": "points", "count": 312, "fields": [
+      ["name", "text", null, null],
+      ["level", "category", null, ["Primary", "Secondary", "College"]],
+      ["students", "integer", "students", null]
+    ]},
+    {"name": "Bus stops", "kind": "points", "count": 2480, "fields": [
+      ["stop_id", "text", null, null],
+      ["name", "text", null, null],
+      ["routes", "integer", "routes", null]
+    ]},
+    {"name": "Air quality stations", "kind": "points", "count": 49, "fields": [
+      ["station", "text", null, null],
+      ["pm25", "number", "µg/m³", null],
+      ["no2", "number", "µg/m³", null]
+    ]},
+    {"name": "Crimes", "kind": "points", "count": 18734, "fields": [
+      ["category", "category", null, ["Burglary", "Theft", "Assault", "Vandalism", "Robbery", "Other"]],
+      ["date", "date", null, null]
+    ]},
+    {"name": "Trees", "kind": "points", "count": 52110, "fields": [
+      ["species", "text", null, null],
+      ["height_m", "number", "m", null],
+      ["planted", "integer", "year", null]
+    ]},
+    {"name": "Streets", "kind": "lines", "count": 14205, "fields": [
+      ["name", "text", null, null],
+      ["class", "category", null, ["motorway", "primary", "secondary", "residential", "cycleway", "footway"]],
+      ["speed_kmh", "integer", "km/h", null]
+    ]},
+    {"name": "Buildings", "kind": "areas", "count": 88412, "fields": [
+      ["use", "category", null, ["residential", "commercial", "industrial", "public", "other"]],
+      ["height_m", "number", "m", null],
+      ["year_built", "integer", "year", null]
+    ]},
+    {"name": "Parks", "kind": "areas", "count": 214, "fields": [
+      ["name", "text", null, null],
+      ["type", "category", null, ["city", "neighbourhood", "pocket", "nature reserve"]]
+    ]},
+    {"name": "Flood zones", "kind": "areas", "count": 37, "fields": [
+      ["zone", "category", null, ["100-year", "500-year"]]
+    ]},
+    {"name": "Surface temperature", "kind": "raster", "desc": "1 band, 30 m cells, °C"},
+    {"name": "Elevation", "kind": "raster", "desc": "1 band, 10 m cells, metres above sea level"},
+    {"name": "Land cover", "kind": "raster", "desc": "1 band, 10 m cells, categories"},
+    {"name": "Tree canopy", "kind": "raster", "desc": "1 band, 10 m cells, % canopy cover"}
+  ]
+}
