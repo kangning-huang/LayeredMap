@@ -94,9 +94,9 @@ pub fn toolbar(shell: &mut Shell, ui: &mut Ui, rect: Rect, _system: System) {
         }
         let tip = match label {
             "Undo" => shell.ws.undo.undo_label().map_or_else(|| "Nothing to undo".to_string(), |l| format!("Undo {}", lower_first(l))),
-            "Open" => "Open files (⌘O)".to_string(),
-            "Layers" => "Show or hide the layer list (⌘L)".to_string(),
-            "Share" => "Export a map image (⌘E) or data".to_string(),
+            "Open" => format!("Open files ({})", crate::keys::shortcut("O")),
+            "Layers" => format!("Show or hide the layer list ({})", crate::keys::shortcut("L")),
+            "Share" => format!("Export a map image ({}) or data", crate::keys::shortcut("E")),
             other => other.to_string(),
         };
         let clicked = resp.clicked();

@@ -291,12 +291,19 @@ fn double_clicking_a_layer_zooms_to_it() {
 
 /// Phase 3: a harness with fixtures opened and every background job (map layers, hit indexes,
 /// insight indexes, styles) finished.
-pub(crate) fn phase3(
+pub(crate) fn phase3(files: &'static [&'static str], view: (f64, f64, f64), setup: impl Fn(&mut Shell) + 'static) -> Harness<'static, Option<Shell>> {
+    phase3_sized(SIZE, 1.0, files, view, setup)
+}
+
+/// [`phase3`] in a window of `size` points at `ppp` pixels per point.
+fn phase3_sized(
+    size: egui::Vec2,
+    ppp: f32,
     files: &'static [&'static str],
     view: (f64, f64, f64),
     setup: impl Fn(&mut Shell) + 'static,
 ) -> Harness<'static, Option<Shell>> {
-    let mut h = harness_phase(3, false, view, move |s| {
+    let mut h = harness_sized(size, ppp, 3, false, view, move |s| {
         let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../fixtures");
         for (i, f) in files.iter().enumerate() {
             let layers =
@@ -935,7 +942,12 @@ pub(crate) fn wait_for_export(h: &mut Harness<'static, Option<Shell>>) {
 /// Districts coloured by population in groups, with the schools over them; the developer flag
 /// shows export ahead of its phase.
 pub(crate) fn export_scene(setup: impl Fn(&mut Shell) + 'static) -> Harness<'static, Option<Shell>> {
-    let mut h = phase3(&["V1/districts.geojson", "T1/schools.csv"], SHANGHAI, move |s| {
+    export_scene_sized(SIZE, 1.0, setup)
+}
+
+/// [`export_scene`] in a window of `size` points at `ppp` pixels per point.
+fn export_scene_sized(size: egui::Vec2, ppp: f32, setup: impl Fn(&mut Shell) + 'static) -> Harness<'static, Option<Shell>> {
+    let mut h = phase3_sized(size, ppp, &["V1/districts.geojson", "T1/schools.csv"], SHANGHAI, move |s| {
         s.developer = true;
         if let Some(id) = s.ws.doc.layers.iter().find(|l| l.profile.kind == lm_core::model::LayerKind::Areas).map(|l| l.id) {
             s.ws.select_layer(id);
@@ -1465,4 +1477,103 @@ fn netcdf_time_slider_above_ask() {
     let mut h = phase3(&["R8/r8_lon360.nc"], WORLD, |s| s.pro = true);
     settle(&mut h);
     h.snapshot("netcdf_time_slider_pro");
+}
+
+/// Windows display scaling (WP6.2): the screens a student meets first, at 125 % and 150 %, in
+/// the window a 1920×1080 laptop gives at each (1536×864 and 1280×720 points), and at 125 % on
+/// a 1366×768 laptop, the smallest common screen (1093×614 points less the taskbar). egui lays
+/// out in points, so these check that nothing assumed whole pixels: text stays sharp, the map
+/// fills its area, and panels, cards and the export sheet fit. Rendered with the bundled fonts,
+/// so the images are the same on macOS, where they are compared.
+mod scaling {
+    use super::*;
+
+    /// A 1920×1080 screen at 125 %.
+    const AT_125: (egui::Vec2, f32) = (egui::vec2(1536.0, 864.0), 1.25);
+    /// A 1920×1080 screen at 150 %.
+    const AT_150: (egui::Vec2, f32) = (egui::vec2(1280.0, 720.0), 1.5);
+    /// A 1366×768 screen at 125 %, less a 48 px taskbar and the title bar: below the window's
+    /// usual minimum, which Windows lowers to fit (apps/layeredmap main.rs).
+    const SMALL_125: (egui::Vec2, f32) = (egui::vec2(1093.0, 560.0), 1.25);
+
+    fn first_launch((size, ppp): (egui::Vec2, f32), name: &str) {
+        let mut h = harness_sized(size, ppp, lm_core::phase::BUILD_PHASE, false, WORLD, |_| {});
+        let px = h.ctx.pixels_per_point();
+        assert_eq!(px, ppp);
+        h.snapshot(name);
+    }
+
+    fn object_card((size, ppp): (egui::Vec2, f32), name: &str) {
+        let mut h = phase3_sized(size, ppp, &["V1/districts.geojson"], SHANGHAI, |_| {});
+        click(&mut h, 121.26, 31.41);
+        let rows = h.state().as_ref().map(|s| s.ws.selection.features.len()).unwrap_or(0);
+        assert_eq!(rows, 1, "one district selected");
+        h.snapshot(name);
+    }
+
+    fn export_sheet((size, ppp): (egui::Vec2, f32), name: &str) {
+        let mut h = export_scene_sized(size, ppp, |_| {});
+        if let Some(e) = h.state_mut().as_mut().and_then(|s| s.export_sheet.as_mut()) {
+            e.title = "Schools and districts of Shanghai".into();
+        }
+        wait_for_export(&mut h);
+        h.run_steps(5);
+        h.snapshot(name);
+    }
+
+    #[test]
+    #[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+    fn first_launch_at_125() {
+        first_launch(AT_125, "scale125_first_launch");
+    }
+
+    #[test]
+    #[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+    fn first_launch_at_150() {
+        first_launch(AT_150, "scale150_first_launch");
+    }
+
+    #[test]
+    #[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+    fn object_card_at_125() {
+        object_card(AT_125, "scale125_object_card");
+    }
+
+    #[test]
+    #[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+    fn object_card_at_150() {
+        object_card(AT_150, "scale150_object_card");
+    }
+
+    #[test]
+    #[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+    fn object_card_on_a_small_screen_at_125() {
+        object_card(SMALL_125, "scale125_small_object_card");
+    }
+
+    #[test]
+    #[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+    fn export_sheet_at_125() {
+        export_sheet(AT_125, "scale125_export_sheet");
+    }
+
+    #[test]
+    #[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+    fn export_sheet_at_150() {
+        export_sheet(AT_150, "scale150_export_sheet");
+    }
+
+    /// Without comparing pixels (so on Windows CI too): at 125 % and 150 % the map is drawn at
+    /// the screen's own resolution, whole pixels covering the map's area in points.
+    #[test]
+    fn the_map_renders_at_the_screens_resolution() {
+        for (size, ppp) in [AT_125, AT_150, SMALL_125] {
+            let h = harness_sized(size, ppp, 1, false, WORLD, |_| {});
+            let s = h.state().as_ref().unwrap();
+            assert!(s.map_view().renders > 0, "the map drew at {ppp}");
+            let rect = s.map_view().rect().unwrap();
+            let want = [(rect.width() * ppp).round() as usize, (rect.height() * ppp).round() as usize];
+            assert_eq!(s.map_view().frame_pixel_size(), Some(want), "at {ppp}");
+        }
+    }
 }

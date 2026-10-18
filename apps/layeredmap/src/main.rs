@@ -1,6 +1,9 @@
 //! LayeredMap: the app entry point (WP1.1). A window that remembers its size and position, the
-//! native macOS menu bar (LayeredMap, File, Edit, View, Window, Help), stored preferences, and the
-//! map-first shell from `lm-ui`.
+//! native macOS menu bar (LayeredMap, File, Edit, View, Window, Help) or the Windows window menu
+//! (WP6.2), stored preferences, and the map-first shell from `lm-ui`.
+// A release build on Windows is a windowed app: no console window opens beside it. Output still
+// reaches a pipe (the launch probe, `--version`), which is how the harnesses read it.
+#![cfg_attr(all(windows, not(debug_assertions)), windows_subsystem = "windows")]
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
 mod diagnostics;
@@ -12,21 +15,32 @@ mod help;
 #[allow(unsafe_code)]
 mod macos;
 mod menu;
+// Native Windows hooks (the menu bar on the window), under the same rule as the macOS module.
+#[cfg(windows)]
+#[allow(unsafe_code)]
+mod windows;
 
 use lm_core::phase::Flags;
+use lm_core::platform::Folder;
 use lm_ui::{Command, FileRequest, Prefs, Shell, System, ThemePref, Units};
 
 /// Where answered question cards are logged: the app's support folder (never data values or
-/// file names; Assumptions and questions › Question budget instrumentation).
+/// file names; Assumptions and questions › Question budget instrumentation). `%APPDATA%\LayeredMap`
+/// on Windows (`lm_core::platform`).
 fn question_log_path() -> std::path::PathBuf {
-    let home = std::env::var_os("HOME").map(std::path::PathBuf::from).unwrap_or_default();
-    home.join("Library/Application Support/LayeredMap/question-log.jsonl")
+    user_dir(Folder::Support).join("question-log.jsonl")
 }
 
-/// Where autosaves and the recovery journal live (WP5.1).
+/// Where autosaves and the recovery journal live (WP5.1): `%LOCALAPPDATA%\LayeredMap\Autosave` on
+/// Windows.
 fn autosave_dir() -> std::path::PathBuf {
-    let home = std::env::var_os("HOME").map(std::path::PathBuf::from).unwrap_or_default();
-    home.join("Library/Application Support/LayeredMap/Autosave")
+    user_dir(Folder::Autosave)
+}
+
+/// A per-user folder; with no home in the environment, one in the temporary folder rather than
+/// the working folder.
+fn user_dir(folder: Folder) -> std::path::PathBuf {
+    lm_core::platform::current_user_dir(folder).unwrap_or_else(|| std::env::temp_dir().join("LayeredMap"))
 }
 
 fn lm_doc_export(log: &std::path::Path, out: &std::path::Path) -> Result<usize, String> {
@@ -160,6 +174,10 @@ impl eframe::App for App {
                     menu::Action::ToggleOffline => {
                         let on = !self.shell.prefs.offline;
                         self.shell.command(ctx, Command::SetOffline(on));
+                    }
+                    menu::Action::ToggleFullscreen => {
+                        let on = ctx.input(|i| i.viewport().fullscreen.unwrap_or(false));
+                        ctx.send_viewport_cmd(egui::ViewportCommand::Fullscreen(!on));
                     }
                     menu::Action::ExportDiagnostics => {
                         let settings = diagnostics::Settings {
@@ -382,22 +400,22 @@ impl Step {
 }
 
 /// LayeredMap Pro: the Pro app bundle carries `Contents/Resources/tier` reading "pro"
-/// (`packaging/lm/bundle-macos.sh` with `LM_TIER=pro`); `LM_TIER=pro` does the same for a run
+/// (`packaging/lm/bundle-macos.sh` with `LM_TIER=pro`; on Windows `Resources\tier` beside the exe,
+/// from the Pro installer); `LM_TIER=pro` does the same for a run
 /// outside a bundle. Until accounts exist (Phase 7) the tier is the app you open.
 fn is_pro() -> bool {
     if std::env::var("LM_TIER").is_ok_and(|v| v.eq_ignore_ascii_case("pro")) {
         return true;
     }
-    std::env::current_exe()
-        .ok()
-        .and_then(|exe| Some(exe.parent()?.parent()?.join("Resources").join("tier")))
+    lm_core::platform::current_resources_dir()
+        .map(|r| r.join("tier"))
         .and_then(|p| std::fs::read_to_string(p).ok())
         .is_some_and(|s| s.trim().eq_ignore_ascii_case("pro"))
 }
 
 fn main() -> eframe::Result {
     let started = std::time::Instant::now();
-    let args: Vec<String> = std::env::args().skip(1).collect();
+    let args: Vec<String> = std::env::args_os().skip(1).map(|a| a.to_string_lossy().into_owned()).collect();
     let arg = |name: &str| args.iter().position(|a| a == name).and_then(|i| args.get(i + 1)).cloned();
     let feel_out = arg("--feel").map(std::path::PathBuf::from);
     let runs = arg("--runs").and_then(|v| v.parse::<usize>().ok()).unwrap_or(1);
@@ -420,7 +438,8 @@ fn main() -> eframe::Result {
     let developer = cfg!(debug_assertions) || std::env::var_os("LM_DEV").is_some();
     let pro = is_pro();
     let app_name = if pro { "LayeredMap Pro" } else { "LayeredMap" };
-    // Crash logs and the log file stay on this Mac (~/Library/Logs/LayeredMap).
+    // Crash logs and the log file stay on this computer (~/Library/Logs/LayeredMap,
+    // %LOCALAPPDATA%\LayeredMap\Logs).
     diagnostics::install_logger();
     diagnostics::install_panic_hook(app_name);
     let mut options = eframe::NativeOptions {
@@ -428,7 +447,9 @@ fn main() -> eframe::Result {
             .with_title(app_name)
             .with_app_id(if pro { "app.layeredmap.pro" } else { "app.layeredmap.desktop" })
             .with_inner_size([1280.0, 800.0])
-            .with_min_inner_size([1024.0, 640.0])
+            // Windows: low enough for a 1366×768 laptop at 125 % (1093×614 points less the taskbar
+            // and title bar), the smallest screen in the course's likely machines.
+            .with_min_inner_size(if cfg!(windows) { [960.0, 540.0] } else { [1024.0, 640.0] })
             // The Strata logo, for runs outside the app bundle (the bundle has AppIcon.icns).
             .with_icon(eframe::icon_data::from_png_bytes(include_bytes!("../../../assets/icon/icon-256.png")).unwrap_or_default()),
         // The window's size and position are remembered between launches.
@@ -466,9 +487,15 @@ fn main() -> eframe::Result {
                 // The update feed (off unless built with LM_UPDATE_FEED_URL), on its own thread.
                 lm_ui::update::start(&cc.egui_ctx, pro);
             }
-            // Files passed on the command line (and, through macOS, Open With) are opened.
-            let files: Vec<std::path::PathBuf> =
-                std::env::args().skip(1).filter(|a| !a.starts_with('-')).map(std::path::PathBuf::from).filter(|p| p.is_file()).collect();
+            // Files passed on the command line (and Open With: through macOS, or Explorer starting
+            // `layeredmap.exe "<file>"` on Windows) are opened.
+            // `args_os`: a file name that isn't valid Unicode still opens.
+            let files: Vec<std::path::PathBuf> = std::env::args_os()
+                .skip(1)
+                .filter(|a| !a.to_string_lossy().starts_with('-'))
+                .map(std::path::PathBuf::from)
+                .filter(|p| p.is_file())
+                .collect();
             if !files.is_empty() {
                 shell.command(&cc.egui_ctx, Command::Open(files));
             }
@@ -478,7 +505,11 @@ fn main() -> eframe::Result {
             let feel = feel_out.map(|out| feel::Feel::new(out, runs, shell.map_view().camera()));
             #[cfg(target_os = "macos")]
             macos::set_context(&cc.egui_ctx);
-            let menu = menu::MenuBar::install(developer, shell.export_shown(), shell.library_available(), &cc.egui_ctx);
+            #[cfg(windows)]
+            let hwnd = windows::hwnd(cc);
+            #[cfg(not(windows))]
+            let hwnd = None;
+            let menu = menu::MenuBar::install(developer, shell.export_shown(), shell.library_available(), &cc.egui_ctx, hwnd);
             Ok(Box::new(App {
                 shell,
                 menu,

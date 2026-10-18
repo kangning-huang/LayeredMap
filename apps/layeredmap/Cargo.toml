@@ -7,7 +7,7 @@ publish = false
 description = "LayeredMap desktop app: window, menu bar, file associations, packaging"
 
 # The workspace forbids unsafe code. The app alone relaxes that to `deny`, so its macOS module
-# (Open With, Dock drops, the Edited state) can opt in with `#[allow(unsafe_code)]`, a SAFETY
+# (Open With, Dock drops, the Edited state) and Windows module (the menu bar) can opt in with `#[allow(unsafe_code)]`, a SAFETY
 # comment on every block, and a second review (Architecture › Rules enforced in CI).
 [lints.rust]
 unsafe_code = "deny"
@@ -35,3 +35,13 @@ objc2 = "0.5.2"
 block2 = "0.5.1"
 objc2-foundation = { version = "0.2.2", features = ["block2", "NSArray", "NSEnumerator", "NSNotification", "NSOperation", "NSString", "NSURL", "NSThread"] }
 objc2-app-kit = { version = "0.2.2", features = ["NSApplication", "NSResponder", "NSWindow"] }
+
+# The Windows module (the menu bar on the window) and the system version for crash logs.
+[target.'cfg(windows)'.dependencies]
+raw-window-handle = "0.6"
+winreg = "0.56"
+
+# The Windows executable's icon, version information and manifest (DPI awareness, long paths):
+# build.rs compiles packaging/lm/windows/layeredmap.rc when the target is Windows.
+[build-dependencies]
+embed-resource = "3"

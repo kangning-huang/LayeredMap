@@ -233,7 +233,7 @@ pub(crate) fn write_container(path: &Path, json: &[u8], entries: &[(OwnedEntry, 
         let _ = std::fs::remove_file(&tmp);
         return Err(DocError::write(path, e));
     }
-    if let Err(e) = std::fs::rename(&tmp, path) {
+    if let Err(e) = replace_file(&tmp, path) {
         let _ = std::fs::remove_file(&tmp);
         return Err(DocError::write(path, e));
     }
@@ -242,6 +242,22 @@ pub(crate) fn write_container(path: &Path, json: &[u8], entries: &[(OwnedEntry, 
         let _ = d.sync_all();
     }
     Ok(())
+}
+
+/// Moves the finished temporary file over `path`. On Windows a virus scanner, the search indexer
+/// or a sync client can hold the old file open for a moment ("access denied"), so the move is
+/// retried for up to half a second before the save fails.
+fn replace_file(tmp: &Path, path: &Path) -> std::io::Result<()> {
+    let mut tries = 0;
+    loop {
+        match std::fs::rename(tmp, path) {
+            Err(e) if cfg!(windows) && e.kind() == std::io::ErrorKind::PermissionDenied && tries < 10 => {
+                tries += 1;
+                std::thread::sleep(std::time::Duration::from_millis(50));
+            }
+            r => return r,
+        }
+    }
 }
 
 /// Opens a `.lmap` file. Unknown fields are ignored; a newer container or document version is

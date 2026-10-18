@@ -87,7 +87,10 @@ pub fn shelf(shell: &mut Shell, ui: &mut Ui, map: Rect) {
                 if shell.ws.doc.layers.len() > 1 {
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                         let link = ui.link(RichText::new("Remove all").size(CAPTION).color(t.text_secondary));
-                        if link.on_hover_text("Remove every layer from the map (⌘Z brings them back)").clicked() {
+                        if link
+                            .on_hover_text(format!("Remove every layer from the map ({} brings them back)", crate::keys::shortcut("Z")))
+                            .clicked()
+                        {
                             shell.command(ui.ctx(), crate::Command::RemoveAllLayers);
                         }
                     });
