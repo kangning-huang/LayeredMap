@@ -291,7 +291,11 @@ fn double_clicking_a_layer_zooms_to_it() {
 
 /// Phase 3: a harness with fixtures opened and every background job (map layers, hit indexes,
 /// insight indexes, styles) finished.
-pub(crate) fn phase3(files: &'static [&'static str], view: (f64, f64, f64), setup: impl Fn(&mut Shell) + 'static) -> Harness<'static, Option<Shell>> {
+pub(crate) fn phase3(
+    files: &'static [&'static str],
+    view: (f64, f64, f64),
+    setup: impl Fn(&mut Shell) + 'static,
+) -> Harness<'static, Option<Shell>> {
     phase3_sized(SIZE, 1.0, files, view, setup)
 }
 
