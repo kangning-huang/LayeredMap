@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>台风：哪些风暴最猛烈 · LayeredMap 帮助</title>
+<meta name="description" content="LayeredMap 分步教程：打开 4999 条台风和飓风路径，找到台风“海燕”，看它排第几，再只留下五级超强台风。">
+<link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+<link rel="alternate" hreflang="en" href="../workflow-typhoons.html">
+<link rel="stylesheet" href="../assets/site.css">
+<script src="../assets/site.js"></script>
+</head>
+<body>
+<header class="site-head">
+  <div class="wrap">
+    <a class="brand" href="index.html"><img src="../assets/logo.svg" alt="" width="30" height="30">LayeredMap</a>
+    <nav class="nav" aria-label="网站导航">
+      <a href="index.html">首页</a>
+      <a href="help.html" aria-current="page">帮助</a>
+      <a href="glossary.html">术语表</a>
+      <a href="index.html#download">下载</a>
+      <a class="lang" href="../workflow-typhoons.html" hreflang="en" lang="en">English</a>
+      <button class="theme-btn" type="button" aria-label="切换深浅色"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></svg></button>
+    </nav>
+  </div>
+</header>
+<main>
+<div class="page-head contours">
+  <div class="narrow">
+    <p class="eyebrow">教程一 · 免费版</p>
+    <h1>台风：哪些风暴最猛烈</h1>
+    <p class="lede">1980 年以来，哪些风暴最凶猛？它们都去了哪里？这一课你会打开 1980 年以来全球所有热带气旋的路径，按大洋给它们上色，查一查 2013 年的台风 “海燕”，最后只留下五级超强台风。</p>
+    <div class="toc">本课会用到：<a class="term" href="glossary.html#layer">图层</a>、<a class="term" href="glossary.html#feature">要素</a>、<a class="term" href="glossary.html#insight">对比信息</a>、<a class="term" href="glossary.html#style">样式</a>、<a class="term" href="glossary.html#filter">筛选</a>和<a class="term" href="glossary.html#table">属性表</a>。</div>
+  </div>
+</div>
+<div class="narrow">
+<ol class="steps">
+  <li id="open">
+    <h3>打开示例</h3>
+    <p>在新窗口底部的卡片上点 <span class="ui">Examples</span>（示例），选 <span class="ui">Typhoons and hurricanes</span>（台风与飓风）。以后随时也可以从菜单 File › Open Example 里打开。</p>
+    <p>左侧 <span class="ui">Layers</span>（图层）面板里会出现一个名为 <span class="ui">storms</span> 的图层，右侧卡片上写着 <span class="ui">4,999 lines · storm tracks.gpkg</span>：一条线就是一场风暴。</p>
+  </li>
+  <li id="basin">
+    <h3>按大洋给路径上色</h3>
+    <p>在图层卡片上打开 <span class="ui">Style</span>（样式）标签页，点 <span class="ui">By basin</span>（按海域）这一格。<span class="ui">Legend</span>（图例）里随即列出各个海域：West Pacific（西北太平洋）、East Pacific（东北太平洋）、North Atlantic（北大西洋）等。</p>
+    <figure class="frame shot"><img src="../img/typhoons-hero.jpg" alt="按海域上色的台风路径：深蓝色的西北太平洋路径铺满了从菲律宾到日本的海面。" width="1600" height="1215" loading="lazy"><figcaption>深蓝色的西北太平洋是全球热带气旋最活跃的海域。登陆香港、上海、台湾和日本的台风，都是从这里生成的。</figcaption></figure>
+  </li>
+  <li id="click">
+    <h3>点一场台风，看它排第几</h3>
+    <p>随便点一条路径。如果好几条路径叠在一起，会弹出一个小列表，比如 <span class="ui">4 objects here</span>（这里有 4 个对象），从里面选 <span class="ui">Haiyan · storms</span>（海燕）。</p>
+    <figure class="frame shot"><img src="../img/typhoons-pick.jpg" alt="标题为 “4 objects here” 的小列表，列出 Gene、Haiyan、Dot、Owen 四场风暴。" width="1600" height="996" loading="lazy"></figure>
+    <p>卡片换成了 2013 年台风 “海燕” 的信息。在给出任何工具之前，它先告诉你海燕的排名：<span class="ui">max_wind_kt</span>（最大风速）170 节，<span class="ui">higher than 99% of 4,547 storms with values</span>，也就是比有风速记录的 4547 场风暴中的 99% 都强。每行旁边的小条形图标出了它在所有风暴中的位置。</p>
+    <figure class="frame shot"><img src="../img/typhoons-card.jpg" alt="海燕的路径从菲律宾一直延伸到越南，被高亮显示；卡片上写着：海域 West Pacific，最大风速 170 节，比 4547 场有记录的风暴中 99% 都高，强度 Category 5。" width="1600" height="996" loading="lazy"><figcaption>2013 年 11 月，海燕横扫菲律宾中部，是有记录以来登陆时最强的风暴之一。</figcaption></figure>
+    <p class="note">想按名字找台风？在图层卡片顶部的 <span class="ui">Find in storms</span>（在 storms 中查找）里输入名字即可；也可以用工具栏的搜索框，匹配结果列在 <span class="ui">Your data</span>（你的数据）下面。数据里的台风名用的是国际英文名，例如 “山竹” 要搜 Mangkhut。</p>
+  </li>
+  <li id="color">
+    <h3>按数值上色</h3>
+    <p>点卡片上的 <span class="ui">Color by a value</span>（按数值上色）。<span class="ui">Style</span> 标签页随即打开，路径按数据里的某个数值着色。想改成按风速上色，就打开 <span class="ui">Color</span>（颜色）下拉菜单，选 <span class="ui">max_wind_kt</span>，再试试 <span class="ui">Heat</span>（热度）配色。<span class="ui">Groups</span>（分组）把数值分成几档；<span class="ui">Smooth</span>（平滑）则用连续渐变。</p>
+    <figure class="frame shot"><img src="../img/typhoons-color.jpg" alt="Style 标签页：颜色按 season（年份），配色 Viridis，按等数量分成 5 组。" width="1600" height="996" loading="lazy"><figcaption>图中的颜色对应 <span class="ui">season</span>（年份）。在 <span class="ui">Color</span> 菜单里可以换成任何其他字段。</figcaption></figure>
+  </li>
+  <li id="table">
+    <h3>打开属性表</h3>
+    <p>点卡片底部的 <span class="ui">View in table</span>（在表格中查看）。表格从地图底部滑出：一行是一场风暴，一列是一项<a class="term" href="glossary.html#attribute">属性</a>。在表格里选中一行，地图上对应的路径也会选中。</p>
+  </li>
+  <li id="filter">
+    <h3>只留下五级超强台风</h3>
+    <p>在表格上方点 <span class="ui">+ Filter</span>（添加筛选）。屏幕上会出现一句待补全的话，把它设成 <span class="ui">Show storms where strength is any of Category 5</span>（只显示强度为五级的风暴）。确认之前它就告诉你有多少条符合：<span class="ui">228 match</span>（228 条）。然后点 <span class="ui">Apply</span>（应用）。</p>
+    <figure class="frame shot"><img src="../img/typhoons-filter.jpg" alt="表格上方的筛选句子 “Show storms where strength is any of Category 5”，显示 228 match，旁边是 Cancel 和 Apply。" width="1600" height="996" loading="lazy"></figure>
+    <p>其余 4771 条路径只是被隐藏了，并没有删除。表格写着 <span class="ui">Showing 228 of 4,999</span>（显示 4999 条中的 228 条），筛选条件变成一个可以点 × 去掉的小标签，图层那一行也多了个漏斗图标。卡片上的对比也随之只在筛选结果里进行：<span class="ui">tied 2nd highest of 228 filtered</span>（在筛选出的 228 场中并列第二）。</p>
+    <figure class="frame shot"><img src="../img/typhoons-filtered.jpg" alt="地图上只剩五级台风的路径，密集分布在菲律宾以东；表格显示 4999 条中的 228 条。" width="1600" height="996" loading="lazy"><figcaption>五级台风集中在菲律宾以东的洋面上，再弯向台湾、华南和日本。</figcaption></figure>
+    <p class="note">想做比较？再加一个条件（比如 <span class="ui">basin</span> 为 <span class="ui">West Pacific</span>），或者去掉标签改看 <span class="ui">North Atlantic</span>（北大西洋）。每一次改动都可以用 <span class="ui">Undo</span> 撤销。</p>
+  </li>
+  <li id="pro">
+    <h3>哪些城市被台风光顾得最多？</h3>
+    <p>保留筛选，在搜索框里输入你关心的城市（比如香港、厦门或马尼拉）飞过去，就能看出哪些地方正处在路径最密集的地带。要真正<em>数一数</em>每座城市附近经过了多少场台风，就属于 “分析” 了，因为它会生成新的数据。在 LayeredMap 里，这正是 Pro 版的用武之地。</p>
+    <div class="pro-note"><strong>LayeredMap Pro。</strong>卡片上会多出分析按钮，比如 <span class="ui">Measure length</span>（测量长度）和 <span class="ui">Show an area within a distance of each</span>（显示每个对象周边一定距离内的范围）。地图底部的 <span class="ui">Ask about your layers</span>（询问你的图层）提问框可以直接用中文提问，例如先问 “显示香港周边 100 公里的范围”，再问 “只保留台风路径在这个范围里的部分”。每个答案都会先在地图上预览，并附上<a class="term" href="glossary.html#recipe">步骤说明</a>；点 <span class="ui">Keep</span>（保留）之前什么都不会保存。</div>
+    <figure class="frame shot"><img src="../img/typhoons-pro.jpg" alt="LayeredMap Pro 里同一张海燕卡片，多了 Measure length 和 Show an area within a distance 按钮，地图底部是 Ask about your layers 提问框。" width="1600" height="1040" loading="lazy"><figcaption>LayeredMap Pro：卡片上的分析按钮和底部的提问框。</figcaption></figure>
+  </li>
+</ol>
+<p class="coords" style="margin:10px 0 60px">数据：NOAA NCEI IBTrACS v04r01（Knapp 等，2010，doi:10.1175/2009BAMS2755.1；Gahtan 等，2024，doi:10.25921/82ty-9e16）。底图 © OpenStreetMap 贡献者、Protomaps、Natural Earth。</p>
+</div>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <div>
+      <p><strong>LayeredMap 帮助</strong> · 这些页面随应用一起安装（菜单 Help › LayeredMap Help），不联网也能看。</p>
+      <p>截图中的地图数据：© OpenStreetMap 贡献者（ODbL），经 Protomaps 提供；Natural Earth（公有领域）；NASA “蓝色弹珠” 卫星影像（NASA Earth Observatory，GIBS）。各页示例数据的来源分别列在页面末尾。</p>
+    </div>
+    <div><a href="help.html">帮助</a> · <a href="glossary.html">术语表</a> · <a href="../workflow-typhoons.html" lang="en">English</a></div>
+  </div>
+</footer>
+</body>
+</html>

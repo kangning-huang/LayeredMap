@@ -5,6 +5,7 @@
 
 mod diagnostics;
 mod feel;
+mod help;
 // The spec's one exception to "no unsafe" (Architecture › Rules enforced in CI): native macOS
 // hooks live in the app's macOS module, with a SAFETY comment on each block and a second review.
 #[cfg(target_os = "macos")]
@@ -170,6 +171,7 @@ impl eframe::App for App {
                         let report = diagnostics::report(&settings, &diagnostics::logs_dir());
                         self.shell.command(ctx, Command::ReviewDiagnostics(report));
                     }
+                    menu::Action::Help => help::open(),
                     menu::Action::ExportQuestionLog => {
                         let log = question_log_path();
                         if let Some(out) =
@@ -292,7 +294,9 @@ impl eframe::App for App {
 /// `area lon,lat lon,lat lon,lat…` makes an area layer from an outline;
 /// `action ID key=value,key=value` opens the composer for an analysis action on the selected
 /// layer (developer surface; `with=NAME` picks the second layer); `keep` keeps its preview;
-/// `ask TEXT` sends a request to Pro's Ask box (waits 15 s); `keep-ask` keeps its plan.
+/// `ask TEXT` sends a request to Pro's Ask box (waits 15 s); `keep-ask` keeps its plan;
+/// `card ID [FIELD]` runs a card's display action (`filter strength`, `style_by_value`, …) on the
+/// selected layer (`card apply_filter` presses the filter's Apply); `time N` shows the n-th time step; `export` opens the map image sheet.
 #[derive(Clone, Debug, PartialEq)]
 enum Step {
     Fly(f64, f64, f64),
@@ -337,6 +341,12 @@ impl Step {
                 Step::Other(Command::ComposeAction(id.to_string(), params))
             }
             "keep" => Step::Other(Command::KeepResult),
+            "card" => {
+                let (id, field) = rest.trim().split_once(' ').map_or((rest.trim(), None), |(a, b)| (a, Some(b.trim().to_string())));
+                Step::Other(Command::CardAction(id.to_string(), field))
+            }
+            "time" => Step::Other(Command::SetTime(rest.trim().parse().ok()?)),
+            "export" => Step::Other(Command::ExportMapImage),
             "ask" => Step::Other(Command::Ask(rest.trim().to_string())),
             "keep-ask" => Step::Other(Command::KeepAsk),
             "example" => Step::Other(Command::OpenExample(rest.trim().to_string())),

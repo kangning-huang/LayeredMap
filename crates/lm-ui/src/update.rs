@@ -137,8 +137,9 @@ fn macos_version() -> Option<String> {
 }
 
 /// Whether the system's first language is Chinese (for the feed's notes), on the checking
-/// thread. The interface's own language setting (WP5.5) replaces this when it exists.
-fn prefers_chinese() -> bool {
+/// thread. The interface's own language setting (WP5.5) replaces this when it exists. Help ›
+/// LayeredMap Help uses it too, to open the Chinese pages.
+pub fn prefers_chinese() -> bool {
     #[cfg(target_os = "macos")]
     {
         std::process::Command::new("/usr/bin/defaults")

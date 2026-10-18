@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Glossary · LayeredMap Help</title>
+<meta name="description" content="Map and GIS words you meet in LayeredMap, explained in plain English, with where each one shows up in the app.">
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+<link rel="alternate" hreflang="zh-Hans" href="zh/glossary.html">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/site.js"></script>
+</head>
+<body>
+<header class="site-head">
+  <div class="wrap">
+    <a class="brand" href="index.html"><img src="assets/logo.svg" alt="" width="30" height="30">LayeredMap</a>
+    <nav class="nav" aria-label="Site">
+      <a href="index.html">Home</a>
+      <a href="help.html">Help</a>
+      <a href="glossary.html" aria-current="page">Glossary</a>
+      <a href="index.html#download">Download</a>
+      <a class="lang" href="zh/glossary.html" hreflang="zh-Hans" lang="zh-Hans">中文</a>
+      <button class="theme-btn" type="button" aria-label="Switch theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></svg></button>
+    </nav>
+  </div>
+</header>
+<main>
+<div class="page-head contours">
+  <div class="narrow">
+    <p class="eyebrow">Glossary</p>
+    <h1>Map words, in plain English</h1>
+    <p class="lede">LayeredMap uses everyday words on its buttons, but map data comes with its own vocabulary. Here is what each word means and where you meet it in the app. Search in English or Chinese.</p>
+  </div>
+</div>
+<div class="search">
+  <div class="narrow">
+    <label for="q" class="coords" style="display:block;margin-bottom:8px">Search the glossary <kbd>/</kbd></label>
+    <input id="q" type="search" placeholder="Try “buffer”, “CRS” or “缓冲区”" autocomplete="off" spellcheck="false">
+    <div id="count" class="count" aria-live="polite"></div>
+    <nav id="letters" class="letters" aria-label="Jump to letter"></nav>
+  </div>
+</div>
+<div class="narrow">
+  <noscript><p class="empty">The glossary needs JavaScript turned on.</p></noscript>
+  <dl id="glossary" class="glossary"></dl>
+</div>
+</main>
+<script src="assets/glossary-data.js"></script>
+<script src="assets/glossary.js"></script>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <div>
+      <p><strong>LayeredMap Help</strong> · These pages ship inside the app (Help › LayeredMap Help) and work offline.</p>
+      <p>Screenshots show map data © OpenStreetMap contributors (ODbL) via Protomaps, Natural Earth (public domain), and NASA Blue Marble imagery (NASA Earth Observatory, GIBS). Example data credits are listed on each page.</p>
+    </div>
+    <div><a href="help.html">Help</a> · <a href="glossary.html">Glossary</a> · <a href="zh/glossary.html" lang="zh-Hans">中文</a></div>
+  </div>
+</footer>
+</body>
+</html>

@@ -33,6 +33,9 @@ cp "$target_dir/release/layeredmap" "$app/Contents/MacOS/layeredmap"
 # The Examples menu (WP2.9): the app looks in Contents/Resources/examples.
 mkdir -p "$app/Contents/Resources/examples"
 rsync -a --exclude '._*' "$root/assets/examples/" "$app/Contents/Resources/examples/"
+# Help › LayeredMap Help (WP6.10): the help pages, read from disk so they work offline.
+mkdir -p "$app/Contents/Resources/help"
+rsync -a --exclude '._*' --exclude 'README.md' "$root/web/lm/" "$app/Contents/Resources/help/"
 # The app icon (the Strata logo; tools/lm/make_app_icon.py builds it from design/logo).
 cp "$root/packaging/lm/AppIcon.icns" "$app/Contents/Resources/AppIcon.icns"
 echo "$tier" > "$app/Contents/Resources/tier"
