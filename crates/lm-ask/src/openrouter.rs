@@ -54,6 +54,12 @@ pub fn read_key() -> Option<String> {
     bundled_key().or_else(keychain_key)
 }
 
+/// An internal test build: one with the owner's key built in (the release has none and talks to
+/// LayeredMap's assistant service). Such builds show each request's cost; the release never does.
+pub fn internal_build() -> bool {
+    bundled_key().is_some()
+}
+
 /// Scrambled so it isn't plain text in the bundle; not a secret store (see the bundle script).
 const PAD: &[u8] = b"LayeredMap Pro test build: not a secret store.";
 

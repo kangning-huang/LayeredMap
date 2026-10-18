@@ -232,6 +232,16 @@ fn keep(shell: &mut Shell) {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
+fn internal_build() -> bool {
+    lm_ask::openrouter::internal_build()
+}
+
+#[cfg(target_arch = "wasm32")]
+fn internal_build() -> bool {
+    false
+}
+
 fn short(s: &str, n: usize) -> String {
     if s.chars().count() <= n { s.to_string() } else { format!("{}…", s.chars().take(n - 1).collect::<String>()) }
 }
@@ -394,6 +404,7 @@ fn answer_panel(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, width: f32, ma
                         _ => None,
                     })
                     .collect();
+                let show_cost = shell.developer || internal_build();
                 let caption = format!(
                     "{} model call{} · US${:.4} · {seconds:.1} s",
                     usage.calls,
@@ -412,9 +423,12 @@ fn answer_panel(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, width: f32, ma
                     if ui.button("Discard").clicked() {
                         action = Some(false);
                     }
-                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        ui.label(RichText::new(caption).size(CAPTION).color(t.text_secondary));
-                    });
+                    // The cost shows only in internal builds (owner's decision, 2026-10-18).
+                    if show_cost {
+                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                            ui.label(RichText::new(caption).size(CAPTION).color(t.text_secondary));
+                        });
+                    }
                 });
             }
             Some(Shown::Question { text, choices }) => {
