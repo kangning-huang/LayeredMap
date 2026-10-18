@@ -21,15 +21,17 @@ type_complexity = "allow"
 [dependencies]
 lm-ui = { path = "../../crates/lm-ui" }
 lm-core = { path = "../../crates/lm-core" }
+lm-net = { path = "../../crates/lm-net" }
 eframe = { workspace = true, features = ["default_fonts", "wgpu", "accesskit", "persistence"] }
 rfd = { workspace = true }
 muda = { version = "0.21", default-features = false }
 egui = { workspace = true }
-log = { workspace = true }
+# `std`: the diagnostics module installs a boxed logger.
+log = { workspace = true, features = ["std"] }
 
-# The macOS module (Open With, Dock drops): the same objc2 versions winit already uses.
+# The macOS module (Open With, Dock drops, the Edited state): the same objc2 versions winit already uses.
 [target.'cfg(target_os = "macos")'.dependencies]
 objc2 = "0.5.2"
 block2 = "0.5.1"
 objc2-foundation = { version = "0.2.2", features = ["block2", "NSArray", "NSEnumerator", "NSNotification", "NSOperation", "NSString", "NSURL", "NSThread"] }
-objc2-app-kit = { version = "0.2.2", features = ["NSApplication", "NSResponder"] }
+objc2-app-kit = { version = "0.2.2", features = ["NSApplication", "NSResponder", "NSWindow"] }

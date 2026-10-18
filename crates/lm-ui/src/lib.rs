@@ -8,22 +8,30 @@ pub mod analysis;
 pub mod ask;
 pub mod basemap;
 mod chrome;
+pub mod diagnostics;
 #[cfg(not(target_arch = "wasm32"))]
 mod dictation;
 pub mod draw;
 pub mod examples;
+pub mod export;
+pub mod export_data;
 pub mod find_ui;
 pub mod form;
 pub mod illustrations;
 pub mod insight;
 pub mod inspect;
 pub mod join_ui;
+pub mod library;
+#[cfg(test)]
+mod offline_harness;
 pub mod panels;
+pub mod saving;
 #[cfg(test)]
 mod screenshots;
 pub mod search;
 pub mod table;
 pub mod theme;
+pub mod update;
 pub mod workspace;
 
 use std::path::PathBuf;
@@ -64,8 +72,10 @@ pub enum Command {
     Open(Vec<PathBuf>),
     /// Ask the app for the Open dialog (⌘O, the Open button).
     RequestOpen,
-    /// Open the three example files (Try an example, File › Open example data).
+    /// Open the world basics (cities, countries, elevation).
     OpenExamples,
+    /// Open one entry of the Examples menu, by id ("storms").
+    OpenExample(String),
     Undo,
     Redo,
     /// Show or hide the layer shelf (⌘L, the Layers button).
@@ -108,6 +118,28 @@ pub enum Command {
     Ask(String),
     KeepAsk,
     Dictate,
+    /// ⌘S: save the map to its file (Save As the first time).
+    Save,
+    /// ⇧⌘S: save the map to a file the user picks.
+    SaveAs,
+    /// Save the map as a `.lmap` file here (the Save As dialog's result).
+    SaveTo(PathBuf),
+    /// Use this file for a layer whose source is missing (the Locate… dialog's result).
+    Relink(lm_core::model::LayerId, PathBuf),
+    /// The recovery prompt's answer: Restore (true) or Discard.
+    Restore(bool),
+    /// Share › Map image… (File › Export Map Image…, ⌘E): the map image sheet (WP5.3).
+    ExportMapImage,
+    /// Share › Data… (File › Export Data…): the data export dialog (WP5.3).
+    ExportData,
+    /// View › Work Offline: strict offline mode (WP6.6) on or off.
+    SetOffline(bool),
+    /// Help › Export Diagnostics…: show the app's report for review before it is saved.
+    ReviewDiagnostics(String),
+    /// Open the data library (WP5.4: the welcome card, File › Browse data library).
+    OpenLibrary,
+    /// Add a library dataset to the map by its id (scripts and tests; the panel's Add to map).
+    AddFromLibrary(String),
 }
 
 /// A file dialog the shell asks the app to show (the shell itself never opens dialogs).
@@ -117,10 +149,16 @@ pub enum FileRequest {
     Open,
     /// Save text to a file the user picks.
     SaveText { title: String, suggested_name: String, contents: String },
+    /// Save bytes (an exported image or data file) to a file the user picks.
+    SaveBytes { title: String, suggested_name: String, bytes: Vec<u8> },
     /// Developer: pick a folder to save the document into.
     SaveDocument,
     /// Developer: pick a document folder to open.
     OpenDocument,
+    /// Pick where to save the map (a `.lmap` file).
+    SaveAs { suggested_name: String },
+    /// Pick the file a missing layer's source moved to.
+    Locate { layer: lm_core::model::LayerId, file_name: String },
 }
 
 /// What the shell remembers between launches (the app stores it).
@@ -133,11 +171,13 @@ pub struct Prefs {
     pub strength: f32,
     /// The last view: centre longitude, latitude and zoom. `None` on first launch.
     pub view: Option<(f64, f64, f64)>,
+    /// Strict offline mode (View › Work Offline): no network request of any kind.
+    pub offline: bool,
 }
 
 impl Default for Prefs {
     fn default() -> Self {
-        Prefs { theme: ThemePref::System, units: Units::Metric, basemap: "auto".into(), strength: 1.0, view: None }
+        Prefs { theme: ThemePref::System, units: Units::Metric, basemap: "auto".into(), strength: 1.0, view: None, offline: false }
     }
 }
 
@@ -217,6 +257,15 @@ pub struct Shell {
     pub(crate) after_drawing: Option<lm_core::model::LayerId>,
     /// The Ask box (Pro, early test build of WP7.1).
     pub(crate) ask: ask::AskState,
+    /// The map's file, autosave and recovery (WP5.1, WP5.2).
+    pub doc_file: saving::DocFile,
+    /// The map image sheet and the data export dialog, while open (WP5.3).
+    pub(crate) export_sheet: Option<export::ImageSheet>,
+    pub(crate) data_export: Option<export_data::DataDialog>,
+    /// A diagnostics report open for review (Help › Export Diagnostics…).
+    pub(crate) diagnostics: Option<String>,
+    /// The data library (WP5.4).
+    pub(crate) library: library::LibraryState,
 }
 
 impl Shell {
@@ -226,6 +275,8 @@ impl Shell {
         if !lm_mapview::add_label_font(theme::NOTO_SC_REGULAR.to_vec()) {
             log::warn!("the bundled Chinese font could not be registered for map labels");
         }
+        // Offline mode is set before the map exists, so not even its first frame asks for tiles.
+        lm_net::set_offline(prefs.offline);
         let dark = basemap::dark_for(prefs.theme, system.dark_mode);
         let map = basemap::initial_map(&prefs, dark);
         let backdrop = basemap::backdrop(&map);
@@ -250,6 +301,11 @@ impl Shell {
             composer: None,
             after_drawing: None,
             ask: ask::AskState::default(),
+            doc_file: saving::DocFile::default(),
+            export_sheet: None,
+            data_export: None,
+            diagnostics: None,
+            library: Default::default(),
             find: find_ui::FindState::default(),
             drawing: None,
             ws: workspace::Workspace::with_waker(ctx),
@@ -281,6 +337,16 @@ impl Shell {
     /// Whether analysis actions are offered: in Pro, and on the developer surface.
     pub fn analysis_actions(&self) -> bool {
         self.pro || self.developer
+    }
+
+    /// Whether export (Share, File › Export…) is offered (WP5.3; see [`export::shown`]).
+    pub fn export_shown(&self) -> bool {
+        export::shown(self.flags, self.developer, self.pro)
+    }
+
+    /// The map image sheet is open.
+    pub fn exporting_image(&self) -> bool {
+        self.export_sheet.is_some()
     }
 
     /// "LayeredMap" or "LayeredMap Pro".
@@ -364,6 +430,34 @@ impl Shell {
             Command::Ask(text) => ask::submit(self, ctx, text),
             Command::KeepAsk => ask::keep_shown(self),
             Command::Dictate => ask::dictate(self, ctx),
+            Command::ExportMapImage => {
+                if self.export_shown() && self.export_sheet.is_none() {
+                    self.data_export = None;
+                    self.export_sheet = Some(export::ImageSheet::new(self));
+                }
+            }
+            Command::ExportData => {
+                if self.export_shown() {
+                    match export_data::DataDialog::new(self, None) {
+                        Some(d) => self.data_export = Some(d),
+                        None => self.notice = Some(("Open a file first: there is no data to export.".into(), t)),
+                    }
+                }
+            }
+            Command::SetOffline(on) => {
+                self.prefs.offline = on;
+                lm_net::set_offline(on);
+                self.basemap_changed();
+                // The daily-build lookup put off at launch runs once back online.
+                if !on && lm_mapview::archive::wanted() {
+                    basemap::start_archive_lookup(ctx);
+                }
+                let msg = if on { "Working offline: LayeredMap won't use the network." } else { "Back online." };
+                self.notice = Some((msg.into(), t));
+            }
+            Command::ReviewDiagnostics(report) => diagnostics::open(self, report),
+            Command::OpenLibrary => library::open(self, ctx),
+            Command::AddFromLibrary(id) => library::add(self, ctx, &id),
             Command::Find(text) => {
                 if let Some(id) = self.ws.selected() {
                     self.find.layer = Some(id);
@@ -399,13 +493,30 @@ impl Shell {
                 self.map.fly_to(lm_mapview::Coord::new(lon, lat), zoom, t, self.last_map_size, self.reduce_motion);
             }
             Command::Open(paths) => {
-                let waker = ctx.clone();
-                self.ws.open(paths, move || waker.request_repaint());
+                // A map file opens as the document; other files as data.
+                let (maps, paths): (Vec<PathBuf>, Vec<PathBuf>) =
+                    paths.into_iter().partition(|p| p.extension().is_some_and(|e| e.eq_ignore_ascii_case(lm_doc::EXTENSION)));
+                if let Some(m) = maps.first() {
+                    saving::open(self, ctx, m, t);
+                }
+                if !paths.is_empty() {
+                    let waker = ctx.clone();
+                    self.ws.open(paths, move || waker.request_repaint());
+                }
             }
+            Command::Save => saving::save(self, t),
+            Command::SaveAs => saving::save_as(self),
+            Command::SaveTo(path) => saving::save_to(self, path, t),
+            Command::Relink(id, path) => saving::relink(self, id, &path, t),
+            Command::Restore(yes) => saving::answer_recovery(self, ctx, yes, t),
             Command::RequestOpen => self.file_requests.push(FileRequest::Open),
             Command::OpenExamples => {
                 let waker = ctx.clone();
                 self.ws.open(examples::paths(), move || waker.request_repaint());
+            }
+            Command::OpenExample(id) => {
+                let waker = ctx.clone();
+                self.ws.open(examples::paths_of(&id), move || waker.request_repaint());
             }
             Command::RequestSaveDocument => self.file_requests.push(FileRequest::SaveDocument),
             Command::RequestOpenDocument => self.file_requests.push(FileRequest::OpenDocument),
@@ -442,18 +553,7 @@ impl Shell {
                 };
                 self.notice = Some((msg, t));
             }
-            Command::OpenDocument(dir) => match lm_doc::load(&dir) {
-                Ok(doc) => {
-                    self.notice = Some((format!("Opened a document with {} layers; reading their files again.", doc.layers.len()), t));
-                    let view = doc.view;
-                    self.ws = workspace::Workspace::with_waker(ctx);
-                    self.ws.restore(doc);
-                    if let Some((lon, lat, zoom)) = view {
-                        self.map.fly_to(lm_mapview::Coord::new(lon, lat), zoom, t, self.last_map_size, self.reduce_motion);
-                    }
-                }
-                Err(e) => self.notice = Some((e.to_string(), t)),
-            },
+            Command::OpenDocument(path) => saving::open(self, ctx, &path, t),
             Command::LoadFixture(path) => {
                 self.notice = Some((format!("Loading {}…", path.display()), t));
                 self.loading = Some(lm_jobs::load_fixture(path));
@@ -461,14 +561,61 @@ impl Shell {
         }
     }
 
+    /// The window title: the map's name, with "— Edited" where the system shows no Edited state
+    /// of its own (macOS shows it from [`Shell::edited`]).
+    pub fn window_title(&self) -> String {
+        let name = self.doc_file.name();
+        if self.doc_file.edited() && !cfg!(target_os = "macos") { format!("{name} — Edited") } else { name }
+    }
+
+    /// Whether the map has changes its file doesn't have.
+    pub fn edited(&self) -> bool {
+        self.doc_file.edited()
+    }
+
+    /// The map's file, once saved or opened.
+    pub fn document_path(&self) -> Option<&std::path::Path> {
+        self.doc_file.path.as_deref()
+    }
+
+    /// Starts autosave and the recovery journal in `dir` (the app's Autosave folder); after a
+    /// crash the recovery prompt shows. Also makes closing ask about unsaved changes.
+    pub fn start_autosave(&mut self, dir: &std::path::Path) {
+        saving::start(self, dir);
+    }
+
+    /// The window asked to close: false while "Save changes?" needs an answer.
+    pub fn may_close(&mut self) -> bool {
+        saving::may_close(self)
+    }
+
+    /// A clean quit (the journal is marked clean).
+    pub fn shutdown(&mut self) {
+        saving::shutdown(self);
+    }
+
     /// File dialogs the app should show, oldest first.
     pub fn take_file_requests(&mut self) -> Vec<FileRequest> {
         std::mem::take(&mut self.file_requests)
     }
 
+    /// The data library's catalog (`library::catalog_url`); `None` hides the library.
+    pub fn set_library_catalog(&mut self, url: Option<String>) {
+        self.library.url = url;
+    }
+
+    /// Whether the data library is offered (the app shows File › Browse data library).
+    pub fn library_available(&self) -> bool {
+        library::available(self)
+    }
+
     /// Where answered question cards are logged (the app's support folder).
     pub fn set_question_log(&mut self, path: PathBuf) {
         self.question_log = Some(path);
+    }
+
+    pub(crate) fn push_file_request(&mut self, r: FileRequest) {
+        self.file_requests.push(r);
     }
 
     pub(crate) fn set_notice(&mut self, text: String, t: f64) {
@@ -583,6 +730,7 @@ impl Shell {
         let t = ctx.input(|i| i.time);
         analysis::poll(self);
         ask::poll(self);
+        library::poll(self, ctx);
         // Files dropped on the window (Open With and the Dock icon arrive through the app).
         let dropped: Vec<PathBuf> =
             ctx.input(|i| i.raw.dropped_files.iter().map(|f| f.path().to_path_buf()).filter(|p| !p.as_os_str().is_empty()).collect());
@@ -663,9 +811,18 @@ impl Shell {
             self.archive_url = Some(u);
             self.basemap_changed();
         }
-        self.shortcuts(&ctx);
+        // The map image sheet takes the whole window (and the keyboard) while it is open.
+        if self.export_sheet.is_none() {
+            self.shortcuts(&ctx);
+        }
         self.poll_loading(&ctx);
         self.update_workspace(&ctx);
+        saving::frame(self, &ctx);
+        saving::close_if_saved(self, &ctx);
+        if self.export_sheet.is_some() {
+            export::sheet(self, ui, ctx.content_rect());
+            return;
+        }
 
         // Full-bleed: the whole window, whatever margins the host's panel has.
         let full = ctx.content_rect();
@@ -725,14 +882,24 @@ impl Shell {
         panels::review(self, &ctx);
         panels::compare_banner(self, ui, overlay_rect);
         ask::ask_box(self, ui, map_rect);
+        update::notice(self, ui, overlay_rect);
         chrome::toolbar(self, ui, toolbar, system);
         if self.credits_open {
             chrome::credits(self, &ctx);
         }
+        export_data::dialog(self, &ctx);
+        diagnostics::window(self, &ctx);
+        library::panel(self, &ctx);
         panels::drop_overlay(self, ui, full);
+        saving::recovery_prompt(self, ui, map_rect);
+        saving::close_prompt(self, ui, map_rect);
     }
 
     fn shortcuts(&mut self, ctx: &egui::Context) {
+        let export_image = ctx.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::E));
+        if export_image {
+            self.command(ctx, Command::ExportMapImage);
+        }
         let (find, zero, debug, open, layers, table_key) = ctx.input_mut(|i| {
             (
                 i.consume_key(egui::Modifiers::COMMAND, egui::Key::F),
@@ -777,6 +944,21 @@ impl Shell {
         }
         if zero {
             self.command(ctx, Command::ZoomToAll);
+        }
+        // ⌘S and ⇧⌘S come from the menu bar on macOS; elsewhere the shell takes them.
+        #[cfg(not(target_os = "macos"))]
+        {
+            let (save_as, save) = ctx.input_mut(|i| {
+                (
+                    i.consume_key(egui::Modifiers::COMMAND | egui::Modifiers::SHIFT, egui::Key::S),
+                    i.consume_key(egui::Modifiers::COMMAND, egui::Key::S),
+                )
+            });
+            if save_as {
+                self.command(ctx, Command::SaveAs);
+            } else if save {
+                self.command(ctx, Command::Save);
+            }
         }
     }
 

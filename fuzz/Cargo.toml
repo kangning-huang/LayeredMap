@@ -50,6 +50,42 @@ test = false
 doc = false
 bench = false
 
+[[bin]]
+name = "kml"
+path = "fuzz_targets/kml.rs"
+test = false
+doc = false
+bench = false
+
+# WP6.8: every import adapter has a target; GeoPackage and Excel joined in Phase 5.
+[[bin]]
+name = "gpkg"
+path = "fuzz_targets/gpkg.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "kmz"
+path = "fuzz_targets/kmz.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "gpx"
+path = "fuzz_targets/gpx.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "xlsx"
+path = "fuzz_targets/xlsx.rs"
+test = false
+doc = false
+bench = false
+
 # Not part of the LayeredMap workspace.
 [workspace]
 members = ["."]

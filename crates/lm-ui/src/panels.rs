@@ -963,6 +963,8 @@ pub fn compare_banner(shell: &mut Shell, ui: &mut Ui, map: Rect) {
 }
 
 fn overview(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, l: &lm_core::document::DocLayer) {
+    // A source that moved since the map was saved (WP5.2): Locate… or Remove layer.
+    crate::saving::missing_card(shell, ui, t, l);
     // Kept results (WP4.6): the card of the result that made this layer, and cards about it.
     crate::analysis::kept_cards(shell, ui, t, l);
     // Joining a table (WP3.11): the result on the joined layer, the question on a table.

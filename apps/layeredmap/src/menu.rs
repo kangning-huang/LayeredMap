@@ -14,6 +14,8 @@ pub enum Action {
     SaveDocument,
     OpenDocument,
     ExportQuestionLog,
+    ToggleOffline,
+    ExportDiagnostics,
 }
 
 pub struct MenuBar {
@@ -22,6 +24,7 @@ pub struct MenuBar {
     theme: [CheckMenuItem; 3],
     units: [CheckMenuItem; 2],
     debug: CheckMenuItem,
+    offline: CheckMenuItem,
 }
 
 fn cmd(key: Code) -> Option<Accelerator> {
@@ -31,15 +34,17 @@ fn cmd(key: Code) -> Option<Accelerator> {
 impl MenuBar {
     /// Builds the menu bar and installs it in the app (macOS). `None` if that fails, or on other
     /// platforms for now (Windows packaging is Phase 6).
-    pub fn install(developer: bool, ctx: &egui::Context) -> Option<MenuBar> {
+    /// `export`: File › Export Map Image… and Export Data… are shown (WP5.3); `library`: File ›
+    /// Browse data library… (WP5.4).
+    pub fn install(developer: bool, export: bool, library: bool, ctx: &egui::Context) -> Option<MenuBar> {
         #[cfg(not(target_os = "macos"))]
         {
-            let _ = (developer, ctx);
+            let _ = (developer, export, library, ctx);
             None
         }
         #[cfg(target_os = "macos")]
         {
-            match Self::build(developer, ctx) {
+            match Self::build(developer, export, library, ctx) {
                 Ok(m) => {
                     m._menu.init_for_nsapp();
                     Some(m)
@@ -53,7 +58,7 @@ impl MenuBar {
     }
 
     #[cfg(target_os = "macos")]
-    fn build(developer: bool, ctx: &egui::Context) -> muda::Result<MenuBar> {
+    fn build(developer: bool, export: bool, library: bool, ctx: &egui::Context) -> muda::Result<MenuBar> {
         let menu = Menu::new();
         let about = AboutMetadata {
             name: Some("LayeredMap".into()),
@@ -78,8 +83,28 @@ impl MenuBar {
         )?;
         let file = Submenu::new("File", true);
         file.append(&MenuItem::with_id("open", "Open…", true, cmd(Code::KeyO)))?;
-        file.append(&MenuItem::with_id("open-examples", "Open example data", true, None))?;
+        let examples = Submenu::new("Open Example", true);
+        for e in lm_ui::examples::EXAMPLES {
+            examples.append(&MenuItem::with_id(format!("example:{}", e.id), e.title, true, None))?;
+        }
+        file.append(&examples)?;
+        if library {
+            file.append(&MenuItem::with_id("library", "Browse data library…", true, None))?;
+        }
         file.append(&PredefinedMenuItem::separator())?;
+        file.append(&MenuItem::with_id("save", "Save", true, cmd(Code::KeyS)))?;
+        file.append(&MenuItem::with_id(
+            "save-as",
+            "Save As…",
+            true,
+            Some(Accelerator::new(Modifiers::META | Modifiers::SHIFT, Code::KeyS)),
+        ))?;
+        file.append(&PredefinedMenuItem::separator())?;
+        if export {
+            file.append(&MenuItem::with_id("export-image", "Export Map Image…", true, cmd(Code::KeyE)))?;
+            file.append(&MenuItem::with_id("export-data", "Export Data…", true, None))?;
+            file.append(&PredefinedMenuItem::separator())?;
+        }
         if developer {
             file.append(&MenuItem::with_id("load-fixture", "Load fixture…", true, None))?;
             file.append(&MenuItem::with_id("save-document", "Save document (developer)…", true, None))?;
@@ -118,6 +143,8 @@ impl MenuBar {
             false,
             Some(Accelerator::new(Modifiers::META | Modifiers::ALT, Code::KeyF)),
         );
+        // Strict offline mode (WP6.6): one switch for every network request.
+        let offline = CheckMenuItem::with_id("offline", "Work Offline", true, false, None);
         let view = Submenu::with_items(
             "View",
             true,
@@ -133,6 +160,8 @@ impl MenuBar {
                 &units[0],
                 &units[1],
                 &PredefinedMenuItem::separator(),
+                &offline,
+                &PredefinedMenuItem::separator(),
                 &debug,
                 &PredefinedMenuItem::fullscreen(None),
             ],
@@ -147,7 +176,11 @@ impl MenuBar {
                 &PredefinedMenuItem::bring_all_to_front(None),
             ],
         )?;
-        let help = Submenu::with_items("Help", true, &[&MenuItem::with_id("credits", "Credits", true, None)])?;
+        let help = Submenu::with_items(
+            "Help",
+            true,
+            &[&MenuItem::with_id("credits", "Credits", true, None), &MenuItem::with_id("diagnostics", "Export Diagnostics…", true, None)],
+        )?;
         for m in [&app, &file, &edit, &view, &window, &help] {
             menu.append(m)?;
         }
@@ -159,7 +192,7 @@ impl MenuBar {
             let _ = tx.send(e);
             ctx.request_repaint();
         }));
-        Ok(MenuBar { _menu: menu, events, theme, units, debug })
+        Ok(MenuBar { _menu: menu, events, theme, units, debug, offline })
     }
 
     /// The actions the menu asked for since the last poll.
@@ -171,6 +204,12 @@ impl MenuBar {
                 "load-fixture" => Action::LoadFixture,
                 "open" => Action::Shell(Command::RequestOpen),
                 "open-examples" => Action::Shell(Command::OpenExamples),
+                id if id.starts_with("example:") => Action::Shell(Command::OpenExample(id["example:".len()..].to_string())),
+                "save" => Action::Shell(Command::Save),
+                "save-as" => Action::Shell(Command::SaveAs),
+                "export-image" => Action::Shell(Command::ExportMapImage),
+                "export-data" => Action::Shell(Command::ExportData),
+                "library" => Action::Shell(Command::OpenLibrary),
                 "undo" => Action::Shell(Command::Undo),
                 "redo" => Action::Shell(Command::Redo),
                 "save-document" => Action::SaveDocument,
@@ -188,6 +227,8 @@ impl MenuBar {
                 "units-imperial" => Action::Shell(Command::SetUnits(Units::Imperial)),
                 "debug" => Action::Shell(Command::ToggleDebugOverlay),
                 "credits" => Action::Shell(Command::ShowCredits),
+                "offline" => Action::ToggleOffline,
+                "diagnostics" => Action::ExportDiagnostics,
                 _ => continue,
             };
             out.push(a);
@@ -211,6 +252,9 @@ impl MenuBar {
         }
         if self.debug.is_checked() != shell.debug_overlay() {
             self.debug.set_checked(shell.debug_overlay());
+        }
+        if self.offline.is_checked() != shell.prefs.offline {
+            self.offline.set_checked(shell.prefs.offline);
         }
     }
 }

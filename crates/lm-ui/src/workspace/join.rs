@@ -233,6 +233,7 @@ impl Workspace {
                 data: LayerData::Vector(Arc::new(joined.data.clone())),
                 status: lm_core::model::ImportStatus::Complete,
                 raw: None,
+                style: None,
             };
             self.data.insert((target, rev), Arc::new(data));
             if let Some(tx) = self.doc.set_profile_tx(target, profile) {
@@ -327,6 +328,7 @@ impl Workspace {
                 data: LayerData::Vector(Arc::new(join::separate(&lds, &record.fields))),
                 status: lm_core::model::ImportStatus::Complete,
                 raw: None,
+                style: None,
             }),
         );
         let mut ops: Vec<Op> = Vec::new();
@@ -433,6 +435,7 @@ impl Workspace {
                 data: LayerData::Vector(Arc::new(joined.data)),
                 status: lm_core::model::ImportStatus::Complete,
                 raw: None,
+                style: None,
             }),
         );
         let tx = self.doc.set_profile_tx(target, profile).map(|mut t| {

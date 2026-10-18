@@ -1,0 +1,76 @@
+{
+  "format": "layeredmap-library",
+  "version": 1,
+  "updated": "2026-10-18",
+  "datasets": [
+    {
+      "id": "world-cities",
+      "title": { "en": "World cities", "zh": "世界城市" },
+      "description": {
+        "en": "1,251 cities and towns with their population and Chinese names.",
+        "zh": "1,251 个城市和城镇，含人口和中文名称。"
+      },
+      "kind": "points",
+      "extent": [-175.23, -90, 179.22, 78.23],
+      "license": { "id": "public-domain", "name": "Public domain", "url": "https://www.naturalearthdata.com/about/terms-of-use/" },
+      "source": "https://www.naturalearthdata.com/downloads/50m-cultural-vectors/50m-populated-places/",
+      "citation": "Made with Natural Earth. Free vector and raster map data @ naturalearthdata.com.",
+      "date": "v5.1.2",
+      "thumbnail": "thumbs/world-cities.png",
+      "files": [
+        {
+          "name": "cities.geojson",
+          "urls": ["../../assets/examples/cities.geojson"],
+          "size": 244807,
+          "sha256": "35bfa5d15bc5e6a898aeb67cc74ac13b8cc9493c1a71ed370fc5246fbe7eb07d"
+        }
+      ]
+    },
+    {
+      "id": "world-elevation",
+      "title": { "en": "World elevation", "zh": "全球高程" },
+      "description": {
+        "en": "Land height and sea-floor depth in metres, in cells of half a degree.",
+        "zh": "陆地高度和海底深度（米），网格为 0.5 度。"
+      },
+      "kind": "raster",
+      "extent": [-180, -90, 180, 90],
+      "license": { "id": "CC0-1.0", "name": "Public domain (CC0)", "url": "https://creativecommons.org/publicdomain/zero/1.0/" },
+      "source": "https://www.ncei.noaa.gov/products/etopo-global-relief-model",
+      "citation": "NOAA National Centers for Environmental Information. 2022: ETOPO 2022 15 Arc-Second Global Relief Model. NOAA National Centers for Environmental Information. https://doi.org/10.25921/fd45-gt74",
+      "date": "2022",
+      "thumbnail": "thumbs/world-elevation.png",
+      "files": [
+        {
+          "name": "elevation.tif",
+          "urls": ["../../assets/examples/elevation.tif"],
+          "size": 362372,
+          "sha256": "274c6494e274f79be01c1dcfbe916abe7629bc5d6caf9fc7a6f72138c27ddfa4"
+        }
+      ]
+    },
+    {
+      "id": "shanghai-districts-test",
+      "title": { "en": "Shanghai districts (test data)", "zh": "上海各区（测试数据）" },
+      "description": {
+        "en": "17 districts with real names; the shapes and populations are made up for testing.",
+        "zh": "17 个区，名称真实；形状和人口为测试而编造。"
+      },
+      "kind": "areas",
+      "extent": [121.2, 30.9, 121.8, 31.5],
+      "license": { "id": "CC0-1.0", "name": "CC0", "url": "https://creativecommons.org/publicdomain/zero/1.0/" },
+      "source": "https://github.com/opengeos/RustGIS",
+      "citation": "LayeredMap test fixture V1 (synthetic), 2026.",
+      "date": "2026",
+      "thumbnail": "thumbs/shanghai-districts.png",
+      "files": [
+        {
+          "name": "districts.geojson",
+          "urls": ["../V1/districts.geojson"],
+          "size": 5000,
+          "sha256": "95bb17969a3c5cba7e631d21a0ccd0258c461bde713a3babac6121d6362572d0"
+        }
+      ]
+    }
+  ]
+}

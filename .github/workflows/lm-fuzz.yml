@@ -1,0 +1,44 @@
+# LayeredMap fuzzing (WP6.8; Gate 6: "24 hours of fuzzing per adapter"): every import adapter's
+# target in 6-hour-class shards on Linux runners (a hosted job may run at most 6 hours, build
+# included). Five shards of 4 h 50 min give each target just over 24 hours. Each shard starts from
+# the seeds and its own random seed; crashes are uploaded as artifacts. See docs/lm/security.md.
+name: LayeredMap fuzz
+
+on:
+  workflow_dispatch:
+    inputs:
+      seconds:
+        description: Seconds per shard (17400 = 4 h 50 min; 5 shards ≈ 24 h per target)
+        default: "17400"
+
+jobs:
+  fuzz:
+    name: fuzz ${{ matrix.target }} (shard ${{ matrix.shard }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [csv, geojson, shapefile, dbf, geotiff_header, gpkg, xlsx]
+        shard: [1, 2, 3, 4, 5]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@nightly
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: fuzz
+      - name: Install cargo-fuzz
+        run: cargo install --locked cargo-fuzz
+      - name: Generated fixtures (seeds for X1–X5)
+        run: cargo xtask fixtures --only X1,X2,X3,X4,X5
+      - name: Fuzz
+        run: cargo xtask fuzz --secs ${{ inputs.seconds }} --target ${{ matrix.target }}
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: fuzz-${{ matrix.target }}-${{ matrix.shard }}
+          path: |
+            fuzz/artifacts/${{ matrix.target }}
+            fuzz/logs/${{ matrix.target }}.log
+          if-no-files-found: ignore

@@ -1,0 +1,241 @@
+{
+  "format": "layeredmap",
+  "version": 0,
+  "layers": [
+    {
+      "id": 1,
+      "display_name": "Districts",
+      "visible": true,
+      "profile": {
+        "source": {
+          "path": "/Users/student/Downloads/districts.shp",
+          "member": null,
+          "size": 52100,
+          "mtime": 1791000100,
+          "sha256": null
+        },
+        "format": "Shapefile",
+        "kind": "Areas",
+        "count": 16,
+        "extent_wgs84": {
+          "min_x": 121.0,
+          "min_y": 31.0,
+          "max_x": 122.0,
+          "max_y": 31.5
+        },
+        "crs": {
+          "value": "Wgs84",
+          "confidence": "Certain",
+          "evidence": "declared"
+        },
+        "fields": [],
+        "bands": [],
+        "assumptions": [],
+        "exclusions": [],
+        "encoding": null,
+        "notices": [],
+        "data_rev": 0,
+        "joins": [
+          {
+            "table": "population.csv",
+            "source": {
+              "path": "/Users/student/Downloads/population.csv",
+              "member": null,
+              "size": 900,
+              "mtime": 1791000200,
+              "sha256": null
+            },
+            "fields": [
+              "pop_2020"
+            ],
+            "spec": "name = district"
+          }
+        ]
+      },
+      "style": {
+        "fill": [
+          0,
+          114,
+          178,
+          255
+        ],
+        "stroke": [
+          0,
+          80,
+          125,
+          255
+        ],
+        "stroke_width": 1.0,
+        "opacity": 1.0,
+        "fill_opacity": 0.35,
+        "point_size": 7.0,
+        "line_width": 2.0,
+        "ramp": "viridis",
+        "stretch": null,
+        "color_by": null,
+        "size_by": null,
+        "labels": null,
+        "band": 0,
+        "above": null,
+        "like": null
+      },
+      "filter": null,
+      "roles": {},
+      "starred": []
+    },
+    {
+      "id": 2,
+      "display_name": "Schools",
+      "visible": true,
+      "profile": {
+        "source": {
+          "path": "/Users/student/Downloads/schools.csv",
+          "member": null,
+          "size": 18204,
+          "mtime": 1791000000,
+          "sha256": null
+        },
+        "format": "CSV",
+        "kind": "Points",
+        "count": 248,
+        "extent_wgs84": {
+          "min_x": 121.0,
+          "min_y": 31.0,
+          "max_x": 122.0,
+          "max_y": 31.5
+        },
+        "crs": {
+          "value": "Wgs84",
+          "confidence": "Certain",
+          "evidence": "declared"
+        },
+        "fields": [
+          {
+            "name": "enrolment",
+            "dtype": "Integer",
+            "role": {
+              "value": {
+                "Measure": "Count"
+              },
+              "confidence": "Likely",
+              "evidence": "integer counts"
+            },
+            "unit": {
+              "value": null,
+              "confidence": "Unknown",
+              "evidence": ""
+            },
+            "stats": {
+              "min": 1.0,
+              "max": 900.0,
+              "median": 300.0,
+              "distinct": 200,
+              "nulls": 2
+            }
+          }
+        ],
+        "bands": [],
+        "assumptions": [
+          {
+            "kind": "CsvCoordinateColumns",
+            "subject": "Layer",
+            "chosen": {
+              "id": "columns:lon,lat",
+              "label": "lon and lat"
+            },
+            "alternatives": [
+              {
+                "id": "columns:lon,lat",
+                "label": "lon and lat"
+              },
+              {
+                "id": "not_sure",
+                "label": "Not sure"
+              }
+            ],
+            "confidence": "Likely",
+            "consequence": "ChangesLocations",
+            "treatment": "Visible",
+            "line": "Located using lon and lat as GPS coordinates (WGS 84).",
+            "confirmed_by_user": true
+          }
+        ],
+        "exclusions": [
+          {
+            "row": 7,
+            "reason": "No coordinates"
+          }
+        ],
+        "encoding": "UTF-8",
+        "notices": [],
+        "data_rev": 0
+      },
+      "style": {
+        "fill": [
+          230,
+          159,
+          0,
+          255
+        ],
+        "stroke": [
+          255,
+          255,
+          255,
+          255
+        ],
+        "stroke_width": 1.5,
+        "opacity": 1.0,
+        "fill_opacity": 1.0,
+        "point_size": 7.0,
+        "line_width": 2.0,
+        "ramp": "viridis",
+        "stretch": null,
+        "color_by": {
+          "field": "enrolment",
+          "categories": false,
+          "classes": {
+            "Groups": {
+              "count": 5,
+              "equal_steps": false
+            }
+          },
+          "palette": "viridis",
+          "per_km2": false,
+          "fit_to_view": false
+        },
+        "size_by": null,
+        "labels": null,
+        "band": 0,
+        "above": null,
+        "like": null
+      },
+      "filter": {
+        "conditions": [
+          {
+            "field": "enrolment",
+            "test": {
+              "Above": 100.0
+            }
+          }
+        ]
+      },
+      "roles": {
+        "enrolment": {
+          "Measure": "Count"
+        }
+      },
+      "starred": [
+        "enrolment"
+      ]
+    }
+  ],
+  "view": [
+    121.47,
+    31.23,
+    10.5
+  ],
+  "next_layer_id": 3,
+  "user_ordered": true,
+  "results": [],
+  "next_result_id": 1
+}

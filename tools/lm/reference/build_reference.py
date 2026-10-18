@@ -1,18 +1,17 @@
 #!/usr/bin/env python3
 """Build the hidden built-in reference data for LayeredMap Pro.
 
-Downloads Natural Earth 1:10m layers (v5.1.x) plus WorldClim 2.1 10' elevation and writes
+Downloads Natural Earth 1:10m layers (v5.1.x) plus NOAA ETOPO 2022 elevation (10') and writes
 trimmed, renamed ESRI shapefiles, point-of-view (POV) country diffs, manifest.json and README.md.
 
     ~/miniforge3/bin/mamba run -n layeredmap-ref python -I \
-        tools/lm/reference/build_reference.py [--out DIR] [--offline] [--elev-tif PATH]
+        tools/lm/reference/build_reference.py [--out DIR] [--offline]
 
 --out      output folder (default /Volumes/LaCie/data/layeredmap-reference); raw downloads go
            to <out>/raw/ and are reused when present.
 --offline  never touch the network; use only what is already in raw/.
---elev-tif reuse an existing wc2.1_10m_elev.tif instead of downloading the WorldClim zip.
 
-Requires geopandas, shapely >= 2, pyogrio, numpy.
+Requires geopandas, shapely >= 2, pyogrio, numpy, rasterio.
 
 POV diff method (details in the generated README): each POV countries layer is trimmed exactly
 like the default layer and diffed against it by match key (iso_a3, or iso_a3|name when iso_a3 is
@@ -24,7 +23,10 @@ applying each entry to countries.shp reproduces the original variant exactly.
 import argparse, datetime, hashlib, json, os, pathlib, shutil, sys, urllib.request, zipfile
 
 NE_BASE = "https://naciscdn.org/naturalearth/10m/{theme}/{name}.zip"
-WC_URL = "https://geodata.ucdavis.edu/climate/worldclim/2_1/base/wc2.1_10m_elev.zip"
+# Elevation: NOAA ETOPO 2022 (public domain), averaged to 10 arc-minutes. WorldClim was used
+# first but doesn't allow redistribution without permission (decisions.md, 2026-10-18).
+ETOPO_URL = ("https://www.ngdc.noaa.gov/mgg/global/relief/ETOPO2022/data/60s/60s_surface_elev_gtif/"
+             "ETOPO_2022_v1_60s_N90W180_surface.tif")
 POV_CODES = ("arg bdg bra chn deu egy esp fra gbr grc idn ind iso isr ita jpn kor mar nep nld "
              "pak pol prt pse rus sau swe tur twn ukr usa vnm").split()
 CULTURAL = ["ne_10m_admin_0_countries", "ne_10m_admin_1_states_provinces",
@@ -67,7 +69,7 @@ def fetch(url, dest, offline):
             "sha256": sha256(dest)}
 
 
-def download_all(raw, offline, elev_tif):
+def download_all(raw, offline):
     """Return (sources dict name -> record, list of existing POV codes)."""
     raw.mkdir(parents=True, exist_ok=True)
     sources = {}
@@ -83,13 +85,8 @@ def download_all(raw, offline, elev_tif):
             povs.append(c)
         else:
             print(f"  POV {c}: not available")
-    if elev_tif and pathlib.Path(elev_tif).exists():
-        p = pathlib.Path(elev_tif)
-        sources["wc2.1_10m_elev"] = {"url": WC_URL, "file": str(p), "bytes": p.stat().st_size,
-                                    "sha256": sha256(p), "note": "existing copy of the tif "
-                                    "(from the WorldClim zip) reused; zip not downloaded"}
-    else:
-        sources["wc2.1_10m_elev"] = fetch(WC_URL, raw / "wc2.1_10m_elev.zip", offline)
+    (raw / "etopo").mkdir(exist_ok=True)
+    sources["etopo_2022_60s"] = fetch(ETOPO_URL, raw / "etopo" / "ETOPO_2022_v1_60s_N90W180_surface.tif", offline)
     return sources, povs
 
 
@@ -404,12 +401,11 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--out", default="/Volumes/LaCie/data/layeredmap-reference")
     ap.add_argument("--offline", action="store_true")
-    ap.add_argument("--elev-tif", default=None)
     a = ap.parse_args()
     out = pathlib.Path(a.out)
     raw = out / "raw"
     print("== download")
-    sources, povs = download_all(raw, a.offline, a.elev_tif)
+    sources, povs = download_all(raw, a.offline)
     print(f"  {len(povs)} POV variants exist: {' '.join(povs)}")
     missing_povs = [c for c in POV_CODES if c not in povs]
 
@@ -441,24 +437,26 @@ def main():
             "bytes": sizes[name]}
         print(f"  {name:17s} {len(gdf):6d} features  {mb(sizes[name])}")
 
-    tif_src = (pathlib.Path(a.elev_tif) if a.elev_tif and pathlib.Path(a.elev_tif).exists()
-               else None)
-    if tif_src is None:
-        with zipfile.ZipFile(raw / "wc2.1_10m_elev.zip") as zf:
-            member = [m for m in zf.namelist() if m.endswith("elev.tif")][0]
-            with zf.open(member) as s, open(out / "elevation.tif", "wb") as d:
-                shutil.copyfileobj(s, d)
-    else:
-        shutil.copyfile(tif_src, out / "elevation.tif")
+    import numpy as np
+    import rasterio
+    from rasterio.enums import Resampling
+    with rasterio.open(raw / "etopo" / "ETOPO_2022_v1_60s_N90W180_surface.tif") as src:
+        w, h = 2160, 1080  # 10 arc-minutes, the cell mean of the 1-minute grid
+        data = src.read(1, out_shape=(h, w), resampling=Resampling.average)
+        t = src.transform * src.transform.scale(src.width / w, src.height / h)
+    prof = dict(driver="GTiff", width=w, height=h, count=1, dtype="int16", crs="EPSG:4326", transform=t,
+                nodata=-32768, compress="deflate", predictor=2)
+    with rasterio.open(out / "elevation.tif", "w", **prof) as d:
+        d.write(np.round(data).astype("int16"), 1)
     sizes["elevation"] = fsize(out / "elevation.tif")
-    sources["wc2.1_10m_elev"]["tif_sha256"] = sha256(out / "elevation.tif")
+    sources["etopo_2022_60s"]["tif_sha256"] = sha256(out / "elevation.tif")
     ri = raster_info(out / "elevation.tif")
     manifest["layers"]["elevation"] = {
         "file": "elevation.tif", "kind": "raster",
-        "description": "WorldClim 2.1 elevation, 10 arc-minute grid (~18.5 km), land only",
-        "source": "wc2.1_10m_elev", "source_version": "2.1", "features": None,
-        "raster": ri, "fields": {"band 1": {"meaning": "elevation above sea level (from SRTM); "
-                                            "sea is no-data", "unit": "m"}},
+        "description": "NOAA ETOPO 2022 global relief, averaged to a 10 arc-minute grid (~18.5 km); land and sea floor",
+        "source": "etopo_2022_60s", "source_version": "ETOPO 2022 v1", "features": None,
+        "raster": ri, "fields": {"band 1": {"meaning": "elevation above sea level, negative on the sea floor "
+                                            "(cell mean of the 1-minute grid)", "unit": "m"}},
         "bytes": sizes["elevation"]}
     print(f"  elevation         {ri['width']}x{ri['height']} raster  {mb(sizes['elevation'])}")
 
@@ -576,7 +574,7 @@ def write_readme(out, sources, manifest, sizes, povs, args):
         f"{v['removed']} |" for c, v in pv.items())
     total = sum(fsize(p) for p in out.rglob("*") if p.is_file() and "raw" not in
                 p.relative_to(out).parts)
-    elev = sources["wc2.1_10m_elev"]
+    elev = sources["etopo_2022_60s"]
     text = f"""# LayeredMap Pro built-in reference data
 
 Hidden reference layers bundled with LayeredMap Pro, so the assistant can answer questions such as
@@ -603,26 +601,24 @@ region -> POV mapping).
 Natural Earth 1:10m, version 5.1.x (per-layer VERSION file: see table above; some physical
 layers were last revised in 4.1/5.0 and are distributed unchanged in the 5.1 release), downloaded
 {manifest['built']} from `https://naciscdn.org/naturalearth/10m/...`.
-WorldClim 2.1 elevation, 10 arc-minutes.
+NOAA ETOPO 2022 global relief (60 arc-second surface elevation), averaged to 10 arc-minutes.
 
 | dataset | URL | bytes | SHA-256 |
 |---|---|---|---|
 {srows}
 
-Elevation: {elev.get('note', 'tif extracted unchanged from the zip above')}
-(source: `{args.elev_tif or 'raw/wc2.1_10m_elev.zip'}`). SHA-256 of `elevation.tif`:
-`{elev['tif_sha256']}`. The copy already on the drive at
-`/Volumes/LaCie/data/layeredmap-puzzles/worldclim/wc2.1_10m_elev.tif` was checked to be
-byte-identical to the tif inside the downloaded zip.
+Elevation: `raw/etopo/ETOPO_2022_v1_60s_N90W180_surface.tif`, averaged (cell mean) to a 2160 × 1080
+grid, rounded to whole metres (int16), written as WGS 84. SHA-256 of `elevation.tif`:
+`{elev['tif_sha256']}`. WorldClim's elevation was used in the first build (2026-10-18) and
+replaced the same day: WorldClim doesn't allow redistribution without permission.
 
 ## Licences
 
 - Natural Earth: public domain (https://www.naturalearthdata.com/about/terms-of-use/). No
   attribution required; "Made with Natural Earth" is appreciated.
-- WorldClim 2.1: CC BY 4.0. Cite: Fick, S.E. and R.J. Hijmans, 2017. WorldClim 2: new 1-km
-  spatial resolution climate surfaces for global land areas. International Journal of
-  Climatology 37 (12): 4302-4315. https://doi.org/10.1002/joc.5086 (WorldClim elevation is
-  derived from SRTM.)
+- NOAA ETOPO 2022: public domain ("not subject to copyright protection in the United States";
+  CC0 1.0 worldwide). Cite: NOAA National Centers for Environmental Information. 2022: ETOPO 2022
+  15 Arc-Second Global Relief Model. https://doi.org/10.25921/fd45-gt74
 
 ## Transformations
 
@@ -630,8 +626,8 @@ Only attribute columns were dropped/renamed; text values are whitespace-trimmed,
 cast to integers (missing -> 0), geometry is copied unchanged.
 
 {chr(10).join(fields)}
-- **elevation.tif**: byte-for-byte copy of `wc2.1_10m_elev.tif` (metres above sea level, land
-  only; sea is no-data {manifest['layers']['elevation']['raster']['nodata']}).
+- **elevation.tif**: ETOPO 2022 averaged to 10 arc-minutes (metres; land and sea floor, negative
+  below sea level; no-data {manifest['layers']['elevation']['raster']['nodata']}).
 
 `iso_a3` in countries: ISO_A3, or ADM0_A3 when ISO_A3 is -99 (France FRA, Norway NOR, Kosovo KOS,
 Somaliland SOL, and small disputed/special areas). `capital` in cities is "yes" when ADM0CAP = 1.
@@ -714,12 +710,11 @@ explicit selection only.
 
 ```
 ~/miniforge3/bin/mamba run -n layeredmap-ref python -I \\
-    /Volumes/LaCie/repos/LayeredMap/tools/lm/reference/build_reference.py \\
-    --elev-tif /Volumes/LaCie/data/layeredmap-puzzles/worldclim/wc2.1_10m_elev.tif
+    /Volumes/LaCie/repos/LayeredMap/tools/lm/reference/build_reference.py
 ```
 
-Downloads go to `raw/` and are reused if present (`--offline` forbids network access). Without
-`--elev-tif` the WorldClim zip is downloaded and the tif extracted. The script rewrites all
+Downloads go to `raw/` and are reused if present (`--offline` forbids network access). ETOPO (466 MB) is downloaded
+once into `raw/etopo/`. The script rewrites all
 outputs, `manifest.json` and this README, and deletes macOS `._*` files.
 """
     (out / "README.md").write_text(text)

@@ -101,6 +101,75 @@ pub fn filter_mask(ds: &Dataset, filter: Option<&Filter>) -> Option<Vec<bool>> {
 /// The field that names objects (WP3.2): the first field whose role is Name (fields called name,
 /// 名称, title or NAME_EN), otherwise the most unique short text field (when at least half its
 /// values are distinct; a category such as "Hospital" doesn't name an object).
+/// How much a line layer piles up on itself: on a grid of about 200 × 200 cells over its
+/// extent, the 90th percentile of how many different lines cross a cell that any line crosses.
+/// Storm tracks reach dozens; rivers and roads stay near 1–2. `None` for no lines.
+pub fn line_overlap(ds: &Dataset) -> Option<f64> {
+    use rustgis_engine::data::Geometry;
+    let mut e = Extent { min_x: f64::INFINITY, min_y: f64::INFINITY, max_x: f64::NEG_INFINITY, max_y: f64::NEG_INFINITY };
+    for f in &ds.features {
+        if let Some(Geometry::Line(parts)) = &f.geometry {
+            for c in parts.iter().flatten().filter(|c| c.x.is_finite() && c.y.is_finite()) {
+                e.min_x = e.min_x.min(c.x);
+                e.min_y = e.min_y.min(c.y);
+                e.max_x = e.max_x.max(c.x);
+                e.max_y = e.max_y.max(c.y);
+            }
+        }
+    }
+    if !(e.min_x < e.max_x || e.min_y < e.max_y) {
+        return None;
+    }
+    let size = (e.max_x - e.min_x).max(e.max_y - e.min_y) / 200.0;
+    let (w, h) = (((e.max_x - e.min_x) / size).ceil() as usize + 1, ((e.max_y - e.min_y) / size).ceil() as usize + 1);
+    let mut count = vec![0u32; w * h];
+    let mut last = vec![u32::MAX; w * h];
+    let mut mark = |row: u32, x: f64, y: f64| {
+        let (i, j) = (((x - e.min_x) / size) as usize, ((y - e.min_y) / size) as usize);
+        let k = j.min(h - 1) * w + i.min(w - 1);
+        if last[k] != row {
+            last[k] = row;
+            count[k] += 1;
+        }
+    };
+    for (row, f) in ds.features.iter().enumerate() {
+        let Some(Geometry::Line(parts)) = &f.geometry else { continue };
+        for part in parts {
+            for seg in part.windows(2) {
+                let (a, b) = (seg[0], seg[1]);
+                if !(a.x.is_finite() && a.y.is_finite() && b.x.is_finite() && b.y.is_finite()) {
+                    continue;
+                }
+                // Sample every half cell along the segment.
+                let n = (((b.x - a.x).hypot(b.y - a.y) / (size * 0.5)).ceil() as usize).clamp(1, 10_000);
+                for t in 0..=n {
+                    let u = t as f64 / n as f64;
+                    mark(row as u32, a.x + (b.x - a.x) * u, a.y + (b.y - a.y) * u);
+                }
+            }
+        }
+    }
+    let mut hit: Vec<u32> = count.into_iter().filter(|c| *c > 0).collect();
+    if hit.is_empty() {
+        return None;
+    }
+    hit.sort_unstable();
+    Some(f64::from(hit[(hit.len() - 1) * 9 / 10]))
+}
+
+/// The default look of a line layer that piles up (storm tracks): fainter and thinner, so
+/// overlaps build up into a picture of where lines are dense. `None`: keep the default.
+pub fn dense_lines_style(overlap: f64) -> Option<(u8, f32)> {
+    // Rivers and coastlines score 3–5 on a world grid (neighbouring features sharing a cell);
+    // storm tracks score about 40.
+    if overlap < 8.0 {
+        return None;
+    }
+    // About three overlapping lines make full strength; never fainter than 10%.
+    let alpha = (3.0 / overlap).clamp(0.1, 0.5);
+    Some(((alpha * 255.0).round() as u8, 1.0))
+}
+
 pub fn title_field(layer: &DocLayer, ds: &Dataset) -> Option<usize> {
     let roles: Vec<(usize, FieldRole)> =
         layer.profile.fields.iter().filter_map(|f| field_index(ds, &f.name).map(|i| (i, layer.role(f).value))).collect();
@@ -1289,6 +1358,49 @@ mod stress {
                 sorted.len(),
                 rc.map_or(0, |c| c.combos.len())
             );
+        }
+    }
+}
+
+#[cfg(test)]
+mod overlap_tests {
+    use super::*;
+    use crate::import::{Ctx, LayerData, import_path};
+
+    fn overlap(path: &str) -> Option<f64> {
+        let ls = import_path(std::path::Path::new(path), &Ctx::detached(Default::default())).ok()?;
+        let LayerData::Vector(ds) = &ls.first()?.data else { return None };
+        line_overlap(ds)
+    }
+
+    /// Lines that don't pile up keep the default look; a bundle of crossing tracks fades.
+    #[test]
+    fn crossing_tracks_fade_and_a_road_does_not() {
+        use rustgis_engine::data::{Coord, Geometry, GeometryType};
+        let mut tracks = Dataset::new("tracks", GeometryType::Polyline, vec![]);
+        for i in 0..40 {
+            let y = f64::from(i) * 0.01;
+            tracks.push_next(Some(Geometry::Line(vec![vec![Coord::new(0.0, y), Coord::new(10.0, 1.0 - y)]])), vec![]);
+        }
+        let o = line_overlap(&tracks).unwrap();
+        assert!(o >= 8.0, "{o}");
+        assert!(dense_lines_style(o).is_some_and(|(a, w)| a < 64 && w == 1.0));
+        let mut road = Dataset::new("road", GeometryType::Polyline, vec![]);
+        road.push_next(Some(Geometry::Line(vec![vec![Coord::new(0.0, 0.0), Coord::new(10.0, 3.0)]])), vec![]);
+        assert_eq!(dense_lines_style(line_overlap(&road).unwrap()), None);
+    }
+
+    /// The owner's data, when the drive is mounted (`cargo test -p lm-jobs overlap_of_real -- --ignored --nocapture`).
+    #[test]
+    #[ignore]
+    fn overlap_of_real_layers() {
+        for p in [
+            "/Volumes/LaCie/data/layeredmap-example-survey/work/storms_1980_2026.gpkg",
+            "/Volumes/LaCie/data/layeredmap-reference/rivers.shp",
+            "/Volumes/LaCie/data/layeredmap-reference/coastline.shp",
+        ] {
+            let o = overlap(p);
+            eprintln!("{p}: overlap {o:?} → {:?}", o.and_then(dense_lines_style));
         }
     }
 }

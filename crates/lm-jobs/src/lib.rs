@@ -6,12 +6,14 @@
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
 pub mod actions;
+pub mod export;
 pub mod find;
 pub mod fingerprint;
 pub mod import;
 pub mod inspect;
 pub mod jobs;
 pub mod join;
+pub mod library;
 pub mod plan_exec;
 
 use std::path::{Path, PathBuf};

@@ -1,0 +1,6 @@
+name,lon,lat,note
+"=HYPERLINK(""http://example.invalid"",""click"")",121.47,31.23,=1+1
++cmd,121.48,31.24,+SUM(A1:A2)
+-2+3,121.49,31.25,-1
+@SUM(1),121.50,31.26,@me
+plain,121.51,31.27,ok

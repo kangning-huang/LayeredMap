@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="LayeredMap fixtures" xmlns="http://www.topografix.com/GPX/1/1">
+  <metadata><name>Hike</name><time>2024-04-20T06:00:00Z</time></metadata>
+  <wpt lat="46.5000" lon="7.9000"><ele>1034.5</ele><time>2024-04-20T06:05:00Z</time><name>Car park</name><sym>Parking Area</sym></wpt>
+  <wpt lat="46.5200" lon="7.9300"><ele>1620</ele><time>2024-04-20T08:30:00Z</time><name>Hut</name><desc>Water and food</desc><sym>Lodge</sym></wpt>
+  <wpt lat="46.5350" lon="7.9500"><ele>2105.2</ele><name>Summit</name><sym>Summit</sym></wpt>
+  <rte>
+    <name>Planned route</name>
+    <rtept lat="46.5000" lon="7.9000"/>
+    <rtept lat="46.5100" lon="7.9150"/>
+    <rtept lat="46.5200" lon="7.9300"/>
+    <rtept lat="46.5350" lon="7.9500"/>
+  </rte>
+  <trk>
+    <name>Ascent</name>

@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2">
+<Document>
+  <name>Field trip</name>
+  <Style id="schoolIcon"><IconStyle><color>ff0000ff</color><scale>1.1</scale></IconStyle></Style>
+  <Style id="schoolIconHi"><IconStyle><color>ff00ffff</color><scale>1.4</scale></IconStyle></Style>
+  <StyleMap id="schoolMap">
+    <Pair><key>normal</key><styleUrl>#schoolIcon</styleUrl></Pair>
+    <Pair><key>highlight</key><styleUrl>#schoolIconHi</styleUrl></Pair>
+  </StyleMap>
+  <Style id="riverLine"><LineStyle><color>ffff0000</color><width>3</width></LineStyle></Style>
+  <Style id="parkPoly">
+    <LineStyle><color>ff006400</color><width>2</width></LineStyle>
+    <PolyStyle><color>8000ff00</color></PolyStyle>
+  </Style>
+  <Schema name="info" id="info"><SimpleField type="string" name="district"/></Schema>
+  <Placemark>
+    <name>Visitor centre</name>
+    <Point><coordinates>121.4700,31.2300,0</coordinates></Point>
+  </Placemark>
+  <Folder>
+    <name>Schools</name>
+    <Placemark>
+      <name>North school</name>
+      <description><![CDATA[<b>Open</b> 8:00-16:00]]></description>
+      <styleUrl>#schoolMap</styleUrl>
+      <ExtendedData>
+        <Data name="pupils"><value>420</value></Data>
+        <SchemaData schemaUrl="#info"><SimpleData name="district">Jing'an</SimpleData></SchemaData>
+      </ExtendedData>
+      <Point><coordinates>121.4500,31.2500</coordinates></Point>
+    </Placemark>
+    <Placemark>
+      <name>East school</name>
+      <styleUrl>#schoolMap</styleUrl>
+      <ExtendedData>
+        <Data name="pupils"><value>385</value></Data>
+        <SchemaData schemaUrl="#info"><SimpleData name="district">Hongkou</SimpleData></SchemaData>
+      </ExtendedData>
+      <Point><coordinates>121.5000,31.2600</coordinates></Point>
+    </Placemark>
+    <Placemark>
+      <name>South school</name>
+      <styleUrl>#schoolMap</styleUrl>
+      <ExtendedData>
+        <Data name="pupils"><value>512</value></Data>
+        <SchemaData schemaUrl="#info"><SimpleData name="district">Xuhui</SimpleData></SchemaData>
+      </ExtendedData>
+      <Point><coordinates>121.4400,31.1900</coordinates></Point>
+    </Placemark>
+    <Placemark>
+      <name>Planned school</name>
+      <description>Site not chosen yet</description>
+      <styleUrl>#schoolMap</styleUrl>
+    </Placemark>
+  </Folder>
+  <Folder>
+    <name>Rivers</name>
+    <Placemark>
+      <name>Suzhou Creek</name>
+      <styleUrl>#riverLine</styleUrl>
+      <TimeSpan><begin>2024-05-01</begin><end>2024-05-31</end></TimeSpan>
+      <LineString><tessellate>1</tessellate><coordinates>
+        121.3800,31.2400,0 121.4200,31.2450,0 121.4600,31.2420,0 121.4900,31.2440,0
+      </coordinates></LineString>
+    </Placemark>
+    <Placemark>
+      <name>Huangpu (part)</name>
+      <styleUrl>#riverLine</styleUrl>
+      <LineString><coordinates>121.4900,31.2440 121.5000,31.2300 121.4950,31.2100 121.4800,31.1900</coordinates></LineString>
+    </Placemark>
+  </Folder>
+  <Folder>
+    <name>Parks</name>
+    <Placemark>
+      <name>Square park</name>
+      <styleUrl>#parkPoly</styleUrl>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>
+        121.4600,31.2250 121.4700,31.2250 121.4700,31.2350 121.4600,31.2350 121.4600,31.2250
+      </coordinates></LinearRing></outerBoundaryIs></Polygon>
+    </Placemark>
+    <Placemark>
+      <name>Lake park</name>
+      <styleUrl>#parkPoly</styleUrl>
+      <Polygon>
+        <outerBoundaryIs><LinearRing><coordinates>
+          121.4000,31.2000 121.4300,31.2000 121.4300,31.2200 121.4000,31.2200 121.4000,31.2000
+        </coordinates></LinearRing></outerBoundaryIs>
+        <innerBoundaryIs><LinearRing><coordinates>
+          121.4100,31.2050 121.4200,31.2050 121.4200,31.2150 121.4100,31.2150 121.4100,31.2050
+        </coordinates></LinearRing></innerBoundaryIs>
+      </Polygon>
+    </Placemark>
+    <Placemark>
+      <name>Twin gardens</name>
+      <styleUrl>#parkPoly</styleUrl>
+      <MultiGeometry>
+        <Polygon><outerBoundaryIs><LinearRing><coordinates>
+          121.5200,31.2000 121.5300,31.2000 121.5300,31.2100 121.5200,31.2000
+        </coordinates></LinearRing></outerBoundaryIs></Polygon>
+        <Polygon><outerBoundaryIs><LinearRing><coordinates>
+          121.5400,31.2000 121.5500,31.2000 121.5500,31.2100 121.5400,31.2000
+        </coordinates></LinearRing></outerBoundaryIs></Polygon>
+      </MultiGeometry>
+    </Placemark>
+  </Folder>
+  <Folder>
+    <name>Survey</name>
+    <Placemark>
+      <name>Transect A</name>
+      <styleUrl>#riverLine</styleUrl>
+      <MultiGeometry>
+        <Point><coordinates>121.4000,31.3000</coordinates></Point>
+        <LineString><coordinates>121.4000,31.3000 121.4200,31.3100</coordinates></LineString>
+      </MultiGeometry>
+    </Placemark>
+    <Placemark>
+      <name>Transect B</name>
+      <Style><LineStyle><color>ff0000ff</color><width>1.5</width></LineStyle></Style>
+      <LineString><coordinates>121.4300,31.3000 121.4500,31.3100</coordinates></LineString>
+    </Placemark>
+  </Folder>
+  <NetworkLink>
+    <name>Live buses</name>
+    <Link><href>https://example.com/buses.kml</href></Link>
+  </NetworkLink>
+  <GroundOverlay>
+    <name>Old map</name>
+    <Icon><href>https://example.com/old_map.jpg</href></Icon>
+    <LatLonBox><north>31.30</north><south>31.15</south><east>121.55</east><west>121.38</west></LatLonBox>
+  </GroundOverlay>
+</Document>
+</kml>

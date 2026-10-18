@@ -538,6 +538,17 @@ impl PropertyProcessor for Props<'_> {
 
 /// Writes a dataset as FlatGeobuf, with a spatial index (WGS 84 longitude/latitude).
 pub fn write(ds: &crate::Dataset) -> Result<Vec<u8>> {
+    write_with(ds, true)
+}
+
+/// Writes a dataset as FlatGeobuf without a spatial index, so the features keep their order (the
+/// index sorts them along a Hilbert curve). Documents store results this way: rows are referred
+/// to by position.
+pub fn write_in_order(ds: &crate::Dataset) -> Result<Vec<u8>> {
+    write_with(ds, false)
+}
+
+fn write_with(ds: &crate::Dataset, index: bool) -> Result<Vec<u8>> {
     use flatgeobuf::geozero::wkb::Wkb;
     use flatgeobuf::{FgbCrs, FgbWriter, FgbWriterOptions, GeometryType as G};
     let ty = match ds.geometry_type {
@@ -546,7 +557,7 @@ pub fn write(ds: &crate::Dataset) -> Result<Vec<u8>> {
         GeometryType::Polygon => G::MultiPolygon,
         GeometryType::None => return Err(DataError::Unsupported("a table without geometry as FlatGeobuf".into())),
     };
-    let options = FgbWriterOptions { crs: FgbCrs { code: 4326, ..Default::default() }, ..Default::default() };
+    let options = FgbWriterOptions { write_index: index, crs: FgbCrs { code: 4326, ..Default::default() }, ..Default::default() };
     let mut w = FgbWriter::create_with_options(&ds.name, ty, options).map_err(err)?;
     for f in &ds.fields {
         let t = match f.ty {

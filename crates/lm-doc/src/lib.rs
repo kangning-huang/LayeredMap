@@ -2,13 +2,20 @@
 //!
 //! Phase 2 (WP2.10): document v0 (`manifest`: `save`/`load` of `manifest.json`), source
 //! fingerprints (`source`) and the question log (`qlog`).
+//!
+//! Phase 5 (WP5.1, WP5.2): the `.lmap` file (`container`; `docs/lm/format-v1.md`), autosave and
+//! the recovery journal (`autosave`).
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
+pub mod autosave;
+pub mod container;
 pub mod error;
 pub mod manifest;
 pub mod qlog;
 pub mod source;
 
+pub use autosave::{Journal, Recovery, ago};
+pub use container::{EXTENSION, Loaded, OwnedData, SaveReport, is_file_source, load_lmap, open_any, save_lmap};
 pub use error::{DocError, Result};
 pub use manifest::{FORMAT_NAME, MANIFEST_FILE, load, save};
 pub use qlog::{QuestionLog, export_csv};

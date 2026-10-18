@@ -49,6 +49,7 @@ no arguments for its fixture jobs or with explicit paths (see each `--help`).
 | `nearest_distance.py` | `N9/expected_nearest_*.csv` | 0 when shapely `intersects` (lon/lat); else feature and targets densified along geodesics to ≤ 1 km, projected to an AEQD centred on the feature, shapely `distance`; same layer leaves the feature's own row out |
 | `join_by_location.py` | `N10/expected_join.csv` | sjoin `intersects`, the lowest area row kept; lines and areas by `representative_point()`; `on_boundary` for points |
 | `measure_features.py` | `N13/expected_measure.csv` | pyproj `Geod.geometry_area_perimeter` (polygons oriented CCW) plus each hole's ring perimeter; `Geod.geometry_length`; point coordinates as given |
+| `make_kml_gpx_fixtures.py` | data + `README.md` + `expected.json` for V11 (KML, KMZ) and V12 (GPX) | GDAL (pyogrio; LIBKML and GPX drivers, ground overlays off): features with a geometry, vertices and bounds per GDAL layer; KMZ timestamps fixed |
 | `run_all.py` | — | runs all of the above in order |
 
 Numbers are written with up to 12 significant digits.

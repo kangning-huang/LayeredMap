@@ -53,9 +53,22 @@ pub fn looking() -> bool {
     state() == State::Looking
 }
 
+/// The app asked for the lookup (it may have been put off while offline).
+static WANTED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// Whether the app asked for the lookup: going back online then starts it, if it hasn't run.
+pub fn wanted() -> bool {
+    WANTED.load(std::sync::atomic::Ordering::SeqCst)
+}
+
 /// Starts looking for the newest build, once per run; `wake` is called when the answer is in.
+/// In offline mode it waits: calling it again once online starts it.
 #[cfg(not(target_arch = "wasm32"))]
 pub fn start(wake: impl Fn() + Send + 'static) {
+    WANTED.store(true, std::sync::atomic::Ordering::SeqCst);
+    if lm_net::offline() {
+        return;
+    }
     {
         let mut s = STATE.lock().unwrap_or_else(|e| e.into_inner());
         if *s != State::Idle {
@@ -80,7 +93,9 @@ pub fn start(wake: impl Fn() + Send + 'static) {
 
 /// The web build reads the pinned archive.
 #[cfg(target_arch = "wasm32")]
-pub fn start(_wake: impl Fn() + Send + 'static) {}
+pub fn start(_wake: impl Fn() + Send + 'static) {
+    WANTED.store(true, std::sync::atomic::Ordering::SeqCst);
+}
 
 /// The builds to try, newest first: the list's newest builds of the schema the style draws, then
 /// the last week's dates (UTC), in case the list can't be read.
@@ -127,12 +142,16 @@ mod native {
         ureq::Agent::config_builder().timeout_global(Some(Duration::from_secs(8))).build().into()
     }
 
-    /// The newest build that answers, if any.
+    /// The newest build that answers, if any. Each request asks the network gate first.
     pub(super) fn newest() -> Option<String> {
+        let allowed = || lm_net::allowed(lm_net::Purpose::Basemap);
         let agent = agent();
+        if !allowed() {
+            return None;
+        }
         let metadata = agent.get(super::METADATA).call().ok().and_then(|mut r| r.body_mut().read_to_string().ok());
         let today = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).ok()?.as_secs() as i64 / 86_400;
-        super::candidates(metadata.as_deref(), today).into_iter().find(|u| agent.head(u).call().is_ok())
+        super::candidates(metadata.as_deref(), today).into_iter().take_while(|_| allowed()).find(|u| agent.head(u).call().is_ok())
     }
 }
 

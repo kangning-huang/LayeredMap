@@ -115,9 +115,47 @@ pub struct JoinByLocation {
 
 const PHASE_JOIN: &str = "Finding the area of each feature";
 const PHASE_COUNT: &str = "Counting points in areas";
+const PHASE_COUNT_LINES: &str = "Counting lines in areas";
 const PHASE_WHICH: &str = "Finding the area of each point";
 const PHASE_INSIDE: &str = "Finding what's inside the area";
 const PHASE_INDEX: &str = "Indexing areas";
+
+/// Counts the lines of `lines` that pass through or touch each area of `areas`: a line counts
+/// once in every area it shares at least one point with (a vertex inside or on the area, or a
+/// segment crossing its boundary), however many times it enters. `counted_more_than_once` is
+/// the number of lines in two or more areas, `points_without_geometry` the lines without a
+/// usable geometry.
+pub fn count_lines_in_areas(lines: &Dataset, areas: &Dataset, ctl: &Control) -> Result<CountInAreas, Cancelled> {
+    let index = AreaIndex::build(areas, ctl)?;
+    let mut out = CountInAreas {
+        counts: vec![0; areas.features.len()],
+        areas_without_geometry: index.without_geometry.clone(),
+        ..CountInAreas::default()
+    };
+    index.for_each_line(lines, ctl, |hits| match hits {
+        None => out.points_without_geometry += 1,
+        Some([]) => out.outside_all += 1,
+        Some(hits) => {
+            if hits.len() > 1 {
+                out.counted_more_than_once += 1;
+            }
+            for &a in hits {
+                if let Some(c) = out.counts.get_mut(a) {
+                    *c += 1;
+                }
+            }
+        }
+    })?;
+    Ok(out)
+}
+
+/// Whether segment `a-b` (a point when equal) shares at least one point with a polygon (its
+/// rings), exactly: an end inside or on it, or a crossing of one of its edges.
+fn segment_touches_polygon(a: Coord, b: Coord, rings: &[Vec<Coord>]) -> bool {
+    locate_in_polygon(rings, a).touches()
+        || locate_in_polygon(rings, b).touches()
+        || rings.iter().any(|ring| edges(ring).any(|(c, d)| segments_intersect(a, b, c, d)))
+}
 
 /// Counts the points of `points` in each area of `areas` (see the module rules).
 pub fn count_points_in_areas(points: &Dataset, areas: &Dataset, ctl: &Control) -> Result<CountInAreas, Cancelled> {
@@ -434,6 +472,51 @@ impl<'a> AreaIndex<'a> {
         Ok(AreaIndex { parts, tree, without_geometry })
     }
 
+    /// Calls `f(hits)` for each line row in order: `None` for an unusable geometry, else the
+    /// ascending, distinct area rows the line touches.
+    fn for_each_line(&self, lines: &Dataset, ctl: &Control, mut f: impl FnMut(Option<&[usize]>)) -> Result<(), Cancelled> {
+        let total = lines.features.len() as u64;
+        let mut work = Work::new(ctl);
+        let mut hits: Vec<usize> = Vec::new();
+        for (row, feat) in lines.features.iter().enumerate() {
+            if row % 1024 == 0 {
+                ctl.report(PHASE_COUNT_LINES, row as u64, Some(total));
+            }
+            let parts: &[Vec<Coord>] = match feat.geometry.as_ref() {
+                Some(Geometry::Line(p)) if p.iter().flatten().all(|c| c.is_finite()) && p.iter().any(|q| !q.is_empty()) => p,
+                _ => {
+                    f(None);
+                    continue;
+                }
+            };
+            work.add(parts.iter().map(Vec::len).sum::<usize>())?;
+            hits.clear();
+            // Segment by segment, only against the areas whose boxes the segment's box meets:
+            // a long track spans a huge box, but each of its segments meets few areas.
+            for part in parts {
+                let segs: Vec<(Coord, Coord)> =
+                    if part.len() == 1 { vec![(part[0], part[0])] } else { part.windows(2).map(|w| (w[0], w[1])).collect() };
+                for (a, b) in segs {
+                    let envelope = AABB::from_corners([a.x.min(b.x), a.y.min(b.y)], [a.x.max(b.x), a.y.max(b.y)]);
+                    for cand in self.tree.locate_in_envelope_intersecting(&envelope) {
+                        let Some(area) = self.parts.get(cand.data) else { continue };
+                        if hits.contains(&area.area) {
+                            continue;
+                        }
+                        work.add(polygon_size(area.rings))?;
+                        if segment_touches_polygon(a, b, area.rings) {
+                            hits.push(area.area);
+                        }
+                    }
+                }
+            }
+            hits.sort_unstable();
+            f(Some(&hits));
+        }
+        ctl.report(PHASE_COUNT_LINES, total, Some(total));
+        Ok(())
+    }
+
     /// Calls `f(row, hits)` for each point row in order: `None` for an unusable geometry, else the
     /// ascending, distinct area rows it touches.
     fn for_each_point(
@@ -585,6 +668,38 @@ mod tests {
             d.push_next(Some(Geometry::Polygon(p)), vec![]);
         }
         d
+    }
+
+    fn lines(ls: Vec<Vec<Vec<Coord>>>) -> Dataset {
+        let mut d = Dataset::new("lines", GeometryType::Polyline, vec![]);
+        for l in ls {
+            d.push_next(Some(Geometry::Line(l)), vec![]);
+        }
+        d
+    }
+
+    /// Storm-track style lines (owner's test: storms crossing circles around cities): a line
+    /// counts once in each area it shares a point with, whether or not a vertex lies inside.
+    #[test]
+    fn lines_count_once_in_every_area_they_touch() {
+        // Area 0: [0,10]²; area 1: [20,30]×[0,10]; area 2: [0,10]² with a hole [4,6]².
+        let a = areas(vec![
+            vec![vec![rect(0.0, 0.0, 10.0, 10.0)]],
+            vec![vec![rect(20.0, 0.0, 30.0, 10.0)]],
+            vec![vec![rect(40.0, 0.0, 50.0, 10.0), rect(44.0, 4.0, 46.0, 6.0)]],
+        ]);
+        let l = lines(vec![
+            vec![vec![c(-5.0, 5.0), c(35.0, 5.0)]],   // crosses 0 and 1, no vertex inside either
+            vec![vec![c(10.0, 12.0), c(10.0, 10.0)]], // touches area 0 at its corner
+            vec![vec![c(2.0, 2.0), c(3.0, 3.0)]],     // wholly inside area 0
+            vec![vec![c(-5.0, 20.0), c(35.0, 20.0)]], // misses everything
+            vec![vec![c(44.5, 4.5), c(45.5, 5.5)]],   // inside the hole of area 2
+            vec![vec![c(5.0, -5.0), c(5.0, 15.0), c(6.0, 15.0), c(6.0, -5.0)]], // enters area 0 twice
+        ]);
+        let r = count_lines_in_areas(&l, &a, &Control::none()).unwrap();
+        assert_eq!(r.counts, vec![4, 1, 0]);
+        assert_eq!(r.outside_all, 2);
+        assert_eq!(r.counted_more_than_once, 1);
     }
 
     fn fixture(rel: &str) -> PathBuf {

@@ -10,6 +10,7 @@
 
 pub mod archive;
 pub mod camera;
+pub mod export;
 pub mod hit;
 mod labels;
 pub mod script;
@@ -128,6 +129,8 @@ impl MapView {
         let camera = map.camera;
         let waker = ctx.clone();
         rustgis_tiles::cache::set_waker(move || waker.request_repaint());
+        // Every tile request asks the network gate first (strict offline mode, WP6.6).
+        rustgis_tiles::cache::set_gate(|_| lm_net::allowed(lm_net::Purpose::Basemap));
         let source_waker = ctx.clone();
         rustgis_map::source::set_waker(move || source_waker.request_repaint());
         MapView {

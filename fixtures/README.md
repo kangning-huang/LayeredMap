@@ -33,6 +33,8 @@ without them they print "skipped".
 | V8 | `generated/V8/` | — | generated (`cargo xtask fixtures`) |
 | V9 | `V9/` | Shapefile in a nested zip folder, and a 3-layer GeoPackage | present |
 | V10 | `V10/` | geometry edge cases and honest errors | present |
+| V11 | `V11/` | KML with folders, styles and MultiGeometry; KMZ; malformed KML/KMZ (WP6.7), checked against GDAL | present |
+| V12 | `V12/` | GPX waypoints, tracks and routes; GPX 1.0 in ISO-8859-1; malformed GPX (WP6.7), checked against GDAL | present |
 | T1 | `T1/` | lon/lat CSV with 242 located and 6 excluded | present |
 | T2 | `T2/` | ambiguous coordinate columns: question card | present |
 | T3 | `generated/T3/` | — | generated (`cargo xtask fixtures`) |
@@ -62,9 +64,11 @@ without them they print "skipped".
 | N10 | `N10/` | join by location: first area in row order, boundaries, holes, antimeridian, lines and areas by label point | present |
 | N13 | `N13/` | per-feature measurements (area, perimeter with holes, length, coordinates) and label points | present |
 | K1 | — | — | owner-supplied |
-| D1–D4 | — | — | TBD |
+| D1–D3 | `D/D1`–`D/D3` | v0 document folders as Gates 2, 3 and 4 saved them (synthetic: layers with answers; then styles, filters, roles, a join; then a drawn area and a kept result); format migration and save/reopen equality (`lm-doc` `container::tests`) | present; rewrite with `LM_WRITE_DOC_FIXTURES=1 cargo test -p lm-doc --lib write_gate_fixture` |
+| D4 | — | — | a Gate 5 `.lmap`, at Gate 5 |
 | B1–B20 | — | — | owner-supplied |
-| X1–X5 | `generated/X1/` … `generated/X5/` | — | generated (`cargo xtask fixtures`) |
+| X1–X4 | `generated/X1/` … `generated/X4/` | — | generated (`cargo xtask fixtures`) |
+| X5 | `X5/` (also `generated/X5/`) | CSV cells beginning with =, +, - or @: no formula injection on export | present |
 
 ## `expected.json` conventions
 

@@ -1,0 +1,124 @@
+{
+  "files": [
+    {
+      "file": "hike.gpx",
+      "layers": [
+        {
+          "assumptions": [],
+          "count": 3,
+          "crs": "Wgs84",
+          "crs_confidence": "Certain",
+          "encoding": null,
+          "exclusions": 0,
+          "extent": [
+            7.9,
+            46.5,
+            7.95,
+            46.535
+          ],
+          "fields": {
+            "desc": "Category (Likely)",
+            "ele": "Measure(Unknown) (Likely)",
+            "name": "Name (Likely)",
+            "sym": "Text (Likely)",
+            "time": "Date (Likely)"
+          },
+          "format": "GPX",
+          "kind": "Points",
+          "member": "hike (waypoints)",
+          "name": "hike (waypoints)",
+          "notices": [],
+          "status": "Complete"
+        },
+        {
+          "assumptions": [],
+          "count": 2,
+          "crs": "Wgs84",
+          "crs_confidence": "Certain",
+          "encoding": null,
+          "exclusions": 0,
+          "extent": [
+            7.9,
+            46.5,
+            7.95,
+            46.535
+          ],
+          "fields": {
+            "end_time": "Date (Likely)",
+            "max_ele": "Measure(Unknown) (Likely)",
+            "min_ele": "Measure(Unknown) (Likely)",
+            "name": "Name (Likely)",
+            "start_time": "Date (Likely)",
+            "type": "Category (Likely)"
+          },
+          "format": "GPX",
+          "kind": "Lines",
+          "member": "hike (tracks)",
+          "name": "hike (tracks)",
+          "notices": [],
+          "status": "Complete"
+        },
+        {
+          "assumptions": [],
+          "count": 1,
+          "crs": "Wgs84",
+          "crs_confidence": "Certain",
+          "encoding": null,
+          "exclusions": 0,
+          "extent": [
+            7.9,
+            46.5,
+            7.95,
+            46.535
+          ],
+          "fields": {
+            "name": "Name (Likely)"
+          },
+          "format": "GPX",
+          "kind": "Lines",
+          "member": "hike (routes)",
+          "name": "hike (routes)",
+          "notices": [],
+          "status": "Complete"
+        }
+      ]
+    },
+    {
+      "file": "old_garmin.gpx",
+      "layers": [
+        {
+          "assumptions": [
+            {
+              "chosen": "id",
+              "kind": "IdentifierField",
+              "line": "Treated as an ID.",
+              "treatment": "Silent"
+            }
+          ],
+          "count": 2,
+          "crs": "Wgs84",
+          "crs_confidence": "Certain",
+          "encoding": null,
+          "exclusions": 0,
+          "extent": [
+            2.2945,
+            48.8584,
+            2.3376,
+            48.8606
+          ],
+          "fields": {
+            "ele": "Identifier (Likely)",
+            "name": "Name (Likely)"
+          },
+          "format": "GPX",
+          "kind": "Points",
+          "member": null,
+          "name": "old_garmin",
+          "notices": [],
+          "status": "Complete"
+        }
+      ]
+    }
+  ],
+  "fixture": "V12"
+}

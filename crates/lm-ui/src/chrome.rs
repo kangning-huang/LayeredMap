@@ -13,8 +13,8 @@ use crate::{Shell, System, Units};
 const OPEN_PHASE: u8 = 2;
 const LAYERS_PHASE: u8 = 2;
 const UNDO_PHASE: u8 = 2;
-const SHARE_PHASE: u8 = 5;
-/// The welcome card appears once Open file and Try an example work.
+const SHARE_PHASE: u8 = crate::export::EXPORT_PHASE;
+/// The welcome card appears once Open file and the Examples menu work.
 const WELCOME_PHASE: u8 = 2;
 
 pub(crate) fn panel_frame(t: &theme::Theme) -> egui::Frame {
@@ -68,7 +68,8 @@ pub fn toolbar(shell: &mut Shell, ui: &mut Ui, rect: Rect, _system: System) {
         (icon::STACK, "Layers", LAYERS_PHASE),
         (icon::FOLDER_OPEN, "Open", OPEN_PHASE),
     ] {
-        let built = flags.shows(phase) && phase <= lm_core::phase::BUILD_PHASE;
+        // Share comes with export, shown ahead of its phase in developer and Pro builds.
+        let built = if phase == SHARE_PHASE { shell.export_shown() } else { flags.shows(phase) && phase <= lm_core::phase::BUILD_PHASE };
         let enabled = built && (label != "Undo" || shell.ws.undo.can_undo());
         let color = if enabled { t.text_primary } else { t.text_secondary.gamma_multiply(0.7) };
         let text = painter.layout_no_wrap(label.to_string(), regular(theme::BODY), color);
@@ -89,10 +90,15 @@ pub fn toolbar(shell: &mut Shell, ui: &mut Ui, rect: Rect, _system: System) {
             "Undo" => shell.ws.undo.undo_label().map_or_else(|| "Nothing to undo".to_string(), |l| format!("Undo {}", lower_first(l))),
             "Open" => "Open files (⌘O)".to_string(),
             "Layers" => "Show or hide the layer list (⌘L)".to_string(),
+            "Share" => "Export a map image (⌘E) or data".to_string(),
             other => other.to_string(),
         };
         let clicked = resp.clicked();
-        resp.on_hover_text(tip);
+        let resp = resp.on_hover_text(tip);
+        if label == "Share" {
+            share_menu(shell, &resp);
+            continue;
+        }
         if clicked {
             match label {
                 "Open" => shell.command(ui.ctx(), crate::Command::RequestOpen),
@@ -102,6 +108,21 @@ pub fn toolbar(shell: &mut Shell, ui: &mut Ui, rect: Rect, _system: System) {
             }
         }
     }
+}
+
+/// Share's menu: Map image… and Data… (Interaction specification › Screen states › Export).
+fn share_menu(shell: &mut Shell, resp: &egui::Response) {
+    let ctx = resp.ctx.clone();
+    let has_data = !shell.ws.doc.layers.is_empty();
+    egui::Popup::menu(resp).show(|ui| {
+        ui.set_min_width(180.0);
+        if ui.button("Map image…").clicked() {
+            shell.command(&ctx, crate::Command::ExportMapImage);
+        }
+        if ui.add_enabled(has_data, egui::Button::new("Data…")).on_disabled_hover_text("Open a file first").clicked() {
+            shell.command(&ctx, crate::Command::ExportData);
+        }
+    });
 }
 
 /// The app icon (the same picture as the Dock's), as a texture made once.
@@ -315,10 +336,16 @@ pub fn map_overlays(shell: &mut Shell, ui: &mut Ui, map: Rect, system: System) {
         debug_overlay(shell, ui, map);
     }
     let empty = shell.ws.doc.layers.is_empty() && shell.ws.imports.is_empty();
-    if shell.flags.shows(WELCOME_PHASE) && WELCOME_PHASE <= lm_core::phase::BUILD_PHASE && empty && !shell.welcome_closed {
-        match welcome(&t, ui, map) {
+    if shell.flags.shows(WELCOME_PHASE)
+        && WELCOME_PHASE <= lm_core::phase::BUILD_PHASE
+        && empty
+        && !shell.welcome_closed
+        && !shell.library.open
+    {
+        match welcome(&t, ui, map, crate::library::available(shell)) {
             Some(Welcome::Open) => shell.command(ui.ctx(), crate::Command::RequestOpen),
-            Some(Welcome::Example) => shell.command(ui.ctx(), crate::Command::OpenExamples),
+            Some(Welcome::Example(id)) => shell.command(ui.ctx(), crate::Command::OpenExample(id.to_string())),
+            Some(Welcome::Library) => shell.command(ui.ctx(), crate::Command::OpenLibrary),
             Some(Welcome::Close) => shell.welcome_closed = true,
             None => {}
         }
@@ -394,9 +421,12 @@ fn basemap_chooser(shell: &mut Shell, ui: &mut Ui, anchor: Rect) {
                     }
                 });
                 ui.add_space(4.0);
+                if lm_net::offline() {
+                    ui.label(egui::RichText::new("Working offline: online backgrounds are off").size(CAPTION).color(t.text_secondary));
+                }
                 ui.label(egui::RichText::new("Background strength").size(CAPTION).color(t.text_secondary));
                 let mut pct = (shell.prefs.strength * 100.0).round();
-                let online = lm_core::basemap::provider(&shell.prefs.basemap).source != Source::Offline;
+                let online = lm_core::basemap::provider(&shell.prefs.basemap).source != Source::Offline && !lm_net::offline();
                 let resp = ui.add_enabled(online, egui::Slider::new(&mut pct, 40.0..=100.0).suffix("%").step_by(5.0).fixed_decimals(0));
                 if resp.changed() {
                     shell.prefs.strength = pct / 100.0;
@@ -527,7 +557,9 @@ fn notices(shell: &mut Shell, ui: &Ui, map: Rect) {
     let t = *shell.theme();
     let now = ui.input(|i| i.time);
     let p = lm_core::basemap::provider(&shell.prefs.basemap);
-    let offline_text = if p.source == Source::Offline {
+    let offline_text = if lm_net::offline() && p.source != Source::Offline {
+        (shell.map_view().zoom() > OFFLINE_MAX_ZOOM).then_some("Working offline: the detailed background is off".to_string())
+    } else if p.source == Source::Offline {
         (shell.map_view().zoom() > OFFLINE_MAX_ZOOM).then_some("Detailed background unavailable offline".to_string())
     } else if p.source == Source::Imagery && shell.map_view().zoom() > f64::from(p.max_zoom) + 1.0 {
         Some("Satellite imagery is sharpest further out (10 m per pixel)".to_string())
@@ -577,12 +609,14 @@ fn debug_overlay(shell: &Shell, ui: &Ui, map: Rect) {
 /// First launch (Screen states): "Open a file to see your data on the map." Phase 2 onwards.
 enum Welcome {
     Open,
-    Example,
+    Example(&'static str),
+    Library,
     Close,
 }
 
-/// The first-launch card (Screen states › First launch). "Try an example" opens the WP2.9 data.
-fn welcome(t: &theme::Theme, ui: &mut Ui, map: Rect) -> Option<Welcome> {
+/// The first-launch card (Screen states › First launch). "Examples" lists the example datasets;
+/// "Browse data library" (WP5.4) shows when a library catalog is set.
+fn welcome(t: &theme::Theme, ui: &mut Ui, map: Rect, library: bool) -> Option<Welcome> {
     let pos = pos2(map.center().x, map.bottom() - 48.0);
     let mut out = None;
     egui::Area::new(egui::Id::new("lm-welcome")).pivot(Align2::CENTER_BOTTOM).fixed_pos(pos).show(ui.ctx(), |ui| {
@@ -601,13 +635,55 @@ fn welcome(t: &theme::Theme, ui: &mut Ui, map: Rect) -> Option<Welcome> {
                 if ui.add(egui::Button::new(egui::RichText::new("Open file…").color(t.on_accent)).fill(t.accent)).clicked() {
                     out = Some(Welcome::Open);
                 }
-                if ui.button("Try an example").on_hover_text("World cities, countries and elevation").clicked() {
-                    out = Some(Welcome::Example);
+                // Examples ▾: a list to choose from (owner's request, 2026-10-18).
+                // The caret is an icon glyph: it must be set in the icon font, the word in the text font.
+                let mut label = egui::text::LayoutJob::default();
+                label.append(
+                    "Examples ",
+                    0.0,
+                    egui::TextFormat { font_id: theme::regular(theme::BODY), color: t.text_primary, ..Default::default() },
+                );
+                label.append(
+                    icon::CARET_DOWN,
+                    0.0,
+                    egui::TextFormat { font_id: theme::icon_font(12.0), color: t.text_secondary, ..Default::default() },
+                );
+                ui.menu_button(label, |ui| {
+                    for e in crate::examples::EXAMPLES {
+                        if example_row(ui, t, e).clicked() {
+                            out = Some(Welcome::Example(e.id));
+                            ui.close();
+                        }
+                    }
+                });
+                if library && ui.button("Browse data library").on_hover_text("Course datasets to add to the map").clicked() {
+                    out = Some(Welcome::Library);
                 }
             });
         });
     });
     out
+}
+
+/// One row of the Examples menu: the example's icon on a soft tile of its tint, then its title
+/// and a line about it. The whole row is one button.
+fn example_row(ui: &mut Ui, t: &theme::Theme, e: &crate::examples::Example) -> egui::Response {
+    let (rect, r) = ui.allocate_exact_size(vec2(344.0, 46.0), Sense::click());
+    let r = r.on_hover_cursor(egui::CursorIcon::PointingHand);
+    r.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, e.title));
+    let p = ui.painter();
+    if r.hovered() {
+        p.rect_filled(rect, CornerRadius::same(theme::RADIUS_CONTROL), t.accent.gamma_multiply(0.10));
+    }
+    let [cr, cg, cb] = e.tint;
+    let tint = Color32::from_rgb(cr, cg, cb);
+    let tile = Rect::from_min_size(pos2(rect.left() + 6.0, rect.center().y - 16.0), vec2(32.0, 32.0));
+    p.rect_filled(tile, CornerRadius::same(8), tint.gamma_multiply(if t.dark { 0.30 } else { 0.16 }));
+    p.text(tile.center(), Align2::CENTER_CENTER, e.icon, theme::icon_font(20.0), tint);
+    let x = tile.right() + 10.0;
+    p.text(pos2(x, rect.center().y - 9.0), Align2::LEFT_CENTER, e.title, theme::regular(theme::BODY), t.text_primary);
+    p.text(pos2(x, rect.center().y + 9.0), Align2::LEFT_CENTER, e.blurb, theme::regular(theme::CAPTION), t.text_secondary);
+    r
 }
 
 #[cfg(test)]

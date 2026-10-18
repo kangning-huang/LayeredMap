@@ -37,6 +37,9 @@ let request = SFSpeechAudioBufferRecognitionRequest()
 request.shouldReportPartialResults = true
 if recognizer.supportsOnDeviceRecognition {
     request.requiresOnDeviceRecognition = true
+} else if ProcessInfo.processInfo.environment["LM_OFFLINE"] == "1" {
+    // Strict offline mode (WP6.6): Apple's server recognizer would go online.
+    fail("Speaking needs on-device speech recognition while LayeredMap is working offline.")
 }
 
 var latest = ""

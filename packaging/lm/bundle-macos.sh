@@ -30,13 +30,15 @@ app="$out/$name.app"
 rm -rf "$app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 cp "$target_dir/release/layeredmap" "$app/Contents/MacOS/layeredmap"
-# Try an example (WP2.9): the app looks in Contents/Resources/examples.
+# The Examples menu (WP2.9): the app looks in Contents/Resources/examples.
 mkdir -p "$app/Contents/Resources/examples"
-cp "$root/assets/examples/cities.geojson" "$root/assets/examples/countries.geojson" \
-  "$root/assets/examples/elevation.tif" "$root/assets/examples/README.md" "$app/Contents/Resources/examples/"
+rsync -a --exclude '._*' "$root/assets/examples/" "$app/Contents/Resources/examples/"
 # The app icon (the Strata logo; tools/lm/make_app_icon.py builds it from design/logo).
 cp "$root/packaging/lm/AppIcon.icns" "$app/Contents/Resources/AppIcon.icns"
 echo "$tier" > "$app/Contents/Resources/tier"
+# Licences (Gate 5 licence audit): the assets' sources and every Rust crate's licence text.
+cp "$root/LICENSE" "$root/ATTRIBUTION.md" "$app/Contents/Resources/"
+[[ -f "$root/ATTRIBUTION-crates.md" ]] && cp "$root/ATTRIBUTION-crates.md" "$app/Contents/Resources/"
 if [[ "$tier" == "pro" ]]; then
   # The Ask box's microphone (WP7.1): Apple's speech recognizer, in a small Swift helper.
   # It carries its own Info.plist (usage texts), as macOS asks of any process that listens.
@@ -98,10 +100,19 @@ cat > "$app/Contents/Info.plist" <<PLIST
   <key>NSMicrophoneUsageDescription</key><string>LayeredMap Pro listens when you click the microphone in the Ask box, to turn your request into text.</string>
   <key>NSSpeechRecognitionUsageDescription</key><string>LayeredMap Pro turns what you say in the Ask box into text, on this Mac when it can.</string>
   <key>LSApplicationCategoryType</key><string>public.app-category.education</string>
-  <!-- Open With (WP2.1): LayeredMap can open these, but never claims to be their default app
-       (LSHandlerRank Alternate) and only views them (role Viewer). -->
+  <!-- Open With (WP2.1): LayeredMap can open data files, but never claims to be their default
+       app (LSHandlerRank Alternate) and only views them (role Viewer). -->
   <key>CFBundleDocumentTypes</key>
   <array>
+    <!-- LayeredMap's own map files (WP5.1): its type, opened for editing. -->
+    <dict>
+      <key>CFBundleTypeName</key><string>LayeredMap map</string>
+      <key>CFBundleTypeRole</key><string>Editor</string>
+      <key>LSHandlerRank</key><string>Owner</string>
+      <key>LSItemContentTypes</key><array><string>app.layeredmap.map</string></array>
+      <key>CFBundleTypeExtensions</key><array><string>lmap</string></array>
+      <key>CFBundleTypeIconFile</key><string>AppIcon</string>
+    </dict>
     <dict>
       <key>CFBundleTypeName</key><string>CSV or TSV table</string>
       <key>CFBundleTypeRole</key><string>Viewer</string>
@@ -144,6 +155,31 @@ cat > "$app/Contents/Info.plist" <<PLIST
       <key>LSItemContentTypes</key><array><string>org.openxmlformats.spreadsheetml.sheet</string></array>
       <key>CFBundleTypeExtensions</key><array><string>xlsx</string></array>
     </dict>
+    <dict>
+      <key>CFBundleTypeName</key><string>KML or KMZ</string>
+      <key>CFBundleTypeRole</key><string>Viewer</string>
+      <key>LSHandlerRank</key><string>Alternate</string>
+      <key>LSItemContentTypes</key><array><string>com.google.earth.kml</string><string>com.google.earth.kmz</string></array>
+      <key>CFBundleTypeExtensions</key><array><string>kml</string><string>kmz</string></array>
+    </dict>
+    <dict>
+      <key>CFBundleTypeName</key><string>GPX track</string>
+      <key>CFBundleTypeRole</key><string>Viewer</string>
+      <key>LSHandlerRank</key><string>Alternate</string>
+      <key>LSItemContentTypes</key><array><string>com.topografix.gpx</string></array>
+      <key>CFBundleTypeExtensions</key><array><string>gpx</string></array>
+    </dict>
+  </array>
+  <!-- The .lmap type, which LayeredMap owns and declares (docs/lm/format-v1.md). -->
+  <key>UTExportedTypeDeclarations</key>
+  <array>
+    <dict>
+      <key>UTTypeIdentifier</key><string>app.layeredmap.map</string>
+      <key>UTTypeDescription</key><string>LayeredMap map</string>
+      <key>UTTypeConformsTo</key><array><string>public.data</string><string>public.content</string></array>
+      <key>UTTypeIconFile</key><string>AppIcon</string>
+      <key>UTTypeTagSpecification</key><dict><key>public.filename-extension</key><array><string>lmap</string></array><key>public.mime-type</key><string>application/vnd.layeredmap.map+zip</string></dict>
+    </dict>
   </array>
   <!-- Types macOS has no system UTI for. Imported, not exported: LayeredMap does not own them. -->
   <key>UTImportedTypeDeclarations</key>
@@ -166,6 +202,24 @@ cat > "$app/Contents/Info.plist" <<PLIST
       <key>UTTypeConformsTo</key><array><string>public.database</string><string>public.data</string></array>
       <key>UTTypeTagSpecification</key><dict><key>public.filename-extension</key><array><string>gpkg</string></array><key>public.mime-type</key><string>application/geopackage+sqlite3</string></dict>
     </dict>
+    <dict>
+      <key>UTTypeIdentifier</key><string>com.google.earth.kml</string>
+      <key>UTTypeDescription</key><string>KML</string>
+      <key>UTTypeConformsTo</key><array><string>public.xml</string></array>
+      <key>UTTypeTagSpecification</key><dict><key>public.filename-extension</key><array><string>kml</string></array><key>public.mime-type</key><string>application/vnd.google-earth.kml+xml</string></dict>
+    </dict>
+    <dict>
+      <key>UTTypeIdentifier</key><string>com.google.earth.kmz</string>
+      <key>UTTypeDescription</key><string>KMZ</string>
+      <key>UTTypeConformsTo</key><array><string>public.zip-archive</string></array>
+      <key>UTTypeTagSpecification</key><dict><key>public.filename-extension</key><array><string>kmz</string></array><key>public.mime-type</key><string>application/vnd.google-earth.kmz</string></dict>
+    </dict>
+    <dict>
+      <key>UTTypeIdentifier</key><string>com.topografix.gpx</string>
+      <key>UTTypeDescription</key><string>GPX</string>
+      <key>UTTypeConformsTo</key><array><string>public.xml</string></array>
+      <key>UTTypeTagSpecification</key><dict><key>public.filename-extension</key><array><string>gpx</string></array><key>public.mime-type</key><string>application/gpx+xml</string></dict>
+    </dict>
   </array>
 </dict>
 </plist>
@@ -180,6 +234,11 @@ if [[ -n "${LM_SIGN_IDENTITY:-}" ]]; then
   fi
   codesign --force --options runtime --timestamp "${ent[@]}" --sign "$LM_SIGN_IDENTITY" "$app"
   codesign --verify --strict --verbose=2 "$app"
+  # The hardened runtime (WP5.7), which notarization requires: the signature must carry it.
+  if ! codesign --display --verbose=2 "$app" 2>&1 | grep -q 'flags=.*runtime'; then
+    echo "bundle-macos: $app is signed without the hardened runtime" >&2
+    exit 1
+  fi
   if [[ -n "${LM_NOTARY_APPLE_ID:-}" ]]; then
     zip="$out/LayeredMap-notarize.zip"
     ditto -c -k --keepParent "$app" "$zip"

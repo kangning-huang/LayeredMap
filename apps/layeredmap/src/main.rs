@@ -3,6 +3,7 @@
 //! map-first shell from `lm-ui`.
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
+mod diagnostics;
 mod feel;
 // The spec's one exception to "no unsafe" (Architecture › Rules enforced in CI): native macOS
 // hooks live in the app's macOS module, with a SAFETY comment on each block and a second review.
@@ -19,6 +20,12 @@ use lm_ui::{Command, FileRequest, Prefs, Shell, System, ThemePref, Units};
 fn question_log_path() -> std::path::PathBuf {
     let home = std::env::var_os("HOME").map(std::path::PathBuf::from).unwrap_or_default();
     home.join("Library/Application Support/LayeredMap/question-log.jsonl")
+}
+
+/// Where autosaves and the recovery journal live (WP5.1).
+fn autosave_dir() -> std::path::PathBuf {
+    let home = std::env::var_os("HOME").map(std::path::PathBuf::from).unwrap_or_default();
+    home.join("Library/Application Support/LayeredMap/Autosave")
 }
 
 fn lm_doc_export(log: &std::path::Path, out: &std::path::Path) -> Result<usize, String> {
@@ -39,6 +46,8 @@ struct App {
     /// what a search jump looks like without driving the keyboard).
     tour: Vec<Step>,
     tour_next: Option<f64>,
+    /// The window title and Edited state last set.
+    title: (String, bool),
 }
 
 /// The system's Reduce Motion setting (macOS), read once at launch.
@@ -76,6 +85,7 @@ fn load_prefs(storage: Option<&dyn eframe::Storage>) -> Prefs {
     if let Some(v) = s.get_string("lm.strength").and_then(|v| v.parse::<f32>().ok()) {
         p.strength = v.clamp(0.4, 1.0);
     }
+    p.offline = s.get_string("lm.offline").as_deref() == Some("on");
     p.view = s.get_string("lm.view").and_then(|v| {
         let n: Vec<f64> = v.split(',').filter_map(|x| x.trim().parse().ok()).collect();
         match n.as_slice() {
@@ -122,6 +132,18 @@ impl eframe::App for App {
             }
             ctx.request_repaint_after(std::time::Duration::from_millis(100));
         }
+        // The map's name in the title bar, and the Edited state (WP5.1).
+        let title = (self.shell.window_title(), self.shell.edited());
+        if title != self.title {
+            ctx.send_viewport_cmd(egui::ViewportCommand::Title(title.0.clone()));
+            #[cfg(target_os = "macos")]
+            macos::set_edited(title.1, self.shell.document_path());
+            self.title = title;
+        }
+        // Closing with unsaved changes asks first.
+        if ctx.input(|i| i.viewport().close_requested()) && !self.shell.may_close() {
+            ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
+        }
         if let Some(m) = &self.menu {
             for action in m.poll() {
                 match action {
@@ -134,6 +156,20 @@ impl eframe::App for App {
                     menu::Action::Shell(cmd) => self.shell.command(ctx, cmd),
                     menu::Action::SaveDocument => self.shell.command(ctx, Command::RequestSaveDocument),
                     menu::Action::OpenDocument => self.shell.command(ctx, Command::RequestOpenDocument),
+                    menu::Action::ToggleOffline => {
+                        let on = !self.shell.prefs.offline;
+                        self.shell.command(ctx, Command::SetOffline(on));
+                    }
+                    menu::Action::ExportDiagnostics => {
+                        let settings = diagnostics::Settings {
+                            app: self.shell.app_name(),
+                            basemap: self.shell.prefs.basemap.clone(),
+                            offline: self.shell.prefs.offline,
+                            layers: self.shell.ws.doc.layers.len(),
+                        };
+                        let report = diagnostics::report(&settings, &diagnostics::logs_dir());
+                        self.shell.command(ctx, Command::ReviewDiagnostics(report));
+                    }
                     menu::Action::ExportQuestionLog => {
                         let log = question_log_path();
                         if let Some(out) =
@@ -171,6 +207,13 @@ impl eframe::App for App {
                         log::warn!("could not write {}: {e}", path.display());
                     }
                 }
+                FileRequest::SaveBytes { title, suggested_name, bytes } => {
+                    if let Some(path) = rfd::FileDialog::new().set_title(title).set_file_name(suggested_name).save_file()
+                        && let Err(e) = std::fs::write(&path, bytes)
+                    {
+                        log::warn!("could not write {}: {e}", path.display());
+                    }
+                }
                 FileRequest::SaveDocument => {
                     if let Some(dir) = rfd::FileDialog::new().set_title("Save document into a folder").pick_folder() {
                         self.shell.command(ctx, Command::SaveDocument(dir));
@@ -179,6 +222,22 @@ impl eframe::App for App {
                 FileRequest::OpenDocument => {
                     if let Some(dir) = rfd::FileDialog::new().set_title("Open a document folder").pick_folder() {
                         self.shell.command(ctx, Command::OpenDocument(dir));
+                    }
+                }
+                FileRequest::SaveAs { suggested_name } => {
+                    if let Some(path) = rfd::FileDialog::new()
+                        .set_title("Save")
+                        .set_file_name(suggested_name)
+                        .add_filter("LayeredMap map", &["lmap"])
+                        .save_file()
+                    {
+                        self.shell.command(ctx, Command::SaveTo(path));
+                    }
+                }
+                FileRequest::Locate { layer, file_name } => {
+                    if let Some(path) = rfd::FileDialog::new().set_title(format!("Locate {file_name}")).set_file_name(file_name).pick_file()
+                    {
+                        self.shell.command(ctx, Command::Relink(layer, path));
                     }
                 }
             }
@@ -194,6 +253,10 @@ impl eframe::App for App {
             self.probe = None;
             ui.ctx().send_viewport_cmd(egui::ViewportCommand::Close);
         }
+    }
+
+    fn on_exit(&mut self) {
+        self.shell.shutdown();
     }
 
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
@@ -213,6 +276,7 @@ impl eframe::App for App {
         storage.set_string("lm.units", if p.units == Units::Imperial { "imperial" } else { "metric" }.into());
         storage.set_string(BASEMAP_KEY, p.basemap);
         storage.set_string("lm.strength", p.strength.to_string());
+        storage.set_string("lm.offline", if p.offline { "on" } else { "off" }.into());
         if let Some((lon, lat, z)) = p.view {
             storage.set_string("lm.view", format!("{lon},{lat},{z}"));
         }
@@ -275,6 +339,7 @@ impl Step {
             "keep" => Step::Other(Command::KeepResult),
             "ask" => Step::Other(Command::Ask(rest.trim().to_string())),
             "keep-ask" => Step::Other(Command::KeepAsk),
+            "example" => Step::Other(Command::OpenExample(rest.trim().to_string())),
             "dictate" => Step::Other(Command::Dictate),
             "undo" => Step::Other(Command::Undo),
             "redo" => Step::Other(Command::Redo),
@@ -332,6 +397,9 @@ fn main() -> eframe::Result {
     let developer = cfg!(debug_assertions) || std::env::var_os("LM_DEV").is_some();
     let pro = is_pro();
     let app_name = if pro { "LayeredMap Pro" } else { "LayeredMap" };
+    // Crash logs and the log file stay on this Mac (~/Library/Logs/LayeredMap).
+    diagnostics::install_logger();
+    diagnostics::install_panic_hook(app_name);
     let mut options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_title(app_name)
@@ -367,9 +435,13 @@ fn main() -> eframe::Result {
             let mut shell = Shell::new(&cc.egui_ctx, flags, prefs, system);
             shell.developer = developer;
             shell.pro = pro;
+            shell.set_library_catalog(lm_ui::library::catalog_url(std::env::var("LM_LIBRARY_URL").ok().as_deref(), developer));
             lm_ui::basemap::start_archive_lookup(&cc.egui_ctx);
             if !ephemeral {
                 shell.set_question_log(question_log_path());
+                shell.start_autosave(&autosave_dir());
+                // The update feed (off unless built with LM_UPDATE_FEED_URL), on its own thread.
+                lm_ui::update::start(&cc.egui_ctx, pro);
             }
             // Files passed on the command line (and, through macOS, Open With) are opened.
             let files: Vec<std::path::PathBuf> =
@@ -383,8 +455,18 @@ fn main() -> eframe::Result {
             let feel = feel_out.map(|out| feel::Feel::new(out, runs, shell.map_view().camera()));
             #[cfg(target_os = "macos")]
             macos::set_context(&cc.egui_ctx);
-            let menu = menu::MenuBar::install(developer, &cc.egui_ctx);
-            Ok(Box::new(App { shell, menu, system, feel, probe: probe.then_some(started), ephemeral, tour, tour_next: None }))
+            let menu = menu::MenuBar::install(developer, shell.export_shown(), shell.library_available(), &cc.egui_ctx);
+            Ok(Box::new(App {
+                shell,
+                menu,
+                system,
+                feel,
+                probe: probe.then_some(started),
+                ephemeral,
+                tour,
+                tour_next: None,
+                title: (app_name.to_string(), false),
+            }))
         }),
     )
 }

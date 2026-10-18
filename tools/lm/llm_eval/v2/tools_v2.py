@@ -75,7 +75,8 @@ DESCRIPTIONS = {
         "(stat sum|mean|median|min|max with field, e.g. total students per district: stat 'sum', field 'students'). "
         "New layer: the areas with field '<points layer, lowercase>' (Schools: 'schools') and, with a statistic, "
         "'<stat> <field>' ('sum students', 'mean students', 'median students', 'minimum students', 'maximum students'). "
-        "It counts any layer's objects: areas and lines (islands, lakes, roads) count by a point inside each. "
+        "It counts any layer's objects: areas (islands, lakes) count by a point inside each; lines (storm tracks, rivers, roads) "
+        "count once in every area they cross or touch. "
         "To count what lies near each point (islands within 100 km of each city), first buffer the points with merge false, "
         "then count_in(points=<the layer to count>, areas='#k')."
     ),
@@ -302,7 +303,7 @@ def submit_plan_tools(context: str, with_resolve: bool = True) -> list[dict]:
     all_actions = [a["id"] for a in table] + DISPLAY + META
     step_props = {
         "action": {"type": "string", "enum": all_actions},
-        "points": {**_enum(L["vector"]), "description": "count_in: the layer to count (points; areas and lines, e.g. islands, count by a point inside each); add_raster_values: a point layer"},
+        "points": {**_enum(L["vector"]), "description": "count_in: the layer to count (points; areas, e.g. islands, by a point inside each; lines, e.g. storm tracks, once in every area they cross); add_raster_values: a point layer"},
         "areas": {"type": "string", "enum": L["areas"]},
         "raster": _enum(L["raster"]),
         "layer": {"type": "string", "enum": L["vector"]},

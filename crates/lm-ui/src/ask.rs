@@ -59,6 +59,14 @@ impl AskState {
         self.pending.is_some()
     }
 
+    /// The message shown in place of an answer (setup problems, offline mode), if any.
+    pub fn message(&self) -> Option<&str> {
+        match &self.shown {
+            Some(Shown::Message { text, .. }) => Some(text),
+            _ => None,
+        }
+    }
+
     /// Esc: stop the request in flight, or drop what is shown.
     pub fn escape(&mut self) -> bool {
         if let Some(p) = self.pending.take() {
@@ -77,6 +85,12 @@ impl AskState {
 pub fn submit(shell: &mut Shell, ctx: &egui::Context, text: String) {
     let text = text.trim().to_string();
     if text.is_empty() || shell.ask.pending.is_some() {
+        return;
+    }
+    // Strict offline mode: say so instead of trying (the transport refuses too).
+    #[cfg(not(target_arch = "wasm32"))]
+    if lm_net::offline() {
+        shell.ask.shown = Some(Shown::Message { text: lm_ask::openrouter::OFFLINE.into(), warning: true });
         return;
     }
     #[cfg(not(target_arch = "wasm32"))]

@@ -86,6 +86,7 @@ impl FormatAdapter for GeoJson {
                 profile,
                 data: LayerData::Vector(Arc::new(part)),
                 raw: None,
+                style: None,
             });
         }
         Ok(out)

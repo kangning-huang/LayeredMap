@@ -1,0 +1,7 @@
+# cargo-audit (WP6.8): the same exceptions as deny.toml, each with its reason there.
+[advisories]
+ignore = [
+  "RUSTSEC-2026-0367", # zip 8 via calamine only; extract() is never called on it
+  "RUSTSEC-2026-0368", # zip 8 via calamine only; extract() is never called on it
+  "RUSTSEC-2026-0369", # zip 8 via calamine only; extract() is never called on it
+]

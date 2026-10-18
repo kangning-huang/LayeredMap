@@ -5,7 +5,7 @@
 //!   fixtures. Each check prints a `STRESS` line (fixture, measured value, threshold, pass/fail);
 //!   the run ends with them as a table for the gate report.
 //! - `fuzz [--secs N] [--target T]`: `cargo fuzz` on each import adapter (CSV, GeoJSON,
-//!   Shapefile, DBF, GeoTIFF header), seeded from the fixtures, all targets at once for N seconds
+//!   Shapefile, DBF, GeoTIFF header, KML, KMZ, GPX), seeded from the fixtures, all targets at once for N seconds
 //!   each (default 3600, Gate 2's hour). Logs go to `fuzz/logs/<target>.log`, findings to
 //!   `fuzz/artifacts/<target>/`. Needs a nightly toolchain and cargo-fuzz.
 
@@ -114,7 +114,7 @@ pub fn stress_table(rows: &[StressRow]) -> String {
 }
 
 /// The fuzz targets (`fuzz/fuzz_targets/*.rs`).
-pub const FUZZ_TARGETS: &[&str] = &["csv", "geojson", "shapefile", "dbf", "geotiff_header"];
+pub const FUZZ_TARGETS: &[&str] = &["csv", "geojson", "shapefile", "dbf", "geotiff_header", "gpkg", "xlsx", "kml", "kmz", "gpx"];
 
 /// Seed inputs for a target: (seed file name, prefix byte for the Shapefile target's mode, source).
 fn seeds(root: &Path, target: &str) -> Vec<(String, Option<u8>, PathBuf)> {
@@ -156,6 +156,21 @@ fn seeds(root: &Path, target: &str) -> Vec<(String, Option<u8>, PathBuf)> {
             v.push((Some(3), gen_dir.join("X1/x1_bomb.zip")));
         }
         "dbf" => v.extend(all("dbf").into_iter().map(|p| (None, p))),
+        "kml" | "kmz" | "gpx" => {
+            v.extend(all(target).into_iter().map(|p| (None, p)));
+            let malformed = fx.join(if target == "gpx" { "V12/malformed" } else { "V11/malformed" });
+            let mut extra: Vec<PathBuf> = std::fs::read_dir(&malformed)
+                .into_iter()
+                .flatten()
+                .flatten()
+                .map(|e| e.path())
+                .filter(|p| p.extension().is_some_and(|e| e.eq_ignore_ascii_case(target)))
+                .collect();
+            extra.sort();
+            v.extend(extra.into_iter().map(|p| (None, p)));
+        }
+        "gpkg" => v.extend(all("gpkg").into_iter().map(|p| (None, p))),
+        "xlsx" => v.extend(all("xlsx").into_iter().map(|p| (None, p))),
         "geotiff_header" => {
             v.extend(all("tif").into_iter().map(|p| (None, p)));
             v.push((None, gen_dir.join("X4/x4_billion.tif")));
@@ -331,6 +346,35 @@ mod tests {
                 .map(|s| s.to_string())
                 .collect();
         assert_eq!(parse_fuzz(&crash).crash.as_deref(), Some("fuzz/artifacts/csv/crash-ab12"));
+    }
+
+    /// WP6.8: each import adapter (`lm_jobs::import::adapters`) is fuzzed by a target. A new
+    /// adapter fails here until it has one (add it to `fuzz/`, `FUZZ_TARGETS` and this table).
+    #[test]
+    fn every_import_adapter_has_a_fuzz_target() {
+        const COVERED: &[(&str, &str)] = &[
+            ("geojson::GeoJson", "geojson"),
+            ("csv::Delimited", "csv"),
+            ("shapefile::Shapefile", "shapefile"),
+            ("shapefile::ZippedShapefile", "shapefile"),
+            ("gpkg::GeoPackage", "gpkg"),
+            ("excel::Excel", "xlsx"),
+            ("raster::GeoTiff", "geotiff_header"),
+            ("kml::Kml", "kml"),
+            ("kml::Kmz", "kmz"),
+            ("gpx::Gpx", "gpx"),
+        ];
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
+        let src = std::fs::read_to_string(root.join("crates/lm-jobs/src/import/mod.rs")).unwrap();
+        let body = src.split("fn adapters(").nth(1).and_then(|b| b.split("\n}").next()).unwrap();
+        let adapters: Vec<&str> =
+            body.split('&').skip(1).filter_map(|a| a.split([',', ']', ')', ';', ' ']).next()).filter(|a| a.contains("::")).collect();
+        assert!(adapters.len() >= 7, "{adapters:?}");
+        for a in adapters {
+            let target = COVERED.iter().find(|(k, _)| *k == a).map(|(_, t)| *t);
+            let target = target.unwrap_or_else(|| panic!("import adapter {a} has no fuzz target"));
+            assert!(FUZZ_TARGETS.contains(&target), "{a}: {target} is not in FUZZ_TARGETS");
+        }
     }
 
     #[test]
