@@ -68,12 +68,15 @@ DATA = Path(os.environ.get("LM_PUZZLE_DATA", "/Volumes/LaCie/data/layeredmap-puz
 PUZZLES_JSON = ROOT / "docs/lm/puzzles/puzzles.json"
 PLANS = HERE / "plans"
 RESULTS = HERE / "results"
-TARGET = Path(os.environ.get("CARGO_TARGET_DIR", "/Volumes/LaCie/cargo-target/layeredmap-wt-e2e"))
+TARGET = Path(os.environ.get("CARGO_TARGET_DIR", "/Volumes/LaCie/cargo-target/layeredmap"))
 RUN_PLAN = TARGET / "release/examples/run_plan"
 MODELS = ["anthropic/claude-haiku-5.5", "z-ai/glm-5.3-flash"]
 DESIGN = "submit_plan"
 MAX_TURNS = 8
 MAX_REPAIRS = 2
+# Each layer's filter when the request is made ({context: {layer: [fields]}}); stepwise.py sets it.
+CURRENT_FILTERS: dict[str, dict[str, list[str]]] = {}
+SINGLE_SHOWN: dict[str, set[str]] = {}
 
 # ---------------------------------------------------------------------------------------------
 # The puzzle layers
@@ -344,7 +347,8 @@ def map_context(ctx: str) -> str:
 
 EXTRA_RULES = """11. Numbers in the request: "at least", "or more", "or warmer", "不低于", "至少" -> at_least; "at most", "or less", "or colder", "不超过", "不高于" -> at_most; "more than", "over", "超过" -> above; "less than", "below" -> below; "between a and b", "a to b" -> between. Write numbers in the field's or raster's unit, digits only ("two million" = 2000000, "一亿" = 100000000, "a million" = 1000000).
 12. Which action gives which value: a raster's value at each point -> add_raster_values; details of the area each object lies in (its country, continent, country population) -> join_by_location; distance to the nearest object of another layer -> nearest_distance; distance to the nearest other object of the same layer -> nearest_other; a value computed from two values (a difference, a ratio) -> calculate_field; one object per island or part of a multi-part area -> split_parts; area, length and coordinates -> add_measurements; places where raster conditions hold -> find_where; the part of a layer inside some areas -> keep_inside; the objects of a layer inside one area -> whats_inside.
-13. Steps that add values fill them only for the objects shown at that moment; hidden objects stay blank. To answer "which one", end the plan with the filter that leaves only the objects meeting every condition."""
+13. Steps that add values fill them only for the objects shown at that moment; hidden objects stay blank. To answer "which one", end the plan with the filter that leaves only the objects meeting every condition.
+14. Well-known geographic terms have standard definitions: use them without asking. Tropical / in the tropics: latitude between -23.44 and 23.44; northern / southern hemisphere: latitude above / below 0; Arctic: latitude at least 66.56; Antarctic: latitude at most -66.56; a latitude needs the layer's latitude field (add_measurements adds one)."""
 
 EXTRA_MAP = """More example layers on the same invented map: Temperature: raster, °C. Lakes: areas, 1 object with many parts; fields name (text)."""
 
@@ -605,7 +609,8 @@ def plan_request(client, model: dict, ctx: str, request: str, budget, cache: boo
     system = system_message(ctx, cache)
     messages: list = [system, {"role": "user", "content": request}]
     est_prompt = count_tokens(json.dumps(system, ensure_ascii=False)) + count_tokens(json.dumps(tools, ensure_ascii=False)) + 50
-    checker = chk.Checker(ctx, None, request, enabled=True)
+    checker = chk.Checker(ctx, None, request, enabled=True, current_filters=CURRENT_FILTERS.get(ctx),
+                          single_shown=SINGLE_SHOWN.get(ctx, frozenset()))
     rec: dict = {}
     tot = {"prompt_tokens": 0, "completion_tokens": 0, "reasoning_tokens": 0, "cached_tokens": 0, "cache_write_tokens": 0,
            "cost_usd": 0.0, "latency_s": 0.0, "tries": 0, "model_calls": 0}

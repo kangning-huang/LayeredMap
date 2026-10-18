@@ -317,3 +317,21 @@ def test_a_second_filter_that_drops_an_earlier_condition_is_flagged():
     assert errs and "without country" in errs[-1]
     plan[1]["args"]["conditions"].insert(0, {"field": "country", "op": "is", "value": "China"})
     assert not any("without" in e for e in k.lint(plan))
+
+
+def test_a_filter_that_drops_the_current_filter_is_flagged():
+    # A later request ("keep those above 1500 m") keeps the filter already on the layer.
+    k = chk.Checker("world", None, "Keep those above 1500 m", current_filters={"Populated places": ["country"]})
+    plan = [{"name": "filter", "args": {"layer": "Populated places", "conditions": [{"field": "Elevation", "op": "above", "value": "1500"}]}}]
+    errs = k.lint(plan)
+    assert errs and "filter now on Populated places" in errs[-1]
+    plan[0]["args"]["conditions"].insert(0, {"field": "country", "op": "is", "value": "China"})
+    assert not k.lint(plan)
+    assert not chk.Checker("world", None, "Keep those above 1500 m").lint(plan[:1])
+
+
+def test_layer_alone_names_its_only_shown_object():
+    plan = [{"name": "whats_inside", "args": {"area": {"layer": "Countries"}, "layer": "Populated places"}}]
+    errs = chk.Checker("world", None, "Which towns are in it?").check_plan(plan)[1]
+    assert errs and "is selected" in errs[0]
+    assert not chk.Checker("world", None, "Which towns are in it?", single_shown={"Countries"}).check_plan(plan)[1]

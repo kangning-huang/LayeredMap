@@ -148,8 +148,13 @@ class Verdict:
 
 
 class Checker:
-    def __init__(self, context: str, selection: dict | None, request: str = "", enabled: bool = True):
+    def __init__(self, context: str, selection: dict | None, request: str = "", enabled: bool = True,
+                 current_filters: dict[str, list[str]] | None = None, single_shown: set[str] | frozenset = frozenset()):
         self.context = context
+        # The fields each layer is filtered by when the request is made (the app knows them).
+        self.current_filters = dict(current_filters or {})
+        # Layers a filter leaves showing exactly one object: {layer} alone names that object.
+        self.single_shown = set(single_shown)
         self.selection = selection
         self.request = request or ""
         self.enabled = enabled
@@ -286,9 +291,9 @@ class Checker:
         fname, value = obj.get("field"), obj.get("value")
         if value in (None, "") and fname in (None, ""):
             sel = (self.selection or {}).get("layer")
-            if key.startswith("#") or self.kind_of(key) == "drawn area" or sel == key or action == "summarize_drawn":
+            if key.startswith("#") or self.kind_of(key) == "drawn area" or sel == key or action == "summarize_drawn" or key in self.single_shown:
                 return out
-            v.errors.append(f"{action}: nothing in {key} is selected. Name the object as {{layer, field, value}} (resolve_feature finds the stored name), or ask_user which one.")
+            v.errors.append(f"{action}: nothing in {key} is selected and it shows more than one object. Name the object as {{layer, field, value}} (resolve_feature finds the stored name), or ask_user which one.")
             return None
         if value in (None, ""):
             v.errors.append(f"{action}: {role} has a field but no value.")
@@ -875,7 +880,9 @@ class Checker:
         # A filter replaces the layer's earlier filter (owner's decision, 2026-10-17): a later
         # filter that leaves out an earlier condition on the same layer undoes it, which a
         # narrowing request almost never means. A filter with no conditions (clear) is exempt.
-        last: dict[str, tuple[int, list[str]]] = {}
+        # The filter already on a layer counts as step 0, so a request that narrows what is shown
+        # ("keep those over 75 km") keeps the earlier request's conditions.
+        last: dict[str, tuple[int, list[str]]] = {k: (-1, v) for k, v in self.current_filters.items()}
         for i, c in enumerate(plan):
             if c["name"] != "filter":
                 continue
@@ -887,7 +894,11 @@ class Checker:
             if key in last and conds:
                 j, before = last[key]
                 dropped = [f for f in before if f not in fields]
-                if dropped:
+                if dropped and j < 0:
+                    errs.append(f"Step #{i + 1} filters {key} without {', '.join(dropped)}, which the filter now on {key} uses. A filter "
+                                f"replaces the current one, so repeat the current conditions in this filter, unless the user asked to "
+                                f"show all or to drop them.")
+                elif dropped:
                     errs.append(f"Step #{i + 1} filters {key} again without {', '.join(dropped)} from step #{j + 1}. A filter replaces "
                                 f"the earlier one, so repeat the earlier conditions you still want in this filter.")
             last[key] = (i, fields)

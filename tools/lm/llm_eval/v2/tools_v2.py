@@ -142,7 +142,7 @@ SUBMIT_CALCULATE = (
     "blanks. Adds the field 'name' (default 'first op second') to the layer; no new layer."
 )
 
-OBJ_NOTE = "One object: {layer, field, value} with value as stored (resolve_feature finds it); omit field and value for the selected object or a drawn area."
+OBJ_NOTE = "One object: {layer, field, value} with value as stored (resolve_feature finds it); omit field and value for the selected object, a drawn area, or the layer's only shown object."
 
 
 def _enum(values: list[str]) -> dict:

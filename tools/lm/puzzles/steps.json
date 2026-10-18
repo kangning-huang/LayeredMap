@@ -1,0 +1,1170 @@
+{
+ "about": "The eight puzzles broken into the requests a user would type one at a time (owner's direction, 18 Oct 2026: the assistant is judged on single requests; the user breaks a puzzle into steps). Each request has its gold steps; '#k' counts the gold steps of the whole puzzle from 1, across requests.",
+ "puzzles": {
+  "P1": [
+   {
+    "request": "Show only the cities in China with more than two million people.",
+    "gold": [
+     {
+      "name": "filter",
+      "args": {
+       "layer": "Populated places",
+       "conditions": [
+        {
+         "field": "ADM0NAME",
+         "op": "is",
+         "value": "China"
+        },
+        {
+         "field": "POP_MAX",
+         "op": "above",
+         "value": "2000000"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   {
+    "request": "Add the elevation to each of these cities.",
+    "gold": [
+     {
+      "name": "add_raster_values",
+      "args": {
+       "raster": "Elevation",
+       "points": "Populated places"
+      }
+     }
+    ]
+   },
+   {
+    "request": "Keep only the ones at least 1,500 metres high.",
+    "gold": [
+     {
+      "name": "filter",
+      "args": {
+       "layer": "Populated places",
+       "conditions": [
+        {
+         "field": "ADM0NAME",
+         "op": "is",
+         "value": "China"
+        },
+        {
+         "field": "POP_MAX",
+         "op": "above",
+         "value": "2000000"
+        },
+        {
+         "field": "Elevation",
+         "op": "at_least",
+         "value": "1500"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   {
+    "request": "What's the January average temperature at each of them?",
+    "gold": [
+     {
+      "name": "add_raster_values",
+      "args": {
+       "raster": "January mean temperature",
+       "points": "Populated places"
+      }
+     }
+    ]
+   },
+   {
+    "request": "Which of them have a January average of 5 °C or warmer?",
+    "gold": [
+     {
+      "name": "filter",
+      "args": {
+       "layer": "Populated places",
+       "conditions": [
+        {
+         "field": "ADM0NAME",
+         "op": "is",
+         "value": "China"
+        },
+        {
+         "field": "POP_MAX",
+         "op": "above",
+         "value": "2000000"
+        },
+        {
+         "field": "Elevation",
+         "op": "at_least",
+         "value": "1500"
+        },
+        {
+         "field": "January mean temperature",
+         "op": "at_least",
+         "value": "5"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  ],
+  "P2": [
+   {
+    "request": "Add the continent to each city.",
+    "gold": [
+     {
+      "name": "join_by_location",
+      "args": {
+       "layer": "Populated places",
+       "areas": "Countries",
+       "fields": "CONTINENT"
+      }
+     }
+    ]
+   },
+   {
+    "request": "Show only North American cities with at least 500,000 people.",
+    "gold": [
+     {
+      "name": "filter",
+      "args": {
+       "layer": "Populated places",
+       "conditions": [
+        {
+         "field": "CONTINENT",
+         "op": "is",
+         "value": "North America"
+        },
+        {
+         "field": "POP_MAX",
+         "op": "at_least",
+         "value": "500000"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   {
+    "request": "Add the January average temperature to them.",
+    "gold": [
+     {
+      "name": "add_raster_values",
+      "args": {
+       "raster": "January mean temperature",
+       "points": "Populated places"
+      }
+     }
+    ]
+   },
+   {
+    "request": "Which ones are minus 15 °C or colder in January?",
+    "gold": [
+     {
+      "name": "filter",
+      "args": {
+       "layer": "Populated places",
+       "conditions": [
+        {
+         "field": "CONTINENT",
+         "op": "is",
+         "value": "North America"
+        },
+        {
+         "field": "POP_MAX",
+         "op": "at_least",
+         "value": "500000"
+        },
+        {
+         "field": "January mean temperature",
+         "op": "at_most",
+         "value": "-15"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  ],
+  "P3": [
+   {
+    "request": "Split the land into separate islands.",
+    "gold": [
+     {
+      "name": "split_parts",
+      "args": {
+       "layer": "Land"
+      }
+     }
+    ]
+   },
+   {
+    "request": "Add the area of each island.",
+    "gold": [
+     {
+      "name": "add_measurements",
+      "args": {
+       "layer": "#1"
+      }
+     }
+    ]
+   },
+   {
+    "request": "How far is each island from the nearest other land?",
+    "gold": [
+     {
+      "name": "nearest_other",
+      "args": {
+       "layer": "#1"
+      }
+     }
+    ]
+   },
+   {
+    "request": "Add the country each island belongs to.",
+    "gold": [
+     {
+      "name": "join_by_location",
+      "args": {
+       "layer": "#1",
+       "areas": "Countries",
+       "fields": "ADMIN"
+      }
+     }
+    ]
+   },
+   {
+    "request": "Show only the South Korean islands between 50 and 100 square kilometres.",
+    "gold": [
+     {
+      "name": "filter",
+      "args": {
+       "layer": "#1",
+       "conditions": [
+        {
+         "field": "ADMIN",
+         "op": "is",
+         "value": "South Korea"
+        },
+        {
+         "field": "area_km2",
+         "op": "between",
+         "value": "50",
+         "value2": "100"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   {
+    "request": "Which of those are at least 75 km from any other land?",
+    "gold": [
+     {
+      "name": "filter",
+      "args": {
+       "layer": "#1",
+       "conditions": [
+        {
+         "field": "ADMIN",
+         "op": "is",
+         "value": "South Korea"
+        },
+        {
+         "field": "area_km2",
+         "op": "between",
+         "value": "50",
+         "value2": "100"
+        },
+        {
+         "field": "km to nearest other area",
+         "op": "at_least",
+         "value": "75"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  ],
+  "P4": [
+   {
+    "request": "Show where the elevation is between 1,000 and 2,000 m, the annual average temperature is at least 17 °C, annual rain is at least 1,300 mm and January averages 10 °C or more.",
+    "gold": [
+     {
+      "name": "find_where",
+      "args": {
+       "conditions": [
+        {
+         "raster": "Elevation",
+         "op": "between",
+         "value": "1000",
+         "value2": "2000"
+        },
+        {
+         "raster": "Annual mean temperature",
+         "op": "at_least",
+         "value": "17"
+        },
+        {
+         "raster": "Annual precipitation",
+         "op": "at_least",
+         "value": "1300"
+        },
+        {
+         "raster": "January mean temperature",
+         "op": "at_least",
+         "value": "10"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   {
+    "request": "Keep only the parts inside China.",
+    "gold": [
+     {
+      "name": "filter",
+      "args": {
+       "layer": "Countries",
+       "conditions": [
+        {
+         "field": "ADMIN",
+         "op": "is",
+         "value": "China"
+        }
+       ]
+      }
+     },
+     {
+      "name": "keep_inside",
+      "args": {
+       "layer": "#1",
+       "areas": "Countries"
+      }
+     }
+    ]
+   },
+   {
+    "request": "How big is each of these areas?",
+    "gold": [
+     {
+      "name": "add_measurements",
+      "args": {
+       "layer": "#3"
+      }
+     }
+    ]
+   },
+   {
+    "request": "Show only the ones bigger than 10,000 square kilometres.",
+    "gold": [
+     {
+      "name": "filter",
+      "args": {
+       "layer": "#3",
+       "conditions": [
+        {
+         "field": "area_km2",
+         "op": "above",
+         "value": "10000"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   {
+    "request": "Which towns are in it?",
+    "gold": [
+     {
+      "name": "whats_inside",
+      "args": {
+       "area": {
+        "layer": "#3"
+       },
+       "layer": "Populated places"
+      }
+     }
+    ]
+   }
+  ],
+  "P5": [
+   {
+    "request": "Add the continent to each city.",
+    "gold": [
+     {
+      "name": "join_by_location",
+      "args": {
+       "layer": "Populated places",
+       "areas": "Countries",
+       "fields": "CONTINENT"
+      }
+     }
+    ]
+   },
+   {
+    "request": "Show only European cities whose name starts with Z and that have at least 300,000 people.",
+    "gold": [
+     {
+      "name": "filter",
+      "args": {
+       "layer": "Populated places",
+       "conditions": [
+        {
+         "field": "CONTINENT",
+         "op": "is",
+         "value": "Europe"
+        },
+        {
+         "field": "NAME",
+         "op": "starts_with",
+         "value": "Z"
+        },
+        {
+         "field": "POP_MAX",
+         "op": "at_least",
+         "value": "300000"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   {
+    "request": "Add the annual rainfall to them.",
+    "gold": [
+     {
+      "name": "add_raster_values",
+      "args": {
+       "raster": "Annual precipitation",
+       "points": "Populated places"
+      }
+     }
+    ]
+   },
+   {
+    "request": "Which get 400 mm a year or less?",
+    "gold": [
+     {
+      "name": "filter",
+      "args": {
+       "layer": "Populated places",
+       "conditions": [
+        {
+         "field": "CONTINENT",
+         "op": "is",
+         "value": "Europe"
+        },
+        {
+         "field": "NAME",
+         "op": "starts_with",
+         "value": "Z"
+        },
+        {
+         "field": "POP_MAX",
+         "op": "at_least",
+         "value": "300000"
+        },
+        {
+         "field": "Annual precipitation",
+         "op": "at_most",
+         "value": "400"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  ],
+  "P6": [
+   {
+    "request": "Add the continent to each city.",
+    "gold": [
+     {
+      "name": "join_by_location",
+      "args": {
+       "layer": "Populated places",
+       "areas": "Countries",
+       "fields": "CONTINENT"
+      }
+     }
+    ]
+   },
+   {
+    "request": "Show the African cities with at least a million people.",
+    "gold": [
+     {
+      "name": "filter",
+      "args": {
+       "layer": "Populated places",
+       "conditions": [
+        {
+         "field": "CONTINENT",
+         "op": "is",
+         "value": "Africa"
+        },
+        {
+         "field": "POP_MAX",
+         "op": "at_least",
+         "value": "1000000"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   {
+    "request": "Add the elevation to them.",
+    "gold": [
+     {
+      "name": "add_raster_values",
+      "args": {
+       "raster": "Elevation",
+       "points": "Populated places"
+      }
+     }
+    ]
+   },
+   {
+    "request": "Keep those at least 1,500 m high.",
+    "gold": [
+     {
+      "name": "filter",
+      "args": {
+       "layer": "Populated places",
+       "conditions": [
+        {
+         "field": "CONTINENT",
+         "op": "is",
+         "value": "Africa"
+        },
+        {
+         "field": "POP_MAX",
+         "op": "at_least",
+         "value": "1000000"
+        },
+        {
+         "field": "Elevation",
+         "op": "at_least",
+         "value": "1500"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   {
+    "request": "Add the January and July average temperatures.",
+    "gold": [
+     {
+      "name": "add_raster_values",
+      "args": {
+       "raster": "January mean temperature",
+       "points": "Populated places"
+      }
+     },
+     {
+      "name": "add_raster_values",
+      "args": {
+       "raster": "July mean temperature",
+       "points": "Populated places"
+      }
+     }
+    ]
+   },
+   {
+    "request": "Work out July minus January for each city.",
+    "gold": [
+     {
+      "name": "calculate_field",
+      "args": {
+       "layer": "Populated places",
+       "a": "July mean temperature",
+       "op": "subtract",
+       "b": "January mean temperature",
+       "name": "July minus January"
+      }
+     }
+    ]
+   },
+   {
+    "request": "Keep the ones where July is at least 1 °C cooler than January.",
+    "gold": [
+     {
+      "name": "filter",
+      "args": {
+       "layer": "Populated places",
+       "conditions": [
+        {
+         "field": "CONTINENT",
+         "op": "is",
+         "value": "Africa"
+        },
+        {
+         "field": "POP_MAX",
+         "op": "at_least",
+         "value": "1000000"
+        },
+        {
+         "field": "Elevation",
+         "op": "at_least",
+         "value": "1500"
+        },
+        {
+         "field": "July minus January",
+         "op": "at_most",
+         "value": "-1"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   {
+    "request": "How far is each of them from the coast?",
+    "gold": [
+     {
+      "name": "nearest_distance",
+      "args": {
+       "layer": "Populated places",
+       "other": "Coastline"
+      }
+     }
+    ]
+   },
+   {
+    "request": "Keep those 300 km or more from the sea.",
+    "gold": [
+     {
+      "name": "filter",
+      "args": {
+       "layer": "Populated places",
+       "conditions": [
+        {
+         "field": "CONTINENT",
+         "op": "is",
+         "value": "Africa"
+        },
+        {
+         "field": "POP_MAX",
+         "op": "at_least",
+         "value": "1000000"
+        },
+        {
+         "field": "Elevation",
+         "op": "at_least",
+         "value": "1500"
+        },
+        {
+         "field": "July minus January",
+         "op": "at_most",
+         "value": "-1"
+        },
+        {
+         "field": "km to nearest coastline",
+         "op": "at_least",
+         "value": "300"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   {
+    "request": "How far is each from the nearest active fault?",
+    "gold": [
+     {
+      "name": "nearest_distance",
+      "args": {
+       "layer": "Populated places",
+       "other": "Active faults"
+      }
+     }
+    ]
+   },
+   {
+    "request": "Which one has an active fault within 50 km?",
+    "gold": [
+     {
+      "name": "filter",
+      "args": {
+       "layer": "Populated places",
+       "conditions": [
+        {
+         "field": "CONTINENT",
+         "op": "is",
+         "value": "Africa"
+        },
+        {
+         "field": "POP_MAX",
+         "op": "at_least",
+         "value": "1000000"
+        },
+        {
+         "field": "Elevation",
+         "op": "at_least",
+         "value": "1500"
+        },
+        {
+         "field": "July minus January",
+         "op": "at_most",
+         "value": "-1"
+        },
+        {
+         "field": "km to nearest coastline",
+         "op": "at_least",
+         "value": "300"
+        },
+        {
+         "field": "km to nearest active fault",
+         "op": "at_most",
+         "value": "50"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  ],
+  "P7": [
+   {
+    "request": "Add each city's continent and its country's population.",
+    "gold": [
+     {
+      "name": "join_by_location",
+      "args": {
+       "layer": "Populated places",
+       "areas": "Countries",
+       "fields": "CONTINENT,POP_EST"
+      }
+     }
+    ]
+   },
+   {
+    "request": "Show only South American cities in a country of more than 100 million people.",
+    "gold": [
+     {
+      "name": "filter",
+      "args": {
+       "layer": "Populated places",
+       "conditions": [
+        {
+         "field": "CONTINENT",
+         "op": "is",
+         "value": "South America"
+        },
+        {
+         "field": "POP_EST",
+         "op": "above",
+         "value": "100000000"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   {
+    "request": "Add the annual rainfall to them.",
+    "gold": [
+     {
+      "name": "add_raster_values",
+      "args": {
+       "raster": "Annual precipitation",
+       "points": "Populated places"
+      }
+     }
+    ]
+   },
+   {
+    "request": "Keep those with at least 1,500 mm a year.",
+    "gold": [
+     {
+      "name": "filter",
+      "args": {
+       "layer": "Populated places",
+       "conditions": [
+        {
+         "field": "CONTINENT",
+         "op": "is",
+         "value": "South America"
+        },
+        {
+         "field": "POP_EST",
+         "op": "above",
+         "value": "100000000"
+        },
+        {
+         "field": "Annual precipitation",
+         "op": "at_least",
+         "value": "1500"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   {
+    "request": "Show only the major rivers.",
+    "gold": [
+     {
+      "name": "filter",
+      "args": {
+       "layer": "Rivers",
+       "conditions": [
+        {
+         "field": "scalerank",
+         "op": "at_most",
+         "value": "4"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   {
+    "request": "How far is each city from the nearest of these rivers?",
+    "gold": [
+     {
+      "name": "nearest_distance",
+      "args": {
+       "layer": "Populated places",
+       "other": "Rivers"
+      }
+     }
+    ]
+   },
+   {
+    "request": "Keep the cities within 10 km of a river.",
+    "gold": [
+     {
+      "name": "filter",
+      "args": {
+       "layer": "Populated places",
+       "conditions": [
+        {
+         "field": "CONTINENT",
+         "op": "is",
+         "value": "South America"
+        },
+        {
+         "field": "POP_EST",
+         "op": "above",
+         "value": "100000000"
+        },
+        {
+         "field": "Annual precipitation",
+         "op": "at_least",
+         "value": "1500"
+        },
+        {
+         "field": "km to nearest river",
+         "op": "at_most",
+         "value": "10"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   {
+    "request": "Add the July average temperature.",
+    "gold": [
+     {
+      "name": "add_raster_values",
+      "args": {
+       "raster": "July mean temperature",
+       "points": "Populated places"
+      }
+     }
+    ]
+   },
+   {
+    "request": "Which of them have a July average of 18 °C or less?",
+    "gold": [
+     {
+      "name": "filter",
+      "args": {
+       "layer": "Populated places",
+       "conditions": [
+        {
+         "field": "CONTINENT",
+         "op": "is",
+         "value": "South America"
+        },
+        {
+         "field": "POP_EST",
+         "op": "above",
+         "value": "100000000"
+        },
+        {
+         "field": "Annual precipitation",
+         "op": "at_least",
+         "value": "1500"
+        },
+        {
+         "field": "km to nearest river",
+         "op": "at_most",
+         "value": "10"
+        },
+        {
+         "field": "July mean temperature",
+         "op": "at_most",
+         "value": "18"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   {
+    "request": "Which countries are within 30 km of Foz do Iguaçu?",
+    "gold": [
+     {
+      "name": "buffer",
+      "args": {
+       "object": {
+        "layer": "Populated places",
+        "field": "NAME",
+        "value": "Foz do Iguaçu"
+       },
+       "layer": "Populated places",
+       "distance": "30 km"
+      }
+     },
+     {
+      "name": "whats_inside",
+      "args": {
+       "area": {
+        "layer": "#10"
+       },
+       "layer": "Countries"
+      }
+     }
+    ]
+   },
+   {
+    "request": "And which countries are within 30 km of Guaira?",
+    "gold": [
+     {
+      "name": "buffer",
+      "args": {
+       "object": {
+        "layer": "Populated places",
+        "field": "NAME",
+        "value": "Guaira"
+       },
+       "layer": "Populated places",
+       "distance": "30 km"
+      }
+     },
+     {
+      "name": "whats_inside",
+      "args": {
+       "area": {
+        "layer": "#12"
+       },
+       "layer": "Countries"
+      }
+     }
+    ]
+   }
+  ],
+  "P8": [
+   {
+    "request": "Split the land into separate islands.",
+    "gold": [
+     {
+      "name": "split_parts",
+      "args": {
+       "layer": "Land"
+      }
+     }
+    ]
+   },
+   {
+    "request": "Add each island's area and position.",
+    "gold": [
+     {
+      "name": "add_measurements",
+      "args": {
+       "layer": "#1"
+      }
+     }
+    ]
+   },
+   {
+    "request": "How far is each island from the nearest other land?",
+    "gold": [
+     {
+      "name": "nearest_other",
+      "args": {
+       "layer": "#1"
+      }
+     }
+    ]
+   },
+   {
+    "request": "Show only tropical islands of 50 to 150 square kilometres.",
+    "gold": [
+     {
+      "name": "filter",
+      "args": {
+       "layer": "#1",
+       "conditions": [
+        {
+         "field": "latitude",
+         "op": "between",
+         "value": "-23.44",
+         "value2": "23.44"
+        },
+        {
+         "field": "area_km2",
+         "op": "between",
+         "value": "50",
+         "value2": "150"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   {
+    "request": "How far is each of them from the nearest minor island?",
+    "gold": [
+     {
+      "name": "nearest_distance",
+      "args": {
+       "layer": "#1",
+       "other": "Minor islands"
+      }
+     }
+    ]
+   },
+   {
+    "request": "Keep those at least 300 km from any other land and from any minor island.",
+    "gold": [
+     {
+      "name": "filter",
+      "args": {
+       "layer": "#1",
+       "conditions": [
+        {
+         "field": "latitude",
+         "op": "between",
+         "value": "-23.44",
+         "value2": "23.44"
+        },
+        {
+         "field": "area_km2",
+         "op": "between",
+         "value": "50",
+         "value2": "150"
+        },
+        {
+         "field": "km to nearest other area",
+         "op": "at_least",
+         "value": "300"
+        },
+        {
+         "field": "km to nearest minor island",
+         "op": "at_least",
+         "value": "300"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   {
+    "request": "What's the average annual rainfall on each of them?",
+    "gold": [
+     {
+      "name": "summarize_each",
+      "args": {
+       "raster": "Annual precipitation",
+       "areas": "#1",
+       "stat": "mean"
+      }
+     }
+    ]
+   },
+   {
+    "request": "Keep the islands with at least 1,500 mm a year.",
+    "gold": [
+     {
+      "name": "filter",
+      "args": {
+       "layer": "#7",
+       "conditions": [
+        {
+         "field": "Annual precipitation mean",
+         "op": "at_least",
+         "value": "1500"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   {
+    "request": "Divide each island's longitude by its latitude and call it ratio.",
+    "gold": [
+     {
+      "name": "calculate_field",
+      "args": {
+       "layer": "#7",
+       "a": "longitude",
+       "op": "divide",
+       "b": "latitude",
+       "name": "ratio"
+      }
+     }
+    ]
+   },
+   {
+    "request": "Add the ratio squared, so the sign doesn't matter.",
+    "gold": [
+     {
+      "name": "calculate_field",
+      "args": {
+       "layer": "#7",
+       "a": "ratio",
+       "op": "multiply",
+       "b": "ratio",
+       "name": "ratio squared"
+      }
+     }
+    ]
+   },
+   {
+    "request": "Keep the islands whose ratio squared is between 90 and 110.",
+    "gold": [
+     {
+      "name": "filter",
+      "args": {
+       "layer": "#7",
+       "conditions": [
+        {
+         "field": "Annual precipitation mean",
+         "op": "at_least",
+         "value": "1500"
+        },
+        {
+         "field": "ratio squared",
+         "op": "between",
+         "value": "90",
+         "value2": "110"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  ]
+ }
+}
