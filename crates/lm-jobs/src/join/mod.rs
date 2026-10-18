@@ -331,6 +331,58 @@ pub fn decide(pairings: &[Pairing]) -> Decision {
     Decision::Ask(offer)
 }
 
+/// What to do with a table and every open layer.
+#[derive(Clone, Debug, PartialEq)]
+pub enum Plan {
+    /// Join to each of these layers (by index), the best match first: each one's decision is a
+    /// clear join on its own.
+    Join(Vec<(usize, Pairing)>),
+    /// No layer is clear: ask once about the best layer's pairings.
+    Ask(usize, Vec<Pairing>),
+    Nothing,
+}
+
+/// The rule over several layers (shelf order, top first): the table joins every layer whose
+/// decision is a clear join, with no question; only when none is clear does it ask, about the
+/// layer that matches best. Ties go to the layer higher on the shelf. The rule for each layer
+/// is `decide`'s, unchanged: a layer whose key field repeats (cities with a country field) is
+/// never a target, so a table of country codes joins countries and leaves cities alone.
+pub fn plan(table: &Dataset, layers: &[&Dataset]) -> Plan {
+    let mut joins: Vec<(usize, Pairing)> = Vec::new();
+    let mut ask: Option<(usize, Vec<Pairing>)> = None;
+    for (i, l) in layers.iter().enumerate() {
+        match decide(&score(table, l)) {
+            Decision::Join(p) => joins.push((i, p)),
+            Decision::Ask(ps) => {
+                if ask.as_ref().is_none_or(|(_, best)| ps[0].rate() > best[0].rate()) {
+                    ask = Some((i, ps));
+                }
+            }
+            Decision::Nothing => {}
+        }
+    }
+    if !joins.is_empty() {
+        // Stable: equal rates keep shelf order.
+        joins.sort_by(|a, b| b.1.rate().total_cmp(&a.1.rate()));
+        return Plan::Join(joins);
+    }
+    match ask {
+        Some((i, ps)) => Plan::Ask(i, ps),
+        None => Plan::Nothing,
+    }
+}
+
+/// The layer's data without fields a join added (separating a joined table).
+pub fn separate(layer: &Dataset, fields: &[String]) -> Dataset {
+    let keep: Vec<usize> = (0..layer.fields.len()).filter(|&f| !fields.contains(&layer.fields[f].name)).collect();
+    let mut data = layer.clone();
+    data.fields = keep.iter().map(|&f| layer.fields[f].clone()).collect();
+    for feat in &mut data.features {
+        feat.attrs = keep.iter().map(|&f| feat.attrs.get(f).cloned().unwrap_or(Value::Null)).collect();
+    }
+    data
+}
+
 /// What to do when the table has several rows for one place.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Rows {

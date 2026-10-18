@@ -287,3 +287,33 @@ fn gate3_join_fixtures() {
     assert_eq!(j.layer_matched, 7);
     assert_eq!(j.near_misses, vec![("Hubel".to_string(), "Hubei".to_string())]);
 }
+
+/// Several layers (owner's request, 2026-10-18): a table joins every layer it clearly matches,
+/// the best first; a layer whose field repeats (cities' country) is never a target, so the
+/// codes table leaves cities alone.
+#[test]
+fn a_table_joins_every_layer_it_clearly_matches() {
+    let tb = open("fixtures/J1/gdp_growth_iso3.csv");
+    let c = open("assets/examples/countries.geojson");
+    let cities = open("assets/examples/cities.geojson");
+    let Plan::Join(targets) = plan(&tb, &[&cities, &c, &c]) else { panic!("no join") };
+    assert_eq!(targets.iter().map(|(i, _)| *i).collect::<Vec<_>>(), [1, 2], "both countries layers, shelf order, not cities");
+    // World Bank names against countries and cities: cities' country names repeat, so only
+    // countries.
+    let tb = open("fixtures/J1/population_wb_names.csv");
+    assert!(matches!(plan(&tb, &[&cities, &c]), Plan::Join(ref v) if v.len() == 1 && v[0].0 == 1));
+    // Nothing clear anywhere: the one question, about the best layer (J4 as today).
+    let (tb, l) = (open("fixtures/J4/mixed_keys.csv"), open("fixtures/J4/places.geojson"));
+    assert!(matches!(plan(&tb, &[&cities, &l]), Plan::Ask(1, ref o) if (2..=3).contains(&o.len())));
+    let unrelated = table(&[("thing", FieldType::Text)], (0..20).map(|i| vec![t(&format!("other {i}"))]).collect());
+    assert_eq!(plan(&unrelated, &[&cities, &l]), Plan::Nothing);
+}
+
+/// Separating a joined table gives the layer's data back as it was.
+#[test]
+fn separating_gives_the_layer_back() {
+    let (t, l) = (open("fixtures/J1/gdp_growth_iso3.csv"), open("assets/examples/countries.geojson"));
+    let Decision::Join(p) = decide(&score(&t, &l)) else { panic!() };
+    let j = apply(&t, &l, &spec_for(&t, &l, &p, "gdp_growth_iso3.csv")).unwrap();
+    assert_eq!(separate(&j.data, &j.new_fields), l);
+}

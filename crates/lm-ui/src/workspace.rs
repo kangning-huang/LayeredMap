@@ -117,7 +117,7 @@ const MAP_ID_BASE: u32 = 1_000_000;
 mod analysis;
 mod join;
 pub use analysis::RunOutcome;
-pub use join::{JoinOffer, JoinQuestion, JoinReport};
+pub use join::{JoinOffer, JoinQuestion, JoinReport, Sublayer};
 
 #[derive(Default)]
 pub struct Workspace {
