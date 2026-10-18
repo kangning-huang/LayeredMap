@@ -367,6 +367,7 @@ fn main() -> eframe::Result {
             let mut shell = Shell::new(&cc.egui_ctx, flags, prefs, system);
             shell.developer = developer;
             shell.pro = pro;
+            shell.set_library_catalog(lm_ui::library::catalog_url(std::env::var("LM_LIBRARY_URL").ok().as_deref(), developer));
             lm_ui::basemap::start_archive_lookup(&cc.egui_ctx);
             if !ephemeral {
                 shell.set_question_log(question_log_path());
@@ -383,7 +384,7 @@ fn main() -> eframe::Result {
             let feel = feel_out.map(|out| feel::Feel::new(out, runs, shell.map_view().camera()));
             #[cfg(target_os = "macos")]
             macos::set_context(&cc.egui_ctx);
-            let menu = menu::MenuBar::install(developer, &cc.egui_ctx);
+            let menu = menu::MenuBar::install(developer, shell.library_available(), &cc.egui_ctx);
             Ok(Box::new(App { shell, menu, system, feel, probe: probe.then_some(started), ephemeral, tour, tour_next: None }))
         }),
     )

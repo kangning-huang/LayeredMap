@@ -31,15 +31,15 @@ fn cmd(key: Code) -> Option<Accelerator> {
 impl MenuBar {
     /// Builds the menu bar and installs it in the app (macOS). `None` if that fails, or on other
     /// platforms for now (Windows packaging is Phase 6).
-    pub fn install(developer: bool, ctx: &egui::Context) -> Option<MenuBar> {
+    pub fn install(developer: bool, library: bool, ctx: &egui::Context) -> Option<MenuBar> {
         #[cfg(not(target_os = "macos"))]
         {
-            let _ = (developer, ctx);
+            let _ = (developer, library, ctx);
             None
         }
         #[cfg(target_os = "macos")]
         {
-            match Self::build(developer, ctx) {
+            match Self::build(developer, library, ctx) {
                 Ok(m) => {
                     m._menu.init_for_nsapp();
                     Some(m)
@@ -53,7 +53,7 @@ impl MenuBar {
     }
 
     #[cfg(target_os = "macos")]
-    fn build(developer: bool, ctx: &egui::Context) -> muda::Result<MenuBar> {
+    fn build(developer: bool, library: bool, ctx: &egui::Context) -> muda::Result<MenuBar> {
         let menu = Menu::new();
         let about = AboutMetadata {
             name: Some("LayeredMap".into()),
@@ -79,6 +79,9 @@ impl MenuBar {
         let file = Submenu::new("File", true);
         file.append(&MenuItem::with_id("open", "Open…", true, cmd(Code::KeyO)))?;
         file.append(&MenuItem::with_id("open-examples", "Open example data", true, None))?;
+        if library {
+            file.append(&MenuItem::with_id("library", "Browse data library…", true, None))?;
+        }
         file.append(&PredefinedMenuItem::separator())?;
         if developer {
             file.append(&MenuItem::with_id("load-fixture", "Load fixture…", true, None))?;
@@ -171,6 +174,7 @@ impl MenuBar {
                 "load-fixture" => Action::LoadFixture,
                 "open" => Action::Shell(Command::RequestOpen),
                 "open-examples" => Action::Shell(Command::OpenExamples),
+                "library" => Action::Shell(Command::OpenLibrary),
                 "undo" => Action::Shell(Command::Undo),
                 "redo" => Action::Shell(Command::Redo),
                 "save-document" => Action::SaveDocument,
