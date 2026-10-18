@@ -561,8 +561,6 @@ fn notices(shell: &mut Shell, ui: &Ui, map: Rect) {
         (shell.map_view().zoom() > OFFLINE_MAX_ZOOM).then_some("Working offline: the detailed background is off".to_string())
     } else if p.source == Source::Offline {
         (shell.map_view().zoom() > OFFLINE_MAX_ZOOM).then_some("Detailed background unavailable offline".to_string())
-    } else if p.source == Source::Imagery && shell.map_view().zoom() > f64::from(p.max_zoom) + 1.0 {
-        Some("Satellite imagery is sharpest further out (10 m per pixel)".to_string())
     } else if !shell.map_view().tile_errors().is_empty() && !lm_mapview::archive::looking() {
         Some("Detailed background unavailable offline. Your data and tools still work.".to_string())
     } else {

@@ -35,6 +35,11 @@ fn look_dark(p: &Provider, dark_ui: bool) -> bool {
     }
 }
 
+/// Closer than this zoom the Satellite basemap shows the vector map instead (owner's request,
+/// 2026-10-18): NASA Blue Marble's own detail ends at zoom 8 (about 600 m a pixel), and past
+/// about 9.5 its tiles are only stretched pixels. Zooming back out brings the imagery back.
+pub const IMAGERY_MAX_ZOOM: f64 = 9.5;
+
 /// Map labels: the English name where the map has one, else the place's own name (owner, Gate 1).
 pub const LABEL_LANGUAGE: &str = "en";
 
@@ -75,13 +80,38 @@ pub fn apply(map: &mut Map, prefs: &Prefs, dark_ui: bool) {
             .ok()
             .filter(|u| !u.trim().is_empty())
             .unwrap_or_else(|| lm_mapview::archive::url(lm_core::basemap::PROTOMAPS_ARCHIVE));
-        let mut labels = TileLayer::new("Satellite labels", TileKind::PmTiles, url);
+        let mut labels = TileLayer::new("Satellite labels", TileKind::PmTiles, url.clone());
         labels.id = format!("lm-basemap-{}-labels", p.id);
         labels.max_zoom = 15;
         labels.variant = "labels".into();
         labels.label_language = LABEL_LANGUAGE.into();
         map.tiles.insert(0, labels);
+        // The vector map for zooms past the imagery's detail (hidden until then; see
+        // `set_imagery_fallback`), in the appearance's look.
+        let mut fallback = TileLayer::new("Map (close up)", TileKind::PmTiles, url);
+        fallback.id = format!("lm-basemap-{}-map", p.id);
+        fallback.attribution = provider("light").attribution.into();
+        fallback.max_zoom = 15;
+        fallback.variant = if dark_ui { "dark".into() } else { "light".into() };
+        fallback.label_language = LABEL_LANGUAGE.into();
+        fallback.opacity = prefs.strength.clamp(0.4, 1.0);
+        fallback.visible = false;
+        map.tiles.insert(0, fallback);
     }
+}
+
+/// Whether the Satellite basemap is showing the vector map in place of the imagery.
+pub fn imagery_fallback_on(map: &Map) -> Option<bool> {
+    map.tiles.iter().find(|t| t.id.starts_with("lm-basemap-") && t.id.ends_with("-map")).map(|t| t.visible)
+}
+
+/// Shows the vector map in place of the imagery (and its separate labels), or the imagery again.
+/// The backdrop follows: dark under imagery, the appearance's under the map.
+pub fn set_imagery_fallback(map: &mut Map, on: bool, dark_ui: bool) {
+    for t in map.tiles.iter_mut().filter(|t| t.id.starts_with("lm-basemap-")) {
+        t.visible = if t.id.ends_with("-map") { on } else { !on };
+    }
+    map.basemap = quiet(if on { dark_ui } else { true });
 }
 
 /// Starts looking for the newest daily build of the online basemap (the app calls this once; tests
@@ -219,5 +249,22 @@ mod tests {
     fn labels_are_english_first() {
         let map = initial_map(&Prefs::default(), false);
         assert_eq!(layer(&map).map(|l| l.1).as_deref(), Some("en"));
+    }
+
+    #[test]
+    fn satellite_hands_over_to_the_map_up_close() {
+        let prefs = Prefs { basemap: "satellite".into(), ..Prefs::default() };
+        let mut map = initial_map(&prefs, true);
+        assert_eq!(imagery_fallback_on(&map), Some(false));
+        let shown =
+            |m: &Map| m.tiles.iter().filter(|t| t.visible && t.id.starts_with("lm-basemap-")).map(|t| t.id.clone()).collect::<Vec<_>>();
+        assert!(shown(&map).iter().all(|id| !id.ends_with("-map")));
+        set_imagery_fallback(&mut map, true, true);
+        assert_eq!(imagery_fallback_on(&map), Some(true));
+        assert_eq!(shown(&map), vec!["lm-basemap-satellite-map".to_string()]);
+        set_imagery_fallback(&mut map, false, true);
+        assert_eq!(imagery_fallback_on(&map), Some(false));
+        // Vector basemaps have no fallback to switch.
+        assert_eq!(imagery_fallback_on(&initial_map(&Prefs::default(), false)), None);
     }
 }

@@ -841,6 +841,21 @@ impl Shell {
 
         // ← → step a time layer (before the map, which would pan with them), and Play advances.
         time_ui::frame(self, &ctx);
+        // Satellite past the imagery's detail: the vector map instead, and back when zoomed out.
+        if let Some(on) = basemap::imagery_fallback_on(self.map.map()) {
+            let want = self.map.zoom() > basemap::IMAGERY_MAX_ZOOM;
+            if want != on {
+                let dark = self.theme.dark;
+                self.map.edit_map(move |m| basemap::set_imagery_fallback(m, want, dark));
+                self.backdrop = basemap::backdrop(self.map.map());
+                if want {
+                    let t = ctx.input(|i| i.time);
+                    self.notice =
+                        Some(("Satellite imagery isn't detailed enough here, so the map is shown. Zoom out to see it again.".into(), t));
+                }
+            }
+        }
+
         // The map first, so the chrome draws over it.
         let keyboard = ctx.memory(|m| m.focused().is_none());
         let drawing = self.drawing.is_some();
