@@ -26,8 +26,13 @@ pub struct JoinReport {
     pub matched: usize,
     pub layer_rows: usize,
     pub unmatched: Vec<String>,
+    /// Table rows that found no place (blank keys included), and those with a blank key.
+    pub unmatched_rows: usize,
+    pub blank_keys: usize,
     pub near_misses: Vec<(String, String)>,
     pub rows_note: Option<String>,
+    /// The cardinality and row counts, worked out before joining.
+    pub expected: join::Expected,
     /// The layer was coloured by the first joined measure (the card offers to undo that).
     pub styled: Option<Style>,
     spec: JoinSpec,
@@ -43,6 +48,8 @@ pub struct JoinOffer {
     pub label: String,
     /// "15 of 17 match".
     pub detail: String,
+    /// What joining this way would give, worked out before joining.
+    pub expected: Option<join::Expected>,
     pub target: LayerId,
     spec: JoinSpec,
 }
@@ -160,10 +167,12 @@ impl Workspace {
                                 *id,
                                 ps.iter()
                                     .map(|p| {
+                                        let spec = join::spec_for(&tds, lds, p, &name);
                                         (
                                             format!("{} ↔ {}", tds.fields[p.table_field].name, lds.fields[p.layer_field].name),
                                             format!("{} of {} match", p.matched_keys, p.table_keys),
-                                            join::spec_for(&tds, lds, p, &name),
+                                            join::expect(&tds, lds, &spec),
+                                            spec,
                                         )
                                     })
                                     .collect(),
@@ -183,8 +192,10 @@ impl Workspace {
                             }
                             Outcome::Ask(target, specs) => {
                                 let name = table_name(w, table);
-                                let offers =
-                                    specs.into_iter().map(|(label, detail, spec)| JoinOffer { label, detail, target, spec }).collect();
+                                let offers = specs
+                                    .into_iter()
+                                    .map(|(label, detail, expected, spec)| JoinOffer { label, detail, expected, target, spec })
+                                    .collect();
                                 w.joins.questions.insert(table, JoinQuestion { table_name: name, offers });
                                 w.select_layer(table);
                             }
@@ -272,8 +283,11 @@ impl Workspace {
                     matched: joined.layer_matched,
                     layer_rows: lds.features.len(),
                     unmatched: joined.unmatched.clone(),
+                    unmatched_rows: joined.unmatched_rows.len(),
+                    blank_keys: joined.blank_keys,
                     near_misses: joined.near_misses.clone(),
                     rows_note: joined.rows_note.clone(),
+                    expected: joined.expected.clone(),
                     styled,
                     spec,
                     table: tds.clone(),
@@ -450,6 +464,9 @@ impl Workspace {
             }
             rep.matched = joined.layer_matched;
             rep.unmatched = joined.unmatched;
+            rep.unmatched_rows = joined.unmatched_rows.len();
+            rep.blank_keys = joined.blank_keys;
+            rep.expected = joined.expected;
             rep.near_misses = Vec::new();
             rep.spec = spec;
         }
@@ -486,7 +503,7 @@ impl Workspace {
 /// What working out a table's join found, for the finish on the main thread.
 enum Outcome {
     Join(Vec<(LayerId, JoinSpec)>),
-    Ask(LayerId, Vec<(String, String, JoinSpec)>),
+    Ask(LayerId, Vec<(String, String, Option<join::Expected>, JoinSpec)>),
     Nothing,
 }
 
@@ -521,6 +538,19 @@ impl JoinReport {
     /// "Country Name ↔ name, through standard country names and codes."
     pub fn how(&self) -> String {
         format!("{} ↔ {}, {}.", self.table_field, self.layer_field, self.level.describe())
+    }
+
+    /// "Show the 3 not matched", with the rows when a key repeats or is blank ("Show the 2 not
+    /// matched (5 rows)"); None when every row found a place.
+    pub fn unmatched_label(&self) -> Option<String> {
+        let (keys, rows) = (self.unmatched.len(), self.unmatched_rows);
+        let plural = |n: usize| if n == 1 { "row" } else { "rows" };
+        match (keys, rows) {
+            (_, 0) => None,
+            (0, r) => Some(format!("Show the {r} {} not matched", plural(r))),
+            (k, r) if k == r => Some(format!("Show the {k} not matched")),
+            (k, r) => Some(format!("Show the {k} not matched ({r} {})", plural(r))),
+        }
     }
 
     pub fn table_source(&self) -> &lm_core::model::SourceRef {

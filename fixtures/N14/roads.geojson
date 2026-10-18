@@ -1,0 +1,6 @@
+{"type": "FeatureCollection", "name": "roads", "features": [
+{"type": "Feature", "properties": {"road_id": "R01"}, "geometry": {"type": "LineString", "coordinates": [[121.35, 31.15], [121.42, 31.2], [121.47, 31.21], [121.55, 31.27]]}},
+{"type": "Feature", "properties": {"road_id": "R02"}, "geometry": {"type": "LineString", "coordinates": [[121.38, 31.3], [121.46, 31.29], [121.52, 31.33]]}},
+{"type": "Feature", "properties": {"road_id": "R03"}, "geometry": {"type": "MultiLineString", "coordinates": [[[121.58, 31.2], [121.6, 31.26]], [[121.33, 31.27], [121.35, 31.32]]]}},
+{"type": "Feature", "properties": {"road_id": "R04"}, "geometry": {"type": "LineString", "coordinates": [[121.5, 31.14], [121.51, 31.19]]}}
+]}

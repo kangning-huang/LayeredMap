@@ -109,6 +109,47 @@ fn n9_islands_to_points_match_the_reference() {
     check_n9("islands", "island_id", "points", "point_id", "expected_nearest_islands_to_points.csv", false);
 }
 
+/// WP6.4 (docs/lm/actions-p2.md › Nearest feature): one N14 pairing against GeoPandas
+/// `sjoin_nearest` in UTM zone 51N, with pyproj Geod distances
+/// (`tools/lm/reference_tests/nearest_sjoin.py`). The nearest target exactly; distances within
+/// 10 cm (1 mm point to point), well inside the plan's 0.1% or 1 m. Returns the largest error (m).
+fn check_n14(features: &str, fid: &str, targets: &str, tid: &str, points: bool) -> f64 {
+    let f = read(&format!("N14/{features}.geojson"));
+    let t = read(&format!("N14/{targets}.geojson"));
+    let r = nearest_distance(&f, &t, false, &Control::none()).unwrap();
+    let (fids, tids) = (ids(&f, fid), ids(&t, tid));
+    let expected = format!("N14/expected_nearest_{features}_{targets}.csv");
+    let want = csv(&expected);
+    assert_eq!(want.len(), fids.len());
+    let mut worst = 0.0f64;
+    for row in want {
+        let i = fids.iter().position(|x| *x == row["feature_id"]).unwrap();
+        let got = r.nearest[i].unwrap_or_else(|| panic!("{expected} {}: no result", row["feature_id"]));
+        let d: f64 = row["distance_m"].parse().unwrap();
+        assert_eq!(tids[got.target_row], row["nearest_id"], "{expected} {}: nearest ({} m vs {d} m)", row["feature_id"], got.distance_m);
+        let err = (got.distance_m - d).abs();
+        let tol = if d == 0.0 {
+            0.0
+        } else if points {
+            1e-3
+        } else {
+            0.1
+        };
+        assert!(err <= tol, "{expected} {}: {} m vs {d} m", row["feature_id"], got.distance_m);
+        worst = worst.max(err);
+    }
+    println!("{expected}: largest error {worst:.4} m");
+    worst
+}
+
+#[test]
+fn n14_matches_sjoin_nearest_and_pyproj() {
+    check_n14("sources", "source_id", "facilities", "facility_id", true);
+    check_n14("sources", "source_id", "roads", "road_id", false);
+    check_n14("sources", "source_id", "parks", "park_id", false);
+    check_n14("parks", "park_id", "facilities", "facility_id", false);
+}
+
 #[test]
 fn a_multipart_feature_excludes_all_its_parts() {
     // Two parts 0.0625° apart (about 7 km), another feature 0.5° away.

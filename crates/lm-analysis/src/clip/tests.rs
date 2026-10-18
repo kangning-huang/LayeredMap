@@ -118,6 +118,74 @@ fn n12_matches_the_reference() {
     eprintln!("N12: {checked} features compared; worst relative area error {worst_area:.1e}; worst sliver error {worst_sliver:.1e} m²");
 }
 
+/// `x y;x y|x y` as numbers.
+fn coords_of(s: &str) -> Vec<Vec<(f64, f64)>> {
+    s.split('|')
+        .filter(|p| !p.is_empty())
+        .map(|p| {
+            p.split(';')
+                .map(|xy| {
+                    let (x, y) = xy.split_once(' ').unwrap();
+                    (x.parse().unwrap(), y.parse().unwrap())
+                })
+                .collect()
+        })
+        .collect()
+}
+
+/// WP6.4 (docs/lm/actions-p2.md › Keep data inside an area): `keep_inside` against GeoPandas
+/// `clip(keep_geom_type=True)` on N15's edge cases (`tools/lm/reference_tests/clip_gpd.py`).
+/// Tolerances: features kept and parts exactly; areas and lengths within 1e-6 relative;
+/// coordinates within 1e-9° (input vertices exactly).
+#[test]
+fn n15_matches_geopandas_clip() {
+    let zone = layer("N15/zone.geojson");
+    let text = fixture("N15/expected_clip.csv");
+    let mut lines = text.lines();
+    let header: Vec<&str> = lines.next().unwrap().split(',').collect();
+    let rows: Vec<HashMap<&str, &str>> = lines.map(|l| header.iter().copied().zip(l.split(',')).collect()).collect();
+    let (mut worst_rel, mut worst_deg, mut checked) = (0.0f64, 0.0f64, 0);
+    for name in ["areas", "lines", "points"] {
+        let ds = layer(&format!("N15/{name}.geojson"));
+        let res = keep_inside(&ds, &zone, &Control::none()).unwrap();
+        let got: HashMap<String, &Feature> = res.source_rows.iter().zip(&res.dataset.features).map(|(&r, f)| (id_of(&ds, r), f)).collect();
+        let want: Vec<&HashMap<&str, &str>> = rows.iter().filter(|r| r["layer"] == name).collect();
+        assert_eq!(want.len(), ds.features.len());
+        let kept = want.iter().filter(|r| r["kept"] == "true").count();
+        assert_eq!(res.dataset.features.len(), kept, "{name}: features kept");
+        assert_eq!(res.dropped as usize, ds.features.len() - kept, "{name}: dropped");
+        for w in want {
+            let id = w["id"];
+            let Some(f) = got.get(id) else {
+                assert_eq!(w["kept"], "false", "{id}: dropped but GeoPandas keeps it");
+                continue;
+            };
+            assert_eq!(w["kept"], "true", "{id}: kept but GeoPandas drops it");
+            let g = f.geometry.as_ref().unwrap();
+            assert_eq!(parts(g), w["parts"].parse::<usize>().unwrap(), "{id}: parts");
+            let (got_m, want_m) = match g {
+                Geometry::Polygon(p) => (polygon_area_perimeter(p).area_m2, w["geod_area_m2"].parse::<f64>().unwrap()),
+                Geometry::Line(p) => (line_length_m(p), w["length_m"].parse::<f64>().unwrap()),
+                _ => (0.0, 0.0),
+            };
+            let rel = if want_m > 0.0 { (got_m - want_m).abs() / want_m } else { 0.0 };
+            assert!(rel <= 1e-6, "{id}: {got_m} vs {want_m}");
+            worst_rel = worst_rel.max(rel);
+            if !matches!(g, Geometry::Polygon(_)) {
+                let (a, b) = (coords_of(&canonical(g)), coords_of(w["coords"]));
+                assert_eq!(a.iter().map(Vec::len).collect::<Vec<_>>(), b.iter().map(Vec::len).collect::<Vec<_>>(), "{id}: {a:?} vs {b:?}");
+                for (p, q) in a.iter().flatten().zip(b.iter().flatten()) {
+                    let d = (p.0 - q.0).abs().max((p.1 - q.1).abs());
+                    assert!(d <= 1e-9, "{id}: {p:?} vs {q:?}");
+                    worst_deg = worst_deg.max(d);
+                }
+            }
+            checked += 1;
+        }
+    }
+    eprintln!("N15: {checked} features compared; worst relative area/length error {worst_rel:.1e}; worst coordinate {worst_deg:.1e}°");
+}
+
 fn ds(kind: GeometryType, geoms: Vec<Option<Geometry>>) -> Dataset {
     let mut d = Dataset::new("t", kind, vec![Field::new("n", FieldType::Integer)]);
     for (i, g) in geoms.into_iter().enumerate() {

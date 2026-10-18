@@ -1,0 +1,5 @@
+layer,table,cardinality,layer_rows,table_rows,pairs,merge_rows,layer_matched,table_matched,unmatched_keys,unmatched_rows,blank_keys
+wards,ward_population,one_to_one,12,13,11,12,11,11,W99,5|9,1
+wards,ward_population_by_year,one_to_many,12,21,19,24,7,19,W98,8|13,0
+wards_split,ward_population,many_to_one,14,13,13,14,13,11,W99,5|9,1
+wards_split,ward_population_by_year,many_to_many,14,21,22,28,8,19,W98,8|13,0

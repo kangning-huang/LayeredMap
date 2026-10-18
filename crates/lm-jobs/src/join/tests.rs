@@ -2,6 +2,7 @@ use super::*;
 use rustgis_engine::data::GeometryType;
 use rustgis_engine::data::geometry::Geometry;
 use rustgis_engine::geom::Coord;
+use std::collections::HashMap;
 
 fn table(fields: &[(&str, FieldType)], rows: Vec<Vec<Value>>) -> Dataset {
     let mut d = Dataset::new("t", GeometryType::None, fields.iter().map(|(n, t)| Field::new(*n, *t)).collect());
@@ -316,4 +317,86 @@ fn separating_gives_the_layer_back() {
     let Decision::Join(p) = decide(&score(&t, &l)) else { panic!() };
     let j = apply(&t, &l, &spec_for(&t, &l, &p, "gdp_growth_iso3.csv")).unwrap();
     assert_eq!(separate(&j.data, &j.new_fields), l);
+}
+
+fn j6_csv(name: &str) -> Vec<HashMap<String, String>> {
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/J6").join(name);
+    let text = std::fs::read_to_string(path).unwrap();
+    let mut lines = text.lines();
+    let head: Vec<String> = lines.next().unwrap().split(',').map(str::to_string).collect();
+    lines.map(|l| head.iter().cloned().zip(l.split(',').map(str::to_string)).collect()).collect()
+}
+
+fn ward_spec(table: &str) -> JoinSpec {
+    JoinSpec {
+        table_name: format!("{table}.csv"),
+        table_field: "ward_code".into(),
+        layer_field: "ward_code".into(),
+        level: Level::Exact,
+        rows: Rows::One,
+        aliases: Vec::new(),
+    }
+}
+
+/// WP6.4 (docs/lm/actions-p2.md › Match a table to a layer): J6's four pairings against pandas
+/// `merge(validate=…)` (`tools/lm/reference_tests/join_validate.py`): the cardinality, the row
+/// counts worked out before joining, the unmatched keys and rows, and every record's value.
+/// Everything exact.
+#[test]
+fn j6_matches_pandas_merge_validate() {
+    let values = j6_csv("expected_join_values.csv");
+    let mut compared = 0;
+    for w in j6_csv("expected_join.csv") {
+        let (l, t) = (open(&format!("fixtures/J6/{}.geojson", w["layer"])), open(&format!("fixtures/J6/{}.csv", w["table"])));
+        let spec = ward_spec(&w["table"]);
+        let e = expect(&t, &l, &spec).unwrap();
+        let job = format!("{} × {}", w["layer"], w["table"]);
+        let n = |k: &str| w[k].parse::<usize>().unwrap();
+        assert_eq!(e.cardinality.pandas(), w["cardinality"], "{job}");
+        assert_eq!(
+            (e.layer_rows, e.table_rows, e.pairs, e.merge_rows, e.layer_matched, e.table_matched),
+            (n("layer_rows"), n("table_rows"), n("pairs"), n("merge_rows"), n("layer_matched"), n("table_matched")),
+            "{job}"
+        );
+        let j = apply(&t, &l, &spec).unwrap();
+        assert_eq!(j.expected, e, "{job}: the same counts before and after");
+        assert_eq!(j.data.features.len(), e.rows(), "{job}: one row per record");
+        assert_eq!(j.unmatched.join("|"), w["unmatched_keys"], "{job}");
+        let rows: Vec<String> = j.unmatched_rows.iter().map(|r| (r + 1).to_string()).collect();
+        assert_eq!(rows.join("|"), w["unmatched_rows"], "{job}");
+        assert_eq!(j.blank_keys, n("blank_keys"), "{job}");
+        let pop = j.data.fields.iter().position(|f| f.name == "population").unwrap();
+        for v in values.iter().filter(|v| v["layer"] == w["layer"] && v["table"] == w["table"]) {
+            let r = v["row"].parse::<usize>().unwrap() - 1;
+            let want = if v["population"].is_empty() { Value::Null } else { Value::Int(v["population"].parse().unwrap()) };
+            assert_eq!(j.data.value(r, pop), &want, "{job}: row {}", r + 1);
+            compared += 1;
+        }
+    }
+    assert_eq!(compared, 52);
+}
+
+/// The card's words for each cardinality.
+#[test]
+fn expected_rows_read_as_words() {
+    let l = open("fixtures/J6/wards.geojson");
+    let split = open("fixtures/J6/wards_split.geojson");
+    let one = open("fixtures/J6/ward_population.csv");
+    let years = open("fixtures/J6/ward_population_by_year.csv");
+    let nouns = ("ward", "wards");
+    let line = |t: &Dataset, l: &Dataset, name: &str| expect(t, l, &ward_spec(name)).unwrap().line(nouns);
+    assert_eq!(line(&one, &l, "ward_population"), "One-to-one: no key repeats. The layer keeps its 12 rows.");
+    assert_eq!(
+        line(&years, &l, "ward_population_by_year"),
+        "One-to-many: a key repeats in the table (up to 3 rows). A plain merge would give 24 rows; the layer keeps its 12, one per ward."
+    );
+    assert_eq!(
+        line(&one, &split, "ward_population"),
+        "Many-to-one: a key repeats in the layer (up to 2 wards), and each gets the row. The layer keeps its 14 rows."
+    );
+    assert_eq!(
+        line(&years, &split, "ward_population_by_year"),
+        "Many-to-many: keys repeat in the table (up to 3 rows) and in the layer (up to 2 wards). A plain merge would give 28 rows; \
+         the layer keeps its 14, one per ward."
+    );
 }

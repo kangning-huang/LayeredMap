@@ -28,11 +28,15 @@ SCRIPTS = ["make_handmade.py", "make_summary_fixtures.py", "coord_vectors.py", "
            "raster_sample.py", "rank_check.py", "make_where_clip_fixtures.py", "find_where.py", "clip_erase.py",
            "make_vector_ops.py", "nearest_distance.py", "join_by_location.py", "measure_features.py",
            "make_kml_gpx_fixtures.py", "make_netcdf_fixtures.py"]
+# WP6.4's P2 action references (J6, N14, N15) live with the other tools.
+P2 = HERE.parent / "tools" / "lm" / "reference_tests"
+P2_SCRIPTS = ["make_p2_fixtures.py", "join_validate.py", "nearest_sjoin.py", "clip_gpd.py"]
 
 
 def run_once():
-    for s in SCRIPTS:
-        r = subprocess.run([sys.executable, "-I", str(HERE / s)], capture_output=True, text=True)
+    for s in SCRIPTS + P2_SCRIPTS:
+        path = HERE / s if s in SCRIPTS else P2 / s
+        r = subprocess.run([sys.executable, "-I", str(path)], capture_output=True, text=True)
         out = (r.stdout + r.stderr).strip()
         print(f"[{s}] {out}" if out else f"[{s}] ok")
         if r.returncode != 0:

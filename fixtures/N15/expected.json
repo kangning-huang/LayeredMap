@@ -1,0 +1,41 @@
+{
+  "fixture": "N15",
+  "files": [
+    "zone.geojson",
+    "areas.geojson",
+    "lines.geojson",
+    "points.geojson"
+  ],
+  "kind": "vector",
+  "layers": [
+    {
+      "name": "zone",
+      "geometry": "area",
+      "count": 3
+    },
+    {
+      "name": "areas",
+      "geometry": "area",
+      "count": 9
+    },
+    {
+      "name": "lines",
+      "geometry": "line",
+      "count": 7
+    },
+    {
+      "name": "points",
+      "geometry": "point",
+      "count": 9
+    }
+  ],
+  "crs": {
+    "epsg": 4326,
+    "source": "declared (GeoJSON RFC 7946 default)"
+  },
+  "rule": "GeoPandas clip(gdf, zone, keep_geom_type=True)",
+  "expected_files": [
+    "expected_clip.csv"
+  ],
+  "assumptions": []
+}

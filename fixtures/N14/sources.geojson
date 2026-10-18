@@ -1,0 +1,18 @@
+{"type": "FeatureCollection", "name": "sources", "features": [
+{"type": "Feature", "properties": {"source_id": "S01"}, "geometry": {"type": "Point", "coordinates": [121.41, 31.235]}},
+{"type": "Feature", "properties": {"source_id": "S02"}, "geometry": {"type": "Point", "coordinates": [121.47, 31.21]}},
+{"type": "Feature", "properties": {"source_id": "S03"}, "geometry": {"type": "Point", "coordinates": [121.496, 31.247]}},
+{"type": "Feature", "properties": {"source_id": "S04"}, "geometry": {"type": "Point", "coordinates": [121.3656, 31.2665]}},
+{"type": "Feature", "properties": {"source_id": "S05"}, "geometry": {"type": "Point", "coordinates": [121.4965, 31.3093]}},
+{"type": "Feature", "properties": {"source_id": "S06"}, "geometry": {"type": "Point", "coordinates": [121.4051, 31.186]}},
+{"type": "Feature", "properties": {"source_id": "S07"}, "geometry": {"type": "Point", "coordinates": [121.4127, 31.2632]}},
+{"type": "Feature", "properties": {"source_id": "S08"}, "geometry": {"type": "Point", "coordinates": [121.4352, 31.28]}},
+{"type": "Feature", "properties": {"source_id": "S09"}, "geometry": {"type": "Point", "coordinates": [121.5564, 31.2044]}},
+{"type": "Feature", "properties": {"source_id": "S10"}, "geometry": {"type": "Point", "coordinates": [121.4025, 31.2848]}},
+{"type": "Feature", "properties": {"source_id": "S11"}, "geometry": {"type": "Point", "coordinates": [121.4916, 31.1669]}},
+{"type": "Feature", "properties": {"source_id": "S12"}, "geometry": {"type": "Point", "coordinates": [121.4723, 31.2595]}},
+{"type": "Feature", "properties": {"source_id": "S13"}, "geometry": {"type": "Point", "coordinates": [121.3796, 31.2573]}},
+{"type": "Feature", "properties": {"source_id": "S14"}, "geometry": {"type": "Point", "coordinates": [121.3695, 31.2007]}},
+{"type": "Feature", "properties": {"source_id": "S15"}, "geometry": {"type": "Point", "coordinates": [121.5747, 31.2127]}},
+{"type": "Feature", "properties": {"source_id": "S16"}, "geometry": {"type": "Point", "coordinates": [121.5777, 31.219]}}
+]}

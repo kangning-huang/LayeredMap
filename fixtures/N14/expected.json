@@ -1,0 +1,44 @@
+{
+  "fixture": "N14",
+  "files": [
+    "sources.geojson",
+    "facilities.geojson",
+    "roads.geojson",
+    "parks.geojson"
+  ],
+  "kind": "vector",
+  "layers": [
+    {
+      "name": "sources",
+      "geometry": "point",
+      "count": 16
+    },
+    {
+      "name": "facilities",
+      "geometry": "point",
+      "count": 8
+    },
+    {
+      "name": "roads",
+      "geometry": "line",
+      "count": 4
+    },
+    {
+      "name": "parks",
+      "geometry": "area",
+      "count": 4
+    }
+  ],
+  "crs": {
+    "epsg": 4326,
+    "source": "declared (GeoJSON RFC 7946 default)"
+  },
+  "rule": "GeoPandas sjoin_nearest in UTM zone 51N (EPSG:32651); distances checked with pyproj Geod (WGS 84)",
+  "expected_files": [
+    "expected_nearest_sources_facilities.csv",
+    "expected_nearest_sources_roads.csv",
+    "expected_nearest_sources_parks.csv",
+    "expected_nearest_parks_facilities.csv"
+  ],
+  "assumptions": []
+}
