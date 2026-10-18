@@ -1172,7 +1172,8 @@ fn export_sheet_us() {
     let s = h.state().as_ref().unwrap();
     let plan = s.export_sheet.as_ref().unwrap().plan();
     assert!(plan.width_km > lm_mapview::export::ARROW_MAX_KM, "{}", plan.width_km);
-    assert_eq!(plan.furniture, lm_mapview::export::Furniture { north_arrow: false, scale_bar: false, labels: true });
+    // Labels and a scale bar, no north arrow (owner's decision, 2026-10-18: 28° and 7,000 km).
+    assert_eq!(plan.furniture, lm_mapview::export::Furniture { north_arrow: false, scale_bar: true, labels: true });
     if let Some(out) = std::env::var_os("LM_EXPORT_OUT").map(std::path::PathBuf::from)
         && let Some((pm, _)) = s.export_sheet.as_ref().and_then(|e| e.image(s))
     {

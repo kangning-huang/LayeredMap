@@ -35,16 +35,25 @@ impl Workspace {
         l
     }
 
-    /// Shows time step `to` of a grid layer. Steps taken one after another (the slider, Play,
-    /// ← →) fold into one undo step.
+    /// Shows time step `to` of a grid layer, and moves every other visible layer with dated
+    /// steps to its latest step on or before that date (owner's decision, 2026-10-18: time
+    /// layers move together by date). Steps taken one after another (the slider, Play, ← →)
+    /// fold into one undo step.
     pub fn set_time(&mut self, id: LayerId, to: usize) -> bool {
-        let tx = self.doc.set_time_tx(id, to).map(|mut t| {
-            if let Some(l) = self.doc.layer(id) {
-                t.label = format!("Change time of {}", l.display_name);
+        let Some(mut tx) = self.doc.set_time_tx(id, to) else { return false };
+        if let Some(l) = self.doc.layer(id) {
+            tx.label = format!("Change time of {}", l.display_name);
+        }
+        if let Some(date) = self.doc.layer(id).and_then(|l| step_date(l, to)) {
+            for other in self.doc.layers.iter().filter(|o| o.id != id && o.visible) {
+                if let Some(t) = step_on_or_before(other, date)
+                    && t != other.time
+                {
+                    tx.ops.push(Op::SetTime { id: other.id, from: other.time, to: t });
+                }
             }
-            t
-        });
-        self.commit_gesture(tx, &format!("time:{}", id.0))
+        }
+        self.commit_gesture(Some(tx), &format!("time:{}", id.0))
     }
 
     /// Steps a grid layer's time by `delta`, wrapping past the ends when `wrap` (Play).
@@ -173,4 +182,20 @@ impl Workspace {
         self.grid_time.insert((id, rev), step);
         self.order_key.clear();
     }
+}
+
+/// The date of a grid layer's time step, when its axis has dates.
+fn step_date(l: &DocLayer, t: usize) -> Option<lm_core::grid::GridDate> {
+    l.profile.grid.as_ref()?.axis()?.dates.get(t).copied()
+}
+
+/// A dated grid layer's latest step on or before `date` (its first step when all are later).
+fn step_on_or_before(l: &DocLayer, date: lm_core::grid::GridDate) -> Option<usize> {
+    let g = l.profile.grid.as_ref().filter(|g| g.has_time())?;
+    let dates = &g.axis()?.dates;
+    if dates.is_empty() {
+        return None;
+    }
+    let key = |d: &lm_core::grid::GridDate| (d.0, d.1, d.2, d.3, d.4);
+    Some(dates.iter().rposition(|d| key(d) <= key(&date)).unwrap_or(0))
 }

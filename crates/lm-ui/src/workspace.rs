@@ -2079,6 +2079,26 @@ mod grid_tests {
         assert_eq!(w.doc.layer(id).unwrap().time, 0);
     }
 
+    /// Time layers move together by date (owner's decision, 2026-10-18): the other layer takes
+    /// its latest step on or before the lead's date, in the same undo step.
+    #[test]
+    fn time_layers_move_together_by_date() {
+        let (mut w, monthly) = open("r8_classic.nc"); // June, July, August 2023
+        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/R8/r8_lon360.nc"); // 2000–2003, yearly
+        let layers = lm_jobs::import::import_path(&path, &lm_jobs::import::Ctx::detached(Default::default())).unwrap();
+        w.add_imported(layers, 2);
+        let yearly = w.doc.layers.iter().find(|l| l.id != monthly).unwrap().id;
+        let undo_before = w.undo.undo.len();
+        assert!(w.set_time(monthly, 2));
+        assert_eq!(w.doc.layer(yearly).unwrap().time, 3, "August 2023 → the 2003 step, the latest before it");
+        assert_eq!(w.undo.undo.len(), undo_before + 1, "one undo step for both");
+        // Leading with the yearly layer: 2001 is before every monthly step, so it shows its first.
+        assert!(w.set_time(yearly, 1));
+        assert_eq!(w.doc.layer(monthly).unwrap().time, 0);
+        w.undo();
+        assert_eq!((w.doc.layer(monthly).unwrap().time, w.doc.layer(yearly).unwrap().time), (2, 3));
+    }
+
     #[test]
     fn a_variable_without_time_resets_the_step_in_the_same_undo_step() {
         let (mut w, id) = open("r8_classic.nc");

@@ -206,12 +206,14 @@ pub const ARROW_MAX_KM: f64 = 1_500.0;
 /// Above this width (km) — a continent, the world — only latitude and longitude on the frame: no
 /// one scale bar is right (Mercator scale doubles between the equator and 60°), and on a web map
 /// north is up everywhere, so an arrow adds nothing.
-pub const LABELS_ONLY_KM: f64 = 6_000.0;
+pub const LABELS_ONLY_KM: f64 = 7_000.0;
 /// Between the two widths (a country such as China or the United States), latitude and longitude
 /// on the frame, plus a scale bar only when the map spans less latitude than this (degrees). Over
 /// it, Mercator scale differs by about 1.4× from the map's bottom edge to its top, so one bar
-/// misleads. The test is strict: a map spanning 25° or more gets no bar.
-pub const SCALE_MAX_LAT_SPAN: f64 = 25.0;
+/// misleads. The test is strict: a map spanning 28° or more gets no bar. 28° and 7,000 km (owner's
+/// decision, 2026-10-18) keep a scale bar on a map of the contiguous United States (about 27° and
+/// 6,300 km with the margin).
+pub const SCALE_MAX_LAT_SPAN: f64 = 28.0;
 /// The margin around the data when the map fits it, as a share of the data's size on each side.
 pub const FIT_MARGIN: f64 = 0.05;
 /// The frame labels' text size, and the margins a framed map keeps for them: above and below
@@ -228,7 +230,8 @@ const GRID: [u8; 4] = [0x1B, 0x1D, 0x21, 0x38];
 /// The north arrow's card (points).
 pub const ARROW_CARD: (f32, f32) = (28.0, 52.0);
 /// The intervals the frame labels may use (degrees).
-pub const STEPS: [f64; 9] = [0.1, 0.25, 0.5, 1.0, 2.0, 5.0, 10.0, 15.0, 30.0];
+/// 60° keeps a world map to six longitudes (owner's decision, 2026-10-18).
+pub const STEPS: [f64; 10] = [0.1, 0.25, 0.5, 1.0, 2.0, 5.0, 10.0, 15.0, 30.0, 60.0];
 /// Half the Web Mercator world's width, metres.
 const HALF_WORLD: f64 = std::f64::consts::PI * rustgis_geom::MERCATOR_R;
 
@@ -1379,12 +1382,12 @@ mod tests {
         assert!(p.width_km < 400.0, "{}", p.width_km);
         assert_eq!(p.furniture, Furniture { north_arrow: true, scale_bar: true, labels: false });
         assert_eq!(p.area, map_area((1280.0, 720.0), true, false));
-        // The contiguous United States (24.5°N–49.4°N): its 25° of latitude plus the margin put
-        // it over the scale bar's limit, so labels only.
+        // The contiguous United States (24.5°N–49.4°N): about 27° of latitude with the margin and
+        // 6,300 km across, under both limits, so labels and a scale bar (owner's decision).
         let us = slide_plan(Extent::new(-124.8, 24.5, -66.9, 49.4));
-        assert!(us.width_km > ARROW_MAX_KM, "{}", us.width_km);
-        assert!(us.lat_span >= SCALE_MAX_LAT_SPAN, "{}", us.lat_span);
-        assert_eq!(us.furniture, Furniture { north_arrow: false, scale_bar: false, labels: true });
+        assert!(us.width_km > ARROW_MAX_KM && us.width_km <= LABELS_ONLY_KM, "{}", us.width_km);
+        assert!(us.lat_span < SCALE_MAX_LAT_SPAN, "{}", us.lat_span);
+        assert_eq!(us.furniture, Furniture { north_arrow: false, scale_bar: true, labels: true });
         assert_eq!(us.area, map_area((1280.0, 720.0), true, true), "framed for its labels");
         // The same width with less latitude (a band 15° tall) keeps its scale bar.
         let band = slide_plan(Extent::new(-110.0, 30.0, -80.0, 42.0));
@@ -1444,7 +1447,8 @@ mod tests {
         assert_eq!(graticule_step(30.6, 31.9), 0.25);
         assert_eq!(graticule_step(-130.0, -62.0), 15.0);
         assert_eq!(graticule_step(22.0, 52.0), 5.0);
-        assert_eq!(graticule_step(-180.0, 180.0), 30.0, "the world: the coarsest");
+        assert_eq!(graticule_step(-180.0, 180.0), 60.0, "the world: every 60°, six longitudes");
+        assert_eq!(ticks(-180.0, 180.0, 60.0).len(), 7, "-180 to 180 inclusive");
         assert_eq!(graticule_step(10.0, 10.05), 0.1, "too small for three: the finest");
         // Over a sweep of spans, every pick but the extremes gives 3–6.
         for k in 1..400 {
