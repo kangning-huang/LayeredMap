@@ -2,11 +2,17 @@
 //! (`packaging/lm/dictate.swift`) listens with Apple's speech recognizer and writes what it hears,
 //! one line per event, which this reads on a thread. Closing its input stops it. The words appear
 //! in the field as they're recognised and stay editable before the request is sent.
+//!
+//! Windows (WP6.2) has no helper yet: the button says so and points to Windows' own voice typing
+//! (Windows+H), which types into the focused Ask box like a keyboard.
 
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
 use std::process::{Child, ChildStdin, Command, Stdio};
 use std::sync::mpsc::{Receiver, channel};
+
+/// What the microphone button says on Windows.
+pub const WINDOWS: &str = "Speaking isn't available on Windows yet. Press Windows+H to type with your voice instead.";
 
 pub enum Event {
     Ready,
@@ -33,6 +39,9 @@ fn helper() -> Option<PathBuf> {
 impl Dictation {
     /// Starts listening; `wake` repaints the app when words arrive.
     pub fn start(wake: impl Fn() + Send + 'static) -> Result<Dictation, String> {
+        if cfg!(windows) && std::env::var_os("LM_DICTATE").is_none() {
+            return Err(WINDOWS.into());
+        }
         let path = helper().ok_or("Speaking needs the LayeredMap Pro app (its speech helper isn't here).")?;
         let mut child = Command::new(path)
             // Offline, the helper refuses to fall back to Apple's server recognizer.
@@ -83,5 +92,21 @@ impl Drop for Dictation {
     fn drop(&mut self) {
         let _ = self.child.kill();
         let _ = self.child.wait();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    /// Windows: the button explains instead of failing to start a helper.
+    #[test]
+    #[cfg(windows)]
+    fn windows_points_to_voice_typing() {
+        let r = super::Dictation::start(|| {});
+        assert_eq!(r.err().as_deref(), Some(super::WINDOWS));
+    }
+
+    #[test]
+    fn the_windows_line_names_the_shortcut() {
+        assert!(super::WINDOWS.contains("Windows+H"));
     }
 }

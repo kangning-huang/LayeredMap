@@ -25,3 +25,7 @@ image = { workspace = true }
 
 [dev-dependencies]
 egui_kittest = { workspace = true, features = ["wgpu", "snapshot"] }
+
+# The system's preferred language on Windows, for the update notes (registry; safe API).
+[target.'cfg(windows)'.dependencies]
+winreg = "0.56"

@@ -21,6 +21,7 @@ pub mod illustrations;
 pub mod insight;
 pub mod inspect;
 pub mod join_ui;
+pub mod keys;
 pub mod library;
 #[cfg(test)]
 mod offline_harness;
@@ -543,7 +544,7 @@ impl Shell {
                     self.find.clear();
                     self.table_for = None;
                     let what = if n == 1 { "1 layer".to_string() } else { format!("{n} layers") };
-                    self.notice = Some((format!("Removed {what}. Undo with ⌘Z."), t));
+                    self.notice = Some((format!("Removed {what}. Undo with {}.", keys::shortcut("Z")), t));
                 }
             }
             Command::SaveDocument(dir) => {
@@ -758,7 +759,7 @@ impl Shell {
             self.fly_to_extent(e);
         }
         if self.ws.new_data.is_some() && self.notice.as_ref().is_none_or(|(_, at)| t - at > 4.0) {
-            self.notice = Some(("New data added outside the view. Zoom to new data with ⌘0.".into(), t));
+            self.notice = Some((format!("New data added outside the view. Zoom to new data with {}.", keys::shortcut("0")), t));
             self.ws.new_data = None;
         }
         if !self.ws.answers.is_empty() {
@@ -976,19 +977,44 @@ impl Shell {
         if zero {
             self.command(ctx, Command::ZoomToAll);
         }
-        // ⌘S and ⇧⌘S come from the menu bar on macOS; elsewhere the shell takes them.
+        // ⌘S, ⇧⌘S, ⌘W, ⌘= and ⌘− come from the menu bar on macOS. Elsewhere the shell takes them:
+        // the Windows menu shows its shortcuts but leaves the keys to egui (apps/layeredmap
+        // windows.rs), so F11 and Windows' Ctrl+Y for Redo are here too.
         #[cfg(not(target_os = "macos"))]
         {
-            let (save_as, save) = ctx.input_mut(|i| {
+            let unfocused = ctx.memory(|m| m.focused().is_none());
+            let (save_as, save, close, zoom_in, zoom_out, full, redo) = ctx.input_mut(|i| {
                 (
                     i.consume_key(egui::Modifiers::COMMAND | egui::Modifiers::SHIFT, egui::Key::S),
                     i.consume_key(egui::Modifiers::COMMAND, egui::Key::S),
+                    i.consume_key(egui::Modifiers::COMMAND, egui::Key::W),
+                    i.consume_key(egui::Modifiers::COMMAND, egui::Key::Equals) || i.consume_key(egui::Modifiers::COMMAND, egui::Key::Plus),
+                    i.consume_key(egui::Modifiers::COMMAND, egui::Key::Minus),
+                    i.consume_key(egui::Modifiers::NONE, egui::Key::F11),
+                    unfocused && i.consume_key(egui::Modifiers::COMMAND, egui::Key::Y),
                 )
             });
             if save_as {
                 self.command(ctx, Command::SaveAs);
             } else if save {
                 self.command(ctx, Command::Save);
+            }
+            if close {
+                // Through the close request, so unsaved changes are asked about first.
+                ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+            }
+            if zoom_in {
+                self.command(ctx, Command::ZoomIn);
+            }
+            if zoom_out {
+                self.command(ctx, Command::ZoomOut);
+            }
+            if full {
+                let on = ctx.input(|i| i.viewport().fullscreen.unwrap_or(false));
+                ctx.send_viewport_cmd(egui::ViewportCommand::Fullscreen(!on));
+            }
+            if redo {
+                self.command(ctx, Command::Redo);
             }
         }
     }

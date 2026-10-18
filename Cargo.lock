@@ -2518,6 +2518,7 @@ dependencies = [
  "block2 0.5.1",
  "eframe",
  "egui",
+ "embed-resource",
  "lm-core",
  "lm-net",
  "lm-ui",
@@ -2526,7 +2527,9 @@ dependencies = [
  "objc2 0.5.3",
  "objc2-app-kit 0.2.2",
  "objc2-foundation 0.2.2",
+ "raw-window-handle",
  "rfd",
+ "winreg",
 ]
 
 [[package]]
@@ -2665,6 +2668,7 @@ dependencies = [
  "log",
  "serde_json",
  "ureq",
+ "winreg",
 ]
 
 [[package]]
@@ -2788,6 +2792,7 @@ dependencies = [
  "lm-net",
  "log",
  "serde_json",
+ "winreg",
 ]
 
 [[package]]

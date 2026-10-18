@@ -14,6 +14,7 @@ pub mod model;
 pub mod palette;
 pub mod phase;
 pub mod places;
+pub mod platform;
 pub mod question;
 pub mod recipe;
 pub mod selection;

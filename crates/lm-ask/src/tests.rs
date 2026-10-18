@@ -256,6 +256,19 @@ fn a_locale_gives_its_region() {
     assert_eq!(region_of_locale("fr").as_deref(), None);
 }
 
+/// Windows: the Country or region setting wins over the regional format; "World" (001) and a
+/// missing setting fall back to the format's locale.
+#[test]
+fn windows_country_or_region_gives_the_region() {
+    use crate::reference::region_of_windows;
+    assert_eq!(region_of_windows(Some("CN"), Some("en-US")).as_deref(), Some("CN"));
+    assert_eq!(region_of_windows(Some("tw"), None).as_deref(), Some("TW"));
+    assert_eq!(region_of_windows(Some("001"), Some("zh-CN")).as_deref(), Some("CN"));
+    assert_eq!(region_of_windows(None, Some("zh-Hans-HK")).as_deref(), Some("HK"));
+    assert_eq!(region_of_windows(None, Some("en")).as_deref(), None);
+    assert_eq!(region_of_windows(None, None).as_deref(), None);
+}
+
 /// Network and the builder's reference data: only the schools are open, and the provinces come
 /// from the built-in layers (`cargo test -p lm-ask builtin_layers -- --ignored --nocapture`).
 #[test]

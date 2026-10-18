@@ -18,3 +18,8 @@ serde_json = { workspace = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 ureq = { version = "3", default-features = false, features = ["rustls", "gzip"] }
+
+# The system region on Windows (Country or region, from the registry): already in the build
+# through embed-resource, and a safe API, so the crate stays free of unsafe code.
+[target.'cfg(windows)'.dependencies]
+winreg = "0.56"

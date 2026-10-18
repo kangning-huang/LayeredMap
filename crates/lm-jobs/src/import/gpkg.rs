@@ -128,8 +128,10 @@ mod settled {
             let salt = std::collections::hash_map::RandomState::new();
             let tag = std::hash::BuildHasher::hash_one(&salt, (nanos, N.fetch_add(1, Ordering::Relaxed)));
             let p = std::env::temp_dir().join(format!("layeredmap-gpkg-{}-{tag:016x}", std::process::id()));
+            // Readable by this user only: the copy holds their data. (On Windows the temp folder
+            // is already the user's own.)
+            #[cfg_attr(not(unix), allow(unused_mut))]
             let mut b = std::fs::DirBuilder::new();
-            // Readable by this user only: the copy holds their data.
             #[cfg(unix)]
             std::os::unix::fs::DirBuilderExt::mode(&mut b, 0o700);
             match b.create(&p) {

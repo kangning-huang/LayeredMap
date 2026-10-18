@@ -1,6 +1,8 @@
-//! The native menu bar (WP1.1), via `muda`: LayeredMap, File, Edit, View, Window, Help. Items for
-//! features not built yet are hidden, not grayed out. Cut/Copy/Paste are left to egui's own key
-//! handling: a menu accelerator for ⌘C would take the key before the text field sees it.
+//! The native menu bar (WP1.1), via `muda`: LayeredMap, File, Edit, View, Window, Help on macOS;
+//! File, Edit, View, Help on the window on Windows (WP6.2), with Exit in File, About in Help and
+//! Ctrl in place of ⌘. Items for features not built yet are hidden, not grayed out. Cut/Copy/Paste
+//! are left to egui's own key handling: a menu accelerator for ⌘C would take the key before the
+//! text field sees it.
 
 use muda::accelerator::{Accelerator, Code, Modifiers};
 use muda::{AboutMetadata, CheckMenuItem, Menu, MenuEvent, MenuItem, PredefinedMenuItem, Submenu};
@@ -16,6 +18,7 @@ pub enum Action {
     ExportQuestionLog,
     ToggleOffline,
     ExportDiagnostics,
+    ToggleFullscreen,
 }
 
 pub struct MenuBar {
@@ -27,26 +30,37 @@ pub struct MenuBar {
     offline: CheckMenuItem,
 }
 
+/// ⌘ on macOS, Ctrl on Windows.
+const CMD: Modifiers = if cfg!(target_os = "macos") { Modifiers::META } else { Modifiers::CONTROL };
+
 fn cmd(key: Code) -> Option<Accelerator> {
-    Some(Accelerator::new(Modifiers::META, key))
+    Some(Accelerator::new(CMD, key))
 }
 
 impl MenuBar {
-    /// Builds the menu bar and installs it in the app (macOS). `None` if that fails, or on other
-    /// platforms for now (Windows packaging is Phase 6).
+    /// Builds the menu bar and installs it: in the app on macOS, on the window `hwnd` on Windows.
+    /// `None` if that fails, or on other platforms (Linux is best effort).
     /// `export`: File › Export Map Image… and Export Data… are shown (WP5.3); `library`: File ›
     /// Browse data library… (WP5.4).
-    pub fn install(developer: bool, export: bool, library: bool, ctx: &egui::Context) -> Option<MenuBar> {
-        #[cfg(not(target_os = "macos"))]
+    pub fn install(developer: bool, export: bool, library: bool, ctx: &egui::Context, hwnd: Option<isize>) -> Option<MenuBar> {
+        #[cfg(not(any(target_os = "macos", windows)))]
         {
-            let _ = (developer, export, library, ctx);
+            let _ = (developer, export, library, ctx, hwnd);
             None
         }
-        #[cfg(target_os = "macos")]
+        #[cfg(any(target_os = "macos", windows))]
         {
             match Self::build(developer, export, library, ctx) {
                 Ok(m) => {
-                    m._menu.init_for_nsapp();
+                    #[cfg(target_os = "macos")]
+                    {
+                        let _ = hwnd;
+                        m._menu.init_for_nsapp();
+                    }
+                    #[cfg(windows)]
+                    if !crate::windows::attach_menu(&m._menu, hwnd?) {
+                        return None;
+                    }
                     Some(m)
                 }
                 Err(e) => {
@@ -57,7 +71,7 @@ impl MenuBar {
         }
     }
 
-    #[cfg(target_os = "macos")]
+    #[cfg(any(target_os = "macos", windows))]
     fn build(developer: bool, export: bool, library: bool, ctx: &egui::Context) -> muda::Result<MenuBar> {
         let menu = Menu::new();
         let about = AboutMetadata {
@@ -67,6 +81,7 @@ impl MenuBar {
             license: Some("Apache-2.0".into()),
             ..Default::default()
         };
+        #[cfg(target_os = "macos")]
         let app = Submenu::with_items(
             "LayeredMap",
             true,
@@ -93,12 +108,7 @@ impl MenuBar {
         }
         file.append(&PredefinedMenuItem::separator())?;
         file.append(&MenuItem::with_id("save", "Save", true, cmd(Code::KeyS)))?;
-        file.append(&MenuItem::with_id(
-            "save-as",
-            "Save As…",
-            true,
-            Some(Accelerator::new(Modifiers::META | Modifiers::SHIFT, Code::KeyS)),
-        ))?;
+        file.append(&MenuItem::with_id("save-as", "Save As…", true, Some(Accelerator::new(CMD | Modifiers::SHIFT, Code::KeyS))))?;
         file.append(&PredefinedMenuItem::separator())?;
         if export {
             file.append(&MenuItem::with_id("export-image", "Export Map Image…", true, cmd(Code::KeyE)))?;
@@ -113,14 +123,17 @@ impl MenuBar {
             file.append(&PredefinedMenuItem::separator())?;
         }
         file.append(&MenuItem::with_id("close", "Close Window", true, cmd(Code::KeyW)))?;
+        // Windows has no application menu: Exit ends File (Alt+F4 is the system's own).
+        #[cfg(windows)]
+        file.append(&MenuItem::with_id("quit", "Exit", true, None))?;
         // Undo and Redo carry no menu accelerators: ⌘Z must still reach a text field being
         // edited. The shell handles ⌘Z and ⇧⌘Z when no text field has the keyboard.
         let edit = Submenu::with_items(
             "Edit",
             true,
             &[
-                &MenuItem::with_id("undo", "Undo (⌘Z)", true, None),
-                &MenuItem::with_id("redo", "Redo (⇧⌘Z)", true, None),
+                &MenuItem::with_id("undo", format!("Undo ({})", lm_ui::keys::shortcut("Z")), true, None),
+                &MenuItem::with_id("redo", format!("Redo ({})", lm_ui::keys::shortcut_shift("Z")), true, None),
                 &PredefinedMenuItem::separator(),
                 &MenuItem::with_id("find", "Find…", true, cmd(Code::KeyF)),
                 &PredefinedMenuItem::separator(),
@@ -136,13 +149,8 @@ impl MenuBar {
             CheckMenuItem::with_id("units-metric", "Metric Units", true, true, None),
             CheckMenuItem::with_id("units-imperial", "Imperial Units", true, false, None),
         ];
-        let debug = CheckMenuItem::with_id(
-            "debug",
-            "Show Frame Rate",
-            true,
-            false,
-            Some(Accelerator::new(Modifiers::META | Modifiers::ALT, Code::KeyF)),
-        );
+        let debug =
+            CheckMenuItem::with_id("debug", "Show Frame Rate", true, false, Some(Accelerator::new(CMD | Modifiers::ALT, Code::KeyF)));
         // Strict offline mode (WP6.6): one switch for every network request.
         let offline = CheckMenuItem::with_id("offline", "Work Offline", true, false, None);
         let view = Submenu::with_items(
@@ -163,9 +171,14 @@ impl MenuBar {
                 &offline,
                 &PredefinedMenuItem::separator(),
                 &debug,
+                // muda's predefined Full Screen is macOS-only; Windows gets its own (F11).
+                #[cfg(target_os = "macos")]
                 &PredefinedMenuItem::fullscreen(None),
+                #[cfg(windows)]
+                &MenuItem::with_id("fullscreen", "Full Screen", true, Some(Accelerator::new(Modifiers::empty(), Code::F11))),
             ],
         )?;
+        #[cfg(target_os = "macos")]
         let window = Submenu::with_items(
             "Window",
             true,
@@ -181,7 +194,13 @@ impl MenuBar {
             true,
             &[&MenuItem::with_id("credits", "Credits", true, None), &MenuItem::with_id("diagnostics", "Export Diagnostics…", true, None)],
         )?;
-        for m in [&app, &file, &edit, &view, &window, &help] {
+        #[cfg(windows)]
+        help.append_items(&[&PredefinedMenuItem::separator(), &PredefinedMenuItem::about(Some("About LayeredMap"), Some(about))])?;
+        #[cfg(target_os = "macos")]
+        let menus = [&app, &file, &edit, &view, &window, &help];
+        #[cfg(windows)]
+        let menus = [&file, &edit, &view, &help];
+        for m in menus {
             menu.append(m)?;
         }
         // egui draws only when something happens: a menu choice must wake it, or the choice would
@@ -229,6 +248,7 @@ impl MenuBar {
                 "credits" => Action::Shell(Command::ShowCredits),
                 "offline" => Action::ToggleOffline,
                 "diagnostics" => Action::ExportDiagnostics,
+                "fullscreen" => Action::ToggleFullscreen,
                 _ => continue,
             };
             out.push(a);

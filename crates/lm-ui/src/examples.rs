@@ -93,9 +93,10 @@ fn all_files() -> impl Iterator<Item = &'static str> {
 const DEV_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../assets/examples");
 
 /// The examples folder inside an app bundle, `<LayeredMap.app>/Contents/Resources/examples`, for
-/// an executable at `<LayeredMap.app>/Contents/MacOS/layeredmap`.
+/// an executable at `<LayeredMap.app>/Contents/MacOS/layeredmap` (on Windows `Resources\examples`
+/// beside `layeredmap.exe`).
 fn bundle_dir(exe: &Path) -> Option<PathBuf> {
-    Some(exe.parent()?.parent()?.join("Resources").join("examples"))
+    Some(lm_core::platform::resources_dir(exe, lm_core::platform::Os::CURRENT)?.join("examples"))
 }
 
 /// The examples folder: the bundle's when it holds the files, otherwise the checkout's.
@@ -122,8 +123,14 @@ mod tests {
 
     #[test]
     fn bundle_folder_is_next_to_the_executable() {
-        let exe = Path::new("/Applications/LayeredMap.app/Contents/MacOS/layeredmap");
-        let want = PathBuf::from("/Applications/LayeredMap.app/Contents/Resources/examples");
+        let (exe, want) = if cfg!(windows) {
+            (Path::new(r"C:\Program Files\LayeredMap\layeredmap.exe"), PathBuf::from(r"C:\Program Files\LayeredMap\Resources\examples"))
+        } else {
+            (
+                Path::new("/Applications/LayeredMap.app/Contents/MacOS/layeredmap"),
+                PathBuf::from("/Applications/LayeredMap.app/Contents/Resources/examples"),
+            )
+        };
         assert_eq!(bundle_dir(exe), Some(want.clone()));
         assert_eq!(resolve(Some(exe), |p| p.starts_with(&want)), want);
     }

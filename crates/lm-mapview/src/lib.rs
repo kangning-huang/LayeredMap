@@ -15,6 +15,7 @@ pub mod hit;
 mod labels;
 pub mod script;
 pub mod stats;
+pub mod wheel;
 mod worker;
 
 use egui::{Align2, Color32, FontId, Pos2, Rect, Sense, Ui, pos2, vec2};
@@ -326,6 +327,17 @@ impl MapView {
         self.last_render_ms
     }
 
+    /// The size in pixels of the frame on screen (the map's area in points times the pixels per
+    /// point, rounded), once one has arrived.
+    pub fn frame_pixel_size(&self) -> Option<[usize; 2]> {
+        self.current.as_ref().map(|c| c.tex.size())
+    }
+
+    /// The map's area on screen, in points, as last shown.
+    pub fn rect(&self) -> Option<Rect> {
+        self.rect
+    }
+
     /// Shows the map in `rect`: handles input, renders off-thread, paints.
     pub fn show(&mut self, ui: &mut Ui, rect: Rect, opts: ViewOptions) -> MapOutput {
         let resp = ui.allocate_rect(rect, Sense::click_and_drag());
@@ -497,36 +509,41 @@ impl MapView {
         if let Some(p) = hover {
             let local = p - rect.min;
             for e in ui.input(|i| i.events.clone()) {
-                match e {
-                    // A purely sideways notch (tilt wheel, ⇧-scroll) doesn't zoom.
-                    egui::Event::MouseWheel { unit: egui::MouseWheelUnit::Line, delta, .. } if delta.y == 0.0 => {}
-                    egui::Event::MouseWheel { unit: egui::MouseWheelUnit::Line, delta, .. } => {
+                // Wheel and trackpad events mean different things on macOS and Windows (`wheel`).
+                let wheel = match e {
+                    egui::Event::MouseWheel { unit, delta, modifiers, .. } => wheel::classify(unit, delta, modifiers, cfg!(windows)),
+                    // Pinch (macOS): continuous, about the pinch centre, never snapped.
+                    egui::Event::Zoom(f) => wheel::Wheel::Zoom(f64::from(f).log2()),
+                    _ => wheel::Wheel::Ignore,
+                };
+                match wheel {
+                    wheel::Wheel::Notch(dir) => {
                         // A mouse wheel: half a zoom level per notch, animated over 250 ms.
                         let from = self.zoom();
                         let base = match self.anim {
                             Some(Animation::Zoom { to, .. }) => to,
                             _ => from,
                         };
-                        let to = camera::clamp_zoom(base + 0.5 * f64::from(delta.y.signum()), h);
+                        let to = camera::clamp_zoom(base + 0.5 * dir, h);
                         self.anim = Some(Animation::Zoom { from, to, start: t, anchor: (f64::from(local.x), f64::from(local.y)) });
                         self.velocity = egui::Vec2::ZERO;
                         moved = true;
                     }
-                    egui::Event::MouseWheel { delta, .. } => {
+                    wheel::Wheel::Pan(d) => {
                         // A trackpad's two-finger scroll pans, as in Apple Maps.
-                        camera::pan(&mut self.camera, f64::from(delta.x), f64::from(delta.y));
+                        camera::pan(&mut self.camera, f64::from(d.x), f64::from(d.y));
                         self.velocity = egui::Vec2::ZERO;
                         stop_anim(self);
                         moved = true;
                     }
-                    egui::Event::Zoom(f) => {
+                    wheel::Wheel::Zoom(levels) => {
                         // Pinch: continuous, about the pinch centre, never snapped.
-                        let z = self.zoom() + f64::from(f).log2();
+                        let z = self.zoom() + levels;
                         camera::zoom_about(&mut self.camera, z, f64::from(local.x), f64::from(local.y), w, h);
                         stop_anim(self);
                         moved = true;
                     }
-                    _ => {}
+                    wheel::Wheel::Ignore => {}
                 }
             }
         }
