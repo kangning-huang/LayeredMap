@@ -65,7 +65,8 @@ def layer_sets(context: str) -> dict[str, list[str]]:
         "points": [n for n, k in by.items() if k == "points"],
         "lines": [n for n, k in by.items() if k == "lines"],
         "areas": [n for n, k in by.items() if k in ("areas", "drawn area")] + REFS,
-        "vector": [n for n, k in by.items() if k != "raster"] + REFS,
+        "vector": [n for n, k in by.items() if k not in ("raster", "table")] + REFS,
+        "tables": [n for n, k in by.items() if k == "table"],
     }
 
 
@@ -128,6 +129,12 @@ DESCRIPTIONS = {
         "Add to each object of a layer the fields of the area it lies in (spatial join; lines and areas use a point on them): layer, "
         "areas, fields (comma list of the areas' fields; all by default). The new fields keep the areas' field names. Changes the layer; no new layer."
     ),
+    "match_table": (
+        "Add a table's columns (a table without locations, e.g. statistics by district) to a layer by a key both share: "
+        "layer, table, layer_field and table_field (the key columns; they may have different names, e.g. 'name' and 'district'; "
+        "left out, the best pair is found), repeats (latest | combine | auto) for several rows per object. The new fields keep "
+        "the table's names. Changes the layer; no new layer."
+    ),
     "add_measurements": (
         "Add area_km2 and perimeter_km (areas), length_km (lines), and longitude and latitude (degrees, of a point on each object) as "
         "fields. A field name the layer already has gets ' 2' (area_km2 2). Changes the layer; no new layer."
@@ -176,7 +183,7 @@ def fn(name: str, description: str, props: dict, required: list[str]) -> dict:
 def slot_schema(role: str, kind: str, action: str, L: dict) -> dict:
     """Schema of one runner input."""
     if kind == "layer":
-        pool = {"points": L["points"], "areas": L["areas"], "raster": L["raster"]}.get(role, L["vector"])
+        pool = {"points": L["points"], "areas": L["areas"], "raster": L["raster"], "table": L["tables"]}.get(role, L["vector"])
         if (action, role) == ("count_in", "points"):
             pool = L["vector"]
         return _enum(pool)
@@ -319,6 +326,10 @@ def submit_plan_tools(context: str, with_resolve: bool = True) -> list[dict]:
         "order": {"type": "string", "enum": ["highest", "lowest"], "description": "rank_by_value: highest first (default) or lowest first"},
         "other": {"type": "string", "enum": L["vector"], "description": "nearest_distance: the layer to measure to"},
         "fields": {"type": "string", "description": "join_by_location: comma list of the areas' fields to add (all by default)"},
+        "table": {**_enum(L["tables"]), "description": "match_table: the table to add to the layer"},
+        "layer_field": toolmod.PARAM_SCHEMA["layer_field"],
+        "table_field": toolmod.PARAM_SCHEMA["table_field"],
+        "repeats": toolmod.PARAM_SCHEMA["repeats"],
         "first": {"type": "string", "description": "calculate_field: the first value, a number field of the layer (first op second)"},
         "op": {"type": "string", "enum": ["add", "subtract", "multiply", "divide"]},
         "second": {"type": "string", "description": "calculate_field: the second value, a number field or a number"},

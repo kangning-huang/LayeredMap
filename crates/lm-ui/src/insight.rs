@@ -89,6 +89,11 @@ pub fn actions(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer, row: Opt
         });
     }
     if let Some(a) = run {
+        // Matching a table is Free (WP3.11): the column picker, in either tier.
+        if a.action_id == "match_table" {
+            crate::join_ui::open_picker(shell, l.id);
+            return;
+        }
         let analysis = lm_actions::registry().action(&a.action_id).is_some_and(|s| s.algorithm.is_some());
         if analysis && shell.analysis_actions() {
             crate::analysis::open(shell, l.id, row, &a);
@@ -108,6 +113,7 @@ pub fn perform(shell: &mut Shell, id: LayerId, row: Option<usize>, a: &Suggested
     let Some(l) = shell.ws.doc.layer(id).cloned() else { return };
     match a.action_id.as_str() {
         "open_file" => shell.request_open(),
+        "match_table" => crate::join_ui::open_picker(shell, id),
         "try_example" => shell.open_examples(),
         "style_by_value" | "raster_colors" => {
             shell.ws.select_layer(id);

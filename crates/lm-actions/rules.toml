@@ -20,7 +20,8 @@
 #
 # Companion kinds: points, lines, areas, raster, any (any visible layer with locations), vector
 # (any visible point, line or area layer),
-# shared_code (a visible layer with an identifier column of the same name as the table's).
+# shared_code (a visible layer with an identifier column of the same name as the table's; unused
+# since match_table picks its columns).
 #
 # more_only = true: offered under More actions and to the assistant, never in a row's top three.
 #
@@ -175,16 +176,20 @@ requires = [
     { need = "coordinate_fields", reason = "This table has no longitude and latitude columns. Mark two columns as coordinates in Details." },
 ]
 
+# Joining a table is Free (WP3.11: it creates no geometry), so this is a card action; it opens
+# the column picker. The assistant calls the same runner (lm_jobs::actions, `match_table`).
 [[action]]
-id = "match_by_code"
-label = "Match to [other] by [code]"
-aliases = ["join", "table join", "attribute join"]
+id = "match_table"
+label = "Match to [other]"
+aliases = ["join", "table join", "attribute join", "merge", "vlookup", "match by code"]
 group = "Keep"
-min_phase = 6
+min_phase = 3
 surface = "card"
 inputs = ["table"]
 input_reason = "Select a table without locations."
-companion = { kind = "shared_code", reason = "Open a layer with a code column of the same name as one in this table." }
+companion = { kind = "vector", reason = "Open a point, line or area layer to match this table to." }
+algorithm = "join::apply"
+method = "an attribute join: each table row goes to every record whose key matches (exactly, or loosened as the join's ladder says); a record matching several rows takes the latest by a year or date column, otherwise counts summed and other numbers averaged; blank keys never match"
 
 # ---------------------------------------------------------------- Analysis (Phase 4, assistant)
 
@@ -638,13 +643,13 @@ selected = ["raster_layer"]
 other = "none"
 actions = ["raster_colors", "threshold", "summarize_drawn"]
 
-# The spec's "layer with a shared code" is checked by match_by_code's companion, so the row
-# still offers its other two actions when no such layer is open.
+# match_table needs a point, line or area layer to match to (its companion), so the row still
+# offers its other two actions when none is open.
 [[row]]
 n = 16
 selected = ["table"]
 other = "any"
-actions = ["match_by_code", "map_coordinates", "view_data"]
+actions = ["match_table", "map_coordinates", "view_data"]
 
 [[row]]
 n = 17

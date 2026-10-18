@@ -346,7 +346,7 @@ def map_context(ctx: str) -> str:
 # Extra rules and worked examples for the puzzle-era actions (general; not the puzzles)
 
 EXTRA_RULES = """11. Numbers in the request: "at least", "or more", "or warmer", "不低于", "至少" -> at_least; "at most", "or less", "or colder", "不超过", "不高于" -> at_most; "more than", "over", "超过" -> above; "less than", "below" -> below; "between a and b", "a to b" -> between. Write numbers in the field's or raster's unit, digits only ("two million" = 2000000, "一亿" = 100000000, "a million" = 1000000).
-12. Which action gives which value: a raster's value at each point -> add_raster_values; details of the area each object lies in (its country, continent, country population) -> join_by_location; distance to the nearest object of another layer -> nearest_distance; distance to the nearest other object of the same layer -> nearest_other; a value computed from two values (a difference, a ratio) -> calculate_field; one object per island or part of a multi-part area -> split_parts; area, length and coordinates -> add_measurements; places where raster conditions hold -> find_where; the part of a layer inside some areas -> keep_inside; the objects of a layer inside one area -> whats_inside.
+12. Which action gives which value: a raster's value at each point -> add_raster_values; details of the area each object lies in (its country, continent, country population) -> join_by_location; distance to the nearest object of another layer -> nearest_distance; distance to the nearest other object of the same layer -> nearest_other; a value computed from two values (a difference, a ratio) -> calculate_field; one object per island or part of a multi-part area -> split_parts; area, length and coordinates -> add_measurements; places where raster conditions hold -> find_where; the part of a layer inside some areas -> keep_inside; the objects of a layer inside one area -> whats_inside; a table's columns (statistics by place, without locations) on a layer -> match_table, naming both key columns when their names differ.
 13. Steps that add values fill them only for the objects shown at that moment; hidden objects stay blank. To answer "which one", end the plan with the filter that leaves only the objects meeting every condition.
 14. Well-known geographic terms have standard definitions: use them without asking. Tropical / in the tropics: latitude between -23.44 and 23.44; northern / southern hemisphere: latitude above / below 0; Arctic: latitude at least 66.56; Antarctic: latitude at most -66.56; a latitude needs the layer's latitude field (add_measurements adds one).
 15. "Which <point> has the highest / lowest <raster value>" (the coldest city, the wettest hospital) asks about the points themselves: add_raster_values to the points, then rank_by_value on that field (order "lowest" for the lowest, coldest, driest, least). summarize_each is for areas (each country's average), never for "which city".
@@ -354,7 +354,7 @@ EXTRA_RULES = """11. Numbers in the request: "at least", "or more", "or warmer",
 17. "Which <point> has the most <things> near it" (the city with the most storms within 100 km, the hospital with the most rivers nearby): buffer the points with merge false, count_in the things in that buffer layer ("#k"), then rank_by_value on the count. Points from a built-in layer (World cities) work the same way.
 18. "Per capita", "per person", "per head": divide by the population, then multiply by 1000000 and name the field "<things> per million people" (or by 1000, "per 1,000 people", for common things such as doctors or beds), so the numbers read well. Count first if the things are objects (count_in), then calculate_field twice: divide, then multiply."""
 
-EXTRA_MAP = """More example layers on the same invented map: Temperature: raster, °C. Lakes: areas, 1 object with many parts; fields name (text)."""
+EXTRA_MAP = """More example layers on the same invented map: Temperature: raster, °C. Lakes: areas, 1 object with many parts; fields name (text). Clinic visits: table; fields ward (text), year (integer), visits (integer)."""
 
 EXTRA_EXAMPLES = [
     ("Which hospitals with at least 100 beds get more than 800 mm of rain and are no more than 2 km from a river?", [],
@@ -384,6 +384,8 @@ EXTRA_EXAMPLES = [
       'filter(layer="Hospitals", conditions=[{field: "km to nearest other hospital", op: "above", value: "3"}])']),
     ("把湖泊拆成一个个单独的湖，并算出每个湖的面积", [],
      ['split_parts(layer="Lakes")', 'add_measurements(layer="#1")']),
+    ("Put the clinic visit numbers on the wards map, latest year only.", [],
+     ['match_table(layer="Wards", table="Clinic visits", layer_field="name", table_field="ward", repeats="latest")']),
 ]
 
 

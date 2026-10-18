@@ -482,3 +482,60 @@ fn small_numbers_are_not_rounded_to_zero() {
     assert_eq!(number(0.0), "0");
     assert_eq!(number(1234.6), "1,235");
 }
+
+/// WP6.4: "Match a table to a layer" as an action, against pandas `merge` (J6,
+/// `tools/lm/reference_tests/join_validate.py`), with both key columns named, including the
+/// pairing whose columns have different names (`ward_code` ↔ `ward`). Every record's value
+/// exactly; the card and the recipe name both columns.
+#[test]
+fn match_table_matches_pandas_with_named_columns() {
+    let rows = csv("J6/expected_join.csv");
+    let values = csv("J6/expected_join_values.csv");
+    let mut compared = 0;
+    for w in &rows {
+        let (layer, table, lk, tk) = (&w[0], &w[1], &w[2], &w[3]);
+        let p = plan(
+            "match_table",
+            vec![input(&format!("J6/{layer}.geojson"), 1), input(&format!("J6/{table}.csv"), 2)],
+            &[("layer_field", lk), ("table_field", tk)],
+        );
+        let r = run(&p, &Control::none()).unwrap();
+        let ActionOutput::NewFields { layer: id, data, fields } = &r.output else { panic!("expected new fields") };
+        assert_eq!(*id, LayerId(1));
+        assert!(!fields.contains(tk), "{table}: the key isn't added again");
+        let keys = format!("{tk} ↔ {lk}");
+        assert!(r.card.title.contains(&keys) && r.card.summary.contains(&keys), "{}", r.card.title);
+        assert!(r.recipe.decisions.iter().any(|d| d.contains(&keys)), "{:?}", r.recipe.decisions);
+        assert_eq!((r.recipe.params.get("layer_field"), r.recipe.params.get("table_field")), (Some(lk), Some(tk)));
+        let card = w[4].replace('_', "-");
+        assert!(r.card.notices[0].to_lowercase().starts_with(&card), "{table}: {:?}", r.card.notices);
+        for v in values.iter().filter(|v| &v[0] == layer && &v[1] == table) {
+            let k = data.field_index(&v[4]).unwrap();
+            let row = v[2].parse::<usize>().unwrap() - 1;
+            let want = if v[5].is_empty() { Value::Null } else { Value::Int(v[5].parse().unwrap()) };
+            assert_eq!(data.features[row].attrs[k], want, "{layer} × {table}: row {}", row + 1);
+            compared += 1;
+        }
+    }
+    assert_eq!(compared, 64);
+    // Left out, the columns are found as the automatic join finds them; a wrong column says so.
+    let auto =
+        run(&plan("match_table", vec![input("J6/wards.geojson", 1), input("J6/ward_people.csv", 2)], &[]), &Control::none()).unwrap();
+    assert!(auto.card.title.contains("ward ↔ ward_code"), "{}", auto.card.title);
+    let bad = run(
+        &plan("match_table", vec![input("J6/wards.geojson", 1), input("J6/ward_people.csv", 2)], &[("table_field", "nope")]),
+        &Control::none(),
+    );
+    assert!(matches!(bad, Err(ActionError::Input(ref m)) if m.contains("nope")));
+    // Repeats: combine instead of the latest year.
+    let r = run(
+        &plan(
+            "match_table",
+            vec![input("J6/wards.geojson", 1), input("J6/ward_population_by_year.csv", 2)],
+            &[("table_field", "ward_code"), ("layer_field", "ward_code"), ("repeats", "combine")],
+        ),
+        &Control::none(),
+    )
+    .unwrap();
+    assert!(r.card.notices.iter().any(|n| n.contains("counts are summed")), "{:?}", r.card.notices);
+}

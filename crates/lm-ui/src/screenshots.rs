@@ -537,6 +537,35 @@ fn phase3_join_question() {
     h.snapshot("phase3_join_question");
 }
 
+/// A clear join whose keys repeat asks first (owner's choice, 2026-10-18): J3, one row per
+/// district per year, shows the row counts and how the repeats are handled, with Join and Keep
+/// as a table.
+#[test]
+fn phase3_join_confirm() {
+    let mut h = phase3(&["V1/districts.geojson", "J3/population_by_year.csv"], SHANGHAI, |_| {});
+    settle(&mut h);
+    let s = h.state().as_ref().unwrap();
+    let table = s.ws.doc.layers.iter().find(|l| l.profile.kind == lm_core::model::LayerKind::Table).expect("the table waits");
+    assert!(s.ws.join_question(table.id).is_some_and(|q| q.confirm));
+    h.snapshot("phase3_join_confirm");
+}
+
+/// "Match to a layer" (WP6.4): the column picker on a table whose key column has another name
+/// than the layer's (J6: `ward` ↔ `ward_code`), with the live preview.
+#[test]
+fn phase3_match_picker() {
+    let mut h = phase3(&["J6/wards.geojson", "J6/ward_people.csv"], (121.37, 31.02, 9.0), |s| {
+        let table = s.ws.doc.layers.iter().find(|l| l.profile.kind == lm_core::model::LayerKind::Table).unwrap().id;
+        // As if opened from the table's menu before the automatic join ran: the picker holds it.
+        crate::join_ui::open_picker(s, table);
+    });
+    settle(&mut h);
+    let s = h.state().as_ref().unwrap();
+    let d = s.match_draft.as_ref().expect("the picker is open");
+    assert_eq!((d.layer_field.as_str(), d.table_field.as_str()), ("ward_code", "ward"));
+    h.snapshot("phase3_match_picker");
+}
+
 /// Drawing an area (WP4.4): the outline so far and the banner; a finished outline becomes the
 /// layer "Area 1" in WGS 84.
 #[test]
