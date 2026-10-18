@@ -1,7 +1,7 @@
 <!--
   docs/lm/spec.md — the LayeredMap build plan, exported as Markdown for agents to read.
   Source: the Claude Docs document "LayeredMap Build Plan"
-  (https://claude.ai/artifact/VRu8z2LFG6YcXodK1Z48Yg), revision 128, exported 2026-10-15.
+  (https://claude.ai/artifact/VRu8z2LFG6YcXodK1Z48Yg), revision 128, exported 2026-10-15; the "Who it's for" paragraph was added from revision 142 (2026-10-18).
   Refreshed at every phase start (build plan › Working with coding agents). Do not edit here:
   change the plan, then re-export. Diagrams are not exported; their captions mark where they sit.
 -->
@@ -11,6 +11,7 @@
 2026-10-15 · Kangning Huang
 
 ## Summary
+**Who it's for.** LayeredMap's target users are global, with China as a specific focus (owner's direction, 2026-10-18). Everything must work for users in China: a basemap reachable from mainland China, a Chinese interface and Chinese place names, China's coordinate offsets (GCJ-02, BD-09), and country borders that follow the user's system region (China's point of view on a Mac set to mainland China, each country's own view elsewhere).
 LayeredMap is built in seven phases. Phases 0–5 (about 22 effort-weeks) end in a classroom pilot. Phase 6 (about 6 more) ends in a public beta.
 Every phase ends at a gate. A gate has four parts: automated checks, a debug pass, a hands-on validation session with you, and stress tests. A gate passes only when all four pass. Otherwise the product rolls back to the last passing tag, and work resumes from there.
 1. **Phase 0 — Foundation and risk spikes.** Decide whether RustGIS's rendering and UI stack can feel like a consumer map. Settle this before writing product code. Also build the test fixtures and set up signed builds.
