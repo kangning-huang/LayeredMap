@@ -18,7 +18,7 @@ use std::path::PathBuf;
 use lm_analysis::control::Control;
 use lm_core::document::DocLayer;
 use lm_core::filter::{Condition, Filter, Test};
-use lm_core::recipe::ResultCard;
+use lm_core::recipe::{Recipe, ResultCard};
 use serde_json::Value as Json;
 
 use crate::actions::{self, ActionError, ActionOutput, Plan, PlanInput};
@@ -48,11 +48,34 @@ pub struct Step {
 /// What each step did.
 #[derive(Clone, Debug)]
 pub enum StepOutcome {
-    Filtered { layer: String, shown: usize, of: usize },
+    /// `layer` is the layer's name (a step's output also answers to its `#k`); `filter` is what
+    /// the layer is now filtered by, to keep it in the document.
+    Filtered {
+        layer: String,
+        shown: usize,
+        of: usize,
+        filter: Filter,
+    },
     Display,
-    NewLayer { name: String, card: Box<ResultCard> },
-    NewFields { layer: String, fields: Vec<String>, card: Box<ResultCard> },
-    Card { card: Box<ResultCard>, highlight: Option<(String, Vec<usize>)> },
+    /// `alias` is the new layer's `#k`; `color_by` the field the action colours it by.
+    NewLayer {
+        name: String,
+        alias: String,
+        card: Box<ResultCard>,
+        recipe: Box<Recipe>,
+        color_by: Option<String>,
+    },
+    NewFields {
+        layer: String,
+        fields: Vec<String>,
+        card: Box<ResultCard>,
+        recipe: Box<Recipe>,
+    },
+    Card {
+        card: Box<ResultCard>,
+        recipe: Box<Recipe>,
+        highlight: Option<(String, Vec<usize>)>,
+    },
     Asked(String),
     Refused(String),
 }
@@ -180,7 +203,7 @@ pub fn execute(layers: &mut Vec<PlanLayer>, steps: &[Step], computed_at: i64, ct
                     .map(|m| m.iter().enumerate().filter(|(_, k)| **k).map(|(r, _)| r).collect::<Vec<_>>());
                 let shown = rows.as_ref().map_or(total, Vec::len);
                 layers[li].rows = rows;
-                out.push(StepOutcome::Filtered { layer: layers[li].name.clone(), shown, of: total });
+                out.push(StepOutcome::Filtered { layer: layers[li].name.clone(), shown, of: total, filter: f });
             }
             "color_by" | "zoom_to" | "view_data" => out.push(StepOutcome::Display),
             "ask_user" => {
@@ -205,8 +228,9 @@ pub fn execute(layers: &mut Vec<PlanLayer>, steps: &[Step], computed_at: i64, ct
                     ActionError::Cancelled => err(n, "cancelled"),
                     other => err(n, other.to_string()),
                 })?;
+                let recipe = Box::new(r.recipe);
                 match r.output {
-                    ActionOutput::NewLayer { layer, .. } => {
+                    ActionOutput::NewLayer { layer, color_by } => {
                         let name = layer.name.clone();
                         let id = lm_core::model::LayerId(10_000 + n as u64);
                         let style = lm_core::document::Style::for_profile(&layer.profile, [0, 0, 0, 255]);
@@ -218,17 +242,17 @@ pub fn execute(layers: &mut Vec<PlanLayer>, steps: &[Step], computed_at: i64, ct
                             rows: None,
                             path: None,
                         });
-                        out.push(StepOutcome::NewLayer { name, card: Box::new(r.card) });
+                        out.push(StepOutcome::NewLayer { name, alias: format!("#{n}"), card: Box::new(r.card), recipe, color_by });
                     }
                     ActionOutput::NewFields { layer, data, fields } => {
                         let li = layers.iter().position(|l| l.layer.id == layer).ok_or_else(|| err(n, "the layer went away"))?;
                         layers[li].data = LayerData::Vector(data);
-                        out.push(StepOutcome::NewFields { layer: layers[li].name.clone(), fields, card: Box::new(r.card) });
+                        out.push(StepOutcome::NewFields { layer: layers[li].name.clone(), fields, card: Box::new(r.card), recipe });
                     }
                     ActionOutput::Card => {
                         let hl =
                             r.highlight.and_then(|(id, rows)| layers.iter().find(|l| l.layer.id == id).map(|l| (l.name.clone(), rows)));
-                        out.push(StepOutcome::Card { card: Box::new(r.card), highlight: hl });
+                        out.push(StepOutcome::Card { card: Box::new(r.card), recipe, highlight: hl });
                     }
                 }
             }

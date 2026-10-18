@@ -4,7 +4,7 @@
 use std::path::{Path, PathBuf};
 
 /// The example files, opened together as one batch.
-pub const FILES: [&str; 3] = ["populated_places.geojson", "countries.geojson", "elevation.tif"];
+pub const FILES: [&str; 3] = ["cities.geojson", "countries.geojson", "elevation.tif"];
 
 /// Where the files are in a development checkout.
 const DEV_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../assets/examples");
@@ -70,7 +70,7 @@ mod tests {
             assert_eq!(layers.len(), 1, "{name}");
             layers.remove(0)
         };
-        let places = open("populated_places.geojson");
+        let places = open("cities.geojson");
         assert_eq!(places.profile.kind, LayerKind::Points);
         assert!((1000..2000).contains(&places.profile.count), "{}", places.profile.count);
         let countries = open("countries.geojson");

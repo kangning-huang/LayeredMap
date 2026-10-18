@@ -24,7 +24,7 @@ import context as ctxmod  # noqa: E402
 
 SOURCES = {
     "Countries": ("geojson", ROOT / "assets/examples/countries.geojson"),
-    "Populated places": ("geojson", ROOT / "assets/examples/populated_places.geojson"),
+    "Populated places": ("geojson", ROOT / "assets/examples/cities.geojson"),
     "Districts": ("geojson", ROOT / "fixtures/V1/districts.geojson"),
     "Schools": ("csv", ROOT / "fixtures/T1/schools.csv"),
     "Roads": ("gpkg", ROOT / "fixtures/V9/city_layers.gpkg", "roads"),

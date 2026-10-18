@@ -2625,6 +2625,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "lm-ask"
+version = "0.2.0"
+dependencies = [
+ "lm-core",
+ "lm-jobs",
+ "log",
+ "serde_json",
+ "ureq",
+]
+
+[[package]]
 name = "lm-capability-audit"
 version = "0.2.0"
 dependencies = [
@@ -2721,11 +2732,13 @@ dependencies = [
  "egui_kittest",
  "image",
  "lm-actions",
+ "lm-ask",
  "lm-core",
  "lm-doc",
  "lm-jobs",
  "lm-mapview",
  "log",
+ "serde_json",
 ]
 
 [[package]]

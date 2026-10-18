@@ -17,6 +17,7 @@ pub mod plan_exec;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{Receiver, channel};
 
+pub use import::Value;
 pub use rustgis_engine::data::GeometryType;
 pub use rustgis_engine::map::Layer;
 

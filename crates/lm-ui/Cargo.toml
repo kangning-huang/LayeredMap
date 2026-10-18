@@ -15,6 +15,8 @@ lm-actions = { path = "../lm-actions" }
 lm-jobs = { path = "../lm-jobs" }
 lm-doc = { path = "../lm-doc" }
 lm-mapview = { path = "../lm-mapview" }
+lm-ask = { path = "../lm-ask" }
+serde_json = { workspace = true }
 egui = { workspace = true }
 egui-phosphor = { version = "0.14", default-features = false, features = ["regular"] }
 log = { workspace = true }

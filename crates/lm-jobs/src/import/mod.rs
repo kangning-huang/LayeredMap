@@ -27,7 +27,7 @@ use rustgis_engine::data::raster::Raster;
 
 pub use lm_profile::PlaceCandidate;
 pub use progress::Ticket;
-pub use rustgis_engine::data::{Dataset, Value};
+pub use rustgis_engine::data::{Dataset, FieldType, Value};
 
 /// Why an import didn't produce layers. The message is shown as written (Error and status copy).
 #[derive(Clone, Debug, PartialEq)]

@@ -112,6 +112,8 @@ impl eframe::App for App {
                     let step = self.tour.remove(0);
                     let wait = match step {
                         Step::Fly(..) => 6.0,
+                        // The assistant answers in a few seconds; give it time before the next step.
+                        Step::Other(Command::Ask(_)) => 15.0,
                         _ => 2.5,
                     };
                     self.shell.command(ctx, step.command());
@@ -225,7 +227,8 @@ impl eframe::App for App {
 /// `find TEXT` finds in the selected layer; `draw` / `draw rect` starts drawing an area;
 /// `area lon,lat lon,lat lon,lat…` makes an area layer from an outline;
 /// `action ID key=value,key=value` opens the composer for an analysis action on the selected
-/// layer (developer surface; `with=NAME` picks the second layer); `keep` keeps its preview.
+/// layer (developer surface; `with=NAME` picks the second layer); `keep` keeps its preview;
+/// `ask TEXT` sends a request to Pro's Ask box (waits 15 s); `keep-ask` keeps its plan.
 #[derive(Clone, Debug, PartialEq)]
 enum Step {
     Fly(f64, f64, f64),
@@ -270,6 +273,8 @@ impl Step {
                 Step::Other(Command::ComposeAction(id.to_string(), params))
             }
             "keep" => Step::Other(Command::KeepResult),
+            "ask" => Step::Other(Command::Ask(rest.trim().to_string())),
+            "keep-ask" => Step::Other(Command::KeepAsk),
             "undo" => Step::Other(Command::Undo),
             "redo" => Step::Other(Command::Redo),
             _ => match nums(s).as_slice() {
@@ -361,6 +366,10 @@ fn main() -> eframe::Result {
             let mut shell = Shell::new(&cc.egui_ctx, flags, prefs, system);
             shell.developer = developer;
             shell.pro = pro;
+            #[cfg(target_os = "macos")]
+            {
+                shell.start_dictation = Some(macos::start_dictation);
+            }
             lm_ui::basemap::start_archive_lookup(&cc.egui_ctx);
             if !ephemeral {
                 shell.set_question_log(question_log_path());

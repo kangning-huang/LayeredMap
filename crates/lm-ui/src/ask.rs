@@ -1,0 +1,442 @@
+//! The Ask box (WP7.1, early test build for LayeredMap Pro): one field at the bottom of the map,
+//! "Ask about your layers". A request goes to the assistant (`lm_ask`) on a background thread;
+//! the plan comes back checked and already run on a copy of the layers. Its new layer shows over
+//! the map and its filter as a highlight. The plan and its cards show above the box; **Keep**
+//! adds everything as one undo step, **Discard** drops it. A question from the assistant shows
+//! with its choices; the reply continues the exchange. The microphone starts macOS Dictation.
+
+use std::sync::mpsc::{Receiver, channel};
+use std::time::Instant;
+
+use egui::{Align2, RichText, Ui, vec2};
+use egui_phosphor::regular as icon;
+
+use lm_ask::session::Transport;
+use lm_ask::{Answer, PlanResult, Request, Turn, Usage};
+use lm_jobs::jobs::Control;
+use lm_jobs::plan_exec::StepOutcome;
+
+use crate::Shell;
+use crate::theme::{self, BODY, CAPTION, HEADLINE, semibold};
+
+const MAX_WIDTH: f32 = 620.0;
+
+#[derive(Default)]
+pub struct AskState {
+    pub text: String,
+    pending: Option<Pending>,
+    shown: Option<Shown>,
+    /// The exchange a reply continues (after the assistant asked a question).
+    conversation: Vec<serde_json::Value>,
+    /// Requests carried out (kept) in this session, for "those" and "of these".
+    history: Vec<String>,
+    /// The key prompt: the text typed so far.
+    key_draft: Option<String>,
+    key_error: Option<String>,
+    /// A request waiting for the key.
+    waiting: Option<String>,
+    pub spent_usd: f64,
+    focus: bool,
+}
+
+struct Pending {
+    rx: Receiver<Turn>,
+    control: Control,
+    request: String,
+    started: Instant,
+}
+
+enum Shown {
+    Plan { request: String, plan: Box<PlanResult>, usage: Usage, seconds: f64 },
+    Question { text: String, choices: Vec<String> },
+    Message { text: String, warning: bool },
+}
+
+impl AskState {
+    pub fn busy(&self) -> bool {
+        self.pending.is_some()
+    }
+
+    /// Esc: stop the request in flight, or drop what is shown.
+    pub fn escape(&mut self) -> bool {
+        if let Some(p) = self.pending.take() {
+            p.control.cancel();
+            return true;
+        }
+        self.shown.take().is_some() || self.key_draft.take().is_some()
+    }
+}
+
+/// Sends `text` to the assistant (or asks for the key first).
+pub fn submit(shell: &mut Shell, ctx: &egui::Context, text: String) {
+    let text = text.trim().to_string();
+    if text.is_empty() || shell.ask.pending.is_some() {
+        return;
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    let key = lm_ask::openrouter::read_key();
+    #[cfg(target_arch = "wasm32")]
+    let key: Option<String> = None;
+    let Some(key) = key else {
+        shell.ask.waiting = Some(text);
+        shell.ask.key_draft = Some(String::new());
+        return;
+    };
+    let (layers, filters) = shell.ws.ask_inputs();
+    let selected = selected_object(shell);
+    let previous =
+        if matches!(shell.ask.shown, Some(Shown::Question { .. })) { std::mem::take(&mut shell.ask.conversation) } else { Vec::new() };
+    let req = Request {
+        text: text.clone(),
+        layers,
+        filters,
+        selected,
+        history: shell.ask.history.clone(),
+        previous,
+        model: lm_ask::MODEL.into(),
+    };
+    discard(shell);
+    let control = Control::default();
+    let (tx, rx) = channel();
+    let c = control.clone();
+    let ctx = ctx.clone();
+    #[cfg(not(target_arch = "wasm32"))]
+    std::thread::spawn(move || {
+        let t = lm_ask::openrouter::OpenRouter::new(key);
+        let turn = lm_ask::ask(&t as &dyn Transport, &req, &c);
+        let _ = tx.send(turn);
+        ctx.request_repaint();
+    });
+    #[cfg(target_arch = "wasm32")]
+    let _ = (key, req, tx, c, ctx);
+    shell.ask.pending = Some(Pending { rx, control, request: text, started: Instant::now() });
+    shell.ask.text.clear();
+}
+
+/// The selected object as `(layer, title field, value)`, when one object is selected.
+fn selected_object(shell: &Shell) -> Option<(String, String, String)> {
+    let f = shell.ws.selection.features.first()?;
+    let l = shell.ws.doc.layer(f.layer)?;
+    let d = shell.ws.data(f.layer)?;
+    let lm_jobs::import::LayerData::Vector(ds) = &d.data else { return None };
+    let k = lm_jobs::inspect::title_field(l, ds)?;
+    let v = ds.value(f.row, k).to_string();
+    (v != "<Null>").then(|| (l.display_name.clone(), ds.fields[k].name.clone(), v))
+}
+
+/// The answer, once it arrives.
+pub fn poll(shell: &mut Shell) {
+    let Some(turn) = shell.ask.pending.as_ref().and_then(|p| p.rx.try_recv().ok()) else { return };
+    let Some(p) = shell.ask.pending.take() else { return };
+    let seconds = p.started.elapsed().as_secs_f64();
+    shell.ask.spent_usd += turn.usage.cost_usd;
+    log::info!(
+        "ask: {} model call(s), {} + {} tokens, US${:.4}, {seconds:.1} s",
+        turn.usage.calls,
+        turn.usage.prompt_tokens,
+        turn.usage.completion_tokens,
+        turn.usage.cost_usd
+    );
+    if p.control.is_cancelled() {
+        return;
+    }
+    shell.ask.conversation.clear();
+    shell.ask.shown = Some(match turn.answer {
+        Ok(Answer::Plan(plan)) => {
+            shell.ws.preview_plan(Some(&plan));
+            Shown::Plan { request: p.request, plan, usage: turn.usage, seconds }
+        }
+        Ok(Answer::Question { text, choices }) => {
+            shell.ask.conversation = turn.messages;
+            shell.ask.focus = true;
+            Shown::Question { text, choices }
+        }
+        Ok(Answer::CannotDo(text)) => Shown::Message { text: format!("I can't answer that with these layers: {text}"), warning: false },
+        Err(e) => {
+            if e.contains("key was refused") {
+                shell.ask.key_draft = Some(String::new());
+                shell.ask.key_error = Some(e.clone());
+                shell.ask.waiting = Some(p.request);
+            }
+            Shown::Message { text: e, warning: true }
+        }
+    });
+}
+
+fn discard(shell: &mut Shell) {
+    if matches!(shell.ask.shown, Some(Shown::Plan { .. })) {
+        shell.ws.preview_plan(None);
+    }
+    shell.ask.shown = None;
+}
+
+/// Keeps the plan shown (the Keep button, and scripts).
+pub fn keep_shown(shell: &mut Shell) {
+    keep(shell);
+}
+
+fn keep(shell: &mut Shell) {
+    let Some(Shown::Plan { request, plan, .. }) = shell.ask.shown.take() else { return };
+    let label = format!("Ask: {}", short(&request, 48));
+    if shell.ws.keep_plan(label, &plan) {
+        shell.ask.history.push(request);
+    } else {
+        shell.ask.shown = Some(Shown::Message { text: "The plan couldn't be kept; nothing changed.".into(), warning: true });
+        shell.ws.preview_plan(None);
+    }
+}
+
+fn short(s: &str, n: usize) -> String {
+    if s.chars().count() <= n { s.to_string() } else { format!("{}…", s.chars().take(n - 1).collect::<String>()) }
+}
+
+/// One step of a plan in words.
+fn step_words(o: &StepOutcome) -> Option<String> {
+    match o {
+        StepOutcome::Filtered { layer, shown, of, filter } => Some(format!(
+            "Show only {layer} where {}: {} of {}",
+            lm_ask::context::filter_text(filter),
+            lm_ask::context::thousands(*shown),
+            lm_ask::context::thousands(*of)
+        )),
+        StepOutcome::NewLayer { name, .. } => Some(format!("New layer: {name}")),
+        StepOutcome::NewFields { layer, fields, .. } => Some(format!("Add {} to {layer}", fields.join(", "))),
+        StepOutcome::Card { card, .. } => Some(card.title.clone()),
+        StepOutcome::Display | StepOutcome::Asked(_) | StepOutcome::Refused(_) => None,
+    }
+}
+
+/// The box and what it shows, at the bottom of `map` between the side panels.
+pub fn ask_box(shell: &mut Shell, ui: &mut Ui, map: egui::Rect) {
+    if !shell.pro {
+        return;
+    }
+    let t = *shell.theme();
+    let (left, right) = shell.panel_insets();
+    let x0 = map.left() + left + theme::PANEL_MARGIN;
+    let x1 = map.right() - right - theme::PANEL_MARGIN;
+    let width = (x1 - x0).min(MAX_WIDTH);
+    if width < 240.0 {
+        return;
+    }
+    let bottom = egui::pos2((x0 + x1) / 2.0, map.bottom() - 34.0);
+    egui::Area::new(egui::Id::new("lm-ask")).order(egui::Order::Foreground).pivot(Align2::CENTER_BOTTOM).fixed_pos(bottom).show(
+        ui.ctx(),
+        |ui| {
+            ui.set_width(width);
+            ui.vertical(|ui| {
+                if shell.ask.key_draft.is_some() {
+                    key_prompt(shell, ui, &t, width);
+                    ui.add_space(8.0);
+                } else if shell.ask.shown.is_some() || shell.ask.pending.is_some() {
+                    answer_panel(shell, ui, &t, width, map.height() * 0.55);
+                    ui.add_space(8.0);
+                }
+                field(shell, ui, &t, width);
+            });
+        },
+    );
+}
+
+fn field(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, width: f32) {
+    let empty = shell.ws.doc.layers.is_empty();
+    let hint = if empty {
+        "Open a layer, then ask about it"
+    } else if matches!(shell.ask.shown, Some(Shown::Question { .. })) {
+        "Type your answer, or pick one above"
+    } else {
+        "Ask about your layers"
+    };
+    let frame = egui::Frame::new()
+        .fill(t.surface)
+        .stroke(egui::Stroke::new(1.0, t.border))
+        .corner_radius(egui::CornerRadius::same(22))
+        .inner_margin(egui::Margin::symmetric(14, 6))
+        .shadow(if t.dark {
+            egui::epaint::Shadow::NONE
+        } else {
+            egui::epaint::Shadow { offset: [0, 2], blur: 10, spread: 0, color: egui::Color32::from_black_alpha(36) }
+        });
+    frame.show(ui, |ui| {
+        ui.set_width(width - 28.0);
+        ui.horizontal(|ui| {
+            ui.label(RichText::new(icon::SPARKLE).font(theme::icon_font(18.0)).color(t.accent));
+            let busy = shell.ask.pending.is_some();
+            let edit = egui::TextEdit::singleline(&mut shell.ask.text)
+                .hint_text(hint)
+                .frame(egui::Frame::NONE)
+                .font(theme::regular(BODY))
+                .desired_width(width - 28.0 - 24.0 - 2.0 * 34.0 - 16.0)
+                .id(egui::Id::new("lm-ask-field"));
+            let r = ui.add_enabled(!busy && !empty, edit);
+            if shell.ask.focus {
+                r.request_focus();
+                shell.ask.focus = false;
+            }
+            let enter = r.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
+            let mic = ui
+                .add_enabled(!busy && !empty, egui::Button::new(RichText::new(icon::MICROPHONE).font(theme::icon_font(18.0))).frame(false))
+                .on_hover_text("Speak your request (Dictation). You can also press the Dictation key or Fn twice.");
+            if mic.clicked() {
+                r.request_focus();
+                if let Some(start) = shell.start_dictation {
+                    start();
+                }
+            }
+            let send = ui
+                .add_enabled(
+                    !busy && !shell.ask.text.trim().is_empty(),
+                    egui::Button::new(RichText::new(icon::ARROW_CIRCLE_UP).font(theme::icon_font(24.0)).color(t.accent)).frame(false),
+                )
+                .on_hover_text("Ask (Return)");
+            if (enter || send.clicked()) && !shell.ask.text.trim().is_empty() {
+                let text = shell.ask.text.clone();
+                submit(shell, ui.ctx(), text);
+            }
+        });
+    });
+}
+
+fn key_prompt(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, width: f32) {
+    crate::chrome::panel_frame(t).show(ui, |ui| {
+        ui.set_width(width - 2.0 * theme::PANEL_PADDING);
+        ui.label(RichText::new("Connect the assistant").font(semibold(HEADLINE)));
+        ui.add_space(4.0);
+        ui.label(
+            RichText::new(
+                "This test build talks to OpenRouter. Paste your OpenRouter key once: it's saved in this Mac's keychain, never in a file.",
+            )
+            .color(t.text_secondary),
+        );
+        ui.add_space(8.0);
+        let draft = shell.ask.key_draft.get_or_insert_with(String::new);
+        let r = ui.add(egui::TextEdit::singleline(draft).password(true).hint_text("sk-or-…").desired_width(f32::INFINITY));
+        if let Some(e) = &shell.ask.key_error {
+            ui.label(RichText::new(e).size(CAPTION).color(t.warning));
+        }
+        ui.add_space(8.0);
+        ui.horizontal(|ui| {
+            let save = ui.button("Save key").clicked() || (r.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)));
+            if ui.button("Cancel").clicked() {
+                shell.ask.key_draft = None;
+                shell.ask.key_error = None;
+                shell.ask.waiting = None;
+                return;
+            }
+            if save {
+                let key = shell.ask.key_draft.clone().unwrap_or_default();
+                #[cfg(not(target_arch = "wasm32"))]
+                let saved = lm_ask::openrouter::save_key(&key);
+                #[cfg(target_arch = "wasm32")]
+                let saved: Result<(), String> = Err(String::new());
+                match saved {
+                    Ok(()) => {
+                        shell.ask.key_draft = None;
+                        shell.ask.key_error = None;
+                        if let Some(text) = shell.ask.waiting.take() {
+                            submit(shell, ui.ctx(), text);
+                        }
+                    }
+                    Err(e) => shell.ask.key_error = Some(e),
+                }
+            }
+        });
+    });
+}
+
+fn answer_panel(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, width: f32, max_h: f32) {
+    crate::chrome::panel_frame(t).show(ui, |ui| {
+        ui.set_width(width - 2.0 * theme::PANEL_PADDING);
+        if let Some(request) = shell.ask.pending.as_ref().map(|p| p.request.clone()) {
+            ui.horizontal(|ui| {
+                ui.spinner();
+                ui.label(RichText::new(format!("Planning “{}”…", short(&request, 60))).color(t.text_secondary));
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    if ui.button("Cancel").clicked() {
+                        shell.ask.escape();
+                    }
+                });
+            });
+            return;
+        }
+        let mut action = None;
+        let mut pick = None;
+        let shown = shell.ask.shown.take();
+        egui::ScrollArea::vertical().max_height(max_h).auto_shrink([false, true]).show(ui, |ui| match &shown {
+            Some(Shown::Plan { request, plan, usage, seconds }) => {
+                ui.label(RichText::new(request).font(semibold(HEADLINE)));
+                ui.add_space(6.0);
+                let words: Vec<String> = plan.outcomes.iter().filter_map(step_words).collect();
+                for (i, w) in words.iter().enumerate() {
+                    ui.label(RichText::new(format!("{}. {w}", i + 1)).size(BODY));
+                }
+                if plan.layers.iter().any(|l| l.alias.is_some()) {
+                    ui.label(RichText::new("Preview on the map — not saved").size(CAPTION).color(t.text_secondary));
+                }
+                for n in &plan.notes {
+                    ui.label(RichText::new(n).size(CAPTION).color(t.warning));
+                }
+                let cards: Vec<(lm_core::recipe::ResultCard, String)> = plan
+                    .outcomes
+                    .iter()
+                    .filter_map(|o| match o {
+                        StepOutcome::Card { card, recipe, .. } => Some(((**card).clone(), recipe.text())),
+                        StepOutcome::NewLayer { card, recipe, .. } => Some(((**card).clone(), recipe.text())),
+                        _ => None,
+                    })
+                    .collect();
+                let caption = format!(
+                    "{} model call{} · US${:.4} · {seconds:.1} s",
+                    usage.calls,
+                    if usage.calls == 1 { "" } else { "s" },
+                    usage.cost_usd
+                );
+                for (card, recipe) in cards {
+                    ui.add_space(10.0);
+                    crate::analysis::result_card(shell, ui, t, &card, &recipe, None);
+                }
+                ui.add_space(10.0);
+                ui.horizontal(|ui| {
+                    if ui.add(egui::Button::new(RichText::new("Keep").color(egui::Color32::WHITE)).fill(t.accent)).clicked() {
+                        action = Some(true);
+                    }
+                    if ui.button("Discard").clicked() {
+                        action = Some(false);
+                    }
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        ui.label(RichText::new(caption).size(CAPTION).color(t.text_secondary));
+                    });
+                });
+            }
+            Some(Shown::Question { text, choices }) => {
+                ui.label(RichText::new(text).size(BODY));
+                ui.add_space(6.0);
+                ui.horizontal_wrapped(|ui| {
+                    for c in choices {
+                        if ui.button(c).clicked() {
+                            pick = Some(c.clone());
+                        }
+                    }
+                });
+            }
+            Some(Shown::Message { text, warning }) => {
+                ui.label(RichText::new(text).color(if *warning { t.warning } else { t.text_primary }));
+                ui.add_space(6.0);
+                if ui.button("OK").clicked() {
+                    action = Some(false);
+                }
+            }
+            None => {}
+        });
+        shell.ask.shown = shown;
+        match action {
+            Some(true) => keep(shell),
+            Some(false) => discard(shell),
+            None => {}
+        }
+        if let Some(c) = pick {
+            submit(shell, ui.ctx(), c);
+        }
+        ui.allocate_space(vec2(0.0, 0.0));
+    });
+}
