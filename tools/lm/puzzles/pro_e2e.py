@@ -349,7 +349,9 @@ EXTRA_RULES = """11. Numbers in the request: "at least", "or more", "or warmer",
 12. Which action gives which value: a raster's value at each point -> add_raster_values; details of the area each object lies in (its country, continent, country population) -> join_by_location; distance to the nearest object of another layer -> nearest_distance; distance to the nearest other object of the same layer -> nearest_other; a value computed from two values (a difference, a ratio) -> calculate_field; one object per island or part of a multi-part area -> split_parts; area, length and coordinates -> add_measurements; places where raster conditions hold -> find_where; the part of a layer inside some areas -> keep_inside; the objects of a layer inside one area -> whats_inside.
 13. Steps that add values fill them only for the objects shown at that moment; hidden objects stay blank. To answer "which one", end the plan with the filter that leaves only the objects meeting every condition.
 14. Well-known geographic terms have standard definitions: use them without asking. Tropical / in the tropics: latitude between -23.44 and 23.44; northern / southern hemisphere: latitude above / below 0; Arctic: latitude at least 66.56; Antarctic: latitude at most -66.56; a latitude needs the layer's latitude field (add_measurements adds one).
-15. "Which <point> has the highest / lowest <raster value>" (the coldest city, the wettest hospital) asks about the points themselves: add_raster_values to the points, then rank_by_value on that field (order "lowest" for the lowest, coldest, driest, least). summarize_each is for areas (each country's average), never for "which city"."""
+15. "Which <point> has the highest / lowest <raster value>" (the coldest city, the wettest hospital) asks about the points themselves: add_raster_values to the points, then rank_by_value on that field (order "lowest" for the lowest, coldest, driest, least). summarize_each is for areas (each country's average), never for "which city".
+16. Typhoon, hurricane and cyclone name the same kind of storm (a tropical cyclone) in different oceans: a layer of storm or cyclone tracks holds them all, so use it as it is unless the user names a strength or basin. "Hit by", "affected by", "near" or "around" without a distance: pick a sensible one rather than asking (about 100 km for storms, 50 km for earthquakes, 1 km within a city), since the plan shows it and the user can change it.
+17. "Which <point> has the most <things> near it" (the city with the most storms within 100 km, the hospital with the most rivers nearby): buffer the points with merge false, count_in the things in that buffer layer ("#k"), then rank_by_value on the count. Points from a built-in layer (World cities) work the same way."""
 
 EXTRA_MAP = """More example layers on the same invented map: Temperature: raster, °C. Lakes: areas, 1 object with many parts; fields name (text)."""
 
@@ -372,6 +374,10 @@ EXTRA_EXAMPLES = [
     ("Which hospital gets the least rain?", [],
      ['add_raster_values(raster="Rainfall", points="Hospitals")',
       'rank_by_value(layer="Hospitals", field="Rainfall", order="lowest")']),
+    ("Which hospital has the most rivers within 5 km?", [],
+     ['buffer(layer="Hospitals", distance="5 km", merge=false)',
+      'count_in(points="Rivers", areas="#1")',
+      'rank_by_value(layer="#2", field="rivers")']),
     ("Which hospitals are more than 3 km from any other hospital?", [],
      ['nearest_other(layer="Hospitals")',
       'filter(layer="Hospitals", conditions=[{field: "km to nearest other hospital", op: "above", value: "3"}])']),

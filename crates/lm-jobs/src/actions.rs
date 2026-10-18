@@ -531,8 +531,10 @@ fn range_words(lo: f64, hi: f64) -> String {
 fn count_in(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
     let (pts_in, areas_in) = (plan.input(0)?, plan.input(1)?);
     let (pts, _) = pts_in.scoped()?;
-    // Areas and lines (islands, roads) are counted by a point inside each: their label point.
-    let by_point_inside = matches!(pts_in.layer.profile.kind, LayerKind::Areas | LayerKind::Lines);
+    // Areas (islands) are counted by a point inside each: their label point. Lines (storm tracks,
+    // rivers) count once in every area they pass through or touch.
+    let lines = pts_in.layer.profile.kind == LayerKind::Lines;
+    let by_point_inside = pts_in.layer.profile.kind == LayerKind::Areas;
     let pts = if by_point_inside { Arc::new(label_points(&pts)) } else { pts };
     let (areas, area_rows) = areas_in.scoped()?;
     let stat = plan.param("stat").unwrap_or("count");
@@ -544,7 +546,7 @@ fn count_in(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
             stat_label(POINT_STATS, stat).to_lowercase()
         )));
     }
-    let r = overlay::count_points_in_areas(&pts, &areas, ctl)?;
+    let r = if lines { overlay::count_lines_in_areas(&pts, &areas, ctl)? } else { overlay::count_points_in_areas(&pts, &areas, ctl)? };
     let things = pts_in.plural_noun();
     let area_one = areas_in.singular_noun();
     let each = areas_in.each();
@@ -614,6 +616,9 @@ fn count_in(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
     let summary =
         format!("{} · {range} {summary_what} · {} with none", areas_in.things(areas.features.len() as u64), group_thousands(none));
     let mut decisions = Vec::new();
+    if lines {
+        decisions.push(format!("each of the {things} counts once in every {area_one} it passes through or touches"));
+    }
     if by_point_inside {
         decisions.push(format!(
             "each of the {things} counts by one point inside it (its label point), in the {} that holds that point",
@@ -623,7 +628,7 @@ fn count_in(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
     if let Some(f) = value_field {
         decisions.push(format!("{} of {f} over the {things} in each {area_one}", stat_label(POINT_STATS, stat).to_lowercase()));
     }
-    if r.counted_more_than_once > 0 {
+    if r.counted_more_than_once > 0 && !lines {
         decisions.push(format!(
             "overlapping {} each count their points ({} counted more than once)",
             plural(&area_one),
