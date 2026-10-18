@@ -72,6 +72,37 @@ pub fn layer_summary(l: &ImportedLayer) -> Value {
     {
         m.insert("bands".into(), Value::Array(bands));
     }
+    // A grid's variables, time axis and lines (WP6.12).
+    if let Some(g) = &p.grid
+        && let Some(m) = out.as_object_mut()
+    {
+        let variables: Vec<Value> = g
+            .variables
+            .iter()
+            .map(|v| {
+                json!({
+                    "name": v.name,
+                    "label": v.label(),
+                    "time": v.time,
+                    "levels": v.levels.as_ref().map(|l| l.values.iter().map(|x| round6(*x)).collect::<Vec<_>>()),
+                })
+            })
+            .collect();
+        m.insert(
+            "grid".into(),
+            json!({
+                "variables": variables,
+                "shown": g.variable,
+                "level": g.level,
+                "steps": g.steps(),
+                "first": g.date_label(0),
+                "last": g.date_label(g.steps().saturating_sub(1)),
+                "lines": g.lines,
+                "range": g.range.map(|(a, b)| vec![round6(a), round6(b)]),
+                "sampled": g.sampled,
+            }),
+        );
+    }
     out
 }
 

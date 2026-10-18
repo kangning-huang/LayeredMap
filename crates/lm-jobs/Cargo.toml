@@ -26,6 +26,8 @@ tiff = { workspace = true }
 roxmltree = { workspace = true }
 # The data library's checksums (WP5.4).
 sha2 = { workspace = true }
+# NetCDF grids (import::netcdf, WP6.12): pure Rust, MIT OR Apache-2.0.
+netcdf-reader = { workspace = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 # Settling a copy of a GeoPackage whose changes are still in its -wal or -journal (import::gpkg).

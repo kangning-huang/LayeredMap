@@ -1,13 +1,15 @@
 //! Map images at an exact output size (WP5.3). The map is drawn offscreen by RustGIS's CPU
 //! renderer at the export's own pixel size (never a screenshot of the window), waiting for its
-//! tiles; then the sheet — title, legend, scale bar, caption and credits — is drawn around it with
-//! the app's fonts. The export sheet's preview is the same drawing at a smaller scale, so what the
-//! preview shows is what is saved.
+//! tiles; then the sheet — title, legend, scale bar, north arrow, latitude/longitude frame, caption
+//! and credits — is drawn around it with the app's fonts. [`plan`] lays the map out automatically:
+//! it frames the data and picks the furniture by the map's ground width. The export sheet's
+//! preview is the same drawing at a smaller scale, so what the preview shows is what is saved.
 //!
 //! Everything is laid out in points; `ppp` (pixels per point) turns points into the output's
 //! pixels. The output is PNG; [`encode_pdf`] wraps the same pixels in a page for Phase 6.
 
 use ab_glyph::{Font, FontArc, FontRef, GlyphId, PxScale, ScaleFont};
+use rustgis_geom::Extent;
 use rustgis_map::Map;
 use rustgis_map::camera::Camera;
 pub use rustgis_render::Pixmap;
@@ -135,6 +137,17 @@ pub struct Sheet {
     pub scale: Option<(f32, String)>,
     /// The map's ground colour, under area swatches (their fills are translucent on the map too).
     pub ground: [u8; 4],
+    pub north_arrow: bool,
+    /// Latitude and longitude on a frame around the map; `None`: the map reaches the edges.
+    pub graticule: Option<Graticule>,
+}
+
+/// The latitude and longitude frame: the map's camera (to place the ticks) and whether faint grid
+/// lines cross the map.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Graticule {
+    pub camera: Camera,
+    pub grid: bool,
 }
 
 impl Sheet {
@@ -160,12 +173,15 @@ pub struct Layout {
     pub footer: Area,
     pub legend: Option<Area>,
     pub scale: Option<Area>,
+    pub north: Option<Area>,
 }
 
-/// The map's part of a sheet `size` points large, with or without a title band.
-pub fn map_area(size: (f32, f32), has_title: bool) -> Area {
+/// The map's part of a sheet `size` points large, with or without a title band, and `framed`
+/// (inset for the latitude and longitude labels around it) or reaching the sheet's edges.
+pub fn map_area(size: (f32, f32), has_title: bool, framed: bool) -> Area {
     let top = if has_title { TITLE_BAND } else { 0.0 };
-    Area::new(0.0, top, size.0, (size.1 - top - FOOTER).max(1.0))
+    let (sx, sy) = if framed { (FRAME_SIDE, FRAME_TB) } else { (0.0, 0.0) };
+    Area::new(sx, top + sy, (size.0 - 2.0 * sx).max(1.0), (size.1 - top - FOOTER - 2.0 * sy).max(1.0))
 }
 
 /// The map area in whole pixels at `ppp`: the size the map is rendered at.
@@ -179,6 +195,305 @@ pub fn fit_camera(center: rustgis_geom::Coord, res: f64, seen: (f32, f32), area:
     let k = (f64::from(seen.0) / f64::from(area.0.max(1.0))).max(f64::from(seen.1) / f64::from(area.1.max(1.0)));
     let k = if k.is_finite() && k > 0.0 { k } else { 1.0 };
     Camera { center, res: res * k }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Automatic layout (WP5.3 › Automatic layout): what frames the map, and which furniture it gets
+
+/// Up to this ground width across the map's centre (km) — a city, a province — the map gets a north
+/// arrow and a scale bar: one scale holds across it to within a few per cent.
+pub const ARROW_MAX_KM: f64 = 1_500.0;
+/// Above this width (km) — a continent, the world — only latitude and longitude on the frame: no
+/// one scale bar is right (Mercator scale doubles between the equator and 60°), and on a web map
+/// north is up everywhere, so an arrow adds nothing.
+pub const LABELS_ONLY_KM: f64 = 7_000.0;
+/// Between the two widths (a country such as China or the United States), latitude and longitude
+/// on the frame, plus a scale bar only when the map spans less latitude than this (degrees). Over
+/// it, Mercator scale differs by about 1.4× from the map's bottom edge to its top, so one bar
+/// misleads. The test is strict: a map spanning 28° or more gets no bar. 28° and 7,000 km (owner's
+/// decision, 2026-10-18) keep a scale bar on a map of the contiguous United States (about 27° and
+/// 6,300 km with the margin).
+pub const SCALE_MAX_LAT_SPAN: f64 = 28.0;
+/// The margin around the data when the map fits it, as a share of the data's size on each side.
+pub const FIT_MARGIN: f64 = 0.05;
+/// The frame labels' text size, and the margins a framed map keeps for them: above and below
+/// (longitudes) and at the sides (latitudes, up to "85.25°N" wide).
+pub const FRAME_TEXT: f32 = 10.0;
+pub const FRAME_TB: f32 = 20.0;
+pub const FRAME_SIDE: f32 = 44.0;
+/// The tick marks' length, pointing into the map from the frame (points).
+const TICK: f32 = 4.0;
+/// The frame's neatline and ticks: a soft near-black, quieter than the text.
+const NEATLINE: [u8; 4] = [0x3A, 0x3F, 0x47, 0xFF];
+/// Grid lines across the map: faint, so they never compete with the data.
+const GRID: [u8; 4] = [0x1B, 0x1D, 0x21, 0x38];
+/// The north arrow's card (points).
+pub const ARROW_CARD: (f32, f32) = (28.0, 52.0);
+/// The intervals the frame labels may use (degrees).
+/// 60° keeps a world map to six longitudes (owner's decision, 2026-10-18).
+pub const STEPS: [f64; 10] = [0.1, 0.25, 0.5, 1.0, 2.0, 5.0, 10.0, 15.0, 30.0, 60.0];
+/// Half the Web Mercator world's width, metres.
+const HALF_WORLD: f64 = std::f64::consts::PI * rustgis_geom::MERCATOR_R;
+
+/// An element of the map's furniture: as the rules say, always, or never.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum Show {
+    #[default]
+    Auto,
+    On,
+    Off,
+}
+
+impl Show {
+    pub const ALL: [Show; 3] = [Show::Auto, Show::On, Show::Off];
+
+    pub fn label(self) -> &'static str {
+        match self {
+            Show::Auto => "Auto",
+            Show::On => "On",
+            Show::Off => "Off",
+        }
+    }
+
+    /// Whether the element is drawn, the rules saying `auto`.
+    pub fn resolve(self, auto: bool) -> bool {
+        match self {
+            Show::Auto => auto,
+            Show::On => true,
+            Show::Off => false,
+        }
+    }
+}
+
+/// Which furniture the map carries.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct Furniture {
+    pub north_arrow: bool,
+    pub scale_bar: bool,
+    /// Latitude and longitude labels on a frame around the map.
+    pub labels: bool,
+}
+
+/// The user's choices over the rules.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct Overrides {
+    pub north_arrow: Show,
+    pub scale_bar: Show,
+    pub labels: Show,
+}
+
+impl Overrides {
+    pub fn apply(&self, auto: Furniture) -> Furniture {
+        Furniture {
+            north_arrow: self.north_arrow.resolve(auto.north_arrow),
+            scale_bar: self.scale_bar.resolve(auto.scale_bar),
+            labels: self.labels.resolve(auto.labels),
+        }
+    }
+}
+
+/// The furniture the rules give a map `width_km` across its centre and spanning `lat_span`
+/// degrees of latitude.
+pub fn auto_furniture(width_km: f64, lat_span: f64) -> Furniture {
+    if width_km <= ARROW_MAX_KM {
+        Furniture { north_arrow: true, scale_bar: true, labels: false }
+    } else if width_km <= LABELS_ONLY_KM {
+        Furniture { north_arrow: false, scale_bar: lat_span < SCALE_MAX_LAT_SPAN, labels: true }
+    } else {
+        Furniture { north_arrow: false, scale_bar: false, labels: true }
+    }
+}
+
+/// The ground distance (km) across a map `w` points wide, along its centre's latitude: the
+/// Mercator resolution there shrunk by cos(latitude).
+pub fn ground_width_km(camera: Camera, w: f32) -> f64 {
+    let lat = rustgis_geom::merc_to_lonlat(camera.center).y.clamp(-rustgis_geom::MAX_LAT, rustgis_geom::MAX_LAT);
+    f64::from(w) * camera.res * lat.to_radians().cos() / 1000.0
+}
+
+/// The longitudes at a `w` × `h` point map's left and right edges, kept within ±180°.
+pub fn lon_range(camera: Camera, size: (f32, f32)) -> (f64, f64) {
+    let (w, h) = (f64::from(size.0), f64::from(size.1));
+    let lon = |sx: f64| rustgis_geom::merc_to_lonlat(camera.to_map(sx, h / 2.0, w, h)).x.clamp(-180.0, 180.0);
+    (lon(0.0), lon(w))
+}
+
+/// The latitudes at a `w` × `h` point map's bottom and top edges.
+pub fn lat_range(camera: Camera, size: (f32, f32)) -> (f64, f64) {
+    let (w, h) = (f64::from(size.0), f64::from(size.1));
+    let lat =
+        |sy: f64| rustgis_geom::merc_to_lonlat(camera.to_map(w / 2.0, sy, w, h)).y.clamp(-rustgis_geom::MAX_LAT, rustgis_geom::MAX_LAT);
+    (lat(h), lat(0.0))
+}
+
+/// The lon/lat extent of the visible data: the union of `boxes` (lon/lat), kept within the world.
+/// The map draws data once, between −180° and 180°, so data crossing the antimeridian (spanning
+/// both ends) gets the world's whole width, with its own latitudes.
+pub fn data_extent(boxes: impl IntoIterator<Item = Extent>) -> Option<Extent> {
+    let mut all = Extent::EMPTY;
+    for b in boxes {
+        if [b.min_x, b.min_y, b.max_x, b.max_y].iter().all(|v| v.is_finite()) && b.min_x <= b.max_x && b.min_y <= b.max_y {
+            all = all.union(&b);
+        }
+    }
+    if all.is_empty() {
+        return None;
+    }
+    let lat = rustgis_geom::MAX_LAT;
+    Some(Extent::new(
+        all.min_x.clamp(-180.0, 180.0),
+        all.min_y.clamp(-lat, lat),
+        all.max_x.clamp(-180.0, 180.0),
+        all.max_y.clamp(-lat, lat),
+    ))
+}
+
+/// The camera that shows the lon/lat extent `e` whole in an area `area` points large, with
+/// [`FIT_MARGIN`] around it: a point or a tiny area stops at street level (zoom 16), and the map
+/// is never more than one world across, nor past a pole.
+pub fn fit_extent(e: &Extent, area: (f32, f32)) -> Camera {
+    let (w, h) = (f64::from(area.0.max(1.0)), f64::from(area.1.max(1.0)));
+    let m = rustgis_geom::extent_to_merc(e);
+    let pad = 1.0 + 2.0 * FIT_MARGIN;
+    let res = (m.width() * pad / w).max(m.height() * pad / h);
+    let street = crate::camera::res_of(16.0);
+    let res = if res.is_finite() { res.max(street) } else { street };
+    let mut cam = Camera { center: m.center(), res: res.min(2.0 * HALF_WORLD / w) };
+    if !cam.center.is_finite() {
+        cam.center = rustgis_geom::Coord::new(0.0, 0.0);
+    }
+    crate::camera::clamp(&mut cam, w, h);
+    let lim_x = (HALF_WORLD - w / 2.0 * cam.res).max(0.0);
+    cam.center.x = cam.center.x.clamp(-lim_x, lim_x);
+    cam
+}
+
+/// What frames the exported map.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Framing {
+    /// The visible data's lon/lat extent ([`data_extent`]), with a margin.
+    Data(Extent),
+    /// The view the user saw: `center` and `res` over `seen` points.
+    View { center: rustgis_geom::Coord, res: f64, seen: (f32, f32) },
+}
+
+impl Framing {
+    /// The camera for a map area `area` points large.
+    pub fn camera(&self, area: (f32, f32)) -> Camera {
+        match *self {
+            Framing::Data(e) => fit_extent(&e, area),
+            Framing::View { center, res, seen } => fit_camera(center, res, seen, area),
+        }
+    }
+}
+
+/// The map's place on the sheet, its camera and its furniture.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Plan {
+    pub area: Area,
+    pub camera: Camera,
+    pub furniture: Furniture,
+    /// What the rules alone give.
+    pub auto: Furniture,
+    /// The ground width across the centre (km) and the latitude span (degrees) the rules read.
+    pub width_km: f64,
+    pub lat_span: f64,
+}
+
+/// Plans the map on a sheet `size` points large: framed by `framing`, its furniture chosen by the
+/// rules ([`auto_furniture`]) unless `overrides` say otherwise. The rules read the map as it would
+/// be without a frame, so taking the labels' margin never flips the choice.
+pub fn plan(size: (f32, f32), has_title: bool, framing: &Framing, overrides: Overrides) -> Plan {
+    let open = map_area(size, has_title, false);
+    let cam = framing.camera((open.w, open.h));
+    let width_km = ground_width_km(cam, open.w);
+    let (south, north) = lat_range(cam, (open.w, open.h));
+    let auto = auto_furniture(width_km, north - south);
+    let furniture = overrides.apply(auto);
+    let area = map_area(size, has_title, furniture.labels);
+    let camera = if furniture.labels { framing.camera((area.w, area.h)) } else { cam };
+    Plan { area, camera, furniture, auto, width_km, lat_span: north - south }
+}
+
+/// The multiples of `step` from `lo` to `hi`.
+pub fn ticks(lo: f64, hi: f64, step: f64) -> Vec<f64> {
+    if step.is_nan() || step <= 0.0 || !lo.is_finite() || !hi.is_finite() || hi < lo {
+        return Vec::new();
+    }
+    let (k0, k1) = ((lo / step - 1e-9).ceil() as i64, (hi / step + 1e-9).floor() as i64);
+    // Rounded to the step's decimals, so 0.1 × 3 reads 0.3, and never −0.
+    (k0..=k1.min(k0 + 10_000)).map(|k| ((k as f64 * step) * 1e6).round() / 1e6 + 0.0).collect()
+}
+
+/// The label interval for a side spanning `lo` to `hi` degrees: the finest of [`STEPS`] giving it
+/// 3–6 labels, else the finest giving at most 6, else the coarsest (30°: the world's 360° gets 13).
+pub fn graticule_step(lo: f64, hi: f64) -> f64 {
+    let n = |s: f64| ticks(lo, hi, s).len();
+    STEPS
+        .iter()
+        .copied()
+        .find(|s| (3..=6).contains(&n(*s)))
+        .or_else(|| STEPS.iter().copied().find(|s| n(*s) <= 6))
+        .unwrap_or(STEPS[STEPS.len() - 1])
+}
+
+/// A frame label: "30°N", "0°", "120°E", "15°S", "180°", with the decimals `step` needs.
+pub fn degree_label(v: f64, step: f64, lat: bool) -> String {
+    let decimals = if step >= 1.0 - 1e-9 {
+        0
+    } else if ((step * 10.0) - (step * 10.0).round()).abs() < 1e-6 {
+        1
+    } else {
+        2
+    };
+    let a = v.abs();
+    let num = format!("{a:.decimals$}");
+    let zero = a < 0.5 * 10f64.powi(-(decimals as i32));
+    if zero {
+        return "0°".into();
+    }
+    if !lat && (a - 180.0).abs() < 1e-9 {
+        return "180°".into();
+    }
+    let hemi = match (lat, v > 0.0) {
+        (true, true) => 'N',
+        (true, false) => 'S',
+        (false, true) => 'E',
+        (false, false) => 'W',
+    };
+    format!("{num}°{hemi}")
+}
+
+/// Where the frame's ticks fall, in points from the map area's top-left corner.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct FrameTicks {
+    pub lon_step: f64,
+    pub lat_step: f64,
+    /// Longitudes and their x along the top and bottom edges.
+    pub lons: Vec<(f64, f32)>,
+    /// Latitudes and their y along the sides: Mercator, so not evenly spaced.
+    pub lats: Vec<(f64, f32)>,
+}
+
+/// The ticks for a map `size` points large seen through `camera`; ticks within a point of a corner
+/// are left out (they would sit on the neatline's corner).
+pub fn frame_ticks(camera: Camera, size: (f32, f32)) -> FrameTicks {
+    let (w, h) = (f64::from(size.0), f64::from(size.1));
+    let (west, east) = lon_range(camera, size);
+    let (south, north) = lat_range(camera, size);
+    let (lon_step, lat_step) = (graticule_step(west, east), graticule_step(south, north));
+    let screen = |lon: f64, lat: f64| camera.to_screen(rustgis_geom::lonlat_to_merc(rustgis_geom::Coord::new(lon, lat)), w, h);
+    let lons = ticks(west, east, lon_step)
+        .into_iter()
+        .map(|lon| (lon, screen(lon, 0.0).0 as f32))
+        .filter(|(_, x)| *x > 1.0 && *x < size.0 - 1.0)
+        .collect();
+    let lats = ticks(south, north, lat_step)
+        .into_iter()
+        .map(|lat| (lat, screen(0.0, lat).1 as f32))
+        .filter(|(_, y)| *y > 1.0 && *y < size.1 - 1.0)
+        .collect();
+    FrameTicks { lon_step, lat_step, lons, lats }
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -635,9 +950,9 @@ pub fn layout(sheet: &Sheet, fonts: &Fonts, occupancy: Option<&Occupancy>) -> La
 fn layout_with(sheet: &Sheet, face: &Face, occupancy: Option<&Occupancy>) -> Layout {
     let size = sheet.size_pt();
     let has_title = !sheet.title.trim().is_empty();
-    let map = map_area(size, has_title);
+    let map = map_area(size, has_title, sheet.graticule.is_some());
     let title = has_title.then(|| Area::new(0.0, 0.0, size.0, TITLE_BAND));
-    let footer = Area::new(0.0, map.bottom(), size.0, size.1 - map.bottom());
+    let footer = Area::new(0.0, size.1 - FOOTER, size.0, FOOTER);
     let scale = sheet.scale.as_ref().map(|(len, _)| {
         let (w, h) = scale_size(*len);
         Area::new(map.x + MARGIN, map.bottom() - MARGIN - h, w, h)
@@ -656,19 +971,41 @@ fn layout_with(sheet: &Sheet, face: &Face, occupancy: Option<&Occupancy>) -> Lay
             clamp(map.right() - MARGIN - w, map.bottom() - MARGIN - h),
             clamp(map.right() - MARGIN - w, map.y + MARGIN),
         ];
-        let Some(occ) = occupancy else { return candidates[0] };
-        // The first corner (bottom left first) with almost no data, else the least covered.
-        candidates.iter().find(|c| occ.share(map, **c) < 0.03).copied().unwrap_or_else(|| {
-            let mut best = candidates[0];
-            for c in &candidates[1..] {
-                if occ.share(map, *c) < occ.share(map, best) - 0.05 {
-                    best = *c;
-                }
-            }
-            best
-        })
+        clear_corner(&candidates, map, occupancy)
     });
-    Layout { title, map, footer, legend, scale }
+    // The north arrow: top right, else another corner clear of the legend and the scale bar
+    // (preferring one without data).
+    let north = sheet.north_arrow.then(|| {
+        let (w, h) = ARROW_CARD;
+        let corners = [
+            Area::new(map.right() - MARGIN - w, map.y + MARGIN, w, h),
+            Area::new(map.x + MARGIN, map.y + MARGIN, w, h),
+            Area::new(map.right() - MARGIN - w, map.bottom() - MARGIN - h, w, h),
+            Area::new(map.x + MARGIN, map.bottom() - MARGIN - h, w, h),
+        ];
+        let free: Vec<Area> = corners.iter().copied().filter(|c| ![legend, scale].iter().flatten().any(|o| overlaps(c, o))).collect();
+        if free.is_empty() { corners[0] } else { clear_corner(&free, map, occupancy) }
+    });
+    Layout { title, map, footer, legend, scale, north }
+}
+
+fn overlaps(a: &Area, b: &Area) -> bool {
+    a.x < b.right() && b.x < a.right() && a.y < b.bottom() && b.y < a.bottom()
+}
+
+/// The first of `candidates` with almost no data, else the least covered (the first unless
+/// another is clearly better).
+fn clear_corner(candidates: &[Area], map: Area, occupancy: Option<&Occupancy>) -> Area {
+    let Some(occ) = occupancy else { return candidates[0] };
+    candidates.iter().find(|c| occ.share(map, **c) < 0.03).copied().unwrap_or_else(|| {
+        let mut best = candidates[0];
+        for c in &candidates[1..] {
+            if occ.share(map, *c) < occ.share(map, best) - 0.05 {
+                best = *c;
+            }
+        }
+        best
+    })
 }
 
 /// The footer's lines: caption lines and the credits, each with its baseline row (0 or 1).
@@ -706,12 +1043,20 @@ pub fn compose(map: &Pixmap, sheet: &Sheet, fonts: &Fonts, occupancy: Option<&Oc
         let px = TITLE * ppp;
         let text = face.fit(sheet.title.trim(), px, true, (t.w - 2.0 * SIDE) * ppp);
         face.draw(&mut pm, &text, SIDE * ppp, (t.y + t.h / 2.0 + 2.0) * ppp, px, PRIMARY, true);
-        line(&mut pm, (0.0, t.bottom() * ppp), (t.w * ppp, t.bottom() * ppp), ppp.max(1.0), BORDER);
+        // A framed map has its neatline: the band's rule would only double it.
+        if sheet.graticule.is_none() {
+            line(&mut pm, (0.0, t.bottom() * ppp), (t.w * ppp, t.bottom() * ppp), ppp.max(1.0), BORDER);
+        }
     }
     // Footer: caption at the left, credits at the right of the last caption line (or a line of
     // their own when long).
     let f = lay.footer;
-    line(&mut pm, (0.0, f.y * ppp), (f.w * ppp, f.y * ppp), ppp.max(1.0), BORDER);
+    if sheet.graticule.is_none() {
+        line(&mut pm, (0.0, f.y * ppp), (f.w * ppp, f.y * ppp), ppp.max(1.0), BORDER);
+    }
+    if let Some(g) = sheet.graticule.filter(|g| g.grid) {
+        draw_grid(&mut pm, &g, lay.map, ppp);
+    }
     let (caption, credits, credit_row) = footer_lines(&face, sheet, f.w);
     let rows = caption.len().max(credit_row + 1).max(1);
     let top = f.y + (f.h - rows as f32 * LINE) / 2.0;
@@ -735,7 +1080,110 @@ pub fn compose(map: &Pixmap, sheet: &Sheet, fonts: &Fonts, occupancy: Option<&Oc
     if let Some(a) = lay.legend {
         draw_legend(&mut pm, &face, &sheet.legend, a, ppp, sheet.ground);
     }
+    if let Some(a) = lay.north {
+        draw_north(&mut pm, &face, a, ppp);
+    }
+    if let Some(g) = &sheet.graticule {
+        draw_frame(&mut pm, &face, g, lay.map, ppp, sheet.size_pt());
+    }
     Some((pm, lay))
+}
+
+/// Faint grid lines across the map at the frame's ticks.
+fn draw_grid(pm: &mut Pixmap, g: &Graticule, map: Area, ppp: f32) {
+    let t = frame_ticks(g.camera, (map.w, map.h));
+    let w = (0.5 * ppp).max(1.0);
+    for (_, x) in &t.lons {
+        let x = (map.x + x) * ppp;
+        line(pm, (x, map.y * ppp), (x, map.bottom() * ppp), w, GRID);
+    }
+    for (_, y) in &t.lats {
+        let y = (map.y + y) * ppp;
+        line(pm, (map.x * ppp, y), (map.right() * ppp, y), w, GRID);
+    }
+}
+
+/// The frame: a thin neatline around the map, ticks pointing in, longitudes above and below,
+/// latitudes at the sides, each label left out where it would crowd its neighbour or leave the
+/// sheet.
+fn draw_frame(pm: &mut Pixmap, face: &Face, g: &Graticule, map: Area, ppp: f32, sheet: (f32, f32)) {
+    let t = frame_ticks(g.camera, (map.w, map.h));
+    let lw = (0.75 * ppp).max(1.0);
+    if let Some(r) = Rect::from_ltrb(map.x * ppp, map.y * ppp, map.right() * ppp, map.bottom() * ppp) {
+        pm.stroke_path(
+            &PathBuilder::from_rect(r),
+            &paint(NEATLINE),
+            &Stroke { width: lw, ..Stroke::default() },
+            Transform::identity(),
+            None,
+        );
+    }
+    let px = FRAME_TEXT * ppp;
+    let gap = 5.0;
+    let mut last_right = f32::NEG_INFINITY;
+    for (lon, x) in &t.lons {
+        let x = map.x + x;
+        line(pm, (x * ppp, map.y * ppp), (x * ppp, (map.y + TICK) * ppp), lw, NEATLINE);
+        line(pm, (x * ppp, map.bottom() * ppp), (x * ppp, (map.bottom() - TICK) * ppp), lw, NEATLINE);
+        let text = degree_label(*lon, t.lon_step, false);
+        let tw = face.width(&text, FRAME_TEXT, false);
+        let left = x - tw / 2.0;
+        if left < last_right + 8.0 || left < 2.0 || left + tw > sheet.0 - 2.0 {
+            continue;
+        }
+        last_right = left + tw;
+        face.draw(pm, &text, left * ppp, (map.y - FRAME_TB / 2.0) * ppp, px, SECONDARY, false);
+        face.draw(pm, &text, left * ppp, (map.bottom() + FRAME_TB / 2.0) * ppp, px, SECONDARY, false);
+    }
+    let mut last_y = f32::NEG_INFINITY;
+    // Top to bottom, so crowding is judged in reading order.
+    let mut lats = t.lats.clone();
+    lats.sort_by(|a, b| a.1.total_cmp(&b.1));
+    for (lat, y) in &lats {
+        let y = map.y + y;
+        line(pm, (map.x * ppp, y * ppp), ((map.x + TICK) * ppp, y * ppp), lw, NEATLINE);
+        line(pm, (map.right() * ppp, y * ppp), ((map.right() - TICK) * ppp, y * ppp), lw, NEATLINE);
+        if y < last_y + FRAME_TEXT + 4.0 {
+            continue;
+        }
+        last_y = y;
+        let text = degree_label(*lat, t.lat_step, true);
+        let tw = face.width(&text, FRAME_TEXT, false);
+        face.draw(pm, &text, (map.x - gap - tw).max(1.0) * ppp, y * ppp, px, SECONDARY, false);
+        face.draw(pm, &text, (map.right() + gap) * ppp, y * ppp, px, SECONDARY, false);
+    }
+}
+
+/// The north arrow on its card: an "N" over a slender split dart, its west half solid and its east
+/// half open, as on a printed map.
+fn draw_north(pm: &mut Pixmap, face: &Face, a: Area, ppp: f32) {
+    card(pm, a, ppp);
+    let cx = a.x + a.w / 2.0;
+    let px = 11.0 * ppp;
+    let nw = face.width("N", px, true);
+    face.draw(pm, "N", cx * ppp - nw / 2.0, (a.y + 13.0) * ppp, px, PRIMARY, true);
+    let (tip, base, notch, half) = (a.y + 23.0, a.bottom() - 7.0, a.bottom() - 12.5, 7.0);
+    let pt = |x: f32, y: f32| (x * ppp, y * ppp);
+    let shape = |pts: &[(f32, f32)]| {
+        let mut pb = PathBuilder::new();
+        pb.move_to(pts[0].0, pts[0].1);
+        for p in &pts[1..] {
+            pb.line_to(p.0, p.1);
+        }
+        pb.close();
+        pb.finish()
+    };
+    let (t, l, n, r) = (pt(cx, tip), pt(cx - half, base), pt(cx, notch), pt(cx + half, base));
+    if let Some(east) = shape(&[t, r, n]) {
+        pm.fill_path(&east, &paint([0xFF, 0xFF, 0xFF, 0xFF]), FillRule::Winding, Transform::identity(), None);
+    }
+    if let Some(west) = shape(&[t, n, l]) {
+        pm.fill_path(&west, &paint(PRIMARY), FillRule::Winding, Transform::identity(), None);
+    }
+    if let Some(outline) = shape(&[t, r, n, l]) {
+        let stroke = Stroke { width: ppp.max(1.0), line_join: tiny_skia::LineJoin::Round, ..Stroke::default() };
+        pm.stroke_path(&outline, &paint(PRIMARY), &stroke, Transform::identity(), None);
+    }
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -792,6 +1240,8 @@ mod tests {
             legend_at: None,
             scale: Some((100.0, "10 km".into())),
             ground: [0xF6, 0xF5, 0xF1, 0xFF],
+            north_arrow: false,
+            graticule: None,
         }
     }
 
@@ -821,7 +1271,7 @@ mod tests {
     #[test]
     fn the_legend_moves_off_the_data_and_stays_where_dragged() {
         let s = sheet(1080, 1080, 1.5);
-        let map = map_area(s.size_pt(), true);
+        let map = map_area(s.size_pt(), true, false);
         // Data along the whole left half.
         let cols = 48;
         let rows = 48;
@@ -885,10 +1335,7 @@ mod tests {
         assert!(lines[1].ends_with('…'));
         let zh = face.wrap("数据：上海市各区人口与夏季地表温度，由某某大学提供。使用 LayeredMap 制作。", TEXT, false, 120.0, 3);
         assert!(zh.len() >= 2);
-        let s = Sheet {
-            attribution: "Sentinel-2 cloudless by EOX (Copernicus Sentinel data 2024) · Natural Earth".into(),
-            ..sheet(1080, 1080, 1.5)
-        };
+        let s = Sheet { attribution: "NASA Blue Marble (NASA Earth Observatory, GIBS) · Natural Earth".into(), ..sheet(1080, 1080, 1.5) };
         let (_, _, row) = footer_lines(&face, &s, 400.0);
         assert_eq!(row, 1);
     }
@@ -911,6 +1358,201 @@ mod tests {
         // A wide screen view into a tall page: the page zooms out by the width ratio.
         let cam = fit_camera(c, 100.0, (1200.0, 700.0), (600.0, 900.0));
         assert!((cam.res - 200.0).abs() < 1e-9);
+    }
+
+    fn ll(lon: f64, lat: f64) -> rustgis_geom::Coord {
+        rustgis_geom::Coord::new(lon, lat)
+    }
+
+    /// The camera fitting `e` into the slide's open map area, and the rules' reading of it.
+    fn slide_plan(e: Extent) -> Plan {
+        plan((1280.0, 720.0), true, &Framing::Data(e), Overrides::default())
+    }
+
+    #[test]
+    fn the_rules_pick_furniture_by_ground_width() {
+        // The table itself.
+        assert_eq!(auto_furniture(120.0, 1.0), Furniture { north_arrow: true, scale_bar: true, labels: false });
+        assert_eq!(auto_furniture(ARROW_MAX_KM, 12.0), Furniture { north_arrow: true, scale_bar: true, labels: false });
+        assert_eq!(auto_furniture(3_000.0, 20.0), Furniture { north_arrow: false, scale_bar: true, labels: true });
+        assert_eq!(auto_furniture(3_000.0, SCALE_MAX_LAT_SPAN), Furniture { north_arrow: false, scale_bar: false, labels: true });
+        assert_eq!(auto_furniture(LABELS_ONLY_KM + 1.0, 10.0), Furniture { north_arrow: false, scale_bar: false, labels: true });
+        // Shanghai: about 120 km across.
+        let p = slide_plan(Extent::new(120.85, 30.67, 122.2, 31.88));
+        assert!(p.width_km < 400.0, "{}", p.width_km);
+        assert_eq!(p.furniture, Furniture { north_arrow: true, scale_bar: true, labels: false });
+        assert_eq!(p.area, map_area((1280.0, 720.0), true, false));
+        // The contiguous United States (24.5°N–49.4°N): about 27° of latitude with the margin and
+        // 6,300 km across, under both limits, so labels and a scale bar (owner's decision).
+        let us = slide_plan(Extent::new(-124.8, 24.5, -66.9, 49.4));
+        assert!(us.width_km > ARROW_MAX_KM && us.width_km <= LABELS_ONLY_KM, "{}", us.width_km);
+        assert!(us.lat_span < SCALE_MAX_LAT_SPAN, "{}", us.lat_span);
+        assert_eq!(us.furniture, Furniture { north_arrow: false, scale_bar: true, labels: true });
+        assert_eq!(us.area, map_area((1280.0, 720.0), true, true), "framed for its labels");
+        // The same width with less latitude (a band 15° tall) keeps its scale bar.
+        let band = slide_plan(Extent::new(-110.0, 30.0, -80.0, 42.0));
+        assert!(band.width_km > ARROW_MAX_KM && band.width_km <= LABELS_ONLY_KM, "{}", band.width_km);
+        assert_eq!(band.furniture, Furniture { north_arrow: false, scale_bar: true, labels: true });
+        // The world: labels only.
+        let w = slide_plan(Extent::new(-180.0, -60.0, 180.0, 80.0));
+        assert!(w.width_km > LABELS_ONLY_KM);
+        assert_eq!(w.furniture, Furniture { north_arrow: false, scale_bar: false, labels: true });
+        // Overrides win over the rules.
+        let o = Overrides { north_arrow: Show::Off, scale_bar: Show::Auto, labels: Show::On };
+        let p = plan((1280.0, 720.0), true, &Framing::Data(Extent::new(120.85, 30.67, 122.2, 31.88)), o);
+        assert_eq!(p.furniture, Furniture { north_arrow: false, scale_bar: true, labels: true });
+        assert_eq!(p.auto, Furniture { north_arrow: true, scale_bar: true, labels: false });
+    }
+
+    #[test]
+    fn fitting_the_data_contains_every_feature_with_a_margin() {
+        let boxes = [Extent::new(121.2, 31.0, 121.3, 31.1), Extent::new(121.9, 31.5, 121.9, 31.5), Extent::new(120.9, 30.7, 121.0, 30.8)];
+        let e = data_extent(boxes).unwrap();
+        assert_eq!((e.min_x, e.min_y, e.max_x, e.max_y), (120.9, 30.7, 121.9, 31.5));
+        for area in [(1280.0, 608.0), (794.0, 1011.0), (720.0, 608.0)] {
+            let cam = fit_extent(&e, area);
+            let (w, h) = (f64::from(area.0), f64::from(area.1));
+            for b in &boxes {
+                for c in [ll(b.min_x, b.min_y), ll(b.max_x, b.max_y)] {
+                    let (x, y) = cam.to_screen(rustgis_geom::lonlat_to_merc(c), w, h);
+                    assert!(x >= 0.0 && x <= w && y >= 0.0 && y <= h, "{c:?} at {x},{y} outside {area:?}");
+                }
+            }
+            // The tighter side keeps a 5% margin each way: the data fills 1 / 1.1 of it.
+            let m = rustgis_geom::extent_to_merc(&e);
+            let fill = (m.width() / (cam.res * w)).max(m.height() / (cam.res * h));
+            assert!((fill - 1.0 / 1.1).abs() < 1e-6, "{fill}");
+        }
+        // Nothing to fit.
+        assert!(data_extent([Extent::EMPTY]).is_none());
+        // Across the antimeridian (Fiji, the Aleutians): the world's width, the data's latitudes.
+        let e = data_extent([Extent::new(172.0, 51.0, 180.0, 55.0), Extent::new(-180.0, 50.0, -165.0, 54.0)]).unwrap();
+        assert_eq!((e.min_x, e.max_x, e.min_y, e.max_y), (-180.0, 180.0, 50.0, 55.0));
+        let cam = fit_extent(&e, (1280.0, 608.0));
+        assert!(cam.center.x.abs() < 1e-6 && (cam.res * 1280.0 - 2.0 * HALF_WORLD).abs() < 1.0, "one world across");
+        // The whole world, poles and all, in a wide slide: one world across, never past a pole.
+        let cam = fit_extent(&Extent::new(-180.0, -90.0, 180.0, 90.0), (1280.0, 608.0));
+        let (s, n) = lat_range(cam, (1280.0, 608.0));
+        assert!(n <= rustgis_geom::MAX_LAT + 1e-6 && s >= -rustgis_geom::MAX_LAT - 1e-6);
+        assert!(cam.res * 1280.0 <= 2.0 * HALF_WORLD + 1.0);
+        // A lone point stops at street level.
+        let cam = fit_extent(&Extent::new(121.5, 31.2, 121.5, 31.2), (720.0, 600.0));
+        assert!((cam.res - crate::camera::res_of(16.0)).abs() < 1e-9);
+    }
+
+    #[test]
+    fn the_interval_gives_three_to_six_labels_a_side() {
+        assert_eq!(ticks(-0.05, 0.31, 0.1), vec![0.0, 0.1, 0.2, 0.3]);
+        assert_eq!(graticule_step(120.85, 122.2), 0.25);
+        assert_eq!(graticule_step(30.6, 31.9), 0.25);
+        assert_eq!(graticule_step(-130.0, -62.0), 15.0);
+        assert_eq!(graticule_step(22.0, 52.0), 5.0);
+        assert_eq!(graticule_step(-180.0, 180.0), 60.0, "the world: every 60°, six longitudes");
+        assert_eq!(ticks(-180.0, 180.0, 60.0).len(), 7, "-180 to 180 inclusive");
+        assert_eq!(graticule_step(10.0, 10.05), 0.1, "too small for three: the finest");
+        // Over a sweep of spans, every pick but the extremes gives 3–6.
+        for k in 1..400 {
+            let span = 0.35 * 1.02f64.powi(k);
+            if span > 180.0 {
+                break;
+            }
+            let lo = -7.3 + k as f64 * 0.37;
+            let n = ticks(lo, lo + span, graticule_step(lo, lo + span)).len();
+            assert!((2..=6).contains(&n), "span {span} from {lo}: {n} labels");
+        }
+    }
+
+    #[test]
+    fn degree_labels_read_like_an_atlas() {
+        assert_eq!(degree_label(30.0, 10.0, true), "30°N");
+        assert_eq!(degree_label(-15.0, 5.0, true), "15°S");
+        assert_eq!(degree_label(0.0, 5.0, true), "0°");
+        assert_eq!(degree_label(120.0, 30.0, false), "120°E");
+        assert_eq!(degree_label(-75.0, 15.0, false), "75°W");
+        assert_eq!(degree_label(180.0, 30.0, false), "180°");
+        assert_eq!(degree_label(-180.0, 30.0, false), "180°");
+        assert_eq!(degree_label(121.25, 0.25, false), "121.25°E");
+        assert_eq!(degree_label(31.5, 0.5, true), "31.5°N");
+        assert_eq!(degree_label(-0.0, 0.1, true), "0°");
+        assert_eq!(degree_label(0.30000000000000004, 0.1, false), "0.3°E");
+    }
+
+    #[test]
+    fn latitude_ticks_follow_mercator_not_a_straight_line() {
+        let cam = fit_extent(&Extent::new(-124.8, 24.5, -66.9, 49.4), (1192.0, 568.0));
+        let size = (1192.0, 568.0);
+        let t = frame_ticks(cam, size);
+        assert!(t.lats.len() >= 3 && t.lons.len() >= 3, "{t:?}");
+        for (lat, y) in &t.lats {
+            let (_, sy) = cam.to_screen(rustgis_geom::lonlat_to_merc(ll(-100.0, *lat)), 1192.0, 568.0);
+            assert!((f64::from(*y) - sy).abs() < 1e-3, "{lat}: {y} vs {sy}");
+        }
+        for (lon, x) in &t.lons {
+            let (sx, _) = cam.to_screen(rustgis_geom::lonlat_to_merc(ll(*lon, 37.0)), 1192.0, 568.0);
+            assert!((f64::from(*x) - sx).abs() < 1e-3);
+        }
+        // Equal steps of latitude are further apart going north.
+        let gaps: Vec<f32> = t.lats.windows(2).map(|w| (w[0].1 - w[1].1).abs()).collect();
+        assert!(gaps.windows(2).all(|g| g[1] > g[0]), "{gaps:?}");
+        // And not where a linear spread would put them.
+        let (s, n) = lat_range(cam, size);
+        let (lat, y) = t.lats[1];
+        let linear = (n - lat) / (n - s) * 568.0;
+        assert!((f64::from(y) - linear).abs() > 2.0, "{y} vs linear {linear}");
+    }
+
+    /// Pixels darker than mid-grey in `a` (points).
+    fn dark(pm: &Pixmap, ppp: f32, a: Area) -> usize {
+        let r = a.px(ppp).unwrap();
+        (r.top() as u32..r.bottom() as u32)
+            .flat_map(|y| (r.left() as u32..r.right() as u32).map(move |x| (x, y)))
+            .filter(|(x, y)| pixel(pm, *x, *y).is_some_and(|c| u32::from(c[0]) + u32::from(c[1]) + u32::from(c[2]) < 3 * 120))
+            .count()
+    }
+
+    #[test]
+    fn the_north_arrow_and_frame_labels_are_drawn_when_asked() {
+        for (w, h, ppp) in [(1920, 1080, 1.5), (2480, 3508, 2480.0 / 793.7)] {
+            let s = Sheet { north_arrow: true, ..sheet(w, h, ppp) };
+            let lay = layout(&s, &FONTS, None);
+            let (mw, mh) = map_pixels(lay.map, ppp);
+            let (pm, lay) = compose(&blank(mw, mh), &s, &FONTS, None).unwrap();
+            let north = lay.north.expect("a north arrow");
+            // Top right of the map, clear of the legend (bottom left), with its N and dart.
+            assert!(north.x > lay.map.w / 2.0 && north.y < lay.map.y + lay.map.h / 2.0, "{north:?}");
+            assert!(!overlaps(&north, &lay.legend.unwrap()));
+            assert!(dark(&pm, ppp, north) as f32 > 40.0 * ppp * ppp, "the arrow is drawn: {}", dark(&pm, ppp, north));
+            // Off: no arrow, and the corner is plain map.
+            let (pm2, lay2) = compose(&blank(mw, mh), &sheet(w, h, ppp), &FONTS, None).unwrap();
+            assert!(lay2.north.is_none());
+            assert_eq!(dark(&pm2, ppp, north), 0);
+            // The frame: the map inset, labels above and at the left, nothing over the map.
+            let cam = fit_extent(&Extent::new(-124.8, 24.5, -66.9, 49.4), (1000.0, 600.0));
+            let s = Sheet { graticule: Some(Graticule { camera: cam, grid: false }), ..sheet(w, h, ppp) };
+            let lay = layout(&s, &FONTS, None);
+            assert_eq!(lay.map, map_area(s.size_pt(), true, true));
+            let (mw, mh) = map_pixels(lay.map, ppp);
+            let (pm, lay) = compose(&blank(mw, mh), &s, &FONTS, None).unwrap();
+            let m = lay.map;
+            let top = Area::new(m.x, m.y - FRAME_TB + 1.0, m.w, FRAME_TB - 3.0);
+            let left = Area::new(1.0, m.y + 2.0, FRAME_SIDE - 3.0, m.h - 4.0);
+            let text = (ppp * ppp * 30.0) as usize;
+            assert!(dark(&pm, ppp, top) > text, "longitudes above: {}", dark(&pm, ppp, top));
+            assert!(dark(&pm, ppp, left) > text, "latitudes at the left");
+            // Grid lines are off by default: the map's middle stays clear.
+            let mid = Area::new(m.x + m.w * 0.55, m.y + 30.0, m.w * 0.4, m.h * 0.3);
+            let grid = |pm: &Pixmap| {
+                let r = mid.px(ppp).unwrap();
+                (r.top() as u32..r.bottom() as u32)
+                    .flat_map(|y| (r.left() as u32..r.right() as u32).map(move |x| (x, y)))
+                    .filter(|(x, y)| pixel(pm, *x, *y).is_some_and(|c| c[0] < 0xF0))
+                    .count()
+            };
+            assert_eq!(grid(&pm), 0);
+            let s = Sheet { graticule: Some(Graticule { camera: cam, grid: true }), ..s };
+            let (pm, _) = compose(&blank(mw, mh), &s, &FONTS, None).unwrap();
+            assert!(grid(&pm) > 0, "grid lines when asked");
+        }
     }
 
     #[test]

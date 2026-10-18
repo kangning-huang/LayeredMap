@@ -213,11 +213,20 @@ pub struct DocLayer {
     /// Fields the user starred ("Show in insight"), in the order starred.
     #[serde(default)]
     pub starred: Vec<String>,
+    /// The time step shown, for a grid with a time axis (WP6.12): 0 for the first, and for
+    /// every other layer. Changing it is an undo step; steps taken one after another (the
+    /// slider, Play, ← →) fold into one.
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub time: usize,
+}
+
+fn is_zero(n: &usize) -> bool {
+    *n == 0
 }
 
 impl DocLayer {
     pub fn new(id: LayerId, display_name: String, profile: LayerProfile, style: Style) -> DocLayer {
-        DocLayer { id, display_name, visible: true, profile, style, filter: None, roles: BTreeMap::new(), starred: Vec::new() }
+        DocLayer { id, display_name, visible: true, profile, style, filter: None, roles: BTreeMap::new(), starred: Vec::new(), time: 0 }
     }
 
     /// A field's role, with the user's choice applied (certain, "Set by you").
@@ -347,6 +356,12 @@ pub enum Op {
         from: Option<usize>,
         to: Option<usize>,
     },
+    /// The time step a grid shows (WP6.12).
+    SetTime {
+        id: LayerId,
+        from: usize,
+        to: usize,
+    },
     /// Keep a result (WP4.6), at `index` in the result list.
     AddResult {
         index: usize,
@@ -382,6 +397,7 @@ impl Op {
             Op::SetFilter { id, from, to } => Op::SetFilter { id: *id, from: to.clone(), to: from.clone() },
             Op::SetRole { id, field, from, to } => Op::SetRole { id: *id, field: field.clone(), from: *to, to: *from },
             Op::SetStarred { id, field, from, to } => Op::SetStarred { id: *id, field: field.clone(), from: *to, to: *from },
+            Op::SetTime { id, from, to } => Op::SetTime { id: *id, from: *to, to: *from },
             Op::AddResult { index, record } => Op::RemoveResult { index: *index, record: record.clone() },
             Op::RemoveResult { index, record } => Op::AddResult { index: *index, record: record.clone() },
         }
@@ -581,6 +597,15 @@ impl Document {
         Some(Transaction::new(label, vec![Op::SetStarred { id, field: field.into(), from, to }]))
     }
 
+    /// Shows another time step of a grid (clamped to its steps). None when it is already shown
+    /// or the layer has no time axis.
+    pub fn set_time_tx(&self, id: LayerId, to: usize) -> Option<Transaction> {
+        let l = self.layer(id)?;
+        let steps = l.profile.grid.as_ref().filter(|g| g.has_time())?.steps();
+        let to = to.min(steps - 1);
+        (to != l.time).then(|| Transaction::new("Change time", vec![Op::SetTime { id, from: l.time, to }]))
+    }
+
     pub fn set_profile_tx(&self, id: LayerId, to: LayerProfile) -> Option<Transaction> {
         let from = self.layer(id)?.profile.clone();
         Some(Transaction::new("Update layer", vec![Op::SetProfile { id, from: Box::new(from), to: Box::new(to) }]))
@@ -685,6 +710,7 @@ impl Document {
                     l.starred.insert(i, field.clone());
                 }
             }
+            Op::SetTime { id, to, .. } => self.layer_mut(*id)?.time = *to,
             Op::AddResult { index, record } => {
                 let n = self.results.len();
                 if *index > n {
@@ -735,6 +761,7 @@ pub(crate) mod tests {
             notices: vec![],
             data_rev: 0,
             joins: Vec::new(),
+            grid: None,
         }
     }
 

@@ -27,6 +27,14 @@ pub const EXAMPLES: &[Example] = &[
         files: &["cities.geojson", "countries.geojson", "elevation.tif"],
     },
     Example {
+        id: "heatwaves",
+        icon: egui_phosphor::regular::THERMOMETER_HOT,
+        tint: [213, 60, 30],
+        title: "Heatwaves, summer 2023",
+        blurb: "Daily heatwave intensity worldwide, June to August",
+        files: &["heatwaves summer 2023.nc"],
+    },
+    Example {
         id: "storms",
         icon: egui_phosphor::regular::HURRICANE,
         tint: [86, 180, 233],
@@ -145,6 +153,7 @@ mod tests {
         use lm_core::model::LayerKind;
         use lm_jobs::import::{Ctx, Ticket, import_path};
         for (id, kind, lo, hi) in [
+            ("heatwaves", LayerKind::Raster, 0, u64::MAX),
             ("storms", LayerKind::Lines, 4_000, 6_000),
             ("walls", LayerKind::Areas, 1_500, 2_000),
             ("earthquakes", LayerKind::Points, 10_000, 20_000),

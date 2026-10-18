@@ -105,6 +105,16 @@ pub fn export_basemap(shown: &Provider) -> (Provider, Option<Provider>) {
     if shown.export_allowed { (shown.clone(), None) } else { (lm_core::basemap::provider("offline"), Some(shown.clone())) }
 }
 
+/// What frames the exported map (Automatic layout).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum Fit {
+    /// The visible layers (only the shown objects of a filtered layer), with a margin.
+    #[default]
+    Data,
+    /// The map as the user sees it.
+    View,
+}
+
 /// The map drawn at full size, and its copy at the preview's scale.
 pub struct Drawn {
     key: String,
@@ -128,6 +138,13 @@ pub struct ImageSheet {
     pub legend: Vec<(LayerId, bool)>,
     /// Where the legend was dragged (points); `None` places it.
     pub legend_at: Option<(f32, f32)>,
+    pub fit: Fit,
+    /// North arrow, scale bar and lat/lon labels: Auto, On or Off.
+    pub overrides: ex::Overrides,
+    /// Faint grid lines across a framed map.
+    pub grid: bool,
+    /// The visible data's lon/lat extent, for Fit to data (`None`: nothing shown).
+    data: Option<lm_mapview::Extent>,
     /// What the user saw: the camera and the size (points) of the part of the map not under
     /// panels, with that part's centre.
     seen: (Camera, (f32, f32)),
@@ -168,6 +185,10 @@ impl ImageSheet {
             caption_edited: false,
             legend,
             legend_at: None,
+            fit: Fit::Data,
+            overrides: ex::Overrides::default(),
+            grid: false,
+            data: data_extent(shell),
             seen: (Camera { center, res: cam.res }, free),
             map: Arc::new(map),
             basemap,
@@ -186,18 +207,28 @@ impl ImageSheet {
         !self.title.trim().is_empty()
     }
 
-    /// The map's area on the sheet (points) and the camera that shows what the user saw in it.
-    fn map_area(&self) -> (ex::Area, Camera) {
+    /// Whether Fit to data has data to fit (otherwise the map shows the current view).
+    pub fn has_data(&self) -> bool {
+        self.data.is_some()
+    }
+
+    /// The map's area on the sheet (points), its camera (fitting the data, or what the user saw)
+    /// and its furniture.
+    pub fn plan(&self) -> ex::Plan {
         let (w, h) = self.preset.pixels();
         let ppp = self.preset.ppp();
-        let area = ex::map_area((w as f32 / ppp, h as f32 / ppp), self.has_title());
         let (cam, seen) = self.seen;
-        (area, ex::fit_camera(cam.center, cam.res, seen, (area.w, area.h)))
+        let framing = match (self.fit, self.data) {
+            (Fit::Data, Some(e)) => ex::Framing::Data(e),
+            _ => ex::Framing::View { center: cam.center, res: cam.res, seen },
+        };
+        ex::plan((w as f32 / ppp, h as f32 / ppp), self.has_title(), &framing, self.overrides)
     }
 
     /// What the map was (or is being) drawn for.
     fn draw_key(&self) -> String {
-        format!("{:?}|{}", self.preset, self.has_title())
+        let p = self.plan();
+        format!("{:?}|{:?}|{:?}", self.preset, p.area, p.camera)
     }
 
     /// The credits: the basemap's, the tile layers' and Natural Earth (always drawn beneath).
@@ -227,7 +258,7 @@ impl ImageSheet {
         if self.drawn.as_ref().is_some_and(|d| d.key == key) || self.job.as_ref().is_some_and(|(k, _)| *k == key) {
             return;
         }
-        let (area, camera) = self.map_area();
+        let ex::Plan { area, camera, .. } = self.plan();
         let ppp = self.preset.ppp();
         let pixels = ex::map_pixels(area, ppp);
         let (w, h) = self.preset.pixels();
@@ -282,7 +313,8 @@ impl ImageSheet {
     /// The sheet at full size, with the legend generated from the shell's layers.
     pub fn sheet(&self, shell: &Shell) -> ex::Sheet {
         let (w, h) = self.preset.pixels();
-        let (_, camera) = self.map_area();
+        let plan = self.plan();
+        let camera = plan.camera;
         let lat = rustgis_lat(camera);
         let m_per_pt = camera.res * lat.to_radians().cos();
         let (len, label) = crate::chrome::scale(m_per_pt, shell.prefs.units, 110.0);
@@ -297,8 +329,10 @@ impl ImageSheet {
             attribution: self.attribution(),
             legend: legend_blocks(shell, &on),
             legend_at: self.legend_at,
-            scale: (len.is_finite() && len > 0.0).then_some((len as f32, label)),
+            scale: (plan.furniture.scale_bar && len.is_finite() && len > 0.0).then_some((len as f32, label)),
             ground: land.0,
+            north_arrow: plan.furniture.north_arrow,
+            graticule: plan.furniture.labels.then_some(ex::Graticule { camera, grid: self.grid }),
         }
     }
 
@@ -348,6 +382,69 @@ impl ImageSheet {
         }
         out
     }
+}
+
+/// The lon/lat extent of the visible layers, for Fit to data: rasters and unfiltered layers by
+/// their extents, filtered layers by the objects the filter shows.
+fn data_extent(shell: &Shell) -> Option<lm_mapview::Extent> {
+    let mut boxes: Vec<lm_mapview::Extent> = Vec::new();
+    let mut add =
+        |e: lm_core::model::Extent| boxes.push(lm_mapview::Extent { min_x: e.min_x, min_y: e.min_y, max_x: e.max_x, max_y: e.max_y });
+    for l in shell.ws.doc.layers.iter().filter(|l| l.visible && crate::workspace::drawable(&l.profile)) {
+        let mask = l.filter.as_ref().and_then(|_| shell.ws.derived(l.id)).and_then(|d| d.mask.clone());
+        match (l.profile.kind, mask, crate::inspect::dataset(shell, l.id)) {
+            (LayerKind::Raster, _, _) | (_, None, _) | (_, _, None) => {
+                if let Some(e) = l.profile.extent_wgs84 {
+                    add(e);
+                }
+            }
+            (_, Some(mask), Some(ds)) => {
+                for (row, _) in mask.iter().enumerate().filter(|(_, on)| **on) {
+                    if let Some(e) = lm_jobs::inspect::row_extent(&ds, row) {
+                        add(e);
+                    }
+                }
+            }
+        }
+    }
+    ex::data_extent(boxes)
+}
+
+/// Why the rules chose what they did, after "Auto: ": "about 6,300 km across: latitude and
+/// longitude on the frame…".
+pub fn rule_text(plan: &ex::Plan) -> String {
+    let km = plan.width_km;
+    let round = if km < 100.0 {
+        1.0
+    } else if km < 1000.0 {
+        10.0
+    } else {
+        100.0
+    };
+    let across = format!("about {} km across", lm_core::model::group_thousands(((km / round).round() * round).max(1.0) as u64));
+    if km <= ex::ARROW_MAX_KM {
+        format!("{across}: a north arrow and a scale bar.")
+    } else if km <= ex::LABELS_ONLY_KM && plan.auto.scale_bar {
+        format!("{across}: latitude and longitude on the frame, and a scale bar.")
+    } else if km <= ex::LABELS_ONLY_KM {
+        format!(
+            "{across} and {:.0}° tall: latitude and longitude on the frame. No scale bar, as distances stretch with latitude.",
+            plan.lat_span
+        )
+    } else {
+        format!("{across}: latitude and longitude on the frame. Distances vary too much for one scale bar.")
+    }
+}
+
+/// A labelled choice in the settings column: the label, then a segmented control.
+fn choice(ui: &mut Ui, t: &Theme, label: &str, selected: usize, labels: &[&str]) -> Option<usize> {
+    ui.horizontal(|ui| {
+        let (r, _) = ui.allocate_exact_size(vec2(104.0, form::ROW_H), Sense::hover());
+        ui.painter().text(r.left_center(), Align2::LEFT_CENTER, label, theme::regular(BODY), t.text_secondary);
+        let w = ui.available_width();
+        ui.push_id(label, |ui| form::segmented(ui, t, selected, labels, w)).inner
+    })
+    .inner
 }
 
 /// The latitude of a camera's centre.
@@ -416,8 +513,13 @@ pub fn legend_blocks(shell: &Shell, ids: &[LayerId]) -> Vec<LegendBlock> {
             let unit = band.and_then(|b| b.unit.value.clone()).map(|u| format!(" {u}")).unwrap_or_default();
             let (lo, hi) = shell.raster_range(*id).or(l.style.stretch).unwrap_or((0.0, 1.0));
             let n = |v: f64| format!("{}{unit}", lm_jobs::inspect::number_text(v));
+            // A grid's legend names the variable and date shown (WP6.12).
+            let title = match &l.profile.grid {
+                Some(g) => format!("{}: {}", l.display_name, g.caption(shell.ws.shown_time(*id))),
+                None => l.display_name.clone(),
+            };
             out.push(LegendBlock {
-                title: l.display_name.clone(),
+                title,
                 entries: vec![
                     Entry::Ramp { stops: ramp_stops(&l.style.ramp), low: n(lo), high: n(hi) },
                     Entry::Item { swatch: Swatch::NoData, label: "No data".into() },
@@ -510,6 +612,8 @@ pub fn sheet(shell: &mut Shell, ui: &mut Ui, full: Rect) {
         }
         ui.label(RichText::new(format!("{} · PNG", s.preset.detail())).size(CAPTION).color(t.text_secondary));
         form::divider(ui, &t);
+        map_settings(ui, &t, &mut s);
+        form::divider(ui, &t);
         form::heading(ui, "Title");
         ui.add(egui::TextEdit::singleline(&mut s.title).hint_text("Add a title (optional)").desired_width(f32::INFINITY));
         ui.add_space(8.0);
@@ -601,6 +705,34 @@ pub fn sheet(shell: &mut Shell, ui: &mut Ui, full: Rect) {
     if !close {
         shell.export_sheet = Some(s);
     }
+}
+
+/// The Map group: what frames the map, and its furniture (Auto, On or Off each).
+fn map_settings(ui: &mut Ui, t: &Theme, s: &mut ImageSheet) {
+    form::heading(ui, "Map");
+    let fit = if s.fit == Fit::Data { 0 } else { 1 };
+    if let Some(k) = choice(ui, t, "Show", fit, &["Fit to data", "Current view"]) {
+        s.fit = if k == 0 { Fit::Data } else { Fit::View };
+    }
+    if s.fit == Fit::Data && !s.has_data() {
+        ui.label(RichText::new("No layers are shown, so the map shows the current view.").size(CAPTION).color(t.text_secondary));
+    }
+    ui.add_space(4.0);
+    let labels: Vec<&str> = ex::Show::ALL.iter().map(|v| v.label()).collect();
+    let pick = |v: ex::Show| ex::Show::ALL.iter().position(|x| *x == v).unwrap_or(0);
+    let o = &mut s.overrides;
+    for (name, v) in [("North arrow", &mut o.north_arrow), ("Scale bar", &mut o.scale_bar), ("Lat/lon labels", &mut o.labels)] {
+        if let Some(k) = choice(ui, t, name, pick(*v), &labels) {
+            *v = ex::Show::ALL[k];
+        }
+    }
+    let plan = s.plan();
+    ui.horizontal(|ui| {
+        ui.add_space(104.0 + ui.spacing().item_spacing.x);
+        ui.add_enabled_ui(plan.furniture.labels, |ui| form::checkbox(ui, t, &mut s.grid, "Grid lines"));
+    });
+    ui.add_space(2.0);
+    ui.add(egui::Label::new(RichText::new(format!("Auto: {}", rule_text(&plan))).size(CAPTION).color(t.text_secondary)).wrap());
 }
 
 /// The preview: the sheet drawn at a smaller scale, fitted into `canvas`; the legend can be

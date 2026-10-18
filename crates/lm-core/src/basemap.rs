@@ -48,13 +48,14 @@ pub struct Provider {
 pub const PROTOMAPS_ARCHIVE: &str = "https://build.protomaps.com/20261014.pmtiles";
 const OSM_ATTRIBUTION: &str = "© OpenStreetMap contributors · Protomaps";
 const NE_ATTRIBUTION: &str = "Natural Earth";
-/// Sentinel-2 cloudless by EOX: a cloud-free 10 m mosaic of the world, keyless. The 2024 edition
-/// is CC BY-NC-SA 4.0 (non-commercial; the 2016 edition is CC BY 4.0), so a paid tier needs
-/// another source (docs/lm/decisions.md, 2026-10-17).
-pub const SENTINEL2_TILES: &str = "https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2024_3857/default/GoogleMapsCompatible/{z}/{y}/{x}.jpg";
-const SENTINEL2_ATTRIBUTION: &str = "Sentinel-2 cloudless by EOX (Copernicus Sentinel data 2024)";
-/// The 2024 edition's licence (CC BY-NC-SA 4.0) carries over to images made from it.
-const SENTINEL2_TERMS: &str = "The satellite imagery is licensed CC BY-NC-SA 4.0: use this image for non-commercial purposes only, and share it under the same licence.";
+/// NASA Blue Marble Next Generation through NASA GIBS: a cloud-free true-colour mosaic of the
+/// world, keyless, tiles to zoom 8 (about 600 m per pixel; deeper zooms scale those tiles up).
+/// NASA imagery is not subject to copyright in the United States; NASA asks to be credited, and
+/// nothing may suggest NASA endorses the app. It replaces Sentinel-2 cloudless by EOX, whose
+/// licence is non-commercial (owner's decision, 2026-10-18).
+pub const BLUE_MARBLE_TILES: &str =
+    "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_NextGeneration/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg";
+const BLUE_MARBLE_ATTRIBUTION: &str = "NASA Blue Marble (NASA Earth Observatory, GIBS)";
 
 /// The built-in providers, in chooser order: Auto (the default; light or dark with the
 /// appearance), Light, Dark, Satellite, Offline.
@@ -99,12 +100,12 @@ pub fn providers() -> Vec<Provider> {
         Provider {
             id: "satellite",
             name: "Satellite",
-            url_template: SENTINEL2_TILES,
-            attribution: SENTINEL2_ATTRIBUTION,
-            max_zoom: 14,
+            url_template: BLUE_MARBLE_TILES,
+            attribution: BLUE_MARBLE_ATTRIBUTION,
+            max_zoom: 8,
             offline_allowed: false,
             export_allowed: true,
-            export_terms: SENTINEL2_TERMS,
+            export_terms: "",
             source: Source::Imagery,
             look: Look::Dark,
         },

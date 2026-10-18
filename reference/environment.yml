@@ -21,6 +21,10 @@ dependencies:
   - pandas=3.0
   - numpy=2.5
   - openpyxl=3.1
+  # NetCDF fixtures (R8, WP6.12)
+  - xarray=2026.9
+  - netcdf4=1.7
+  - h5netcdf=1.8
   - pip
   - pip:
       - prcoords==1.0.2        # CC0-1.0 / GPL-3.0-or-later

@@ -34,7 +34,7 @@ fn inputs(dir: &Path) -> Vec<PathBuf> {
                 && !n.contains("TODO")
                 && matches!(
                     ext.as_str(),
-                    "csv" | "tsv" | "geojson" | "json" | "shp" | "zip" | "tif" | "tiff" | "gpkg" | "xlsx" | "kml" | "kmz" | "gpx"
+                    "csv" | "tsv" | "geojson" | "json" | "shp" | "zip" | "tif" | "tiff" | "gpkg" | "xlsx" | "kml" | "kmz" | "gpx" | "nc"
                 )
         })
         .collect();

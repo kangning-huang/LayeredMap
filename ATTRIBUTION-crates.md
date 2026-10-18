@@ -7,7 +7,7 @@ Assets, data and fonts are listed in [ATTRIBUTION.md](ATTRIBUTION.md).
 
 | Licence | Crates |
 |---|---|
-| MIT License | 294 |
+| MIT License | 305 |
 | Apache License 2.0 | 40 |
 | ISC License | 20 |
 | BSD 3-Clause "New" or "Revised" License | 12 |
@@ -3694,7 +3694,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### MIT License
 
-Used by: bitflags 1.3.2, bitflags 2.13.2, log 0.4.34, num-bigint 0.5.1, num-integer 0.1.47, num-traits 0.2.19
+Used by: bitflags 1.3.2, bitflags 2.13.2, log 0.4.34, num-bigint 0.5.1, num-complex 0.4.6, num-integer 0.1.47, num-traits 0.2.19
 
 ```text
 Copyright (c) 2014 The Rust Project Developers
@@ -3855,10 +3855,45 @@ DEALINGS IN THE SOFTWARE.
 
 ### MIT License
 
-Used by: either 1.19.0, itertools 0.15.0
+Used by: either 1.19.0, itertools 0.15.0, rawpointer 0.2.1
 
 ```text
 Copyright (c) 2015
+
+Permission is hereby granted, free of charge, to any
+person obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the
+Software without restriction, including without
+limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software
+is furnished to do so, subject to the following
+conditions:
+
+The above copyright notice and this permission notice
+shall be included in all copies or substantial portions
+of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF
+ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
+SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+
+```
+
+### MIT License
+
+Used by: ndarray 0.17.2
+
+```text
+Copyright (c) 2015 - 2021 Ulrik Sverdrup "bluss",
+			  Jim Turner,
+			  and ndarray developers
 
 Permission is hereby granted, free of charge, to any
 person obtaining a copy of this software and associated
@@ -4150,6 +4185,41 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
+
+```
+
+### MIT License
+
+Used by: matrixmultiply 0.3.11
+
+```text
+Copyright (c) 2016 - 2023 Ulrik Sverdrup "bluss"
+Copyirhgt (c) 2018 R. Janis Goldschmidt
+Copyright (c) 2021 DutchGhost [constparse.rs]
+
+Permission is hereby granted, free of charge, to any
+person obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the
+Software without restriction, including without
+limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software
+is furnished to do so, subject to the following
+conditions:
+
+The above copyright notice and this permission notice
+shall be included in all copies or substantial portions
+of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF
+ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
+SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
 
 ```
 
@@ -5415,6 +5485,40 @@ DEALINGS IN THE SOFTWARE.
 
 ### MIT License
 
+Used by: memmap2 0.9.11
+
+```text
+Copyright (c) 2020 Yevhenii Reizner
+Copyright (c) 2015 Dan Burkert
+
+Permission is hereby granted, free of charge, to any
+person obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the
+Software without restriction, including without
+limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software
+is furnished to do so, subject to the following
+conditions:
+
+The above copyright notice and this permission notice
+shall be included in all copies or substantial portions
+of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF
+ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
+SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+
+```
+
+### MIT License
+
 Used by: pollster 1.0.1
 
 ```text
@@ -6188,6 +6292,34 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 ### MIT License
 
+Used by: lru 0.16.4
+
+```text
+MIT License
+
+Copyright (c) 2016 Jerome Froelich
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+### MIT License
+
 Used by: static_assertions 1.1.0
 
 ```text
@@ -6758,7 +6890,7 @@ SOFTWARE.
 
 ### MIT License
 
-Used by: accesskit 0.24.1, accesskit_consumer 0.35.0, accesskit_consumer 0.38.0, accesskit_macos 0.26.3, accesskit_windows 0.32.1, block2 0.5.1, block2 0.6.2, bufrw 0.2.0, chrono 0.4.45, dispatch2 0.3.1, dispatch 0.2.0, dpi 0.1.2, ecolor 0.36.2, eframe 0.36.2, egui-wgpu 0.36.2, egui-winit 0.36.2, egui 0.36.2, emath 0.36.2, epaint 0.36.2, geo-traits 0.3.0, geo 0.33.1, geozero 0.15.1, i_key_sort 0.10.3, i_overlay 4.5.2, libm 0.2.16, objc-sys 0.3.5, objc2-app-kit 0.2.2, objc2-app-kit 0.3.2, objc2-core-foundation 0.3.2, objc2-core-graphics 0.3.2, objc2-encode 4.1.0, objc2-foundation 0.2.2, objc2-foundation 0.3.2, objc2-metal 0.3.2, objc2-quartz-core 0.3.2, objc2 0.5.3, objc2 0.6.5, profiling 1.0.18, proj4rs-geodesic 0.1.1, proj4rs 0.2.1, rstar 0.12.2, type-map 0.5.1, wasmi 2.0.0, wasmi_collections 2.0.0, wasmi_core 2.0.0, wasmi_ir 2.0.0, wasmparser 0.228.0, windows-collections 0.3.2, windows-core 0.62.2, windows-future 0.3.2, windows-implement 0.60.2, windows-interface 0.59.3, windows-link 0.2.1, windows-numerics 0.3.1, windows-result 0.4.1, windows-strings 0.5.1, windows-sys 0.52.0, windows-sys 0.60.2, windows-sys 0.61.2, windows-targets 0.52.6, windows-targets 0.53.5, windows-threading 0.2.1, windows 0.62.2, windows_x86_64_msvc 0.52.6, windows_x86_64_msvc 0.53.1
+Used by: accesskit 0.24.1, accesskit_consumer 0.35.0, accesskit_consumer 0.38.0, accesskit_macos 0.26.3, accesskit_windows 0.32.1, block2 0.5.1, block2 0.6.2, bufrw 0.2.0, chrono 0.4.45, dispatch2 0.3.1, dispatch 0.2.0, dpi 0.1.2, ecolor 0.36.2, eframe 0.36.2, egui-wgpu 0.36.2, egui-winit 0.36.2, egui 0.36.2, emath 0.36.2, epaint 0.36.2, geo-traits 0.3.0, geo 0.33.1, geozero 0.15.1, hdf5-core 0.9.1, hdf5-reader 0.9.1, i_key_sort 0.10.3, i_overlay 4.5.2, libm 0.2.16, netcdf-core 0.9.1, netcdf-reader 0.9.1, objc-sys 0.3.5, objc2-app-kit 0.2.2, objc2-app-kit 0.3.2, objc2-core-foundation 0.3.2, objc2-core-graphics 0.3.2, objc2-encode 4.1.0, objc2-foundation 0.2.2, objc2-foundation 0.3.2, objc2-metal 0.3.2, objc2-quartz-core 0.3.2, objc2 0.5.3, objc2 0.6.5, profiling 1.0.18, proj4rs-geodesic 0.1.1, proj4rs 0.2.1, rstar 0.12.2, type-map 0.5.1, wasmi 2.0.0, wasmi_collections 2.0.0, wasmi_core 2.0.0, wasmi_ir 2.0.0, wasmparser 0.228.0, windows-collections 0.3.2, windows-core 0.62.2, windows-future 0.3.2, windows-implement 0.60.2, windows-interface 0.59.3, windows-link 0.2.1, windows-numerics 0.3.1, windows-result 0.4.1, windows-strings 0.5.1, windows-sys 0.52.0, windows-sys 0.60.2, windows-sys 0.61.2, windows-targets 0.52.6, windows-targets 0.53.5, windows-threading 0.2.1, windows 0.62.2, windows_x86_64_msvc 0.52.6, windows_x86_64_msvc 0.53.1
 
 ```text
 MIT License
@@ -7491,7 +7623,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### MIT License
 
-Used by: lz4_flex 0.14.0
+Used by: lz4_flex 0.11.6, lz4_flex 0.14.0
 
 ```text
 The MIT License (MIT)

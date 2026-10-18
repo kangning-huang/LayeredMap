@@ -472,3 +472,13 @@ fn a_ranking_can_put_the_lowest_first() {
     assert!(low.card.title.ends_with("lowest first"), "{}", low.card.title);
     assert!(low.card.summary.starts_with("Lowest:"), "{}", low.card.summary);
 }
+
+/// Small values keep three significant digits (owner's test: plants per person showed as "0").
+#[test]
+fn small_numbers_are_not_rounded_to_zero() {
+    assert_eq!(number(0.000123), "0.000123");
+    assert_eq!(number(0.0412), "0.0412");
+    assert_eq!(number(0.5), "0.5");
+    assert_eq!(number(0.0), "0");
+    assert_eq!(number(1234.6), "1,235");
+}

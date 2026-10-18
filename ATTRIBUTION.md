@@ -40,12 +40,13 @@ bundle. The licence audit (Gate 5) last ran on 2026-10-18.
 | App icon (`assets/icon`, `packaging/lm/AppIcon.icns`), made by `tools/lm/make_app_icon.py` from `design/logo` | LayeredMap (original drawing) | Apache-2.0, as the code |
 | Basemap chooser thumbnails (`assets/thumbnails`), sources in `assets/thumbnails/README.md` | Crops of the app's own rendering of the basemaps below | As the basemap each shows |
 | Online basemap (not bundled; shown with its attribution on the map) | © OpenStreetMap contributors, through Protomaps' daily planet builds | ODbL 1.0 (data); attribution on the map |
-| Satellite basemap (not bundled) | Sentinel-2 cloudless 2024 by EOX IT Services (contains modified Copernicus Sentinel data 2024) | CC BY-NC-SA 4.0 for this year's mosaic: **non-commercial**; owner to confirm terms for Pro (docs/lm/decisions.md, 2026-10-18) |
+| Satellite basemap (not bundled) | NASA Blue Marble Next Generation, served by NASA GIBS (gibs.earthdata.nasa.gov) | NASA imagery is not subject to copyright in the United States; credit "NASA" as the source; no NASA logos and no suggestion of NASA endorsement. Replaced Sentinel-2 cloudless (EOX, CC BY-NC-SA 4.0, non-commercial) on 2026-10-18 |
 | Pro's built-in reference layers (`Contents/Resources/reference`, built by `tools/lm/reference/build_reference.py`) | Natural Earth 1:10m (public domain); WorldClim elevation | Natural Earth: public domain. WorldClim: free for non-commercial use, redistribution needs permission; owner to confirm for Pro |
 
 ## Example datasets in the Examples menu (2026-10-18)
 
-Sources, licences and required credits are listed in `assets/examples/README.md`: IBTrACS storm
+Sources, licences and required credits are listed in `assets/examples/README.md`: Copernicus GDO
+heatwave intensity (JRC, CC BY 4.0, (c) European Union), IBTrACS storm
 tracks (NOAA/WMO), walled cities of late imperial China (Xue et al. 2021, CC BY 4.0), USGS
 earthquakes (public domain), NOAA NCEI volcanoes, OurAirports (public domain), and the WRI Global
 Power Plant Database (CC BY 4.0).

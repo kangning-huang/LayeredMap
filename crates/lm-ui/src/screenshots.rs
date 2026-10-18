@@ -994,8 +994,82 @@ fn exported_images_have_exact_sizes_a_legend_credits_and_the_maps_colors() {
             y += 20.0;
         }
         assert!(checked >= 4, "{checked} classes checked");
+        // Shanghai, about 100 km across: a north arrow with its N and dart, clear of the legend.
+        let north = lay.north.expect("a north arrow");
+        assert!(sheet.north_arrow && sheet.graticule.is_none() && sheet.scale.is_some());
+        assert!(dark_pixels(&pm, sheet.ppp, north) as f32 > 40.0 * sheet.ppp * sheet.ppp, "{preset:?} north arrow");
+        assert!(
+            north.x + north.w <= legend.x
+                || legend.x + legend.w <= north.x
+                || north.y + north.h <= legend.y
+                || legend.y + legend.h <= north.y
+        );
         let _ = &ctx;
     }
+}
+
+/// Automatic layout: the map fits the visible data (the shown objects of a filtered layer); the
+/// overrides switch the north arrow off and the lat/lon frame on, and the image follows.
+#[test]
+fn export_layout_fits_the_data_and_follows_the_overrides() {
+    use lm_mapview::export::{Area, Show};
+    let mut h = export_scene(|s| {
+        let id = s.ws.doc.layers.iter().find(|l| l.profile.kind == lm_core::model::LayerKind::Areas).map(|l| l.id).unwrap();
+        let f = lm_core::filter::Filter {
+            conditions: vec![lm_core::filter::Condition { field: "population".into(), test: lm_core::filter::Test::Above(1_000_000.0) }],
+        };
+        let tx = s.ws.doc.set_filter_tx(id, Some(f));
+        s.ws.commit(tx);
+        // The schools are hidden: only the ten districts frame the map.
+        if let Some(l) = s.ws.doc.layers.iter_mut().find(|l| l.profile.kind != lm_core::model::LayerKind::Areas) {
+            l.visible = false;
+        }
+    });
+    let s = h.state().as_ref().unwrap();
+    let e = s.export_sheet.as_ref().unwrap();
+    assert_eq!(e.fit, crate::export::Fit::Data);
+    let plan = e.plan();
+    let (w, hh) = (f64::from(plan.area.w), f64::from(plan.area.h));
+    let id = s.ws.doc.layers.iter().find(|l| l.profile.kind == lm_core::model::LayerKind::Areas).map(|l| l.id).unwrap();
+    let ds = crate::inspect::dataset(s, id).unwrap();
+    let mask = s.ws.derived(id).and_then(|d| d.mask.clone()).expect("the filter's mask");
+    let (mut lo, mut hi) = ((f64::INFINITY, f64::INFINITY), (f64::NEG_INFINITY, f64::NEG_INFINITY));
+    for (row, on) in mask.iter().enumerate() {
+        let Some(b) = lm_jobs::inspect::row_extent(&ds, row).filter(|_| *on) else { continue };
+        for (lon, lat) in [(b.min_x, b.min_y), (b.max_x, b.max_y)] {
+            let (x, y) = plan.camera.to_screen(lm_mapview::lonlat_to_merc(lm_mapview::Coord::new(lon, lat)), w, hh);
+            assert!(x >= 0.0 && x <= w && y >= 0.0 && y <= hh, "shown district {row} at {x},{y}");
+            lo = (lo.0.min(x), lo.1.min(y));
+            hi = (hi.0.max(x), hi.1.max(y));
+        }
+    }
+    // Fitted, not merely contained: the shown districts fill one side but for the 5% margins.
+    let fill = ((hi.0 - lo.0) / w).max((hi.1 - lo.1) / hh);
+    assert!(fill > 0.88, "fills {fill}");
+    // Overrides: no arrow, the frame on, with grid lines.
+    let s = h.state_mut().as_mut().unwrap();
+    if let Some(e) = s.export_sheet.as_mut() {
+        e.overrides.north_arrow = Show::Off;
+        e.overrides.labels = Show::On;
+        e.grid = true;
+    }
+    wait_for_export(&mut h);
+    let s = h.state().as_ref().unwrap();
+    let e = s.export_sheet.as_ref().unwrap();
+    let sheet = e.sheet(s);
+    let (pm, lay) = e.image(s).expect("the image");
+    assert!(lay.north.is_none() && sheet.graticule.is_some_and(|g| g.grid));
+    let m = lay.map;
+    let fr = lm_mapview::export::FRAME_TB;
+    let top = Area::new(m.x, m.y - fr + 1.0, m.w, fr - 3.0);
+    assert!(dark_pixels(&pm, sheet.ppp, top) > (sheet.ppp * sheet.ppp * 40.0) as usize, "longitude labels above the map");
+    // Current view: the camera is the one the user saw, refitted.
+    let s = h.state_mut().as_mut().unwrap();
+    if let Some(e) = s.export_sheet.as_mut() {
+        e.fit = crate::export::Fit::View;
+    }
+    let e = s.export_sheet.as_ref().unwrap();
+    assert_ne!(e.plan().camera, plan.camera);
 }
 
 /// Export warnings: a colour scale without a legend, a filtered layer ("10 of 17"); previews
@@ -1020,11 +1094,11 @@ fn export_warnings_name_what_the_image_leaves_out() {
     let w = e.warnings(s).join("\n");
     assert!(w.contains("districts is colored by value but has no legend."), "{w}");
     assert!(!w.contains("schools is colored"), "single-colour layers need no legend: {w}");
-    // The Satellite basemap carries its licence's terms.
+    // The Satellite basemap (NASA Blue Marble) carries no extra terms, only its credit.
     s.prefs.basemap = "satellite".into();
     let sat = crate::export::ImageSheet::new(s);
-    assert!(sat.warnings(s).iter().any(|w| w.contains("CC BY-NC-SA 4.0")));
-    assert!(sat.attribution().contains("Sentinel-2") && sat.attribution().contains("OpenStreetMap"));
+    assert!(!sat.warnings(s).iter().any(|w| w.contains("licensed")), "{:?}", sat.warnings(s));
+    assert!(sat.attribution().contains("NASA Blue Marble") && sat.attribution().contains("OpenStreetMap"));
     s.prefs.basemap = "offline".into();
     s.export_sheet = Some(e);
 }
@@ -1055,6 +1129,60 @@ fn export_sheet() {
     wait_for_export(&mut h);
     h.run_steps(5);
     h.snapshot("export_sheet");
+}
+
+/// The map image sheet at the scale of a country: cities across the contiguous United States, Key
+/// West to Bellingham (the current view is Shanghai; Fit to data frames the cities). About 6,000 km across and over
+/// 25° of latitude: latitude and longitude on the frame, no north arrow, no scale bar.
+#[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+fn export_sheet_us() {
+    let dir = std::env::temp_dir().join(format!("lm-export-us-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let csv = dir.join("us_cities.csv");
+    std::fs::write(
+        &csv,
+        "name,population,lon,lat\n\
+         New York,8336817,-74.006,40.713\nLos Angeles,3979576,-118.244,34.052\nChicago,2693976,-87.630,41.878\n\
+         Houston,2320268,-95.370,29.760\nPhoenix,1680992,-112.074,33.448\nPhiladelphia,1584064,-75.165,39.953\n\
+         San Antonio,1547253,-98.494,29.424\nSan Diego,1423851,-117.161,32.716\nDallas,1343573,-96.797,32.777\n\
+         Seattle,753675,-122.332,47.606\nDenver,727211,-104.990,39.739\nBoston,692600,-71.059,42.360\n\
+         Miami,467963,-80.192,25.762\nMinneapolis,429954,-93.265,44.978\nPortland,654741,-122.676,45.523\n\
+         Atlanta,506811,-84.388,33.749\nSalt Lake City,200567,-111.891,40.761\nKansas City,495327,-94.579,39.100\n\
+         Bellingham,92314,-122.479,48.752\nKey West,26444,-81.780,24.555\nBangor,31753,-68.772,44.801\n",
+    )
+    .unwrap();
+    let path = csv.clone();
+    let mut h = harness_phase(3, false, SHANGHAI, move |s| {
+        s.developer = true;
+        let layers = lm_jobs::import::import_path(&path, &lm_jobs::import::Ctx::detached(Default::default())).unwrap_or_default();
+        s.ws.add_imported(layers, 500);
+        s.ws.clear_selection();
+        s.ws.new_data = None;
+    });
+    settle(&mut h);
+    let ctx = h.ctx.clone();
+    if let Some(s) = h.state_mut().as_mut() {
+        s.command(&ctx, crate::Command::ExportMapImage);
+        if let Some(e) = s.export_sheet.as_mut() {
+            e.title = "Cities of the contiguous United States".into();
+        }
+    }
+    wait_for_export(&mut h);
+    let s = h.state().as_ref().unwrap();
+    let plan = s.export_sheet.as_ref().unwrap().plan();
+    assert!(plan.width_km > lm_mapview::export::ARROW_MAX_KM, "{}", plan.width_km);
+    // Labels and a scale bar, no north arrow (owner's decision, 2026-10-18: 28° and 7,000 km).
+    assert_eq!(plan.furniture, lm_mapview::export::Furniture { north_arrow: false, scale_bar: true, labels: true });
+    if let Some(out) = std::env::var_os("LM_EXPORT_OUT").map(std::path::PathBuf::from)
+        && let Some((pm, _)) = s.export_sheet.as_ref().and_then(|e| e.image(s))
+    {
+        std::fs::create_dir_all(&out).unwrap();
+        std::fs::write(out.join("us.png"), lm_mapview::export::encode_png(&pm).unwrap()).unwrap();
+    }
+    h.run_steps(5);
+    h.snapshot("export_sheet_us");
+    let _ = std::fs::remove_dir_all(&dir);
 }
 
 /// The data dialog for a points layer with personal fields: phone and email start unchecked,
@@ -1189,4 +1317,66 @@ fn welcome_examples_menu() {
     assert!(
         s.ws.imports.iter().any(|i| i.name().contains("storm tracks")) || s.ws.doc.layers.iter().any(|l| l.display_name == "storm tracks")
     );
+}
+
+/// WP6.12: a NetCDF grid with time: the time slider at the bottom of the map ("July 2023", step
+/// 2 of 3), and the variable pop-up in the layer's row.
+#[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+fn netcdf_time_slider() {
+    use egui_kittest::kittest::Queryable as _;
+    let mut h = phase3(&["R8/r8_classic.nc"], WORLD, |s| {
+        let id = s.ws.doc.layers[0].id;
+        s.ws.set_time(id, 1);
+    });
+    settle(&mut h);
+    let s = h.state().as_ref().unwrap();
+    let id = s.ws.doc.layers[0].id;
+    assert_eq!((s.ws.doc.layers[0].time, s.ws.shown_time(id)), (1, 1));
+    assert!(h.query_by_label("Play").is_some() && h.query_by_label("Variable shown").is_some());
+    h.snapshot("netcdf_time_slider");
+    // → steps forward while the map has the keyboard; ← steps back.
+    h.key_press(egui::Key::ArrowRight);
+    settle(&mut h);
+    assert_eq!(h.state().as_ref().unwrap().ws.doc.layers[0].time, 2);
+    h.key_press(egui::Key::ArrowLeft);
+    h.key_press(egui::Key::ArrowLeft);
+    settle(&mut h);
+    assert_eq!(h.state().as_ref().unwrap().ws.doc.layers[0].time, 0);
+    // Play steps about twice a second and loops; Pause stops.
+    h.get_by_label("Play").click();
+    h.run_steps(2);
+    assert!(h.state().as_ref().unwrap().playing.is_some());
+    h.get_by_label("Pause").click();
+    h.run_steps(2);
+    assert!(h.state().as_ref().unwrap().playing.is_none());
+}
+
+/// WP6.12: the variable pop-up open, listing the grid's variables with their units, the shown one
+/// checked; picking one redraws the layer as one undo step.
+#[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+fn netcdf_variable_dropdown() {
+    use egui_kittest::kittest::Queryable as _;
+    let mut h = phase3(&["R8/r8_classic.nc"], WORLD, |_| {});
+    h.get_by_label("Variable shown").click();
+    h.run_steps(4);
+    h.snapshot("netcdf_variable_dropdown");
+    h.get_by_label("Air temperature (K)").click();
+    settle(&mut h);
+    let s = h.state().as_ref().unwrap();
+    let g = s.ws.doc.layers[0].profile.grid.as_ref().unwrap();
+    assert_eq!(g.variable, "ta");
+    assert_eq!(s.ws.undo.undo_label(), Some("Show Air temperature in r8_classic"));
+    // A variable with levels gets the level pop-up under it.
+    assert!(h.query_by_label("Level shown").is_some());
+}
+
+/// WP6.12 in Pro: the time slider sits just above the Ask field, never over it.
+#[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+fn netcdf_time_slider_above_ask() {
+    let mut h = phase3(&["R8/r8_lon360.nc"], WORLD, |s| s.pro = true);
+    settle(&mut h);
+    h.snapshot("netcdf_time_slider_pro");
 }

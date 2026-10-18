@@ -110,6 +110,7 @@ mod tests {
             notices: vec![],
             data_rev: 0,
             joins: Vec::new(),
+            grid: None,
         }
     }
 

@@ -141,7 +141,7 @@ fn every_hand_made_fixture_opens_and_stays_byte_identical() {
                 || n.starts_with("expected")
                 || n.contains("TODO")
                 || n == "vectors.csv"
-                || !matches!(ext.as_str(), "csv" | "geojson" | "shp" | "zip" | "tif" | "gpkg" | "xlsx" | "kml" | "kmz" | "gpx")
+                || !matches!(ext.as_str(), "csv" | "geojson" | "shp" | "zip" | "tif" | "gpkg" | "xlsx" | "kml" | "kmz" | "gpx" | "nc")
             {
                 continue;
             }
