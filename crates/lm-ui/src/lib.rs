@@ -182,6 +182,10 @@ pub struct Shell {
     question_log: Option<PathBuf>,
     /// Phase 3: the layer whose table drawer is open, its view, and a filter being written.
     pub(crate) table_for: Option<lm_core::model::LayerId>,
+    /// A joined table picked on the shelf (its layer and name): the inspector shows that join,
+    /// scrolling to it once while `join_scroll` is set.
+    pub(crate) join_focus: Option<(lm_core::model::LayerId, String)>,
+    pub(crate) join_scroll: bool,
     pub(crate) table: table::TableView,
     pub(crate) filter_draft: Option<table::FilterDraft>,
     /// "Compare with other [Districts]": the ranking chart open for a layer and field.
@@ -262,6 +266,8 @@ impl Shell {
             file_requests: Vec::new(),
             question_log: None,
             table_for: None,
+            join_focus: None,
+            join_scroll: false,
             table: Default::default(),
             filter_draft: None,
             compare_peers: None,

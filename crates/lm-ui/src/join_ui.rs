@@ -35,6 +35,12 @@ pub fn report(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
             ui.add(egui::Label::new(RichText::new(r.line(&l.display_name, l.profile.kind.nouns())).size(BODY)).wrap());
         });
         ui.label(RichText::new(r.how()).size(CAPTION).color(t.text_secondary));
+        // The table left the shelf's top level: say where it went.
+        ui.label(
+            RichText::new(format!("{} now appears under {} in Layers.", r.table_name, l.display_name))
+                .size(CAPTION)
+                .color(t.text_secondary),
+        );
         if let Some(note) = &r.rows_note {
             ui.label(RichText::new(note).size(CAPTION).color(t.text_secondary));
         }

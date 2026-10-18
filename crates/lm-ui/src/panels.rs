@@ -14,6 +14,9 @@ use crate::{FileRequest, Shell};
 /// Shelf and inspector widths (Layout).
 pub const SHELF_WIDTH: f32 = 280.0;
 pub const INSPECTOR_WIDTH: f32 = 360.0;
+/// A joined table's row under its layer: indent and height (name above a caption).
+const SUBLAYER_INDENT: f32 = 20.0;
+const SUBLAYER_HEIGHT: f32 = 40.0;
 
 fn frame(t: &Theme) -> egui::Frame {
     crate::chrome::panel_frame(t)
@@ -180,9 +183,10 @@ fn layer_rows(shell: &mut Shell, ui: &mut Ui, t: &Theme) {
     let mut rects: Vec<Rect> = Vec::with_capacity(n);
     for (d, id) in ids.iter().enumerate() {
         let Some(l) = shell.ws.doc.layer(*id).cloned() else { continue };
-        let selected = shell.ws.selected() == Some(*id);
+        // While one of its joined tables is picked, that row is the highlighted one.
+        let child_focused = shell.join_focus.as_ref().is_some_and(|(p, _)| p == id);
+        let selected = shell.ws.selected() == Some(*id) && !child_focused;
         let (r, resp) = ui.allocate_exact_size(vec2(ui.available_width(), ROW_HEIGHT), Sense::click_and_drag());
-        rects.push(r);
         let p = ui.painter();
         if selected {
             p.rect_filled(r, CornerRadius::same(theme::RADIUS_CONTROL), t.accent_weak);
@@ -288,10 +292,43 @@ fn layer_rows(shell: &mut Shell, ui: &mut Ui, t: &Theme) {
         };
         paint_badge(ui, pos2(r.right() - 12.0, r.center().y), &badge, t);
         // A filtered layer shows a funnel (WP3.7).
-        if l.filter.as_ref().is_some_and(|f| !f.is_empty()) {
+        let filtered = l.filter.as_ref().is_some_and(|f| !f.is_empty());
+        if filtered {
             ui.painter().text(pos2(r.right() - 30.0, r.center().y), Align2::CENTER_CENTER, icon::FUNNEL, theme::icon_font(14.0), t.accent);
         }
+        // Joined tables: a chevron, in the next free place from the right, shows or hides them.
+        let subs = shell.ws.sublayers(*id);
+        let open = shell.ws.sublayers_open(*id);
+        if !subs.is_empty() {
+            let x = if filtered {
+                r.right() - 48.0
+            } else if matches!(badge, Badge::None) {
+                r.right() - 12.0
+            } else {
+                r.right() - 30.0
+            };
+            let c = Rect::from_center_size(pos2(x, r.center().y), vec2(20.0, 24.0));
+            let cr = ui.interact(c, egui::Id::new(("lm-sublayers", id.0)), Sense::click());
+            ui.painter().text(
+                c.center(),
+                Align2::CENTER_CENTER,
+                if open { icon::CARET_DOWN } else { icon::CARET_RIGHT },
+                theme::icon_font(13.0),
+                if cr.hovered() { t.text_primary } else { t.text_secondary },
+            );
+            if cr.clicked() {
+                shell.ws.set_sublayers_open(*id, !open);
+            }
+            let n = subs.len();
+            cr.on_hover_text(match (open, n) {
+                (true, 1) => "Hide the joined table".to_string(),
+                (true, _) => format!("Hide the {n} joined tables"),
+                (false, 1) => "Show the joined table".to_string(),
+                (false, _) => format!("Show the {n} joined tables"),
+            });
+        }
         if resp.clicked() {
+            shell.join_focus = None;
             // ⌘-click adds the layer to the selection as a companion (the expert path).
             let cmd = ui.input(|i| i.modifiers.command);
             match shell.ws.selected() {
@@ -344,6 +381,14 @@ fn layer_rows(shell: &mut Shell, ui: &mut Ui, t: &Theme) {
                 ui.close();
             }
         });
+        // Joined tables, indented under the layer (owner's request, 2026-10-18).
+        let mut block = r;
+        if open {
+            for s in &subs {
+                block = block.union(sublayer_row(shell, ui, t, &l, s));
+            }
+        }
+        rects.push(block);
         // A question card attaches to its row; the map stays usable. While the layer's overview
         // is open it shows the card there instead, and the row just says so.
         if let Some(q) = l.profile.open_questions().next().cloned() {
@@ -375,6 +420,56 @@ fn layer_rows(shell: &mut Shell, ui: &mut Ui, t: &Theme) {
             }
         }
     }
+}
+
+/// A joined table's row under its layer: the table glyph, its name and how many of the layer's
+/// records it matched. A click shows the join in the inspector (its card while it is the latest
+/// join, otherwise its fields in Details); the menu has Unjoin, which puts the table back.
+fn sublayer_row(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &lm_core::document::DocLayer, s: &crate::workspace::Sublayer) -> Rect {
+    let parent = l.id;
+    let (r, resp) = ui.allocate_exact_size(vec2(ui.available_width(), SUBLAYER_HEIGHT), Sense::click());
+    let focused = shell.ws.selected() == Some(parent) && shell.join_focus.as_ref().is_some_and(|(p, n)| *p == parent && *n == s.table);
+    let x = r.left() + SUBLAYER_INDENT;
+    let bg = Rect::from_min_max(pos2(x + 24.0, r.top()), r.max);
+    if focused {
+        ui.painter().rect_filled(bg, CornerRadius::same(theme::RADIUS_CONTROL), t.accent_weak);
+    } else if resp.hovered() {
+        ui.painter().rect_filled(bg, CornerRadius::same(theme::RADIUS_CONTROL), t.surface_raised);
+    }
+    let p = ui.painter();
+    p.text(pos2(x + 36.0, r.center().y), Align2::CENTER_CENTER, icon::TABLE, theme::icon_font(15.0), t.text_secondary);
+    let text = if l.visible { t.text_primary } else { t.text_secondary };
+    p.text(pos2(x + 50.0, r.top() + 4.0), Align2::LEFT_TOP, middle_truncate(&s.table, 24), egui::FontId::proportional(BODY), text);
+    let caption = match s.matched {
+        Some((m, n)) => format!("joined · {} of {} matched", group_thousands(m as u64), group_thousands(n as u64)),
+        None => "joined".into(),
+    };
+    p.text(pos2(x + 50.0, r.top() + 22.0), Align2::LEFT_TOP, caption, egui::FontId::proportional(CAPTION), t.text_secondary);
+    let show = |shell: &mut Shell, details: bool| {
+        shell.ws.select_layer(parent);
+        shell.join_focus = Some((parent, s.table.clone()));
+        shell.join_scroll = true;
+        let card = shell.ws.join_report(parent).is_some_and(|r| r.table_name == s.table);
+        shell.inspector_tab = if card && !details { 0 } else { 2 };
+    };
+    if resp.clicked() {
+        show(shell, false);
+    }
+    resp.clone().on_hover_text(format!("Joined to {}: its fields are part of the layer", l.display_name));
+    resp.context_menu(|ui| {
+        if menu_item(ui, t, icon::LIST_BULLETS, "Show joined fields").clicked() {
+            show(shell, true);
+            ui.close();
+        }
+        ui.separator();
+        let unjoin = ui.add_enabled_ui(s.can_unjoin, |ui| menu_item(ui, t, icon::LINK_BREAK, "Unjoin")).inner;
+        if unjoin.on_disabled_hover_text("The table wasn't opened in this session, so it can't be put back").clicked() {
+            shell.ws.unjoin(parent, &s.table);
+            shell.join_focus = None;
+            ui.close();
+        }
+    });
+    r
 }
 
 /// "Where should this data be?" (WP2.4): name a place (or use the map's centre); the coordinate
@@ -1032,10 +1127,17 @@ fn details(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, l: &lm_core::
         for (k, (title, fields)) in groups.iter().enumerate() {
             if let Some(title) = title {
                 ui.add_space(8.0);
-                ui.horizontal(|ui| {
-                    ui.label(RichText::new(icon::LINK).font(theme::icon_font(13.0)).color(t.text_secondary));
-                    ui.label(RichText::new(format!("From {title}")).size(CAPTION).color(t.text_secondary));
+                // The joined table picked on the shelf is in the accent colour, scrolled to once.
+                let focused = shell.join_focus.as_ref().is_some_and(|(p, n)| *p == id && n == title);
+                let c = if focused { t.accent } else { t.text_secondary };
+                let header = ui.horizontal(|ui| {
+                    ui.label(RichText::new(icon::LINK).font(theme::icon_font(13.0)).color(c));
+                    ui.label(RichText::new(format!("From {title}")).size(CAPTION).color(c));
                 });
+                if focused && shell.join_scroll {
+                    header.response.scroll_to_me(Some(egui::Align::TOP));
+                    shell.join_scroll = false;
+                }
             } else if fields.is_empty() && k == 0 {
                 continue;
             }
