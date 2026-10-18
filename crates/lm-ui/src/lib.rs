@@ -106,6 +106,12 @@ pub enum Command {
     Escape,
     /// Find in the selected layer (WP3.10; scripts and tests).
     Find(String),
+    /// Scripts: run a card's display action (`filter`, `style_by_value`, `view_data`, …) on the
+    /// selected layer and object, starting with this field when given; `apply_filter` presses the
+    /// filter builder's Apply (help screenshots, WP6.10).
+    CardAction(String, Option<String>),
+    /// Scripts: show the n-th time step of the time slider's layer (help screenshots, WP6.10).
+    SetTime(usize),
     /// Start drawing an area (WP4.4): from the assistant or the developer surface.
     StartDrawing(draw::Mode),
     /// Make an area layer from an outline in longitude/latitude (scripts and tests).
@@ -414,6 +420,35 @@ impl Shell {
                 }
             }
             Command::InspectorTab(tab) => self.inspector_tab = tab,
+            Command::CardAction(action_id, _) if action_id == "apply_filter" => {
+                // The filter builder's Apply.
+                if let Some(d) = self.filter_draft.take()
+                    && let Some(c) = d.condition()
+                {
+                    let mut f = self.ws.doc.layer(d.layer).and_then(|l| l.filter.clone()).unwrap_or_default();
+                    f.conditions.push(c);
+                    let tx = self.ws.doc.set_filter_tx(d.layer, Some(f));
+                    self.ws.commit(tx);
+                }
+            }
+            Command::CardAction(action_id, field) => {
+                if let Some(id) = self.ws.selected() {
+                    let row = self.ws.selection.features.iter().find(|f| f.layer == id).map(|f| f.row);
+                    let a = lm_actions::Suggested {
+                        action_id,
+                        label: String::new(),
+                        group: lm_actions::Group::ChangeLook,
+                        companion: None,
+                        field,
+                    };
+                    insight::perform(self, id, row, &a);
+                }
+            }
+            Command::SetTime(n) => {
+                if let Some(id) = time_ui::time_layer(self) {
+                    self.ws.set_time(id, n);
+                }
+            }
             Command::StartDrawing(mode) => {
                 self.find.clear();
                 self.drawing = Some(draw::Drawing::new(mode));

@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LayeredMap：打开地图文件，看懂它在说什么</title>
+<meta name="description" content="LayeredMap 是一款给爱看地图、但没学过 GIS 的人用的地图应用。双击就能打开地图数据，点一下就知道它在同类里排第几，还能导出一张完整的地图分享出去。">
+<link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+<link rel="alternate" hreflang="en" href="../index.html">
+<link rel="stylesheet" href="../assets/site.css">
+<script src="../assets/site.js"></script>
+</head>
+<body>
+<header class="site-head">
+  <div class="wrap">
+    <a class="brand" href="index.html"><img src="../assets/logo.svg" alt="" width="30" height="30">LayeredMap</a>
+    <nav class="nav" aria-label="网站导航">
+      <a href="index.html" aria-current="page">首页</a>
+      <a href="help.html">帮助</a>
+      <a href="glossary.html">术语表</a>
+      <a href="#download">下载</a>
+      <a class="lang" href="../index.html" hreflang="en" lang="en">English</a>
+      <button class="theme-btn" type="button" aria-label="切换深浅色"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></svg></button>
+    </nav>
+  </div>
+</header>
+
+<main>
+<section class="hero contours">
+  <div class="wrap hero-grid">
+    <div>
+      <p class="eyebrow">给好奇心的地图应用</p>
+      <h1>打开地图文件，<br>看懂它在说什么。</h1>
+      <p class="lede">LayeredMap 是为爱看地图、却从没学过 GIS 的人做的。双击一个地点、轨迹或气候数据文件，它就出现在地图上。点一下任何东西，它会告诉你这个东西在同类里处于什么位置：最强的台风、最大的城池、最热的一周。</p>
+      <div class="actions">
+        <a class="btn btn-primary" href="#download">下载 Mac 版</a>
+        <a class="btn btn-quiet" href="help.html">跟着教程试一试</a>
+      </div>
+      <p class="coords" style="margin-top:28px">免费开源 · macOS · 英文界面，支持中文地名（中文界面制作中）</p>
+    </div>
+    <div class="hero-shot">
+      <figure class="frame"><img src="../img/typhoons-card.jpg" alt="LayeredMap 显示亚洲和太平洋上空的 4999 条台风路径；选中了台风“海燕”，卡片显示它 170 节的最大风速比有记录的 4547 场风暴中的 99% 都强。" width="1600" height="996"></figure>
+      <figure class="frame"><img src="../img/heatwave-slider.jpg" alt="2023 年热浪示例停在 7 月 16 日，地图底部是时间滑块。" width="1600" height="996" loading="lazy"></figure>
+    </div>
+  </div>
+</section>
+
+<section id="what">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">怎么用</p>
+      <h2>图层，就像一叠描图纸</h2>
+      <p class="lede">在 LayeredMap 里，一张地图就是底图上叠放的几层数据。开始之前什么都不用设置：没有向导，不用建项目，也没有一屏空荡荡的工具箱。</p>
+    </div>
+    <div class="strata">
+      <div><h3>打开</h3><p>把带坐标的 CSV、GeoJSON、Shapefile、GeoPackage、GeoTIFF 或 NetCDF 气候数据拖进来就行。如果应用需要推断些什么，比如哪几列是坐标，它会用一行字说明，并允许你一键修改。</p></div>
+      <div><h3>点选</h3><p>选中一座城市、一场台风，或气候格网里的一个格子。在给出任何工具之前，卡片会先告诉你它处在什么位置：“4999 个里最高”“比其他 80% 的都低”。</p></div>
+      <div><h3>分享</h3><p>按数值上色，筛出你关心的部分，再导出一张带标题、图例、比例尺和数据来源的完整图片，尺寸可选幻灯片、A4 页面或方形社交图。</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="examples">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">自带示例</p>
+      <h2>普通地图应用看不到的东西</h2>
+      <p class="lede">应用自带八组示例数据，点一下 <span class="ui">Examples</span>（示例）就能打开。几组大家最喜欢的：</p>
+    </div>
+    <div class="examples">
+      <article class="example">
+        <figure class="frame"><img src="../img/typhoons-color.jpg" alt="亚洲和太平洋上空的台风路径，在样式标签页中按年份上色。" loading="lazy" width="1600" height="996"></figure>
+        <h3>台风与飓风</h3>
+        <p>来自美国 NOAA IBTrACS 档案的 4999 条风暴路径，覆盖 1980 年以来的所有大洋。找到 “海燕”，按风速上色，看台风带一下子亮起来。</p>
+        <span class="coords">IBTrACS v04r01 · 1980–2026</span>
+      </article>
+      <article class="example">
+        <figure class="frame"><img src="../img/walls-satellite.jpg" alt="1866 年北京的城墙叠在卫星影像上，卡片显示城内面积 35.3 平方公里，比 1789 座城池中的 99% 都大。" loading="lazy" width="1600" height="996"></figure>
+        <h3>1866 年的中国城墙</h3>
+        <p>晚清 1789 座城池的城墙，从京师、省城到县城和满城，叠在卫星影像上看。</p>
+        <span class="coords">Xue 等，2021 · CC BY 4.0</span>
+      </article>
+      <article class="example">
+        <figure class="frame"><img src="../img/heatwave-click.jpg" alt="2023 年 7 月 16 日欧洲和北非的热浪强度，选中了一个格子，下方是时间滑块。" loading="lazy" width="1600" height="996"></figure>
+        <h3>2023 年夏季热浪</h3>
+        <p>2023 年 6 月到 8 月的全球逐日热浪强度，一个带时间滑块的 NetCDF 气候文件。点播放，看热浪怎样一路移动。</p>
+        <span class="coords">哥白尼 GDO（JRC）· CC BY 4.0</span>
+      </article>
+    </div>
+    <p style="margin-top:30px;color:var(--ink-2)">此外还有：1900 年以来的大地震、全球火山、机场、发电厂，以及世界城市、国家和地形。</p>
+  </div>
+</section>
+
+<section id="pro">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">免费版与 Pro 版</p>
+      <h2>免费看，Pro 能问。</h2>
+      <p class="lede">免费版可以打开、叠加、美化和分享地图数据。LayeredMap Pro 多了一位助手，你可以用大白话问它关于图层的问题。</p>
+    </div>
+    <div class="tiers">
+      <div class="tier">
+        <h3>免费版</h3>
+        <p class="sub">开源（Apache-2.0）</p>
+        <ul>
+          <li>支持 CSV、Excel、GeoJSON、Shapefile、GeoPackage、KML、GPX、GeoTIFF 和 NetCDF</li>
+          <li>点一下就能看到详细信息和排名对比</li>
+          <li>按数值上色、筛选、比较、加标注</li>
+          <li>按共有的一列把表格连接到地图上</li>
+          <li>气候格网的时间滑块</li>
+          <li>浅色、深色和卫星底图；断网也能用</li>
+          <li>支持国内地图坐标（GCJ-02、BD-09）</li>
+          <li>导出地图图片和数据</li>
+        </ul>
+      </div>
+      <div class="tier">
+        <h3>Pro 版 <span class="tag">PRO</span></h3>
+        <p class="sub">包含免费版的全部功能，另外还有：</p>
+        <ul>
+          <li>提问框：用中文或英文、打字或语音，询问关于图层的问题</li>
+          <li>答案以地图预览和可核对的分步说明呈现，绝不瞎猜</li>
+          <li>内置世界图层：国家、省份、城市、河流、湖泊和地形，可以直接问 “哪个国家的发电厂最多？” 这样的问题</li>
+          <li>卡片上的分析按钮，比如 “显示一定距离内的范围”</li>
+          <li>数据留在你的 Mac 上：只发送图层名称、字段和范围，绝不发送数据值</li>
+        </ul>
+        <div class="ask-sample">哪个国家的首都海拔最高？</div>
+      </div>
+    </div>
+    <figure class="frame shot" style="margin-top:34px"><img src="../img/pro-ask.jpg" alt="LayeredMap Pro 回答 “Which country has the most cities?”（哪个国家的城市最多？），给出排名列表并在地图上预览。" loading="lazy" width="1600" height="1040"><figcaption>LayeredMap Pro 借助内置的世界国家图层回答 “哪个国家的城市最多？”。点 Keep（保留）之前，什么都不会保存。</figcaption></figure>
+  </div>
+</section>
+
+<section id="download">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">下载</p>
+      <h2>获取 LayeredMap</h2>
+      <p class="lede">适用于搭载 Apple 芯片、macOS 13 或更高版本的 Mac。Windows 版正在制作中。</p>
+    </div>
+    <div class="downloads">
+      <div class="dl">
+        <h3>LayeredMap Mac 版</h3>
+        <p>免费 · 已签名并经过 Apple 公证</p>
+        <!-- TODO(owner): link the signed .dmg once a host reachable from mainland China and elsewhere is chosen. -->
+        <a class="btn btn-primary disabled" href="#download" aria-disabled="true">下载</a>
+        <p style="margin-top:12px"><span class="todo">待定：下载服务器尚未确定</span></p>
+      </div>
+      <div class="dl">
+        <h3>中国大陆镜像</h3>
+        <p>同一个签名版本，从国内服务器下载</p>
+        <!-- TODO(owner): mainland China mirror. -->
+        <a class="btn btn-quiet disabled" href="#download" aria-disabled="true">下载</a>
+        <p style="margin-top:12px"><span class="todo">待定：镜像尚未搭建</span></p>
+      </div>
+      <div class="dl">
+        <h3>LayeredMap Pro</h3>
+        <p>订阅制 · 提问框和内置世界图层</p>
+        <!-- TODO(owner): Pro sign-up and pricing (Phase 7). -->
+        <a class="btn btn-quiet disabled" href="#download" aria-disabled="true">即将推出</a>
+        <p style="margin-top:12px"><span class="todo">待定：价格与注册</span></p>
+      </div>
+    </div>
+    <p style="margin-top:24px;color:var(--ink-3);font-size:15px">LayeredMap 基于 <a href="https://github.com/opengeos/RustGIS">RustGIS</a> 构建。免费版源代码采用 Apache-2.0 许可。</p>
+  </div>
+</section>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <div>
+      <p><strong>LayeredMap</strong> · 以地图为中心的应用，基于 RustGIS。</p>
+      <p>截图中的地图数据：© OpenStreetMap 贡献者（ODbL），经 Protomaps 提供；Natural Earth（公有领域）；NASA “蓝色弹珠” 卫星影像（NASA Earth Observatory，GIBS）。示例数据：NOAA IBTrACS；Xue 等，2021（CC BY 4.0）；哥白尼全球干旱观测站 / JRC（CC BY 4.0）。</p>
+    </div>
+    <div><a href="help.html">帮助</a> · <a href="glossary.html">术语表</a> · <a href="../index.html" lang="en">English</a></div>
+  </div>
+</footer>
+</body>
+</html>

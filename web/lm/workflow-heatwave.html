@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The 2023 heatwave over time · LayeredMap Help</title>
+<meta name="description" content="A step-by-step LayeredMap workflow: play a summer of daily heatwave data with the time slider, read single cells and export a finished map image.">
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+<link rel="alternate" hreflang="zh-Hans" href="zh/workflow-heatwave.html">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/site.js"></script>
+</head>
+<body>
+<header class="site-head">
+  <div class="wrap">
+    <a class="brand" href="index.html"><img src="assets/logo.svg" alt="" width="30" height="30">LayeredMap</a>
+    <nav class="nav" aria-label="Site">
+      <a href="index.html">Home</a>
+      <a href="help.html" aria-current="page">Help</a>
+      <a href="glossary.html">Glossary</a>
+      <a href="index.html#download">Download</a>
+      <a class="lang" href="zh/workflow-heatwave.html" hreflang="zh-Hans" lang="zh-Hans">中文</a>
+      <button class="theme-btn" type="button" aria-label="Switch theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></svg></button>
+    </nav>
+  </div>
+</header>
+<main>
+<div class="page-head contours">
+  <div class="narrow">
+    <p class="eyebrow">Workflow 2 · Free</p>
+    <h1>The 2023 heatwave over time</h1>
+    <p class="lede">Summer 2023 broke heat records on several continents. This example holds 92 days of heatwave intensity for the whole world, from 1 June to 31 August. You will play it like a film, stop on a day, read single places, and export the map as an image.</p>
+    <div class="toc">You will use: <a class="term" href="glossary.html#netcdf">NetCDF</a>, <a class="term" href="glossary.html#raster">rasters</a>, <a class="term" href="glossary.html#timestep">time steps</a>, <a class="term" href="glossary.html#nodata">no data</a> and <a class="term" href="glossary.html#export">map images</a>.</div>
+  </div>
+</div>
+<div class="narrow">
+<ol class="steps">
+  <li id="open">
+    <h3>Open the example</h3>
+    <p>Click <span class="ui">Examples</span> on the welcome card (or File › Open Example) and choose <span class="ui">Heatwaves, summer 2023</span>.</p>
+    <p>The layer <span class="ui">heatwaves summer 2023</span> appears, with its <a class="term" href="glossary.html#variable">variable</a> named under it: <span class="ui">Heat-wave intensity (°C)</span>. The card explains the file in plain words: a NetCDF-4 file with one variable on a 720 × 360 grid, <span class="ui">Time: 1 Jun 2023 to 31 Aug 2023 (92 steps)</span>. Its first line, <span class="ui">Treated as measured values (averaged, not summed)</span>, is an <a class="term" href="glossary.html#assumption">assumption</a> you can <span class="ui">Change</span>.</p>
+  </li>
+  <li id="slider">
+    <h3>Play the summer</h3>
+    <p>A time slider appears at the bottom of the map because the layer has dates. Press <span class="ui">Play</span>, drag the knob, or use <span class="ui">Previous step (←)</span> and <span class="ui">Next step (→)</span>; the arrow keys on your keyboard work too. The date of the day shown, such as <span class="ui">16 Jul 2023</span>, and the step (<span class="ui">46 of 92</span>) sit on the right.</p>
+    <figure class="frame shot"><img src="img/heatwave-slider.jpg" alt="The world on 16 July 2023, with heatwaves over the Mediterranean, the southern United States and South America, and the time slider at step 46 of 92." width="1600" height="996" loading="lazy"><figcaption>16 July 2023: heat over the Mediterranean, the southern United States, Mexico and China, and strong marine heat off West Africa and South America.</figcaption></figure>
+    <p class="note">The colour range stays the same on every day, so a redder colour always means a stronger heatwave, never just a different scale. The legend names the day: <span class="ui">Heat-wave intensity (°C), 16 Jul 2023</span>.</p>
+  </li>
+  <li id="click">
+    <h3>Read a single place</h3>
+    <p>Zoom in on a region (scroll or pinch, or type a place in the search box) and click a coloured cell. The card shows the value for that cell on that day, and where it stands: <span class="ui">1.70 °C</span>, <span class="ui">lower than 58% of this layer’s cells (estimated from a sample)</span>.</p>
+    <figure class="frame shot"><img src="img/heatwave-click.jpg" alt="Europe and North Africa on 16 July 2023; a cell in northern Algeria is selected and its card reads 1.70 °C, lower than 58% of this layer’s cells." width="1600" height="996" loading="lazy"></figure>
+    <p>Cells left clear are <a class="term" href="glossary.html#nodata">no data</a>: no heatwave was recorded there that day. Clicking one says <span class="ui">No value</span>, <span class="ui">This cell has no data.</span> It is not the same as zero.</p>
+    <p class="note">Each cell is 0.5° across, about 55 km at the equator, so a value describes a big square, not one town. See <a href="glossary.html#resolution">resolution</a>.</p>
+  </li>
+  <li id="colors">
+    <h3>Make the hottest places stand out</h3>
+    <p>Click <span class="ui">Show only values above…</span> on the layer’s card to grey out everything below a threshold you set, or <span class="ui">Change colors and range</span> to pick another <span class="ui">Palette</span> or <span class="ui">Range</span> in the <span class="ui">Style</span> tab. With a cell selected, <span class="ui">Show where values are like this</span> highlights every cell with a similar value.</p>
+  </li>
+  <li id="export">
+    <h3>Export the map as an image</h3>
+    <p>Stop on the day you want, then click <span class="ui">Share</span> › <span class="ui">Map image…</span> (⌘E). The sheet shows the image exactly as it will be saved.</p>
+    <figure class="frame shot"><img src="img/heatwave-export.jpg" alt="The Export map image sheet: a world map of 16 July 2023 with latitude and longitude on the frame and a legend, and options for size, north arrow, scale bar, labels, title, caption and legend." width="1600" height="996" loading="lazy"></figure>
+    <ul>
+      <li><span class="ui">Size</span>: <span class="ui">Slide 16:9</span> (1920 × 1080), <span class="ui">Report A4</span> or <span class="ui">Square</span>.</li>
+      <li><span class="ui">Show</span>: <span class="ui">Fit to data</span> or <span class="ui">Current view</span> (what you see in the window).</li>
+      <li><span class="ui">North arrow</span>, <span class="ui">Scale bar</span> and <span class="ui">Lat/lon labels</span>: <span class="ui">Auto</span> picks what suits the map; a world map gets latitude and longitude on the frame instead of a scale bar, because distances vary too much across it.</li>
+      <li><span class="ui">Title</span>: for example “Heatwaves on 16 July 2023”. The <span class="ui">Caption</span> is written from the layers and credits; edit it if you like.</li>
+    </ul>
+    <p>Click <span class="ui">Save…</span> to write a PNG. The legend carries the date, so the picture explains itself when you share it.</p>
+    <p class="note">Want a sequence? Step to the next day and export again. Each image keeps the same colour range, so the frames compare fairly.</p>
+  </li>
+</ol>
+<div class="pro-note" style="margin-bottom:30px"><strong>LayeredMap Pro.</strong> Ask about the heat in plain words, for example “Which countries had the strongest heatwave on this day?”, with Pro’s built-in world countries. The answer works on the variable and day shown, and its recipe names both.</div>
+<p class="coords" style="margin:10px 0 60px">Data: Copernicus Global Drought Observatory (European Commission, JRC), GDO Warm Spell Intensity (ERA5), 2023; © European Union, 1995–2026, CC BY 4.0. Trimmed for LayeredMap to June–August, averaged to 0.5°, days without a warm spell set to no data. Basemap © OpenStreetMap contributors, Protomaps, Natural Earth.</p>
+</div>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <div>
+      <p><strong>LayeredMap Help</strong> · These pages ship inside the app (Help › LayeredMap Help) and work offline.</p>
+      <p>Screenshots show map data © OpenStreetMap contributors (ODbL) via Protomaps, Natural Earth (public domain), and NASA Blue Marble imagery (NASA Earth Observatory, GIBS). Example data credits are listed on each page.</p>
+    </div>
+    <div><a href="help.html">Help</a> · <a href="glossary.html">Glossary</a> · <a href="zh/workflow-heatwave.html" lang="zh-Hans">中文</a></div>
+  </div>
+</footer>
+</body>
+</html>

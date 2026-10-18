@@ -16,6 +16,7 @@ pub enum Action {
     ExportQuestionLog,
     ToggleOffline,
     ExportDiagnostics,
+    Help,
 }
 
 pub struct MenuBar {
@@ -179,7 +180,13 @@ impl MenuBar {
         let help = Submenu::with_items(
             "Help",
             true,
-            &[&MenuItem::with_id("credits", "Credits", true, None), &MenuItem::with_id("diagnostics", "Export Diagnostics…", true, None)],
+            &[
+                // The help pages ship inside the app (WP6.10), so this works offline.
+                &MenuItem::with_id("help", "LayeredMap Help", true, None),
+                &PredefinedMenuItem::separator(),
+                &MenuItem::with_id("credits", "Credits", true, None),
+                &MenuItem::with_id("diagnostics", "Export Diagnostics…", true, None),
+            ],
         )?;
         for m in [&app, &file, &edit, &view, &window, &help] {
             menu.append(m)?;
@@ -229,6 +236,7 @@ impl MenuBar {
                 "credits" => Action::Shell(Command::ShowCredits),
                 "offline" => Action::ToggleOffline,
                 "diagnostics" => Action::ExportDiagnostics,
+                "help" => Action::Help,
                 _ => continue,
             };
             out.push(a);
