@@ -13,7 +13,7 @@ use crate::{Shell, System, Units};
 const OPEN_PHASE: u8 = 2;
 const LAYERS_PHASE: u8 = 2;
 const UNDO_PHASE: u8 = 2;
-const SHARE_PHASE: u8 = 5;
+const SHARE_PHASE: u8 = crate::export::EXPORT_PHASE;
 /// The welcome card appears once Open file and Try an example work.
 const WELCOME_PHASE: u8 = 2;
 
@@ -68,7 +68,8 @@ pub fn toolbar(shell: &mut Shell, ui: &mut Ui, rect: Rect, _system: System) {
         (icon::STACK, "Layers", LAYERS_PHASE),
         (icon::FOLDER_OPEN, "Open", OPEN_PHASE),
     ] {
-        let built = flags.shows(phase) && phase <= lm_core::phase::BUILD_PHASE;
+        // Share comes with export, shown ahead of its phase in developer and Pro builds.
+        let built = if phase == SHARE_PHASE { shell.export_shown() } else { flags.shows(phase) && phase <= lm_core::phase::BUILD_PHASE };
         let enabled = built && (label != "Undo" || shell.ws.undo.can_undo());
         let color = if enabled { t.text_primary } else { t.text_secondary.gamma_multiply(0.7) };
         let text = painter.layout_no_wrap(label.to_string(), regular(theme::BODY), color);
@@ -89,10 +90,15 @@ pub fn toolbar(shell: &mut Shell, ui: &mut Ui, rect: Rect, _system: System) {
             "Undo" => shell.ws.undo.undo_label().map_or_else(|| "Nothing to undo".to_string(), |l| format!("Undo {}", lower_first(l))),
             "Open" => "Open files (⌘O)".to_string(),
             "Layers" => "Show or hide the layer list (⌘L)".to_string(),
+            "Share" => "Export a map image (⌘E) or data".to_string(),
             other => other.to_string(),
         };
         let clicked = resp.clicked();
-        resp.on_hover_text(tip);
+        let resp = resp.on_hover_text(tip);
+        if label == "Share" {
+            share_menu(shell, &resp);
+            continue;
+        }
         if clicked {
             match label {
                 "Open" => shell.command(ui.ctx(), crate::Command::RequestOpen),
@@ -102,6 +108,21 @@ pub fn toolbar(shell: &mut Shell, ui: &mut Ui, rect: Rect, _system: System) {
             }
         }
     }
+}
+
+/// Share's menu: Map image… and Data… (Interaction specification › Screen states › Export).
+fn share_menu(shell: &mut Shell, resp: &egui::Response) {
+    let ctx = resp.ctx.clone();
+    let has_data = !shell.ws.doc.layers.is_empty();
+    egui::Popup::menu(resp).show(|ui| {
+        ui.set_min_width(180.0);
+        if ui.button("Map image…").clicked() {
+            shell.command(&ctx, crate::Command::ExportMapImage);
+        }
+        if ui.add_enabled(has_data, egui::Button::new("Data…")).on_disabled_hover_text("Open a file first").clicked() {
+            shell.command(&ctx, crate::Command::ExportData);
+        }
+    });
 }
 
 /// The app icon (the same picture as the Dock's), as a texture made once.

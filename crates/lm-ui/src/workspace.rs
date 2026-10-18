@@ -1469,6 +1469,17 @@ fn derive_saved(base: &ImportedLayer, saved: &lm_core::document::DocLayer) -> Re
     lm_jobs::import::reapply_choices(fresh, &saved.profile).map_err(|e| e.to_string())
 }
 
+/// A copy of the map for an exported image (WP5.3): previews — an action's, the Compare view's —
+/// are left out, and nothing is highlighted as selected.
+pub fn map_for_export(map: &Map) -> Map {
+    let mut m = map.clone();
+    m.layers.retain(|l| l.id != analysis::PREVIEW_MAP_ID && l.id != COMPARE_MAP_ID);
+    for l in &mut m.layers {
+        l.selection.clear();
+    }
+    m
+}
+
 /// Whether a layer can be drawn: located in GPS coordinates (or a raster with an extent).
 pub fn drawable(p: &lm_core::model::LayerProfile) -> bool {
     p.kind != LayerKind::Table

@@ -67,7 +67,8 @@ without them they print "skipped".
 | D1–D3 | `D/D1`–`D/D3` | v0 document folders as Gates 2, 3 and 4 saved them (synthetic: layers with answers; then styles, filters, roles, a join; then a drawn area and a kept result); format migration and save/reopen equality (`lm-doc` `container::tests`) | present; rewrite with `LM_WRITE_DOC_FIXTURES=1 cargo test -p lm-doc --lib write_gate_fixture` |
 | D4 | — | — | a Gate 5 `.lmap`, at Gate 5 |
 | B1–B20 | — | — | owner-supplied |
-| X1–X5 | `generated/X1/` … `generated/X5/` | — | generated (`cargo xtask fixtures`) |
+| X1–X4 | `generated/X1/` … `generated/X4/` | — | generated (`cargo xtask fixtures`) |
+| X5 | `X5/` (also `generated/X5/`) | CSV cells beginning with =, +, - or @: no formula injection on export | present |
 
 ## `expected.json` conventions
 

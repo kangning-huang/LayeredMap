@@ -37,6 +37,9 @@ pub struct Provider {
     pub offline_allowed: bool,
     /// Its terms allow it in exported images (otherwise export substitutes the offline map).
     pub export_allowed: bool,
+    /// What the provider's terms ask of an exported image beyond its credit (shown in the export
+    /// sheet; empty when nothing).
+    pub export_terms: &'static str,
     pub source: Source,
     pub look: Look,
 }
@@ -50,6 +53,8 @@ const NE_ATTRIBUTION: &str = "Natural Earth";
 /// another source (docs/lm/decisions.md, 2026-10-17).
 pub const SENTINEL2_TILES: &str = "https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2024_3857/default/GoogleMapsCompatible/{z}/{y}/{x}.jpg";
 const SENTINEL2_ATTRIBUTION: &str = "Sentinel-2 cloudless by EOX (Copernicus Sentinel data 2024)";
+/// The 2024 edition's licence (CC BY-NC-SA 4.0) carries over to images made from it.
+const SENTINEL2_TERMS: &str = "The satellite imagery is licensed CC BY-NC-SA 4.0: use this image for non-commercial purposes only, and share it under the same licence.";
 
 /// The built-in providers, in chooser order: Auto (the default; light or dark with the
 /// appearance), Light, Dark, Satellite, Offline.
@@ -63,6 +68,7 @@ pub fn providers() -> Vec<Provider> {
             max_zoom: 15,
             offline_allowed: false,
             export_allowed: true,
+            export_terms: "",
             source: Source::VectorArchive,
             look: Look::Auto,
         },
@@ -74,6 +80,7 @@ pub fn providers() -> Vec<Provider> {
             max_zoom: 15,
             offline_allowed: false,
             export_allowed: true,
+            export_terms: "",
             source: Source::VectorArchive,
             look: Look::Light,
         },
@@ -85,6 +92,7 @@ pub fn providers() -> Vec<Provider> {
             max_zoom: 15,
             offline_allowed: false,
             export_allowed: true,
+            export_terms: "",
             source: Source::VectorArchive,
             look: Look::Dark,
         },
@@ -96,6 +104,7 @@ pub fn providers() -> Vec<Provider> {
             max_zoom: 14,
             offline_allowed: false,
             export_allowed: true,
+            export_terms: SENTINEL2_TERMS,
             source: Source::Imagery,
             look: Look::Dark,
         },
@@ -107,6 +116,7 @@ pub fn providers() -> Vec<Provider> {
             max_zoom: 8,
             offline_allowed: true,
             export_allowed: true,
+            export_terms: "",
             source: Source::Offline,
             look: Look::Light,
         },
@@ -127,6 +137,7 @@ pub fn provider(id: &str) -> Provider {
             max_zoom: 8,
             offline_allowed: true,
             export_allowed: true,
+            export_terms: "",
             source: Source::Offline,
             look: Look::Light,
         }),
