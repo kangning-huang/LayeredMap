@@ -3,7 +3,8 @@
 //! the plan comes back checked and already run on a copy of the layers. Its new layer shows over
 //! the map and its filter as a highlight. The plan and its cards show above the box; **Keep**
 //! adds everything as one undo step, **Discard** drops it. A question from the assistant shows
-//! with its choices; the reply continues the exchange. The microphone starts macOS Dictation.
+//! with its choices; the reply continues the exchange. The microphone listens with Apple's
+//! speech recognizer (`crate::dictation`).
 
 use std::sync::mpsc::{Receiver, channel};
 use std::time::Instant;
@@ -30,13 +31,11 @@ pub struct AskState {
     conversation: Vec<serde_json::Value>,
     /// Requests carried out (kept) in this session, for "those" and "of these".
     history: Vec<String>,
-    /// The key prompt: the text typed so far.
-    key_draft: Option<String>,
-    key_error: Option<String>,
-    /// A request waiting for the key.
-    waiting: Option<String>,
     pub spent_usd: f64,
     focus: bool,
+    /// Listening (the microphone): the helper, and the field's text before speaking began.
+    #[cfg(not(target_arch = "wasm32"))]
+    listening: Option<(crate::dictation::Dictation, String)>,
 }
 
 struct Pending {
@@ -63,11 +62,15 @@ impl AskState {
             p.control.cancel();
             return true;
         }
-        self.shown.take().is_some() || self.key_draft.take().is_some()
+        #[cfg(not(target_arch = "wasm32"))]
+        if self.listening.take().is_some() {
+            return true;
+        }
+        self.shown.take().is_some()
     }
 }
 
-/// Sends `text` to the assistant (or asks for the key first).
+/// Sends `text` to the assistant.
 pub fn submit(shell: &mut Shell, ctx: &egui::Context, text: String) {
     let text = text.trim().to_string();
     if text.is_empty() || shell.ask.pending.is_some() {
@@ -78,8 +81,8 @@ pub fn submit(shell: &mut Shell, ctx: &egui::Context, text: String) {
     #[cfg(target_arch = "wasm32")]
     let key: Option<String> = None;
     let Some(key) = key else {
-        shell.ask.waiting = Some(text);
-        shell.ask.key_draft = Some(String::new());
+        shell.ask.shown =
+            Some(Shown::Message { text: "The assistant isn't set up in this build (it has no assistant key).".into(), warning: true });
         return;
     };
     let (layers, filters) = shell.ws.ask_inputs();
@@ -152,14 +155,7 @@ pub fn poll(shell: &mut Shell) {
             Shown::Question { text, choices }
         }
         Ok(Answer::CannotDo(text)) => Shown::Message { text: format!("I can't answer that with these layers: {text}"), warning: false },
-        Err(e) => {
-            if e.contains("key was refused") {
-                shell.ask.key_draft = Some(String::new());
-                shell.ask.key_error = Some(e.clone());
-                shell.ask.waiting = Some(p.request);
-            }
-            Shown::Message { text: e, warning: true }
-        }
+        Err(e) => Shown::Message { text: e, warning: true },
     });
 }
 
@@ -168,6 +164,56 @@ fn discard(shell: &mut Shell) {
         shell.ws.preview_plan(None);
     }
     shell.ask.shown = None;
+}
+
+/// The microphone (the button, and scripts): starts listening, or stops it.
+pub fn dictate(shell: &mut Shell, ctx: &egui::Context) {
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        if let Some((d, _)) = &mut shell.ask.listening {
+            d.stop();
+            return;
+        }
+        let wake = ctx.clone();
+        match crate::dictation::Dictation::start(move || wake.request_repaint()) {
+            Ok(d) => {
+                let base = shell.ask.text.trim_end().to_string();
+                shell.ask.listening = Some((d, if base.is_empty() { base } else { base + " " }));
+            }
+            Err(e) => shell.ask.shown = Some(Shown::Message { text: e, warning: true }),
+        }
+    }
+    #[cfg(target_arch = "wasm32")]
+    let _ = (shell, ctx);
+}
+
+/// Words heard so far go into the field; the final words end listening.
+#[cfg(not(target_arch = "wasm32"))]
+fn hear(shell: &mut Shell) -> bool {
+    use crate::dictation::Event;
+    let Some((d, base)) = &shell.ask.listening else { return false };
+    let mut done = false;
+    for e in d.events() {
+        match e {
+            Event::Ready => {}
+            Event::Partial(t) => shell.ask.text = format!("{base}{t}"),
+            Event::Final(t) => {
+                if !t.is_empty() {
+                    shell.ask.text = format!("{base}{t}");
+                }
+                done = true;
+            }
+            Event::Error(m) => {
+                shell.ask.shown = Some(Shown::Message { text: m, warning: true });
+                done = true;
+            }
+        }
+    }
+    if done {
+        shell.ask.listening = None;
+        shell.ask.focus = true;
+    }
+    shell.ask.listening.is_some()
 }
 
 /// Keeps the plan shown (the Keep button, and scripts).
@@ -208,7 +254,8 @@ fn step_words(o: &StepOutcome) -> Option<String> {
 
 /// The box and what it shows, at the bottom of `map` between the side panels.
 pub fn ask_box(shell: &mut Shell, ui: &mut Ui, map: egui::Rect) {
-    if !shell.pro {
+    // Nothing to ask about until a layer is open; the welcome card has that space.
+    if !shell.pro || shell.ws.doc.layers.is_empty() {
         return;
     }
     let t = *shell.theme();
@@ -225,10 +272,7 @@ pub fn ask_box(shell: &mut Shell, ui: &mut Ui, map: egui::Rect) {
         |ui| {
             ui.set_width(width);
             ui.vertical(|ui| {
-                if shell.ask.key_draft.is_some() {
-                    key_prompt(shell, ui, &t, width);
-                    ui.add_space(8.0);
-                } else if shell.ask.shown.is_some() || shell.ask.pending.is_some() {
+                if shell.ask.shown.is_some() || shell.ask.pending.is_some() {
                     answer_panel(shell, ui, &t, width, map.height() * 0.55);
                     ui.add_space(8.0);
                 }
@@ -240,9 +284,7 @@ pub fn ask_box(shell: &mut Shell, ui: &mut Ui, map: egui::Rect) {
 
 fn field(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, width: f32) {
     let empty = shell.ws.doc.layers.is_empty();
-    let hint = if empty {
-        "Open a layer, then ask about it"
-    } else if matches!(shell.ask.shown, Some(Shown::Question { .. })) {
+    let hint = if matches!(shell.ask.shown, Some(Shown::Question { .. })) {
         "Type your answer, or pick one above"
     } else {
         "Ask about your layers"
@@ -262,6 +304,14 @@ fn field(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, width: f32) {
         ui.horizontal(|ui| {
             ui.label(RichText::new(icon::SPARKLE).font(theme::icon_font(18.0)).color(t.accent));
             let busy = shell.ask.pending.is_some();
+            #[cfg(not(target_arch = "wasm32"))]
+            let listening = hear(shell);
+            #[cfg(target_arch = "wasm32")]
+            let listening = false;
+            if listening {
+                ui.ctx().request_repaint_after(std::time::Duration::from_millis(100));
+            }
+            let hint = if listening { "Listening… speak your request" } else { hint };
             let edit = egui::TextEdit::singleline(&mut shell.ask.text)
                 .hint_text(hint)
                 .frame(egui::Frame::NONE)
@@ -274,14 +324,20 @@ fn field(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, width: f32) {
                 shell.ask.focus = false;
             }
             let enter = r.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
+            // While listening the microphone is red and stops listening when clicked.
+            let (glyph, color, tip) = if listening {
+                (icon::MICROPHONE, egui::Color32::from_rgb(255, 59, 48), "Stop listening")
+            } else {
+                (icon::MICROPHONE, t.text_secondary, "Speak your request")
+            };
             let mic = ui
-                .add_enabled(!busy && !empty, egui::Button::new(RichText::new(icon::MICROPHONE).font(theme::icon_font(18.0))).frame(false))
-                .on_hover_text("Speak your request (Dictation). You can also press the Dictation key or Fn twice.");
+                .add_enabled(
+                    !busy && !empty,
+                    egui::Button::new(RichText::new(glyph).font(theme::icon_font(18.0)).color(color)).frame(false),
+                )
+                .on_hover_text(tip);
             if mic.clicked() {
-                r.request_focus();
-                if let Some(start) = shell.start_dictation {
-                    start();
-                }
+                dictate(shell, ui.ctx());
             }
             let send = ui
                 .add_enabled(
@@ -292,53 +348,6 @@ fn field(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, width: f32) {
             if (enter || send.clicked()) && !shell.ask.text.trim().is_empty() {
                 let text = shell.ask.text.clone();
                 submit(shell, ui.ctx(), text);
-            }
-        });
-    });
-}
-
-fn key_prompt(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, width: f32) {
-    crate::chrome::panel_frame(t).show(ui, |ui| {
-        ui.set_width(width - 2.0 * theme::PANEL_PADDING);
-        ui.label(RichText::new("Connect the assistant").font(semibold(HEADLINE)));
-        ui.add_space(4.0);
-        ui.label(
-            RichText::new(
-                "This test build talks to OpenRouter. Paste your OpenRouter key once: it's saved in this Mac's keychain, never in a file.",
-            )
-            .color(t.text_secondary),
-        );
-        ui.add_space(8.0);
-        let draft = shell.ask.key_draft.get_or_insert_with(String::new);
-        let r = ui.add(egui::TextEdit::singleline(draft).password(true).hint_text("sk-or-…").desired_width(f32::INFINITY));
-        if let Some(e) = &shell.ask.key_error {
-            ui.label(RichText::new(e).size(CAPTION).color(t.warning));
-        }
-        ui.add_space(8.0);
-        ui.horizontal(|ui| {
-            let save = ui.button("Save key").clicked() || (r.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)));
-            if ui.button("Cancel").clicked() {
-                shell.ask.key_draft = None;
-                shell.ask.key_error = None;
-                shell.ask.waiting = None;
-                return;
-            }
-            if save {
-                let key = shell.ask.key_draft.clone().unwrap_or_default();
-                #[cfg(not(target_arch = "wasm32"))]
-                let saved = lm_ask::openrouter::save_key(&key);
-                #[cfg(target_arch = "wasm32")]
-                let saved: Result<(), String> = Err(String::new());
-                match saved {
-                    Ok(()) => {
-                        shell.ask.key_draft = None;
-                        shell.ask.key_error = None;
-                        if let Some(text) = shell.ask.waiting.take() {
-                            submit(shell, ui.ctx(), text);
-                        }
-                    }
-                    Err(e) => shell.ask.key_error = Some(e),
-                }
             }
         });
     });

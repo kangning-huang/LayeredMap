@@ -8,6 +8,8 @@ pub mod analysis;
 pub mod ask;
 pub mod basemap;
 mod chrome;
+#[cfg(not(target_arch = "wasm32"))]
+mod dictation;
 pub mod draw;
 pub mod examples;
 pub mod find_ui;
@@ -105,6 +107,7 @@ pub enum Command {
     /// Pro's Ask box (scripts and tests): send a request, keep its plan.
     Ask(String),
     KeepAsk,
+    Dictate,
 }
 
 /// A file dialog the shell asks the app to show (the shell itself never opens dialogs).
@@ -210,8 +213,6 @@ pub struct Shell {
     pub(crate) after_drawing: Option<lm_core::model::LayerId>,
     /// The Ask box (Pro, early test build of WP7.1).
     pub(crate) ask: ask::AskState,
-    /// Starts the system's dictation into the focused field (set by the app on macOS).
-    pub start_dictation: Option<fn()>,
 }
 
 impl Shell {
@@ -245,7 +246,6 @@ impl Shell {
             composer: None,
             after_drawing: None,
             ask: ask::AskState::default(),
-            start_dictation: None,
             find: find_ui::FindState::default(),
             drawing: None,
             ws: workspace::Workspace::with_waker(ctx),
@@ -357,6 +357,7 @@ impl Shell {
             }
             Command::Ask(text) => ask::submit(self, ctx, text),
             Command::KeepAsk => ask::keep_shown(self),
+            Command::Dictate => ask::dictate(self, ctx),
             Command::Find(text) => {
                 if let Some(id) = self.ws.selected() {
                     self.find.layer = Some(id);
