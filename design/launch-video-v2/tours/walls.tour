@@ -1,0 +1,7 @@
+# Walled cities over satellite, then Beijing's walls and their card
+example walls
+basemap satellite
+114.5,36.5,6.4
+116.39,39.91,10.6
+click 116.39,39.91
+116.39,39.91,10.6
