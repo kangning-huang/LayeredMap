@@ -1604,7 +1604,13 @@ fn row_symbols(c: &lm_jobs::inspect::RowClasses, s: &Style, kind: LayerKind) -> 
                     f[3] = (f32::from(f[3]) * s.fill_opacity.clamp(0.0, 1.0)).round() as u8;
                     (f, lm_core::document::darker(*color))
                 }
-                LayerKind::Lines => (*color, *color),
+                // A colour per category or value keeps the layer's line transparency, so lines
+                // that pile up (storm tracks open faint) still show where they are densest.
+                LayerKind::Lines => {
+                    let mut c = *color;
+                    c[3] = ((u16::from(c[3]) * u16::from(s.stroke[3]) + 127) / 255) as u8;
+                    (c, c)
+                }
                 _ => (*color, s.stroke),
             };
             let (size, stroke_width) = match kind {
@@ -2181,5 +2187,34 @@ mod grid_tests {
         assert_eq!(w2.shown_time(id), 1);
         // ta at 500 hPa in July 2023 (xarray: expected_slices.csv).
         assert!((mean(&w2, id) - 256.5).abs() < 1e-4, "{}", mean(&w2, id));
+    }
+}
+
+#[cfg(test)]
+mod row_symbol_tests {
+    use super::*;
+
+    fn classes() -> lm_jobs::inspect::RowClasses {
+        lm_jobs::inspect::RowClasses {
+            index: vec![0, 1],
+            combos: vec![([0, 114, 178, 255], 0.0), ([230, 159, 0, 255], 0.0)],
+            legend: Default::default(),
+            scale: None,
+        }
+    }
+
+    /// Storm tracks open faint (`stroke[3]` well under 255); colouring them by basin or season
+    /// keeps that, so overlaps still build up into density.
+    #[test]
+    fn coloured_lines_keep_the_layers_line_transparency() {
+        let mut s = Style::for_kind(LayerKind::Lines, [0, 114, 178, 255], 4_999);
+        s.stroke[3] = 51; // 20 %
+        let r = row_symbols(&classes(), &s, LayerKind::Lines);
+        let a: Vec<u8> = r.symbols.iter().map(|sym| sym.stroke.a()).collect();
+        assert_eq!(a, vec![51, 51]);
+        // Fully opaque lines stay fully opaque.
+        s.stroke[3] = 255;
+        let r = row_symbols(&classes(), &s, LayerKind::Lines);
+        assert!(r.symbols.iter().all(|sym| sym.stroke.a() == 255));
     }
 }
