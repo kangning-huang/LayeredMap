@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Your NimbleMap sign-in code</title>
+</head>
+<body style="margin:0;padding:24px 16px;background:#ffffff;color:#1d1d1f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.5">
+<div style="max-width:30em;margin:0 auto">
+<p style="margin:0 0 16px">Welcome to NimbleMap. Here is your code to finish signing in; this also creates your account.</p>
+<p style="margin:0 0 4px">Your code:</p>
+<p style="margin:0 0 20px;font-family:ui-monospace,Menlo,Consolas,'Courier New',monospace;font-size:34px;font-weight:600;letter-spacing:6px">{{ .Token }}</p>
+<p style="margin:0 0 16px">Type it into NimbleMap, where it asks for the 6-digit code. It works for one hour.</p>
+<p style="margin:0 0 16px">Or, on the computer where you asked for this email, open this link within 10 minutes:<br>
+<a href="{{ .ConfirmationURL }}" style="color:#1a5fd6">Sign in to NimbleMap</a></p>
+<p style="margin:24px 0 0;color:#6e6e73;font-size:14px">If you didn't ask to sign in to NimbleMap, you can ignore this email. Nobody can sign in without this code or link.</p>
+</div>
+</body>
+</html>
