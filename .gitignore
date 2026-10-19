@@ -32,3 +32,6 @@ Thumbs.db
 **/tests/snapshots/*.new.png
 **/tests/snapshots/*.old.png
 **/tests/snapshots/*.diff.png
+
+# AppleDouble files macOS writes on external drives
+._*
