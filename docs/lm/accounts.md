@@ -6,6 +6,9 @@ a subscription may come later. The app only needs to know who is who, so it can 
 This page is the plan. How it is built (endpoints, tokens, the redirect, the Ask proxy, the China
 adapter): `docs/lm/accounts-design.md`.
 
+A Mac App Store channel with Pro as an in-app purchase, which needs no account and no WeChat or
+Alipay sign-in, is planned in `docs/lm/app-store.md`.
+
 ## Principles
 
 - **Store as little as possible.** Per user: the sign-in service's user ID, how they signed in, an email or phone number when the provider gives one, `pro` (true/false), the sign-up date, and later the subscription status. No names, no avatars, no map data.
