@@ -1,0 +1,10 @@
+{
+  "name": "nimblemap-ask-proxy",
+  "private": true,
+  "type": "module",
+  "description": "The Ask proxy's logic, tested with Node's built-in runner (the functions themselves run on Supabase's Deno)",
+  "engines": { "node": ">=22.18" },
+  "scripts": {
+    "test": "node --test test/*.test.ts"
+  }
+}

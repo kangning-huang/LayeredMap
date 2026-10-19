@@ -167,7 +167,7 @@ It holds no data values or file contents; file and folder names may appear in er
 Save…	保存…
 Couldn't start listening.	无法开始收听。
 Speaking isn't available on Windows yet. Press Windows+H to type with your voice instead.	Windows 上暂不支持语音提问。可以按 Windows+H 用语音输入文字。
-Speaking needs the {app} app (its speech helper isn't here).	语音提问需要 {app} 应用（找不到它的语音组件）。
+Speaking needs the {app} app (its speech helper isn't here).	语音提问需要{app}应用（找不到它的语音组件）。
 Couldn't start listening: {error}	无法开始收听：{error}
 Drawing — click to add points, double-click to finish, Esc to cancel	绘制中——单击添加点，双击完成，按 Esc 取消
 Drawing — drag a rectangle, Esc to cancel	绘制中——拖出一个矩形，按 Esc 取消
@@ -229,8 +229,8 @@ about {km} km across: a north arrow and a scale bar.	宽约 {km} km：加指北�
 about {km} km across: latitude and longitude on the frame, and a scale bar.	宽约 {km} km：图框上标经纬度，并加比例尺。
 about {km} km across and {degrees}° tall: latitude and longitude on the frame. No scale bar, as distances stretch with latitude.	宽约 {km} km、高 {degrees}°：图框上标经纬度。距离随纬度拉伸，所以不加比例尺。
 about {km} km across: latitude and longitude on the frame. Distances vary too much for one scale bar.	宽约 {km} km：图框上标经纬度。距离变化太大，一个比例尺无法表示。
-Made with {app}.	使用 {app} 制作。
-Data: {sources}. Made with {app}.	数据：{sources}。使用 {app} 制作。
+Made with {app}.	使用{app}制作。
+Data: {sources}. Made with {app}.	数据：{sources}。使用{app}制作。
 No data ({n})	无数据（{n}）
 Credits are always included: {credits}	数据来源始终会包含：{credits}
 The image couldn't be made: {error}	无法生成图片：{error}
@@ -261,7 +261,7 @@ All {n}	全部 {n} 个
 Filtered {n}	已筛选 {n} 个
 Selected {n}	已选中 {n} 个
 {note}: left out unless you check it	{note}：除非勾选，否则不包含
-Styles and recipes stay in {app}: these formats carry only locations and values.	样式和步骤说明只保存在 {app} 里：这些格式只带位置和数值。
+Styles and recipes stay in {app}: these formats carry only locations and values.	样式和步骤说明只保存在{app}里：这些格式只带位置和数值。
 Clear	清除
 Clear the search	清除搜索
 Zoom to it	缩放到它
@@ -634,7 +634,7 @@ The layer couldn't be read again.	无法重新读取该图层。
 Reading {done} of {total}	正在读取 {done}/{total}
 Still reading {layer}. Try again in a moment.	仍在读取 {layer}，请稍后再试。
 Save map package	保存地图包
-{app} map	{app} 地图
+{app} map	{app}地图
 Locate {file}	查找 {file}
 A map-first GIS. Built on RustGIS.	以地图为先的 GIS。基于 RustGIS 构建。
 File	文件
@@ -667,11 +667,11 @@ Full Screen	全屏
 Window	窗口
 Help	帮助
 Export Diagnostics…	导出诊断信息…
-About {app}	关于 {app}
-Quit {app}	退出 {app}
+About {app}	关于{app}
+Quit {app}	退出{app}
 Undo ({key})	撤销（{key}）
 Redo ({key})	重做（{key}）
-{app} Help	{app} 帮助
+{app} Help	{app}帮助
 Satellite	卫星图
 Offline	离线
 Try an example	试试示例
@@ -709,3 +709,85 @@ Split [layer] into separate parts	把 [layer] 拆分成独立的部分
 Keep the part of [layer] inside [other]	保留 [layer] 在 [other] 以内的部分
 Remove the part of [layer] inside [other]	去掉 [layer] 在 [other] 以内的部分
 Find areas where [Heat] meets conditions	查找 [Heat] 满足条件的区域
+Settings	设置
+Account	账户
+Delete Account	删除账户
+Sign Out	退出登录
+Delete Account…	删除账户…
+Working offline: Delete Account needs the network. Sign Out works offline.	正在离线工作：删除账户需要联网。退出登录在离线时也能用。
+Region	地区
+Sign-in for mainland China (WeChat, Alipay, phone number) is coming in a later version.	中国大陆登录方式（微信、支付宝、手机号）将在后续版本中提供。
+Finish signing in in your browser…	请在浏览器中完成登录…
+Signing out…	正在退出登录…
+Deleting your account…	正在删除你的账户…
+Email address	电子邮件地址
+Verify	验证
+The link has stopped working on this Mac; the code still works for an hour.	链接在这台 Mac 上已失效；验证码在一小时内仍然有效。
+The link has stopped working on this computer; the code still works for an hour.	链接在这台电脑上已失效；验证码在一小时内仍然有效。
+Send a New Email	重新发送邮件
+Use a Different Email	使用其他邮箱
+Asking about your layers needs a free account. Your maps and files stay on this computer.	询问图层需要一个免费账户。你的地图和文件仍保留在这台电脑上。
+Sign In…	登录…
+You're signed out.	你已退出登录。
+Your account was deleted.	你的账户已删除。
+Signed in with {provider} · {region}	已通过{provider}登录 · {region}
+{pro} is on for this account.	此账户已开通{pro}。
+Delete your {app} account? {pro} stops working on every computer you use. Your maps and files are not affected.	要删除你的{app}账户吗？{pro}将在你使用的所有电脑上停止工作。你的地图和文件不受影响。
+Sign in to use {pro}	登录后即可使用{pro}
+{pro} is free while it's new. Your account only says who you are: your maps and files never leave this computer.	{pro}在推出初期免费。账户只用来确认你是谁：你的地图和文件从不离开这台电脑。
+Sending an email to {address}…	正在向 {address} 发送邮件…
+We sent an email to {address}. Enter the {n}-digit code in it.	我们已向 {address} 发送了一封邮件。请输入邮件中的 {n} 位验证码。
+We sent an email to {address}. Click the link in it on this Mac, or enter the {n}-digit code.	我们已向 {address} 发送了一封邮件。请在这台 Mac 上点击邮件中的链接，或输入 {n} 位验证码。
+We sent an email to {address}. Click the link in it on this computer, or enter the {n}-digit code.	我们已向 {address} 发送了一封邮件。请在这台电脑上点击邮件中的链接，或输入 {n} 位验证码。
+{n}-digit code	{n} 位验证码
+Sign in to use {pro} (Settings › Account).	登录后即可使用{pro}（设置 › 账户）。
+Settings…	设置…
+International	国际
+Mainland China	中国大陆
+Continue with Apple	通过 Apple 继续
+Continue with Google	通过 Google 继续
+Continue with X	通过 X 继续
+Email me a sign-in code	通过邮件发送登录验证码
+Continue with WeChat	通过微信继续
+Continue with Alipay	通过支付宝继续
+Text me a code	通过短信发送验证码
+Sign-in isn't available in this build yet.	此版本暂不支持登录。
+{app} is working offline, so it can't reach the sign-in service. Turn off View › Work Offline to sign in.	{app}正在离线工作，无法连接登录服务。请关闭“视图 › 离线工作”后再登录。
+Sign-in was cancelled.	登录已取消。
+Sign-in took too long. Try again.	登录超时，请重试。
+Sign-in didn't finish: {reason}	登录未完成：{reason}
+You're signed out. Sign in again to use {pro}.	你已退出登录。请重新登录以使用{pro}。
+Couldn't reach the sign-in service: {error}	无法连接登录服务：{error}
+The sign-in service answered {status}: {reason}	登录服务返回了 {status}：{reason}
+Couldn't keep the sign-in on this computer: {error}	无法在这台电脑上保持登录状态：{error}
+Couldn't start sign-in: {error}	无法开始登录：{error}
+The code is the {n} digits in the email.	验证码是邮件中的 {n} 位数字。
+That code didn't work. Check it, or send a new email.	验证码无效。请检查，或重新发送邮件。
+Too many attempts. Wait a few minutes, then try again.	尝试次数过多。请等几分钟再试。
+no reason given	未说明原因
+that doesn't look like an email address	这看起来不像电子邮件地址
+too many emails were sent; wait a minute and try again	发送的邮件太多；请等一分钟再试
+the sign-in service sent no code	登录服务没有发来验证码
+Signed in with {provider}	已通过{provider}登录
+Apple	Apple
+Google	Google
+X	X
+email	邮件
+a phone number	手机号
+WeChat	微信
+Alipay	支付宝
+You're signed out. Sign in again in Settings › Account to use {pro}.	你已退出登录。请在“设置 › 账户”中重新登录以使用{pro}。
+{pro} isn't on for this account.	此账户未开通{pro}。
+This account can't use {pro} yet. Try again in a minute.	此账户暂时还不能使用{pro}。请过一分钟再试。
+You've used this month's assistant allowance. It renews tomorrow.	你已用完本月的助手额度。额度将在明天恢复。
+You've used this month's assistant allowance. It renews in {n} days.	你已用完本月的助手额度。额度将在 {n} 天后恢复。
+You've used today's assistant allowance. It renews within the hour.	你已用完今天的助手额度。额度将在一小时内恢复。
+You've used today's assistant allowance. It renews in about {n} hours.	你已用完今天的助手额度。额度将在大约 {n} 小时后恢复。
+The assistant service is out of credit. It has been told; try again later.	助手服务的额度已用完。已通知维护者，请稍后再试。
+The assistant service is busy. Try again in a minute.	助手服务正忙。请过一分钟再试。
+The assistant service answered {status}: {reason}	助手服务返回了 {status}：{reason}
+The assistant service's address isn't https.	助手服务的地址不是 https。
+Couldn't reach the assistant service: {error}	无法连接助手服务：{error}
+The assistant service's answer was cut off: {error}	助手服务的回复被截断了：{error}
+The assistant service answered {status} with something unreadable.	助手服务返回了 {status}，内容无法读取。
+{app} is working offline, so the assistant can't be reached. Turn off View › Work Offline to ask.	{app}正在离线工作，无法连接助手。请关闭“视图 › 离线工作”后再提问。

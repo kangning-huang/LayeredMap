@@ -1,0 +1,25 @@
+[package]
+name = "lm-account"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+description = "NimbleMap Pro: the account (browser sign-in with PKCE, the session and its refresh token in the system's credential store)"
+
+[lints]
+workspace = true
+
+[dependencies]
+lm-core = { path = "../lm-core" }
+lm-net = { path = "../lm-net" }
+log = { workspace = true }
+serde_json = { workspace = true }
+sha2 = { workspace = true }
+base64 = { workspace = true }
+web-time = { workspace = true }
+
+# The HTTP client (already in the build through lm-net) and the system's random numbers for the
+# PKCE verifier and state (getrandom 0.3, already in the build through other crates).
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+ureq = { version = "3", default-features = false, features = ["rustls", "gzip"] }
+getrandom = "0.3"

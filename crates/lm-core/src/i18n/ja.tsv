@@ -709,3 +709,85 @@ Split [layer] into separate parts	[layer] を個別のパーツに分割
 Keep the part of [layer] inside [other]	[layer] のうち [other] の内側を残す
 Remove the part of [layer] inside [other]	[layer] のうち [other] の内側を取り除く
 Find areas where [Heat] meets conditions	[Heat] が条件を満たす場所を探す
+Settings	設定
+Account	アカウント
+Delete Account	アカウントを削除
+Sign Out	サインアウト
+Delete Account…	アカウントを削除…
+Working offline: Delete Account needs the network. Sign Out works offline.	オフラインで作業中：アカウントの削除にはネットワークが必要です。サインアウトはオフラインでもできます。
+Region	地域
+Sign-in for mainland China (WeChat, Alipay, phone number) is coming in a later version.	中国本土向けのサインイン（WeChat、Alipay、電話番号）は今後のバージョンで対応します。
+Finish signing in in your browser…	ブラウザでサインインを完了してください…
+Signing out…	サインアウト中…
+Deleting your account…	アカウントを削除中…
+Email address	メールアドレス
+Verify	確認
+The link has stopped working on this Mac; the code still works for an hour.	この Mac ではリンクが使えなくなりました。コードは 1 時間有効です。
+The link has stopped working on this computer; the code still works for an hour.	このコンピューターではリンクが使えなくなりました。コードは 1 時間有効です。
+Send a New Email	メールを再送信
+Use a Different Email	別のメールアドレスを使う
+Asking about your layers needs a free account. Your maps and files stay on this computer.	レイヤーについて質問するには、無料のアカウントが必要です。地図とファイルはこのコンピューターに残ります。
+Sign In…	サインイン…
+You're signed out.	サインアウトしました。
+Your account was deleted.	アカウントを削除しました。
+Signed in with {provider} · {region}	{provider} でサインイン中 · {region}
+{pro} is on for this account.	このアカウントでは {pro} が有効です。
+Delete your {app} account? {pro} stops working on every computer you use. Your maps and files are not affected.	{app} のアカウントを削除しますか？お使いのすべてのコンピューターで {pro} が使えなくなります。地図とファイルには影響しません。
+Sign in to use {pro}	サインインして {pro} を使う
+{pro} is free while it's new. Your account only says who you are: your maps and files never leave this computer.	{pro} は提供開始記念で無料です。アカウントはあなたが誰かを示すだけで、地図やファイルがこのコンピューターの外に出ることはありません。
+Sending an email to {address}…	{address} にメールを送信中…
+We sent an email to {address}. Enter the {n}-digit code in it.	{address} にメールを送信しました。メールに記載された {n} 桁のコードを入力してください。
+We sent an email to {address}. Click the link in it on this Mac, or enter the {n}-digit code.	{address} にメールを送信しました。この Mac でメール内のリンクをクリックするか、{n} 桁のコードを入力してください。
+We sent an email to {address}. Click the link in it on this computer, or enter the {n}-digit code.	{address} にメールを送信しました。このコンピューターでメール内のリンクをクリックするか、{n} 桁のコードを入力してください。
+{n}-digit code	{n} 桁のコード
+Sign in to use {pro} (Settings › Account).	{pro} を使うにはサインインしてください（設定 › アカウント）。
+Settings…	設定…
+International	国際版
+Mainland China	中国本土
+Continue with Apple	Apple で続ける
+Continue with Google	Google で続ける
+Continue with X	X で続ける
+Email me a sign-in code	サインインコードをメールで受け取る
+Continue with WeChat	WeChat で続ける
+Continue with Alipay	Alipay で続ける
+Text me a code	SMS でコードを受け取る
+Sign-in isn't available in this build yet.	このビルドではまだサインインを利用できません。
+{app} is working offline, so it can't reach the sign-in service. Turn off View › Work Offline to sign in.	{app} はオフラインで作業中のため、サインインサービスに接続できません。サインインするには、表示 › オフラインで作業 をオフにしてください。
+Sign-in was cancelled.	サインインがキャンセルされました。
+Sign-in took too long. Try again.	サインインに時間がかかりすぎました。もう一度お試しください。
+Sign-in didn't finish: {reason}	サインインが完了しませんでした：{reason}
+You're signed out. Sign in again to use {pro}.	サインアウトしました。{pro} を使うには、もう一度サインインしてください。
+Couldn't reach the sign-in service: {error}	サインインサービスに接続できませんでした：{error}
+The sign-in service answered {status}: {reason}	サインインサービスの応答 {status}：{reason}
+Couldn't keep the sign-in on this computer: {error}	このコンピューターにサインイン情報を保存できませんでした：{error}
+Couldn't start sign-in: {error}	サインインを開始できませんでした：{error}
+The code is the {n} digits in the email.	コードはメールに記載された {n} 桁の数字です。
+That code didn't work. Check it, or send a new email.	そのコードは使えませんでした。確認するか、メールを再送信してください。
+Too many attempts. Wait a few minutes, then try again.	試行回数が多すぎます。数分待ってから、もう一度お試しください。
+no reason given	理由は示されていません
+that doesn't look like an email address	メールアドレスの形式ではないようです
+too many emails were sent; wait a minute and try again	送信したメールが多すぎます。1 分ほど待ってからもう一度お試しください
+the sign-in service sent no code	サインインサービスからコードが届きませんでした
+Signed in with {provider}	{provider} でサインイン中
+Apple	Apple
+Google	Google
+X	X
+email	メール
+a phone number	電話番号
+WeChat	WeChat
+Alipay	Alipay
+You're signed out. Sign in again in Settings › Account to use {pro}.	サインアウトしました。{pro} を使うには、設定 › アカウント でもう一度サインインしてください。
+{pro} isn't on for this account.	このアカウントでは {pro} が有効になっていません。
+This account can't use {pro} yet. Try again in a minute.	このアカウントではまだ {pro} を使えません。1 分ほどしてからもう一度お試しください。
+You've used this month's assistant allowance. It renews tomorrow.	今月のアシスタント利用枠を使い切りました。明日リセットされます。
+You've used this month's assistant allowance. It renews in {n} days.	今月のアシスタント利用枠を使い切りました。{n} 日後にリセットされます。
+You've used today's assistant allowance. It renews within the hour.	今日のアシスタント利用枠を使い切りました。1 時間以内にリセットされます。
+You've used today's assistant allowance. It renews in about {n} hours.	今日のアシスタント利用枠を使い切りました。約 {n} 時間後にリセットされます。
+The assistant service is out of credit. It has been told; try again later.	アシスタントサービスのクレジットが不足しています。運営者に通知済みです。しばらくしてからもう一度お試しください。
+The assistant service is busy. Try again in a minute.	アシスタントサービスが混み合っています。1 分ほどしてからもう一度お試しください。
+The assistant service answered {status}: {reason}	アシスタントサービスの応答 {status}：{reason}
+The assistant service's address isn't https.	アシスタントサービスのアドレスが https ではありません。
+Couldn't reach the assistant service: {error}	アシスタントサービスに接続できませんでした：{error}
+The assistant service's answer was cut off: {error}	アシスタントサービスの応答が途中で切れました：{error}
+The assistant service answered {status} with something unreadable.	アシスタントサービスの応答 {status} を読み取れませんでした。
+{app} is working offline, so the assistant can't be reached. Turn off View › Work Offline to ask.	{app} はオフラインで作業中のため、アシスタントに接続できません。質問するには、表示 › オフラインで作業 をオフにしてください。

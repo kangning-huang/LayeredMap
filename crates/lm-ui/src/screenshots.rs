@@ -1617,3 +1617,137 @@ mod scaling {
         }
     }
 }
+
+/// Settings › Account (WP7.4), as its states look: signed out with the international ways to
+/// sign in, the email sent (its 6-digit code, and a wrong one), signed in, Delete Account's
+/// confirmation, and mainland China (not built yet).
+mod account {
+    use super::*;
+    use lm_account::Region;
+
+    fn settings(signed_in: bool, region: Region, setup: impl Fn(&mut Shell) + 'static) -> Harness<'static, Option<Shell>> {
+        let mut h = harness(false, WORLD, move |s| {
+            s.pro = true;
+            s.account = crate::account_ui::test_ui(signed_in, region);
+            s.account.open = true;
+            setup(s);
+        });
+        h.run_steps(5);
+        h
+    }
+
+    #[test]
+    #[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+    fn account_signed_out() {
+        let mut h = settings(false, Region::International, |_| {});
+        use egui_kittest::kittest::Queryable as _;
+        for b in ["Continue with Apple", "Continue with Google", "Continue with X", "Email me a sign-in code"] {
+            assert!(h.query_by_label(b).is_some(), "{b}");
+        }
+        h.snapshot("account_signed_out");
+    }
+
+    #[test]
+    #[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+    fn account_signed_in() {
+        let mut h = settings(true, Region::International, |_| {});
+        use egui_kittest::kittest::Queryable as _;
+        assert!(h.query_by_label("kim@example.com").is_some());
+        assert!(h.query_by_label("Sign Out").is_some() && h.query_by_label("Delete Account…").is_some());
+        h.snapshot("account_signed_in");
+    }
+
+    #[test]
+    #[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+    fn account_delete_confirmation() {
+        settings(true, Region::International, |s| s.account.confirm_delete = true).snapshot("account_delete_confirm");
+    }
+
+    #[test]
+    #[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+    fn account_mainland_china() {
+        settings(false, Region::China, |_| {}).snapshot("account_china");
+    }
+
+    fn email_sent(s: &mut Shell) {
+        s.account.email_code = Some(crate::account_ui::EmailCode::new("kim@example.com".into(), Region::International));
+    }
+
+    /// After "Email me a sign-in code": the link works on this Mac, or the 6-digit code is typed.
+    #[test]
+    #[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+    fn account_email_code() {
+        let mut h = settings(false, Region::International, email_sent);
+        use egui_kittest::kittest::Queryable as _;
+        assert!(h.query_by_label_contains("We sent an email to kim@example.com. Click the link in it on this Mac").is_some());
+        for b in ["6-digit code", "Verify", "Send a New Email", "Use a Different Email"] {
+            assert!(h.query_by_label(b).is_some(), "{b}");
+        }
+        h.snapshot("account_email_code");
+    }
+
+    /// A code the service refused: the plain message under the field, the digits kept to fix.
+    #[test]
+    #[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+    fn account_wrong_code() {
+        let mut h = settings(false, Region::International, |s| {
+            email_sent(s);
+            if let Some(ec) = s.account.email_code.as_mut() {
+                ec.code = "123465".into();
+                ec.error = Some(lm_account::AccountError::WrongCode.to_string());
+            }
+        });
+        use egui_kittest::kittest::Queryable as _;
+        assert!(h.query_by_label("That code didn't work. Check it, or send a new email.").is_some());
+        h.snapshot("account_wrong_code");
+    }
+
+    /// Typing (or pasting) "123 456" keeps the six digits, Return checks them, and the answer lands
+    /// under the field (this test's account has no network). "Use a Different Email" goes back to
+    /// the address, ready to edit.
+    #[test]
+    fn the_code_field_takes_digits_and_return_checks_them() {
+        let mut h = settings(false, Region::International, email_sent);
+        use egui_kittest::kittest::Queryable as _;
+        h.get_by_label("6-digit code").focus();
+        h.run_steps(2);
+        h.get_by_label("6-digit code").type_text("123 456 7x");
+        h.run_steps(2);
+        let code =
+            |h: &Harness<'static, Option<Shell>>| h.state().as_ref().and_then(|s| s.account.email_code.as_ref().map(|e| e.code.clone()));
+        assert_eq!(code(&h).as_deref(), Some("123456"));
+        h.key_press(egui::Key::Enter);
+        for _ in 0..100 {
+            h.run_steps(1);
+            if h.state().as_ref().and_then(|s| s.account.email_code.as_ref()).is_some_and(|e| e.error.is_some()) {
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        }
+        let err = h.state().as_ref().and_then(|s| s.account.email_code.as_ref()).and_then(|e| e.error.clone()).unwrap_or_default();
+        assert!(err.starts_with("Couldn't reach the sign-in service"), "{err}");
+        h.get_by_label("Use a Different Email").click();
+        h.run_steps(3);
+        let s = h.state().as_ref().unwrap();
+        assert!(s.account.email_code.is_none());
+        assert_eq!(s.account.email, "kim@example.com");
+    }
+
+    /// The Ask box in Pro through the proxy, signed out: the sign-in prompt takes the field's place.
+    #[test]
+    #[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+    fn ask_sign_in_prompt() {
+        let mut h = phase3(&["V1/districts.geojson"], SHANGHAI, |s| {
+            s.pro = true;
+            s.account = crate::account_ui::test_ui(false, Region::International);
+        });
+        use egui_kittest::kittest::Queryable as _;
+        assert!(h.query_by_label("Sign In…").is_some());
+        assert!(h.query_by_label("Ask about your layers").is_none(), "no field while signed out");
+        h.snapshot("ask_sign_in_prompt");
+        // Sign In… opens Settings › Account.
+        h.get_by_label("Sign In…").click();
+        h.run_steps(5);
+        assert!(h.state().as_ref().is_some_and(|s| s.account.open));
+    }
+}

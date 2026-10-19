@@ -1,9 +1,14 @@
 # Accounts and Pro access (plan, Phase 7)
 
-Owner decision, 2026-10-19: Pro needs an account. At first Pro is free for anyone who registers;
-a subscription may come later. The app only needs to know who is who, so it can grant Pro.
+Owner decision, 2026-10-19: Pro needs an account. Pro is free for anyone who registers, for now:
+the first goal is a good, popular app; a subscription comes only with a big user base
+(`app-store.md` › Pricing). The app only needs to know who is who, so it can grant Pro.
 
-This page is the plan. Nothing here is built yet.
+This page is the plan. How it is built (endpoints, tokens, the redirect, the Ask proxy, the China
+adapter): `docs/lm/accounts-design.md`.
+
+A Mac App Store channel with Pro as an in-app purchase, which needs no account and no WeChat or
+Alipay sign-in, is planned in `docs/lm/app-store.md`.
 
 ## Principles
 

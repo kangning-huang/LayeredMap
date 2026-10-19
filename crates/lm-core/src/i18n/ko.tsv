@@ -709,3 +709,85 @@ Split [layer] into separate parts	[layer]을(를) 개별 부분으로 나누기
 Keep the part of [layer] inside [other]	[other] 안에 있는 [layer] 부분만 남기기
 Remove the part of [layer] inside [other]	[other] 안에 있는 [layer] 부분 제거
 Find areas where [Heat] meets conditions	[Heat]이(가) 조건을 만족하는 영역 찾기
+Settings	설정
+Account	계정
+Delete Account	계정 삭제
+Sign Out	로그아웃
+Delete Account…	계정 삭제…
+Working offline: Delete Account needs the network. Sign Out works offline.	오프라인 작업 중: 계정 삭제에는 네트워크가 필요합니다. 로그아웃은 오프라인에서도 됩니다.
+Region	지역
+Sign-in for mainland China (WeChat, Alipay, phone number) is coming in a later version.	중국 본토용 로그인(WeChat, Alipay, 전화번호)은 이후 버전에서 제공됩니다.
+Finish signing in in your browser…	브라우저에서 로그인을 완료하세요…
+Signing out…	로그아웃하는 중…
+Deleting your account…	계정을 삭제하는 중…
+Email address	이메일 주소
+Verify	확인
+The link has stopped working on this Mac; the code still works for an hour.	이 Mac에서는 링크가 더 이상 작동하지 않습니다. 코드는 1시간 동안 계속 쓸 수 있습니다.
+The link has stopped working on this computer; the code still works for an hour.	이 컴퓨터에서는 링크가 더 이상 작동하지 않습니다. 코드는 1시간 동안 계속 쓸 수 있습니다.
+Send a New Email	새 이메일 보내기
+Use a Different Email	다른 이메일 사용
+Asking about your layers needs a free account. Your maps and files stay on this computer.	레이어에 대해 질문하려면 무료 계정이 필요합니다. 지도와 파일은 이 컴퓨터에 남습니다.
+Sign In…	로그인…
+You're signed out.	로그아웃되었습니다.
+Your account was deleted.	계정이 삭제되었습니다.
+Signed in with {provider} · {region}	로그인 방법: {provider} · {region}
+{pro} is on for this account.	이 계정에서 {pro}이(가) 켜져 있습니다.
+Delete your {app} account? {pro} stops working on every computer you use. Your maps and files are not affected.	{app} 계정을 삭제할까요? 사용하는 모든 컴퓨터에서 {pro}이(가) 작동하지 않게 됩니다. 지도와 파일에는 영향이 없습니다.
+Sign in to use {pro}	{pro}을(를) 사용하려면 로그인하세요
+{pro} is free while it's new. Your account only says who you are: your maps and files never leave this computer.	{pro}은(는) 출시 기간 동안 무료입니다. 계정은 사용자가 누구인지만 알려 줄 뿐, 지도와 파일은 이 컴퓨터 밖으로 나가지 않습니다.
+Sending an email to {address}…	{address}(으)로 이메일을 보내는 중…
+We sent an email to {address}. Enter the {n}-digit code in it.	{address}(으)로 이메일을 보냈습니다. 이메일에 있는 {n}자리 코드를 입력하세요.
+We sent an email to {address}. Click the link in it on this Mac, or enter the {n}-digit code.	{address}(으)로 이메일을 보냈습니다. 이 Mac에서 이메일의 링크를 클릭하거나 {n}자리 코드를 입력하세요.
+We sent an email to {address}. Click the link in it on this computer, or enter the {n}-digit code.	{address}(으)로 이메일을 보냈습니다. 이 컴퓨터에서 이메일의 링크를 클릭하거나 {n}자리 코드를 입력하세요.
+{n}-digit code	{n}자리 코드
+Sign in to use {pro} (Settings › Account).	{pro}을(를) 사용하려면 로그인하세요(설정 › 계정).
+Settings…	설정…
+International	국제
+Mainland China	중국 본토
+Continue with Apple	Apple로 계속하기
+Continue with Google	Google로 계속하기
+Continue with X	X로 계속하기
+Email me a sign-in code	로그인 코드를 이메일로 받기
+Continue with WeChat	WeChat으로 계속하기
+Continue with Alipay	Alipay로 계속하기
+Text me a code	코드를 문자로 받기
+Sign-in isn't available in this build yet.	이 빌드에서는 아직 로그인을 사용할 수 없습니다.
+{app} is working offline, so it can't reach the sign-in service. Turn off View › Work Offline to sign in.	{app}이(가) 오프라인으로 작업 중이라 로그인 서비스에 연결할 수 없습니다. 로그인하려면 보기 › 오프라인으로 작업을 끄세요.
+Sign-in was cancelled.	로그인이 취소되었습니다.
+Sign-in took too long. Try again.	로그인 시간이 너무 오래 걸렸습니다. 다시 시도하세요.
+Sign-in didn't finish: {reason}	로그인을 완료하지 못했습니다: {reason}
+You're signed out. Sign in again to use {pro}.	로그아웃되었습니다. {pro}을(를) 사용하려면 다시 로그인하세요.
+Couldn't reach the sign-in service: {error}	로그인 서비스에 연결할 수 없습니다: {error}
+The sign-in service answered {status}: {reason}	로그인 서비스의 응답 {status}: {reason}
+Couldn't keep the sign-in on this computer: {error}	이 컴퓨터에 로그인 상태를 저장할 수 없습니다: {error}
+Couldn't start sign-in: {error}	로그인을 시작할 수 없습니다: {error}
+The code is the {n} digits in the email.	코드는 이메일에 있는 {n}자리 숫자입니다.
+That code didn't work. Check it, or send a new email.	코드가 올바르지 않습니다. 확인하거나 새 이메일을 보내세요.
+Too many attempts. Wait a few minutes, then try again.	시도 횟수가 너무 많습니다. 몇 분 기다린 후 다시 시도하세요.
+no reason given	이유가 제공되지 않음
+that doesn't look like an email address	올바른 이메일 주소가 아닌 것 같습니다
+too many emails were sent; wait a minute and try again	이메일을 너무 많이 보냈습니다. 1분 후 다시 시도하세요
+the sign-in service sent no code	로그인 서비스가 코드를 보내지 않았습니다
+Signed in with {provider}	로그인 방법: {provider}
+Apple	Apple
+Google	Google
+X	X
+email	이메일
+a phone number	전화번호
+WeChat	WeChat
+Alipay	Alipay
+You're signed out. Sign in again in Settings › Account to use {pro}.	로그아웃되었습니다. {pro}을(를) 사용하려면 설정 › 계정에서 다시 로그인하세요.
+{pro} isn't on for this account.	이 계정에서는 {pro}이(가) 켜져 있지 않습니다.
+This account can't use {pro} yet. Try again in a minute.	이 계정은 아직 {pro}을(를) 사용할 수 없습니다. 1분 후 다시 시도하세요.
+You've used this month's assistant allowance. It renews tomorrow.	이번 달 어시스턴트 사용량을 모두 썼습니다. 내일 다시 채워집니다.
+You've used this month's assistant allowance. It renews in {n} days.	이번 달 어시스턴트 사용량을 모두 썼습니다. {n}일 후 다시 채워집니다.
+You've used today's assistant allowance. It renews within the hour.	오늘 어시스턴트 사용량을 모두 썼습니다. 1시간 안에 다시 채워집니다.
+You've used today's assistant allowance. It renews in about {n} hours.	오늘 어시스턴트 사용량을 모두 썼습니다. 약 {n}시간 후 다시 채워집니다.
+The assistant service is out of credit. It has been told; try again later.	어시스턴트 서비스의 크레딧이 소진되었습니다. 관리자에게 알렸으니 나중에 다시 시도하세요.
+The assistant service is busy. Try again in a minute.	어시스턴트 서비스가 혼잡합니다. 1분 후 다시 시도하세요.
+The assistant service answered {status}: {reason}	어시스턴트 서비스의 응답 {status}: {reason}
+The assistant service's address isn't https.	어시스턴트 서비스 주소가 https가 아닙니다.
+Couldn't reach the assistant service: {error}	어시스턴트 서비스에 연결할 수 없습니다: {error}
+The assistant service's answer was cut off: {error}	어시스턴트 서비스의 응답이 중간에 끊겼습니다: {error}
+The assistant service answered {status} with something unreadable.	어시스턴트 서비스가 읽을 수 없는 내용으로 응답했습니다({status}).
+{app} is working offline, so the assistant can't be reached. Turn off View › Work Offline to ask.	{app}이(가) 오프라인으로 작업 중이라 어시스턴트에 연결할 수 없습니다. 질문하려면 보기 › 오프라인으로 작업을 끄세요.

@@ -86,12 +86,13 @@ The suggested pairing is NimbleMap with 千层图, carrying "nimble" in a descri
 | Place | What to edit |
 |---|---|
 | Rust code | `crates/lm-core/src/brand.rs`: `NAME`, `PRO_NAME` (plus `name(pro)` and `with_version`), and `NAME_ZH`/`PRO_NAME_ZH` (凌波微图; the Chinese interface shows them through `brand::shown(pro)`, every other language shows `NAME`). The macOS bundle's `zh-Hans.lproj/InfoPlist.strings` (written by `bundle-macos.sh` from `brand_zh`) gives Finder and the menu bar the Chinese name on a Chinese Mac |
-| Rust literals that can't read a `const` | Each has a comment that names `lm_core::brand`: `git grep -n "lm_core::brand"`. They are the `OFFLINE` messages in `lm-ask` and `lm-net`, the `User-Agent` strings (`concat!`) in `lm-net` and `lm-jobs`, the PDF creator and producer in `lm-mapview` (which doesn't depend on lm-core), and two `&'static str` KML exclusion reasons in `lm-jobs` |
+| Rust literals that can't read a `const` | Each has a comment that names `lm_core::brand`: `git grep -n "lm_core::brand"`. They are the `OFFLINE` messages in `lm-ask` and `lm-net`, the `User-Agent` strings (`concat!`) in `lm-net`, `lm-jobs` and `lm-account`, the PDF creator and producer in `lm-mapview` (which doesn't depend on lm-core), and two `&'static str` KML exclusion reasons in `lm-jobs` |
 | macOS bundle, Info.plist | `brand=` at the top of `packaging/lm/bundle-macos.sh` |
 | Disk image | `brand=` at the top of `packaging/lm/build-dmg.sh` |
 | Windows installer | `#define Brand` at the top of `packaging/lm/windows/layeredmap.iss`; `$brand` at the top of `packaging/lm/windows/build-installer.ps1` (the installer's file name) |
 | Windows version information | `BRAND` at the top of `apps/layeredmap/build.rs` |
 | Windows application manifest | `<description>` in `packaging/lm/windows/layeredmap.exe.manifest` |
+| Ask proxy (server) | the `X-Title` header in `services/ask-proxy/supabase/functions/ask/index.ts` |
 | Speech helper messages | `appName`, `proName` at the top of `packaging/lm/dictate.swift` |
 | Assistant system prompt | `RULES` in `tools/lm/llm_eval/v2/prompt_v2.py`, then `python -I tools/lm/assistant/export_assets.py` (writes `crates/lm-ask/assets/system.txt`) |
 | Website and in-app help | Every page in `web/lm/` and `web/lm/zh/`, `web/lm/assets/glossary-data.js` and `web/lm/README.md`, as plain text. English pages say NimbleMap. Chinese pages say 千层图, introduced once per page as "千层图（NimbleMap）", with JSON-LD `name` 千层图 and `alternateName` NimbleMap; they keep the English menu item "Help › NimbleMap Help", as the interface is English. In the glossary, `*_zh` strings say 千层图 and `*_en` strings NimbleMap |

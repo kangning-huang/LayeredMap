@@ -5,6 +5,7 @@
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
 pub mod a11y;
+pub mod account_ui;
 pub mod analysis;
 pub mod ask;
 pub mod basemap;
@@ -126,6 +127,8 @@ pub enum Command {
     ComposeAction(String, Vec<(String, String)>),
     /// Developer surface: keep the composer's preview.
     KeepResult,
+    /// Settings… (⌘,): Settings › Account (WP7.4), when the build has accounts.
+    ShowSettings,
     /// Pro's Ask box (scripts and tests): send a request, keep its plan.
     Ask(String),
     KeepAsk,
@@ -294,6 +297,8 @@ pub struct Shell {
     pub(crate) after_drawing: Option<lm_core::model::LayerId>,
     /// The Ask box (Pro, early test build of WP7.1).
     pub(crate) ask: ask::AskState,
+    /// Pro's account and Settings › Account (WP7.4).
+    pub(crate) account: account_ui::AccountUi,
     /// The map's file, autosave and recovery (WP5.1, WP5.2).
     pub doc_file: saving::DocFile,
     /// The map image sheet and the data export dialog, while open (WP5.3).
@@ -351,6 +356,7 @@ impl Shell {
             composer: None,
             after_drawing: None,
             ask: ask::AskState::default(),
+            account: account_ui::AccountUi::default(),
             doc_file: saving::DocFile::default(),
             export_sheet: None,
             data_export: None,
@@ -512,6 +518,7 @@ impl Shell {
             Command::KeepResult => {
                 analysis::keep(self);
             }
+            Command::ShowSettings => account_ui::open(self),
             Command::Ask(text) => ask::submit(self, ctx, text),
             Command::KeepAsk => ask::keep_shown(self),
             Command::Dictate => ask::dictate(self, ctx),
@@ -718,6 +725,18 @@ impl Shell {
         self.library.url = url;
     }
 
+    /// Reads the account config and the stored session (Pro, at launch): without a config the
+    /// Ask box works as before (docs/lm/accounts-design.md).
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn start_account(&mut self) {
+        account_ui::start(self);
+    }
+
+    /// Whether the build has accounts (the app shows Settings…).
+    pub fn account_available(&self) -> bool {
+        self.account.available()
+    }
+
     /// Whether the data library is offered (the app shows File › Browse data library).
     pub fn library_available(&self) -> bool {
         library::available(self)
@@ -849,6 +868,7 @@ impl Shell {
         let t = ctx.input(|i| i.time);
         analysis::poll(self);
         ask::poll(self);
+        account_ui::poll(self);
         library::poll(self, ctx);
         // Files dropped on the window (Open With and the Dock icon arrive through the app).
         let dropped: Vec<PathBuf> =
@@ -1071,6 +1091,7 @@ impl Shell {
         export_data::dialog(self, &ctx);
         package::dialog(self, &ctx);
         diagnostics::window(self, &ctx);
+        account_ui::window(self, &ctx);
         library::panel(self, &ctx);
         panels::drop_overlay(self, ui, full);
         saving::recovery_prompt(self, ui, map_rect);

@@ -49,6 +49,7 @@ struct Options {
     developer: bool,
     export: bool,
     library: bool,
+    settings: bool,
 }
 
 /// ⌘ on macOS, Ctrl on Windows.
@@ -62,9 +63,18 @@ impl MenuBar {
     /// Builds the menu bar in `lang` and installs it: in the app on macOS, on the window `hwnd` on
     /// Windows. `None` if that fails, or on other platforms (Linux is best effort).
     /// `export`: File › Export Map Image… and Export Data… are shown (WP5.3); `library`: File ›
-    /// Browse data library… (WP5.4).
-    pub fn install(developer: bool, export: bool, library: bool, lang: Lang, ctx: &egui::Context, hwnd: Option<isize>) -> Option<MenuBar> {
-        Self::install_with(Options { developer, export, library }, lang, ctx, hwnd)
+    /// Browse data library… (WP5.4); `settings`: Settings… (⌘,) for Pro's account (WP7.4), in the
+    /// app menu on macOS and in File on Windows.
+    pub fn install(
+        developer: bool,
+        export: bool,
+        library: bool,
+        settings: bool,
+        lang: Lang,
+        ctx: &egui::Context,
+        hwnd: Option<isize>,
+    ) -> Option<MenuBar> {
+        Self::install_with(Options { developer, export, library, settings }, lang, ctx, hwnd)
     }
 
     /// Builds the bar again when the interface language has changed (View › Language, or the
@@ -112,7 +122,7 @@ impl MenuBar {
 
     #[cfg(any(target_os = "macos", windows))]
     fn build(options: Options, lang: Lang, ctx: &egui::Context, hwnd: Option<isize>) -> muda::Result<MenuBar> {
-        let Options { developer, export, library } = options;
+        let Options { developer, export, library, settings } = options;
         let menu = Menu::new();
         // The name as this language shows it: 凌波微图 in Chinese.
         let shown = lm_core::brand::shown_in(lang, false);
@@ -144,6 +154,12 @@ impl MenuBar {
                 &MenuItem::with_id("quit", i18n::fmt("Quit {app}", &brand), true, cmd(Code::KeyQ)),
             ],
         )?;
+        // Settings… under About, as macOS apps have it; hidden while there is nothing to set.
+        #[cfg(target_os = "macos")]
+        if settings {
+            app.insert(&MenuItem::with_id("settings", tl!("Settings…"), true, cmd(Code::Comma)), 2)?;
+            app.insert(&PredefinedMenuItem::separator(), 3)?;
+        }
         let file = Submenu::new(tl!("File"), true);
         file.append(&MenuItem::with_id("open", tl!("Open…"), true, cmd(Code::KeyO)))?;
         let examples = Submenu::new(tl!("Open Example"), true);
@@ -169,6 +185,11 @@ impl MenuBar {
             file.append(&MenuItem::with_id("save-document", "Save document (developer)…", true, None))?; // i18n: developer only
             file.append(&MenuItem::with_id("open-document", "Open document (developer)…", true, None))?; // i18n: developer only
             file.append(&MenuItem::with_id("export-questions", "Export question log…", true, None))?; // i18n: developer only
+            file.append(&PredefinedMenuItem::separator())?;
+        }
+        #[cfg(windows)]
+        if settings {
+            file.append(&MenuItem::with_id("settings", tl!("Settings…"), true, cmd(Code::Comma)))?;
             file.append(&PredefinedMenuItem::separator())?;
         }
         file.append(&MenuItem::with_id("close", tl!("Close Window"), true, cmd(Code::KeyW)))?;
@@ -303,6 +324,7 @@ impl MenuBar {
                 "export-data" => Action::Shell(Command::ExportData),
                 "export-package" => Action::Shell(Command::ExportPackage),
                 "library" => Action::Shell(Command::OpenLibrary),
+                "settings" => Action::Shell(Command::ShowSettings),
                 "undo" => Action::Shell(Command::Undo),
                 "redo" => Action::Shell(Command::Redo),
                 "save-document" => Action::SaveDocument,

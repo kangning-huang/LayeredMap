@@ -56,6 +56,13 @@ enum Shown {
 }
 
 impl AskState {
+    /// Drops a message shown in place of an answer (signing in answered it).
+    pub(crate) fn clear_message(&mut self) {
+        if matches!(self.shown, Some(Shown::Message { .. })) {
+            self.shown = None;
+        }
+    }
+
     pub fn busy(&self) -> bool {
         self.pending.is_some()
     }
@@ -91,14 +98,26 @@ pub fn submit(shell: &mut Shell, ctx: &egui::Context, text: String) {
     // Strict offline mode: say so instead of trying (the transport refuses too).
     #[cfg(not(target_arch = "wasm32"))]
     if lm_net::offline() {
-        shell.ask.shown = Some(Shown::Message { text: lm_ask::openrouter::OFFLINE.into(), warning: true });
+        shell.ask.shown = Some(Shown::Message { text: crate::account_ui::shown(lm_ask::openrouter::OFFLINE), warning: true });
         return;
     }
-    #[cfg(not(target_arch = "wasm32"))]
-    let key = lm_ask::openrouter::read_key();
-    #[cfg(target_arch = "wasm32")]
-    let key: Option<String> = None;
-    let Some(key) = key else {
+    // Which way the request goes (docs/lm/accounts-design.md): a developer's or test build's key
+    // straight to OpenRouter, or the Ask proxy with the signed-in account's token.
+    let via = match shell.account.route() {
+        lm_account::AskRoute::Direct => direct_key().map(Via::Direct),
+        lm_account::AskRoute::Proxy => match shell.account.proxy_target() {
+            Some((account, url, anon_key)) => Some(Via::Proxy { account, url, anon_key }),
+            None => {
+                shell.ask.shown = Some(Shown::Message {
+                    text: i18n::fmt("Sign in to use {pro} (Settings › Account).", &[("pro", lm_core::brand::shown(true))]),
+                    warning: true,
+                });
+                return;
+            }
+        },
+        lm_account::AskRoute::Unavailable => None,
+    };
+    let Some(via) = via else {
         shell.ask.shown =
             Some(Shown::Message { text: tl!("The assistant isn't set up in this build (it has no assistant key).").into(), warning: true });
         return;
@@ -124,15 +143,40 @@ pub fn submit(shell: &mut Shell, ctx: &egui::Context, text: String) {
     let ctx = ctx.clone();
     #[cfg(not(target_arch = "wasm32"))]
     std::thread::spawn(move || {
-        let t = lm_ask::openrouter::OpenRouter::new(key);
-        let turn = lm_ask::ask(&t as &dyn Transport, &req, &c);
+        let turn = match via {
+            Via::Direct(key) => lm_ask::ask(&lm_ask::openrouter::OpenRouter::new(key) as &dyn Transport, &req, &c),
+            // A fresh token first (refreshed when it is about to expire; the network gate decides).
+            Via::Proxy { account, url, anon_key } => match account.access_token() {
+                Ok(token) => lm_ask::ask(&lm_ask::proxy::Proxy::new(url, anon_key, token) as &dyn Transport, &req, &c),
+                Err(lm_account::AccountError::Offline) => {
+                    Turn { answer: Err(lm_ask::openrouter::OFFLINE.into()), messages: Vec::new(), usage: Usage::default() }
+                }
+                Err(e) => Turn { answer: Err(e.to_string()), messages: Vec::new(), usage: Usage::default() },
+            },
+        };
         let _ = tx.send(turn);
         ctx.request_repaint();
     });
     #[cfg(target_arch = "wasm32")]
-    let _ = (key, req, tx, c, ctx);
+    let _ = (via, req, tx, c, ctx);
     shell.ask.pending = Some(Pending { rx, control, request: text, started: Instant::now() });
     shell.ask.text.clear();
+}
+
+/// How a request is sent.
+enum Via {
+    Direct(String),
+    Proxy { account: std::sync::Arc<lm_account::Account>, url: String, anon_key: String },
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn direct_key() -> Option<String> {
+    lm_ask::openrouter::read_key()
+}
+
+#[cfg(target_arch = "wasm32")]
+fn direct_key() -> Option<String> {
+    None
 }
 
 /// Pro's built-in reference layers, opened once, with the borders of this Mac's region.
@@ -189,7 +233,9 @@ pub fn poll(shell: &mut Shell) {
         Ok(Answer::CannotDo(text)) => {
             Shown::Message { text: i18n::fmt("I can't answer that with these layers: {text}", &[("text", &text)]), warning: false }
         }
-        Err(e) => Shown::Message { text: e, warning: true },
+        // Built in English on the request's thread (the Ask service's and the account's
+        // messages): translated here, on the interface's.
+        Err(e) => Shown::Message { text: crate::account_ui::shown(&e), warning: true },
     });
 }
 
@@ -340,7 +386,12 @@ pub fn ask_box(shell: &mut Shell, ui: &mut Ui, map: egui::Rect) {
                     crate::time_ui::controls(shell, ui, width);
                     ui.add_space(8.0);
                 }
-                field(shell, ui, &t, width);
+                // Pro through the Ask proxy needs an account: the prompt takes the field's place.
+                if shell.account.needs_sign_in() {
+                    crate::account_ui::ask_prompt(shell, ui, &t, width);
+                } else {
+                    field(shell, ui, &t, width);
+                }
             });
         },
     );

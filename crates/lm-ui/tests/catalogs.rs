@@ -15,7 +15,14 @@ use std::path::{Path, PathBuf};
 use lm_core::i18n::{self, Lang};
 
 /// The source folders whose interface text goes through the catalogs.
-const SOURCES: &[&str] = &["crates/lm-ui/src", "apps/layeredmap/src", "crates/lm-actions/src", "crates/lm-core/src"];
+const SOURCES: &[&str] = &[
+    "crates/lm-ui/src",
+    "apps/layeredmap/src",
+    "crates/lm-actions/src",
+    "crates/lm-core/src",
+    "crates/lm-account/src",
+    "crates/lm-ask/src",
+];
 
 /// Calls that mark a translatable literal: the literal is their first argument.
 const MARKERS: &[&str] = &["tl!(", "tn!(", "i18n::fmt("];

@@ -35,3 +35,6 @@ Thumbs.db
 
 # AppleDouble files macOS writes on external drives
 ._*
+
+# Supabase CLI link state (project ref, versions): per machine, not shared
+services/ask-proxy/supabase/.temp/

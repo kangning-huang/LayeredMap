@@ -709,3 +709,85 @@ Split [layer] into separate parts	[layer] splitsen in losse delen
 Keep the part of [layer] inside [other]	Het deel van [layer] binnen [other] behouden
 Remove the part of [layer] inside [other]	Het deel van [layer] binnen [other] verwijderen
 Find areas where [Heat] meets conditions	Gebieden zoeken waar [Heat] aan voorwaarden voldoet
+Settings	Instellingen
+Account	Account
+Delete Account	Account verwijderen
+Sign Out	Uitloggen
+Delete Account…	Account verwijderen…
+Working offline: Delete Account needs the network. Sign Out works offline.	Offline: voor Account verwijderen is een netwerkverbinding nodig. Uitloggen werkt offline.
+Region	Regio
+Sign-in for mainland China (WeChat, Alipay, phone number) is coming in a later version.	Inloggen voor het Chinese vasteland (WeChat, Alipay, telefoonnummer) komt in een latere versie.
+Finish signing in in your browser…	Rond het inloggen af in uw browser…
+Signing out…	Uitloggen…
+Deleting your account…	Uw account verwijderen…
+Email address	E-mailadres
+Verify	Verifiëren
+The link has stopped working on this Mac; the code still works for an hour.	De link werkt niet meer op deze Mac; de code werkt nog een uur.
+The link has stopped working on this computer; the code still works for an hour.	De link werkt niet meer op deze computer; de code werkt nog een uur.
+Send a New Email	Nieuwe e-mail sturen
+Use a Different Email	Ander e-mailadres gebruiken
+Asking about your layers needs a free account. Your maps and files stay on this computer.	Voor vragen over uw lagen hebt u een gratis account nodig. Uw kaarten en bestanden blijven op deze computer.
+Sign In…	Inloggen…
+You're signed out.	U bent uitgelogd.
+Your account was deleted.	Uw account is verwijderd.
+Signed in with {provider} · {region}	Ingelogd met {provider} · {region}
+{pro} is on for this account.	{pro} staat aan voor dit account.
+Delete your {app} account? {pro} stops working on every computer you use. Your maps and files are not affected.	Uw {app}-account verwijderen? {pro} werkt dan niet meer op alle computers die u gebruikt. Uw kaarten en bestanden blijven ongemoeid.
+Sign in to use {pro}	Log in om {pro} te gebruiken
+{pro} is free while it's new. Your account only says who you are: your maps and files never leave this computer.	{pro} is gratis zolang het nieuw is. Uw account zegt alleen wie u bent: uw kaarten en bestanden verlaten deze computer nooit.
+Sending an email to {address}…	E-mail sturen naar {address}…
+We sent an email to {address}. Enter the {n}-digit code in it.	We hebben een e-mail gestuurd naar {address}. Voer de code van {n} cijfers in die erin staat.
+We sent an email to {address}. Click the link in it on this Mac, or enter the {n}-digit code.	We hebben een e-mail gestuurd naar {address}. Klik op deze Mac op de link erin, of voer de code van {n} cijfers in.
+We sent an email to {address}. Click the link in it on this computer, or enter the {n}-digit code.	We hebben een e-mail gestuurd naar {address}. Klik op deze computer op de link erin, of voer de code van {n} cijfers in.
+{n}-digit code	Code van {n} cijfers
+Sign in to use {pro} (Settings › Account).	Log in om {pro} te gebruiken (Instellingen › Account).
+Settings…	Instellingen…
+International	Internationaal
+Mainland China	Chinees vasteland
+Continue with Apple	Doorgaan met Apple
+Continue with Google	Doorgaan met Google
+Continue with X	Doorgaan met X
+Email me a sign-in code	Stuur mij een inlogcode per e-mail
+Continue with WeChat	Doorgaan met WeChat
+Continue with Alipay	Doorgaan met Alipay
+Text me a code	Stuur mij een code per sms
+Sign-in isn't available in this build yet.	Inloggen is in deze versie nog niet beschikbaar.
+{app} is working offline, so it can't reach the sign-in service. Turn off View › Work Offline to sign in.	{app} werkt offline en kan de inlogdienst dus niet bereiken. Zet Weergave › Offline werken uit om in te loggen.
+Sign-in was cancelled.	Inloggen is geannuleerd.
+Sign-in took too long. Try again.	Inloggen duurde te lang. Probeer het opnieuw.
+Sign-in didn't finish: {reason}	Inloggen is niet voltooid: {reason}
+You're signed out. Sign in again to use {pro}.	U bent uitgelogd. Log opnieuw in om {pro} te gebruiken.
+Couldn't reach the sign-in service: {error}	Kan de inlogdienst niet bereiken: {error}
+The sign-in service answered {status}: {reason}	De inlogdienst antwoordde {status}: {reason}
+Couldn't keep the sign-in on this computer: {error}	Kan de inlog niet op deze computer bewaren: {error}
+Couldn't start sign-in: {error}	Kan niet beginnen met inloggen: {error}
+The code is the {n} digits in the email.	De code bestaat uit de {n} cijfers in de e-mail.
+That code didn't work. Check it, or send a new email.	Die code werkte niet. Controleer hem, of stuur een nieuwe e-mail.
+Too many attempts. Wait a few minutes, then try again.	Te veel pogingen. Wacht een paar minuten en probeer het dan opnieuw.
+no reason given	geen reden opgegeven
+that doesn't look like an email address	dat lijkt geen e-mailadres
+too many emails were sent; wait a minute and try again	er zijn te veel e-mails verstuurd; wacht een minuut en probeer het opnieuw
+the sign-in service sent no code	de inlogdienst stuurde geen code
+Signed in with {provider}	Ingelogd met {provider}
+Apple	Apple
+Google	Google
+X	X
+email	e-mail
+a phone number	een telefoonnummer
+WeChat	WeChat
+Alipay	Alipay
+You're signed out. Sign in again in Settings › Account to use {pro}.	U bent uitgelogd. Log opnieuw in via Instellingen › Account om {pro} te gebruiken.
+{pro} isn't on for this account.	{pro} staat niet aan voor dit account.
+This account can't use {pro} yet. Try again in a minute.	Dit account kan {pro} nog niet gebruiken. Probeer het over een minuut opnieuw.
+You've used this month's assistant allowance. It renews tomorrow.	U hebt het assistenttegoed van deze maand opgebruikt. Het wordt morgen aangevuld.
+You've used this month's assistant allowance. It renews in {n} days.	U hebt het assistenttegoed van deze maand opgebruikt. Het wordt over {n} dagen aangevuld.
+You've used today's assistant allowance. It renews within the hour.	U hebt het assistenttegoed van vandaag opgebruikt. Het wordt binnen het uur aangevuld.
+You've used today's assistant allowance. It renews in about {n} hours.	U hebt het assistenttegoed van vandaag opgebruikt. Het wordt over ongeveer {n} uur aangevuld.
+The assistant service is out of credit. It has been told; try again later.	De assistentdienst heeft geen tegoed meer. Dit is gemeld; probeer het later opnieuw.
+The assistant service is busy. Try again in a minute.	De assistentdienst is bezet. Probeer het over een minuut opnieuw.
+The assistant service answered {status}: {reason}	De assistentdienst antwoordde {status}: {reason}
+The assistant service's address isn't https.	Het adres van de assistentdienst is geen https.
+Couldn't reach the assistant service: {error}	Kan de assistentdienst niet bereiken: {error}
+The assistant service's answer was cut off: {error}	Het antwoord van de assistentdienst is afgebroken: {error}
+The assistant service answered {status} with something unreadable.	De assistentdienst antwoordde {status} met iets onleesbaars.
+{app} is working offline, so the assistant can't be reached. Turn off View › Work Offline to ask.	{app} werkt offline en kan de assistent dus niet bereiken. Zet Weergave › Offline werken uit om een vraag te stellen.

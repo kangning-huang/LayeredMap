@@ -709,3 +709,85 @@ Split [layer] into separate parts	Dividir [layer] em partes separadas
 Keep the part of [layer] inside [other]	Manter a parte de [layer] dentro de [other]
 Remove the part of [layer] inside [other]	Remover a parte de [layer] dentro de [other]
 Find areas where [Heat] meets conditions	Encontrar áreas em que [Heat] atende às condições
+Settings	Ajustes
+Account	Conta
+Delete Account	Apagar conta
+Sign Out	Encerrar sessão
+Delete Account…	Apagar conta…
+Working offline: Delete Account needs the network. Sign Out works offline.	Trabalhando offline: Apagar conta precisa da rede. Encerrar sessão funciona offline.
+Region	Região
+Sign-in for mainland China (WeChat, Alipay, phone number) is coming in a later version.	O início de sessão para a China continental (WeChat, Alipay, número de telefone) chega numa versão futura.
+Finish signing in in your browser…	Termine de iniciar a sessão no navegador…
+Signing out…	Encerrando a sessão…
+Deleting your account…	Apagando sua conta…
+Email address	Endereço de e-mail
+Verify	Verificar
+The link has stopped working on this Mac; the code still works for an hour.	O link parou de funcionar neste Mac; o código ainda funciona por uma hora.
+The link has stopped working on this computer; the code still works for an hour.	O link parou de funcionar neste computador; o código ainda funciona por uma hora.
+Send a New Email	Enviar novo e-mail
+Use a Different Email	Usar outro e-mail
+Asking about your layers needs a free account. Your maps and files stay on this computer.	Para perguntar sobre suas camadas, é preciso uma conta gratuita. Seus mapas e arquivos ficam neste computador.
+Sign In…	Iniciar sessão…
+You're signed out.	Sua sessão foi encerrada.
+Your account was deleted.	Sua conta foi apagada.
+Signed in with {provider} · {region}	Sessão iniciada com {provider} · {region}
+{pro} is on for this account.	O {pro} está ativado nesta conta.
+Delete your {app} account? {pro} stops working on every computer you use. Your maps and files are not affected.	Apagar sua conta do {app}? O {pro} deixa de funcionar em todos os computadores que você usa. Seus mapas e arquivos não são afetados.
+Sign in to use {pro}	Inicie sessão para usar o {pro}
+{pro} is free while it's new. Your account only says who you are: your maps and files never leave this computer.	O {pro} é gratuito enquanto é novo. Sua conta só diz quem você é: seus mapas e arquivos nunca saem deste computador.
+Sending an email to {address}…	Enviando um e-mail para {address}…
+We sent an email to {address}. Enter the {n}-digit code in it.	Enviamos um e-mail para {address}. Digite o código de {n} dígitos que está nele.
+We sent an email to {address}. Click the link in it on this Mac, or enter the {n}-digit code.	Enviamos um e-mail para {address}. Clique no link dele neste Mac ou digite o código de {n} dígitos.
+We sent an email to {address}. Click the link in it on this computer, or enter the {n}-digit code.	Enviamos um e-mail para {address}. Clique no link dele neste computador ou digite o código de {n} dígitos.
+{n}-digit code	Código de {n} dígitos
+Sign in to use {pro} (Settings › Account).	Inicie sessão para usar o {pro} (Ajustes › Conta).
+Settings…	Ajustes…
+International	Internacional
+Mainland China	China continental
+Continue with Apple	Continuar com a Apple
+Continue with Google	Continuar com o Google
+Continue with X	Continuar com o X
+Email me a sign-in code	Enviar código de acesso por e-mail
+Continue with WeChat	Continuar com o WeChat
+Continue with Alipay	Continuar com o Alipay
+Text me a code	Enviar código por SMS
+Sign-in isn't available in this build yet.	O início de sessão ainda não está disponível nesta versão.
+{app} is working offline, so it can't reach the sign-in service. Turn off View › Work Offline to sign in.	O {app} está trabalhando offline, então não consegue acessar o serviço de início de sessão. Desative Visualizar › Trabalhar offline para iniciar sessão.
+Sign-in was cancelled.	O início de sessão foi cancelado.
+Sign-in took too long. Try again.	O início de sessão demorou demais. Tente de novo.
+Sign-in didn't finish: {reason}	O início de sessão não terminou: {reason}
+You're signed out. Sign in again to use {pro}.	Sua sessão foi encerrada. Inicie sessão de novo para usar o {pro}.
+Couldn't reach the sign-in service: {error}	Não foi possível acessar o serviço de início de sessão: {error}
+The sign-in service answered {status}: {reason}	O serviço de início de sessão respondeu {status}: {reason}
+Couldn't keep the sign-in on this computer: {error}	Não foi possível manter a sessão neste computador: {error}
+Couldn't start sign-in: {error}	Não foi possível iniciar a sessão: {error}
+The code is the {n} digits in the email.	O código são os {n} dígitos do e-mail.
+That code didn't work. Check it, or send a new email.	Esse código não funcionou. Confira ou envie um novo e-mail.
+Too many attempts. Wait a few minutes, then try again.	Tentativas demais. Aguarde alguns minutos e tente de novo.
+no reason given	nenhum motivo informado
+that doesn't look like an email address	isso não parece um endereço de e-mail
+too many emails were sent; wait a minute and try again	foram enviados e-mails demais; aguarde um minuto e tente de novo
+the sign-in service sent no code	o serviço de início de sessão não enviou código
+Signed in with {provider}	Sessão iniciada com {provider}
+Apple	Apple
+Google	Google
+X	X
+email	e-mail
+a phone number	um número de telefone
+WeChat	WeChat
+Alipay	Alipay
+You're signed out. Sign in again in Settings › Account to use {pro}.	Sua sessão foi encerrada. Inicie sessão de novo em Ajustes › Conta para usar o {pro}.
+{pro} isn't on for this account.	O {pro} não está ativado nesta conta.
+This account can't use {pro} yet. Try again in a minute.	Esta conta ainda não pode usar o {pro}. Tente de novo daqui a um minuto.
+You've used this month's assistant allowance. It renews tomorrow.	Você usou a cota do assistente deste mês. Ela é renovada amanhã.
+You've used this month's assistant allowance. It renews in {n} days.	Você usou a cota do assistente deste mês. Ela é renovada em {n} dias.
+You've used today's assistant allowance. It renews within the hour.	Você usou a cota do assistente de hoje. Ela é renovada em menos de uma hora.
+You've used today's assistant allowance. It renews in about {n} hours.	Você usou a cota do assistente de hoje. Ela é renovada em cerca de {n} horas.
+The assistant service is out of credit. It has been told; try again later.	O serviço do assistente está sem crédito. O problema já foi informado; tente de novo mais tarde.
+The assistant service is busy. Try again in a minute.	O serviço do assistente está ocupado. Tente de novo daqui a um minuto.
+The assistant service answered {status}: {reason}	O serviço do assistente respondeu {status}: {reason}
+The assistant service's address isn't https.	O endereço do serviço do assistente não é https.
+Couldn't reach the assistant service: {error}	Não foi possível acessar o serviço do assistente: {error}
+The assistant service's answer was cut off: {error}	A resposta do serviço do assistente foi cortada: {error}
+The assistant service answered {status} with something unreadable.	O serviço do assistente respondeu {status} com algo ilegível.
+{app} is working offline, so the assistant can't be reached. Turn off View › Work Offline to ask.	O {app} está trabalhando offline, então não consegue acessar o assistente. Desative Visualizar › Trabalhar offline para perguntar.

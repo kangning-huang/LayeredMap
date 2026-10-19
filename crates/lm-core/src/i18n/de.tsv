@@ -709,3 +709,85 @@ Split [layer] into separate parts	[layer] in einzelne Teile zerlegen
 Keep the part of [layer] inside [other]	Den Teil von [layer] innerhalb von [other] behalten
 Remove the part of [layer] inside [other]	Den Teil von [layer] innerhalb von [other] entfernen
 Find areas where [Heat] meets conditions	Gebiete finden, in denen [Heat] Bedingungen erfüllt
+Settings	Einstellungen
+Account	Account
+Delete Account	Account löschen
+Sign Out	Abmelden
+Delete Account…	Account löschen …
+Working offline: Delete Account needs the network. Sign Out works offline.	Offline: Zum Löschen des Accounts ist eine Netzwerkverbindung nötig. Abmelden funktioniert auch offline.
+Region	Region
+Sign-in for mainland China (WeChat, Alipay, phone number) is coming in a later version.	Die Anmeldung für Festlandchina (WeChat, Alipay, Telefonnummer) folgt in einer späteren Version.
+Finish signing in in your browser…	Schließen Sie die Anmeldung im Browser ab …
+Signing out…	Abmelden …
+Deleting your account…	Ihr Account wird gelöscht …
+Email address	E-Mail-Adresse
+Verify	Bestätigen
+The link has stopped working on this Mac; the code still works for an hour.	Der Link funktioniert auf diesem Mac nicht mehr; der Code ist noch eine Stunde gültig.
+The link has stopped working on this computer; the code still works for an hour.	Der Link funktioniert auf diesem Computer nicht mehr; der Code ist noch eine Stunde gültig.
+Send a New Email	Neue E-Mail senden
+Use a Different Email	Andere E-Mail-Adresse verwenden
+Asking about your layers needs a free account. Your maps and files stay on this computer.	Für Fragen zu Ihren Layern brauchen Sie einen kostenlosen Account. Ihre Karten und Dateien bleiben auf diesem Computer.
+Sign In…	Anmelden …
+You're signed out.	Sie sind abgemeldet.
+Your account was deleted.	Ihr Account wurde gelöscht.
+Signed in with {provider} · {region}	Angemeldet mit {provider} · {region}
+{pro} is on for this account.	{pro} ist für diesen Account aktiv.
+Delete your {app} account? {pro} stops working on every computer you use. Your maps and files are not affected.	Ihren {app}-Account löschen? {pro} funktioniert dann auf keinem Ihrer Computer mehr. Ihre Karten und Dateien sind davon nicht betroffen.
+Sign in to use {pro}	Melden Sie sich an, um {pro} zu nutzen
+{pro} is free while it's new. Your account only says who you are: your maps and files never leave this computer.	{pro} ist kostenlos, solange es neu ist. Ihr Account sagt nur, wer Sie sind: Ihre Karten und Dateien verlassen diesen Computer nie.
+Sending an email to {address}…	E-Mail an {address} wird gesendet …
+We sent an email to {address}. Enter the {n}-digit code in it.	Wir haben eine E-Mail an {address} gesendet. Geben Sie den {n}-stelligen Code daraus ein.
+We sent an email to {address}. Click the link in it on this Mac, or enter the {n}-digit code.	Wir haben eine E-Mail an {address} gesendet. Klicken Sie auf diesem Mac auf den Link darin oder geben Sie den {n}-stelligen Code ein.
+We sent an email to {address}. Click the link in it on this computer, or enter the {n}-digit code.	Wir haben eine E-Mail an {address} gesendet. Klicken Sie auf diesem Computer auf den Link darin oder geben Sie den {n}-stelligen Code ein.
+{n}-digit code	{n}-stelliger Code
+Sign in to use {pro} (Settings › Account).	Melden Sie sich an, um {pro} zu nutzen (Einstellungen › Account).
+Settings…	Einstellungen …
+International	International
+Mainland China	Festlandchina
+Continue with Apple	Mit Apple fortfahren
+Continue with Google	Mit Google fortfahren
+Continue with X	Mit X fortfahren
+Email me a sign-in code	Anmeldecode per E-Mail senden
+Continue with WeChat	Mit WeChat fortfahren
+Continue with Alipay	Mit Alipay fortfahren
+Text me a code	Code per SMS senden
+Sign-in isn't available in this build yet.	Die Anmeldung ist in diesem Build noch nicht verfügbar.
+{app} is working offline, so it can't reach the sign-in service. Turn off View › Work Offline to sign in.	{app} arbeitet offline und erreicht den Anmeldedienst daher nicht. Deaktivieren Sie Darstellung › Offline arbeiten, um sich anzumelden.
+Sign-in was cancelled.	Die Anmeldung wurde abgebrochen.
+Sign-in took too long. Try again.	Die Anmeldung hat zu lange gedauert. Versuchen Sie es erneut.
+Sign-in didn't finish: {reason}	Die Anmeldung wurde nicht abgeschlossen: {reason}
+You're signed out. Sign in again to use {pro}.	Sie sind abgemeldet. Melden Sie sich erneut an, um {pro} zu nutzen.
+Couldn't reach the sign-in service: {error}	Der Anmeldedienst ist nicht erreichbar: {error}
+The sign-in service answered {status}: {reason}	Der Anmeldedienst antwortete mit {status}: {reason}
+Couldn't keep the sign-in on this computer: {error}	Die Anmeldung konnte auf diesem Computer nicht gespeichert werden: {error}
+Couldn't start sign-in: {error}	Die Anmeldung konnte nicht gestartet werden: {error}
+The code is the {n} digits in the email.	Der Code sind die {n} Ziffern in der E-Mail.
+That code didn't work. Check it, or send a new email.	Dieser Code hat nicht funktioniert. Prüfen Sie ihn oder senden Sie eine neue E-Mail.
+Too many attempts. Wait a few minutes, then try again.	Zu viele Versuche. Warten Sie ein paar Minuten und versuchen Sie es dann erneut.
+no reason given	kein Grund angegeben
+that doesn't look like an email address	das sieht nicht nach einer E-Mail-Adresse aus
+too many emails were sent; wait a minute and try again	zu viele E-Mails gesendet; warten Sie eine Minute und versuchen Sie es erneut
+the sign-in service sent no code	der Anmeldedienst hat keinen Code gesendet
+Signed in with {provider}	Angemeldet mit {provider}
+Apple	Apple
+Google	Google
+X	X
+email	E-Mail
+a phone number	einer Telefonnummer
+WeChat	WeChat
+Alipay	Alipay
+You're signed out. Sign in again in Settings › Account to use {pro}.	Sie sind abgemeldet. Melden Sie sich unter Einstellungen › Account erneut an, um {pro} zu nutzen.
+{pro} isn't on for this account.	{pro} ist für diesen Account nicht aktiv.
+This account can't use {pro} yet. Try again in a minute.	Dieser Account kann {pro} noch nicht nutzen. Versuchen Sie es in einer Minute erneut.
+You've used this month's assistant allowance. It renews tomorrow.	Sie haben das Assistenten-Kontingent für diesen Monat aufgebraucht. Es wird morgen erneuert.
+You've used this month's assistant allowance. It renews in {n} days.	Sie haben das Assistenten-Kontingent für diesen Monat aufgebraucht. Es wird in {n} Tagen erneuert.
+You've used today's assistant allowance. It renews within the hour.	Sie haben das Assistenten-Kontingent für heute aufgebraucht. Es wird innerhalb der nächsten Stunde erneuert.
+You've used today's assistant allowance. It renews in about {n} hours.	Sie haben das Assistenten-Kontingent für heute aufgebraucht. Es wird in etwa {n} Stunden erneuert.
+The assistant service is out of credit. It has been told; try again later.	Der Assistentendienst hat kein Guthaben mehr. Das wurde gemeldet; versuchen Sie es später erneut.
+The assistant service is busy. Try again in a minute.	Der Assistentendienst ist ausgelastet. Versuchen Sie es in einer Minute erneut.
+The assistant service answered {status}: {reason}	Der Assistentendienst antwortete mit {status}: {reason}
+The assistant service's address isn't https.	Die Adresse des Assistentendienstes ist kein https.
+Couldn't reach the assistant service: {error}	Der Assistentendienst ist nicht erreichbar: {error}
+The assistant service's answer was cut off: {error}	Die Antwort des Assistentendienstes wurde abgeschnitten: {error}
+The assistant service answered {status} with something unreadable.	Der Assistentendienst antwortete mit {status} und etwas Unlesbarem.
+{app} is working offline, so the assistant can't be reached. Turn off View › Work Offline to ask.	{app} arbeitet offline, daher ist der Assistent nicht erreichbar. Deaktivieren Sie Darstellung › Offline arbeiten, um zu fragen.

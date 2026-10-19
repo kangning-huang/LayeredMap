@@ -283,6 +283,54 @@ fn screens() -> Vec<(&'static str, Box<dyn Fn() -> H>)> {
                 h
             }),
         ),
+        (
+            "Settings › Account, signed out",
+            Box::new(|| {
+                let mut h = harness_phase(3, false, WORLD, |s| {
+                    s.pro = true;
+                    s.account = crate::account_ui::test_ui(false, lm_account::Region::International);
+                    s.account.open = true;
+                });
+                h.run_steps(3);
+                h
+            }),
+        ),
+        (
+            "Settings › Account, signed in",
+            Box::new(|| {
+                let mut h = harness_phase(3, false, WORLD, |s| {
+                    s.pro = true;
+                    s.account = crate::account_ui::test_ui(true, lm_account::Region::International);
+                    s.account.open = true;
+                });
+                h.run_steps(3);
+                h
+            }),
+        ),
+        (
+            "Settings › Account, the email's code",
+            Box::new(|| {
+                let mut h = harness_phase(3, false, WORLD, |s| {
+                    s.pro = true;
+                    s.account = crate::account_ui::test_ui(false, lm_account::Region::International);
+                    s.account.open = true;
+                    let mut ec = crate::account_ui::EmailCode::new("kim@example.com".into(), lm_account::Region::International);
+                    ec.error = Some(lm_account::AccountError::WrongCode.to_string());
+                    s.account.email_code = Some(ec);
+                });
+                h.run_steps(3);
+                h
+            }),
+        ),
+        (
+            "Pro, sign-in prompt",
+            Box::new(|| {
+                phase3(&["V1/districts.geojson"], SHANGHAI, |s| {
+                    s.pro = true;
+                    s.account = crate::account_ui::test_ui(false, lm_account::Region::International);
+                })
+            }),
+        ),
     ]
 }
 

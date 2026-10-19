@@ -709,3 +709,85 @@ Split [layer] into separate parts	Разделить [layer] на отдельн
 Keep the part of [layer] inside [other]	Оставить часть [layer] внутри [other]
 Remove the part of [layer] inside [other]	Убрать часть [layer] внутри [other]
 Find areas where [Heat] meets conditions	Найти области, где [Heat] отвечает условиям
+Settings	Настройки
+Account	Учётная запись
+Delete Account	Удалить учётную запись
+Sign Out	Выйти
+Delete Account…	Удалить учётную запись…
+Working offline: Delete Account needs the network. Sign Out works offline.	Работа офлайн: для удаления учётной записи нужна сеть. Выйти можно и офлайн.
+Region	Регион
+Sign-in for mainland China (WeChat, Alipay, phone number) is coming in a later version.	Вход для материкового Китая (WeChat, Alipay, номер телефона) появится в одной из следующих версий.
+Finish signing in in your browser…	Завершите вход в браузере…
+Signing out…	Выход…
+Deleting your account…	Удаление учётной записи…
+Email address	Адрес электронной почты
+Verify	Подтвердить
+The link has stopped working on this Mac; the code still works for an hour.	Ссылка больше не работает на этом Mac; код действует ещё час.
+The link has stopped working on this computer; the code still works for an hour.	Ссылка больше не работает на этом компьютере; код действует ещё час.
+Send a New Email	Отправить новое письмо
+Use a Different Email	Другой адрес почты
+Asking about your layers needs a free account. Your maps and files stay on this computer.	Чтобы задавать вопросы о слоях, нужна бесплатная учётная запись. Ваши карты и файлы остаются на этом компьютере.
+Sign In…	Войти…
+You're signed out.	Вы вышли из учётной записи.
+Your account was deleted.	Ваша учётная запись удалена.
+Signed in with {provider} · {region}	Вход через {provider} · {region}
+{pro} is on for this account.	{pro} включён для этой учётной записи.
+Delete your {app} account? {pro} stops working on every computer you use. Your maps and files are not affected.	Удалить учётную запись {app}? {pro} перестанет работать на всех ваших компьютерах. Ваши карты и файлы это не затронет.
+Sign in to use {pro}	Войдите, чтобы пользоваться {pro}
+{pro} is free while it's new. Your account only says who you are: your maps and files never leave this computer.	Пока {pro} новый, он бесплатен. Учётная запись лишь подтверждает, кто вы: ваши карты и файлы никогда не покидают этот компьютер.
+Sending an email to {address}…	Отправка письма на {address}…
+We sent an email to {address}. Enter the {n}-digit code in it.	Мы отправили письмо на {address}. Введите код из {n} цифр, указанный в нём.
+We sent an email to {address}. Click the link in it on this Mac, or enter the {n}-digit code.	Мы отправили письмо на {address}. Нажмите ссылку в нём на этом Mac или введите код из {n} цифр.
+We sent an email to {address}. Click the link in it on this computer, or enter the {n}-digit code.	Мы отправили письмо на {address}. Нажмите ссылку в нём на этом компьютере или введите код из {n} цифр.
+{n}-digit code	Код из {n} цифр
+Sign in to use {pro} (Settings › Account).	Войдите, чтобы пользоваться {pro} (Настройки › Учётная запись).
+Settings…	Настройки…
+International	Международный
+Mainland China	Материковый Китай
+Continue with Apple	Продолжить с Apple
+Continue with Google	Продолжить с Google
+Continue with X	Продолжить с X
+Email me a sign-in code	Прислать код для входа на почту
+Continue with WeChat	Продолжить с WeChat
+Continue with Alipay	Продолжить с Alipay
+Text me a code	Прислать код в SMS
+Sign-in isn't available in this build yet.	Вход в этой сборке пока недоступен.
+{app} is working offline, so it can't reach the sign-in service. Turn off View › Work Offline to sign in.	{app} работает офлайн, поэтому не может связаться со службой входа. Чтобы войти, отключите Вид › Работать офлайн.
+Sign-in was cancelled.	Вход отменён.
+Sign-in took too long. Try again.	Вход занял слишком много времени. Попробуйте ещё раз.
+Sign-in didn't finish: {reason}	Вход не завершён: {reason}
+You're signed out. Sign in again to use {pro}.	Вы вышли из учётной записи. Войдите снова, чтобы пользоваться {pro}.
+Couldn't reach the sign-in service: {error}	Не удалось связаться со службой входа: {error}
+The sign-in service answered {status}: {reason}	Служба входа ответила {status}: {reason}
+Couldn't keep the sign-in on this computer: {error}	Не удалось сохранить вход на этом компьютере: {error}
+Couldn't start sign-in: {error}	Не удалось начать вход: {error}
+The code is the {n} digits in the email.	Код — это {n} цифр из письма.
+That code didn't work. Check it, or send a new email.	Код не подошёл. Проверьте его или отправьте новое письмо.
+Too many attempts. Wait a few minutes, then try again.	Слишком много попыток. Подождите несколько минут и попробуйте снова.
+no reason given	причина не указана
+that doesn't look like an email address	это не похоже на адрес электронной почты
+too many emails were sent; wait a minute and try again	отправлено слишком много писем; подождите минуту и попробуйте снова
+the sign-in service sent no code	служба входа не прислала код
+Signed in with {provider}	Вход через {provider}
+Apple	Apple
+Google	Google
+X	X
+email	электронную почту
+a phone number	номер телефона
+WeChat	WeChat
+Alipay	Alipay
+You're signed out. Sign in again in Settings › Account to use {pro}.	Вы вышли из учётной записи. Чтобы пользоваться {pro}, войдите снова в Настройки › Учётная запись.
+{pro} isn't on for this account.	{pro} не включён для этой учётной записи.
+This account can't use {pro} yet. Try again in a minute.	Эта учётная запись пока не может пользоваться {pro}. Попробуйте через минуту.
+You've used this month's assistant allowance. It renews tomorrow.	Вы израсходовали лимит помощника на этот месяц. Он обновится завтра.
+You've used this month's assistant allowance. It renews in {n} days.	Вы израсходовали лимит помощника на этот месяц. Он обновится через {n} дн.
+You've used today's assistant allowance. It renews within the hour.	Вы израсходовали лимит помощника на сегодня. Он обновится в течение часа.
+You've used today's assistant allowance. It renews in about {n} hours.	Вы израсходовали лимит помощника на сегодня. Он обновится примерно через {n} ч.
+The assistant service is out of credit. It has been told; try again later.	У службы помощника закончился баланс. Мы уже сообщили об этом; попробуйте позже.
+The assistant service is busy. Try again in a minute.	Служба помощника занята. Попробуйте через минуту.
+The assistant service answered {status}: {reason}	Служба помощника ответила {status}: {reason}
+The assistant service's address isn't https.	Адрес службы помощника не использует https.
+Couldn't reach the assistant service: {error}	Не удалось связаться со службой помощника: {error}
+The assistant service's answer was cut off: {error}	Ответ службы помощника оборвался: {error}
+The assistant service answered {status} with something unreadable.	Служба помощника ответила {status}, но ответ не удалось прочитать.
+{app} is working offline, so the assistant can't be reached. Turn off View › Work Offline to ask.	{app} работает офлайн, поэтому помощник недоступен. Чтобы задать вопрос, отключите Вид › Работать офлайн.

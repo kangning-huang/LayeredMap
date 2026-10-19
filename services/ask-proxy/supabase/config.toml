@@ -1,0 +1,49 @@
+# Supabase project settings the CLI deploys with (only what NimbleMap needs; `supabase init` would
+# write the full file). project_id is the local name; link the real project with
+# `supabase link --project-ref <ref>`.
+project_id = "nimblemap"
+
+[auth]
+# The app's loopback redirect (docs/lm/accounts-design.md › The redirect). The hosted project's
+# Redirect URLs list (Authentication › URL Configuration) needs the same entry.
+site_url = "http://127.0.0.1"
+additional_redirect_urls = ["http://127.0.0.1:*/**"]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+
+# Email sign-in is passwordless: one email carries a link and a 6-digit code; either signs in
+# (docs/lm/accounts-design.md › Email: the link or the code). Every key of this table is pushed
+# by `supabase config push` (the CLI fills the ones left out with its own defaults, which differ
+# from a hosted project's: confirmations off, one email a second), so all are written out, at
+# the hosted defaults except the OTP length and expiry.
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+# "Confirm email" on: a first sign-in sends the Confirm signup email (below), and the password
+# sign-up endpoint can't claim someone else's address.
+enable_confirmations = true
+secure_password_change = false
+# The shortest wait before another email to the same address ("Send a new email" in the app).
+max_frequency = "60s"
+# The code: 6 digits, good for an hour (the link only works for the app's 10-minute wait).
+otp_length = 6
+otp_expiry = 3600
+
+# Both emails show the code and the link: an existing account gets "Magic link", a first sign-in
+# (create_user) gets "Confirm signup". content_path is relative to services/ask-proxy.
+[auth.email.template.magic_link]
+subject = "Your NimbleMap sign-in code"
+content_path = "./supabase/templates/magic_link.html"
+
+[auth.email.template.confirmation]
+subject = "Your NimbleMap sign-in code"
+content_path = "./supabase/templates/confirmation.html"
+
+# Both functions check the token themselves (auth.getClaims), which works with the legacy JWT secret
+# and with the newer asymmetric signing keys; the gateway check is left off so either works.
+[functions.ask]
+verify_jwt = false
+
+[functions.account]
+verify_jwt = false
