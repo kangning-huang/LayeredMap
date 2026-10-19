@@ -1,2 +1,711 @@
 # NimbleMap interface catalog, ko: English<TAB>translation (format: crates/lm-core/src/i18n.rs).
 # Machine translation awaiting native review: docs/lm/localization.md.
+degrees Celsius	섭씨
+degrees Fahrenheit	화씨
+square kilometres	제곱킬로미터
+square metres	제곱미터
+square miles	제곱마일
+degrees	도
+minus	마이너스
+map	지도
+No data yet	아직 데이터 없음
+Every layer is hidden	모든 레이어가 숨겨져 있음
+Open a file or an example to add data. Search places with Command-F.	파일이나 예제를 열어 데이터를 추가하세요. Command-F로 장소를 검색할 수 있습니다.
+Arrow keys pan, plus and minus zoom. The layer list and the data table (Command-T) list every record; Command-F finds one.	화살표 키로 지도를 이동하고, 더하기와 빼기 키로 확대·축소합니다. 레이어 목록과 데이터 테이블(Command-T)에 모든 레코드가 나열되며, Command-F로 하나를 찾을 수 있습니다.
+The whole world	전 세계
+{lat} degrees north, {lon} degrees east	북위 {lat}도, 동경 {lon}도
+{lat} degrees north, {lon} degrees west	북위 {lat}도, 서경 {lon}도
+{lat} degrees south, {lon} degrees east	남위 {lat}도, 동경 {lon}도
+{lat} degrees south, {lon} degrees west	남위 {lat}도, 서경 {lon}도
+Selection cleared.	선택이 해제되었습니다.
+Cell selected.	셀이 선택되었습니다.
+No value	값 없음
+Showing {layers}	{layers} 표시 중
+Map. {layers}.	지도. {layers}.
+Map. {layers}. {place}.	지도. {layers}. {place}.
+{names} and {last}	{names}, {last}
+About {across} kilometres across, centred at {place}	{place} 중심, 너비 약 {across}킬로미터
+{layer} layer selected. {subtitle}.	{layer} 레이어 선택됨. {subtitle}.
+{title} selected.	{title} 선택됨.
+{title} selected. {field} {value}, {phrase}.	{title} 선택됨. {field} {value}, {phrase}.
+{title} selected. {field} {value}.	{title} 선택됨. {field} {value}.
+{n} {noun} selected.	{noun} {n}개 선택됨.
+{n} objects selected.	대상 {n}개 선택됨.
+{layer} cell at {place} selected. {value}.	{place}의 {layer} 셀 선택됨. {value}.
+Summarize in an area I draw	내가 그린 영역 안에서 요약
+The layer was removed.	레이어가 제거되었습니다.
+A layer is still loading.	아직 불러오는 중인 레이어가 있습니다.
+A condition names no raster.	래스터를 지정하지 않은 조건이 있습니다.
+Add a condition.	조건을 추가하세요.
+Add a layer of points to answer this.	이 질문에 답하려면 점 레이어를 추가하세요.
+Add a layer of lines to answer this.	이 질문에 답하려면 선 레이어를 추가하세요.
+Add a layer of areas to answer this.	이 질문에 답하려면 면 레이어를 추가하세요.
+Add a layer of cells to answer this.	이 질문에 답하려면 셀 레이어를 추가하세요.
+Add a layer of points or lines or areas to answer this.	이 질문에 답하려면 점, 선 또는 면 레이어를 추가하세요.
+Analysis	분석
+Developer surface · assistant action	개발자 화면 · 어시스턴트 동작
+Choose a layer	레이어 선택
+With	다른 레이어
+Distance	거리
+Merge overlaps	겹치는 부분 합치기
+Choose a value	값 선택
+By	기준
+Choose a raster	래스터 선택
+a number	숫자
+and	~
+Remove this condition	이 조건 제거
++ Add condition	+ 조건 추가
+or a field	또는 필드
+Statistic	통계
+of	대상 필드
+Scope	범위
+Working…	작업 중…
+Cancel	취소
+Kept	유지됨
+Done	완료
+Preview — not saved	미리 보기 — 저장 안 됨
+Keep result	결과 유지
+Discard	버리기
+Preview out of date	미리 보기가 최신이 아님
+Preview	미리 보기
+No data	데이터 없음
+Show fewer	간단히 보기
+How this was calculated	계산 방법
+Copy	복사
+All {n} points	점 {n}개 전체
+All {n} lines	선 {n}개 전체
+All {n} areas	면 {n}개 전체
+All {n} cells	셀 {n}개 전체
+All {n} rows	행 {n}개 전체
+≥  at least	≥  이상
+≤  at most	≤  이하
+[ ]  between	[ ]  사이
+“{action}” isn't connected yet.	“{action}” 기능은 아직 연결되지 않았습니다.
+The question could not be answered. Nothing was added to your map. ({reason})	질문에 답할 수 없었습니다. 지도에는 아무것도 추가되지 않았습니다. ({reason})
+{n} selected	{n}개 선택됨
+{phase}: {done} of {total}	{phase}: {total}개 중 {done}개
+{phase}…	{phase}…
+Kept: {title}. {summary}	유지됨: {title}. {summary}
+Preview: {summary}	미리 보기: {summary}
+{rank}. {label}: {value} {unit}	{rank}. {label}: {value} {unit}
+Show all {n}	{n}개 모두 보기
+Values: {unit}	값: {unit}
+The assistant isn't set up in this build (it has no assistant key).	이 빌드에는 어시스턴트가 설정되어 있지 않습니다(어시스턴트 키가 없음).
+The plan couldn't be kept; nothing changed.	계획을 유지할 수 없었습니다. 아무것도 바뀌지 않았습니다.
+Type your answer, or pick one above	답을 입력하거나 위에서 하나를 고르세요
+Ask about your layers	레이어에 대해 질문하기
+Listening… speak your request	듣는 중… 요청을 말씀하세요
+Stop listening	듣기 중지
+Speak your request	요청을 말로 하기
+Ask (Return)	질문하기(Return)
+Ask	질문하기
+Planning…	계획 세우는 중…
+Preview on the map — not saved	지도에서 미리 보기 — 저장 안 됨
+OK	확인
+Keep	유지
+I can't answer that with these layers: {text}	이 레이어로는 답할 수 없습니다: {text}
+Show only {layer} where {filter}: {shown} of {of}	{filter} 조건으로 {layer}만 표시: {of}개 중 {shown}개
+New layer: {name}	새 레이어: {name}
+Add {fields} to {layer}	{layer}에 {fields} 추가
+Planning “{request}”…	“{request}” 계획 세우는 중…
+Nothing to undo	실행 취소할 항목 없음
+Map image…	지도 이미지…
+Data…	데이터…
+Open a file first	먼저 파일을 여세요
+Map package…	지도 패키지…
+Search places or your data	장소 또는 내 데이터 검색
+Your data	내 데이터
+Loading places…	장소 불러오는 중…
+No places match	일치하는 장소 없음
+Places	장소
+Zoom in	확대
+Zoom out	축소
+Basemap	배경 지도
+Working offline: online backgrounds are off	오프라인 작업 중: 온라인 배경 지도가 꺼져 있습니다
+Background strength	배경 강도
+Credits	출처
+Working offline: the detailed background is off	오프라인 작업 중: 상세 배경 지도가 꺼져 있습니다
+Detailed background unavailable offline	오프라인에서는 상세 배경 지도를 쓸 수 없음
+Detailed background unavailable offline. Your data and tools still work.	오프라인에서는 상세 배경 지도를 쓸 수 없습니다. 데이터와 도구는 그대로 작동합니다.
+Open a file to see your data on the map.	파일을 열어 지도에서 데이터를 확인하세요.
+Close	닫기
+Open file…	파일 열기…
+Examples	예제
+Browse data library	데이터 라이브러리 둘러보기
+Course datasets to add to the map	지도에 추가할 수 있는 강의용 데이터셋
+Share	공유
+Undo	실행 취소
+Layers	레이어
+Open	열기
+Map data	지도 데이터
+© OpenStreetMap contributors (ODbL), through the Protomaps basemap	© OpenStreetMap 기여자(ODbL), Protomaps 배경 지도 제공
+Offline basemap	오프라인 배경 지도
+Natural Earth (public domain)	Natural Earth(퍼블릭 도메인)
+Place search	장소 검색
+GeoNames (geonames.org), CC BY 4.0	GeoNames(geonames.org), CC BY 4.0
+Fonts	글꼴
+Inter and Noto Sans SC (SIL Open Font License 1.1)	Inter 및 Noto Sans SC(SIL Open Font License 1.1)
+Icons	아이콘
+Phosphor Icons (MIT)	Phosphor Icons(MIT)
+Engine	엔진
+RustGIS (Apache-2.0)	RustGIS(Apache-2.0)
+{label} arrives in a later phase	{label} 기능은 이후 단계에서 제공됩니다
+Undo {action}	실행 취소: {action}
+Open files ({key})	파일 열기({key})
+Show or hide the layer list ({key})	레이어 목록 보기/숨기기({key})
+Export a map image ({key}) or data	지도 이미지({key}) 또는 데이터 내보내기
+{title}, {detail}	{title}, {detail}
+{title}, {detail}, {i} of {n}	{title}, {detail}, {n}개 중 {i}번째
+{n} km	{n} km
+{n} m	{n} m
+{n} mi	{n} mi
+{n} ft	{n} ft
+Credits: {text}	출처: {text}
+Export Diagnostics	진단 정보 내보내기
+This is everything the diagnostics file will contain. Nothing is sent: save it, read it, and send it yourself if you want help.	진단 파일에 담길 내용은 이것이 전부입니다. 아무것도 전송되지 않습니다. 저장해서 읽어 보고, 도움이 필요하면 직접 보내세요.
+It holds no data values or file contents; file and folder names may appear in error messages.	데이터 값이나 파일 내용은 들어 있지 않습니다. 오류 메시지에 파일 및 폴더 이름이 나올 수 있습니다.
+Save…	저장…
+Couldn't start listening.	듣기를 시작할 수 없습니다.
+Speaking isn't available on Windows yet. Press Windows+H to type with your voice instead.	Windows에서는 아직 음성 입력을 쓸 수 없습니다. 대신 Windows+H를 눌러 음성으로 입력하세요.
+Speaking needs the {app} app (its speech helper isn't here).	음성 입력에는 {app} 앱이 필요합니다(음성 도우미가 없음).
+Couldn't start listening: {error}	듣기를 시작할 수 없습니다: {error}
+Drawing — click to add points, double-click to finish, Esc to cancel	그리는 중 — 클릭해 점 추가, 더블클릭해 완료, Esc로 취소
+Drawing — drag a rectangle, Esc to cancel	그리는 중 — 사각형을 드래그, Esc로 취소
+World basics	세계 기본 지도
+Cities, countries and elevation	도시, 국가, 고도
+Heatwaves, summer 2023	2023년 여름 폭염
+Daily heatwave intensity worldwide, June to August	6~8월 전 세계 일별 폭염 강도
+Typhoons and hurricanes	태풍과 허리케인
+4,999 storm tracks since 1980	1980년 이후 폭풍 경로 4,999개
+Walled cities of China, 1866	1866년 중국의 성곽 도시
+1,789 city walls of late imperial China	청나라 말기 중국의 성벽 1,789곳
+Big earthquakes	대지진
+14,537 of magnitude 6 or more since 1900	1900년 이후 규모 6 이상 14,537건
+Volcanoes	화산
+1,609 volcanoes and their status	화산 1,609곳과 활동 상태
+Airports	공항
+5,280 large and medium airports, with elevation	대형·중형 공항 5,280곳, 고도 포함
+Power plants	발전소
+34,936 plants by fuel and capacity	발전소 34,936곳, 연료와 용량별
+Slide 16:9	슬라이드 16:9
+Report A4	보고서 A4
+Square	정사각형
+2480 × 3508 px · A4 at 300 dpi	2480 × 3508 px · 300 dpi A4
+slide	슬라이드
+square	정사각형
+Map	지도
+The preview isn't included. Keep it to put it in the image.	미리 보기는 포함되지 않습니다. 이미지에 넣으려면 유지하세요.
+Some of the background couldn't be loaded, so the image shows less detail.	배경 지도 일부를 불러오지 못해 이미지가 덜 상세합니다.
+Export map image	지도 이미지 내보내기
+Size	크기
+Title	제목
+Add a title (optional)	제목 추가(선택 사항)
+Caption	설명문
+Use the caption made from the layers	레이어로 만든 설명문 사용
+Made from the layers; edit it if you like.	레이어로 만들었습니다. 원하면 고치세요.
+Legend	범례
+No layers are shown.	표시된 레이어가 없습니다.
+It places itself clear of the data; drag it to move it.	데이터를 가리지 않는 곳에 자동으로 놓입니다. 드래그해 옮길 수 있습니다.
+Place the legend automatically	범례 자동 배치
+Drawing the map at full size…	지도를 원래 크기로 그리는 중…
+Fit to data	데이터에 맞춤
+Current view	현재 화면
+No layers are shown, so the map shows the current view.	표시된 레이어가 없어 현재 화면을 보여 줍니다.
+Grid lines	격자선
+Auto	자동
+On	켬
+Off	끔
+Legend: drag to move it	범례: 드래그해 옮기기
+Format	형식
+Show	표시
+North arrow	방위표
+Scale bar	축척 막대
+Lat/lon labels	위경도 라벨
+{paper} · PDF, text and symbols as vectors	{paper} · PDF, 텍스트와 기호는 벡터로
+{layer} is colored by value but has no legend.	{layer}은(는) 값에 따라 색칠되어 있지만 범례가 없습니다.
+{layer} is filtered: the image shows {shown} of {total} {nouns}.	{layer}에 필터가 적용되어 있습니다: 이미지에는 {nouns} {total}개 중 {shown}개가 나옵니다.
+The {basemap} basemap's terms don't allow exported images, so the offline basemap is used.	{basemap} 배경 지도의 이용 약관상 이미지 내보내기가 허용되지 않아 오프라인 배경 지도를 사용합니다.
+about {km} km across: a north arrow and a scale bar.	너비 약 {km} km: 방위표와 축척 막대.
+about {km} km across: latitude and longitude on the frame, and a scale bar.	너비 약 {km} km: 테두리에 위도와 경도, 그리고 축척 막대.
+about {km} km across and {degrees}° tall: latitude and longitude on the frame. No scale bar, as distances stretch with latitude.	너비 약 {km} km, 높이 {degrees}°: 테두리에 위도와 경도. 위도에 따라 거리가 늘어나므로 축척 막대는 넣지 않습니다.
+about {km} km across: latitude and longitude on the frame. Distances vary too much for one scale bar.	너비 약 {km} km: 테두리에 위도와 경도. 거리 차이가 너무 커서 축척 막대 하나로 나타낼 수 없습니다.
+Made with {app}.	{app}으로 만들었습니다.
+Data: {sources}. Made with {app}.	데이터: {sources}. {app}으로 만들었습니다.
+No data ({n})	데이터 없음({n})
+Credits are always included: {credits}	출처는 항상 포함됩니다: {credits}
+The image couldn't be made: {error}	이미지를 만들 수 없습니다: {error}
+Auto: {rules}	자동: {rules}
+{size} · exactly as saved	{size} · 저장될 모습 그대로
+The layer is gone.	레이어가 없어졌습니다.
+The layer's data is still loading.	레이어 데이터를 아직 불러오는 중입니다.
+Export data	데이터 내보내기
+Export…	내보내기…
+Layer	레이어
+Filtered	필터됨
+Selected	선택됨
+Records	레코드
+The layer has no filter and nothing is selected.	레이어에 필터가 없고 선택된 항목도 없습니다.
+The layer has no filter.	레이어에 필터가 없습니다.
+Nothing is selected in this layer.	이 레이어에 선택된 항목이 없습니다.
+Location	위치
+Longitude, latitude	경도, 위도
+Lines and areas are written as well-known text (WKT).	선과 면은 WKT(well-known text)로 저장됩니다.
+Fields	필드
+None	없음
+All	전체
+The band shown, on the raster's own grid and coordinate system: resampling to WGS 84 would change its values.	표시 중인 밴드를 래스터 자체의 격자와 좌표계 그대로 저장합니다. WGS 84로 리샘플링하면 값이 바뀌기 때문입니다.
+Coordinates are written in WGS 84 (longitude, latitude).	좌표는 WGS 84(경도, 위도)로 저장됩니다.
+{name} (filtered)	{name}(필터됨)
+{name} (selected)	{name}(선택됨)
+All {n}	전체 {n}개
+Filtered {n}	필터된 {n}개
+Selected {n}	선택된 {n}개
+{note}: left out unless you check it	{note}: 체크하지 않으면 제외됩니다
+Styles and recipes stay in {app}: these formats carry only locations and values.	스타일과 작업 기록은 {app}에만 남습니다. 이 형식에는 위치와 값만 담깁니다.
+Clear	지우기
+Clear the search	검색 지우기
+Zoom to it	그곳으로 확대
+Zoom to all	모두 보이게 확대
+No points contain “{q}”.	“{q}”을(를) 포함하는 점이 없습니다.
+No lines contain “{q}”.	“{q}”을(를) 포함하는 선이 없습니다.
+No areas contain “{q}”.	“{q}”을(를) 포함하는 면이 없습니다.
+No cells contain “{q}”.	“{q}”을(를) 포함하는 셀이 없습니다.
+No rows contain “{q}”.	“{q}”을(를) 포함하는 행이 없습니다.
+Find in {layer}	{layer}에서 찾기
+{n} found	{n}개 찾음
+‹ All {n} found	‹ 찾은 {n}개 전체
+{title}, {field}: {value}	{title}, {field}: {value}
+{n} more on the map · 	지도에 {n}개 더 있음 · 
+More actions…	다른 작업…
+Working out how this compares…	다른 항목과 비교하는 중…
+point	점
+line	선
+area	면
+cell	셀
+row	행
+The data is still loading.	데이터를 아직 불러오는 중입니다.
+Show fewer fields	필드 간단히 보기
+View in table	테이블에서 보기
+Zoom to	위치로 이동
+◉ Range fitted to the view	◉ 화면에 맞춘 범위
+Color	색상
+One color	한 가지 색
+Smooth	연속
+Groups	구간
+Palette	팔레트
+Equal counts	개수가 같게
+Equal steps	간격이 같게
+Fit range to view	범위를 화면에 맞춤
+Larger areas tend to have higher counts.	면적이 넓을수록 개수가 많은 경향이 있습니다.
+Color by count per km² instead?	대신 km²당 개수로 색칠할까요?
+Use totals	합계 사용
+Same size	같은 크기
+Labels	라벨
+Opacity	불투명도
+Outline	윤곽선
+Width	너비
+Band	밴드
+From	최소
+To	최대
+Reset to the middle 96% of the time step	이 시간 단계의 가운데 96%로 재설정
+Same for every time step: the middle 96% of the time step	모든 시간 단계에 동일: 이 시간 단계의 가운데 96%
+Covers the middle 96% of cells	셀의 가운데 96%를 포함
+Reset to the middle 96% of cells	셀의 가운데 96%로 재설정
+Only show values above	다음 값보다 큰 값만 표시
+Range	범위
+Stop highlighting	강조 중지
+{n} point	점 {n}개
+{n} points	점 {n}개
+{n} line	선 {n}개
+{n} lines	선 {n}개
+{n} area	면 {n}개
+{n} areas	면 {n}개
+{n} cell	셀 {n}개
+{n} cells	셀 {n}개
+{n} row	행 {n}개
+{n} rows	행 {n}개
+Blue	파랑
+Orange	주황
+Bluish green	청록
+Vermilion	주홍
+Reddish purple	붉은 보라
+Sky blue	하늘색
+Yellow	노랑
+Black	검정
+Show all {n} fields	필드 {n}개 모두 보기
+Band {n} ({unit})	밴드 {n}({unit})
+Band {n}	밴드 {n}
+Showing only values above {v}	{v}보다 큰 값만 표시 중
+Highlighting {low} to {high}	{low}~{high} 강조 중
+{field} per km² (geodesic area)	km²당 {field}(측지 면적)
+Band {n} ({name})	밴드 {n}({name})
+Reset to the middle 96% of {n} time steps	시간 단계 {n}개의 가운데 96%로 재설정
+Same for every time step: the middle 96% of {n} time steps	모든 시간 단계에 동일: 시간 단계 {n}개의 가운데 96%
+{low} to {high}	{low}~{high}
+Use this match	이 일치 항목 사용
+Use these matches	이 일치 항목들 사용
+Hide the rows not matched	일치하지 않는 행 숨기기
+Keep the original colors	원래 색상 유지
+Looking for the places this table describes…	이 표가 설명하는 장소를 찾는 중…
+None of these: keep it as a table	해당 없음: 표로 유지
+Use this	이것 사용
+Join	조인
+Keep as a table	표로 유지
+Choose other columns…	다른 열 선택…
+Open a point, line or area layer to match this table to.	이 표를 연결할 점, 선 또는 면 레이어를 여세요.
+Several rows for one place	한 장소에 여러 행
+{n} name looks like a typo: {examples}	오타로 보이는 이름 {n}개: {examples}
+{n} names look like typos: {examples}	오타로 보이는 이름 {n}개: {examples}
+{n} row with no {field}	{field} 값이 없는 행 {n}개
+{n} rows with no {field}	{field} 값이 없는 행 {n}개
+Automatic	자동
+Latest year or date	최근 연도 또는 날짜
+Combine	합치기
+{table} now appears under {layer} in Layers.	이제 {table}이(가) 레이어 패널의 {layer} 아래에 나타납니다.
+and {n} more	외 {n}개
+Which places does {table} describe?	{table}은(는) 어떤 장소를 설명하나요?
+Join {table} to {target}?	{table}을(를) {target}에 조인할까요?
+Match {layer} to a layer	{layer}을(를) 레이어에 연결
+Column in {layer}	{layer}의 열
+{matched} of {total} {nouns} match · {rows_matched} of {rows} rows find a place	{nouns} {total}개 중 {matched}개 일치 · 행 {rows}개 중 {rows_matched}개가 장소를 찾음
+Ctrl+{key}	Ctrl+{key}
+Ctrl+Shift+{key}	Ctrl+Shift+{key}
+Points	점
+Lines	선
+Areas	면
+Grid	격자
+Table	테이블
+Data library	데이터 라이브러리
+Search datasets	데이터셋 검색
+Offline: showing the list from your last visit	오프라인: 마지막으로 방문했을 때의 목록을 표시합니다
+Try again	다시 시도
+Loading the library…	라이브러리 불러오는 중…
+The library is empty.	라이브러리가 비어 있습니다.
+Add to map	지도에 추가
+Downloaded: opens without the internet	다운로드됨: 인터넷 없이 열립니다
+Downloaded	다운로드됨
+{n} GB	{n} GB
+{n} MB	{n} MB
+{n} KB	{n} KB
+No datasets match “{q}”.	“{q}”와(과) 일치하는 데이터셋이 없습니다.
+Downloading {done} of {total}	{total}개 중 {done}개 다운로드 중
+A layer is still loading. Try again in a moment.	아직 불러오는 중인 레이어가 있습니다. 잠시 후 다시 시도하세요.
+Packaging the map and its data…	지도와 데이터를 패키지로 묶는 중…
+packaging stopped unexpectedly	패키지 작업이 예기치 않게 중단됨
+Share as a map package	지도 패키지로 공유
+One file with the map and its data, so it opens on another computer.	지도와 데이터를 파일 하나에 담아 다른 컴퓨터에서도 열 수 있게 합니다.
+Save Package…	패키지 저장…
+Before compression; text files shrink a lot in the package.	압축 전 크기입니다. 텍스트 파일은 패키지에서 크게 줄어듭니다.
+Data it includes	포함되는 데이터
+No source files: the map's layers are all stored in it already.	원본 파일 없음: 지도의 레이어가 모두 이미 패키지에 저장되어 있습니다.
+can't be found, so it's left out	찾을 수 없어 제외됨
+Folder paths	폴더 경로
+The map names no folders on this computer.	이 지도에는 이 컴퓨터의 폴더 이름이 들어 있지 않습니다.
+Paths name your account and folders, so they are left out; files keep only their names.	경로에는 계정과 폴더 이름이 드러나므로 제외됩니다. 파일은 이름만 유지합니다.
+Fields that look personal	개인 정보로 보이는 필드
+None found: no names, emails, phone or ID numbers.	찾은 항목 없음: 이름, 이메일, 전화번호, ID 번호가 없습니다.
+Checked fields are left out of the package. Your own map keeps them.	체크한 필드는 패키지에서 제외됩니다. 내 지도에는 그대로 남습니다.
+Unknown — check before sharing	알 수 없음 — 공유 전에 확인하세요
+The map is colored by it	지도가 이 필드로 색칠되어 있음
+The map sizes points by it	지도가 이 필드로 점 크기를 정함
+The map labels by it	지도가 이 필드로 라벨을 붙임
+The filter uses it	필터가 이 필드를 사용함
+{layer} (without the fields left out)	{layer}(제외한 필드 없이)
+The package couldn't be made: {error}	패키지를 만들 수 없습니다: {error}
+Saved {name} ({size}), without {missing}: it couldn't be found.	{name}({size})을(를) 저장했습니다. {missing}은(는) 찾을 수 없어 빠졌습니다.
+Saved {name}, but {layer} couldn't be kept in it ({why}).	{name}을(를) 저장했지만, {layer}은(는) 패키지에 넣을 수 없었습니다({why}).
+Saved {name} ({size}): the map and its data, ready to share.	{name}({size})을(를) 저장했습니다: 지도와 데이터를 공유할 준비가 되었습니다.
+The package couldn't be made. {error}	패키지를 만들 수 없습니다. {error}
+{name} (package)	{name}(패키지)
+About {size}	약 {size}
+Stored in the package itself: {layers}.	패키지 자체에 저장됨: {layers}.
+Layers: {layers}	레이어: {layers}
+Licence: {licence}	라이선스: {licence}
+Leave out {field} ({layer})	{field} 제외({layer})
+{note}. {why}, so it stays.	{note}. {why}, 그래서 유지됩니다.
+Remove all	모두 제거
+Open file	파일 열기
+Dismiss	닫기
+Hide the joined table	조인된 표 숨기기
+Show the joined table	조인된 표 보기
+View data	데이터 보기
+Match to a layer…	레이어에 연결…
+Style…	스타일…
+Zoom to layer	레이어로 확대
+Rename	이름 바꾸기
+Remove from map	지도에서 제거
+Needs a decision: see the layer's panel	결정이 필요함: 레이어 패널을 확인하세요
+Variable shown	표시할 변수
+Level shown	표시할 층
+joined	조인됨
+Show joined fields	조인된 필드 표시
+Unjoin	조인 해제
+The table wasn't opened in this session, so it can't be put back	이 세션에서 연 표가 아니라서 되돌릴 수 없습니다
+Where should this data be?	이 데이터는 어디에 있어야 하나요?
+This file doesn't say where on Earth its coordinates are. Name a place it covers.	이 파일에는 좌표가 지구상의 어디인지 나와 있지 않습니다. 이 데이터가 포함하는 장소를 하나 입력하세요.
+A city or town, e.g. Shanghai	도시나 마을, 예: 상하이
+Use the middle of the map	지도 가운데 사용
+the middle of the map	지도 가운데
+Open as a table	표로 열기
+Not sure	잘 모르겠음
+Compare on the map first	먼저 지도에서 비교
+Close the panel	패널 닫기
+Back	뒤로
+This cell has no data.	이 셀에는 데이터가 없습니다.
+This layer has no values to compare.	이 레이어에는 비교할 값이 없습니다.
+Compare by	비교 기준
+Export problem list	문제 목록 내보내기
+Opened as a table: there is nothing to place on the map yet.	표로 열었습니다: 아직 지도에 놓을 것이 없습니다.
+Compare	비교
+Add unit	단위 추가
+Change	변경
+as in the file	파일 그대로
+converted from Baidu (BD-09)	Baidu(BD-09)에서 변환
+converted from Amap/Tencent (GCJ-02)	Amap/Tencent(GCJ-02)에서 변환
+Keep the set that sits on the streets.	도로 위에 놓이는 쪽을 유지하세요.
+Keep converted	변환한 것 유지
+Keep as in the file	파일 그대로 유지
+Try Amap/Tencent instead	대신 Amap/Tencent로 시도
+Try Baidu instead	대신 Baidu로 시도
+Filtered:	필터 적용됨:
+Values	값
+Source	원본
+Text encoding	텍스트 인코딩
+Coordinate system	좌표계
+Extent	범위
+Complete	완료
+Needs a decision	결정이 필요함
+Canceled	취소됨
+Not loaded (the source is read again when the document opens)	불러오지 않음(문서를 열 때 원본을 다시 읽습니다)
+Import	가져오기
+Remove from insight	비교 정보에서 제거
+Show in insight	비교 정보에 표시
+Treat this field as	이 필드를 다음으로 처리
+Back to the detected role	감지된 역할로 되돌리기
+Assumptions	가정
+Export problem list…	문제 목록 내보내기…
+Row	행
+Reason	이유
+Drop to add to the map	놓으면 지도에 추가됩니다
+Overview	개요
+Style	스타일
+Details	세부 정보
+{n} {things} opened; {left} has no usable location.	{things} {n}개를 열었습니다. {left}개는 쓸 수 있는 위치가 없습니다.
+{n} {things} opened; {left} have no usable location.	{things} {n}개를 열었습니다. {left}개는 쓸 수 있는 위치가 없습니다.
+{n} records opened; {left} has no usable location.	레코드 {n}개를 열었습니다. {left}개는 쓸 수 있는 위치가 없습니다.
+{n} records opened; {left} have no usable location.	레코드 {n}개를 열었습니다. {left}개는 쓸 수 있는 위치가 없습니다.
+{line} (applied quietly; chosen: {choice})	{line}(자동 적용됨, 선택: {choice})
+{line} (shown; chosen: {choice})	{line}(표시됨, 선택: {choice})
+{line} (answered; chosen: {choice})	{line}(답변됨, 선택: {choice})
+{line} (needs a decision; chosen: {choice})	{line}(결정 필요, 선택: {choice})
+{line} (blocks actions; chosen: {choice})	{line}(작업 차단, 선택: {choice})
+Count	개수
+Density	밀도
+Value	값
+ID	ID
+Name	이름
+Category	범주
+Text	텍스트
+Date	날짜
+Coordinate	좌표
+Unknown	알 수 없음
+Remove every layer from the map ({key} brings them back)	지도에서 모든 레이어 제거({key}로 되돌림)
+{error}\n\nDetails: {details}	{error}\n\n세부 정보: {details}
+Dismiss {name}	{name} 닫기
+Cancel {name}	{name} 취소
+Show {layer}	{layer} 표시
+Joined tables of {layer}	{layer}의 조인된 표
+Hide the {n} joined tables	조인된 표 {n}개 숨기기
+Show the {n} joined tables	조인된 표 {n}개 보기
+joined · {matched} of {total} matched	조인됨 · {total}개 중 {matched}개 일치
+Joined table {table}, {caption}	조인된 표 {table}, {caption}
+Joined to {layer}: its fields are part of the layer	{layer}에 조인됨: 이 표의 필드가 레이어의 일부가 됩니다
+No coordinate system puts this data near {name}. Try another place, or open it as a table.	이 데이터를 {name} 근처에 놓는 좌표계가 없습니다. 다른 장소를 입력하거나 표로 여세요.
+{crs} — lands {km} km from {name}	{crs} — {name}에서 {km} km 떨어진 곳에 놓임
+{choice} (recommended)	{choice}(권장)
+{lat}°, {lon}°	{lat}°, {lon}°
+{layer} · cell	{layer} · 셀
+{n} {things}, highest first	{things} {n}개, 높은 순
+{n}{plus} objects here	이곳에 대상 {n}{plus}개
+Review {n}	{n}개 검토
+Compare {layer}	{layer} 비교
++{n} more	+{n}개 더
+{variable}: {low} to {high}{unit} over {sampled} of {steps} time steps	{variable}: {low}~{high}{unit}(시간 단계 {steps}개 중 {sampled}개 기준)
+{variable}: {low} to {high}{unit}	{variable}: {low}~{high}{unit}
+Time: {range}	시간: {range}
+Band {n}: {low} to {high}{unit}	밴드 {n}: {low}~{high}{unit}
+Band {n} ({name}): {low} to {high}{unit}	밴드 {n}({name}): {low}~{high}{unit}
+{west}° to {east}° E, {south}° to {north}° N	동경 {west}°~{east}°, 북위 {south}°~{north}°
+Complete, with {n} records excluded	완료, 레코드 {n}개 제외
+Failed: {reason}	실패: {reason}
+From {table}	출처 표: {table}
+Show {field} in insight	{field}을(를) 비교 정보에 표시
+Excluded records — {layer}	제외된 레코드 — {layer}
+{n} records were left out of the map. Your file has not been changed.	레코드 {n}개가 지도에서 제외되었습니다. 원본 파일은 바뀌지 않았습니다.
+Untitled	제목 없음
+Your own file has not been changed.	원본 파일은 바뀌지 않았습니다.
+Restore	복원
+Your changes will be lost if you don't save them.	저장하지 않으면 변경 사항이 사라집니다.
+Don't Save	저장 안 함
+Save	저장
+Use It	사용
+Locate…	위치 지정…
+Remove layer	레이어 제거
+its size changed	크기가 바뀜
+its contents changed	내용이 바뀜
+its modification date changed	수정 날짜가 바뀜
+Using {file}. 1 result made from the old file now say Source changed.	{file}을(를) 사용합니다. 이전 파일로 만든 결과 1개에 이제 ‘원본 변경됨’이 표시됩니다.
+Using {file}. {n} results made from the old file now say Source changed.	{file}을(를) 사용합니다. 이전 파일로 만든 결과 {n}개에 이제 ‘원본 변경됨’이 표시됩니다.
+This file looks different ({reason}). Use it anyway?	이 파일은 달라 보입니다({reason}). 그래도 사용할까요?
+Saved, but {name} couldn't be kept in the map file ({why}).	저장했지만, {name}은(는) 지도 파일에 넣을 수 없었습니다({why}).
+The autosaved map could not be restored. {error}	자동 저장된 지도를 복원할 수 없습니다. {error}
+Do you want to save the changes you made to '{name}'?	'{name}'에 대한 변경 사항을 저장하시겠습니까?
+a date	날짜
+some text	텍스트
+Remove this filter	이 필터 제거
+Filter	필터
+Add a filter	필터 추가
+Close the table	테이블 닫기
+Search	검색
+Search the table	테이블 검색
+no value	값 없음
+where	조건:
+choose…	선택…
+Finish the sentence to see how many match.	문장을 완성하면 몇 개가 일치하는지 보입니다.
+Apply	적용
+is	같음
+is not	같지 않음
+contains	포함
+starts with	(으)로 시작
+ends with	(으)로 끝남
+is empty	비어 있음
+above	초과
+below	미만
+between	사이
+before	이전
+after	이후
+is any of	다음 중 하나
+Sort by {name}, sorted ascending	{name} 기준 정렬, 오름차순 정렬됨
+Sort by {name}, sorted descending	{name} 기준 정렬, 내림차순 정렬됨
+Sort by {name}	{name} 기준 정렬
+Showing {shown} of {total}	{total}개 중 {shown}개 표시
+Remove filter: {filter}	필터 제거: {filter}
+{n} match	{n}개 일치
+Previous step (←)	이전 단계(←)
+Pause	일시 정지
+Play	재생
+Next step (→)	다음 단계(→)
+Time step	시간 단계
+{layer} · {step} of {steps}	{layer} · {steps}단계 중 {step}
+A new version is available	새 버전이 있습니다
+Close the update notice	업데이트 알림 닫기
+{app} {version}: {notes}	{app} {version}: {notes}
+Download {version}	{version} 다운로드
+That layer is gone.	그 레이어는 없어졌습니다.
+This layer has no variables to choose from.	이 레이어에는 고를 수 있는 변수가 없습니다.
+This layer's data isn't loaded.	이 레이어의 데이터를 불러오지 않았습니다.
+{layer} has no variable {variable}.	{layer}에는 {variable} 변수가 없습니다.
+The layer isn't loaded yet.	레이어를 아직 불러오지 않았습니다.
+Pick a column on each side.	양쪽에서 열을 하나씩 고르세요.
+{matched} of {keys} match	{keys}개 중 {matched}개 일치
+Joined {table} to {layer}: {matched} of {total} {things} matched.	{table}을(를) {layer}에 조인했습니다: {things} {total}개 중 {matched}개 일치.
+Show the {r} row not matched	일치하지 않는 행 {r}개 보기
+Show the {r} rows not matched	일치하지 않는 행 {r}개 보기
+Show the {k} not matched	일치하지 않는 {k}개 보기
+Show the {k} not matched ({r} row)	일치하지 않는 {k}개 보기(행 {r}개)
+Show the {k} not matched ({r} rows)	일치하지 않는 {k}개 보기(행 {r}개)
+file	파일
+Preparing a faster preview…	더 빠른 미리 보기를 준비하는 중…
+Still reading a layer. Undo in a moment.	아직 레이어를 읽는 중입니다. 잠시 후 실행 취소하세요.
+Still reading a layer. Redo in a moment.	아직 레이어를 읽는 중입니다. 잠시 후 실행 복귀하세요.
+That couldn't be done. Nothing was changed.	그 작업을 할 수 없었습니다. 아무것도 바뀌지 않았습니다.
+The layer changed while it was being read again, so that change was not applied.	다시 읽는 동안 레이어가 바뀌어 그 변경은 적용되지 않았습니다.
+That assumption couldn't be changed.	그 가정을 바꿀 수 없었습니다.
+Only points, lines and areas can be converted.	점, 선, 면만 변환할 수 있습니다.
+The layer changed while it was being converted, so nothing was added.	변환하는 동안 레이어가 바뀌어 아무것도 추가되지 않았습니다.
+The converted layer couldn't be added.	변환한 레이어를 추가할 수 없었습니다.
+Only points, lines and areas can be compared.	점, 선, 면만 비교할 수 있습니다.
+This layer has nothing to compare.	이 레이어에는 비교할 것이 없습니다.
+{file} has changed since this document was saved; it was read as it is now.	{file}은(는) 이 문서를 저장한 뒤 바뀌었습니다. 현재 상태로 읽었습니다.
+{layer} is no longer in {file}.	{layer}은(는) 더 이상 {file}에 없습니다.
+Can't find {file}. It was last seen in {folder}.	{file}을(를) 찾을 수 없습니다. 마지막 위치: {folder}
+Can't find {file}. It was last seen in its folder.	{file}을(를) 찾을 수 없습니다. 마지막으로 있던 폴더에 없습니다.
+The layer couldn't be read again.	레이어를 다시 읽을 수 없었습니다.
+Reading {done} of {total}	{total}개 중 {done}개 읽는 중
+Still reading {layer}. Try again in a moment.	아직 {layer}을(를) 읽는 중입니다. 잠시 후 다시 시도하세요.
+Save map package	지도 패키지 저장
+{app} map	{app} 지도
+Locate {file}	{file} 위치 지정
+A map-first GIS. Built on RustGIS.	지도 중심의 GIS. RustGIS 기반.
+File	파일
+Open…	열기…
+Open Example	예제 열기
+Browse data library…	데이터 라이브러리 둘러보기…
+Save As…	다른 이름으로 저장…
+Export Map Image…	지도 이미지 내보내기…
+Export Data…	데이터 내보내기…
+Export Map Package…	지도 패키지 내보내기…
+Close Window	윈도우 닫기
+Exit	끝내기
+Edit	편집
+Find…	찾기…
+Remove All Layers	모든 레이어 제거
+Use System Appearance	시스템 화면 모드 사용
+Light	밝게
+Dark	어둡게
+Metric Units	미터법 단위
+Imperial Units	야드파운드 단위
+System Language	시스템 언어
+Language	언어
+Show Frame Rate	프레임 속도 표시
+Work Offline	오프라인으로 작업
+View	보기
+Zoom In	확대
+Zoom Out	축소
+Zoom to All Data	전체 데이터로 확대
+Full Screen	전체 화면
+Window	윈도우
+Help	도움말
+Export Diagnostics…	진단 정보 내보내기…
+About {app}	{app}에 관하여
+Quit {app}	{app} 종료
+Undo ({key})	실행 취소({key})
+Redo ({key})	실행 복귀({key})
+{app} Help	{app} 도움말
+Satellite	위성
+Offline	오프라인
+Try an example	예제 열어 보기
+Color by a value	값에 따라 색칠
+Color or size by a value	값에 따라 색 또는 크기 지정
+Filter [layer]	[layer] 필터
+Filter by [Type]	[Type]별 필터
+Compare with other [layer]	다른 [layer]와 비교
+Change colors and range	색상과 범위 변경
+Change colors	색상 변경
+Show only values above…	다음 값보다 큰 값만 표시…
+Show where values are like this	비슷한 값인 곳 표시
+Map using coordinate columns	좌표 열로 지도에 표시
+Match to [other]	[other]에 연결
+Show an area within a distance	일정 거리 이내 영역 표시
+Show an area within a distance of each	각각 일정 거리 이내 영역 표시
+Measure from here	여기서부터 거리 재기
+Which [District] is it in?	어느 [District]에 속하나요?
+Count [Schools] in each [District]	[District]마다 [Schools] 개수 세기
+Add [Heat] values to each [School]	각 [School]에 [Heat] 값 추가
+Measure its area	면적 재기
+What's inside?	안에 무엇이 있나요?
+Summarize [Heat] here	여기의 [Heat] 요약
+Summarize [Heat] in each [District]	[District]마다 [Heat] 요약
+Rank [layer] by a value	값으로 [layer] 순위 매기기
+Measure length	길이 재기
+Summarize data here	여기의 데이터 요약
+Count [Schools] here	여기의 [Schools] 개수 세기
+Add the distance to the nearest of [other] to [layer]	[layer]에 가장 가까운 [other]까지의 거리 추가
+Add the distance to the nearest neighbour in [layer]	[layer]에 같은 레이어의 가장 가까운 대상까지의 거리 추가
+Add [other] details to [layer]	[layer]에 [other] 정보 추가
+Add area and coordinates to [layer]	[layer]에 면적과 좌표 추가
+Add a field calculated from two values	두 값으로 계산한 필드 추가
+Split [layer] into separate parts	[layer]을(를) 개별 부분으로 나누기
+Keep the part of [layer] inside [other]	[other] 안에 있는 [layer] 부분만 남기기
+Remove the part of [layer] inside [other]	[other] 안에 있는 [layer] 부분 제거
+Find areas where [Heat] meets conditions	[Heat]이(가) 조건을 만족하는 영역 찾기

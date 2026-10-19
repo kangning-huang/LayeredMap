@@ -3,6 +3,7 @@
 //! themselves; nothing is ever sent by the app.
 
 use egui::RichText;
+use lm_core::tl;
 
 use crate::{FileRequest, Shell};
 
@@ -11,7 +12,7 @@ pub(crate) fn open(shell: &mut Shell, report: String) {
     shell.diagnostics = Some(report);
 }
 
-/// The suggested file name: "NimbleMap diagnostics 2026-10-18.txt".
+/// The suggested file name: "NimbleMap diagnostics 2026-10-18.txt" (in English, like the report).
 pub fn file_name(app: &str, today: &str) -> String {
     format!("{app} diagnostics {today}.txt")
 }
@@ -29,7 +30,7 @@ pub(crate) fn window(shell: &mut Shell, ctx: &egui::Context) {
     let mut open = true;
     let mut save = false;
     let mut cancel = false;
-    egui::Window::new("Export Diagnostics")
+    egui::Window::new(tl!("Export Diagnostics"))
         .id(egui::Id::new("lm-diagnostics"))
         .open(&mut open)
         .collapsible(false)
@@ -37,12 +38,10 @@ pub(crate) fn window(shell: &mut Shell, ctx: &egui::Context) {
         .default_size([620.0, 480.0])
         .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
         .show(ctx, |ui| {
+            ui.label(tl!("This is everything the diagnostics file will contain. Nothing is sent: save it, \
+                 read it, and send it yourself if you want help."));
             ui.label(
-                "This is everything the diagnostics file will contain. Nothing is sent: save it, \
-                 read it, and send it yourself if you want help.",
-            );
-            ui.label(
-                RichText::new("It holds no data values or file contents; file and folder names may appear in error messages.")
+                RichText::new(tl!("It holds no data values or file contents; file and folder names may appear in error messages."))
                     .size(crate::theme::CAPTION)
                     .color(shell.theme().text_secondary),
             );
@@ -54,17 +53,18 @@ pub(crate) fn window(shell: &mut Shell, ctx: &egui::Context) {
             });
             ui.add_space(6.0);
             ui.horizontal(|ui| {
-                if ui.button("Save…").clicked() {
+                if ui.button(tl!("Save…")).clicked() {
                     save = true;
                 }
-                if ui.button("Cancel").clicked() {
+                if ui.button(tl!("Cancel")).clicked() {
                     cancel = true;
                 }
             });
         });
     if save {
         shell.file_requests.push(FileRequest::SaveText {
-            title: "Export Diagnostics".into(),
+            title: tl!("Export Diagnostics").into(),
+
             suggested_name: file_name(shell.app_name(), &today()),
             contents: report,
         });

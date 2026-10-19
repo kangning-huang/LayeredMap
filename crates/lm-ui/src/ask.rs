@@ -14,6 +14,7 @@ use egui_phosphor::regular as icon;
 
 use lm_ask::session::Transport;
 use lm_ask::{Answer, PlanResult, Request, Turn, Usage};
+use lm_core::{i18n, tl};
 use lm_jobs::jobs::Control;
 use lm_jobs::plan_exec::StepOutcome;
 
@@ -99,7 +100,7 @@ pub fn submit(shell: &mut Shell, ctx: &egui::Context, text: String) {
     let key: Option<String> = None;
     let Some(key) = key else {
         shell.ask.shown =
-            Some(Shown::Message { text: "The assistant isn't set up in this build (it has no assistant key).".into(), warning: true });
+            Some(Shown::Message { text: tl!("The assistant isn't set up in this build (it has no assistant key).").into(), warning: true });
         return;
     };
     let (layers, filters) = shell.ws.ask_inputs();
@@ -184,7 +185,10 @@ pub fn poll(shell: &mut Shell) {
             shell.ask.focus = true;
             Shown::Question { text, choices }
         }
-        Ok(Answer::CannotDo(text)) => Shown::Message { text: format!("I can't answer that with these layers: {text}"), warning: false },
+        // The assistant's own words stay as it wrote them; only the frame around them is translated.
+        Ok(Answer::CannotDo(text)) => {
+            Shown::Message { text: i18n::fmt("I can't answer that with these layers: {text}", &[("text", &text)]), warning: false }
+        }
         Err(e) => Shown::Message { text: e, warning: true },
     });
 }
@@ -253,11 +257,12 @@ pub fn keep_shown(shell: &mut Shell) {
 
 fn keep(shell: &mut Shell) {
     let Some(Shown::Plan { request, plan, .. }) = shell.ask.shown.take() else { return };
+    // i18n: an undo label, stored with the document's history
     let label = format!("Ask: {}", short(&request, 48));
     if shell.ws.keep_plan(label, &plan) {
         shell.ask.history.push(request);
     } else {
-        shell.ask.shown = Some(Shown::Message { text: "The plan couldn't be kept; nothing changed.".into(), warning: true });
+        shell.ask.shown = Some(Shown::Message { text: tl!("The plan couldn't be kept; nothing changed.").into(), warning: true });
         shell.ws.preview_plan(None);
     }
 }
@@ -279,14 +284,20 @@ fn short(s: &str, n: usize) -> String {
 /// One step of a plan in words.
 fn step_words(o: &StepOutcome) -> Option<String> {
     match o {
-        StepOutcome::Filtered { layer, shown, of, filter } => Some(format!(
-            "Show only {layer} where {}: {} of {}",
-            lm_ask::context::filter_text(filter),
-            lm_ask::context::thousands(*shown),
-            lm_ask::context::thousands(*of)
+        // The filter's words come from `lm_ask` (English, like the plan itself).
+        StepOutcome::Filtered { layer, shown, of, filter } => Some(i18n::fmt(
+            "Show only {layer} where {filter}: {shown} of {of}",
+            &[
+                ("layer", layer),
+                ("filter", &lm_ask::context::filter_text(filter)),
+                ("shown", &i18n::count(*shown as u64)),
+                ("of", &i18n::count(*of as u64)),
+            ],
         )),
-        StepOutcome::NewLayer { name, .. } => Some(format!("New layer: {name}")),
-        StepOutcome::NewFields { layer, fields, .. } => Some(format!("Add {} to {layer}", fields.join(", "))),
+        StepOutcome::NewLayer { name, .. } => Some(i18n::fmt("New layer: {name}", &[("name", name)])),
+        StepOutcome::NewFields { layer, fields, .. } => {
+            Some(i18n::fmt("Add {fields} to {layer}", &[("fields", &fields.join(", ")), ("layer", layer)]))
+        }
         StepOutcome::Card { card, .. } => Some(card.title.clone()),
         StepOutcome::Display | StepOutcome::Asked(_) | StepOutcome::Refused(_) => None,
     }
@@ -338,9 +349,9 @@ pub fn ask_box(shell: &mut Shell, ui: &mut Ui, map: egui::Rect) {
 fn field(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, width: f32) {
     let empty = shell.ws.doc.layers.is_empty();
     let hint = if matches!(shell.ask.shown, Some(Shown::Question { .. })) {
-        "Type your answer, or pick one above"
+        tl!("Type your answer, or pick one above")
     } else {
-        "Ask about your layers"
+        tl!("Ask about your layers")
     };
     let frame = egui::Frame::new()
         .fill(t.surface)
@@ -364,7 +375,7 @@ fn field(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, width: f32) {
             if listening {
                 ui.ctx().request_repaint_after(std::time::Duration::from_millis(100));
             }
-            let hint = if listening { "Listening… speak your request" } else { hint };
+            let hint = if listening { tl!("Listening… speak your request") } else { hint };
             let edit = egui::TextEdit::singleline(&mut shell.ask.text)
                 .hint_text(hint)
                 .frame(egui::Frame::NONE)
@@ -372,7 +383,7 @@ fn field(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, width: f32) {
                 .desired_width(width - 28.0 - 24.0 - 2.0 * 34.0 - 16.0)
                 .id(egui::Id::new("lm-ask-field"));
             let r = ui.add_enabled(!busy && !empty, edit);
-            crate::a11y::label(&r, "Ask about your layers");
+            crate::a11y::label(&r, tl!("Ask about your layers"));
             if shell.ask.focus {
                 r.request_focus();
                 shell.ask.focus = false;
@@ -380,9 +391,9 @@ fn field(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, width: f32) {
             let enter = r.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
             // While listening the microphone is red and stops listening when clicked.
             let (glyph, color, tip) = if listening {
-                (icon::MICROPHONE, egui::Color32::from_rgb(255, 59, 48), "Stop listening")
+                (icon::MICROPHONE, egui::Color32::from_rgb(255, 59, 48), tl!("Stop listening"))
             } else {
-                (icon::MICROPHONE, t.text_secondary, "Speak your request")
+                (icon::MICROPHONE, t.text_secondary, tl!("Speak your request"))
             };
             let mic = ui
                 .add_enabled(
@@ -399,8 +410,8 @@ fn field(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, width: f32) {
                     !busy && !shell.ask.text.trim().is_empty(),
                     egui::Button::new(RichText::new(icon::ARROW_CIRCLE_UP).font(theme::icon_font(24.0)).color(t.accent)).frame(false),
                 )
-                .on_hover_text("Ask (Return)");
-            crate::a11y::button(&send, "Ask");
+                .on_hover_text(tl!("Ask (Return)"));
+            crate::a11y::button(&send, tl!("Ask"));
             if (enter || send.clicked()) && !shell.ask.text.trim().is_empty() {
                 let text = shell.ask.text.clone();
                 submit(shell, ui.ctx(), text);
@@ -415,10 +426,10 @@ fn answer_panel(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, width: f32, ma
         if let Some(request) = shell.ask.pending.as_ref().map(|p| p.request.clone()) {
             ui.horizontal(|ui| {
                 ui.spinner();
-                ui.label(RichText::new(format!("Planning “{}”…", short(&request, 60))).color(t.text_secondary));
-                crate::a11y::live(ui.ctx(), egui::Id::new("lm-result-live"), "Planning…");
+                ui.label(RichText::new(i18n::fmt("Planning “{request}”…", &[("request", &short(&request, 60))])).color(t.text_secondary));
+                crate::a11y::live(ui.ctx(), egui::Id::new("lm-result-live"), tl!("Planning…"));
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    if ui.button("Cancel").clicked() {
+                    if ui.button(tl!("Cancel")).clicked() {
                         shell.ask.escape();
                     }
                 });
@@ -450,7 +461,7 @@ fn answer_panel(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, width: f32, ma
                         ui.label(RichText::new(format!("{}. {w}", i + 1)).size(BODY));
                     }
                     if plan.layers.iter().any(|l| l.alias.is_some()) {
-                        ui.label(RichText::new("Preview on the map — not saved").size(CAPTION).color(t.text_secondary));
+                        ui.label(RichText::new(tl!("Preview on the map — not saved")).size(CAPTION).color(t.text_secondary));
                     }
                     for n in &plan.notes {
                         ui.label(RichText::new(n).size(CAPTION).color(t.warning));
@@ -489,7 +500,7 @@ fn answer_panel(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, width: f32, ma
                 Some(Shown::Message { text, warning }) => {
                     ui.label(RichText::new(text).color(if *warning { t.warning } else { t.text_primary }));
                     ui.add_space(6.0);
-                    if ui.button("OK").clicked() {
+                    if ui.button(tl!("OK")).clicked() {
                         action = Some(false);
                     }
                 }
@@ -500,14 +511,15 @@ fn answer_panel(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, width: f32, ma
         if let Some(Shown::Plan { usage, seconds, .. }) = &shown {
             ui.add_space(10.0);
             ui.horizontal(|ui| {
-                if ui.add(egui::Button::new(RichText::new("Keep").color(egui::Color32::WHITE)).fill(t.accent)).clicked() {
+                if ui.add(egui::Button::new(RichText::new(tl!("Keep")).color(egui::Color32::WHITE)).fill(t.accent)).clicked() {
                     action = Some(true);
                 }
-                if ui.button("Discard").clicked() {
+                if ui.button(tl!("Discard")).clicked() {
                     action = Some(false);
                 }
                 // The cost shows only in internal builds (owner's decision, 2026-10-18).
                 if shell.developer || internal_build() {
+                    // i18n: developer only
                     let caption = format!(
                         "{} model call{} · US${:.4} · {seconds:.1} s",
                         usage.calls,

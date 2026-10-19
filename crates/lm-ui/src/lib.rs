@@ -524,7 +524,7 @@ impl Shell {
             Command::ExportPackage => {
                 if self.export_shown() {
                     if self.ws.doc.layers.is_empty() {
-                        self.notice = Some(("Open a file first: there is no map to package.".into(), t));
+                        self.notice = Some((lm_core::tl!("Open a file first: there is no map to package.").into(), t));
                     } else {
                         self.data_export = None;
                         self.package_dialog = Some(package::PackageDialog::new(self));
@@ -536,7 +536,7 @@ impl Shell {
                 if self.export_shown() {
                     match export_data::DataDialog::new(self, None) {
                         Some(d) => self.data_export = Some(d),
-                        None => self.notice = Some(("Open a file first: there is no data to export.".into(), t)),
+                        None => self.notice = Some((lm_core::tl!("Open a file first: there is no data to export.").into(), t)),
                     }
                 }
             }
@@ -549,9 +549,9 @@ impl Shell {
                     basemap::start_archive_lookup(ctx);
                 }
                 let msg = if on {
-                    format!("Working offline: {} won't use the network.", lm_core::brand::NAME)
+                    lm_core::i18n::fmt("Working offline: {app} won't use the network.", &[("app", lm_core::brand::NAME)])
                 } else {
-                    "Back online.".to_string()
+                    lm_core::tl!("Back online.").to_string()
                 };
                 self.notice = Some((msg, t));
             }
@@ -627,12 +627,12 @@ impl Shell {
             Command::RequestOpenDocument => self.file_requests.push(FileRequest::OpenDocument),
             Command::Undo => {
                 if let Some(label) = self.ws.undo() {
-                    self.notice = Some((format!("Undid {}", lower_first(&label)), t));
+                    self.notice = Some((lm_core::i18n::fmt("Undid {action}", &[("action", &lower_first(&label))]), t));
                 }
             }
             Command::Redo => {
                 if let Some(label) = self.ws.redo() {
-                    self.notice = Some((format!("Redid {}", lower_first(&label)), t));
+                    self.notice = Some((lm_core::i18n::fmt("Redid {action}", &[("action", &lower_first(&label))]), t));
                 }
             }
             Command::ToggleLayers => self.shelf_open = !self.shelf_open,
@@ -643,8 +643,13 @@ impl Shell {
                     self.ws.clear_selection();
                     self.find.clear();
                     self.table_for = None;
-                    let what = if n == 1 { "1 layer".to_string() } else { format!("{n} layers") };
-                    self.notice = Some((format!("Removed {what}. Undo with {}.", keys::shortcut("Z")), t));
+                    let key = keys::shortcut("Z");
+                    let msg = if n == 1 {
+                        lm_core::i18n::fmt("Removed 1 layer. Undo with {key}.", &[("key", &key)])
+                    } else {
+                        lm_core::i18n::fmt("Removed {n} layers. Undo with {key}.", &[("n", &lm_core::i18n::count(n as u64)), ("key", &key)])
+                    };
+                    self.notice = Some((msg, t));
                 }
             }
             Command::SaveDocument(dir) => {
@@ -653,14 +658,14 @@ impl Shell {
                     Some((c.x, c.y, self.map.zoom()))
                 };
                 let msg = match lm_doc::save(&self.ws.doc, &dir) {
-                    Ok(()) => format!("Saved the document in {}", dir.display()),
+                    Ok(()) => lm_core::i18n::fmt("Saved the document in {folder}", &[("folder", &dir.display().to_string())]),
                     Err(e) => e.to_string(),
                 };
                 self.notice = Some((msg, t));
             }
             Command::OpenDocument(path) => saving::open(self, ctx, &path, t),
             Command::LoadFixture(path) => {
-                self.notice = Some((format!("Loading {}…", path.display()), t));
+                self.notice = Some((lm_core::i18n::fmt("Loading {file}…", &[("file", &path.display().to_string())]), t));
                 self.loading = Some(lm_jobs::load_fixture(path));
             }
         }
@@ -670,7 +675,11 @@ impl Shell {
     /// of its own (macOS shows it from [`Shell::edited`]).
     pub fn window_title(&self) -> String {
         let name = self.doc_file.name();
-        if self.doc_file.edited() && !cfg!(target_os = "macos") { format!("{name} — Edited") } else { name }
+        if self.doc_file.edited() && !cfg!(target_os = "macos") {
+            lm_core::i18n::fmt("{name} — Edited", &[("name", &name)])
+        } else {
+            name
+        }
     }
 
     /// Whether the map has changes its file doesn't have.
@@ -732,7 +741,7 @@ impl Shell {
         let Some(data) = self.ws.data(id) else { return };
         let name = self.ws.doc.layer(id).map_or_else(|| "layer".to_string(), |l| l.display_name.clone());
         self.file_requests.push(FileRequest::SaveText {
-            title: "Export problem list".into(),
+            title: lm_core::tl!("Export problem list").into(),
             suggested_name: format!("{name} problems.csv"),
             contents: lm_jobs::import::problem_list_csv(data),
         });
@@ -859,7 +868,10 @@ impl Shell {
             self.fly_to_extent(e);
         }
         if self.ws.new_data.is_some() && self.notice.as_ref().is_none_or(|(_, at)| t - at > 4.0) {
-            self.notice = Some((format!("New data added outside the view. Zoom to new data with {}.", keys::shortcut("0")), t));
+            self.notice = Some((
+                lm_core::i18n::fmt("New data added outside the view. Zoom to new data with {key}.", &[("key", &keys::shortcut("0"))]),
+                t,
+            ));
             self.ws.new_data = None;
         }
         if !self.ws.answers.is_empty() {
@@ -974,8 +986,10 @@ impl Shell {
                 self.backdrop = basemap::backdrop(self.map.map());
                 if want {
                     let t = ctx.input(|i| i.time);
-                    self.notice =
-                        Some(("Satellite imagery isn't detailed enough here, so the map is shown. Zoom out to see it again.".into(), t));
+                    self.notice = Some((
+                        lm_core::tl!("Satellite imagery isn't detailed enough here, so the map is shown. Zoom out to see it again.").into(),
+                        t,
+                    ));
                 }
             }
         }
@@ -1169,7 +1183,7 @@ impl Shell {
                     // Points above areas (index 0 draws on top).
                     m.layers.sort_by_key(|l| u8::from(l.dataset.geometry_type != lm_jobs::GeometryType::Point));
                 });
-                self.notice = Some((format!("Loaded {} features", lm_core::model::group_thousands(n as u64)), t));
+                self.notice = Some((lm_core::i18n::fmt("Loaded {n} features", &[("n", &lm_core::i18n::count(n as u64))]), t));
                 self.loading = None;
             }
             Ok(Err(e)) => {

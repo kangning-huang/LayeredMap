@@ -16,8 +16,9 @@ fn shortcut_for(mac: bool, key: &str, shift: bool) -> String {
     match (mac, shift) {
         (true, false) => format!("⌘{key}"),
         (true, true) => format!("⇧⌘{key}"),
-        (false, false) => format!("Ctrl+{key}"),
-        (false, true) => format!("Ctrl+Shift+{key}"),
+        // Windows key names are localized on some keyboards ("Strg" in German).
+        (false, false) => lm_core::i18n::fmt("Ctrl+{key}", &[("key", key)]),
+        (false, true) => lm_core::i18n::fmt("Ctrl+Shift+{key}", &[("key", key)]),
     }
 }
 

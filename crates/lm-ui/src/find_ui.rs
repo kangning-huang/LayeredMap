@@ -9,8 +9,10 @@ use egui::{Align2, CornerRadius, Rect, RichText, Sense, Ui, pos2, vec2};
 use egui_phosphor::regular as icon;
 
 use lm_core::document::DocLayer;
-use lm_core::model::LayerId;
+use lm_core::i18n;
+use lm_core::model::{LayerId, LayerKind};
 use lm_core::selection::{FeatureRef, SelectionContext};
+use lm_core::{tl, tn};
 use lm_jobs::find::{FindHit, match_range};
 use lm_jobs::inspect as data;
 
@@ -66,7 +68,7 @@ pub fn bar(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
     let has_text = !shell.find.query.is_empty();
     let edit = egui::TextEdit::singleline(&mut shell.find.query)
         .id(field_id)
-        .hint_text(format!("Find in {}", l.display_name))
+        .hint_text(i18n::fmt("Find in {layer}", &[("layer", &l.display_name)]))
         .desired_width(rect.width() - 40.0)
         .margin(egui::Margin { left: 30, right: if has_text { 96 } else { 10 }, top: 7, bottom: 7 });
     let resp = ui.put(rect, edit);
@@ -121,13 +123,13 @@ pub fn bar(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
     // The count and the clear button at the right of the field.
     if has_text {
         let x_rect = Rect::from_center_size(pos2(rect.right() - 16.0, rect.center().y), vec2(20.0, 20.0));
-        let x = ui.interact(x_rect, field_id.with("clear"), Sense::click()).on_hover_text("Clear");
-        crate::a11y::button(&x, "Clear the search");
+        let x = ui.interact(x_rect, field_id.with("clear"), Sense::click()).on_hover_text(tl!("Clear"));
+        crate::a11y::button(&x, tl!("Clear the search"));
         let p = ui.painter();
         p.circle_filled(x_rect.center(), 8.0, if x.hovered() { t.text_secondary } else { t.control_stroke });
         p.text(x_rect.center(), Align2::CENTER_CENTER, icon::X, theme::icon_font(10.0), t.surface);
         let n = shell.find.hits.len();
-        let count = if indexing { "…".to_string() } else { format!("{} found", lm_core::model::group_thousands(n as u64)) };
+        let count = if indexing { "…".to_string() } else { i18n::fmt("{n} found", &[("n", &i18n::count(n as u64))]) };
         p.text(pos2(x_rect.left() - 6.0, rect.center().y), Align2::RIGHT_CENTER, count, theme::regular(CAPTION), t.text_secondary);
         if x.clicked() {
             shell.find.clear();
@@ -174,7 +176,7 @@ pub fn results(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
     let hits = shell.find.hits.clone();
     let q = shell.find.query.trim().to_string();
     if let Some(row) = shell.find.open_row {
-        if ui.link(format!("‹ All {} found", lm_core::model::group_thousands(hits.len() as u64))).clicked() {
+        if ui.link(i18n::fmt("‹ All {n} found", &[("n", &i18n::count(hits.len() as u64))])).clicked() {
             shell.find.open_row = None;
             shell.find.key.clear();
             return;
@@ -187,9 +189,8 @@ pub fn results(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
     }
     if hits.is_empty() {
         if shell.ws.find_index(id).is_some() {
-            let (_, many) = l.profile.kind.nouns();
             ui.add_space(6.0);
-            ui.label(RichText::new(format!("No {many} contain “{q}”.")).color(t.text_secondary));
+            ui.label(RichText::new(no_match(l.profile.kind, &q)).color(t.text_secondary));
         }
         return;
     }
@@ -199,7 +200,7 @@ pub fn results(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
         let field = ds.fields.get(h.field).map(|f| f.name.clone()).unwrap_or_default();
         let value = data::cell_text(&ds, h.row, h.field).unwrap_or_default();
         let (r, resp) = ui.allocate_exact_size(vec2(ui.available_width(), 44.0), Sense::click());
-        crate::a11y::button(&resp, format!("{title}, {field}: {value}"));
+        crate::a11y::button(&resp, i18n::fmt("{title}, {field}: {value}", &[("title", &title), ("field", &field), ("value", &value)]));
         let resp = resp.on_hover_cursor(egui::CursorIcon::PointingHand);
         if resp.hovered() {
             ui.painter().rect_filled(r, CornerRadius::same(RADIUS_CONTROL), t.accent_weak);
@@ -233,12 +234,23 @@ pub fn results(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
     }
     let n = hits.len();
     ui.add_space(6.0);
-    let more =
-        if n > LISTED { format!("{} more on the map · ", lm_core::model::group_thousands((n - LISTED) as u64)) } else { String::new() };
+    let more = if n > LISTED { i18n::fmt("{n} more on the map · ", &[("n", &i18n::count((n - LISTED) as u64))]) } else { String::new() };
     ui.horizontal(|ui| {
         ui.label(RichText::new(more).size(CAPTION).color(t.text_secondary));
-        if ui.link(RichText::new(if n == 1 { "Zoom to it" } else { "Zoom to all" }).size(CAPTION).color(t.accent)).clicked() {
+        if ui.link(RichText::new(if n == 1 { tl!("Zoom to it") } else { tl!("Zoom to all") }).size(CAPTION).color(t.accent)).clicked() {
             zoom_to_hits(shell, id);
         }
     });
+}
+
+/// "No points contain “q”.": one whole sentence per kind of layer, for the translators.
+fn no_match(kind: LayerKind, q: &str) -> String {
+    let template = match kind {
+        LayerKind::Points => tn!("No points contain “{q}”."),
+        LayerKind::Lines => tn!("No lines contain “{q}”."),
+        LayerKind::Areas => tn!("No areas contain “{q}”."),
+        LayerKind::Raster => tn!("No cells contain “{q}”."),
+        LayerKind::Table => tn!("No rows contain “{q}”."),
+    };
+    i18n::fmt(template, &[("q", q)])
 }

@@ -1,2 +1,711 @@
 # NimbleMap interface catalog, zh: English<TAB>translation (format: crates/lm-core/src/i18n.rs).
 # Machine translation awaiting native review: docs/lm/localization.md.
+degrees Celsius	摄氏度
+degrees Fahrenheit	华氏度
+square kilometres	平方公里
+square metres	平方米
+square miles	平方英里
+degrees	度
+minus	负
+map	地图
+No data yet	还没有数据
+Every layer is hidden	所有图层都已隐藏
+Open a file or an example to add data. Search places with Command-F.	打开文件或示例来添加数据。按 Command-F 搜索地名。
+Arrow keys pan, plus and minus zoom. The layer list and the data table (Command-T) list every record; Command-F finds one.	方向键平移地图，加号和减号缩放。图层列表和数据表（Command-T）列出所有记录；按 Command-F 查找某一条。
+The whole world	整个世界
+{lat} degrees north, {lon} degrees east	北纬 {lat} 度，东经 {lon} 度
+{lat} degrees north, {lon} degrees west	北纬 {lat} 度，西经 {lon} 度
+{lat} degrees south, {lon} degrees east	南纬 {lat} 度，东经 {lon} 度
+{lat} degrees south, {lon} degrees west	南纬 {lat} 度，西经 {lon} 度
+Selection cleared.	已取消选择。
+Cell selected.	已选中格子。
+No value	没有数值
+Showing {layers}	正在显示 {layers}
+Map. {layers}.	地图。{layers}。
+Map. {layers}. {place}.	地图。{layers}。{place}。
+{names} and {last}	{names} 和 {last}
+About {across} kilometres across, centred at {place}	宽约 {across} 公里，以 {place} 为中心
+{layer} layer selected. {subtitle}.	已选中图层 {layer}。{subtitle}。
+{title} selected.	已选中 {title}。
+{title} selected. {field} {value}, {phrase}.	已选中 {title}。{field} {value}，{phrase}。
+{title} selected. {field} {value}.	已选中 {title}。{field} {value}。
+{n} {noun} selected.	已选中 {n} 个 {noun}。
+{n} objects selected.	已选中 {n} 个对象。
+{layer} cell at {place} selected. {value}.	已选中 {layer} 在 {place} 的格子。{value}。
+Summarize in an area I draw	在我画的区域内汇总
+The layer was removed.	该图层已被移除。
+A layer is still loading.	还有图层正在加载。
+A condition names no raster.	有一个条件没有选栅格。
+Add a condition.	请添加一个条件。
+Add a layer of points to answer this.	需要一个点图层才能回答。
+Add a layer of lines to answer this.	需要一个线图层才能回答。
+Add a layer of areas to answer this.	需要一个面图层才能回答。
+Add a layer of cells to answer this.	需要一个栅格图层才能回答。
+Add a layer of points or lines or areas to answer this.	需要一个点、线或面图层才能回答。
+Analysis	分析
+Developer surface · assistant action	开发者界面 · 助手操作
+Choose a layer	选择图层
+With	与
+Distance	距离
+Merge overlaps	合并重叠部分
+Choose a value	选择数值
+By	依据
+Choose a raster	选择栅格
+a number	数字
+and	和
+Remove this condition	移除此条件
++ Add condition	+ 添加条件
+or a field	或选字段
+Statistic	统计
+of	字段
+Scope	范围
+Working…	正在处理…
+Cancel	取消
+Kept	已保留
+Done	完成
+Preview — not saved	预览——尚未保存
+Keep result	保留结果
+Discard	放弃
+Preview out of date	预览已过时
+Preview	预览
+No data	无数据
+Show fewer	收起
+How this was calculated	计算方法
+Copy	复制
+All {n} points	全部 {n} 个点
+All {n} lines	全部 {n} 条线
+All {n} areas	全部 {n} 个面
+All {n} cells	全部 {n} 个格子
+All {n} rows	全部 {n} 行
+≥  at least	≥  至少
+≤  at most	≤  至多
+[ ]  between	[ ]  介于
+“{action}” isn't connected yet.	“{action}”还没有接通。
+The question could not be answered. Nothing was added to your map. ({reason})	无法回答这个问题，地图上没有添加任何内容。（{reason}）
+{n} selected	已选 {n} 个
+{phase}: {done} of {total}	{phase}：{done}/{total}
+{phase}…	{phase}…
+Kept: {title}. {summary}	已保留：{title}。{summary}
+Preview: {summary}	预览：{summary}
+{rank}. {label}: {value} {unit}	{rank}. {label}：{value} {unit}
+Show all {n}	显示全部 {n} 个
+Values: {unit}	数值：{unit}
+The assistant isn't set up in this build (it has no assistant key).	此版本没有配置助手（缺少助手密钥）。
+The plan couldn't be kept; nothing changed.	无法保留此方案，没有做任何更改。
+Type your answer, or pick one above	输入你的回答，或从上面选一个
+Ask about your layers	询问你的图层
+Listening… speak your request	正在听…请说出你的问题
+Stop listening	停止收听
+Speak your request	用语音提问
+Ask (Return)	提问（Return）
+Ask	提问
+Planning…	正在规划…
+Preview on the map — not saved	地图上的预览——尚未保存
+OK	好
+Keep	保留
+I can't answer that with these layers: {text}	用这些图层无法回答：{text}
+Show only {layer} where {filter}: {shown} of {of}	只显示 {layer} 中 {filter} 的：{of} 个中的 {shown} 个
+New layer: {name}	新图层：{name}
+Add {fields} to {layer}	给 {layer} 添加 {fields}
+Planning “{request}”…	正在规划“{request}”…
+Nothing to undo	没有可撤销的操作
+Map image…	地图图片…
+Data…	数据…
+Open a file first	请先打开文件
+Map package…	地图包…
+Search places or your data	搜索地名或你的数据
+Your data	你的数据
+Loading places…	正在加载地名…
+No places match	没有匹配的地名
+Places	地名
+Zoom in	放大
+Zoom out	缩小
+Basemap	底图
+Working offline: online backgrounds are off	正在离线工作：在线底图已关闭
+Background strength	底图浓淡
+Credits	数据来源
+Working offline: the detailed background is off	正在离线工作：详细底图已关闭
+Detailed background unavailable offline	离线时无法使用详细底图
+Detailed background unavailable offline. Your data and tools still work.	离线时无法使用详细底图。你的数据和工具照常可用。
+Open a file to see your data on the map.	打开文件，就能在地图上看到你的数据。
+Close	关闭
+Open file…	打开文件…
+Examples	示例
+Browse data library	浏览数据库
+Course datasets to add to the map	可添加到地图的课程数据集
+Share	分享
+Undo	撤销
+Layers	图层
+Open	打开
+Map data	地图数据
+© OpenStreetMap contributors (ODbL), through the Protomaps basemap	© OpenStreetMap 贡献者（ODbL），经由 Protomaps 底图
+Offline basemap	离线底图
+Natural Earth (public domain)	Natural Earth（公有领域）
+Place search	地名搜索
+GeoNames (geonames.org), CC BY 4.0	GeoNames（geonames.org），CC BY 4.0
+Fonts	字体
+Inter and Noto Sans SC (SIL Open Font License 1.1)	Inter 和 Noto Sans SC（SIL Open Font License 1.1）
+Icons	图标
+Phosphor Icons (MIT)	Phosphor Icons（MIT）
+Engine	引擎
+RustGIS (Apache-2.0)	RustGIS（Apache-2.0）
+{label} arrives in a later phase	{label}将在后续版本中提供
+Undo {action}	撤销{action}
+Open files ({key})	打开文件（{key}）
+Show or hide the layer list ({key})	显示或隐藏图层列表（{key}）
+Export a map image ({key}) or data	导出地图图片（{key}）或数据
+{title}, {detail}	{title}，{detail}
+{title}, {detail}, {i} of {n}	{title}，{detail}，第 {i} 个，共 {n} 个
+{n} km	{n} km
+{n} m	{n} m
+{n} mi	{n} mi
+{n} ft	{n} ft
+Credits: {text}	数据来源：{text}
+Export Diagnostics	导出诊断信息
+This is everything the diagnostics file will contain. Nothing is sent: save it, read it, and send it yourself if you want help.	这是诊断文件包含的全部内容。不会自动发送任何东西：你可以保存、查看，需要帮助时自己发送。
+It holds no data values or file contents; file and folder names may appear in error messages.	其中不含数据值或文件内容；错误信息里可能出现文件和文件夹名称。
+Save…	保存…
+Couldn't start listening.	无法开始收听。
+Speaking isn't available on Windows yet. Press Windows+H to type with your voice instead.	Windows 上暂不支持语音提问。可以按 Windows+H 用语音输入文字。
+Speaking needs the {app} app (its speech helper isn't here).	语音提问需要 {app} 应用（找不到它的语音组件）。
+Couldn't start listening: {error}	无法开始收听：{error}
+Drawing — click to add points, double-click to finish, Esc to cancel	绘制中——单击添加点，双击完成，按 Esc 取消
+Drawing — drag a rectangle, Esc to cancel	绘制中——拖出一个矩形，按 Esc 取消
+World basics	世界基础数据
+Cities, countries and elevation	城市、国家和高程
+Heatwaves, summer 2023	2023 年夏季热浪
+Daily heatwave intensity worldwide, June to August	6 月至 8 月全球每日热浪强度
+Typhoons and hurricanes	台风与飓风
+4,999 storm tracks since 1980	1980 年以来的 4,999 条风暴路径
+Walled cities of China, 1866	1866 年的中国城墙
+1,789 city walls of late imperial China	晚清的 1,789 座城墙
+Big earthquakes	大地震
+14,537 of magnitude 6 or more since 1900	1900 年以来 14,537 次 6 级以上地震
+Volcanoes	火山
+1,609 volcanoes and their status	1,609 座火山及其状态
+Airports	机场
+5,280 large and medium airports, with elevation	5,280 个大中型机场，含海拔
+Power plants	发电厂
+34,936 plants by fuel and capacity	34,936 座发电厂，含燃料类型和装机容量
+Slide 16:9	幻灯片 16:9
+Report A4	A4 报告
+Square	方形
+2480 × 3508 px · A4 at 300 dpi	2480 × 3508 px · A4，300 dpi
+slide	幻灯片
+square	方形
+Map	地图
+The preview isn't included. Keep it to put it in the image.	预览不会放进图片。保留它才会出现在图片里。
+Some of the background couldn't be loaded, so the image shows less detail.	部分底图未能加载，图片细节会少一些。
+Export map image	导出地图图片
+Size	尺寸
+Title	标题
+Add a title (optional)	添加标题（可选）
+Caption	说明
+Use the caption made from the layers	使用根据图层生成的说明
+Made from the layers; edit it if you like.	根据图层生成，可以自行修改。
+Legend	图例
+No layers are shown.	没有显示任何图层。
+It places itself clear of the data; drag it to move it.	它会自动避开数据摆放；拖动即可移动。
+Place the legend automatically	自动摆放图例
+Drawing the map at full size…	正在按实际尺寸绘制地图…
+Fit to data	适应数据
+Current view	当前视图
+No layers are shown, so the map shows the current view.	没有显示任何图层，所以地图使用当前视图。
+Grid lines	经纬网
+Auto	自动
+On	开
+Off	关
+Legend: drag to move it	图例：拖动即可移动
+Format	格式
+Show	显示
+North arrow	指北针
+Scale bar	比例尺
+Lat/lon labels	经纬度标注
+{paper} · PDF, text and symbols as vectors	{paper} · PDF，文字和符号为矢量
+{layer} is colored by value but has no legend.	{layer} 按数值上色，但没有图例。
+{layer} is filtered: the image shows {shown} of {total} {nouns}.	{layer} 已筛选：图片显示 {total} 个 {nouns} 中的 {shown} 个。
+The {basemap} basemap's terms don't allow exported images, so the offline basemap is used.	{basemap} 底图的使用条款不允许导出图片，所以改用离线底图。
+about {km} km across: a north arrow and a scale bar.	宽约 {km} km：加指北针和比例尺。
+about {km} km across: latitude and longitude on the frame, and a scale bar.	宽约 {km} km：图框上标经纬度，并加比例尺。
+about {km} km across and {degrees}° tall: latitude and longitude on the frame. No scale bar, as distances stretch with latitude.	宽约 {km} km、高 {degrees}°：图框上标经纬度。距离随纬度拉伸，所以不加比例尺。
+about {km} km across: latitude and longitude on the frame. Distances vary too much for one scale bar.	宽约 {km} km：图框上标经纬度。距离变化太大，一个比例尺无法表示。
+Made with {app}.	使用 {app} 制作。
+Data: {sources}. Made with {app}.	数据：{sources}。使用 {app} 制作。
+No data ({n})	无数据（{n}）
+Credits are always included: {credits}	数据来源始终会包含：{credits}
+The image couldn't be made: {error}	无法生成图片：{error}
+Auto: {rules}	自动：{rules}
+{size} · exactly as saved	{size} · 与保存的完全一致
+The layer is gone.	该图层已不存在。
+The layer's data is still loading.	该图层的数据仍在加载。
+Export data	导出数据
+Export…	导出…
+Layer	图层
+Filtered	已筛选
+Selected	已选中
+Records	记录
+The layer has no filter and nothing is selected.	该图层没有筛选，也没有选中任何内容。
+The layer has no filter.	该图层没有筛选。
+Nothing is selected in this layer.	该图层中没有选中任何内容。
+Location	位置
+Longitude, latitude	经度、纬度
+Lines and areas are written as well-known text (WKT).	线和面以 WKT（Well-Known Text）文本写出。
+Fields	字段
+None	无
+All	全部
+The band shown, on the raster's own grid and coordinate system: resampling to WGS 84 would change its values.	导出当前显示的波段，保持栅格自身的格网和坐标系：重采样到 WGS 84 会改变它的数值。
+Coordinates are written in WGS 84 (longitude, latitude).	坐标按 WGS 84（经度、纬度）写出。
+{name} (filtered)	{name}（已筛选）
+{name} (selected)	{name}（已选中）
+All {n}	全部 {n} 个
+Filtered {n}	已筛选 {n} 个
+Selected {n}	已选中 {n} 个
+{note}: left out unless you check it	{note}：除非勾选，否则不包含
+Styles and recipes stay in {app}: these formats carry only locations and values.	样式和步骤说明只保存在 {app} 里：这些格式只带位置和数值。
+Clear	清除
+Clear the search	清除搜索
+Zoom to it	缩放到它
+Zoom to all	缩放到全部
+No points contain “{q}”.	没有点包含“{q}”。
+No lines contain “{q}”.	没有线包含“{q}”。
+No areas contain “{q}”.	没有面包含“{q}”。
+No cells contain “{q}”.	没有格子包含“{q}”。
+No rows contain “{q}”.	没有行包含“{q}”。
+Find in {layer}	在 {layer} 中查找
+{n} found	找到 {n} 个
+‹ All {n} found	‹ 全部 {n} 个结果
+{title}, {field}: {value}	{title}，{field}：{value}
+{n} more on the map · 	地图上还有 {n} 个 · 
+More actions…	更多操作…
+Working out how this compares…	正在计算对比情况…
+point	点
+line	线
+area	面
+cell	格子
+row	行
+The data is still loading.	数据仍在加载。
+Show fewer fields	收起字段
+View in table	在表格中查看
+Zoom to	缩放到
+◉ Range fitted to the view	◉ 范围已适应当前视图
+Color	颜色
+One color	单一颜色
+Smooth	平滑
+Groups	分组
+Palette	配色
+Equal counts	等数量
+Equal steps	等间距
+Fit range to view	按当前视图调整范围
+Larger areas tend to have higher counts.	面积越大，计数往往越高。
+Color by count per km² instead?	改为按每 km² 的数量上色？
+Use totals	使用总数
+Same size	同样大小
+Labels	标注
+Opacity	不透明度
+Outline	轮廓
+Width	宽度
+Band	波段
+From	从
+To	到
+Reset to the middle 96% of the time step	重设为该时间步中间 96% 的数值
+Same for every time step: the middle 96% of the time step	所有时间步相同：该时间步中间 96% 的数值
+Covers the middle 96% of cells	覆盖中间 96% 的格子
+Reset to the middle 96% of cells	重设为中间 96% 的格子
+Only show values above	只显示高于此值的数值
+Range	取值范围
+Stop highlighting	停止突出显示
+{n} point	{n} 个点
+{n} points	{n} 个点
+{n} line	{n} 条线
+{n} lines	{n} 条线
+{n} area	{n} 个面
+{n} areas	{n} 个面
+{n} cell	{n} 个格子
+{n} cells	{n} 个格子
+{n} row	{n} 行
+{n} rows	{n} 行
+Blue	蓝色
+Orange	橙色
+Bluish green	蓝绿色
+Vermilion	朱红色
+Reddish purple	紫红色
+Sky blue	天蓝色
+Yellow	黄色
+Black	黑色
+Show all {n} fields	显示全部 {n} 个字段
+Band {n} ({unit})	波段 {n}（{unit}）
+Band {n}	波段 {n}
+Showing only values above {v}	只显示高于 {v} 的数值
+Highlighting {low} to {high}	突出显示 {low} 到 {high}
+{field} per km² (geodesic area)	每 km² 的 {field}（测地面积）
+Band {n} ({name})	波段 {n}（{name}）
+Reset to the middle 96% of {n} time steps	重设为 {n} 个时间步中间 96% 的数值
+Same for every time step: the middle 96% of {n} time steps	所有时间步相同：{n} 个时间步中间 96% 的数值
+{low} to {high}	{low} 到 {high}
+Use this match	使用此匹配
+Use these matches	使用这些匹配
+Hide the rows not matched	隐藏未匹配的行
+Keep the original colors	保留原来的颜色
+Looking for the places this table describes…	正在查找这张表描述的地方…
+None of these: keep it as a table	都不是：保留为表格
+Use this	使用这个
+Join	连接
+Keep as a table	保留为表格
+Choose other columns…	选择其他列…
+Open a point, line or area layer to match this table to.	请打开一个点、线或面图层，用来与这张表匹配。
+Several rows for one place	一个地方有多行
+{n} name looks like a typo: {examples}	{n} 个名称疑似拼写错误：{examples}
+{n} names look like typos: {examples}	{n} 个名称疑似拼写错误：{examples}
+{n} row with no {field}	{n} 行没有 {field}
+{n} rows with no {field}	{n} 行没有 {field}
+Automatic	自动
+Latest year or date	最近的年份或日期
+Combine	合并
+{table} now appears under {layer} in Layers.	{table} 现在显示在图层面板中的 {layer} 下方。
+and {n} more	等另外 {n} 个
+Which places does {table} describe?	{table} 描述的是哪些地方？
+Join {table} to {target}?	把 {table} 连接到 {target}？
+Match {layer} to a layer	把 {layer} 匹配到图层
+Column in {layer}	{layer} 中的列
+{matched} of {total} {nouns} match · {rows_matched} of {rows} rows find a place	{total} 个 {nouns} 中 {matched} 个匹配 · {rows} 行中 {rows_matched} 行找到地方
+Ctrl+{key}	Ctrl+{key}
+Ctrl+Shift+{key}	Ctrl+Shift+{key}
+Points	点
+Lines	线
+Areas	面
+Grid	格网
+Table	表格
+Data library	数据库
+Search datasets	搜索数据集
+Offline: showing the list from your last visit	离线：显示上次访问时的列表
+Try again	重试
+Loading the library…	正在加载数据库…
+The library is empty.	数据库是空的。
+Add to map	添加到地图
+Downloaded: opens without the internet	已下载：无需联网即可打开
+Downloaded	已下载
+{n} GB	{n} GB
+{n} MB	{n} MB
+{n} KB	{n} KB
+No datasets match “{q}”.	没有与“{q}”匹配的数据集。
+Downloading {done} of {total}	正在下载 {done}/{total}
+A layer is still loading. Try again in a moment.	还有图层正在加载，请稍后再试。
+Packaging the map and its data…	正在打包地图和数据…
+packaging stopped unexpectedly	打包意外中止
+Share as a map package	以地图包分享
+One file with the map and its data, so it opens on another computer.	把地图和数据打包成一个文件，在别的电脑上也能打开。
+Save Package…	保存地图包…
+Before compression; text files shrink a lot in the package.	压缩前的大小；文本文件在包里会小很多。
+Data it includes	包含的数据
+No source files: the map's layers are all stored in it already.	没有源文件：地图的图层都已存在包里。
+can't be found, so it's left out	找不到，所以未包含
+Folder paths	文件夹路径
+The map names no folders on this computer.	地图没有提到这台电脑上的任何文件夹。
+Paths name your account and folders, so they are left out; files keep only their names.	路径会暴露你的账户和文件夹，所以不包含；文件只保留文件名。
+Fields that look personal	疑似个人信息的字段
+None found: no names, emails, phone or ID numbers.	没有发现：没有姓名、邮箱、电话或证件号码。
+Checked fields are left out of the package. Your own map keeps them.	勾选的字段不会放进地图包。你自己的地图仍保留它们。
+Unknown — check before sharing	未知——分享前请检查
+The map is colored by it	地图按它上色
+The map sizes points by it	地图按它决定点的大小
+The map labels by it	地图按它标注
+The filter uses it	筛选用到了它
+{layer} (without the fields left out)	{layer}（不含已排除的字段）
+The package couldn't be made: {error}	无法生成地图包：{error}
+Saved {name} ({size}), without {missing}: it couldn't be found.	已保存 {name}（{size}），不含 {missing}：找不到该文件。
+Saved {name}, but {layer} couldn't be kept in it ({why}).	已保存 {name}，但无法把 {layer} 放进去（{why}）。
+Saved {name} ({size}): the map and its data, ready to share.	已保存 {name}（{size}）：包含地图和数据，可以分享了。
+The package couldn't be made. {error}	无法生成地图包。{error}
+{name} (package)	{name}（地图包）
+About {size}	约 {size}
+Stored in the package itself: {layers}.	直接存在包里：{layers}。
+Layers: {layers}	图层：{layers}
+Licence: {licence}	许可：{licence}
+Leave out {field} ({layer})	排除 {field}（{layer}）
+{note}. {why}, so it stays.	{note}。{why}，所以保留。
+Remove all	全部移除
+Open file	打开文件
+Dismiss	关闭
+Hide the joined table	隐藏连接的表
+Show the joined table	显示连接的表
+View data	查看数据
+Match to a layer…	匹配到图层…
+Style…	样式…
+Zoom to layer	缩放到图层
+Rename	重命名
+Remove from map	从地图移除
+Needs a decision: see the layer's panel	需要你决定：请看图层面板
+Variable shown	显示的变量
+Level shown	显示的层
+joined	已连接
+Show joined fields	显示连接的字段
+Unjoin	取消连接
+The table wasn't opened in this session, so it can't be put back	这张表不是本次打开的，无法恢复
+Where should this data be?	这些数据应该在哪里？
+This file doesn't say where on Earth its coordinates are. Name a place it covers.	这个文件没有说明它的坐标在地球上的什么位置。请说一个它覆盖的地方。
+A city or town, e.g. Shanghai	城市或城镇，例如上海
+Use the middle of the map	使用地图中心
+the middle of the map	地图中心
+Open as a table	作为表格打开
+Not sure	不确定
+Compare on the map first	先在地图上对比
+Close the panel	关闭面板
+Back	返回
+This cell has no data.	该格子无数据。
+This layer has no values to compare.	该图层没有可对比的数值。
+Compare by	比较依据
+Export problem list	导出问题列表
+Opened as a table: there is nothing to place on the map yet.	已作为表格打开：暂时没有可以放到地图上的内容。
+Compare	对比
+Add unit	添加单位
+Change	更改
+as in the file	文件原样
+converted from Baidu (BD-09)	从百度坐标（BD-09）转换
+converted from Amap/Tencent (GCJ-02)	从高德/腾讯坐标（GCJ-02）转换
+Keep the set that sits on the streets.	保留落在街道上的那一组。
+Keep converted	保留转换后的
+Keep as in the file	保留文件原样
+Try Amap/Tencent instead	改试高德/腾讯
+Try Baidu instead	改试百度
+Filtered:	已筛选：
+Values	数值
+Source	来源
+Text encoding	文本编码
+Coordinate system	坐标系
+Extent	范围
+Complete	完成
+Needs a decision	需要你决定
+Canceled	已取消
+Not loaded (the source is read again when the document opens)	未加载（打开文档时会重新读取源文件）
+Import	导入
+Remove from insight	从对比信息中移除
+Show in insight	在对比信息中显示
+Treat this field as	把此字段当作
+Back to the detected role	恢复为识别出的类型
+Assumptions	假设
+Export problem list…	导出问题列表…
+Row	行
+Reason	原因
+Drop to add to the map	松开即可添加到地图
+Overview	概览
+Style	样式
+Details	详情
+{n} {things} opened; {left} has no usable location.	已打开 {n} 个 {things}；{left} 个没有可用的位置。
+{n} {things} opened; {left} have no usable location.	已打开 {n} 个 {things}；{left} 个没有可用的位置。
+{n} records opened; {left} has no usable location.	已打开 {n} 条记录；{left} 条没有可用的位置。
+{n} records opened; {left} have no usable location.	已打开 {n} 条记录；{left} 条没有可用的位置。
+{line} (applied quietly; chosen: {choice})	{line}（已直接应用；选择：{choice}）
+{line} (shown; chosen: {choice})	{line}（已提示；选择：{choice}）
+{line} (answered; chosen: {choice})	{line}（已回答；选择：{choice}）
+{line} (needs a decision; chosen: {choice})	{line}（需要你决定；选择：{choice}）
+{line} (blocks actions; chosen: {choice})	{line}（暂停操作；选择：{choice}）
+Count	计数
+Density	密度
+Value	数值
+ID	ID
+Name	名称
+Category	类别
+Text	文本
+Date	日期
+Coordinate	坐标
+Unknown	未知
+Remove every layer from the map ({key} brings them back)	从地图移除所有图层（按 {key} 可恢复）
+{error}\n\nDetails: {details}	{error}\n\n详情：{details}
+Dismiss {name}	关闭 {name}
+Cancel {name}	取消 {name}
+Show {layer}	显示 {layer}
+Joined tables of {layer}	{layer} 的连接表
+Hide the {n} joined tables	隐藏 {n} 张连接的表
+Show the {n} joined tables	显示 {n} 张连接的表
+joined · {matched} of {total} matched	已连接 · {total} 个中匹配 {matched} 个
+Joined table {table}, {caption}	连接的表 {table}，{caption}
+Joined to {layer}: its fields are part of the layer	已连接到 {layer}：它的字段已成为该图层的一部分
+No coordinate system puts this data near {name}. Try another place, or open it as a table.	没有哪个坐标系能把这些数据放到 {name} 附近。换一个地方试试，或作为表格打开。
+{crs} — lands {km} km from {name}	{crs}——落在离 {name} {km} km 处
+{choice} (recommended)	{choice}（推荐）
+{lat}°, {lon}°	{lat}°，{lon}°
+{layer} · cell	{layer} · 格子
+{n} {things}, highest first	{n} 个 {things}，从高到低
+{n}{plus} objects here	这里有 {n}{plus} 个对象
+Review {n}	查看 {n} 条
+Compare {layer}	对比 {layer}
++{n} more	另有 {n} 个
+{variable}: {low} to {high}{unit} over {sampled} of {steps} time steps	{variable}：{low} 到 {high}{unit}（基于 {steps} 个时间步中的 {sampled} 个）
+{variable}: {low} to {high}{unit}	{variable}：{low} 到 {high}{unit}
+Time: {range}	时间：{range}
+Band {n}: {low} to {high}{unit}	波段 {n}：{low} 到 {high}{unit}
+Band {n} ({name}): {low} to {high}{unit}	波段 {n}（{name}）：{low} 到 {high}{unit}
+{west}° to {east}° E, {south}° to {north}° N	东经 {west}° 至 {east}°，北纬 {south}° 至 {north}°
+Complete, with {n} records excluded	完成，排除了 {n} 条记录
+Failed: {reason}	失败：{reason}
+From {table}	来自 {table}
+Show {field} in insight	在对比信息中显示 {field}
+Excluded records — {layer}	被排除的记录——{layer}
+{n} records were left out of the map. Your file has not been changed.	有 {n} 条记录没有放到地图上。你的文件没有被改动。
+Untitled	未命名
+Your own file has not been changed.	你自己的文件没有被改动。
+Restore	恢复
+Your changes will be lost if you don't save them.	如果不保存，你的更改将会丢失。
+Don't Save	不保存
+Save	保存
+Use It	使用
+Locate…	查找文件…
+Remove layer	移除图层
+its size changed	大小变了
+its contents changed	内容变了
+its modification date changed	修改日期变了
+Using {file}. 1 result made from the old file now say Source changed.	正在使用 {file}。由旧文件得出的 1 个结果现在标为“来源已更改”。
+Using {file}. {n} results made from the old file now say Source changed.	正在使用 {file}。由旧文件得出的 {n} 个结果现在标为“来源已更改”。
+This file looks different ({reason}). Use it anyway?	这个文件看起来不一样了（{reason}）。仍然使用吗？
+Saved, but {name} couldn't be kept in the map file ({why}).	已保存，但无法把 {name} 存进地图文件（{why}）。
+The autosaved map could not be restored. {error}	无法恢复自动保存的地图。{error}
+Do you want to save the changes you made to '{name}'?	要保存对“{name}”所做的更改吗？
+a date	日期
+some text	文字
+Remove this filter	移除此筛选
+Filter	筛选
+Add a filter	添加筛选
+Close the table	关闭表格
+Search	搜索
+Search the table	搜索表格
+no value	无值
+where	中
+choose…	选择…
+Finish the sentence to see how many match.	补全这句话，就能看到有多少条符合。
+Apply	应用
+is	是
+is not	不是
+contains	包含
+starts with	开头是
+ends with	结尾是
+is empty	为空
+above	高于
+below	低于
+between	介于
+before	早于
+after	晚于
+is any of	属于
+Sort by {name}, sorted ascending	按 {name} 排序，当前为升序
+Sort by {name}, sorted descending	按 {name} 排序，当前为降序
+Sort by {name}	按 {name} 排序
+Showing {shown} of {total}	显示 {total} 条中的 {shown} 条
+Remove filter: {filter}	移除筛选：{filter}
+{n} match	{n} 条符合
+Previous step (←)	上一步（←）
+Pause	暂停
+Play	播放
+Next step (→)	下一步（→）
+Time step	时间步
+{layer} · {step} of {steps}	{layer} · 第 {step} 步，共 {steps} 步
+A new version is available	有新版本可用
+Close the update notice	关闭更新提示
+{app} {version}: {notes}	{app} {version}：{notes}
+Download {version}	下载 {version}
+That layer is gone.	该图层已不存在。
+This layer has no variables to choose from.	该图层没有可选的变量。
+This layer's data isn't loaded.	该图层的数据尚未加载。
+{layer} has no variable {variable}.	{layer} 没有变量 {variable}。
+The layer isn't loaded yet.	该图层尚未加载。
+Pick a column on each side.	请在两边各选一列。
+{matched} of {keys} match	{keys} 个中 {matched} 个匹配
+Joined {table} to {layer}: {matched} of {total} {things} matched.	已把 {table} 连接到 {layer}：{total} 个 {things} 中匹配了 {matched} 个。
+Show the {r} row not matched	显示未匹配的 {r} 行
+Show the {r} rows not matched	显示未匹配的 {r} 行
+Show the {k} not matched	显示未匹配的 {k} 个
+Show the {k} not matched ({r} row)	显示未匹配的 {k} 个（{r} 行）
+Show the {k} not matched ({r} rows)	显示未匹配的 {k} 个（{r} 行）
+file	文件
+Preparing a faster preview…	正在准备更快的预览…
+Still reading a layer. Undo in a moment.	仍在读取图层，请稍后再撤销。
+Still reading a layer. Redo in a moment.	仍在读取图层，请稍后再重做。
+That couldn't be done. Nothing was changed.	无法完成，没有做任何更改。
+The layer changed while it was being read again, so that change was not applied.	重新读取期间图层发生了变化，所以这项更改没有应用。
+That assumption couldn't be changed.	无法更改这项假设。
+Only points, lines and areas can be converted.	只有点、线和面可以转换。
+The layer changed while it was being converted, so nothing was added.	转换期间图层发生了变化，所以没有添加任何内容。
+The converted layer couldn't be added.	无法添加转换后的图层。
+Only points, lines and areas can be compared.	只有点、线和面可以对比。
+This layer has nothing to compare.	该图层没有可对比的内容。
+{file} has changed since this document was saved; it was read as it is now.	{file} 在此文档保存后有改动；已按当前内容读取。
+{layer} is no longer in {file}.	{file} 中已没有 {layer}。
+Can't find {file}. It was last seen in {folder}.	找不到 {file}。上次是在 {folder} 中。
+Can't find {file}. It was last seen in its folder.	找不到 {file}。上次是在它原来的文件夹中。
+The layer couldn't be read again.	无法重新读取该图层。
+Reading {done} of {total}	正在读取 {done}/{total}
+Still reading {layer}. Try again in a moment.	仍在读取 {layer}，请稍后再试。
+Save map package	保存地图包
+{app} map	{app} 地图
+Locate {file}	查找 {file}
+A map-first GIS. Built on RustGIS.	以地图为先的 GIS。基于 RustGIS 构建。
+File	文件
+Open…	打开…
+Open Example	打开示例
+Browse data library…	浏览数据库…
+Save As…	另存为…
+Export Map Image…	导出地图图片…
+Export Data…	导出数据…
+Export Map Package…	导出地图包…
+Close Window	关闭窗口
+Exit	退出
+Edit	编辑
+Find…	查找…
+Remove All Layers	移除所有图层
+Use System Appearance	跟随系统外观
+Light	浅色
+Dark	深色
+Metric Units	公制
+Imperial Units	英制
+System Language	跟随系统语言
+Language	语言
+Show Frame Rate	显示帧率
+Work Offline	离线工作
+View	视图
+Zoom In	放大
+Zoom Out	缩小
+Zoom to All Data	缩放到全部数据
+Full Screen	全屏
+Window	窗口
+Help	帮助
+Export Diagnostics…	导出诊断信息…
+About {app}	关于 {app}
+Quit {app}	退出 {app}
+Undo ({key})	撤销（{key}）
+Redo ({key})	重做（{key}）
+{app} Help	{app} 帮助
+Satellite	卫星图
+Offline	离线
+Try an example	试试示例
+Color by a value	按数值上色
+Color or size by a value	按数值设置颜色或大小
+Filter [layer]	筛选 [layer]
+Filter by [Type]	按 [Type] 筛选
+Compare with other [layer]	与其他 [layer] 比较
+Change colors and range	更改颜色和范围
+Change colors	更改颜色
+Show only values above…	只显示高于……的值
+Show where values are like this	显示数值相近的地方
+Map using coordinate columns	按坐标列放到地图上
+Match to [other]	匹配到 [other]
+Show an area within a distance	显示一定距离内的区域
+Show an area within a distance of each	显示每个对象周边一定距离内的范围
+Measure from here	从这里量距离
+Which [District] is it in?	它在哪个 [District] 里？
+Count [Schools] in each [District]	统计每个 [District] 内的 [Schools] 数量
+Add [Heat] values to each [School]	把 [Heat] 的值添加到每个 [School]
+Measure its area	测量面积
+What's inside?	里面有什么？
+Summarize [Heat] here	汇总这里的 [Heat]
+Summarize [Heat] in each [District]	按每个 [District] 汇总 [Heat]
+Rank [layer] by a value	按数值给 [layer] 排名
+Measure length	测量长度
+Summarize data here	汇总这里的数据
+Count [Schools] here	统计这里的 [Schools] 数量
+Add the distance to the nearest of [other] to [layer]	给 [layer] 添加到最近 [other] 的距离
+Add the distance to the nearest neighbour in [layer]	给 [layer] 添加到最近邻的距离
+Add [other] details to [layer]	把 [other] 的信息添加到 [layer]
+Add area and coordinates to [layer]	给 [layer] 添加面积和坐标
+Add a field calculated from two values	添加由两个数值计算的字段
+Split [layer] into separate parts	把 [layer] 拆分成独立的部分
+Keep the part of [layer] inside [other]	保留 [layer] 在 [other] 以内的部分
+Remove the part of [layer] inside [other]	去掉 [layer] 在 [other] 以内的部分
+Find areas where [Heat] meets conditions	查找 [Heat] 满足条件的区域

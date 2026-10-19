@@ -17,8 +17,9 @@ pub const NAME: &str = "NimbleMap";
 pub const PRO_NAME: &str = "NimbleMap Pro";
 
 /// The Chinese brand name (owner's choice, 2026-10-19): a pun on 凌波微步, light and nimble like the
-/// English name, which the Chinese web pages show beside it ("凌波微图 NimbleMap"). Not shown in the
-/// app yet: the interface is English-only until WP5.5.
+/// English name, which the Chinese web pages show beside it ("凌波微图 NimbleMap"). The app, Chinese
+/// interface included, shows [`NAME`] for now (whether it should show this is the owner's call,
+/// docs/lm/localization.md). Japanese and Korean use [`NAME`]: no kanji or hangul form (same doc).
 pub const NAME_ZH: &str = "凌波微图";
 
 /// [`NAME`] or [`PRO_NAME`].

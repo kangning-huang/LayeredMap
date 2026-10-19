@@ -10,6 +10,7 @@ use std::sync::Mutex;
 
 use egui::{Align2, RichText, pos2};
 use egui_phosphor::regular as icon;
+use lm_core::{i18n, tl};
 
 use crate::Shell;
 use crate::theme::{self, CAPTION, PANEL_MARGIN};
@@ -238,14 +239,17 @@ pub(crate) fn notice(shell: &Shell, ui: &egui::Ui, map: egui::Rect) {
     egui::Area::new(egui::Id::new("lm-update")).pivot(Align2::RIGHT_BOTTOM).fixed_pos(pos).show(ui.ctx(), |ui| {
         crate::chrome::panel_frame(&t).show(ui, |ui| {
             ui.horizontal(|ui| {
-                let label = ui.label(RichText::new("A new version is available").size(CAPTION).color(t.text_primary));
+                let label = ui.label(RichText::new(tl!("A new version is available")).size(CAPTION).color(t.text_primary));
                 if let Some(n) = &u.notes {
-                    label.on_hover_text(format!("{} {}: {n}", lm_core::brand::NAME, u.version));
+                    label.on_hover_text(i18n::fmt(
+                        "{app} {version}: {notes}",
+                        &[("app", lm_core::brand::NAME), ("version", &u.version), ("notes", n)],
+                    ));
                 }
-                ui.hyperlink_to(RichText::new(format!("Download {}", u.version)).size(CAPTION), &u.url);
+                ui.hyperlink_to(RichText::new(i18n::fmt("Download {version}", &[("version", &u.version)])).size(CAPTION), &u.url);
                 let close = ui.add(egui::Button::new(RichText::new(icon::X).font(theme::icon_font(11.0))).frame(false));
-                crate::a11y::button(&close, "Close the update notice");
-                if close.on_hover_text("Close").clicked() {
+                crate::a11y::button(&close, tl!("Close the update notice"));
+                if close.on_hover_text(tl!("Close")).clicked() {
                     ui.ctx().data_mut(|d| d.insert_temp(closed_id, u.version.clone()));
                 }
             });

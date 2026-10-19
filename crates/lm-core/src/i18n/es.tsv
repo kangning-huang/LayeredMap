@@ -1,2 +1,711 @@
 # NimbleMap interface catalog, es: English<TAB>translation (format: crates/lm-core/src/i18n.rs).
 # Machine translation awaiting native review: docs/lm/localization.md.
+degrees Celsius	grados Celsius
+degrees Fahrenheit	grados Fahrenheit
+square kilometres	kilómetros cuadrados
+square metres	metros cuadrados
+square miles	millas cuadradas
+degrees	grados
+minus	menos
+map	mapa
+No data yet	Aún no hay datos
+Every layer is hidden	Todas las capas están ocultas
+Open a file or an example to add data. Search places with Command-F.	Abre un archivo o un ejemplo para añadir datos. Busca lugares con Comando-F.
+Arrow keys pan, plus and minus zoom. The layer list and the data table (Command-T) list every record; Command-F finds one.	Las flechas desplazan el mapa; más y menos acercan y alejan. La lista de capas y la tabla de datos (Comando-T) enumeran todos los registros; Comando-F busca uno.
+The whole world	El mundo entero
+{lat} degrees north, {lon} degrees east	{lat} grados norte, {lon} grados este
+{lat} degrees north, {lon} degrees west	{lat} grados norte, {lon} grados oeste
+{lat} degrees south, {lon} degrees east	{lat} grados sur, {lon} grados este
+{lat} degrees south, {lon} degrees west	{lat} grados sur, {lon} grados oeste
+Selection cleared.	Selección borrada.
+Cell selected.	Celda seleccionada.
+No value	Sin valor
+Showing {layers}	Se muestra: {layers}
+Map. {layers}.	Mapa. {layers}.
+Map. {layers}. {place}.	Mapa. {layers}. {place}.
+{names} and {last}	{names} y {last}
+About {across} kilometres across, centred at {place}	Unos {across} kilómetros de ancho, centrado en {place}
+{layer} layer selected. {subtitle}.	Capa {layer} seleccionada. {subtitle}.
+{title} selected.	{title}: seleccionado.
+{title} selected. {field} {value}, {phrase}.	{title}: seleccionado. {field} {value}, {phrase}.
+{title} selected. {field} {value}.	{title}: seleccionado. {field} {value}.
+{n} {noun} selected.	Selección: {n} {noun}.
+{n} objects selected.	{n} objetos seleccionados.
+{layer} cell at {place} selected. {value}.	Celda de {layer} en {place} seleccionada. {value}.
+Summarize in an area I draw	Resumir en un área que dibujo
+The layer was removed.	Se ha quitado la capa.
+A layer is still loading.	Todavía se está cargando una capa.
+A condition names no raster.	Una condición no indica ningún ráster.
+Add a condition.	Añade una condición.
+Add a layer of points to answer this.	Añade una capa de puntos para responder a esto.
+Add a layer of lines to answer this.	Añade una capa de líneas para responder a esto.
+Add a layer of areas to answer this.	Añade una capa de áreas para responder a esto.
+Add a layer of cells to answer this.	Añade una capa de celdas para responder a esto.
+Add a layer of points or lines or areas to answer this.	Añade una capa de puntos, líneas o áreas para responder a esto.
+Analysis	Análisis
+Developer surface · assistant action	Superficie de desarrollo · acción del asistente
+Choose a layer	Elige una capa
+With	Con
+Distance	Distancia
+Merge overlaps	Fusionar solapamientos
+Choose a value	Elige un valor
+By	Por
+Choose a raster	Elige un ráster
+a number	un número
+and	y
+Remove this condition	Quitar esta condición
++ Add condition	+ Añadir condición
+or a field	o un campo
+Statistic	Estadística
+of	de
+Scope	Ámbito
+Working…	Trabajando…
+Cancel	Cancelar
+Kept	Conservado
+Done	Hecho
+Preview — not saved	Vista previa: sin guardar
+Keep result	Conservar resultado
+Discard	Descartar
+Preview out of date	Vista previa desactualizada
+Preview	Vista previa
+No data	Sin datos
+Show fewer	Mostrar menos
+How this was calculated	Cómo se ha calculado
+Copy	Copiar
+All {n} points	Los {n} puntos
+All {n} lines	Las {n} líneas
+All {n} areas	Las {n} áreas
+All {n} cells	Las {n} celdas
+All {n} rows	Las {n} filas
+≥  at least	≥  al menos
+≤  at most	≤  como máximo
+[ ]  between	[ ]  entre
+“{action}” isn't connected yet.	“{action}” aún no está conectado.
+The question could not be answered. Nothing was added to your map. ({reason})	No se ha podido responder a la pregunta. No se ha añadido nada al mapa. ({reason})
+{n} selected	{n} seleccionados
+{phase}: {done} of {total}	{phase}: {done} de {total}
+{phase}…	{phase}…
+Kept: {title}. {summary}	Conservado: {title}. {summary}
+Preview: {summary}	Vista previa: {summary}
+{rank}. {label}: {value} {unit}	{rank}. {label}: {value} {unit}
+Show all {n}	Mostrar los {n}
+Values: {unit}	Valores: {unit}
+The assistant isn't set up in this build (it has no assistant key).	El asistente no está configurado en esta versión (no tiene clave de asistente).
+The plan couldn't be kept; nothing changed.	No se ha podido conservar el plan; no ha cambiado nada.
+Type your answer, or pick one above	Escribe tu respuesta o elige una de arriba
+Ask about your layers	Pregunta sobre tus capas
+Listening… speak your request	Escuchando… di lo que quieres
+Stop listening	Dejar de escuchar
+Speak your request	Di lo que quieres
+Ask (Return)	Preguntar (Retorno)
+Ask	Preguntar
+Planning…	Planificando…
+Preview on the map — not saved	Vista previa en el mapa: sin guardar
+OK	Aceptar
+Keep	Conservar
+I can't answer that with these layers: {text}	No puedo responder a eso con estas capas: {text}
+Show only {layer} where {filter}: {shown} of {of}	Mostrar solo {layer} donde {filter}: {shown} de {of}
+New layer: {name}	Capa nueva: {name}
+Add {fields} to {layer}	Añadir {fields} a {layer}
+Planning “{request}”…	Planificando “{request}”…
+Nothing to undo	Nada que deshacer
+Map image…	Imagen del mapa…
+Data…	Datos…
+Open a file first	Abre antes un archivo
+Map package…	Paquete de mapa…
+Search places or your data	Buscar lugares o tus datos
+Your data	Tus datos
+Loading places…	Cargando lugares…
+No places match	Ningún lugar coincide
+Places	Lugares
+Zoom in	Acercar
+Zoom out	Alejar
+Basemap	Mapa base
+Working offline: online backgrounds are off	Trabajando sin conexión: los fondos en línea están desactivados
+Background strength	Intensidad del fondo
+Credits	Créditos
+Working offline: the detailed background is off	Trabajando sin conexión: el fondo detallado está desactivado
+Detailed background unavailable offline	Fondo detallado no disponible sin conexión
+Detailed background unavailable offline. Your data and tools still work.	Fondo detallado no disponible sin conexión. Tus datos y herramientas siguen funcionando.
+Open a file to see your data on the map.	Abre un archivo para ver tus datos en el mapa.
+Close	Cerrar
+Open file…	Abrir archivo…
+Examples	Ejemplos
+Browse data library	Explorar la biblioteca de datos
+Course datasets to add to the map	Conjuntos de datos de cursos para añadir al mapa
+Share	Compartir
+Undo	Deshacer
+Layers	Capas
+Open	Abrir
+Map data	Datos del mapa
+© OpenStreetMap contributors (ODbL), through the Protomaps basemap	© colaboradores de OpenStreetMap (ODbL), a través del mapa base de Protomaps
+Offline basemap	Mapa base sin conexión
+Natural Earth (public domain)	Natural Earth (dominio público)
+Place search	Búsqueda de lugares
+GeoNames (geonames.org), CC BY 4.0	GeoNames (geonames.org), CC BY 4.0
+Fonts	Tipos de letra
+Inter and Noto Sans SC (SIL Open Font License 1.1)	Inter y Noto Sans SC (SIL Open Font License 1.1)
+Icons	Iconos
+Phosphor Icons (MIT)	Phosphor Icons (MIT)
+Engine	Motor
+RustGIS (Apache-2.0)	RustGIS (Apache-2.0)
+{label} arrives in a later phase	{label} llegará en una fase posterior
+Undo {action}	Deshacer {action}
+Open files ({key})	Abrir archivos ({key})
+Show or hide the layer list ({key})	Mostrar u ocultar la lista de capas ({key})
+Export a map image ({key}) or data	Exportar una imagen del mapa ({key}) o datos
+{title}, {detail}	{title}, {detail}
+{title}, {detail}, {i} of {n}	{title}, {detail}, {i} de {n}
+{n} km	{n} km
+{n} m	{n} m
+{n} mi	{n} mi
+{n} ft	{n} ft
+Credits: {text}	Créditos: {text}
+Export Diagnostics	Exportar diagnóstico
+This is everything the diagnostics file will contain. Nothing is sent: save it, read it, and send it yourself if you want help.	Esto es todo lo que contendrá el archivo de diagnóstico. No se envía nada: guárdalo, léelo y envíalo tú mismo si quieres ayuda.
+It holds no data values or file contents; file and folder names may appear in error messages.	No contiene valores de datos ni contenido de archivos; los nombres de archivos y carpetas pueden aparecer en los mensajes de error.
+Save…	Guardar…
+Couldn't start listening.	No se ha podido empezar a escuchar.
+Speaking isn't available on Windows yet. Press Windows+H to type with your voice instead.	Hablar aún no está disponible en Windows. Pulsa Windows+H para escribir con la voz.
+Speaking needs the {app} app (its speech helper isn't here).	Para hablar se necesita la app {app} (falta su asistente de voz).
+Couldn't start listening: {error}	No se ha podido empezar a escuchar: {error}
+Drawing — click to add points, double-click to finish, Esc to cancel	Dibujando: haz clic para añadir puntos, doble clic para terminar, Esc para cancelar
+Drawing — drag a rectangle, Esc to cancel	Dibujando: arrastra un rectángulo, Esc para cancelar
+World basics	Lo básico del mundo
+Cities, countries and elevation	Ciudades, países y elevación
+Heatwaves, summer 2023	Olas de calor, verano de 2023
+Daily heatwave intensity worldwide, June to August	Intensidad diaria de las olas de calor en todo el mundo, de junio a agosto
+Typhoons and hurricanes	Tifones y huracanes
+4,999 storm tracks since 1980	4999 trayectorias de tormentas desde 1980
+Walled cities of China, 1866	Ciudades amuralladas de China, 1866
+1,789 city walls of late imperial China	1789 murallas de ciudades de la China imperial tardía
+Big earthquakes	Grandes terremotos
+14,537 of magnitude 6 or more since 1900	14.537 de magnitud 6 o más desde 1900
+Volcanoes	Volcanes
+1,609 volcanoes and their status	1609 volcanes y su estado
+Airports	Aeropuertos
+5,280 large and medium airports, with elevation	5280 aeropuertos grandes y medianos, con elevación
+Power plants	Centrales eléctricas
+34,936 plants by fuel and capacity	34.936 centrales por combustible y potencia
+Slide 16:9	Diapositiva 16:9
+Report A4	Informe A4
+Square	Cuadrado
+2480 × 3508 px · A4 at 300 dpi	2480 × 3508 px · A4 a 300 ppp
+slide	diapositiva
+square	cuadrado
+Map	Mapa
+The preview isn't included. Keep it to put it in the image.	La vista previa no se incluye. Consérvala para ponerla en la imagen.
+Some of the background couldn't be loaded, so the image shows less detail.	Parte del fondo no se ha podido cargar, así que la imagen muestra menos detalle.
+Export map image	Exportar imagen del mapa
+Size	Tamaño
+Title	Título
+Add a title (optional)	Añade un título (opcional)
+Caption	Pie de imagen
+Use the caption made from the layers	Usar el pie de imagen creado a partir de las capas
+Made from the layers; edit it if you like.	Creado a partir de las capas; edítalo si quieres.
+Legend	Leyenda
+No layers are shown.	No se muestra ninguna capa.
+It places itself clear of the data; drag it to move it.	Se coloca sola lejos de los datos; arrástrala para moverla.
+Place the legend automatically	Colocar la leyenda automáticamente
+Drawing the map at full size…	Dibujando el mapa a tamaño completo…
+Fit to data	Ajustar a los datos
+Current view	Vista actual
+No layers are shown, so the map shows the current view.	No se muestra ninguna capa, así que el mapa muestra la vista actual.
+Grid lines	Líneas de cuadrícula
+Auto	Automático
+On	Sí
+Off	No
+Legend: drag to move it	Leyenda: arrástrala para moverla
+Format	Formato
+Show	Mostrar
+North arrow	Flecha de norte
+Scale bar	Barra de escala
+Lat/lon labels	Etiquetas de lat./lon.
+{paper} · PDF, text and symbols as vectors	{paper} · PDF, texto y símbolos como vectores
+{layer} is colored by value but has no legend.	{layer} está coloreada por valor, pero no tiene leyenda.
+{layer} is filtered: the image shows {shown} of {total} {nouns}.	{layer} está filtrada: la imagen muestra {shown} de {total} {nouns}.
+The {basemap} basemap's terms don't allow exported images, so the offline basemap is used.	Las condiciones del mapa base {basemap} no permiten exportar imágenes, así que se usa el mapa base sin conexión.
+about {km} km across: a north arrow and a scale bar.	unos {km} km de ancho: una flecha de norte y una barra de escala.
+about {km} km across: latitude and longitude on the frame, and a scale bar.	unos {km} km de ancho: latitud y longitud en el marco, y una barra de escala.
+about {km} km across and {degrees}° tall: latitude and longitude on the frame. No scale bar, as distances stretch with latitude.	unos {km} km de ancho y {degrees}° de alto: latitud y longitud en el marco. Sin barra de escala, porque las distancias se estiran con la latitud.
+about {km} km across: latitude and longitude on the frame. Distances vary too much for one scale bar.	unos {km} km de ancho: latitud y longitud en el marco. Las distancias varían demasiado para una sola barra de escala.
+Made with {app}.	Hecho con {app}.
+Data: {sources}. Made with {app}.	Datos: {sources}. Hecho con {app}.
+No data ({n})	Sin datos ({n})
+Credits are always included: {credits}	Los créditos siempre se incluyen: {credits}
+The image couldn't be made: {error}	No se ha podido crear la imagen: {error}
+Auto: {rules}	Automático: {rules}
+{size} · exactly as saved	{size} · exactamente como se guardará
+The layer is gone.	La capa ya no está.
+The layer's data is still loading.	Los datos de la capa todavía se están cargando.
+Export data	Exportar datos
+Export…	Exportar…
+Layer	Capa
+Filtered	Filtrados
+Selected	Seleccionados
+Records	Registros
+The layer has no filter and nothing is selected.	La capa no tiene filtro y no hay nada seleccionado.
+The layer has no filter.	La capa no tiene filtro.
+Nothing is selected in this layer.	No hay nada seleccionado en esta capa.
+Location	Ubicación
+Longitude, latitude	Longitud, latitud
+Lines and areas are written as well-known text (WKT).	Las líneas y las áreas se escriben como texto WKT (well-known text).
+Fields	Campos
+None	Ninguno
+All	Todos
+The band shown, on the raster's own grid and coordinate system: resampling to WGS 84 would change its values.	La banda mostrada, en la cuadrícula y el sistema de coordenadas propios del ráster: remuestrearla a WGS 84 cambiaría sus valores.
+Coordinates are written in WGS 84 (longitude, latitude).	Las coordenadas se escriben en WGS 84 (longitud, latitud).
+{name} (filtered)	{name} (filtrado)
+{name} (selected)	{name} (selección)
+All {n}	Todos ({n})
+Filtered {n}	Filtrados ({n})
+Selected {n}	Seleccionados ({n})
+{note}: left out unless you check it	{note}: se deja fuera salvo que lo marques
+Styles and recipes stay in {app}: these formats carry only locations and values.	Los estilos y las recetas se quedan en {app}: estos formatos solo llevan ubicaciones y valores.
+Clear	Quitar
+Clear the search	Borrar la búsqueda
+Zoom to it	Zoom a este
+Zoom to all	Zoom a todos
+No points contain “{q}”.	Ningún punto contiene “{q}”.
+No lines contain “{q}”.	Ninguna línea contiene “{q}”.
+No areas contain “{q}”.	Ningún área contiene “{q}”.
+No cells contain “{q}”.	Ninguna celda contiene “{q}”.
+No rows contain “{q}”.	Ninguna fila contiene “{q}”.
+Find in {layer}	Buscar en {layer}
+{n} found	{n} encontrados
+‹ All {n} found	‹ Los {n} encontrados
+{title}, {field}: {value}	{title}, {field}: {value}
+{n} more on the map · 	{n} más en el mapa · 
+More actions…	Más acciones…
+Working out how this compares…	Calculando cómo se compara…
+point	punto
+line	línea
+area	área
+cell	celda
+row	fila
+The data is still loading.	Los datos todavía se están cargando.
+Show fewer fields	Mostrar menos campos
+View in table	Ver en la tabla
+Zoom to	Zoom a
+◉ Range fitted to the view	◉ Rango ajustado a la vista
+Color	Color
+One color	Un solo color
+Smooth	Continuo
+Groups	Grupos
+Palette	Paleta
+Equal counts	Cuantiles
+Equal steps	Intervalos
+Fit range to view	Ajustar el rango a la vista
+Larger areas tend to have higher counts.	Las áreas más grandes suelen tener recuentos más altos.
+Color by count per km² instead?	¿Colorear por recuento por km²?
+Use totals	Usar totales
+Same size	Mismo tamaño
+Labels	Etiquetas
+Opacity	Opacidad
+Outline	Contorno
+Width	Grosor
+Band	Banda
+From	Desde
+To	Hasta
+Reset to the middle 96% of the time step	Restablecer al 96 % central del paso de tiempo
+Same for every time step: the middle 96% of the time step	Igual en todos los pasos de tiempo: el 96 % central del paso de tiempo
+Covers the middle 96% of cells	Abarca el 96 % central de las celdas
+Reset to the middle 96% of cells	Restablecer al 96 % central de las celdas
+Only show values above	Mostrar solo valores por encima de
+Range	Rango
+Stop highlighting	Dejar de resaltar
+{n} point	{n} punto
+{n} points	{n} puntos
+{n} line	{n} línea
+{n} lines	{n} líneas
+{n} area	{n} área
+{n} areas	{n} áreas
+{n} cell	{n} celda
+{n} cells	{n} celdas
+{n} row	{n} fila
+{n} rows	{n} filas
+Blue	Azul
+Orange	Naranja
+Bluish green	Verde azulado
+Vermilion	Bermellón
+Reddish purple	Púrpura rojizo
+Sky blue	Azul cielo
+Yellow	Amarillo
+Black	Negro
+Show all {n} fields	Mostrar los {n} campos
+Band {n} ({unit})	Banda {n} ({unit})
+Band {n}	Banda {n}
+Showing only values above {v}	Solo se muestran valores por encima de {v}
+Highlighting {low} to {high}	Resaltando de {low} a {high}
+{field} per km² (geodesic area)	{field} por km² (área geodésica)
+Band {n} ({name})	Banda {n} ({name})
+Reset to the middle 96% of {n} time steps	Restablecer al 96 % central de {n} pasos de tiempo
+Same for every time step: the middle 96% of {n} time steps	Igual en todos los pasos de tiempo: el 96 % central de {n} pasos de tiempo
+{low} to {high}	De {low} a {high}
+Use this match	Usar esta coincidencia
+Use these matches	Usar estas coincidencias
+Hide the rows not matched	Ocultar las filas sin coincidencia
+Keep the original colors	Mantener los colores originales
+Looking for the places this table describes…	Buscando los lugares que describe esta tabla…
+None of these: keep it as a table	Ninguno: mantenerla como tabla
+Use this	Usar este
+Join	Unir
+Keep as a table	Mantener como tabla
+Choose other columns…	Elegir otras columnas…
+Open a point, line or area layer to match this table to.	Abre una capa de puntos, líneas o áreas con la que emparejar esta tabla.
+Several rows for one place	Varias filas para un mismo lugar
+{n} name looks like a typo: {examples}	{n} nombre parece una errata: {examples}
+{n} names look like typos: {examples}	{n} nombres parecen erratas: {examples}
+{n} row with no {field}	{n} fila sin {field}
+{n} rows with no {field}	{n} filas sin {field}
+Automatic	Automático
+Latest year or date	Año o fecha más reciente
+Combine	Combinar
+{table} now appears under {layer} in Layers.	{table} aparece ahora bajo {layer} en Capas.
+and {n} more	y {n} más
+Which places does {table} describe?	¿Qué lugares describe {table}?
+Join {table} to {target}?	¿Unir {table} a {target}?
+Match {layer} to a layer	Emparejar {layer} con una capa
+Column in {layer}	Columna de {layer}
+{matched} of {total} {nouns} match · {rows_matched} of {rows} rows find a place	{matched} de {total} {nouns} coinciden · {rows_matched} de {rows} filas encuentran un lugar
+Ctrl+{key}	Ctrl+{key}
+Ctrl+Shift+{key}	Ctrl+Shift+{key}
+Points	Puntos
+Lines	Líneas
+Areas	Áreas
+Grid	Cuadrícula
+Table	Tabla
+Data library	Biblioteca de datos
+Search datasets	Buscar conjuntos de datos
+Offline: showing the list from your last visit	Sin conexión: se muestra la lista de tu última visita
+Try again	Reintentar
+Loading the library…	Cargando la biblioteca…
+The library is empty.	La biblioteca está vacía.
+Add to map	Añadir al mapa
+Downloaded: opens without the internet	Descargado: se abre sin internet
+Downloaded	Descargado
+{n} GB	{n} GB
+{n} MB	{n} MB
+{n} KB	{n} KB
+No datasets match “{q}”.	Ningún conjunto de datos coincide con “{q}”.
+Downloading {done} of {total}	Descargando {done} de {total}
+A layer is still loading. Try again in a moment.	Todavía se está cargando una capa. Inténtalo de nuevo en un momento.
+Packaging the map and its data…	Empaquetando el mapa y sus datos…
+packaging stopped unexpectedly	el empaquetado se detuvo de forma inesperada
+Share as a map package	Compartir como paquete de mapa
+One file with the map and its data, so it opens on another computer.	Un solo archivo con el mapa y sus datos, para que se abra en otro equipo.
+Save Package…	Guardar paquete…
+Before compression; text files shrink a lot in the package.	Antes de comprimir; los archivos de texto ocupan mucho menos en el paquete.
+Data it includes	Datos que incluye
+No source files: the map's layers are all stored in it already.	Sin archivos de origen: todas las capas del mapa ya están guardadas en él.
+can't be found, so it's left out	no se encuentra, así que se deja fuera
+Folder paths	Rutas de carpetas
+The map names no folders on this computer.	El mapa no nombra ninguna carpeta de este equipo.
+Paths name your account and folders, so they are left out; files keep only their names.	Las rutas muestran tu cuenta y tus carpetas, así que se dejan fuera; los archivos conservan solo su nombre.
+Fields that look personal	Campos que parecen personales
+None found: no names, emails, phone or ID numbers.	No se ha encontrado ninguno: ni nombres, ni correos, ni teléfonos, ni números de identificación.
+Checked fields are left out of the package. Your own map keeps them.	Los campos marcados se dejan fuera del paquete. Tu propio mapa los conserva.
+Unknown — check before sharing	Desconocida: compruébala antes de compartir
+The map is colored by it	El mapa está coloreado por este campo
+The map sizes points by it	El mapa dimensiona los puntos por este campo
+The map labels by it	El mapa etiqueta por este campo
+The filter uses it	El filtro lo usa
+{layer} (without the fields left out)	{layer} (sin los campos dejados fuera)
+The package couldn't be made: {error}	No se ha podido crear el paquete: {error}
+Saved {name} ({size}), without {missing}: it couldn't be found.	Se ha guardado {name} ({size}), sin {missing}: no se encontró.
+Saved {name}, but {layer} couldn't be kept in it ({why}).	Se ha guardado {name}, pero {layer} no se ha podido conservar en él ({why}).
+Saved {name} ({size}): the map and its data, ready to share.	Se ha guardado {name} ({size}): el mapa y sus datos, listos para compartir.
+The package couldn't be made. {error}	No se ha podido crear el paquete. {error}
+{name} (package)	{name} (paquete)
+About {size}	Unos {size}
+Stored in the package itself: {layers}.	Guardado en el propio paquete: {layers}.
+Layers: {layers}	Capas: {layers}
+Licence: {licence}	Licencia: {licence}
+Leave out {field} ({layer})	Dejar fuera {field} ({layer})
+{note}. {why}, so it stays.	{note}. {why}, así que se queda.
+Remove all	Quitar todas
+Open file	Abrir archivo
+Dismiss	Descartar
+Hide the joined table	Ocultar la tabla unida
+Show the joined table	Mostrar la tabla unida
+View data	Ver datos
+Match to a layer…	Emparejar con una capa…
+Style…	Estilo…
+Zoom to layer	Zoom a la capa
+Rename	Cambiar nombre
+Remove from map	Quitar del mapa
+Needs a decision: see the layer's panel	Requiere una decisión: consulta el panel de la capa
+Variable shown	Variable mostrada
+Level shown	Nivel mostrado
+joined	unida
+Show joined fields	Mostrar campos unidos
+Unjoin	Deshacer unión
+The table wasn't opened in this session, so it can't be put back	La tabla no se abrió en esta sesión, así que no se puede restaurar
+Where should this data be?	¿Dónde deberían estar estos datos?
+This file doesn't say where on Earth its coordinates are. Name a place it covers.	Este archivo no dice en qué lugar de la Tierra están sus coordenadas. Indica un lugar que abarque.
+A city or town, e.g. Shanghai	Una ciudad o localidad, p. ej., Shanghái
+Use the middle of the map	Usar el centro del mapa
+the middle of the map	el centro del mapa
+Open as a table	Abrir como tabla
+Not sure	No estoy seguro
+Compare on the map first	Comparar antes en el mapa
+Close the panel	Cerrar el panel
+Back	Atrás
+This cell has no data.	Esta celda no tiene datos.
+This layer has no values to compare.	Esta capa no tiene valores que comparar.
+Compare by	Comparar por
+Export problem list	Exportar lista de problemas
+Opened as a table: there is nothing to place on the map yet.	Abierto como tabla: aún no hay nada que colocar en el mapa.
+Compare	Comparar
+Add unit	Añadir unidad
+Change	Cambiar
+as in the file	como en el archivo
+converted from Baidu (BD-09)	convertidos desde Baidu (BD-09)
+converted from Amap/Tencent (GCJ-02)	convertidos desde Amap/Tencent (GCJ-02)
+Keep the set that sits on the streets.	Conserva la versión que cae sobre las calles.
+Keep converted	Conservar convertidos
+Keep as in the file	Conservar como en el archivo
+Try Amap/Tencent instead	Probar con Amap/Tencent
+Try Baidu instead	Probar con Baidu
+Filtered:	Filtrado:
+Values	Valores
+Source	Origen
+Text encoding	Codificación de texto
+Coordinate system	Sistema de coordenadas
+Extent	Extensión
+Complete	Completa
+Needs a decision	Requiere una decisión
+Canceled	Cancelada
+Not loaded (the source is read again when the document opens)	Sin cargar (el origen se vuelve a leer al abrir el documento)
+Import	Importación
+Remove from insight	Quitar de las líneas de contexto
+Show in insight	Mostrar en las líneas de contexto
+Treat this field as	Tratar este campo como
+Back to the detected role	Volver al papel detectado
+Assumptions	Supuestos
+Export problem list…	Exportar lista de problemas…
+Row	Fila
+Reason	Motivo
+Drop to add to the map	Suelta para añadir al mapa
+Overview	Resumen
+Style	Estilo
+Details	Detalles
+{n} {things} opened; {left} has no usable location.	{n} {things} abiertos; {left} no tiene una ubicación utilizable.
+{n} {things} opened; {left} have no usable location.	{n} {things} abiertos; {left} no tienen una ubicación utilizable.
+{n} records opened; {left} has no usable location.	{n} registros abiertos; {left} no tiene una ubicación utilizable.
+{n} records opened; {left} have no usable location.	{n} registros abiertos; {left} no tienen una ubicación utilizable.
+{line} (applied quietly; chosen: {choice})	{line} (aplicado sin avisar; elegido: {choice})
+{line} (shown; chosen: {choice})	{line} (mostrado; elegido: {choice})
+{line} (answered; chosen: {choice})	{line} (respondido; elegido: {choice})
+{line} (needs a decision; chosen: {choice})	{line} (requiere una decisión; elegido: {choice})
+{line} (blocks actions; chosen: {choice})	{line} (bloquea acciones; elegido: {choice})
+Count	Recuento
+Density	Densidad
+Value	Valor
+ID	ID
+Name	Nombre
+Category	Categoría
+Text	Texto
+Date	Fecha
+Coordinate	Coordenada
+Unknown	Desconocido
+Remove every layer from the map ({key} brings them back)	Quitar todas las capas del mapa ({key} las recupera)
+{error}\n\nDetails: {details}	{error}\n\nDetalles: {details}
+Dismiss {name}	Descartar {name}
+Cancel {name}	Cancelar {name}
+Show {layer}	Mostrar {layer}
+Joined tables of {layer}	Tablas unidas de {layer}
+Hide the {n} joined tables	Ocultar las {n} tablas unidas
+Show the {n} joined tables	Mostrar las {n} tablas unidas
+joined · {matched} of {total} matched	unida · {matched} de {total} coinciden
+Joined table {table}, {caption}	Tabla unida {table}, {caption}
+Joined to {layer}: its fields are part of the layer	Unida a {layer}: sus campos forman parte de la capa
+No coordinate system puts this data near {name}. Try another place, or open it as a table.	Ningún sistema de coordenadas sitúa estos datos cerca de {name}. Prueba con otro lugar o ábrelos como tabla.
+{crs} — lands {km} km from {name}	{crs}: cae a {km} km de {name}
+{choice} (recommended)	{choice} (recomendado)
+{lat}°, {lon}°	{lat}°, {lon}°
+{layer} · cell	{layer} · celda
+{n} {things}, highest first	{n} {things}, de mayor a menor
+{n}{plus} objects here	{n}{plus} objetos aquí
+Review {n}	Revisar {n}
+Compare {layer}	Comparar {layer}
++{n} more	+{n} más
+{variable}: {low} to {high}{unit} over {sampled} of {steps} time steps	{variable}: de {low} a {high}{unit} en {sampled} de {steps} pasos de tiempo
+{variable}: {low} to {high}{unit}	{variable}: de {low} a {high}{unit}
+Time: {range}	Tiempo: {range}
+Band {n}: {low} to {high}{unit}	Banda {n}: de {low} a {high}{unit}
+Band {n} ({name}): {low} to {high}{unit}	Banda {n} ({name}): de {low} a {high}{unit}
+{west}° to {east}° E, {south}° to {north}° N	De {west}° a {east}° E, de {south}° a {north}° N
+Complete, with {n} records excluded	Completa, con {n} registros excluidos
+Failed: {reason}	Error: {reason}
+From {table}	De {table}
+Show {field} in insight	Mostrar {field} en las líneas de contexto
+Excluded records — {layer}	Registros excluidos: {layer}
+{n} records were left out of the map. Your file has not been changed.	{n} registros se han dejado fuera del mapa. Tu archivo no se ha modificado.
+Untitled	Sin título
+Your own file has not been changed.	Tu propio archivo no se ha modificado.
+Restore	Restaurar
+Your changes will be lost if you don't save them.	Si no guardas los cambios, se perderán.
+Don't Save	No guardar
+Save	Guardar
+Use It	Usarlo
+Locate…	Localizar…
+Remove layer	Quitar capa
+its size changed	ha cambiado su tamaño
+its contents changed	ha cambiado su contenido
+its modification date changed	ha cambiado su fecha de modificación
+Using {file}. 1 result made from the old file now say Source changed.	Se usa {file}. 1 resultado creado a partir del archivo antiguo indica ahora Source changed.
+Using {file}. {n} results made from the old file now say Source changed.	Se usa {file}. {n} resultados creados a partir del archivo antiguo indican ahora Source changed.
+This file looks different ({reason}). Use it anyway?	Este archivo parece distinto ({reason}). ¿Usarlo de todos modos?
+Saved, but {name} couldn't be kept in the map file ({why}).	Se ha guardado, pero {name} no se ha podido conservar en el archivo del mapa ({why}).
+The autosaved map could not be restored. {error}	No se ha podido restaurar el mapa guardado automáticamente. {error}
+Do you want to save the changes you made to '{name}'?	¿Quieres guardar los cambios que has hecho en «{name}»?
+a date	una fecha
+some text	un texto
+Remove this filter	Quitar este filtro
+Filter	Filtrar
+Add a filter	Añadir un filtro
+Close the table	Cerrar la tabla
+Search	Buscar
+Search the table	Buscar en la tabla
+no value	sin valor
+where	donde
+choose…	elegir…
+Finish the sentence to see how many match.	Completa la frase para ver cuántos coinciden.
+Apply	Aplicar
+is	es
+is not	no es
+contains	contiene
+starts with	empieza por
+ends with	termina en
+is empty	está vacío
+above	mayor que
+below	menor que
+between	entre
+before	antes de
+after	después de
+is any of	es uno de
+Sort by {name}, sorted ascending	Ordenar por {name}, en orden ascendente
+Sort by {name}, sorted descending	Ordenar por {name}, en orden descendente
+Sort by {name}	Ordenar por {name}
+Showing {shown} of {total}	Mostrando {shown} de {total}
+Remove filter: {filter}	Quitar filtro: {filter}
+{n} match	{n} coincidencias
+Previous step (←)	Paso anterior (←)
+Pause	Pausa
+Play	Reproducir
+Next step (→)	Paso siguiente (→)
+Time step	Paso de tiempo
+{layer} · {step} of {steps}	{layer} · {step} de {steps}
+A new version is available	Hay una nueva versión disponible
+Close the update notice	Cerrar el aviso de actualización
+{app} {version}: {notes}	{app} {version}: {notes}
+Download {version}	Descargar {version}
+That layer is gone.	Esa capa ya no está.
+This layer has no variables to choose from.	Esta capa no tiene variables entre las que elegir.
+This layer's data isn't loaded.	Los datos de esta capa no están cargados.
+{layer} has no variable {variable}.	{layer} no tiene la variable {variable}.
+The layer isn't loaded yet.	La capa aún no está cargada.
+Pick a column on each side.	Elige una columna a cada lado.
+{matched} of {keys} match	{matched} de {keys} coinciden
+Joined {table} to {layer}: {matched} of {total} {things} matched.	{table} unida a {layer}: {matched} de {total} {things} coinciden.
+Show the {r} row not matched	Mostrar la {r} fila sin coincidencia
+Show the {r} rows not matched	Mostrar las {r} filas sin coincidencia
+Show the {k} not matched	Mostrar los {k} sin coincidencia
+Show the {k} not matched ({r} row)	Mostrar los {k} sin coincidencia ({r} fila)
+Show the {k} not matched ({r} rows)	Mostrar los {k} sin coincidencia ({r} filas)
+file	archivo
+Preparing a faster preview…	Preparando una vista previa más rápida…
+Still reading a layer. Undo in a moment.	Todavía se está leyendo una capa. Deshaz dentro de un momento.
+Still reading a layer. Redo in a moment.	Todavía se está leyendo una capa. Rehaz dentro de un momento.
+That couldn't be done. Nothing was changed.	No se ha podido hacer. No se ha cambiado nada.
+The layer changed while it was being read again, so that change was not applied.	La capa cambió mientras se volvía a leer, así que ese cambio no se aplicó.
+That assumption couldn't be changed.	No se ha podido cambiar ese supuesto.
+Only points, lines and areas can be converted.	Solo se pueden convertir puntos, líneas y áreas.
+The layer changed while it was being converted, so nothing was added.	La capa cambió mientras se convertía, así que no se añadió nada.
+The converted layer couldn't be added.	No se ha podido añadir la capa convertida.
+Only points, lines and areas can be compared.	Solo se pueden comparar puntos, líneas y áreas.
+This layer has nothing to compare.	Esta capa no tiene nada que comparar.
+{file} has changed since this document was saved; it was read as it is now.	{file} ha cambiado desde que se guardó este documento; se ha leído tal como está ahora.
+{layer} is no longer in {file}.	{layer} ya no está en {file}.
+Can't find {file}. It was last seen in {folder}.	No se encuentra {file}. Se vio por última vez en {folder}.
+Can't find {file}. It was last seen in its folder.	No se encuentra {file}. Se vio por última vez en su carpeta.
+The layer couldn't be read again.	No se ha podido volver a leer la capa.
+Reading {done} of {total}	Leyendo {done} de {total}
+Still reading {layer}. Try again in a moment.	Todavía se está leyendo {layer}. Inténtalo de nuevo en un momento.
+Save map package	Guardar paquete de mapa
+{app} map	Mapa de {app}
+Locate {file}	Localizar {file}
+A map-first GIS. Built on RustGIS.	Un SIG centrado en el mapa. Basado en RustGIS.
+File	Archivo
+Open…	Abrir…
+Open Example	Abrir ejemplo
+Browse data library…	Explorar la biblioteca de datos…
+Save As…	Guardar como…
+Export Map Image…	Exportar imagen del mapa…
+Export Data…	Exportar datos…
+Export Map Package…	Exportar paquete de mapa…
+Close Window	Cerrar ventana
+Exit	Salir
+Edit	Edición
+Find…	Buscar…
+Remove All Layers	Quitar todas las capas
+Use System Appearance	Usar la apariencia del sistema
+Light	Claro
+Dark	Oscuro
+Metric Units	Unidades métricas
+Imperial Units	Unidades imperiales
+System Language	Idioma del sistema
+Language	Idioma
+Show Frame Rate	Mostrar fotogramas por segundo
+Work Offline	Trabajar sin conexión
+View	Ver
+Zoom In	Acercar
+Zoom Out	Alejar
+Zoom to All Data	Zoom a todos los datos
+Full Screen	Pantalla completa
+Window	Ventana
+Help	Ayuda
+Export Diagnostics…	Exportar diagnóstico…
+About {app}	Acerca de {app}
+Quit {app}	Salir de {app}
+Undo ({key})	Deshacer ({key})
+Redo ({key})	Rehacer ({key})
+{app} Help	Ayuda de {app}
+Satellite	Satélite
+Offline	Sin conexión
+Try an example	Prueba un ejemplo
+Color by a value	Colorear por valor
+Color or size by a value	Colorear o dimensionar por valor
+Filter [layer]	Filtrar [layer]
+Filter by [Type]	Filtrar por [Type]
+Compare with other [layer]	Comparar con otros elementos de [layer]
+Change colors and range	Cambiar colores y rango
+Change colors	Cambiar colores
+Show only values above…	Mostrar solo valores por encima de…
+Show where values are like this	Mostrar dónde hay valores como este
+Map using coordinate columns	Situar en el mapa con columnas de coordenadas
+Match to [other]	Emparejar con [other]
+Show an area within a distance	Mostrar el área hasta una distancia
+Show an area within a distance of each	Mostrar el área hasta una distancia de cada uno
+Measure from here	Medir desde aquí
+Which [District] is it in?	¿En qué [District] está?
+Count [Schools] in each [District]	Contar [Schools] en cada [District]
+Add [Heat] values to each [School]	Añadir valores de [Heat] a cada [School]
+Measure its area	Medir su área
+What's inside?	¿Qué hay dentro?
+Summarize [Heat] here	Resumir [Heat] aquí
+Summarize [Heat] in each [District]	Resumir [Heat] en cada [District]
+Rank [layer] by a value	Ordenar [layer] por un valor
+Measure length	Medir longitud
+Summarize data here	Resumir los datos de aquí
+Count [Schools] here	Contar [Schools] aquí
+Add the distance to the nearest of [other] to [layer]	Añadir a [layer] la distancia al más cercano de [other]
+Add the distance to the nearest neighbour in [layer]	Añadir la distancia al vecino más cercano en [layer]
+Add [other] details to [layer]	Añadir datos de [other] a [layer]
+Add area and coordinates to [layer]	Añadir área y coordenadas a [layer]
+Add a field calculated from two values	Añadir un campo calculado a partir de dos valores
+Split [layer] into separate parts	Separar [layer] en partes
+Keep the part of [layer] inside [other]	Conservar la parte de [layer] dentro de [other]
+Remove the part of [layer] inside [other]	Quitar la parte de [layer] dentro de [other]
+Find areas where [Heat] meets conditions	Buscar zonas donde [Heat] cumple condiciones

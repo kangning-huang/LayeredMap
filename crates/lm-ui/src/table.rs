@@ -13,8 +13,10 @@ use egui_phosphor::regular as icon;
 
 use lm_core::document::DocLayer;
 use lm_core::filter::{Condition, Filter, Test};
+use lm_core::i18n;
 use lm_core::model::{DataType, FieldRole, LayerId};
 use lm_core::selection::FeatureRef;
+use lm_core::{tl, tn};
 use lm_jobs::inspect as data;
 
 use crate::Shell;
@@ -80,25 +82,26 @@ fn verb_label(verb: &str, color: egui::Color32) -> egui::text::LayoutJob {
     let mut job = egui::text::LayoutJob::default();
     let format = |font| egui::TextFormat { font_id: font, color, valign: egui::Align::Center, ..Default::default() };
     job.append(verb_symbol(verb), 0.0, format(theme::icon_font(14.0)));
-    job.append(verb, 6.0, format(egui::FontId::proportional(theme::BODY)));
+    job.append(tl!(verb), 6.0, format(egui::FontId::proportional(theme::BODY)));
     job
 }
 
 /// What to type in the value box, so an empty box doesn't look like a stray bar.
 fn hint(kind: FieldKind) -> &'static str {
     match kind {
-        FieldKind::Number => "a number",
-        FieldKind::Date => "a date",
-        _ => "some text",
+        FieldKind::Number => tl!("a number"),
+        FieldKind::Date => tl!("a date"),
+        _ => tl!("some text"),
     }
 }
 
 fn verbs(kind: FieldKind) -> &'static [&'static str] {
     match kind {
-        FieldKind::Text => &["is", "is not", "contains", "starts with", "ends with", "is empty"],
-        FieldKind::Number => &["above", "below", "between", "is empty"],
-        FieldKind::Date => &["before", "after", "between"],
-        FieldKind::Category => &["is any of"],
+        // The verbs are ids too (matched below); they are translated where drawn.
+        FieldKind::Text => &[tn!("is"), tn!("is not"), tn!("contains"), tn!("starts with"), tn!("ends with"), tn!("is empty")],
+        FieldKind::Number => &[tn!("above"), tn!("below"), tn!("between"), tn!("is empty")],
+        FieldKind::Date => &[tn!("before"), tn!("after"), tn!("between")],
+        FieldKind::Category => &[tn!("is any of")],
     }
 }
 
@@ -284,10 +287,9 @@ pub fn drawer(shell: &mut Shell, ui: &mut Ui, map: egui::Rect, left: f32, right:
                     ui.label(RichText::new(&l.display_name).font(theme::semibold(BODY)));
                     let total = ds.features.len() as u64;
                     ui.label(
-                        RichText::new(format!(
-                            "Showing {} of {}",
-                            lm_core::model::group_thousands(rows.len() as u64),
-                            lm_core::model::group_thousands(total)
+                        RichText::new(i18n::fmt(
+                            "Showing {shown} of {total}",
+                            &[("shown", &i18n::count(rows.len() as u64)), ("total", &i18n::count(total))],
                         ))
                         .color(t.text_secondary),
                     );
@@ -297,25 +299,26 @@ pub fn drawer(shell: &mut Shell, ui: &mut Ui, map: egui::Rect, left: f32, right:
                                 .fill(t.accent_weak)
                                 .corner_radius(egui::CornerRadius::same(10));
                             let chip = ui.add(chip);
-                            crate::a11y::button(&chip, format!("Remove filter: {}", c.chip()));
-                            if chip.on_hover_text("Remove this filter").clicked() {
+                            crate::a11y::button(&chip, i18n::fmt("Remove filter: {filter}", &[("filter", &c.chip())]));
+                            if chip.on_hover_text(tl!("Remove this filter")).clicked() {
                                 remove_condition = Some(k);
                             }
                         }
                     }
-                    let add = ui.button(format!("{} Filter", icon::PLUS));
-                    crate::a11y::button(&add, "Add a filter");
+                    let add = ui.button(format!("{} {}", icon::PLUS, tl!("Filter")));
+                    crate::a11y::button(&add, tl!("Add a filter"));
                     if add.clicked() {
                         open_builder = true;
                     }
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                         let x = ui.add(egui::Button::new(RichText::new(icon::X).font(theme::icon_font(14.0))).frame(false));
-                        crate::a11y::button(&x, "Close the table");
-                        if x.on_hover_text("Close").clicked() {
+                        crate::a11y::button(&x, tl!("Close the table"));
+                        if x.on_hover_text(tl!("Close")).clicked() {
                             close = true;
                         }
-                        let search = ui.add(egui::TextEdit::singleline(&mut shell.table.search).hint_text("Search").desired_width(160.0));
-                        crate::a11y::label(&search, "Search the table");
+                        let search =
+                            ui.add(egui::TextEdit::singleline(&mut shell.table.search).hint_text(tl!("Search")).desired_width(160.0));
+                        crate::a11y::label(&search, tl!("Search the table"));
                     });
                 });
                 ui.separator();
@@ -333,12 +336,12 @@ pub fn drawer(shell: &mut Shell, ui: &mut Ui, map: egui::Rect, left: f32, right:
                                 _ => "",
                             };
                             let (r, resp) = ui.allocate_exact_size(vec2(COL_W, ROW_H), Sense::click());
-                            let order = match shell.table.sort {
-                                Some((f, true)) if f == c => ", sorted ascending",
-                                Some((f, false)) if f == c => ", sorted descending",
-                                _ => "",
+                            let spoken = match shell.table.sort {
+                                Some((f, true)) if f == c => tn!("Sort by {name}, sorted ascending"),
+                                Some((f, false)) if f == c => tn!("Sort by {name}, sorted descending"),
+                                _ => tn!("Sort by {name}"),
                             };
-                            crate::a11y::button(&resp, format!("Sort by {name}{order}"));
+                            crate::a11y::button(&resp, i18n::fmt(spoken, &[("name", &name)]));
                             ui.painter().text(
                                 r.left_center() + vec2(6.0, 0.0),
                                 Align2::LEFT_CENTER,
@@ -346,7 +349,7 @@ pub fn drawer(shell: &mut Shell, ui: &mut Ui, map: egui::Rect, left: f32, right:
                                 theme::semibold(CAPTION),
                                 t.text_primary,
                             );
-                            if resp.on_hover_text(format!("Sort by {name}")).clicked() {
+                            if resp.on_hover_text(i18n::fmt("Sort by {name}", &[("name", &name)])).clicked() {
                                 sort_click = Some(c);
                             }
                         }
@@ -526,7 +529,7 @@ fn row_name(l: &DocLayer, ds: &lm_jobs::import::Dataset, cols: &[usize], r: usiz
     let mut s = data::object_title(l, ds, r);
     for &c in cols.iter().take(6) {
         let name = ds.fields.get(c).map(|f| f.name.as_str()).unwrap_or_default();
-        let v = data::cell_text(ds, r, c).unwrap_or_else(|| "no value".into());
+        let v = data::cell_text(ds, r, c).unwrap_or_else(|| tl!("no value").into());
         s.push_str(&format!(", {name}: {v}"));
     }
     s
@@ -555,9 +558,9 @@ fn builder(shell: &mut Shell, ui: &mut Ui, drawer: egui::Rect) {
             egui::Frame::popup(ui.style()).show(ui, |ui| {
                 ui.set_max_width(560.0);
                 ui.horizontal_wrapped(|ui| {
-                    ui.label("Show");
+                    ui.label(tl!("Show"));
                     ui.label(RichText::new(data::noun_plural(&l)).strong());
-                    ui.label("where");
+                    ui.label(tl!("where"));
                     let before = d.field.clone();
                     egui::ComboBox::from_id_salt("lm-filter-field").selected_text(&d.field).show_ui(ui, |ui| {
                         for f in &l.profile.fields {
@@ -582,7 +585,7 @@ fn builder(shell: &mut Shell, ui: &mut Ui, drawer: egui::Rect) {
                         (FieldKind::Category, _) => {
                             let fi = data::field_index(&ds, &d.field);
                             let values = fi.map(|i| ds.unique_values(i, 50)).unwrap_or_default();
-                            ui.menu_button(if d.any_of.is_empty() { "choose…".to_string() } else { d.any_of.join(", ") }, |ui| {
+                            ui.menu_button(if d.any_of.is_empty() { tl!("choose…").to_string() } else { d.any_of.join(", ") }, |ui| {
                                 for v in values {
                                     let mut on = d.any_of.contains(&v);
                                     if ui.checkbox(&mut on, &v).changed() {
@@ -599,7 +602,7 @@ fn builder(shell: &mut Shell, ui: &mut Ui, drawer: egui::Rect) {
                             // "[a] and [b]" moves to the next line as one piece, never split or
                             // squeezed.
                             let and_w = ui.fonts_mut(|f| {
-                                f.layout_no_wrap("and".into(), egui::FontId::proportional(theme::BODY), egui::Color32::WHITE).size().x
+                                f.layout_no_wrap(tl!("and").into(), egui::FontId::proportional(theme::BODY), egui::Color32::WHITE).size().x
                             });
                             let need = 2.0 * 80.0 + and_w + 4.0 * ui.spacing().item_spacing.x + 2.0 * ui.spacing().button_padding.x;
                             // A wrapping row reports its full width as available; what is left on
@@ -609,7 +612,7 @@ fn builder(shell: &mut Shell, ui: &mut Ui, drawer: egui::Rect) {
                             }
                             ui.horizontal(|ui| {
                                 ui.add(egui::TextEdit::singleline(&mut d.a).desired_width(80.0).hint_text(hint(d.kind)));
-                                ui.label("and");
+                                ui.label(tl!("and"));
                                 ui.add(egui::TextEdit::singleline(&mut d.b).desired_width(80.0).hint_text(hint(d.kind)));
                             });
                         }
@@ -628,18 +631,18 @@ fn builder(shell: &mut Shell, ui: &mut Ui, drawer: egui::Rect) {
                 ui.horizontal(|ui| {
                     match count {
                         Some(n) => {
-                            ui.label(RichText::new(format!("{} match", lm_core::model::group_thousands(n as u64))).color(t.text_secondary))
+                            ui.label(RichText::new(i18n::fmt("{n} match", &[("n", &i18n::count(n as u64))])).color(t.text_secondary))
                         }
-                        None => ui.label(RichText::new("Finish the sentence to see how many match.").color(t.text_secondary)),
+                        None => ui.label(RichText::new(tl!("Finish the sentence to see how many match.")).color(t.text_secondary)),
                     };
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                         if ui
-                            .add_enabled(cond.is_some(), egui::Button::new(RichText::new("Apply").color(t.on_accent)).fill(t.accent))
+                            .add_enabled(cond.is_some(), egui::Button::new(RichText::new(tl!("Apply")).color(t.on_accent)).fill(t.accent))
                             .clicked()
                         {
                             apply = true;
                         }
-                        if ui.button("Cancel").clicked() {
+                        if ui.button(tl!("Cancel")).clicked() {
                             cancel = true;
                         }
                     });

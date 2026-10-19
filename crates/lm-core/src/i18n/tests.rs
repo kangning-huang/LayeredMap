@@ -14,6 +14,13 @@ fn every_catalog_parses_cleanly_and_keeps_placeholders() {
         assert!(errors.is_empty(), "{}: {errors:?}", l.code());
         for (en, tr) in &m {
             assert_eq!(placeholders(en), placeholders(tr), "{}: placeholders differ in {en:?} → {tr:?}", l.code());
+            // Action templates' [tokens] are filled with layer names (lm-actions).
+            let tokens = |s: &str| -> Vec<String> {
+                let mut v: Vec<String> = s.split('[').skip(1).filter_map(|p| p.split_once(']').map(|x| x.0.to_string())).collect();
+                v.sort();
+                v
+            };
+            assert_eq!(tokens(en), tokens(tr), "{}: [tokens] differ in {en:?} → {tr:?}", l.code());
             // Line breaks are part of the layout.
             assert_eq!(en.matches('\n').count(), tr.matches('\n').count(), "{}: line breaks differ in {en:?}", l.code());
             // The app's name comes from lm_core::brand as {app}, never typed into a catalog.

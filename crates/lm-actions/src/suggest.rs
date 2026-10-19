@@ -316,7 +316,10 @@ impl Registry {
         }
         Ok(Suggested {
             action_id: a.id.clone(),
-            label: tokens.fill(a.label_for(key)),
+            // The label is only ever shown (never saved, nor part of a recipe or an undo step),
+            // so its template is translated before the layer and field names go in; catalogs
+            // keep the `[tokens]`. The rules' reasons stay English: the assistant reads them.
+            label: tokens.fill(lm_core::i18n::t(a.label_for(key))),
             group: a.group,
             companion: tokens.companion.map(|l| l.id),
             field: tokens.field.clone().or(tokens.code.clone()),

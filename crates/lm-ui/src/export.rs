@@ -18,6 +18,7 @@ use lm_core::basemap::Provider;
 use lm_core::document::DocLayer;
 use lm_core::model::{LayerId, LayerKind};
 use lm_core::palette;
+use lm_core::{i18n, tl, tn};
 use lm_jobs::inspect::LegendItem;
 use lm_mapview::export::{self as ex, Entry, LegendBlock, Swatch};
 use lm_mapview::map::{Camera, Map};
@@ -69,16 +70,16 @@ impl Preset {
 
     pub fn label(self) -> &'static str {
         match self {
-            Preset::Slide => "Slide 16:9",
-            Preset::A4 => "Report A4",
-            Preset::Square => "Square",
+            Preset::Slide => tl!("Slide 16:9"),
+            Preset::A4 => tl!("Report A4"),
+            Preset::Square => tl!("Square"),
         }
     }
 
     pub fn detail(self) -> &'static str {
         match self {
             Preset::Slide => "1920 × 1080 px",
-            Preset::A4 => "2480 × 3508 px · A4 at 300 dpi",
+            Preset::A4 => tl!("2480 × 3508 px · A4 at 300 dpi"),
             Preset::Square => "1080 × 1080 px",
         }
     }
@@ -97,15 +98,16 @@ impl Preset {
     /// "210 × 297 mm".
     pub fn paper(self) -> String {
         let (w, h) = self.page_mm();
-        let mm = |v: f64| if (v - v.round()).abs() < 0.05 { format!("{v:.0}") } else { format!("{v:.1}") };
+        let mm = |v: f64| i18n::number(&if (v - v.round()).abs() < 0.05 { format!("{v:.0}") } else { format!("{v:.1}") });
         format!("{} × {} mm", mm(w), mm(h))
     }
 
+    /// Part of the suggested file name, so it is in the interface's language.
     fn file_suffix(self) -> &'static str {
         match self {
-            Preset::Slide => "slide",
+            Preset::Slide => tl!("slide"),
             Preset::A4 => "A4",
-            Preset::Square => "square",
+            Preset::Square => tl!("square"),
         }
     }
 }
@@ -386,7 +388,7 @@ impl ImageSheet {
     /// The finished sheet as PDF (`None` while the map is still being drawn).
     pub fn pdf(&self, shell: &Shell) -> Option<Result<Vec<u8>, String>> {
         let d = self.drawn.as_ref().filter(|d| d.key == self.draw_key())?;
-        let title = if self.has_title() { self.title.trim().to_string() } else { "Map".to_string() };
+        let title = if self.has_title() { self.title.trim().to_string() } else { tl!("Map").to_string() };
         Some(ex::compose_pdf(&d.full, &self.sheet(shell), &fonts(), Some(&d.occupancy), self.preset.page_mm(), &title))
     }
 
@@ -403,7 +405,7 @@ impl ImageSheet {
     pub fn size_line(&self) -> String {
         match self.format {
             Format::Png => format!("{} · PNG", self.preset.detail()),
-            Format::Pdf => format!("{} · PDF, text and symbols as vectors", self.preset.paper()),
+            Format::Pdf => i18n::fmt("{paper} · PDF, text and symbols as vectors", &[("paper", &self.preset.paper())]),
         }
     }
 
@@ -414,11 +416,11 @@ impl ImageSheet {
             let Some(l) = shell.ws.doc.layer(*id) else { continue };
             let scale = l.style.color_by.is_some() || l.style.size_by.is_some() || l.profile.kind == LayerKind::Raster;
             if scale && !on {
-                out.push(format!("{} is colored by value but has no legend.", l.display_name));
+                out.push(i18n::fmt("{layer} is colored by value but has no legend.", &[("layer", &l.display_name)]));
             }
         }
         if self.preview_excluded {
-            out.push("The preview isn't included. Keep it to put it in the image.".into());
+            out.push(tl!("The preview isn't included. Keep it to put it in the image.").into());
         }
         for (id, _) in &self.legend {
             let Some(l) = shell.ws.doc.layer(*id) else { continue };
@@ -428,22 +430,23 @@ impl ImageSheet {
             if let Some(d) = shell.ws.derived(*id) {
                 let total = l.profile.count;
                 let (_, many) = l.profile.kind.nouns();
-                out.push(format!(
-                    "{} is filtered: the image shows {} of {} {many}.",
-                    l.display_name,
-                    lm_core::model::group_thousands(d.shown as u64),
-                    lm_core::model::group_thousands(total)
+                out.push(i18n::fmt(
+                    "{layer} is filtered: the image shows {shown} of {total} {nouns}.",
+                    &[("layer", &l.display_name), ("shown", &i18n::count(d.shown as u64)), ("total", &i18n::count(total)), ("nouns", many)],
                 ));
             }
         }
         if let Some(r) = &self.replaced {
-            out.push(format!("The {} basemap's terms don't allow exported images, so the offline basemap is used.", r.name));
+            out.push(i18n::fmt(
+                "The {basemap} basemap's terms don't allow exported images, so the offline basemap is used.",
+                &[("basemap", r.name)],
+            ));
         }
         if !self.basemap.export_terms.is_empty() {
             out.push(self.basemap.export_terms.to_string());
         }
         if self.drawn.as_ref().is_some_and(|d| d.tiles_missing) {
-            out.push("Some of the background couldn't be loaded, so the image shows less detail.".into());
+            out.push(tl!("Some of the background couldn't be loaded, so the image shows less detail.").into());
         }
         out
     }
@@ -486,26 +489,30 @@ pub fn rule_text(plan: &ex::Plan) -> String {
     } else {
         100.0
     };
-    let across = format!("about {} km across", lm_core::model::group_thousands(((km / round).round() * round).max(1.0) as u64));
+    let km_text = i18n::count(((km / round).round() * round).max(1.0) as u64);
     if km <= ex::ARROW_MAX_KM {
-        format!("{across}: a north arrow and a scale bar.")
+        i18n::fmt("about {km} km across: a north arrow and a scale bar.", &[("km", &km_text)])
     } else if km <= ex::LABELS_ONLY_KM && plan.auto.scale_bar {
-        format!("{across}: latitude and longitude on the frame, and a scale bar.")
+        i18n::fmt("about {km} km across: latitude and longitude on the frame, and a scale bar.", &[("km", &km_text)])
     } else if km <= ex::LABELS_ONLY_KM {
-        format!(
-            "{across} and {:.0}° tall: latitude and longitude on the frame. No scale bar, as distances stretch with latitude.",
-            plan.lat_span
+        i18n::fmt(
+            "about {km} km across and {degrees}° tall: latitude and longitude on the frame. No scale bar, as distances stretch with latitude.",
+            &[("km", &km_text), ("degrees", &format!("{:.0}", plan.lat_span))],
         )
     } else {
-        format!("{across}: latitude and longitude on the frame. Distances vary too much for one scale bar.")
+        i18n::fmt(
+            "about {km} km across: latitude and longitude on the frame. Distances vary too much for one scale bar.",
+            &[("km", &km_text)],
+        )
     }
 }
 
-/// A labelled choice in the settings column: the label, then a segmented control.
+/// A labelled choice in the settings column: the label, then a segmented control. `label` is
+/// English (it is also the control's id) and is translated where drawn.
 fn choice(ui: &mut Ui, t: &Theme, label: &str, selected: usize, labels: &[&str]) -> Option<usize> {
     ui.horizontal(|ui| {
         let (r, _) = ui.allocate_exact_size(vec2(104.0, form::ROW_H), Sense::hover());
-        ui.painter().text(r.left_center(), Align2::LEFT_CENTER, label, theme::regular(BODY), t.text_secondary);
+        ui.painter().text(r.left_center(), Align2::LEFT_CENTER, tl!(label), theme::regular(BODY), t.text_secondary);
         let w = ui.available_width();
         ui.push_id(label, |ui| form::segmented(ui, t, selected, labels, w)).inner
     })
@@ -531,8 +538,13 @@ pub fn auto_caption(shell: &Shell) -> String {
             if file.is_empty() || file == l.display_name { l.display_name.clone() } else { format!("{} ({file})", l.display_name) }
         })
         .collect();
+    // The caption is drawn into the image, in the interface's language.
     let app = lm_core::brand::NAME;
-    if parts.is_empty() { format!("Made with {app}.") } else { format!("Data: {}. Made with {app}.", parts.join("; ")) }
+    if parts.is_empty() {
+        i18n::fmt("Made with {app}.", &[("app", app)])
+    } else {
+        i18n::fmt("Data: {sources}. Made with {app}.", &[("sources", &parts.join("; ")), ("app", app)])
+    }
 }
 
 /// A legend swatch for a layer's colour as the map draws it: areas translucent with a darker
@@ -588,7 +600,7 @@ pub fn legend_blocks(shell: &Shell, ids: &[LayerId]) -> Vec<LegendBlock> {
                 title,
                 entries: vec![
                     Entry::Ramp { stops: ramp_stops(&l.style.ramp), low: n(lo), high: n(hi) },
-                    Entry::Item { swatch: Swatch::NoData, label: "No data".into() },
+                    Entry::Item { swatch: Swatch::NoData, label: tl!("No data").into() },
                 ],
             });
             continue;
@@ -619,9 +631,10 @@ pub fn legend_blocks(shell: &Shell, ids: &[LayerId]) -> Vec<LegendBlock> {
                 LegendItem::Size { diameter, label } => {
                     Entry::Item { swatch: swatch_for(l, l.style.fill, None, Some(*diameter)), label: label.clone() }
                 }
-                LegendItem::NoData { count } => {
-                    Entry::Item { swatch: Swatch::NoData, label: format!("No data ({})", lm_core::model::group_thousands(*count)) }
-                }
+                LegendItem::NoData { count } => Entry::Item {
+                    swatch: Swatch::NoData,
+                    label: i18n::fmt("No data ({n})", &[("n", &lm_core::model::group_thousands(*count))]),
+                },
             })
             .collect();
         out.push(LegendBlock { title, entries });
@@ -663,12 +676,12 @@ pub fn sheet(shell: &mut Shell, ui: &mut Ui, full: Rect) {
 
     let mut side_ui = ui.new_child(egui::UiBuilder::new().max_rect(side.shrink2(vec2(theme::PANEL_PADDING + 4.0, 20.0))));
     let ui = &mut side_ui;
-    ui.label(RichText::new("Export map image").font(theme::semibold(theme::TITLE)));
+    ui.label(RichText::new(tl!("Export map image")).font(theme::semibold(theme::TITLE)));
     ui.add_space(12.0);
     let buttons_h = 44.0;
     let body_h = ui.available_height() - buttons_h;
     egui::ScrollArea::vertical().max_height(body_h).auto_shrink([false, true]).show(ui, |ui| {
-        form::heading(ui, "Size");
+        form::heading(ui, tl!("Size"));
         let sel = Preset::ALL.iter().position(|p| *p == s.preset).unwrap_or(0);
         let labels: Vec<&str> = Preset::ALL.iter().map(|p| p.label()).collect();
         if let Some(k) = form::segmented(ui, &t, sel, &labels, ui.available_width())
@@ -678,47 +691,47 @@ pub fn sheet(shell: &mut Shell, ui: &mut Ui, full: Rect) {
             s.legend_at = None;
         }
         let fmt = if s.format == Format::Pdf { 1 } else { 0 };
-        if let Some(k) = choice(ui, &t, "Format", fmt, &["PNG", "PDF"]) {
+        if let Some(k) = choice(ui, &t, tn!("Format"), fmt, &["PNG", "PDF"]) {
             s.format = if k == 0 { Format::Png } else { Format::Pdf };
         }
         ui.label(RichText::new(s.size_line()).size(CAPTION).color(t.text_secondary));
         form::divider(ui, &t);
         map_settings(ui, &t, &mut s);
         form::divider(ui, &t);
-        form::heading(ui, "Title");
-        ui.add(egui::TextEdit::singleline(&mut s.title).hint_text("Add a title (optional)").desired_width(f32::INFINITY));
+        form::heading(ui, tl!("Title"));
+        ui.add(egui::TextEdit::singleline(&mut s.title).hint_text(tl!("Add a title (optional)")).desired_width(f32::INFINITY));
         ui.add_space(8.0);
-        form::heading(ui, "Caption");
+        form::heading(ui, tl!("Caption"));
         let before = s.caption.clone();
         let caption = ui.add(egui::TextEdit::multiline(&mut s.caption).desired_rows(3).desired_width(f32::INFINITY));
-        crate::a11y::label(&caption, "Caption");
+        crate::a11y::label(&caption, tl!("Caption"));
         if s.caption != before {
             s.caption_edited = true;
         }
         if s.caption_edited {
-            if ui.link("Use the caption made from the layers").clicked() {
+            if ui.link(tl!("Use the caption made from the layers")).clicked() {
                 s.caption_edited = false;
                 s.caption = auto_caption(shell);
             }
         } else {
-            ui.label(RichText::new("Made from the layers; edit it if you like.").size(CAPTION).color(t.text_secondary));
+            ui.label(RichText::new(tl!("Made from the layers; edit it if you like.")).size(CAPTION).color(t.text_secondary));
         }
         form::divider(ui, &t);
-        form::heading(ui, "Legend");
+        form::heading(ui, tl!("Legend"));
         if s.legend.is_empty() {
-            ui.label(RichText::new("No layers are shown.").color(t.text_secondary));
+            ui.label(RichText::new(tl!("No layers are shown.")).color(t.text_secondary));
         }
         for (id, on) in s.legend.iter_mut() {
             let name = shell.ws.doc.layer(*id).map_or_else(String::new, |l| l.display_name.clone());
             form::checkbox(ui, &t, on, &name);
         }
-        let hint = if s.legend_at.is_some() { None } else { Some("It places itself clear of the data; drag it to move it.") };
+        let hint = if s.legend_at.is_some() { None } else { Some(tl!("It places itself clear of the data; drag it to move it.")) };
         match hint {
             Some(h) => {
                 ui.label(RichText::new(h).size(CAPTION).color(t.text_secondary));
             }
             None => {
-                if ui.link("Place the legend automatically").clicked() {
+                if ui.link(tl!("Place the legend automatically")).clicked() {
                     s.legend_at = None;
                 }
             }
@@ -736,7 +749,9 @@ pub fn sheet(shell: &mut Shell, ui: &mut Ui, full: Rect) {
             ui.label(RichText::new(icon::INFO).font(theme::icon_font(16.0)).color(t.text_secondary));
             ui.add(
                 egui::Label::new(
-                    RichText::new(format!("Credits are always included: {}", s.attribution())).size(CAPTION).color(t.text_secondary),
+                    RichText::new(i18n::fmt("Credits are always included: {credits}", &[("credits", &s.attribution())]))
+                        .size(CAPTION)
+                        .color(t.text_secondary),
                 )
                 .wrap(),
             );
@@ -749,25 +764,25 @@ pub fn sheet(shell: &mut Shell, ui: &mut Ui, full: Rect) {
     );
     let mut row_ui = ui.new_child(egui::UiBuilder::new().max_rect(row).layout(egui::Layout::right_to_left(egui::Align::Center)));
     let ready = !s.busy();
-    let save_btn = egui::Button::new(RichText::new("Save…").color(t.on_accent)).fill(t.accent).min_size(vec2(88.0, 30.0));
-    if row_ui.add_enabled(ready, save_btn).on_disabled_hover_text("Drawing the map at full size…").clicked() {
+    let save_btn = egui::Button::new(RichText::new(tl!("Save…")).color(t.on_accent)).fill(t.accent).min_size(vec2(88.0, 30.0));
+    if row_ui.add_enabled(ready, save_btn).on_disabled_hover_text(tl!("Drawing the map at full size…")).clicked() {
         save = true;
     }
-    if row_ui.add(egui::Button::new("Cancel").min_size(vec2(80.0, 30.0))).clicked() {
+    if row_ui.add(egui::Button::new(tl!("Cancel")).min_size(vec2(80.0, 30.0))).clicked() {
         close = true;
     }
     if save {
         match s.file(shell) {
             Some(Ok(bytes)) => {
-                let name = if s.title.trim().is_empty() { "Map".to_string() } else { s.title.trim().replace(['/', ':', '\\'], "-") };
+                let name = if s.title.trim().is_empty() { tl!("Map").to_string() } else { s.title.trim().replace(['/', ':', '\\'], "-") };
                 shell.push_file_request(FileRequest::SaveBytes {
-                    title: "Export map image".into(),
+                    title: tl!("Export map image").into(),
                     suggested_name: format!("{name} ({}).{}", s.preset.file_suffix(), s.format.extension()),
                     bytes,
                 });
                 close = true;
             }
-            Some(Err(e)) => shell.set_notice(format!("The image couldn't be made: {e}"), ctx.input(|i| i.time)),
+            Some(Err(e)) => shell.set_notice(i18n::fmt("The image couldn't be made: {error}", &[("error", &e)]), ctx.input(|i| i.time)),
             None => {}
         }
     }
@@ -781,19 +796,21 @@ pub fn sheet(shell: &mut Shell, ui: &mut Ui, full: Rect) {
 
 /// The Map group: what frames the map, and its furniture (Auto, On or Off each).
 fn map_settings(ui: &mut Ui, t: &Theme, s: &mut ImageSheet) {
-    form::heading(ui, "Map");
+    form::heading(ui, tl!("Map"));
     let fit = if s.fit == Fit::Data { 0 } else { 1 };
-    if let Some(k) = choice(ui, t, "Show", fit, &["Fit to data", "Current view"]) {
+    if let Some(k) = choice(ui, t, tn!("Show"), fit, &[tl!("Fit to data"), tl!("Current view")]) {
         s.fit = if k == 0 { Fit::Data } else { Fit::View };
     }
     if s.fit == Fit::Data && !s.has_data() {
-        ui.label(RichText::new("No layers are shown, so the map shows the current view.").size(CAPTION).color(t.text_secondary));
+        ui.label(RichText::new(tl!("No layers are shown, so the map shows the current view.")).size(CAPTION).color(t.text_secondary));
     }
     ui.add_space(4.0);
-    let labels: Vec<&str> = ex::Show::ALL.iter().map(|v| v.label()).collect();
+    let labels: Vec<&str> = ex::Show::ALL.iter().map(|v| show_label(*v)).collect();
     let pick = |v: ex::Show| ex::Show::ALL.iter().position(|x| *x == v).unwrap_or(0);
     let o = &mut s.overrides;
-    for (name, v) in [("North arrow", &mut o.north_arrow), ("Scale bar", &mut o.scale_bar), ("Lat/lon labels", &mut o.labels)] {
+    for (name, v) in
+        [(tn!("North arrow"), &mut o.north_arrow), (tn!("Scale bar"), &mut o.scale_bar), (tn!("Lat/lon labels"), &mut o.labels)]
+    {
         if let Some(k) = choice(ui, t, name, pick(*v), &labels) {
             *v = ex::Show::ALL[k];
         }
@@ -801,10 +818,22 @@ fn map_settings(ui: &mut Ui, t: &Theme, s: &mut ImageSheet) {
     let plan = s.plan();
     ui.horizontal(|ui| {
         ui.add_space(104.0 + ui.spacing().item_spacing.x);
-        ui.add_enabled_ui(plan.furniture.labels, |ui| form::checkbox(ui, t, &mut s.grid, "Grid lines"));
+        ui.add_enabled_ui(plan.furniture.labels, |ui| form::checkbox(ui, t, &mut s.grid, tl!("Grid lines")));
     });
     ui.add_space(2.0);
-    ui.add(egui::Label::new(RichText::new(format!("Auto: {}", rule_text(&plan))).size(CAPTION).color(t.text_secondary)).wrap());
+    ui.add(
+        egui::Label::new(RichText::new(i18n::fmt("Auto: {rules}", &[("rules", &rule_text(&plan))])).size(CAPTION).color(t.text_secondary))
+            .wrap(),
+    );
+}
+
+/// Auto, On or Off as the segmented control shows them (`ex::Show::label` is English).
+fn show_label(v: ex::Show) -> &'static str {
+    match v {
+        ex::Show::Auto => tl!("Auto"),
+        ex::Show::On => tl!("On"),
+        ex::Show::Off => tl!("Off"),
+    }
 }
 
 /// The preview: the sheet drawn at a smaller scale, fitted into `canvas`; the legend can be
@@ -840,7 +869,7 @@ fn preview(shell: &Shell, s: &mut ImageSheet, ui: &mut Ui, canvas: Rect, t: &The
             let k = img.width() / (w as f32 / s.preset.ppp());
             let r = Rect::from_min_size(img.min + vec2(a.x * k, a.y * k), vec2(a.w * k, a.h * k));
             let resp = ui.interact(r, egui::Id::new("lm-export-legend"), Sense::drag()).on_hover_cursor(egui::CursorIcon::Grab);
-            crate::a11y::name(&resp, egui::WidgetType::Other, "Legend: drag to move it");
+            crate::a11y::name(&resp, egui::WidgetType::Other, tl!("Legend: drag to move it"));
             if resp.dragged() {
                 let d = resp.drag_delta() / k;
                 s.legend_at = Some((a.x + d.x, a.y + d.y));
@@ -855,11 +884,11 @@ fn preview(shell: &Shell, s: &mut ImageSheet, ui: &mut Ui, canvas: Rect, t: &The
     if busy {
         let pill = Rect::from_center_size(img.center(), vec2(240.0, 36.0));
         p.rect_filled(pill, CornerRadius::same(18), t.surface.gamma_multiply(0.95));
-        p.text(pill.center(), Align2::CENTER_CENTER, "Drawing the map at full size…", theme::regular(BODY), t.text_primary);
+        p.text(pill.center(), Align2::CENTER_CENTER, tl!("Drawing the map at full size…"), theme::regular(BODY), t.text_primary);
     }
     let note = match s.format {
-        Format::Png => format!("{} · exactly as saved", s.preset.detail()),
-        Format::Pdf => format!("{} · exactly as saved", s.preset.paper()),
+        Format::Png => i18n::fmt("{size} · exactly as saved", &[("size", s.preset.detail())]),
+        Format::Pdf => i18n::fmt("{size} · exactly as saved", &[("size", &s.preset.paper())]),
     };
     p.text(pos2(img.center().x, img.bottom() + 16.0), Align2::CENTER_TOP, note, theme::regular(CAPTION), t.text_secondary);
 }

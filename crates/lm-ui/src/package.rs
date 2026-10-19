@@ -17,6 +17,7 @@ use std::sync::mpsc::Receiver;
 use egui::{RichText, Ui, vec2};
 use egui_phosphor::regular as icon;
 use lm_core::model::LayerId;
+use lm_core::{i18n, tl, tn};
 use lm_doc::package::{PackageOptions, PackageReport, Review};
 use lm_jobs::export::sensitive_fields;
 use lm_jobs::import::LayerData;
@@ -25,8 +26,8 @@ use crate::library::size_text;
 use crate::theme::{self, CAPTION, Theme};
 use crate::{FileRequest, Shell, form};
 
-/// "Unknown — check before sharing".
-pub const UNKNOWN_LICENSE: &str = "Unknown — check before sharing";
+/// "Unknown — check before sharing" (English; translated where drawn).
+pub const UNKNOWN_LICENSE: &str = tn!("Unknown — check before sharing");
 
 /// One source the package carries.
 #[derive(Clone, Debug, PartialEq)]
@@ -93,7 +94,8 @@ fn to_owned(d: &LayerData) -> lm_doc::OwnedData {
 }
 
 /// The licence of the source at `path`, when NimbleMap knows it: an example's, or a data
-/// library dataset's (from the catalog, when it has been read).
+/// library dataset's (from the catalog, when it has been read). The licence is written into the
+/// package, so it stays English.
 pub fn license_of(shell: &Shell, path: &Path) -> Option<String> {
     if let Some(l) = crate::examples::license_of(path) {
         return Some(l.to_string());
@@ -106,20 +108,21 @@ pub fn license_of(shell: &Shell, path: &Path) -> Option<String> {
     })
 }
 
-/// Why a field can't be left out of a layer: the style or the filter uses it.
+/// Why a field can't be left out of a layer: the style or the filter uses it (English; translated
+/// where drawn).
 fn used_by(l: &lm_core::document::DocLayer, field: &str) -> Option<&'static str> {
     let s = &l.style;
     if s.color_by.as_ref().is_some_and(|c| c.field == field) {
-        return Some("The map is colored by it");
+        return Some(tn!("The map is colored by it"));
     }
     if s.size_by.as_ref().is_some_and(|c| c.field == field) {
-        return Some("The map sizes points by it");
+        return Some(tn!("The map sizes points by it"));
     }
     if s.labels.as_ref().is_some_and(|c| c.field == field) {
-        return Some("The map labels by it");
+        return Some(tn!("The map labels by it"));
     }
     if l.filter.as_ref().is_some_and(|f| f.conditions.iter().any(|c| c.field == field)) {
-        return Some("The filter uses it");
+        return Some(tn!("The filter uses it"));
     }
     None
 }
@@ -177,22 +180,21 @@ impl PackageDialog {
         self.review = lm_doc::package::review(&shell.ws.doc, &owned, &self.options());
         let name = |id: &LayerId| shell.ws.doc.layer(*id).map_or_else(String::new, |l| l.display_name.clone());
         let dropped: Vec<LayerId> = self.dropped().iter().map(|(id, _)| *id).collect();
-        self.stored =
-            shell
-                .ws
-                .doc
-                .layers
-                .iter()
-                .rev()
-                .filter(|l| owned.contains(&l.id) || dropped.contains(&l.id))
-                .map(|l| {
-                    if dropped.contains(&l.id) {
-                        format!("{} (without the fields left out)", l.display_name)
-                    } else {
-                        l.display_name.clone()
-                    }
-                })
-                .collect();
+        self.stored = shell
+            .ws
+            .doc
+            .layers
+            .iter()
+            .rev()
+            .filter(|l| owned.contains(&l.id) || dropped.contains(&l.id))
+            .map(|l| {
+                if dropped.contains(&l.id) {
+                    i18n::fmt("{layer} (without the fields left out)", &[("layer", &l.display_name)])
+                } else {
+                    l.display_name.clone()
+                }
+            })
+            .collect();
         self.sources = self
             .review
             .sources
@@ -226,7 +228,7 @@ impl PackageDialog {
             if owned.iter().any(|(o, _)| *o == id) {
                 continue;
             }
-            let data = shell.ws.data(id).ok_or("A layer is still loading. Try again in a moment.")?;
+            let data = shell.ws.data(id).ok_or(tl!("A layer is still loading. Try again in a moment."))?;
             owned.push((id, to_owned(&data.data)));
         }
         let mut doc = shell.ws.doc.clone();
@@ -257,9 +259,9 @@ pub(crate) fn write_to(shell: &mut Shell, path: PathBuf, t: f64) {
     match spawned {
         Ok(_) => {
             shell.package_job = Some(PackageJob { path, rx });
-            shell.notice = Some(("Packaging the map and its data…".into(), t));
+            shell.notice = Some((tl!("Packaging the map and its data…").into(), t));
         }
-        Err(e) => shell.notice = Some((format!("The package couldn't be made: {e}"), t)),
+        Err(e) => shell.notice = Some((i18n::fmt("The package couldn't be made: {error}", &[("error", &e.to_string())]), t)),
     }
 }
 
@@ -269,22 +271,26 @@ pub(crate) fn poll(shell: &mut Shell, t: f64) {
     let r = match job.rx.try_recv() {
         Ok(r) => r,
         Err(std::sync::mpsc::TryRecvError::Empty) => return,
-        Err(std::sync::mpsc::TryRecvError::Disconnected) => Err("packaging stopped unexpectedly".into()),
+        Err(std::sync::mpsc::TryRecvError::Disconnected) => Err(tl!("packaging stopped unexpectedly").into()),
     };
     let name = job.path.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
     shell.package_job = None;
     let msg = match r {
-        Ok(rep) if !rep.missing.is_empty() => {
-            format!("Saved {name} ({}), without {}: it couldn't be found.", size_text(rep.bytes), rep.missing.join(", "))
-        }
+        Ok(rep) if !rep.missing.is_empty() => i18n::fmt(
+            "Saved {name} ({size}), without {missing}: it couldn't be found.",
+            &[("name", &name), ("size", &size_text(rep.bytes)), ("missing", &rep.missing.join(", "))],
+        ),
         Ok(rep) => match rep.save.skipped.first() {
             Some((id, why)) => {
                 let layer = shell.ws.doc.layer(*id).map_or_else(String::new, |l| l.display_name.clone());
-                format!("Saved {name}, but {layer} couldn't be kept in it ({why}).")
+                i18n::fmt("Saved {name}, but {layer} couldn't be kept in it ({why}).", &[("name", &name), ("layer", &layer), ("why", why)])
             }
-            None => format!("Saved {name} ({}): the map and its data, ready to share.", size_text(rep.bytes)),
+            None => i18n::fmt(
+                "Saved {name} ({size}): the map and its data, ready to share.",
+                &[("name", &name), ("size", &size_text(rep.bytes))],
+            ),
         },
-        Err(e) => format!("The package couldn't be made. {e}"),
+        Err(e) => i18n::fmt("The package couldn't be made. {error}", &[("error", &e)]),
     };
     shell.notice = Some((msg, t));
 }
@@ -298,9 +304,9 @@ pub fn dialog(shell: &mut Shell, ctx: &egui::Context) {
     let mut changed = false;
     let modal = egui::Modal::new(egui::Id::new("lm-package")).show(ctx, |ui| {
         ui.set_width(520.0);
-        ui.label(RichText::new("Share as a map package").font(theme::semibold(theme::TITLE)));
+        ui.label(RichText::new(tl!("Share as a map package")).font(theme::semibold(theme::TITLE)));
         ui.add_space(4.0);
-        ui.label(RichText::new("One file with the map and its data, so it opens on another computer.").color(t.text_secondary));
+        ui.label(RichText::new(tl!("One file with the map and its data, so it opens on another computer.")).color(t.text_secondary));
         ui.add_space(12.0);
         let max_h = (ctx.content_rect().height() - 220.0).max(200.0);
         egui::ScrollArea::vertical().max_height(max_h).auto_shrink([false, true]).show(ui, |ui| {
@@ -312,11 +318,11 @@ pub fn dialog(shell: &mut Shell, ctx: &egui::Context) {
             ui.add_space(6.0);
         }
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            let ok = egui::Button::new(RichText::new("Save Package…").color(t.on_accent)).fill(t.accent).min_size(vec2(112.0, 30.0));
+            let ok = egui::Button::new(RichText::new(tl!("Save Package…")).color(t.on_accent)).fill(t.accent).min_size(vec2(112.0, 30.0));
             if ui.add(ok).clicked() {
                 save = true;
             }
-            if ui.add(egui::Button::new("Cancel").min_size(vec2(80.0, 30.0))).clicked() {
+            if ui.add(egui::Button::new(tl!("Cancel")).min_size(vec2(80.0, 30.0))).clicked() {
                 close = true;
             }
         });
@@ -330,7 +336,7 @@ pub fn dialog(shell: &mut Shell, ctx: &egui::Context) {
     if save {
         match d.inputs(shell) {
             Ok(inputs) => {
-                let suggested_name = format!("{} (package).{}", inputs.name, lm_doc::EXTENSION);
+                let suggested_name = format!("{}.{}", i18n::fmt("{name} (package)", &[("name", &inputs.name)]), lm_doc::EXTENSION);
                 shell.package_inputs = Some(inputs);
                 shell.push_file_request(FileRequest::SavePackage { suggested_name });
                 close = true;
@@ -346,17 +352,17 @@ pub fn dialog(shell: &mut Shell, ctx: &egui::Context) {
 /// The dialog's body; true when a field choice changed.
 fn body(ui: &mut Ui, t: &Theme, d: &mut PackageDialog) -> bool {
     let mut changed = false;
-    form::row(ui, t, "Size", |ui| ui.label(RichText::new(format!("About {}", size_text(d.estimate()))).strong()));
+    form::row(ui, t, tl!("Size"), |ui| ui.label(RichText::new(i18n::fmt("About {size}", &[("size", &size_text(d.estimate()))])).strong()));
     form::indented(ui, |ui| {
-        ui.label(RichText::new("Before compression; text files shrink a lot in the package.").size(CAPTION).color(t.text_secondary))
+        ui.label(RichText::new(tl!("Before compression; text files shrink a lot in the package.")).size(CAPTION).color(t.text_secondary))
     });
     form::divider(ui, t);
-    form::heading(ui, "Data it includes");
+    form::heading(ui, tl!("Data it includes"));
     if d.sources.is_empty() {
-        ui.label(RichText::new("No source files: the map's layers are all stored in it already.").color(t.text_secondary));
+        ui.label(RichText::new(tl!("No source files: the map's layers are all stored in it already.")).color(t.text_secondary));
     }
     if !d.stored.is_empty() {
-        let text = format!("Stored in the package itself: {}.", d.stored.join(", "));
+        let text = i18n::fmt("Stored in the package itself: {layers}.", &[("layers", &d.stored.join(", "))]);
         ui.add(egui::Label::new(RichText::new(text).size(CAPTION).color(t.text_secondary)).wrap());
         ui.add_space(4.0);
     }
@@ -368,28 +374,34 @@ fn body(ui: &mut Ui, t: &Theme, d: &mut PackageDialog) -> bool {
             ui.vertical(|ui| {
                 ui.horizontal(|ui| {
                     ui.label(RichText::new(&s.file).strong());
-                    let size = if s.missing { "can't be found, so it's left out".to_string() } else { size_text(s.size) };
+                    let size = if s.missing { tl!("can't be found, so it's left out").to_string() } else { size_text(s.size) };
                     ui.label(RichText::new(size).size(CAPTION).color(t.text_secondary));
                 });
                 let layers = s.layers.join(", ");
-                ui.label(RichText::new(format!("Layers: {layers}")).size(CAPTION).color(t.text_secondary));
+                ui.label(RichText::new(i18n::fmt("Layers: {layers}", &[("layers", &layers)])).size(CAPTION).color(t.text_secondary));
                 match &s.license {
-                    Some(l) => ui.label(RichText::new(format!("Licence: {l}")).size(CAPTION).color(t.text_secondary)),
-                    None => ui.label(RichText::new(format!("Licence: {UNKNOWN_LICENSE}")).size(CAPTION).color(t.assumption)),
+                    Some(l) => {
+                        ui.label(RichText::new(i18n::fmt("Licence: {licence}", &[("licence", l)])).size(CAPTION).color(t.text_secondary))
+                    }
+                    None => ui.label(
+                        RichText::new(i18n::fmt("Licence: {licence}", &[("licence", tl!(UNKNOWN_LICENSE))]))
+                            .size(CAPTION)
+                            .color(t.assumption),
+                    ),
                 };
             });
         });
         ui.add_space(4.0);
     }
     form::divider(ui, t);
-    form::heading(ui, "Folder paths");
+    form::heading(ui, tl!("Folder paths"));
     let paths: Vec<&lm_doc::package::Stripped> = d.review.stripped.iter().collect();
     if paths.is_empty() {
-        ui.label(RichText::new("The map names no folders on this computer.").color(t.text_secondary));
+        ui.label(RichText::new(tl!("The map names no folders on this computer.")).color(t.text_secondary));
     } else {
         ui.add(
             egui::Label::new(
-                RichText::new("Paths name your account and folders, so they are left out; files keep only their names.")
+                RichText::new(tl!("Paths name your account and folders, so they are left out; files keep only their names."))
                     .color(t.text_secondary),
             )
             .wrap(),
@@ -398,28 +410,32 @@ fn body(ui: &mut Ui, t: &Theme, d: &mut PackageDialog) -> bool {
             ui.add(egui::Label::new(RichText::new(format!("{}  →  {}", p.from, p.to)).size(CAPTION).color(t.text_secondary)).truncate());
         }
         if paths.len() > 8 {
-            ui.label(RichText::new(format!("and {} more", paths.len() - 8)).size(CAPTION).color(t.text_secondary));
+            ui.label(
+                RichText::new(i18n::fmt("and {n} more", &[("n", &(paths.len() - 8).to_string())])).size(CAPTION).color(t.text_secondary),
+            );
         }
     }
     form::divider(ui, t);
-    form::heading(ui, "Fields that look personal");
+    form::heading(ui, tl!("Fields that look personal"));
     if d.fields.is_empty() {
-        ui.label(RichText::new("None found: no names, emails, phone or ID numbers.").color(t.text_secondary));
+        ui.label(RichText::new(tl!("None found: no names, emails, phone or ID numbers.")).color(t.text_secondary));
     } else {
         ui.add(
-            egui::Label::new(RichText::new("Checked fields are left out of the package. Your own map keeps them.").color(t.text_secondary))
-                .wrap(),
+            egui::Label::new(
+                RichText::new(tl!("Checked fields are left out of the package. Your own map keeps them.")).color(t.text_secondary),
+            )
+            .wrap(),
         );
         for f in d.fields.iter_mut() {
             ui.horizontal(|ui| {
-                let label = format!("Leave out {} ({})", f.field, f.layer_name);
+                let label = i18n::fmt("Leave out {field} ({layer})", &[("field", &f.field), ("layer", &f.layer_name)]);
                 ui.add_enabled_ui(f.locked.is_none(), |ui| {
                     if form::checkbox(ui, t, &mut f.drop, &label).changed() {
                         changed = true;
                     }
                 });
                 let note = match f.locked {
-                    Some(why) => format!("{}. {why}, so it stays.", f.note),
+                    Some(why) => i18n::fmt("{note}. {why}, so it stays.", &[("note", f.note), ("why", tl!(why))]),
                     None => f.note.to_string(),
                 };
                 ui.label(RichText::new(note).size(CAPTION).color(t.assumption));

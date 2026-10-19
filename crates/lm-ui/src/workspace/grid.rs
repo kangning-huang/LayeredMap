@@ -7,6 +7,7 @@ use std::sync::Arc;
 use lm_core::document::{DocLayer, Op};
 use lm_core::grid::GridProfile;
 use lm_core::model::{LayerId, LayerProfile};
+use lm_core::{i18n, tl};
 use lm_jobs::import::{ImportedLayer, LayerData, netcdf};
 
 use super::Workspace;
@@ -85,16 +86,16 @@ impl Workspace {
     /// undo step changes the layer's variable, colour range and (when the new variable has fewer
     /// steps) its time step.
     pub fn choose_variable(&mut self, id: LayerId, variable: &str, level: usize) -> Result<(), String> {
-        let Some(l) = self.doc.layer(id).cloned() else { return Err("That layer is gone.".into()) };
-        let Some(g) = &l.profile.grid else { return Err("This layer has no variables to choose from.".into()) };
+        let Some(l) = self.doc.layer(id).cloned() else { return Err(tl!("That layer is gone.").into()) };
+        let Some(g) = &l.profile.grid else { return Err(tl!("This layer has no variables to choose from.").into()) };
         if g.variable == variable && g.level == level {
             return Ok(());
         }
         let Some(v) = g.variables.iter().find(|v| v.name == variable) else {
-            return Err(format!("{} has no variable {variable}.", l.display_name));
+            return Err(i18n::fmt("{layer} has no variable {variable}.", &[("layer", &l.display_name), ("variable", variable)]));
         };
         self.not_busy(id, &l.display_name)?;
-        let data = self.data(id).cloned().ok_or("This layer's data isn't loaded.")?;
+        let data = self.data(id).cloned().ok_or(tl!("This layer's data isn't loaded."))?;
         let label = if g.variable == variable {
             format!("Show {} of {}", v.level_label(level), l.display_name)
         } else {

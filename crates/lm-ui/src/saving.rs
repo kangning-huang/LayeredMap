@@ -12,6 +12,7 @@ use egui_phosphor::regular as icon;
 use lm_core::document::{DocLayer, Document, Transaction};
 use lm_core::model::{LayerId, SourceRef};
 use lm_core::recipe::ResultRecord;
+use lm_core::{i18n, tl, tn};
 use lm_jobs::import::LayerData;
 
 use crate::theme::{self, CAPTION, Theme};
@@ -61,20 +62,20 @@ pub struct RelinkAsk {
     pub layer: LayerId,
     /// The chosen file's fingerprint.
     pub source: SourceRef,
-    /// "its size changed".
+    /// "its size changed" (English; translated where drawn).
     pub reason: &'static str,
 }
 
 impl RelinkAsk {
     pub fn question(&self) -> String {
-        format!("This file looks different ({}). Use it anyway?", self.reason)
+        i18n::fmt("This file looks different ({reason}). Use it anyway?", &[("reason", tl!(self.reason))])
     }
 }
 
 impl DocFile {
     /// "Heat study", or "Untitled" before the first save.
     pub fn name(&self) -> String {
-        self.path.as_deref().and_then(|p| p.file_stem()).map_or_else(|| "Untitled".to_string(), |s| s.to_string_lossy().to_string())
+        self.path.as_deref().and_then(|p| p.file_stem()).map_or_else(|| tl!("Untitled").to_string(), |s| s.to_string_lossy().to_string())
     }
 
     /// Whether the document has changes its file doesn't have.
@@ -86,12 +87,12 @@ impl DocFile {
 /// Why a chosen file doesn't match a source's fingerprint, if it doesn't.
 pub fn mismatch(old: &SourceRef, new: &SourceRef) -> Option<&'static str> {
     if old.size != new.size {
-        return Some("its size changed");
+        return Some(tn!("its size changed"));
     }
     match (&old.sha256, &new.sha256) {
-        (Some(a), Some(b)) if !a.eq_ignore_ascii_case(b) => Some("its contents changed"),
+        (Some(a), Some(b)) if !a.eq_ignore_ascii_case(b) => Some(tn!("its contents changed")),
         (Some(_), Some(_)) => None,
-        _ if old.mtime != new.mtime => Some("its modification date changed"),
+        _ if old.mtime != new.mtime => Some(tn!("its modification date changed")),
         _ => None,
     }
 }
@@ -140,6 +141,7 @@ impl Workspace {
         if ops.is_empty() {
             return false;
         }
+        // The undo label stays English, like the document's other transaction labels.
         let tx = Transaction::new(format!("Relink {}", fresh.file_name()), ops);
         let _ = self.doc.apply(&tx.inverse());
         if !self.commit(Some(tx)) {
@@ -258,7 +260,8 @@ pub(crate) fn save_to(shell: &mut Shell, path: PathBuf, t: f64) {
             }
             if let Some((id, why)) = report.skipped.first() {
                 let name = shell.ws.doc.layer(*id).map_or_else(String::new, |l| l.display_name.clone());
-                shell.notice = Some((format!("Saved, but {name} couldn't be kept in the map file ({why})."), t));
+                shell.notice =
+                    Some((i18n::fmt("Saved, but {name} couldn't be kept in the map file ({why}).", &[("name", &name), ("why", why)]), t));
             }
             if shell.doc_file.close_after_save {
                 shell.doc_file.close_ok = true;
@@ -333,7 +336,7 @@ pub(crate) fn answer_recovery(shell: &mut Shell, ctx: &egui::Context, restore: b
                 shell.doc_file.restored = true;
                 shell.doc_file.edited = true;
             }
-            Err(e) => shell.notice = Some((format!("The autosaved map could not be restored. {e}"), t)),
+            Err(e) => shell.notice = Some((i18n::fmt("The autosaved map could not be restored. {error}", &[("error", &e.to_string())]), t)),
         }
     }
     if let Some(j) = &mut shell.doc_file.journal
@@ -373,8 +376,12 @@ pub(crate) fn answer_relink(shell: &mut Shell, yes: bool, t: f64) {
     if shell.ws.relink(&old, &ask.source) {
         let n = shell.ws.doc.results.iter().filter(|r| shell.ws.result_status(r).is_some()).count();
         if n > 0 {
-            let what = if n == 1 { "1 result".to_string() } else { format!("{n} results") };
-            shell.notice = Some((format!("Using {}. {what} made from the old file now say Source changed.", ask.source.file_name()), t));
+            let template = if n == 1 {
+                tn!("Using {file}. 1 result made from the old file now say Source changed.")
+            } else {
+                tn!("Using {file}. {n} results made from the old file now say Source changed.")
+            };
+            shell.notice = Some((i18n::fmt(template, &[("file", ask.source.file_name()), ("n", &n.to_string())]), t));
         }
     }
 }
@@ -520,13 +527,13 @@ pub(crate) fn recovery_prompt(shell: &mut Shell, ui: &Ui, map: egui::Rect) {
             ui.add(egui::Label::new(RichText::new(&text).font(theme::semibold(theme::BODY))).wrap());
         });
         ui.add_space(4.0);
-        ui.label(RichText::new("Your own file has not been changed.").size(CAPTION).color(t.text_secondary));
+        ui.label(RichText::new(tl!("Your own file has not been changed.")).size(CAPTION).color(t.text_secondary));
         ui.add_space(8.0);
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            if accent_button(ui, &t, "Restore").clicked() {
+            if accent_button(ui, &t, tl!("Restore")).clicked() {
                 answer = Some(true);
             }
-            if ui.button("Discard").clicked() {
+            if ui.button(tl!("Discard")).clicked() {
                 answer = Some(false);
             }
         });
@@ -544,21 +551,21 @@ pub(crate) fn close_prompt(shell: &mut Shell, ui: &Ui, map: egui::Rect) {
         return;
     }
     let t = *shell.theme();
-    let text = format!("Do you want to save the changes you made to '{}'?", shell.doc_file.name());
+    let text = i18n::fmt("Do you want to save the changes you made to '{name}'?", &[("name", &shell.doc_file.name())]);
     let answer = prompt(ui, &t, "lm-close", map, |ui| {
         let mut answer = None;
         ui.add(egui::Label::new(RichText::new(&text).font(theme::semibold(theme::BODY))).wrap());
-        ui.label(RichText::new("Your changes will be lost if you don't save them.").size(CAPTION).color(t.text_secondary));
+        ui.label(RichText::new(tl!("Your changes will be lost if you don't save them.")).size(CAPTION).color(t.text_secondary));
         ui.add_space(8.0);
         ui.horizontal(|ui| {
-            if ui.button("Don't Save").clicked() {
+            if ui.button(tl!("Don't Save")).clicked() {
                 answer = Some(0);
             }
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                if accent_button(ui, &t, "Save").clicked() {
+                if accent_button(ui, &t, tl!("Save")).clicked() {
                     answer = Some(2);
                 }
-                if ui.button("Cancel").clicked() {
+                if ui.button(tl!("Cancel")).clicked() {
                     answer = Some(1);
                 }
             });
@@ -619,18 +626,18 @@ pub(crate) fn missing_card(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLay
             ui.add_space(4.0);
             ui.horizontal(|ui| match &ask {
                 Some(_) => {
-                    if accent_button(ui, t, "Use It").clicked() {
+                    if accent_button(ui, t, tl!("Use It")).clicked() {
                         action = Some(2);
                     }
-                    if ui.button("Cancel").clicked() {
+                    if ui.button(tl!("Cancel")).clicked() {
                         action = Some(3);
                     }
                 }
                 None => {
-                    if accent_button(ui, t, "Locate…").clicked() {
+                    if accent_button(ui, t, tl!("Locate…")).clicked() {
                         action = Some(0);
                     }
-                    if ui.button("Remove layer").clicked() {
+                    if ui.button(tl!("Remove layer")).clicked() {
                         action = Some(1);
                     }
                 }

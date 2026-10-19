@@ -6,6 +6,7 @@ use egui::{Color32, CornerRadius, RichText, Sense, Stroke, Ui, vec2};
 use lm_core::document::{Classes, ColorBy, DocLayer, LabelStyle, SizeBy, Style};
 use lm_core::model::{FieldRole, LayerId, LayerKind};
 use lm_core::palette;
+use lm_core::{i18n, tl, tn};
 use lm_jobs::import::LayerData;
 use lm_jobs::inspect::{self as data, LegendItem};
 
@@ -31,8 +32,7 @@ pub(crate) fn dataset(shell: &Shell, id: LayerId) -> Option<std::sync::Arc<lm_jo
 pub fn object_header(shell: &Shell, l: &DocLayer, row: usize) -> (String, String) {
     let Some(ds) = dataset(shell, l.id) else { return (l.display_name.clone(), String::new()) };
     let title = data::object_title(l, &ds, row);
-    let (noun, _) = l.profile.kind.nouns();
-    let mut sub = format!("{} · {noun}", l.display_name);
+    let mut sub = format!("{} · {}", l.display_name, noun(l.profile.kind));
     if let Some(m) = data::measure_text(&ds, row, shell.prefs.units == crate::Units::Imperial) {
         sub.push_str(" · ");
         sub.push_str(&m);
@@ -40,10 +40,38 @@ pub fn object_header(shell: &Shell, l: &DocLayer, row: usize) -> (String, String
     (title, sub)
 }
 
+/// The kind of thing one feature of a layer is ("area"), for the card's subtitle.
+fn noun(kind: LayerKind) -> &'static str {
+    match kind {
+        LayerKind::Points => tl!("point"),
+        LayerKind::Lines => tl!("line"),
+        LayerKind::Areas => tl!("area"),
+        LayerKind::Raster => tl!("cell"),
+        LayerKind::Table => tl!("row"),
+    }
+}
+
+/// "1,248 points": a count of a layer's features, one whole phrase per kind and number.
+pub(crate) fn count_text(kind: LayerKind, n: u64) -> String {
+    let template = match (kind, n == 1) {
+        (LayerKind::Points, true) => tn!("{n} point"),
+        (LayerKind::Points, false) => tn!("{n} points"),
+        (LayerKind::Lines, true) => tn!("{n} line"),
+        (LayerKind::Lines, false) => tn!("{n} lines"),
+        (LayerKind::Areas, true) => tn!("{n} area"),
+        (LayerKind::Areas, false) => tn!("{n} areas"),
+        (LayerKind::Raster, true) => tn!("{n} cell"),
+        (LayerKind::Raster, false) => tn!("{n} cells"),
+        (LayerKind::Table, true) => tn!("{n} row"),
+        (LayerKind::Table, false) => tn!("{n} rows"),
+    };
+    i18n::fmt(template, &[("n", &i18n::count(n))])
+}
+
 /// The body of an object card: insight strip, facts, suggested actions, footer.
 pub fn object_body(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer, row: usize) {
     let Some(ds) = dataset(shell, l.id) else {
-        ui.label(RichText::new("The data is still loading.").color(t.text_secondary));
+        ui.label(RichText::new(tl!("The data is still loading.")).color(t.text_secondary));
         return;
     };
     let shown = crate::insight::strip(shell, ui, t, l, &ds, row);
@@ -62,28 +90,28 @@ pub fn object_body(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer, row:
             match &f.value {
                 Some(v) => {
                     let unit = f.unit.as_deref().map(|u| format!(" {u}")).unwrap_or_default();
-                    ui.add(egui::Label::new(format!("{v}{unit}")).wrap());
+                    ui.add(egui::Label::new(format!("{v}{unit}")).wrap()); // i18n: a value and its unit (data)
                 }
                 None => {
-                    ui.label(RichText::new("No value").color(t.text_secondary));
+                    ui.label(RichText::new(tl!("No value")).color(t.text_secondary));
                 }
             }
             ui.end_row();
         }
     });
-    if !all && total > facts.len() && ui.link(format!("Show all {total} fields")).clicked() {
+    if !all && total > facts.len() && ui.link(i18n::fmt("Show all {n} fields", &[("n", &i18n::number(&total.to_string()))])).clicked() {
         ui.data_mut(|d| d.insert_temp(key, true));
-    } else if all && ui.link("Show fewer fields").clicked() {
+    } else if all && ui.link(tl!("Show fewer fields")).clicked() {
         ui.data_mut(|d| d.insert_temp(key, false));
     }
     crate::insight::actions(shell, ui, t, l, Some(row));
     ui.add_space(8.0);
     ui.horizontal(|ui| {
-        if ui.link("View in table").clicked() {
+        if ui.link(tl!("View in table")).clicked() {
             shell.table_for = Some(l.id);
         }
         ui.label(RichText::new("·").color(t.text_secondary));
-        if ui.link("Zoom to").clicked()
+        if ui.link(tl!("Zoom to")).clicked()
             && let Some(e) = data::row_extent(&ds, row)
         {
             shell.zoom_to = Some(e);
@@ -105,8 +133,7 @@ pub fn legend(shell: &Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
         ui.horizontal(|ui| {
             swatch(ui, l.profile.kind, l.style.key_color(l.profile.kind), 7.0);
             let count = shell.ws.derived(l.id).map_or(l.profile.count, |d| d.shown as u64);
-            let (one, many) = l.profile.kind.nouns();
-            ui.label(format!("{} {}", lm_core::model::group_thousands(count), if count == 1 { one } else { many }));
+            ui.label(count_text(l.profile.kind, count));
         });
         return;
     };
@@ -142,13 +169,13 @@ pub fn legend(shell: &Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
             LegendItem::NoData { count } => {
                 ui.horizontal(|ui| {
                     no_data_swatch(ui);
-                    ui.label(format!("No data ({})", lm_core::model::group_thousands(*count)));
+                    ui.label(i18n::fmt("No data ({n})", &[("n", &i18n::count(*count))]));
                 });
             }
         }
     }
     if c.legend.fitted_to_view {
-        ui.label(RichText::new("◉ Range fitted to the view").size(CAPTION).color(t.accent));
+        ui.label(RichText::new(tl!("◉ Range fitted to the view")).size(CAPTION).color(t.accent));
     }
 }
 
@@ -160,26 +187,35 @@ fn raster_legend(shell: &Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
         // A grid names its variable, level and date (WP6.12).
         ui.label(RichText::new(g.caption(shell.ws.shown_time(l.id))).size(CAPTION).color(t.text_secondary));
     } else if let Some(b) = band {
-        let u = unit.as_deref().map(|u| format!(" ({u})")).unwrap_or_default();
-        ui.label(RichText::new(format!("Band {}{u}", b.index)).size(CAPTION).color(t.text_secondary));
+        let n = b.index.to_string();
+        let text = match unit.as_deref() {
+            Some(u) => i18n::fmt("Band {n} ({unit})", &[("n", &n), ("unit", u)]),
+            None => i18n::fmt("Band {n}", &[("n", &n)]),
+        };
+        ui.label(RichText::new(text).size(CAPTION).color(t.text_secondary));
     }
     ramp(ui, &l.style.ramp, 200.0);
     ui.horizontal(|ui| {
         ui.set_width(200.0);
-        ui.label(RichText::new(data::number_text(lo)).size(CAPTION));
+        ui.label(RichText::new(i18n::number(&data::number_text(lo))).size(CAPTION));
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            ui.label(RichText::new(data::number_text(hi)).size(CAPTION));
+            ui.label(RichText::new(i18n::number(&data::number_text(hi))).size(CAPTION));
         });
     });
     if let Some(a) = l.style.above {
-        ui.label(RichText::new(format!("Showing only values above {}", data::number_text(a))).size(CAPTION).color(t.accent));
+        ui.label(
+            RichText::new(i18n::fmt("Showing only values above {v}", &[("v", &i18n::number(&data::number_text(a)))]))
+                .size(CAPTION)
+                .color(t.accent),
+        );
     }
     if let Some((a, b)) = l.style.like {
-        ui.label(RichText::new(format!("Highlighting {} to {}", data::number_text(a), data::number_text(b))).size(CAPTION).color(t.accent));
+        let (a, b) = (i18n::number(&data::number_text(a)), i18n::number(&data::number_text(b)));
+        ui.label(RichText::new(i18n::fmt("Highlighting {low} to {high}", &[("low", &a), ("high", &b)])).size(CAPTION).color(t.accent));
     }
     ui.horizontal(|ui| {
         no_data_swatch(ui);
-        ui.label("No data");
+        ui.label(tl!("No data"));
     });
 }
 
@@ -281,12 +317,12 @@ fn style_form(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
     let mut s = l.style.clone();
     // Color.
     let current = s.color_by.as_ref().map(|c| c.field.clone());
-    form::row(ui, t, "Color", |ui| {
+    form::row(ui, t, tl!("Color"), |ui| {
         egui::ComboBox::from_id_salt(("lm-color-by", id.0))
-            .selected_text(current.clone().unwrap_or_else(|| "One color".into()))
+            .selected_text(current.clone().unwrap_or_else(|| tl!("One color").into()))
             .width(ui.available_width())
             .show_ui(ui, |ui| {
-                if ui.selectable_label(current.is_none(), "One color").clicked() {
+                if ui.selectable_label(current.is_none(), tl!("One color")).clicked() {
                     s.color_by = None;
                 }
                 for f in measures.iter().chain(&categories) {
@@ -310,7 +346,7 @@ fn style_form(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
         form::indented(ui, |ui| {
             ui.spacing_mut().item_spacing.x = 2.0;
             for (c, name) in lm_core::document::OKABE_ITO.iter().zip(SWATCH_NAMES) {
-                if form::swatch_button(ui, t, color(*c), s.fill == *c, name).clicked() {
+                if form::swatch_button(ui, t, color(*c), s.fill == *c, tl!(name)).clicked() {
                     s.fill = *c;
                     s.stroke = match l.profile.kind {
                         LayerKind::Areas => lm_core::document::darker(*c),
@@ -324,20 +360,20 @@ fn style_form(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
     if let Some(cb) = s.color_by.as_mut().filter(|c| !c.categories) {
         form::indented(ui, |ui| {
             let smooth = cb.classes == Classes::Smooth;
-            match form::segmented(ui, t, usize::from(!smooth), &["Smooth", "Groups"], ui.available_width()) {
+            match form::segmented(ui, t, usize::from(!smooth), &[tl!("Smooth"), tl!("Groups")], ui.available_width()) {
                 Some(0) => cb.classes = Classes::Smooth,
                 Some(_) => cb.classes = Classes::Groups { count: 5, equal_steps: false },
                 None => {}
             }
         });
         ui.add_space(2.0);
-        form::row(ui, t, "Palette", |ui| {
+        form::row(ui, t, tl!("Palette"), |ui| {
             if let Some(p) = palette_tiles(ui, t, &cb.palette) {
                 cb.palette = p.into();
             }
         });
         if let Classes::Groups { count, equal_steps } = &mut cb.classes {
-            form::row(ui, t, "Groups", |ui| {
+            form::row(ui, t, tl!("Groups"), |ui| {
                 let mut n = *count;
                 egui::ComboBox::from_id_salt(("lm-class-count", id.0)).width(48.0).selected_text(n.to_string()).show_ui(ui, |ui| {
                     for k in 2..=7u8 {
@@ -345,12 +381,14 @@ fn style_form(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
                     }
                 });
                 *count = n;
-                if let Some(k) = form::segmented(ui, t, usize::from(*equal_steps), &["Equal counts", "Equal steps"], ui.available_width()) {
+                if let Some(k) =
+                    form::segmented(ui, t, usize::from(*equal_steps), &[tl!("Equal counts"), tl!("Equal steps")], ui.available_width())
+                {
                     *equal_steps = k == 1;
                 }
             });
         }
-        form::indented(ui, |ui| form::checkbox(ui, t, &mut cb.fit_to_view, "Fit range to view"));
+        form::indented(ui, |ui| form::checkbox(ui, t, &mut cb.fit_to_view, tl!("Fit range to view")));
     }
     // The count guard.
     if data::count_guard(l) {
@@ -358,8 +396,8 @@ fn style_form(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
         ui.horizontal_wrapped(|ui| {
             let (r, _) = ui.allocate_exact_size(vec2(3.0, 32.0), Sense::hover());
             ui.painter().rect_filled(r, 0.0, t.assumption);
-            ui.label("Larger areas tend to have higher counts.");
-            if ui.link("Color by count per km² instead?").clicked()
+            ui.label(tl!("Larger areas tend to have higher counts."));
+            if ui.link(tl!("Color by count per km² instead?")).clicked()
                 && let Some(cb) = s.color_by.as_mut()
             {
                 cb.per_km2 = true;
@@ -368,8 +406,10 @@ fn style_form(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
     }
     if let Some(cb) = s.color_by.as_mut().filter(|c| c.per_km2) {
         form::indented(ui, |ui| {
-            ui.label(RichText::new(format!("{} per km² (geodesic area)", cb.field)).size(CAPTION).color(t.text_secondary));
-            if ui.small_button("Use totals").clicked() {
+            ui.label(
+                RichText::new(i18n::fmt("{field} per km² (geodesic area)", &[("field", &cb.field)])).size(CAPTION).color(t.text_secondary),
+            );
+            if ui.small_button(tl!("Use totals")).clicked() {
                 cb.per_km2 = false;
             }
         });
@@ -377,12 +417,12 @@ fn style_form(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
     // Size (points).
     if l.profile.kind == LayerKind::Points && !measures.is_empty() {
         let current = s.size_by.as_ref().map(|c| c.field.clone());
-        form::row(ui, t, "Size", |ui| {
+        form::row(ui, t, tl!("Size"), |ui| {
             egui::ComboBox::from_id_salt(("lm-size-by", id.0))
-                .selected_text(current.clone().unwrap_or_else(|| "Same size".into()))
+                .selected_text(current.clone().unwrap_or_else(|| tl!("Same size").into()))
                 .width(ui.available_width())
                 .show_ui(ui, |ui| {
-                    if ui.selectable_label(current.is_none(), "Same size").clicked() {
+                    if ui.selectable_label(current.is_none(), tl!("Same size")).clicked() {
                         s.size_by = None;
                     }
                     for f in &measures {
@@ -400,12 +440,12 @@ fn style_form(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
     let texts = fields_with(l, |r| matches!(r, FieldRole::Name | FieldRole::Text | FieldRole::Category | FieldRole::Identifier));
     if !texts.is_empty() {
         let current = s.labels.as_ref().map(|c| c.field.clone());
-        form::row(ui, t, "Labels", |ui| {
+        form::row(ui, t, tl!("Labels"), |ui| {
             egui::ComboBox::from_id_salt(("lm-labels", id.0))
-                .selected_text(current.clone().unwrap_or_else(|| "Off".into()))
+                .selected_text(current.clone().unwrap_or_else(|| tl!("Off").into()))
                 .width(ui.available_width())
                 .show_ui(ui, |ui| {
-                    if ui.selectable_label(current.is_none(), "Off").clicked() {
+                    if ui.selectable_label(current.is_none(), tl!("Off")).clicked() {
                         s.labels = None;
                     }
                     for f in &texts {
@@ -423,7 +463,7 @@ fn style_form(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
     // Appearance: opacity (one undo step per drag) and outline or width.
     let before = l.style.clone();
     let mut opacity = s.opacity;
-    let resp = form::row(ui, t, "Opacity", |ui| {
+    let resp = form::row(ui, t, tl!("Opacity"), |ui| {
         form::slider(ui, t, egui::Slider::new(&mut opacity, 0.0..=1.0).custom_formatter(|v, _| format!("{:.0}%", v * 100.0)))
     });
     if resp.changed() && (opacity - before.opacity).abs() > f32::EPSILON {
@@ -438,7 +478,7 @@ fn style_form(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
     }
     if l.profile.kind != LayerKind::Lines {
         let mut outline = s.stroke_width > 0.0;
-        if form::indented(ui, |ui| form::checkbox(ui, t, &mut outline, "Outline")).changed() {
+        if form::indented(ui, |ui| form::checkbox(ui, t, &mut outline, tl!("Outline"))).changed() {
             s.stroke_width = if outline {
                 match l.profile.kind {
                     LayerKind::Points => 1.5,
@@ -449,10 +489,10 @@ fn style_form(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
             };
         }
     } else {
-        form::row(ui, t, "Width", |ui| form::slider(ui, t, egui::Slider::new(&mut s.line_width, 1.0..=8.0).suffix(" px")));
+        form::row(ui, t, tl!("Width"), |ui| form::slider(ui, t, egui::Slider::new(&mut s.line_width, 1.0..=8.0).suffix(" px")));
     }
     form::divider(ui, t);
-    form::heading(ui, "Legend");
+    form::heading(ui, tl!("Legend"));
     legend(shell, ui, t, l);
     if s != l.style {
         set_style(shell, id, s);
@@ -460,7 +500,16 @@ fn style_form(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
 }
 
 /// Names of the single-colour swatches (Okabe–Ito), for tooltips and screen readers.
-const SWATCH_NAMES: [&str; 8] = ["Blue", "Orange", "Bluish green", "Vermilion", "Reddish purple", "Sky blue", "Yellow", "Black"];
+const SWATCH_NAMES: [&str; 8] = [
+    tn!("Blue"),
+    tn!("Orange"),
+    tn!("Bluish green"),
+    tn!("Vermilion"),
+    tn!("Reddish purple"),
+    tn!("Sky blue"),
+    tn!("Yellow"),
+    tn!("Black"),
+];
 
 /// The sequential palettes as tiles (ramp and name); returns the one clicked.
 fn palette_tiles(ui: &mut Ui, t: &Theme, current: &str) -> Option<&'static str> {
@@ -533,6 +582,7 @@ fn preset_thumb(ui: &mut Ui, t: &Theme, l: &DocLayer, s: &Style, name: &str, on:
     }
     if s.labels.is_some() {
         let at = tile.center_bottom() - vec2(0.0, 4.0);
+        // Sample letters standing for labels (not words, so not translated).
         let galley = p.layout_no_wrap("Abc".into(), theme::semibold(10.0), t.text_primary);
         let bg = egui::Rect::from_center_size(at - vec2(0.0, galley.size().y / 2.0), galley.size() + vec2(6.0, 0.0));
         p.rect_filled(bg, CornerRadius::same(3), t.surface.gamma_multiply(0.85));
@@ -550,22 +600,27 @@ fn raster_style(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
     ui.add_space(4.0);
     if l.profile.bands.len() > 1 {
         let cur = s.band.max(1);
-        form::row(ui, t, "Band", |ui| {
-            egui::ComboBox::from_id_salt(("lm-band", id.0)).width(ui.available_width()).selected_text(format!("Band {cur}")).show_ui(
-                ui,
-                |ui| {
+        form::row(ui, t, tl!("Band"), |ui| {
+            egui::ComboBox::from_id_salt(("lm-band", id.0))
+                .width(ui.available_width())
+                .selected_text(i18n::fmt("Band {n}", &[("n", &cur.to_string())]))
+                .show_ui(ui, |ui| {
                     for b in &l.profile.bands {
-                        let label = if b.name.is_empty() { format!("Band {}", b.index) } else { format!("Band {} ({})", b.index, b.name) };
+                        let n = b.index.to_string();
+                        let label = if b.name.is_empty() {
+                            i18n::fmt("Band {n}", &[("n", &n)])
+                        } else {
+                            i18n::fmt("Band {n} ({name})", &[("n", &n), ("name", &b.name)])
+                        };
                         if ui.selectable_label(cur == b.index, label).clicked() {
                             s.band = b.index;
                             s.stretch = None;
                         }
                     }
-                },
-            );
+                });
         });
     }
-    form::row(ui, t, "Palette", |ui| {
+    form::row(ui, t, tl!("Palette"), |ui| {
         if let Some(p) = palette_tiles(ui, t, &s.ramp) {
             s.ramp = p.into();
         }
@@ -575,8 +630,8 @@ fn raster_style(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
     if let Some((flo, fhi)) = full {
         let mut a = lo;
         let mut b = hi;
-        let r1 = form::row(ui, t, "From", |ui| form::slider(ui, t, egui::Slider::new(&mut a, flo..=fhi)));
-        let r2 = form::row(ui, t, "To", |ui| form::slider(ui, t, egui::Slider::new(&mut b, flo..=fhi)));
+        let r1 = form::row(ui, t, tl!("From"), |ui| form::slider(ui, t, egui::Slider::new(&mut a, flo..=fhi)));
+        let r2 = form::row(ui, t, tl!("To"), |ui| form::slider(ui, t, egui::Slider::new(&mut b, flo..=fhi)));
         if (r1.changed() || r2.changed()) && a < b {
             let mut g = l.style.clone();
             g.stretch = Some((a, b));
@@ -592,33 +647,39 @@ fn raster_style(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
             // change in value; reset goes back to the range of the sampled steps.
             Some(g) => {
                 let default = lm_jobs::import::netcdf::default_stretch(&l.profile);
-                let steps = if g.sampled == 1 { "the time step".to_string() } else { format!("{} time steps", g.sampled) };
+                let n = i18n::number(&g.sampled.to_string());
+                let one = g.sampled == 1;
                 if s.stretch != default && default.is_some() {
-                    if ui.link(format!("Reset to the middle 96% of {steps}")).clicked() {
+                    let reset = if one {
+                        tl!("Reset to the middle 96% of the time step").to_string()
+                    } else {
+                        i18n::fmt("Reset to the middle 96% of {n} time steps", &[("n", &n)])
+                    };
+                    if ui.link(reset).clicked() {
                         s.stretch = default;
                     }
                 } else {
-                    let what = if g.has_time() {
-                        format!("Same for every time step: the middle 96% of {steps}")
-                    } else {
-                        "Covers the middle 96% of cells".into()
+                    let what = match (g.has_time(), one) {
+                        (true, true) => tl!("Same for every time step: the middle 96% of the time step").to_string(),
+                        (true, false) => i18n::fmt("Same for every time step: the middle 96% of {n} time steps", &[("n", &n)]),
+                        (false, _) => tl!("Covers the middle 96% of cells").to_string(),
                     };
                     ui.label(RichText::new(what).size(CAPTION).color(t.text_secondary));
                 }
             }
             None => {
                 if s.stretch.is_some() {
-                    if ui.link("Reset to the middle 96% of cells").clicked() {
+                    if ui.link(tl!("Reset to the middle 96% of cells")).clicked() {
                         s.stretch = None;
                     }
                 } else {
-                    ui.label(RichText::new("Covers the middle 96% of cells").size(CAPTION).color(t.text_secondary));
+                    ui.label(RichText::new(tl!("Covers the middle 96% of cells")).size(CAPTION).color(t.text_secondary));
                 }
             }
         });
         // Show only values above…
         let mut on = s.above.is_some();
-        if form::indented(ui, |ui| form::checkbox(ui, t, &mut on, "Only show values above")).changed() {
+        if form::indented(ui, |ui| form::checkbox(ui, t, &mut on, tl!("Only show values above"))).changed() {
             s.above = on.then_some((lo + hi) / 2.0);
         }
         if let Some(mut v) = s.above
@@ -631,16 +692,17 @@ fn raster_style(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
             return;
         }
     } else {
-        form::row(ui, t, "Range", |ui| {
-            ui.label(RichText::new(format!("{} to {}", data::number_text(lo), data::number_text(hi))).color(t.text_secondary))
+        form::row(ui, t, tl!("Range"), |ui| {
+            let (lo, hi) = (i18n::number(&data::number_text(lo)), i18n::number(&data::number_text(hi)));
+            ui.label(RichText::new(i18n::fmt("{low} to {high}", &[("low", &lo), ("high", &hi)])).color(t.text_secondary))
         });
     }
-    if s.like.is_some() && form::indented(ui, |ui| ui.link("Stop highlighting")).clicked() {
+    if s.like.is_some() && form::indented(ui, |ui| ui.link(tl!("Stop highlighting"))).clicked() {
         s.like = None;
     }
     form::divider(ui, t);
     let mut opacity = s.opacity;
-    let resp = form::row(ui, t, "Opacity", |ui| {
+    let resp = form::row(ui, t, tl!("Opacity"), |ui| {
         form::slider(ui, t, egui::Slider::new(&mut opacity, 0.0..=1.0).custom_formatter(|v, _| format!("{:.0}%", v * 100.0)))
     });
     if resp.changed() {
@@ -654,7 +716,7 @@ fn raster_style(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
         shell.ws.end_gesture();
     }
     form::divider(ui, t);
-    form::heading(ui, "Legend");
+    form::heading(ui, tl!("Legend"));
     legend(shell, ui, t, l);
     if s != l.style {
         set_style(shell, id, s);

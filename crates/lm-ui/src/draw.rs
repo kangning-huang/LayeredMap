@@ -5,6 +5,8 @@
 
 use egui::{Align2, Color32, CornerRadius, Pos2, Rect, Stroke, StrokeKind, Ui, pos2, vec2};
 
+use lm_core::tl;
+
 use crate::Shell;
 use crate::theme::{self, PANEL_MARGIN};
 
@@ -67,7 +69,8 @@ impl Drawing {
     }
 }
 
-/// The next free "Area N" name.
+/// The next free "Area N" name. A layer name is data, saved with the document, so it isn't
+/// translated.
 pub fn next_name(existing: impl Iterator<Item = String>) -> String {
     let used: Vec<u32> = existing.filter_map(|n| n.strip_prefix("Area ").and_then(|k| k.parse().ok())).collect();
     let n = (1..).find(|k| !used.contains(k)).unwrap_or(1);
@@ -145,8 +148,8 @@ fn paint(shell: &Shell, ui: &Ui, t: &theme::Theme, map_rect: Rect, d: &Drawing) 
     }
     // The banner.
     let text = match d.mode {
-        Mode::Polygon => "Drawing — click to add points, double-click to finish, Esc to cancel",
-        Mode::Rectangle => "Drawing — drag a rectangle, Esc to cancel",
+        Mode::Polygon => tl!("Drawing — click to add points, double-click to finish, Esc to cancel"),
+        Mode::Rectangle => tl!("Drawing — drag a rectangle, Esc to cancel"),
     };
     let fg = ui.ctx().layer_painter(egui::LayerId::new(egui::Order::Foreground, egui::Id::new("lm-drawing-banner")));
     let galley = fg.layout_no_wrap(text.to_string(), theme::regular(theme::BODY), t.on_accent);

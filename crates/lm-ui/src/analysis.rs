@@ -10,8 +10,9 @@ use egui::{RichText, Ui, vec2};
 
 use lm_actions::Suggested;
 use lm_core::document::DocLayer;
-use lm_core::model::{LayerId, LayerKind, group_thousands};
+use lm_core::model::{LayerId, LayerKind};
 use lm_core::recipe::{Answer, ResultCard};
+use lm_core::{i18n, tl, tn};
 use lm_jobs::actions::{ActionError, ActionOutput, ActionResult, Plan, number};
 use lm_jobs::jobs::{ActionKind, InputSummary};
 
@@ -72,7 +73,7 @@ fn companion_kinds(action: &str, main: LayerKind) -> Vec<LayerKind> {
 /// the estimate is under a second.
 pub fn open(shell: &mut Shell, main: LayerId, row: Option<usize>, a: &Suggested) {
     if !lm_jobs::actions::ACTIONS.contains(&a.action_id.as_str()) {
-        shell.notice = Some((format!("“{}” isn't connected yet.", a.label), 0.0));
+        shell.notice = Some((i18n::fmt("“{action}” isn't connected yet.", &[("action", &a.label)]), 0.0));
         return;
     }
     let Some(l) = shell.ws.doc.layer(main).cloned() else { return };
@@ -128,7 +129,9 @@ pub fn area_drawn(shell: &mut Shell, area: LayerId) {
     shell.ws.selection = lm_core::selection::SelectionContext::object(lm_core::selection::FeatureRef { layer: area, row: 0 });
     let a = Suggested {
         action_id: "summarize_drawn".into(),
-        label: lm_actions::registry().action("summarize_drawn").map_or_else(|| "Summarize in an area I draw".into(), |s| s.label.clone()),
+        label: lm_actions::registry()
+            .action("summarize_drawn")
+            .map_or_else(|| tl!("Summarize in an area I draw").to_string(), |s| tl!(&s.label).to_string()),
         group: lm_actions::Group::Measure,
         companion: Some(raster),
         field: None,
@@ -147,7 +150,7 @@ pub fn compose_by_id(shell: &mut Shell, action: &str, params: Vec<(String, Strin
     let found = s.top.iter().chain(s.more.iter().flat_map(|(_, v)| v.iter())).find(|a| a.action_id == action).cloned();
     let a = found.unwrap_or_else(|| Suggested {
         action_id: action.to_string(),
-        label: lm_actions::registry().action(action).map_or_else(|| action.to_string(), |s| s.label.clone()),
+        label: lm_actions::registry().action(action).map_or_else(|| action.to_string(), |s| tl!(&s.label).to_string()),
         group: lm_actions::registry().action(action).map_or(lm_actions::Group::Measure, |s| s.group),
         companion: None,
         field: None,
@@ -171,21 +174,18 @@ fn first_numeric_field(l: &DocLayer) -> Option<String> {
 
 /// The plan for the composer as it stands, or what is missing.
 fn plan(shell: &Shell, c: &Composer) -> Result<Plan, String> {
-    let main = shell.ws.doc.layer(c.main).ok_or("The layer was removed.")?;
+    let main = shell.ws.doc.layer(c.main).ok_or(tl!("The layer was removed."))?;
     let kind = main.profile.kind;
     let rows_main = if c.selected_only && !c.selected_rows.is_empty() { Some(c.selected_rows.clone()) } else { None };
     let one = c.row.map(|r| vec![r]);
     let needs_companion = !companion_kinds(&c.action, kind).is_empty();
     let other = match (needs_companion, c.companion) {
         (true, Some(id)) => Some(id),
-        (true, None) => {
-            let words: Vec<&str> = companion_kinds(&c.action, kind).iter().map(|k| k.nouns().1).collect();
-            return Err(format!("Add a layer of {} to answer this.", words.join(" or ")));
-        }
+        (true, None) => return Err(missing_layer(&companion_kinds(&c.action, kind))),
         (false, _) => None,
     };
     let input =
-        |id: LayerId, rows: Option<Vec<usize>>| shell.ws.plan_input(id, rows).ok_or_else(|| "A layer is still loading.".to_string());
+        |id: LayerId, rows: Option<Vec<usize>>| shell.ws.plan_input(id, rows).ok_or_else(|| tl!("A layer is still loading.").to_string());
     let inputs = match c.action.as_str() {
         "count_in" => {
             let o = other.unwrap_or(c.main);
@@ -217,7 +217,7 @@ fn plan(shell: &Shell, c: &Composer) -> Result<Plan, String> {
             let mut items = Vec::new();
             for item in c.params.get("conditions").map(String::as_str).unwrap_or("").split(';').filter(|i| !i.trim().is_empty()) {
                 let mut parts: Vec<String> = item.split('|').map(str::to_string).collect();
-                let id = parts.first().and_then(|p| p.parse::<u64>().ok()).map(LayerId).ok_or("A condition names no raster.")?;
+                let id = parts.first().and_then(|p| p.parse::<u64>().ok()).map(LayerId).ok_or(tl!("A condition names no raster."))?;
                 let k = ids.iter().position(|x| *x == id).unwrap_or_else(|| {
                     ids.push(id);
                     ids.len() - 1
@@ -226,7 +226,7 @@ fn plan(shell: &Shell, c: &Composer) -> Result<Plan, String> {
                 items.push(parts.join("|"));
             }
             if items.is_empty() {
-                return Err("Add a condition.".into());
+                return Err(tl!("Add a condition.").into());
             }
             let mut v = Vec::new();
             for id in ids {
@@ -242,6 +242,35 @@ fn plan(shell: &Shell, c: &Composer) -> Result<Plan, String> {
         _ => vec![input(c.main, rows_main.clone().or(one.clone()))?],
     };
     finish_plan(c, inputs, c.params.clone())
+}
+
+/// What to add when the companion layer is missing: one whole sentence per set of kinds.
+fn missing_layer(kinds: &[LayerKind]) -> String {
+    use LayerKind::*;
+    match kinds {
+        [Points] => tl!("Add a layer of points to answer this.").to_string(),
+        [Lines] => tl!("Add a layer of lines to answer this.").to_string(),
+        [Areas] => tl!("Add a layer of areas to answer this.").to_string(),
+        [Raster] => tl!("Add a layer of cells to answer this.").to_string(),
+        [Points, Lines, Areas] => tl!("Add a layer of points or lines or areas to answer this.").to_string(),
+        // No action asks for another set today.
+        _ => {
+            let words: Vec<&str> = kinds.iter().map(|k| k.nouns().1).collect();
+            format!("Add a layer of {} to answer this.", words.join(" or "))
+        }
+    }
+}
+
+/// "All 1,248 points": the scope choice for every object of the layer.
+fn all_text(kind: LayerKind, n: u64) -> String {
+    let template = match kind {
+        LayerKind::Points => tn!("All {n} points"),
+        LayerKind::Lines => tn!("All {n} lines"),
+        LayerKind::Areas => tn!("All {n} areas"),
+        LayerKind::Raster => tn!("All {n} cells"),
+        LayerKind::Table => tn!("All {n} rows"),
+    };
+    i18n::fmt(template, &[("n", &i18n::count(n))])
 }
 
 fn finish_plan(c: &Composer, inputs: Vec<lm_jobs::actions::PlanInput>, params: BTreeMap<String, String>) -> Result<Plan, String> {
@@ -344,7 +373,9 @@ pub fn poll(shell: &mut Shell) {
         Err(e) => {
             c.result = None;
             c.error = Some(match e {
-                ActionError::Failed(m) => format!("The question could not be answered. Nothing was added to your map. ({m})"),
+                ActionError::Failed(m) => {
+                    i18n::fmt("The question could not be answered. Nothing was added to your map. ({reason})", &[("reason", &m)])
+                }
                 other => other.to_string(),
             });
         }
@@ -381,7 +412,7 @@ pub fn composer(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
     let Some(c) = shell.composer.as_ref() else { return };
     let kinds = companion_kinds(&c.action, l.profile.kind);
     let action = c.action.clone();
-    let caption = if shell.pro { "Analysis" } else { "Developer surface · assistant action" };
+    let caption = if shell.pro { tl!("Analysis") } else { tl!("Developer surface · assistant action") };
     ui.label(RichText::new(caption).size(CAPTION).color(t.text_secondary));
     ui.add_space(2.0);
     // The sentence with its tokens.
@@ -402,10 +433,10 @@ pub fn composer(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
             .map(|o| (o.id, o.display_name.clone()))
             .collect();
         let current =
-            c.companion.and_then(|id| choices.iter().find(|(i, _)| *i == id)).map_or("Choose a layer".to_string(), |(_, n)| n.clone());
+            c.companion.and_then(|id| choices.iter().find(|(i, _)| *i == id)).map_or(tl!("Choose a layer").to_string(), |(_, n)| n.clone());
         let mut pick = None;
         ui.horizontal(|ui| {
-            ui.label(RichText::new("With").color(t.text_secondary));
+            ui.label(RichText::new(tl!("With")).color(t.text_secondary));
             egui::ComboBox::from_id_salt("lm-composer-companion").selected_text(current).show_ui(ui, |ui| {
                 for (id, name) in &choices {
                     if ui.selectable_label(c.companion == Some(*id), name).clicked() {
@@ -428,12 +459,12 @@ pub fn composer(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
         let mut d = c.params.get("distance").cloned().unwrap_or_default();
         let mut merge = c.params.get("merge").map(String::as_str) != Some("no");
         ui.horizontal(|ui| {
-            ui.label(RichText::new("Distance").color(t.text_secondary));
+            ui.label(RichText::new(tl!("Distance")).color(t.text_secondary));
             if ui.add(egui::TextEdit::singleline(&mut d).desired_width(90.0)).changed() {
                 c.params.insert("distance".into(), d.clone());
                 changed = true;
             }
-            if ui.checkbox(&mut merge, "Merge overlaps").changed() {
+            if ui.checkbox(&mut merge, tl!("Merge overlaps")).changed() {
                 c.params.insert("merge".into(), if merge { "yes" } else { "no" }.into());
                 changed = true;
             }
@@ -448,12 +479,13 @@ pub fn composer(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
             .map(|f| f.name.clone())
             .collect();
         let Some(c) = shell.composer.as_mut() else { return };
-        let current = c.params.get("field").cloned().unwrap_or_else(|| "Choose a value".into());
+        let current = c.params.get("field").cloned();
+        let shown = current.clone().unwrap_or_else(|| tl!("Choose a value").into());
         ui.horizontal(|ui| {
-            ui.label(RichText::new("By").color(t.text_secondary));
-            egui::ComboBox::from_id_salt("lm-composer-field").selected_text(&current).show_ui(ui, |ui| {
+            ui.label(RichText::new(tl!("By")).color(t.text_secondary));
+            egui::ComboBox::from_id_salt("lm-composer-field").selected_text(&shown).show_ui(ui, |ui| {
                 for f in &fields {
-                    if ui.selectable_label(current == *f, f).clicked() {
+                    if ui.selectable_label(current.as_deref() == Some(f), f).clicked() {
                         c.params.insert("field".into(), f.clone());
                         changed = true;
                     }
@@ -483,14 +515,16 @@ pub fn composer(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
             .filter(|i| !i.trim().is_empty())
             .map(|i| i.split('|').map(str::to_string).collect())
             .collect();
-        let tests = [("at_least", "≥  at least"), ("at_most", "≤  at most"), ("between", "[ ]  between")];
+        let tests = [("at_least", tn!("≥  at least")), ("at_most", tn!("≤  at most")), ("between", tn!("[ ]  between"))];
         let mut remove = None;
         let mut edited = false;
         for (k, row) in rows.iter_mut().enumerate() {
             row.resize(4, String::new());
             ui.horizontal_wrapped(|ui| {
-                let name =
-                    rasters.iter().find(|(id, _)| id.0.to_string() == row[0]).map_or("Choose a raster".to_string(), |(_, n)| n.clone());
+                let name = rasters
+                    .iter()
+                    .find(|(id, _)| id.0.to_string() == row[0])
+                    .map_or(tl!("Choose a raster").to_string(), |(_, n)| n.clone());
                 egui::ComboBox::from_id_salt(("lm-where-raster", k)).selected_text(name).show_ui(ui, |ui| {
                     for (id, n) in &rasters {
                         if ui.selectable_label(id.0.to_string() == row[0], n).clicked() {
@@ -499,25 +533,25 @@ pub fn composer(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
                         }
                     }
                 });
-                let shown = tests.iter().find(|(t, _)| *t == row[1]).map_or("≥  at least", |(_, w)| *w);
-                egui::ComboBox::from_id_salt(("lm-where-test", k)).selected_text(shown).show_ui(ui, |ui| {
+                let shown = tests.iter().find(|(t, _)| *t == row[1]).map_or(tests[0].1, |(_, w)| *w);
+                egui::ComboBox::from_id_salt(("lm-where-test", k)).selected_text(tl!(shown)).show_ui(ui, |ui| {
                     for (t, w) in tests {
-                        if ui.selectable_label(row[1] == t, w).clicked() {
+                        if ui.selectable_label(row[1] == t, tl!(w)).clicked() {
                             row[1] = t.to_string();
                             edited = true;
                         }
                     }
                 });
-                if ui.add(egui::TextEdit::singleline(&mut row[2]).desired_width(64.0).hint_text("a number")).changed() {
+                if ui.add(egui::TextEdit::singleline(&mut row[2]).desired_width(64.0).hint_text(tl!("a number"))).changed() {
                     edited = true;
                 }
                 if row[1] == "between" {
-                    ui.label("and");
-                    if ui.add(egui::TextEdit::singleline(&mut row[3]).desired_width(64.0).hint_text("a number")).changed() {
+                    ui.label(tl!("and"));
+                    if ui.add(egui::TextEdit::singleline(&mut row[3]).desired_width(64.0).hint_text(tl!("a number"))).changed() {
                         edited = true;
                     }
                 }
-                if k > 0 && ui.small_button("×").on_hover_text("Remove this condition").clicked() {
+                if k > 0 && ui.small_button("×").on_hover_text(tl!("Remove this condition")).clicked() {
                     remove = Some(k);
                 }
             });
@@ -526,7 +560,7 @@ pub fn composer(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
             rows.remove(k);
             edited = true;
         }
-        if ui.link(RichText::new("+ Add condition").size(CAPTION)).clicked() {
+        if ui.link(RichText::new(tl!("+ Add condition")).size(CAPTION)).clicked() {
             let first = rasters.first().map(|(id, _)| id.0.to_string()).unwrap_or_default();
             rows.push(vec![first, "at_least".into(), String::new(), String::new()]);
             edited = true;
@@ -557,7 +591,7 @@ pub fn composer(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
         let mut b_now = c.params.get("b").cloned().unwrap_or_default();
         ui.horizontal_wrapped(|ui| {
             egui::ComboBox::from_id_salt("lm-composer-calc-a")
-                .selected_text(if a_now.is_empty() { "Choose a value".into() } else { a_now.clone() })
+                .selected_text(if a_now.is_empty() { tl!("Choose a value").into() } else { a_now.clone() })
                 .show_ui(ui, |ui| {
                     for f in &numeric {
                         if ui.selectable_label(a_now == *f, f).clicked() {
@@ -576,11 +610,11 @@ pub fn composer(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
                 }
             });
             // The second value: type a number, or pick a field.
-            if ui.add(egui::TextEdit::singleline(&mut b_now).desired_width(90.0).hint_text("a number")).changed() {
+            if ui.add(egui::TextEdit::singleline(&mut b_now).desired_width(90.0).hint_text(tl!("a number"))).changed() {
                 c.params.insert("b".into(), b_now.clone());
                 changed = true;
             }
-            ui.menu_button(RichText::new("or a field").size(CAPTION), |ui| {
+            ui.menu_button(RichText::new(tl!("or a field")).size(CAPTION), |ui| {
                 for f in &numeric {
                     if ui.button(f).clicked() {
                         c.params.insert("b".into(), f.clone());
@@ -628,7 +662,7 @@ pub fn composer(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
         let mut pick_field = None;
         let field_now = c.params.get("field").cloned();
         ui.horizontal(|ui| {
-            ui.label(RichText::new("Statistic").color(t.text_secondary));
+            ui.label(RichText::new(tl!("Statistic")).color(t.text_secondary));
             egui::ComboBox::from_id_salt("lm-composer-stat").selected_text(label(&current)).show_ui(ui, |ui| {
                 for (id, name) in stats {
                     // A statistic of values needs a numeric field on the points.
@@ -639,8 +673,8 @@ pub fn composer(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
                 }
             });
             if action == "count_in" && current != "count" {
-                ui.label(RichText::new("of").color(t.text_secondary));
-                let shown = field_now.clone().unwrap_or_else(|| "Choose a value".into());
+                ui.label(RichText::new(tl!("of")).color(t.text_secondary));
+                let shown = field_now.clone().unwrap_or_else(|| tl!("Choose a value").into());
                 egui::ComboBox::from_id_salt("lm-composer-stat-field").selected_text(shown).show_ui(ui, |ui| {
                     for f in &numeric {
                         if ui.selectable_label(field_now.as_deref() == Some(f), f).clicked() {
@@ -670,16 +704,18 @@ pub fn composer(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
     }
     // Scope line.
     if let Some(c) = shell.composer.as_mut() {
-        let (_, many) = l.profile.kind.nouns();
         let n = shell.ws.doc.layer(c.main).map_or(0, |l| l.profile.count);
         if c.selected_rows.len() > 1 {
             ui.horizontal(|ui| {
-                ui.label(RichText::new("Scope").color(t.text_secondary));
-                if ui.selectable_label(!c.selected_only, format!("All {} {many}", group_thousands(n))).clicked() {
+                ui.label(RichText::new(tl!("Scope")).color(t.text_secondary));
+                if ui.selectable_label(!c.selected_only, all_text(l.profile.kind, n)).clicked() {
                     c.selected_only = false;
                     changed = true;
                 }
-                if ui.selectable_label(c.selected_only, format!("{} selected", group_thousands(c.selected_rows.len() as u64))).clicked() {
+                if ui
+                    .selectable_label(c.selected_only, i18n::fmt("{n} selected", &[("n", &i18n::count(c.selected_rows.len() as u64))]))
+                    .clicked()
+                {
                     c.selected_only = true;
                     changed = true;
                 }
@@ -697,14 +733,17 @@ pub fn composer(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
         let p = shell.ws.plan_progress();
         ui.horizontal(|ui| {
             ui.spinner();
-            let words = p.map_or("Working…".to_string(), |p| match p.total {
-                Some(total) => format!("{}: {} of {}", p.phase, group_thousands(p.done), group_thousands(total)),
-                None => format!("{}…", p.phase),
+            let words = p.map_or(tl!("Working…").to_string(), |p| match p.total {
+                Some(total) => i18n::fmt(
+                    "{phase}: {done} of {total}",
+                    &[("phase", &p.phase), ("done", &i18n::count(p.done)), ("total", &i18n::count(total))],
+                ),
+                None => i18n::fmt("{phase}…", &[("phase", &p.phase)]),
             });
             ui.label(RichText::new(words).size(CAPTION).color(t.text_secondary));
         });
         // Esc never cancels a job; its own button does (spec › Keyboard).
-        if ui.button("Cancel").clicked() {
+        if ui.button(tl!("Cancel")).clicked() {
             shell.ws.cancel_plan();
             if let Some(c) = shell.composer.as_mut() {
                 c.generation = None;
@@ -721,15 +760,15 @@ pub fn composer(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
     if let Some(id) = c.kept {
         let record = shell.ws.doc.results.iter().find(|r| r.id == id).cloned();
         if let Some(r) = record {
-            ui.label(RichText::new("Kept").size(CAPTION).color(t.text_secondary));
+            ui.label(RichText::new(tl!("Kept")).size(CAPTION).color(t.text_secondary));
             crate::a11y::live(
                 ui.ctx(),
                 egui::Id::new("lm-result-live"),
-                &crate::a11y::spoken(&format!("Kept: {}. {}", r.card.title, r.card.summary)),
+                &crate::a11y::spoken(&i18n::fmt("Kept: {title}. {summary}", &[("title", &r.card.title), ("summary", &r.card.summary)])),
             );
             result_card(shell, ui, t, &r.card, &r.recipe.text(), Some(&r));
         }
-        if ui.button("Done").clicked() {
+        if ui.button(tl!("Done")).clicked() {
             close(shell);
         }
         return;
@@ -737,15 +776,19 @@ pub fn composer(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
     match c.result.clone() {
         Some(r) if !c.stale => {
             ui.label(RichText::new(&r.card.summary).font(semibold(BODY)));
-            crate::a11y::live(ui.ctx(), egui::Id::new("lm-result-live"), &crate::a11y::spoken(&format!("Preview: {}", r.card.summary)));
+            crate::a11y::live(
+                ui.ctx(),
+                egui::Id::new("lm-result-live"),
+                &crate::a11y::spoken(&i18n::fmt("Preview: {summary}", &[("summary", &r.card.summary)])),
+            );
             if shell.ws.has_preview() {
-                ui.label(RichText::new("Preview — not saved").size(CAPTION).color(t.accent));
+                ui.label(RichText::new(tl!("Preview — not saved")).size(CAPTION).color(t.accent));
             }
             ui.add_space(6.0);
             let mut keep_clicked = false;
             ui.horizontal(|ui| {
-                keep_clicked = ui.add(egui::Button::new(RichText::new("Keep result").color(t.on_accent)).fill(t.accent)).clicked();
-                if ui.button("Discard").clicked() {
+                keep_clicked = ui.add(egui::Button::new(RichText::new(tl!("Keep result")).color(t.on_accent)).fill(t.accent)).clicked();
+                if ui.button(tl!("Discard")).clicked() {
                     close(shell);
                 }
             });
@@ -758,15 +801,18 @@ pub fn composer(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
         }
         _ => {
             if c.stale {
-                ui.label(RichText::new("Preview out of date").size(CAPTION).color(t.warning));
+                ui.label(RichText::new(tl!("Preview out of date")).size(CAPTION).color(t.warning));
             }
             let enter = ui.input(|i| i.key_pressed(egui::Key::Enter));
             let mut preview = false;
             ui.horizontal(|ui| {
                 preview = ui
-                    .add_sized(vec2((w - 8.0) / 2.0, 30.0), egui::Button::new(RichText::new("Preview").color(t.on_accent)).fill(t.accent))
+                    .add_sized(
+                        vec2((w - 8.0) / 2.0, 30.0),
+                        egui::Button::new(RichText::new(tl!("Preview")).color(t.on_accent)).fill(t.accent),
+                    )
                     .clicked();
-                if ui.add_sized(vec2((w - 8.0) / 2.0, 30.0), egui::Button::new("Cancel")).clicked() {
+                if ui.add_sized(vec2((w - 8.0) / 2.0, 30.0), egui::Button::new(tl!("Cancel"))).clicked() {
                     close(shell);
                 }
             });
@@ -798,8 +844,13 @@ pub fn result_card(
             for (k, r) in rows.iter().take(if show_all { usize::MAX } else { 5 }).enumerate() {
                 let (rect, resp) = ui.allocate_exact_size(vec2(w, 22.0), egui::Sense::hover());
                 // Drawn, so read out as text: "1. Pudong: 34".
-                let value = r.value.map_or_else(|| "No data".to_string(), number);
-                crate::a11y::text(&resp, &crate::a11y::spoken(&format!("{}. {}: {value} {unit}", k + 1, r.label)));
+                let value = r.value.map_or_else(|| tl!("No data").to_string(), |v| i18n::number(&number(v)));
+                let rank = (k + 1).to_string();
+                let spoken = i18n::fmt(
+                    "{rank}. {label}: {value} {unit}",
+                    &[("rank", &rank), ("label", &r.label), ("value", &value), ("unit", unit)],
+                );
+                crate::a11y::text(&resp, &crate::a11y::spoken(&spoken));
                 let p = ui.painter();
                 let label_w = w * 0.42;
                 // The label is clipped to its column so it never runs into the bar.
@@ -820,7 +871,7 @@ pub fn result_card(
                         egui::pos2(bar.right() + 6.0, rect.center().y),
                         egui::Align2::LEFT_CENTER,
                         // A ranking by a year field reads "2013" (its unit is the field's name).
-                        if lm_core::format::is_year(unit, v) { lm_core::format::year(v) } else { number(v) },
+                        if lm_core::format::is_year(unit, v) { lm_core::format::year(v) } else { i18n::number(&number(v)) },
                         theme::regular(CAPTION),
                         t.text_secondary,
                     );
@@ -828,25 +879,29 @@ pub fn result_card(
                     p.text(
                         egui::pos2(rect.left() + label_w, rect.center().y),
                         egui::Align2::LEFT_CENTER,
-                        "No data",
+                        tl!("No data"),
                         theme::regular(CAPTION),
                         t.text_secondary,
                     );
                 }
             }
             if rows.len() > 5 {
-                let text = if show_all { "Show fewer".to_string() } else { format!("Show all {}", group_thousands(rows.len() as u64)) };
+                let text = if show_all {
+                    tl!("Show fewer").to_string()
+                } else {
+                    i18n::fmt("Show all {n}", &[("n", &i18n::count(rows.len() as u64))])
+                };
                 if ui.link(RichText::new(text).size(CAPTION)).clicked() {
                     ui.data_mut(|d| d.insert_temp(all_key, !show_all));
                 }
             }
             if !unit.is_empty() {
-                ui.label(RichText::new(format!("Values: {unit}")).size(CAPTION).color(t.text_secondary));
+                ui.label(RichText::new(i18n::fmt("Values: {unit}", &[("unit", unit)])).size(CAPTION).color(t.text_secondary));
             }
         }
         Answer::Number { value, unit, detail } => {
             ui.horizontal(|ui| {
-                ui.label(RichText::new(number(*value)).font(semibold(theme::BIG_NUMBER)));
+                ui.label(RichText::new(i18n::number(&number(*value))).font(semibold(theme::BIG_NUMBER)));
                 ui.label(RichText::new(unit).font(semibold(theme::HEADLINE)).color(t.text_secondary));
             });
             ui.label(RichText::new(detail).color(t.text_secondary));
@@ -874,11 +929,11 @@ pub fn result_card(
         }
     }
     ui.add_space(6.0);
-    egui::CollapsingHeader::new(RichText::new("How this was calculated").size(CAPTION)).id_salt(("lm-recipe", &card.title)).show(
+    egui::CollapsingHeader::new(RichText::new(tl!("How this was calculated")).size(CAPTION)).id_salt(("lm-recipe", &card.title)).show(
         ui,
         |ui| {
             ui.label(RichText::new(recipe).size(CAPTION).family(egui::FontFamily::Proportional));
-            if ui.small_button("Copy").clicked() {
+            if ui.small_button(tl!("Copy")).clicked() {
                 ui.ctx().copy_text(recipe.to_string());
             }
         },

@@ -10,6 +10,7 @@ use egui::{RichText, Ui, vec2};
 use lm_actions::{Context, FieldSummary, OpenLayer, Options, Selection, Suggested};
 use lm_core::document::DocLayer;
 use lm_core::model::LayerId;
+use lm_core::tl;
 
 use crate::Shell;
 use crate::theme::{BODY, CAPTION, Theme};
@@ -79,7 +80,7 @@ pub fn actions(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer, row: Opt
         ui.add_space(2.0);
     }
     if !more.is_empty() {
-        ui.menu_button(RichText::new("More actions…").color(t.accent), |ui| {
+        ui.menu_button(RichText::new(tl!("More actions…")).color(t.accent), |ui| {
             for a in &more {
                 if ui.button(&a.label).clicked() {
                     run = Some(a.clone());
@@ -173,7 +174,7 @@ fn first_measure(l: &DocLayer) -> Option<String> {
 /// Returns the fields shown.
 pub fn strip(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer, ds: &lm_jobs::import::Dataset, row: usize) -> Vec<String> {
     let Some(index) = shell.ws.layer_index(l.id) else {
-        ui.label(RichText::new("Working out how this compares…").size(CAPTION).color(t.text_secondary));
+        ui.label(RichText::new(tl!("Working out how this compares…")).size(CAPTION).color(t.text_secondary));
         return Vec::new();
     };
     let rows = lm_jobs::inspect::insight_rows(l, ds, &index, row, 3);

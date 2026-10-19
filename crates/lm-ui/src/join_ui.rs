@@ -9,7 +9,8 @@ use lm_core::model::LayerId;
 
 use crate::Shell;
 use crate::theme::{self, BODY, CAPTION, Theme};
-use lm_core::model::group_thousands;
+use lm_core::i18n;
+use lm_core::{tl, tn};
 
 fn card<R>(ui: &mut Ui, t: &Theme, add: impl FnOnce(&mut Ui) -> R) -> R {
     egui::Frame::new()
@@ -39,9 +40,12 @@ pub fn report(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
         ui.add(egui::Label::new(RichText::new(r.expected.line(l.profile.kind.nouns())).size(CAPTION).color(t.text_secondary)).wrap());
         // The table left the shelf's top level: say where it went.
         ui.label(
-            RichText::new(format!("{} now appears under {} in Layers.", r.table_name, l.display_name))
-                .size(CAPTION)
-                .color(t.text_secondary),
+            RichText::new(i18n::fmt(
+                "{table} now appears under {layer} in Layers.",
+                &[("table", &r.table_name), ("layer", &l.display_name)],
+            ))
+            .size(CAPTION)
+            .color(t.text_secondary),
         );
         if let Some(note) = &r.rows_note {
             ui.label(RichText::new(note).size(CAPTION).color(t.text_secondary));
@@ -51,18 +55,14 @@ pub fn report(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
             let shown: Vec<String> = r.near_misses.iter().take(3).map(|(a, b)| format!("{a} → {b}")).collect();
             let more = if r.near_misses.len() > 3 { "…" } else { "" };
             let n = r.near_misses.len();
+            let template =
+                if n == 1 { tn!("{n} name looks like a typo: {examples}") } else { tn!("{n} names look like typos: {examples}") };
+            let examples = format!("{}{more}", shown.join(", "));
             ui.add(
-                egui::Label::new(
-                    RichText::new(format!(
-                        "{n} {}: {}{more}",
-                        if n == 1 { "name looks like a typo" } else { "names look like typos" },
-                        shown.join(", ")
-                    ))
-                    .size(CAPTION),
-                )
-                .wrap(),
+                egui::Label::new(RichText::new(i18n::fmt(template, &[("n", &n.to_string()), ("examples", &examples)])).size(CAPTION))
+                    .wrap(),
             );
-            if ui.button(if n == 1 { "Use this match" } else { "Use these matches" }).clicked() {
+            if ui.button(if n == 1 { tl!("Use this match") } else { tl!("Use these matches") }).clicked() {
                 shell.ws.accept_near_misses(id);
             }
         }
@@ -71,23 +71,23 @@ pub fn report(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
         ui.add_space(4.0);
         ui.horizontal_wrapped(|ui| {
             if let Some(show) = r.unmatched_label() {
-                let label = if open { "Hide the rows not matched".to_string() } else { show };
+                let label = if open { tl!("Hide the rows not matched").to_string() } else { show };
                 if ui.link(RichText::new(label).size(CAPTION)).clicked() {
                     ui.data_mut(|d| d.insert_temp(key, !open));
                 }
                 ui.label(RichText::new("·").size(CAPTION).color(t.text_secondary));
             }
             if r.styled.is_some() && l.style.color_by.is_some() {
-                if ui.link(RichText::new("Keep the original colors").size(CAPTION)).clicked() {
+                if ui.link(RichText::new(tl!("Keep the original colors")).size(CAPTION)).clicked() {
                     shell.ws.keep_original_colors(id);
                 }
                 ui.label(RichText::new("·").size(CAPTION).color(t.text_secondary));
             }
-            if ui.link(RichText::new("Undo").size(CAPTION)).clicked() {
+            if ui.link(RichText::new(tl!("Undo")).size(CAPTION)).clicked() {
                 shell.command(ui.ctx(), crate::Command::Undo);
             }
             ui.label(RichText::new("·").size(CAPTION).color(t.text_secondary));
-            if ui.link(RichText::new("Done").size(CAPTION)).clicked() {
+            if ui.link(RichText::new(tl!("Done")).size(CAPTION)).clicked() {
                 dismiss = true;
             }
         });
@@ -96,11 +96,16 @@ pub fn report(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
                 ui.label(RichText::new(k).size(CAPTION).color(t.text_secondary));
             }
             if r.unmatched.len() > 20 {
-                ui.label(RichText::new(format!("and {} more", r.unmatched.len() - 20)).size(CAPTION).color(t.text_secondary));
+                ui.label(
+                    RichText::new(i18n::fmt("and {n} more", &[("n", &(r.unmatched.len() - 20).to_string())]))
+                        .size(CAPTION)
+                        .color(t.text_secondary),
+                );
             }
             if r.blank_keys > 0 {
-                let rows = if r.blank_keys == 1 { "row" } else { "rows" };
-                ui.label(RichText::new(format!("{} {rows} with no {}", r.blank_keys, r.table_field)).size(CAPTION).color(t.text_secondary));
+                let template = if r.blank_keys == 1 { tn!("{n} row with no {field}") } else { tn!("{n} rows with no {field}") };
+                let text = i18n::fmt(template, &[("n", &r.blank_keys.to_string()), ("field", &r.table_field)]);
+                ui.label(RichText::new(text).size(CAPTION).color(t.text_secondary));
             }
         }
     });
@@ -113,7 +118,7 @@ pub fn report(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
 /// On a table: the join question, or what is happening with it. Returns whether it drew.
 pub fn table_status(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId) -> bool {
     if shell.ws.join_working(id) {
-        ui.label(RichText::new("Looking for the places this table describes…").color(t.text_secondary));
+        ui.label(RichText::new(tl!("Looking for the places this table describes…")).color(t.text_secondary));
         return true;
     }
     let Some(q) = shell.ws.join_question(id).cloned() else { return false };
@@ -125,7 +130,7 @@ pub fn table_status(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId) -> b
     let mut choice = ui.data(|d| d.get_temp::<usize>(key)).unwrap_or(0);
     let mut answer: Option<Option<usize>> = None;
     card(ui, t, |ui| {
-        ui.label(RichText::new(format!("Which places does {} describe?", q.table_name)).font(theme::semibold(BODY)));
+        ui.label(RichText::new(i18n::fmt("Which places does {table} describe?", &[("table", &q.table_name)])).font(theme::semibold(BODY)));
         ui.add_space(4.0);
         for (i, o) in q.offers.iter().enumerate() {
             let target = shell.ws.doc.layer(o.target).map(|l| l.display_name.clone()).unwrap_or_default();
@@ -142,11 +147,11 @@ pub fn table_status(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId) -> b
                 });
             }
         }
-        if ui.radio(choice == q.offers.len(), "None of these: keep it as a table").clicked() {
+        if ui.radio(choice == q.offers.len(), tl!("None of these: keep it as a table")).clicked() {
             choice = q.offers.len();
         }
         ui.add_space(6.0);
-        if ui.add(egui::Button::new(RichText::new("Use this").color(t.on_accent)).fill(t.accent)).clicked() {
+        if ui.add(egui::Button::new(RichText::new(tl!("Use this")).color(t.on_accent)).fill(t.accent)).clicked() {
             answer = Some((choice < q.offers.len()).then_some(choice));
         }
     });
@@ -167,7 +172,13 @@ fn confirm(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, q: &crate::wo
     let mut answer: Option<bool> = None;
     let mut pick = false;
     card(ui, t, |ui| {
-        ui.add(egui::Label::new(RichText::new(format!("Join {} to {target}?", q.table_name)).font(theme::semibold(BODY))).wrap());
+        ui.add(
+            egui::Label::new(
+                RichText::new(i18n::fmt("Join {table} to {target}?", &[("table", &q.table_name), ("target", &target)]))
+                    .font(theme::semibold(BODY)),
+            )
+            .wrap(),
+        );
         ui.add_space(2.0);
         ui.label(RichText::new(format!("{}  ·  {}", o.label, o.detail)).size(CAPTION));
         if let Some(e) = &o.expected {
@@ -178,14 +189,14 @@ fn confirm(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, q: &crate::wo
         }
         ui.add_space(6.0);
         ui.horizontal(|ui| {
-            if ui.add(egui::Button::new(RichText::new("Join").color(t.on_accent)).fill(t.accent)).clicked() {
+            if ui.add(egui::Button::new(RichText::new(tl!("Join")).color(t.on_accent)).fill(t.accent)).clicked() {
                 answer = Some(true);
             }
-            if ui.button("Keep as a table").clicked() {
+            if ui.button(tl!("Keep as a table")).clicked() {
                 answer = Some(false);
             }
         });
-        if ui.link(RichText::new("Choose other columns…").size(CAPTION)).clicked() {
+        if ui.link(RichText::new(tl!("Choose other columns…")).size(CAPTION)).clicked() {
             pick = true;
         }
     });
@@ -207,7 +218,7 @@ pub fn open_picker(shell: &mut Shell, table: LayerId) {
             shell.inspector_tab = 0;
             shell.match_draft = Some(d);
         }
-        None => shell.notice = Some(("Open a point, line or area layer to match this table to.".into(), 0.0)),
+        None => shell.notice = Some((tl!("Open a point, line or area layer to match this table to.").into(), 0.0)),
     }
 }
 
@@ -236,9 +247,9 @@ pub fn picker(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
     let mut join = false;
     let mut cancel = false;
     card(ui, t, |ui| {
-        ui.label(RichText::new(format!("Match {} to a layer", l.display_name)).font(theme::semibold(BODY)));
+        ui.label(RichText::new(i18n::fmt("Match {layer} to a layer", &[("layer", &l.display_name)])).font(theme::semibold(BODY)));
         ui.add_space(4.0);
-        combo(ui, egui::Id::new(("lm-match-layer", l.id.0)), "Layer", &mut target, &targets);
+        combo(ui, egui::Id::new(("lm-match-layer", l.id.0)), tl!("Layer"), &mut target, &targets);
         if let Some(id) = shell.ws.match_targets().into_iter().find(|id| id.0.to_string() == target)
             && id != d.target
         {
@@ -262,22 +273,36 @@ pub fn picker(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
         let lf: Vec<(String, String)> = shell.ws.field_names(d.target).into_iter().map(|f| (f.clone(), f)).collect();
         let tf: Vec<(String, String)> = shell.ws.field_names(d.table).into_iter().map(|f| (f.clone(), f)).collect();
         ui.add_space(2.0);
-        combo(ui, egui::Id::new(("lm-match-lf", l.id.0)), &format!("Column in {target_name}"), &mut d.layer_field, &lf);
+        combo(
+            ui,
+            egui::Id::new(("lm-match-lf", l.id.0)),
+            &i18n::fmt("Column in {layer}", &[("layer", &target_name)]),
+            &mut d.layer_field,
+            &lf,
+        );
         ui.add_space(2.0);
-        combo(ui, egui::Id::new(("lm-match-tf", l.id.0)), &format!("Column in {}", l.display_name), &mut d.table_field, &tf);
+        combo(
+            ui,
+            egui::Id::new(("lm-match-tf", l.id.0)),
+            &i18n::fmt("Column in {layer}", &[("layer", &l.display_name)]),
+            &mut d.table_field,
+            &tf,
+        );
         ui.add_space(6.0);
         let preview = shell.ws.match_preview(&d);
         match &preview {
             Ok((_, e)) => {
                 ui.add(
                     egui::Label::new(
-                        RichText::new(format!(
-                            "{} of {} {} match · {} of {} rows find a place",
-                            group_thousands(e.layer_matched as u64),
-                            group_thousands(e.layer_rows as u64),
-                            if e.layer_rows == 1 { nouns.0 } else { nouns.1 },
-                            group_thousands(e.table_matched as u64),
-                            group_thousands(e.table_rows as u64),
+                        RichText::new(i18n::fmt(
+                            "{matched} of {total} {nouns} match · {rows_matched} of {rows} rows find a place",
+                            &[
+                                ("matched", &i18n::count(e.layer_matched as u64)),
+                                ("total", &i18n::count(e.layer_rows as u64)),
+                                ("nouns", if e.layer_rows == 1 { nouns.0 } else { nouns.1 }),
+                                ("rows_matched", &i18n::count(e.table_matched as u64)),
+                                ("rows", &i18n::count(e.table_rows as u64)),
+                            ],
                         ))
                         .size(CAPTION),
                     )
@@ -296,10 +321,10 @@ pub fn picker(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
         let repeats = preview.as_ref().map_or(d.repeats != "auto", |(_, e)| e.table_most > 1);
         if repeats {
             ui.add_space(4.0);
-            ui.label(RichText::new("Several rows for one place").size(CAPTION));
+            ui.label(RichText::new(tl!("Several rows for one place")).size(CAPTION));
             ui.horizontal_wrapped(|ui| {
-                for (k, v) in [("auto", "Automatic"), ("latest", "Latest year or date"), ("combine", "Combine")] {
-                    if ui.radio(d.repeats == k, RichText::new(v).size(CAPTION)).clicked() {
+                for (k, v) in [("auto", tn!("Automatic")), ("latest", tn!("Latest year or date")), ("combine", tn!("Combine"))] {
+                    if ui.radio(d.repeats == k, RichText::new(tl!(v)).size(CAPTION)).clicked() {
                         d.repeats = k.to_string();
                     }
                 }
@@ -308,10 +333,10 @@ pub fn picker(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
         ui.add_space(6.0);
         ui.horizontal(|ui| {
             let ok = preview.as_ref().is_ok_and(|(_, e)| e.layer_matched > 0);
-            if ui.add_enabled(ok, egui::Button::new(RichText::new("Join").color(t.on_accent)).fill(t.accent)).clicked() {
+            if ui.add_enabled(ok, egui::Button::new(RichText::new(tl!("Join")).color(t.on_accent)).fill(t.accent)).clicked() {
                 join = true;
             }
-            if ui.button("Cancel").clicked() {
+            if ui.button(tl!("Cancel")).clicked() {
                 cancel = true;
             }
         });

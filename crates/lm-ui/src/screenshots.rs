@@ -665,6 +665,35 @@ fn style_gallery() {
     }
 }
 
+/// The interface in every language (WP5.5): the welcome card, an object card and the Style tab,
+/// rendered into `$LM_GALLERY` for translation reviews
+/// (`LM_GALLERY=dir cargo test -p lm-ui language_gallery -- --ignored`). Not a regression test:
+/// Japanese and Korean use the system's fonts.
+#[test]
+#[ignore]
+fn language_gallery() {
+    let Some(dir) = std::env::var_os("LM_GALLERY").map(std::path::PathBuf::from) else { return };
+    std::fs::create_dir_all(&dir).unwrap();
+    for lang in lm_core::i18n::Lang::all() {
+        let code = lang.code();
+        let mut h = harness_phase(2, false, WORLD, move |s| s.prefs.language = code.into());
+        h.run_steps(10);
+        h.render().unwrap().save(dir.join(format!("{code}-welcome.png"))).unwrap();
+        let mut h = phase3(&["V1/districts.geojson"], SHANGHAI, move |s| s.prefs.language = code.into());
+        click(&mut h, 121.26, 31.41);
+        h.render().unwrap().save(dir.join(format!("{code}-card.png"))).unwrap();
+        let mut h = phase3(&["V1/districts.geojson"], SHANGHAI, move |s| {
+            s.prefs.language = code.into();
+            let id = s.ws.doc.layers[0].id;
+            s.ws.select_layer(id);
+            s.inspector_tab = 1;
+            s.command(&egui::Context::default(), crate::Command::ApplyPreset(1));
+        });
+        settle(&mut h);
+        h.render().unwrap().save(dir.join(format!("{code}-style.png"))).unwrap();
+    }
+}
+
 /// Phase 4's developer surface: the composer previews "Count points in each area", Keep adds
 /// the result layer and its record in one undo step, and Undo removes both.
 #[test]

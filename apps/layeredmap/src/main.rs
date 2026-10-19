@@ -21,6 +21,8 @@ mod menu;
 mod windows;
 
 use lm_core::phase::Flags;
+use lm_core::{i18n, tl};
+
 use lm_core::platform::Folder;
 use lm_ui::{Command, FileRequest, Prefs, Shell, System, ThemePref, Units};
 
@@ -175,6 +177,7 @@ impl eframe::App for App {
                 match action {
                     menu::Action::Quit => ctx.send_viewport_cmd(egui::ViewportCommand::Close),
                     menu::Action::LoadFixture => {
+                        // i18n: developer only
                         if let Some(dir) = rfd::FileDialog::new().set_title("Load fixture (a folder of GeoJSON/CSV files)").pick_folder() {
                             self.shell.command(ctx, Command::LoadFixture(dir));
                         }
@@ -200,9 +203,10 @@ impl eframe::App for App {
                         let report = diagnostics::report(&settings, &diagnostics::logs_dir());
                         self.shell.command(ctx, Command::ReviewDiagnostics(report));
                     }
-                    menu::Action::Help => help::open(),
+                    menu::Action::Help => help::open(self.shell.language()),
                     menu::Action::ExportQuestionLog => {
                         let log = question_log_path();
+                        // i18n: developer only
                         if let Some(out) =
                             rfd::FileDialog::new().set_title("Export question log").set_file_name("question log.csv").save_file()
                         {
@@ -216,6 +220,8 @@ impl eframe::App for App {
             }
             m.sync(&self.shell);
         }
+        // A new interface language re-labels the menu bar.
+        menu::MenuBar::relabel(&mut self.menu, &self.shell, ctx);
         // Files from Finder's Open With and drops on the Dock icon: the same pipeline as Open.
         #[cfg(target_os = "macos")]
         {
@@ -227,7 +233,7 @@ impl eframe::App for App {
         for req in self.shell.take_file_requests() {
             match req {
                 FileRequest::Open => {
-                    if let Some(paths) = rfd::FileDialog::new().set_title("Open").pick_files() {
+                    if let Some(paths) = rfd::FileDialog::new().set_title(tl!("Open")).pick_files() {
                         self.shell.command(ctx, Command::Open(paths));
                     }
                 }
@@ -246,36 +252,41 @@ impl eframe::App for App {
                     }
                 }
                 FileRequest::SaveDocument => {
+                    // i18n: developer only
                     if let Some(dir) = rfd::FileDialog::new().set_title("Save document into a folder").pick_folder() {
                         self.shell.command(ctx, Command::SaveDocument(dir));
                     }
                 }
                 FileRequest::OpenDocument => {
+                    // i18n: developer only
                     if let Some(dir) = rfd::FileDialog::new().set_title("Open a document folder").pick_folder() {
                         self.shell.command(ctx, Command::OpenDocument(dir));
                     }
                 }
                 FileRequest::SaveAs { suggested_name } => {
                     if let Some(path) = rfd::FileDialog::new()
-                        .set_title("Save")
+                        .set_title(tl!("Save"))
                         .set_file_name(suggested_name)
-                        .add_filter(format!("{} map", lm_core::brand::NAME), &["lmap"])
+                        .add_filter(i18n::fmt("{app} map", &[("app", lm_core::brand::NAME)]), &["lmap"])
                         .save_file()
                     {
                         self.shell.command(ctx, Command::SaveTo(path));
                     }
                 }
                 FileRequest::Locate { layer, file_name } => {
-                    if let Some(path) = rfd::FileDialog::new().set_title(format!("Locate {file_name}")).set_file_name(file_name).pick_file()
+                    if let Some(path) = rfd::FileDialog::new()
+                        .set_title(i18n::fmt("Locate {file}", &[("file", &file_name)]))
+                        .set_file_name(file_name)
+                        .pick_file()
                     {
                         self.shell.command(ctx, Command::Relink(layer, path));
                     }
                 }
                 FileRequest::SavePackage { suggested_name } => {
                     if let Some(path) = rfd::FileDialog::new()
-                        .set_title("Save map package")
+                        .set_title(tl!("Save map package"))
                         .set_file_name(suggested_name)
-                        .add_filter(format!("{} map", lm_core::brand::NAME), &["lmap"])
+                        .add_filter(i18n::fmt("{app} map", &[("app", lm_core::brand::NAME)]), &["lmap"])
                         .save_file()
                     {
                         self.shell.command(ctx, Command::SavePackageTo(path));
@@ -533,7 +544,8 @@ fn main() -> eframe::Result {
             let hwnd = windows::hwnd(cc);
             #[cfg(not(windows))]
             let hwnd = None;
-            let menu = menu::MenuBar::install(developer, shell.export_shown(), shell.library_available(), &cc.egui_ctx, hwnd);
+            let menu =
+                menu::MenuBar::install(developer, shell.export_shown(), shell.library_available(), shell.language(), &cc.egui_ctx, hwnd);
             Ok(Box::new(App {
                 shell,
                 menu,

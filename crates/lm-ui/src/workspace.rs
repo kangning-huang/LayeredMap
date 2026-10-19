@@ -10,8 +10,10 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use lm_core::document::{Document, Op, Style, Transaction};
+use lm_core::i18n;
 use lm_core::model::{AssumptionKind, Choice, Crs, Extent, ImportStatus, LayerId, LayerKind, Subject};
 use lm_core::undo::UndoStack;
+use lm_core::{tl, tn};
 use lm_jobs::import::{ImportError, ImportEvent, ImportJob, ImportedLayer, LayerData, Stage};
 use lm_mapview::map::Map;
 
@@ -29,20 +31,20 @@ pub struct ImportRow {
 
 impl ImportRow {
     pub fn name(&self) -> String {
-        self.path.file_name().and_then(|n| n.to_str()).unwrap_or("file").to_string()
+        self.path.file_name().and_then(|n| n.to_str()).unwrap_or(tl!("file")).to_string()
     }
 
     /// Progress text for the shelf row ("Reading 1.2 of 3.4 MB").
     pub fn progress(&self) -> String {
         if self.preparing {
-            return "Preparing a faster preview…".into();
+            return tl!("Preparing a faster preview…").into();
         }
         if self.stage == Stage::Metadata
             && let Some(job) = &self.job
         {
             let (done, total) = job.ticket.bytes();
             if total > 0 {
-                return format!("Reading {} of {}", mb(done), mb(total));
+                return i18n::fmt("Reading {done} of {total}", &[("done", &mb(done)), ("total", &mb(total))]);
             }
         }
         self.stage.label().into()
@@ -51,7 +53,7 @@ impl ImportRow {
 
 fn mb(b: u64) -> String {
     let m = b as f64 / 1_000_000.0;
-    if m >= 100.0 { format!("{m:.0} MB") } else { format!("{m:.1} MB") }
+    i18n::number(&if m >= 100.0 { format!("{m:.0} MB") } else { format!("{m:.1} MB") })
 }
 
 /// A question card answered, for the question log (no file names or values).
@@ -428,7 +430,7 @@ impl Workspace {
 
     pub fn undo(&mut self) -> Option<String> {
         if self.rereading() {
-            self.notice = Some("Still reading a layer. Undo in a moment.".into());
+            self.notice = Some(tl!("Still reading a layer. Undo in a moment.").into());
             return None;
         }
         self.undo.undo(&mut self.doc)
@@ -436,7 +438,7 @@ impl Workspace {
 
     pub fn redo(&mut self) -> Option<String> {
         if self.rereading() {
-            self.notice = Some("Still reading a layer. Redo in a moment.".into());
+            self.notice = Some(tl!("Still reading a layer. Redo in a moment.").into());
             return None;
         }
         self.undo.redo(&mut self.doc)
@@ -458,7 +460,7 @@ impl Workspace {
         choice: Choice,
         seconds: Option<f64>,
     ) -> Result<(), String> {
-        let Some(layer) = self.doc.layer(id).cloned() else { return Err("That layer is gone.".into()) };
+        let Some(layer) = self.doc.layer(id).cloned() else { return Err(tl!("That layer is gone.").into()) };
         self.not_busy(id, &layer.display_name)?;
         let was_question = layer
             .profile
@@ -468,6 +470,7 @@ impl Workspace {
         if let Some(secs) = seconds.filter(|_| was_question) {
             self.answers.push(QuestionAnswer { kind, answer: choice.clone(), seconds: secs });
         }
+        // Undo labels stay English, as lm-core's do.
         let label = format!("Change how {} is read", layer.display_name);
         match kind {
             // Not sure on "Where should this data be?" goes to the re-read branch below (it may
@@ -475,7 +478,7 @@ impl Workspace {
             AssumptionKind::CsvCoordinateColumns | AssumptionKind::CsvAmbiguousColumns | AssumptionKind::NoCrsProjected
                 if choice.id.starts_with("columns:") || (choice.id == "not_sure" && kind != AssumptionKind::NoCrsProjected) =>
             {
-                let data = self.data(id).cloned().ok_or("This layer's data isn't loaded.")?;
+                let data = self.data(id).cloned().ok_or(tl!("This layer's data isn't loaded."))?;
                 if data.raw.is_none() {
                     return self.record(id, kind, subject, choice, label);
                 }
@@ -487,7 +490,7 @@ impl Workspace {
                 self.convert_offset(id, &choice, kind, subject)
             }
             AssumptionKind::ExcelSheet if choice.id.starts_with("sheet:") => {
-                let data = self.data(id).cloned().ok_or("This layer's data isn't loaded.")?;
+                let data = self.data(id).cloned().ok_or(tl!("This layer's data isn't loaded."))?;
                 let wake = self.wake.clone();
                 self.spawn_edit(id, format!("Open another sheet of {}", layer.display_name), true, wake, move || {
                     lm_jobs::import::choose_sheet(&data, &choice).map_err(|e| e.to_string())
@@ -495,7 +498,7 @@ impl Workspace {
                 Ok(())
             }
             AssumptionKind::RasterNoData | AssumptionKind::RasterKelvin | AssumptionKind::LandsatScale | AssumptionKind::RasterNoUnit => {
-                let data = self.data(id).cloned().ok_or("This layer's data isn't loaded.")?;
+                let data = self.data(id).cloned().ok_or(tl!("This layer's data isn't loaded."))?;
                 let wake = self.wake.clone();
                 self.spawn_edit(id, label, false, wake, move || {
                     lm_jobs::import::rechoose_raster(&data, kind, &subject, &choice).map_err(|e| e.to_string())
@@ -503,7 +506,7 @@ impl Workspace {
                 Ok(())
             }
             AssumptionKind::ShapefileGbk if matches!(choice.id.as_str(), "gbk" | "utf8" | "windows1252") => {
-                let data = self.data(id).cloned().ok_or("This layer's data isn't loaded.")?;
+                let data = self.data(id).cloned().ok_or(tl!("This layer's data isn't loaded."))?;
                 let wake = self.wake.clone();
                 self.spawn_edit(id, label, false, wake, move || {
                     lm_jobs::import::reread_encoding(&data, &choice).map_err(|e| e.to_string())
@@ -524,6 +527,7 @@ impl Workspace {
                     let mut layer = lm_jobs::import::reapply_choices(fresh, &others).map_err(|e| e.to_string())?;
                     let p = &mut layer.profile;
                     p.assumptions.retain(|a| !matches!(a.kind, AssumptionKind::NoCrsProjected | AssumptionKind::NoCrsLonLat));
+                    // Saved in the document, so English (as lm-jobs' assumptions are).
                     p.assumptions.push(lm_core::model::Assumption {
                         kind: AssumptionKind::NoCrsProjected,
                         subject: Subject::Layer,
@@ -558,7 +562,7 @@ impl Workspace {
         let spawned = std::thread::Builder::new().name("lm-work".into()).spawn(move || {
             let f = std::panic::catch_unwind(std::panic::AssertUnwindSafe(work)).unwrap_or_else(|_| {
                 Box::new(move |w: &mut Workspace| {
-                    w.notice = Some("That couldn't be done. Nothing was changed.".into());
+                    w.notice = Some(tl!("That couldn't be done. Nothing was changed.").into());
                     on_fail(w);
                 }) as Finish
             });
@@ -601,8 +605,8 @@ impl Workspace {
         let rev = self.next_rev;
         let (tx, rx) = std::sync::mpsc::channel();
         let spawned = std::thread::Builder::new().name("lm-reread".into()).spawn(move || {
-            let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(work))
-                .unwrap_or_else(|_| Err("The layer couldn't be read again.".into()));
+            // Off the interface thread: the message is translated where it is shown (`poll_pending`).
+            let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(work)).unwrap_or_else(|_| Err(REREAD_FAILED.into()));
             let _ = tx.send(r);
             if let Some(w) = wake {
                 w();
@@ -620,7 +624,7 @@ impl Workspace {
 
     /// Refuses a second change to a layer while the first is still being worked out.
     fn not_busy(&self, id: LayerId, name: &str) -> Result<(), String> {
-        if self.is_busy(id) { Err(format!("Still reading {name}. Try again in a moment.")) } else { Ok(()) }
+        if self.is_busy(id) { Err(i18n::fmt("Still reading {layer}. Try again in a moment.", &[("layer", name)])) } else { Ok(()) }
     }
 
     /// Commits re-reads that have finished. Returns errors to show.
@@ -631,7 +635,7 @@ impl Workspace {
             match p.rx.try_recv() {
                 Ok(r) => done.push((i, r)),
                 Err(std::sync::mpsc::TryRecvError::Empty) => {}
-                Err(std::sync::mpsc::TryRecvError::Disconnected) => done.push((i, Err("The layer couldn't be read again.".into()))),
+                Err(std::sync::mpsc::TryRecvError::Disconnected) => done.push((i, Err(REREAD_FAILED.into()))),
             }
         }
         for (i, r) in done.into_iter().rev() {
@@ -639,7 +643,7 @@ impl Workspace {
             let current = self.doc.layer(p.id).map(|l| l.profile.data_rev);
             match r {
                 Ok(_) if current != Some(p.base_rev) => {
-                    errors.push("The layer changed while it was being read again, so that change was not applied.".into());
+                    errors.push(tl!("The layer changed while it was being read again, so that change was not applied.").into());
                 }
                 Ok(mut new) => {
                     new.profile.data_rev = p.rev;
@@ -655,7 +659,8 @@ impl Workspace {
                         self.fit = fit;
                     }
                 }
-                Err(e) => errors.push(e),
+                // Messages made off the interface thread (ours) are translated here; others' pass as they are.
+                Err(e) => errors.push(tl!(&e).to_string()),
             }
         }
         errors
@@ -674,7 +679,7 @@ impl Workspace {
 
     /// Records a changed choice (and marks it confirmed) without re-reading data.
     fn record(&mut self, id: LayerId, kind: AssumptionKind, subject: Subject, choice: Choice, label: String) -> Result<(), String> {
-        let Some(layer) = self.doc.layer(id).cloned() else { return Err("That layer is gone.".into()) };
+        let Some(layer) = self.doc.layer(id).cloned() else { return Err(tl!("That layer is gone.").into()) };
         // The line must say what is now in effect.
         let mut profile = layer.profile.clone();
         let mut found = false;
@@ -685,13 +690,13 @@ impl Workspace {
             found = true;
         }
         if !found {
-            return Err("That assumption couldn't be changed.".into());
+            return Err(tl!("That assumption couldn't be changed.").into());
         }
         let tx = self.doc.set_profile_tx(id, profile).map(|mut t| {
             t.label = label;
             t
         });
-        if self.commit(tx) { Ok(()) } else { Err("That assumption couldn't be changed.".into()) }
+        if self.commit(tx) { Ok(()) } else { Err(tl!("That assumption couldn't be changed.").into()) }
     }
 
     /// Converts a layer's points from GCJ-02 or BD-09 to GPS coordinates as a new layer beside it
@@ -699,9 +704,9 @@ impl Workspace {
     /// layer is added, the original hidden, and the original's question closed. The source file is
     /// untouched.
     fn convert_offset(&mut self, id: LayerId, choice: &Choice, kind: AssumptionKind, subject: Subject) -> Result<(), String> {
-        let data = self.data(id).cloned().ok_or("This layer's data isn't loaded.")?;
+        let data = self.data(id).cloned().ok_or(tl!("This layer's data isn't loaded."))?;
         if !matches!(data.data, LayerData::Vector(_)) {
-            return Err("Only points, lines and areas can be converted.".into());
+            return Err(tl!("Only points, lines and areas can be converted.").into());
         }
         let base_rev = self.doc.layer(id).map_or(0, |l| l.profile.data_rev);
         let choice = choice.clone();
@@ -730,7 +735,7 @@ impl Workspace {
         recipe: String,
     ) {
         let Some(orig) = self.doc.layer(id).cloned().filter(|l| l.profile.data_rev == base_rev) else {
-            self.notice = Some("The layer changed while it was being converted, so nothing was added.".into());
+            self.notice = Some(tl!("The layer changed while it was being converted, so nothing was added.").into());
             return;
         };
         let mut profile = orig.profile.clone();
@@ -782,7 +787,7 @@ impl Workspace {
         if self.commit(Some(tx)) {
             self.select_layer(new_id);
         } else {
-            self.notice = Some("The converted layer couldn't be added.".into());
+            self.notice = Some(tl!("The converted layer couldn't be added.").into());
         }
     }
 
@@ -794,8 +799,8 @@ impl Workspace {
     /// Places a layer read with raw coordinates using the coordinate system the user picked:
     /// re-reads nothing, converts the coordinates, keeps the style; one undo step.
     pub fn place_layer(&mut self, id: LayerId, epsg: u16, seconds: Option<f64>) -> Result<(), String> {
-        let data = self.data(id).cloned().ok_or("This layer's data isn't loaded.")?;
-        let Some(layer) = self.doc.layer(id).cloned() else { return Err("That layer is gone.".into()) };
+        let data = self.data(id).cloned().ok_or(tl!("This layer's data isn't loaded."))?;
+        let Some(layer) = self.doc.layer(id).cloned() else { return Err(tl!("That layer is gone.").into()) };
         self.not_busy(id, &layer.display_name)?;
         if let Some(secs) = seconds {
             let name = lm_jobs::import::crs_name(epsg);
@@ -825,8 +830,8 @@ impl Workspace {
     /// Starts comparing a layer's points with the same points converted from GCJ-02 (or BD-09).
     /// The conversion and the map layer are built off the interface thread.
     pub fn start_compare(&mut self, id: LayerId, from_bd09: bool) -> Result<(), String> {
-        let data = self.data(id).cloned().ok_or("This layer's data isn't loaded.")?;
-        let LayerData::Vector(ds) = &data.data else { return Err("Only points, lines and areas can be compared.".into()) };
+        let data = self.data(id).cloned().ok_or(tl!("This layer's data isn't loaded."))?;
+        let LayerData::Vector(ds) = &data.data else { return Err(tl!("Only points, lines and areas can be compared.").into()) };
         let mut focus = None;
         if let Some(g) = ds.features.iter().find_map(|f| f.geometry.as_ref()) {
             g.for_each_coord(|c| {
@@ -835,7 +840,7 @@ impl Workspace {
                 }
             });
         }
-        let focus = focus.ok_or("This layer has nothing to compare.")?;
+        let focus = focus.ok_or(tl!("This layer has nothing to compare."))?;
         self.compare = Some(Compare { layer: id, from_bd09, map_pair: None, focus });
         self.spawn_job(None, Box::new(|w: &mut Workspace| w.compare = None), move || {
             let LayerData::Vector(ds) = &data.data else { return Box::new(|_: &mut Workspace| {}) };
@@ -956,19 +961,22 @@ impl Workspace {
             // The source check may hash the file: here, off the interface thread.
             let state = lm_doc::check_source(&layers[0].profile.source);
             let file = layers[0].profile.source.file_name().to_string();
-            let mut notes = Vec::new();
+            let mut notes: Vec<Note> = Vec::new();
             let mut out = Vec::new();
             let missing = state == lm_doc::SourceState::Missing;
             match state {
                 lm_doc::SourceState::Missing => {
-                    notes.push(missing_line(&layers[0].profile.source));
+                    notes.push(missing_note(&layers[0].profile.source));
                 }
                 other => {
                     if other == lm_doc::SourceState::Changed {
-                        notes.push(format!("{file} has changed since this document was saved; it was read as it is now."));
+                        notes.push((
+                            tn!("{file} has changed since this document was saved; it was read as it is now."),
+                            vec![("file", file.clone())],
+                        ));
                     }
                     match lm_jobs::import::import_path(std::path::Path::new(&path), &lm_jobs::import::Ctx::detached(Default::default())) {
-                        Err(e) => notes.push(e.to_string()),
+                        Err(e) => notes.push(("{error}", vec![("error", e.to_string())])),
                         Ok(read) => {
                             for dl in layers {
                                 // The layer's own part of the file; a part that's gone is said.
@@ -977,7 +985,10 @@ impl Workspace {
                                     None => read.first().filter(|_| read.len() == 1),
                                 };
                                 let Some(base) = base else {
-                                    notes.push(format!("{} is no longer in {file}.", dl.display_name));
+                                    notes.push((
+                                        tn!("{layer} is no longer in {file}."),
+                                        vec![("layer", dl.display_name.clone()), ("file", file.clone())],
+                                    ));
                                     continue;
                                 };
                                 match derive_saved(base, &dl) {
@@ -986,7 +997,7 @@ impl Workspace {
                                         layer.profile = dl.profile.clone();
                                         out.push((dl.id, dl.profile.data_rev, layer));
                                     }
-                                    Err(e) => notes.push(format!("{}: {e}", dl.display_name)),
+                                    Err(e) => notes.push(("{layer}: {error}", vec![("layer", dl.display_name.clone()), ("error", e)])),
                                 }
                             }
                         }
@@ -1007,8 +1018,8 @@ impl Workspace {
                         w.select_layer(ids[0]);
                     }
                 }
-                if let Some(n) = notes.into_iter().next() {
-                    w.notice = Some(n);
+                if let Some(n) = notes.first() {
+                    w.notice = Some(note_text(n));
                 }
             })
         });
@@ -1478,7 +1489,8 @@ fn compare_style() -> Style {
     s
 }
 
-/// The line for a choice that changes how values are read but not the data itself.
+/// The line for a choice that changes how values are read but not the data itself. It is saved in
+/// the document, so it stays English (as lm-jobs' assumption lines do).
 fn line_for(kind: AssumptionKind, choice: &Choice) -> Option<String> {
     Some(match (kind, choice.id.as_str()) {
         (AssumptionKind::RasterCellMeaning, "measured") => "Treated as measured values (averaged, not summed).".into(),
@@ -1504,9 +1516,29 @@ fn line_for(kind: AssumptionKind, choice: &Choice) -> Option<String> {
 /// a GCJ-02/BD-09 conversion.
 /// "Can't find heat_july.tif. It was last seen in Downloads." (Error and status copy).
 pub fn missing_line(src: &lm_core::model::SourceRef) -> String {
-    let folder = std::path::Path::new(&src.path).parent().and_then(|p| p.file_name()).and_then(|n| n.to_str()).unwrap_or("its folder");
-    format!("Can't find {}. It was last seen in {folder}.", src.file_name())
+    note_text(&missing_note(src))
 }
+
+/// [`missing_line`] before it is put in words (it is made off the interface thread too).
+fn missing_note(src: &lm_core::model::SourceRef) -> Note {
+    let file = src.file_name().to_string();
+    match std::path::Path::new(&src.path).parent().and_then(|p| p.file_name()).and_then(|n| n.to_str()) {
+        Some(folder) => (tn!("Can't find {file}. It was last seen in {folder}."), vec![("file", file), ("folder", folder.to_string())]),
+        None => (tn!("Can't find {file}. It was last seen in its folder."), vec![("file", file)]),
+    }
+}
+
+/// A message put together off the interface thread: its English template and its values. It is
+/// put in words where it is shown, on the interface thread (the language is set per thread).
+type Note = (&'static str, Vec<(&'static str, String)>);
+
+fn note_text((template, args): &Note) -> String {
+    let args: Vec<(&str, &str)> = args.iter().map(|(k, v)| (*k, v.as_str())).collect();
+    i18n::fmt(template, &args)
+}
+
+/// A re-read that failed unexpectedly (made off the interface thread; translated where shown).
+const REREAD_FAILED: &str = tn!("The layer couldn't be read again.");
 
 fn derive_saved(base: &ImportedLayer, saved: &lm_core::document::DocLayer) -> Result<ImportedLayer, String> {
     // A chosen text encoding needs the file read again in it; every other choice is re-applied.

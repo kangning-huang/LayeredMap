@@ -15,6 +15,7 @@ use egui::accesskit::{Live, Role};
 use egui::{Context, Id, Response, WidgetInfo, WidgetType};
 
 use lm_core::selection::SelectionContext;
+use lm_core::{i18n, tl};
 
 use crate::Shell;
 
@@ -131,16 +132,16 @@ pub(crate) fn live(ctx: &Context, id: Id, text: &str) {
 pub fn spoken(s: &str) -> String {
     let mut out = s.to_string();
     for (sym, words) in [
-        ("°C", "degrees Celsius"),
-        ("°F", "degrees Fahrenheit"),
-        ("km²", "square kilometres"),
-        ("m²", "square metres"),
-        ("mi²", "square miles"),
-        ("°", " degrees"),
-        ("·", ","),
-        ("−", "minus "),
+        ("°C", tl!("degrees Celsius").to_string()),
+        ("°F", tl!("degrees Fahrenheit").to_string()),
+        ("km²", tl!("square kilometres").to_string()),
+        ("m²", tl!("square metres").to_string()),
+        ("mi²", tl!("square miles").to_string()),
+        ("°", format!(" {}", tl!("degrees"))),
+        ("·", ",".to_string()),
+        ("−", format!("{} ", tl!("minus"))),
     ] {
-        out = out.replace(sym, words);
+        out = out.replace(sym, &words);
     }
     // "31.2  degrees" from a bare "°" after a space.
     while out.contains("  ") {
@@ -225,7 +226,7 @@ pub(crate) fn map_canvas(shell: &mut Shell, ctx: &Context, id: Id) {
     let (label, help) = map_description(shell);
     ctx.accesskit_node_builder(id, |n| {
         n.set_role(Role::Canvas);
-        n.set_role_description("map");
+        n.set_role_description(tl!("map"));
         n.set_label(label);
         n.set_description(help);
     });
@@ -242,21 +243,25 @@ pub(crate) fn map_canvas(shell: &mut Shell, ctx: &Context, id: Id) {
 pub fn map_description(shell: &Shell) -> (String, String) {
     let shown: Vec<&str> = shell.ws.doc.layers.iter().rev().filter(|l| l.visible).map(|l| l.display_name.as_str()).collect();
     let layers = match shown.len() {
-        0 if shell.ws.doc.layers.is_empty() => "No data yet".to_string(),
-        0 => "Every layer is hidden".to_string(),
-        _ => format!("Showing {}", list(&shown)),
+        0 if shell.ws.doc.layers.is_empty() => tl!("No data yet").to_string(),
+        0 => tl!("Every layer is hidden").to_string(),
+        _ => i18n::fmt("Showing {layers}", &[("layers", &list(&shown))]),
     };
     let place = match shell.ws.view_extent {
         Some(e) => extent_words(&e),
         None => String::new(),
     };
-    let label = if place.is_empty() { format!("Map. {layers}.") } else { format!("Map. {layers}. {place}.") };
-    let help = if shell.ws.doc.layers.is_empty() {
-        "Open a file or an example to add data. Search places with Command-F.".to_string()
+    let label = if place.is_empty() {
+        i18n::fmt("Map. {layers}.", &[("layers", &layers)])
     } else {
-        "Arrow keys pan, plus and minus zoom. The layer list and the data table (Command-T) list every record; \
-         Command-F finds one."
-            .to_string()
+        i18n::fmt("Map. {layers}. {place}.", &[("layers", &layers), ("place", &place)])
+    };
+    let help = if shell.ws.doc.layers.is_empty() {
+        tl!("Open a file or an example to add data. Search places with Command-F.").to_string()
+    } else {
+        tl!("Arrow keys pan, plus and minus zoom. The layer list and the data table (Command-T) list every record; \
+             Command-F finds one.")
+        .to_string()
     };
     (label, help)
 }
@@ -266,7 +271,7 @@ fn list(names: &[&str]) -> String {
     match names {
         [] => String::new(),
         [a] => (*a).to_string(),
-        [rest @ .., last] => format!("{} and {last}", rest.join(", ")),
+        [rest @ .., last] => i18n::fmt("{names} and {last}", &[("names", &rest.join(", ")), ("last", last)]),
     }
 }
 
@@ -277,16 +282,27 @@ pub fn extent_words(e: &lm_core::model::Extent) -> String {
     let lon = (e.min_x + e.max_x) / 2.0;
     let km = (e.max_x - e.min_x).abs() * 111.32 * lat.to_radians().cos();
     if km > 15_000.0 || (e.max_x - e.min_x) >= 300.0 {
-        return "The whole world".to_string();
+        return tl!("The whole world").to_string();
     }
     let across = if km >= 10.0 {
-        lm_core::model::group_thousands((km / if km >= 1000.0 { 100.0 } else { 10.0 }).round() as u64 * if km >= 1000.0 { 100 } else { 10 })
+        i18n::count((km / if km >= 1000.0 { 100.0 } else { 10.0 }).round() as u64 * if km >= 1000.0 { 100 } else { 10 })
     } else {
         format!("{:.0}", km.max(1.0))
     };
-    let ns = if lat >= 0.0 { "north" } else { "south" };
-    let ew = if lon >= 0.0 { "east" } else { "west" };
-    format!("About {across} kilometres across, centred at {:.1} degrees {ns}, {:.1} degrees {ew}", lat.abs(), lon.abs())
+    i18n::fmt("About {across} kilometres across, centred at {place}", &[("across", &across), ("place", &lat_lon_words(lat, lon, 1))])
+}
+
+/// A point in words, "31.2 degrees north, 121.5 degrees east", with `decimals` places.
+fn lat_lon_words(lat: f64, lon: f64, decimals: usize) -> String {
+    let template = match (lat >= 0.0, lon >= 0.0) {
+        (true, true) => tl!("{lat} degrees north, {lon} degrees east"),
+        (true, false) => tl!("{lat} degrees north, {lon} degrees west"),
+        (false, true) => tl!("{lat} degrees south, {lon} degrees east"),
+        (false, false) => tl!("{lat} degrees south, {lon} degrees west"),
+    };
+    let lat = i18n::number(&format!("{:.*}", decimals, lat.abs()));
+    let lon = i18n::number(&format!("{:.*}", decimals, lon.abs()));
+    i18n::fill(template, &[("lat", &lat), ("lon", &lon)])
 }
 
 /// What a screen reader says when the selection changes, and whether it is complete (`false`
@@ -301,44 +317,53 @@ pub fn selection_summary(shell: &Shell, sel: &SelectionContext) -> (String, bool
     }
     match sel.features.as_slice() {
         [] => match sel.active_layer.and_then(|id| shell.ws.doc.layer(id)) {
-            Some(l) => (spoken(&format!("{} layer selected. {}.", l.display_name, l.profile.subtitle())), true),
-            None => ("Selection cleared.".to_string(), true),
+            // The subtitle comes from `lm-core`'s profile (English).
+            Some(l) => (
+                spoken(&i18n::fmt(
+                    "{layer} layer selected. {subtitle}.",
+                    &[("layer", &l.display_name), ("subtitle", &l.profile.subtitle())],
+                )),
+                true,
+            ),
+            None => (tl!("Selection cleared.").to_string(), true),
         },
         [f] => {
-            let Some(l) = shell.ws.doc.layer(f.layer) else { return ("Selection cleared.".into(), true) };
-            let Some(ds) = crate::inspect::dataset(shell, l.id) else { return (format!("{} selected.", l.display_name), false) };
-            let title = lm_jobs::inspect::object_title(l, &ds, f.row);
-            let Some(index) = shell.ws.layer_index(l.id) else { return (format!("{title} selected."), false) };
-            let row = lm_jobs::inspect::insight_rows(l, &ds, &index, f.row, 1).into_iter().next();
-            let detail = match row {
-                Some(r) => match r.phrase {
-                    Some(p) => format!(" {} {}, {p}.", r.field, r.value),
-                    None => format!(" {} {}.", r.field, r.value),
-                },
-                None => String::new(),
+            let Some(l) = shell.ws.doc.layer(f.layer) else { return (tl!("Selection cleared.").into(), true) };
+            let Some(ds) = crate::inspect::dataset(shell, l.id) else {
+                return (i18n::fmt("{title} selected.", &[("title", &l.display_name)]), false);
             };
-            (spoken(&format!("{title} selected.{detail}")), true)
+            let title = lm_jobs::inspect::object_title(l, &ds, f.row);
+            let Some(index) = shell.ws.layer_index(l.id) else { return (i18n::fmt("{title} selected.", &[("title", &title)]), false) };
+            let row = lm_jobs::inspect::insight_rows(l, &ds, &index, f.row, 1).into_iter().next();
+            // The insight phrase ("3rd highest of 17") comes from `lm-jobs` (English).
+            let said = match row {
+                Some(r) => match r.phrase {
+                    Some(p) => i18n::fmt(
+                        "{title} selected. {field} {value}, {phrase}.",
+                        &[("title", &title), ("field", &r.field), ("value", &r.value), ("phrase", &p)],
+                    ),
+                    None => i18n::fmt("{title} selected. {field} {value}.", &[("title", &title), ("field", &r.field), ("value", &r.value)]),
+                },
+                None => i18n::fmt("{title} selected.", &[("title", &title)]),
+            };
+            (spoken(&said), true)
         }
         many => {
             let same = many.iter().all(|f| f.layer == many[0].layer);
-            let noun = match shell.ws.doc.layer(many[0].layer) {
-                Some(l) if same => lm_jobs::inspect::noun_plural(l),
-                _ => "objects".to_string(),
+            let n = i18n::count(many.len() as u64);
+            // The layer's plural noun comes from `lm-jobs` (English).
+            let said = match shell.ws.doc.layer(many[0].layer) {
+                Some(l) if same => i18n::fmt("{n} {noun} selected.", &[("n", &n), ("noun", &lm_jobs::inspect::noun_plural(l))]),
+                _ => i18n::fmt("{n} objects selected.", &[("n", &n)]),
             };
-            (format!("{} {noun} selected.", lm_core::model::group_thousands(many.len() as u64)), true)
+            (said, true)
         }
     }
 }
 
 fn pixel_summary(shell: &Shell, p: &lm_core::selection::PixelPick) -> String {
-    let Some(l) = shell.ws.doc.layer(p.layer) else { return "Cell selected.".into() };
-    let place = format!(
-        "{:.2} degrees {}, {:.2} degrees {}",
-        p.lat.abs(),
-        if p.lat >= 0.0 { "north" } else { "south" },
-        p.lon.abs(),
-        if p.lon >= 0.0 { "east" } else { "west" }
-    );
+    let Some(l) = shell.ws.doc.layer(p.layer) else { return tl!("Cell selected.").into() };
+    let place = lat_lon_words(p.lat, p.lon, 2);
     let value = match (shell.ws.data(l.id).map(|d| d.data.clone()), p.value) {
         (Some(lm_jobs::import::LayerData::Raster(r)), Some(v)) => {
             let band = lm_jobs::inspect::style_band(&r, &l.style);
@@ -349,10 +374,10 @@ fn pixel_summary(shell: &Shell, p: &lm_core::selection::PixelPick) -> String {
                 None => value,
             }
         }
-        (_, Some(v)) => lm_jobs::inspect::number_text(v),
-        (_, None) => "No value".to_string(),
+        (_, Some(v)) => i18n::number(&lm_jobs::inspect::number_text(v)),
+        (_, None) => tl!("No value").to_string(),
     };
-    spoken(&format!("{} cell at {place} selected. {value}.", l.display_name))
+    spoken(&i18n::fmt("{layer} cell at {place} selected. {value}.", &[("layer", &l.display_name), ("place", &place), ("value", &value)]))
 }
 
 /// After the frame's widgets: the selection announcement, and the focus ring.

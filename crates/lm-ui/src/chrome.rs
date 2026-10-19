@@ -5,6 +5,7 @@
 use egui::{Align2, Color32, CornerRadius, Rect, Sense, Stroke, Ui, pos2, vec2};
 use egui_phosphor::regular as icon;
 use lm_core::basemap::{OFFLINE_MAX_ZOOM, Source, providers};
+use lm_core::{i18n, tl, tn};
 
 use crate::theme::{self, CAPTION, ICON_HIT, PANEL_MARGIN, RADIUS_CARD, RADIUS_CONTROL, RADIUS_PANEL, regular, semibold};
 use crate::{Shell, System, Units};
@@ -50,7 +51,7 @@ pub fn toolbar(shell: &mut Shell, ui: &mut Ui, rect: Rect, _system: System) {
         painter.text(pos2(name_x, rect.center().y), Align2::LEFT_CENTER, lm_core::brand::NAME, semibold(theme::HEADLINE), t.text_primary);
     if shell.pro {
         // "Pro" as a small accent badge after the name.
-        let g = painter.layout_no_wrap("PRO".into(), semibold(10.0), t.on_accent);
+        let g = painter.layout_no_wrap("PRO".into(), semibold(10.0), t.on_accent); // i18n: brand
         let badge = Rect::from_min_size(pos2(name.right() + 6.0, rect.center().y - g.size().y / 2.0 - 2.0), g.size() + vec2(10.0, 4.0));
         painter.rect_filled(badge, 4.0, t.accent);
         painter.galley(badge.min + vec2(5.0, 2.0), g, t.on_accent);
@@ -66,16 +67,16 @@ pub fn toolbar(shell: &mut Shell, ui: &mut Ui, rect: Rect, _system: System) {
     let flags = shell.flags;
     let mut buttons = Vec::new();
     for (glyph, label, phase) in [
-        (icon::EXPORT, "Share", SHARE_PHASE),
-        (icon::ARROW_COUNTER_CLOCKWISE, "Undo", UNDO_PHASE),
-        (icon::STACK, "Layers", LAYERS_PHASE),
-        (icon::FOLDER_OPEN, "Open", OPEN_PHASE),
+        (icon::EXPORT, tn!("Share"), SHARE_PHASE),
+        (icon::ARROW_COUNTER_CLOCKWISE, tn!("Undo"), UNDO_PHASE),
+        (icon::STACK, tn!("Layers"), LAYERS_PHASE),
+        (icon::FOLDER_OPEN, tn!("Open"), OPEN_PHASE),
     ] {
         // Share comes with export, shown ahead of its phase in developer and Pro builds.
         let built = if phase == SHARE_PHASE { shell.export_shown() } else { flags.shows(phase) && phase <= lm_core::phase::BUILD_PHASE };
         let enabled = built && (label != "Undo" || shell.ws.undo.can_undo());
         let color = if enabled { t.text_primary } else { t.text_secondary.gamma_multiply(0.7) };
-        let text = painter.layout_no_wrap(label.to_string(), regular(theme::BODY), color);
+        let text = painter.layout_no_wrap(tl!(label).to_string(), regular(theme::BODY), color);
         let w = 18.0 + 6.0 + text.size().x + 20.0;
         let r = Rect::from_min_size(pos2(x - w, rect.center().y - 16.0), vec2(w, 32.0));
         x -= w + 4.0;
@@ -83,22 +84,27 @@ pub fn toolbar(shell: &mut Shell, ui: &mut Ui, rect: Rect, _system: System) {
     }
     for (glyph, label, built, enabled, color, text, r) in buttons.into_iter().rev() {
         let resp = ui.allocate_rect(r, if enabled { Sense::click() } else { Sense::hover() });
-        crate::a11y::button(&resp, label);
+        crate::a11y::button(&resp, tl!(label));
         if enabled && resp.hovered() {
             painter.rect_filled(r, CornerRadius::same(RADIUS_CONTROL), t.surface_raised);
         }
         painter.text(pos2(r.left() + 10.0, r.center().y), Align2::LEFT_CENTER, glyph, theme::icon_font(18.0), color);
         painter.galley(pos2(r.left() + 34.0, r.center().y - text.size().y / 2.0), text, color);
         if !built {
-            resp.on_hover_text(format!("{label} arrives in a later phase"));
+            resp.on_hover_text(i18n::fmt("{label} arrives in a later phase", &[("label", tl!(label))]));
             continue;
         }
+        // Undo labels come from lm-core in English (they are also saved in the history).
         let tip = match label {
-            "Undo" => shell.ws.undo.undo_label().map_or_else(|| "Nothing to undo".to_string(), |l| format!("Undo {}", lower_first(l))),
-            "Open" => format!("Open files ({})", crate::keys::shortcut("O")),
-            "Layers" => format!("Show or hide the layer list ({})", crate::keys::shortcut("L")),
-            "Share" => format!("Export a map image ({}) or data", crate::keys::shortcut("E")),
-            other => other.to_string(),
+            "Undo" => shell
+                .ws
+                .undo
+                .undo_label()
+                .map_or_else(|| tl!("Nothing to undo").to_string(), |l| i18n::fmt("Undo {action}", &[("action", &lower_first(l))])),
+            "Open" => i18n::fmt("Open files ({key})", &[("key", &crate::keys::shortcut("O"))]),
+            "Layers" => i18n::fmt("Show or hide the layer list ({key})", &[("key", &crate::keys::shortcut("L"))]),
+            "Share" => i18n::fmt("Export a map image ({key}) or data", &[("key", &crate::keys::shortcut("E"))]),
+            other => tl!(other).to_string(),
         };
         let clicked = resp.clicked();
         let resp = resp.on_hover_text(tip);
@@ -124,13 +130,13 @@ fn share_menu(shell: &mut Shell, resp: &egui::Response) {
     let has_data = !shell.ws.doc.layers.is_empty();
     egui::Popup::menu(resp).show(|ui| {
         ui.set_min_width(180.0);
-        if ui.button("Map image…").clicked() {
+        if ui.button(tl!("Map image…")).clicked() {
             shell.command(&ctx, crate::Command::ExportMapImage);
         }
-        if ui.add_enabled(has_data, egui::Button::new("Data…")).on_disabled_hover_text("Open a file first").clicked() {
+        if ui.add_enabled(has_data, egui::Button::new(tl!("Data…"))).on_disabled_hover_text(tl!("Open a file first")).clicked() {
             shell.command(&ctx, crate::Command::ExportData);
         }
-        if ui.add_enabled(has_data, egui::Button::new("Map package…")).on_disabled_hover_text("Open a file first").clicked() {
+        if ui.add_enabled(has_data, egui::Button::new(tl!("Map package…"))).on_disabled_hover_text(tl!("Open a file first")).clicked() {
             shell.command(&ctx, crate::Command::ExportPackage);
         }
     });
@@ -163,11 +169,11 @@ fn search_field(shell: &mut Shell, ui: &mut Ui, rect: Rect) {
     let id = egui::Id::new("lm-search");
     let edit = egui::TextEdit::singleline(&mut shell.search.query)
         .id(id)
-        .hint_text("Search places or your data")
+        .hint_text(tl!("Search places or your data"))
         .desired_width(rect.width() - 40.0)
         .margin(egui::Margin { left: 32, right: 10, top: 7, bottom: 7 });
     let resp = ui.put(rect, edit);
-    crate::a11y::label(&resp, "Search places or your data");
+    crate::a11y::label(&resp, tl!("Search places or your data"));
     ui.painter().text(
         pos2(rect.left() + 12.0, rect.center().y),
         Align2::LEFT_CENTER,
@@ -232,10 +238,13 @@ fn search_field(shell: &mut Shell, ui: &mut Ui, rect: Rect) {
                 ui.set_width(rect.width() - 16.0);
                 let result_row = |ui: &mut Ui, i: usize, title: &str, detail: &str| -> bool {
                     let (r, resp) = ui.allocate_exact_size(vec2(ui.available_width(), 40.0), Sense::click());
-                    crate::a11y::button(&resp, format!("{title}, {detail}"));
+                    crate::a11y::button(&resp, i18n::fmt("{title}, {detail}", &[("title", title), ("detail", detail)]));
                     if i == selected {
                         // The highlighted result is read as the arrows move it (the field keeps focus).
-                        let spoken = crate::a11y::spoken(&format!("{title}, {detail}, {} of {n}", i + 1));
+                        let spoken = crate::a11y::spoken(&i18n::fmt(
+                            "{title}, {detail}, {i} of {n}",
+                            &[("title", title), ("detail", detail), ("i", &i18n::count(i as u64 + 1)), ("n", &i18n::count(n as u64))],
+                        ));
                         crate::a11y::live(ui.ctx(), egui::Id::new("lm-search-highlight"), &spoken);
                     }
                     if i == selected || resp.hovered() {
@@ -246,7 +255,7 @@ fn search_field(shell: &mut Shell, ui: &mut Ui, rect: Rect) {
                     resp.clicked()
                 };
                 if nd > 0 {
-                    ui.label(egui::RichText::new("Your data").font(semibold(CAPTION)).color(t.text_secondary));
+                    ui.label(egui::RichText::new(tl!("Your data")).font(semibold(CAPTION)).color(t.text_secondary));
                     for (i, d) in data_rows.iter().enumerate() {
                         if result_row(ui, i, &d.title, &d.detail) {
                             chosen = Some(d.pick.clone());
@@ -254,14 +263,14 @@ fn search_field(shell: &mut Shell, ui: &mut Ui, rect: Rect) {
                     }
                 }
                 if !shell.search.ready() {
-                    ui.label(egui::RichText::new("Loading places…").color(t.text_secondary).size(CAPTION));
+                    ui.label(egui::RichText::new(tl!("Loading places…")).color(t.text_secondary).size(CAPTION));
                     ui.ctx().request_repaint_after(std::time::Duration::from_millis(50));
                 } else if shell.search.rows.is_empty() {
                     if nd == 0 {
-                        ui.label(egui::RichText::new("No places match").color(t.text_secondary).size(CAPTION));
+                        ui.label(egui::RichText::new(tl!("No places match")).color(t.text_secondary).size(CAPTION));
                     }
                 } else {
-                    ui.label(egui::RichText::new("Places").font(semibold(CAPTION)).color(t.text_secondary));
+                    ui.label(egui::RichText::new(tl!("Places")).font(semibold(CAPTION)).color(t.text_secondary));
                     for (k, row) in shell.search.rows.iter().enumerate() {
                         if result_row(ui, nd + k, &row.title, &row.detail) {
                             chosen = Some(Pick::Place(row.choice.clone()));
@@ -402,14 +411,14 @@ fn controls(shell: &mut Shell, ui: &mut Ui, map: Rect) {
     let r_in = r_out.translate(vec2(0.0, -ICON_HIT - 2.0));
     let now = ui.input(|i| i.time);
     let size = shell.last_map_size;
-    if icon_button(ui, r_in, icon::PLUS, "Zoom in", &t, false).clicked() {
+    if icon_button(ui, r_in, icon::PLUS, tl!("Zoom in"), &t, false).clicked() {
         shell.map_view_mut().zoom_by(1.0, now, size);
     }
-    if icon_button(ui, r_out, icon::MINUS, "Zoom out", &t, false).clicked() {
+    if icon_button(ui, r_out, icon::MINUS, tl!("Zoom out"), &t, false).clicked() {
         shell.map_view_mut().zoom_by(-1.0, now, size);
     }
     let open = shell.basemap_open;
-    if icon_button(ui, r_base, icon::MAP_TRIFOLD, "Basemap", &t, open).clicked() {
+    if icon_button(ui, r_base, icon::MAP_TRIFOLD, tl!("Basemap"), &t, open).clicked() {
         shell.basemap_open = !shell.basemap_open;
     }
     if shell.basemap_open {
@@ -427,17 +436,17 @@ fn basemap_chooser(shell: &mut Shell, ui: &mut Ui, anchor: Rect) {
         .fixed_pos(anchor.left_bottom() + vec2(-8.0, 0.0))
         .show(ui.ctx(), |ui| {
             panel_frame(&t).show(ui, |ui| {
-                ui.label(egui::RichText::new("Basemap").font(semibold(theme::BODY)));
+                ui.label(egui::RichText::new(tl!("Basemap")).font(semibold(theme::BODY)));
                 ui.horizontal(|ui| {
                     for p in providers() {
                         ui.vertical(|ui| {
                             let (r, resp) = ui.allocate_exact_size(vec2(96.0, 64.0), Sense::click());
                             crate::basemap::paint_thumbnail(ui.painter(), r, &p, t.dark);
                             let selected = shell.prefs.basemap == p.id;
-                            crate::a11y::choice(&resp, p.name, selected);
+                            crate::a11y::choice(&resp, tl!(p.name), selected);
                             let stroke = if selected { Stroke::new(2.0, t.accent) } else { Stroke::new(1.0, t.border) };
                             ui.painter().rect_stroke(r, CornerRadius::same(RADIUS_CONTROL), stroke, egui::StrokeKind::Outside);
-                            ui.label(egui::RichText::new(p.name).size(CAPTION));
+                            ui.label(egui::RichText::new(tl!(p.name)).size(CAPTION));
                             if resp.clicked() && !selected {
                                 shell.prefs.basemap = p.id.into();
                                 shell.basemap_changed();
@@ -447,13 +456,13 @@ fn basemap_chooser(shell: &mut Shell, ui: &mut Ui, anchor: Rect) {
                 });
                 ui.add_space(4.0);
                 if lm_net::offline() {
-                    ui.label(egui::RichText::new("Working offline: online backgrounds are off").size(CAPTION).color(t.text_secondary));
+                    ui.label(egui::RichText::new(tl!("Working offline: online backgrounds are off")).size(CAPTION).color(t.text_secondary));
                 }
-                ui.label(egui::RichText::new("Background strength").size(CAPTION).color(t.text_secondary));
+                ui.label(egui::RichText::new(tl!("Background strength")).size(CAPTION).color(t.text_secondary));
                 let mut pct = (shell.prefs.strength * 100.0).round();
                 let online = lm_core::basemap::provider(&shell.prefs.basemap).source != Source::Offline && !lm_net::offline();
                 let resp = ui.add_enabled(online, egui::Slider::new(&mut pct, 40.0..=100.0).suffix("%").step_by(5.0).fixed_decimals(0));
-                crate::a11y::label(&resp, "Background strength");
+                crate::a11y::label(&resp, tl!("Background strength"));
                 if resp.changed() {
                     shell.prefs.strength = pct / 100.0;
                     shell.basemap_changed();
@@ -487,7 +496,7 @@ pub fn nice(max: f64) -> f64 {
 /// A nice scale value as text: whole numbers with thousands separators ("5,000"), fractions as
 /// written ("0.5").
 fn nice_text(v: f64) -> String {
-    if v >= 1.0 && v.fract() == 0.0 { lm_core::model::group_thousands(v as u64) } else { format!("{v}") }
+    if v >= 1.0 && v.fract() == 0.0 { i18n::count(v as u64) } else { i18n::number(&format!("{v}")) }
 }
 
 /// The scale bar's length in points and its label, for `m_per_pt` metres per point.
@@ -495,7 +504,11 @@ pub fn scale(m_per_pt: f64, units: Units, max_pt: f64) -> (f64, String) {
     match units {
         Units::Metric => {
             let m = nice(m_per_pt * max_pt);
-            let label = if m >= 1000.0 { format!("{} km", nice_text(m / 1000.0)) } else { format!("{} m", nice_text(m)) };
+            let label = if m >= 1000.0 {
+                i18n::fmt("{n} km", &[("n", &nice_text(m / 1000.0))])
+            } else {
+                i18n::fmt("{n} m", &[("n", &nice_text(m))])
+            };
             (m / m_per_pt, label)
         }
         Units::Imperial => {
@@ -503,10 +516,10 @@ pub fn scale(m_per_pt: f64, units: Units, max_pt: f64) -> (f64, String) {
             let ft_max = ft_per_pt * max_pt;
             if ft_max >= 5280.0 {
                 let mi = nice(ft_max / 5280.0);
-                (mi * 5280.0 / ft_per_pt, format!("{} mi", nice_text(mi)))
+                (mi * 5280.0 / ft_per_pt, i18n::fmt("{n} mi", &[("n", &nice_text(mi))]))
             } else {
                 let ft = nice(ft_max);
-                (ft / ft_per_pt, format!("{} ft", nice_text(ft)))
+                (ft / ft_per_pt, i18n::fmt("{n} ft", &[("n", &nice_text(ft))]))
             }
         }
     }
@@ -541,8 +554,8 @@ fn attribution(shell: &mut Shell, ui: &mut Ui, map: Rect) {
     let galley = ui.painter().layout_no_wrap(text.clone(), regular(CAPTION), t.text_secondary);
     let r = Rect::from_min_size(map.right_bottom() - galley.size() - vec2(PANEL_MARGIN + 6.0, PANEL_MARGIN - 2.0), galley.size())
         .expand2(vec2(6.0, 3.0));
-    let resp = ui.allocate_rect(r, Sense::click()).on_hover_text("Credits");
-    crate::a11y::button(&resp, format!("Credits: {text}"));
+    let resp = ui.allocate_rect(r, Sense::click()).on_hover_text(tl!("Credits"));
+    crate::a11y::button(&resp, i18n::fmt("Credits: {text}", &[("text", &text)]));
     ui.painter().rect_filled(r, CornerRadius::same(4), t.surface.gamma_multiply(0.85));
     ui.painter().galley(r.min + vec2(6.0, 3.0), galley, t.text_secondary);
     if resp.clicked() {
@@ -552,21 +565,27 @@ fn attribution(shell: &mut Shell, ui: &mut Ui, map: Rect) {
 
 pub fn credits(shell: &mut Shell, ctx: &egui::Context) {
     let mut open = shell.credits_open;
-    egui::Window::new("Credits").open(&mut open).collapsible(false).resizable(false).default_width(420.0).show(ctx, |ui| {
-        for (what, who) in [
-            ("Map data", "© OpenStreetMap contributors (ODbL), through the Protomaps basemap"),
-            ("Offline basemap", "Natural Earth (public domain)"),
-            ("Place search", "GeoNames (geonames.org), CC BY 4.0"),
-            ("Fonts", "Inter and Noto Sans SC (SIL Open Font License 1.1)"),
-            ("Icons", "Phosphor Icons (MIT)"),
-            ("Engine", "RustGIS (Apache-2.0)"),
-        ] {
-            ui.horizontal_wrapped(|ui| {
-                ui.label(egui::RichText::new(what).strong());
-                ui.label(who);
-            });
-        }
-    });
+    egui::Window::new(tl!("Credits"))
+        .id(egui::Id::new("Credits"))
+        .open(&mut open)
+        .collapsible(false)
+        .resizable(false)
+        .default_width(420.0)
+        .show(ctx, |ui| {
+            for (what, who) in [
+                (tn!("Map data"), tn!("© OpenStreetMap contributors (ODbL), through the Protomaps basemap")),
+                (tn!("Offline basemap"), tn!("Natural Earth (public domain)")),
+                (tn!("Place search"), tn!("GeoNames (geonames.org), CC BY 4.0")),
+                (tn!("Fonts"), tn!("Inter and Noto Sans SC (SIL Open Font License 1.1)")),
+                (tn!("Icons"), tn!("Phosphor Icons (MIT)")),
+                (tn!("Engine"), tn!("RustGIS (Apache-2.0)")),
+            ] {
+                ui.horizontal_wrapped(|ui| {
+                    ui.label(egui::RichText::new(tl!(what)).strong());
+                    ui.label(tl!(who));
+                });
+            }
+        });
     shell.credits_open = open;
 }
 
@@ -580,11 +599,11 @@ fn notices(shell: &mut Shell, ui: &Ui, map: Rect) {
     let now = ui.input(|i| i.time);
     let p = lm_core::basemap::provider(&shell.prefs.basemap);
     let offline_text = if lm_net::offline() && p.source != Source::Offline {
-        (shell.map_view().zoom() > OFFLINE_MAX_ZOOM).then_some("Working offline: the detailed background is off".to_string())
+        (shell.map_view().zoom() > OFFLINE_MAX_ZOOM).then_some(tl!("Working offline: the detailed background is off").to_string())
     } else if p.source == Source::Offline {
-        (shell.map_view().zoom() > OFFLINE_MAX_ZOOM).then_some("Detailed background unavailable offline".to_string())
+        (shell.map_view().zoom() > OFFLINE_MAX_ZOOM).then_some(tl!("Detailed background unavailable offline").to_string())
     } else if !shell.map_view().tile_errors().is_empty() && !lm_mapview::archive::looking() {
-        Some("Detailed background unavailable offline. Your data and tools still work.".to_string())
+        Some(tl!("Detailed background unavailable offline. Your data and tools still work.").to_string())
     } else {
         None
     };
@@ -609,6 +628,7 @@ fn notices(shell: &mut Shell, ui: &Ui, map: Rect) {
 }
 
 fn debug_overlay(shell: &Shell, ui: &Ui, map: Rect) {
+    // i18n: developer only (the debug overlay)
     let mv = shell.map_view();
     let s = mv.stats();
     let text = format!(
@@ -644,22 +664,22 @@ fn welcome(t: &theme::Theme, ui: &mut Ui, map: Rect, library: bool) -> Option<We
     egui::Area::new(egui::Id::new("lm-welcome")).pivot(Align2::CENTER_BOTTOM).fixed_pos(pos).show(ui.ctx(), |ui| {
         panel_frame(t).show(ui, |ui| {
             ui.horizontal(|ui| {
-                ui.label(egui::RichText::new("Open a file to see your data on the map.").size(theme::BODY));
+                ui.label(egui::RichText::new(tl!("Open a file to see your data on the map.")).size(theme::BODY));
                 let close = ui.add(egui::Button::new(egui::RichText::new(icon::X).font(theme::icon_font(12.0))).frame(false));
-                crate::a11y::button(&close, "Close");
-                if close.on_hover_text("Close").clicked() {
+                crate::a11y::button(&close, tl!("Close"));
+                if close.on_hover_text(tl!("Close")).clicked() {
                     out = Some(Welcome::Close);
                 }
             });
             ui.horizontal(|ui| {
-                if ui.add(egui::Button::new(egui::RichText::new("Open file…").color(t.on_accent)).fill(t.accent)).clicked() {
+                if ui.add(egui::Button::new(egui::RichText::new(tl!("Open file…")).color(t.on_accent)).fill(t.accent)).clicked() {
                     out = Some(Welcome::Open);
                 }
                 // Examples ▾: a list to choose from (owner's request, 2026-10-18).
                 // The caret is an icon glyph: it must be set in the icon font, the word in the text font.
                 let mut label = egui::text::LayoutJob::default();
                 label.append(
-                    "Examples ",
+                    &format!("{} ", tl!("Examples")),
                     0.0,
                     egui::TextFormat { font_id: theme::regular(theme::BODY), color: t.text_primary, ..Default::default() },
                 );
@@ -676,8 +696,8 @@ fn welcome(t: &theme::Theme, ui: &mut Ui, map: Rect, library: bool) -> Option<We
                         }
                     }
                 });
-                crate::a11y::button(&menu.response, "Examples");
-                if library && ui.button("Browse data library").on_hover_text("Course datasets to add to the map").clicked() {
+                crate::a11y::button(&menu.response, tl!("Examples"));
+                if library && ui.button(tl!("Browse data library")).on_hover_text(tl!("Course datasets to add to the map")).clicked() {
                     out = Some(Welcome::Library);
                 }
             });
@@ -691,8 +711,8 @@ fn welcome(t: &theme::Theme, ui: &mut Ui, map: Rect, library: bool) -> Option<We
 fn example_row(ui: &mut Ui, t: &theme::Theme, e: &crate::examples::Example) -> egui::Response {
     let (rect, r) = ui.allocate_exact_size(vec2(344.0, 46.0), Sense::click());
     let r = r.on_hover_cursor(egui::CursorIcon::PointingHand);
-    r.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, e.title));
-    crate::a11y::describe(&r, e.blurb);
+    r.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, tl!(e.title)));
+    crate::a11y::describe(&r, tl!(e.blurb));
     let p = ui.painter();
     if r.hovered() {
         p.rect_filled(rect, CornerRadius::same(theme::RADIUS_CONTROL), t.accent.gamma_multiply(0.10));
@@ -703,8 +723,8 @@ fn example_row(ui: &mut Ui, t: &theme::Theme, e: &crate::examples::Example) -> e
     p.rect_filled(tile, CornerRadius::same(8), tint.gamma_multiply(if t.dark { 0.30 } else { 0.16 }));
     p.text(tile.center(), Align2::CENTER_CENTER, e.icon, theme::icon_font(20.0), tint);
     let x = tile.right() + 10.0;
-    p.text(pos2(x, rect.center().y - 9.0), Align2::LEFT_CENTER, e.title, theme::regular(theme::BODY), t.text_primary);
-    p.text(pos2(x, rect.center().y + 9.0), Align2::LEFT_CENTER, e.blurb, theme::regular(theme::CAPTION), t.text_secondary);
+    p.text(pos2(x, rect.center().y - 9.0), Align2::LEFT_CENTER, tl!(e.title), theme::regular(theme::BODY), t.text_primary);
+    p.text(pos2(x, rect.center().y + 9.0), Align2::LEFT_CENTER, tl!(e.blurb), theme::regular(theme::CAPTION), t.text_secondary);
     r
 }
 
