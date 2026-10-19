@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hittegolfkaart van de zomer van 2023, dag voor dag · NimbleMap</title>
+<meta name="description" content="Een stappenplan in NimbleMap: speel een zomer aan dagelijkse hittegolfgegevens af met de tijdbalk, lees losse cellen af en exporteer een kant-en-klare kaartafbeelding.">
+<link rel="canonical" href="workflow-heatwave.html">
+<link rel="alternate" hreflang="en" href="../workflow-heatwave.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/workflow-heatwave.html">
+<link rel="alternate" hreflang="de" href="../de/workflow-heatwave.html">
+<link rel="alternate" hreflang="es" href="../es/workflow-heatwave.html">
+<link rel="alternate" hreflang="fr" href="../fr/workflow-heatwave.html">
+<link rel="alternate" hreflang="it" href="../it/workflow-heatwave.html">
+<link rel="alternate" hreflang="nl" href="workflow-heatwave.html">
+<link rel="alternate" hreflang="pt-BR" href="../pt-br/workflow-heatwave.html">
+<link rel="alternate" hreflang="ru" href="../ru/workflow-heatwave.html">
+<link rel="alternate" hreflang="ja" href="../ja/workflow-heatwave.html">
+<link rel="alternate" hreflang="ko" href="../ko/workflow-heatwave.html">
+<link rel="alternate" hreflang="x-default" href="../workflow-heatwave.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="NimbleMap">
+<meta property="og:locale" content="nl_NL">
+<meta property="og:title" content="Hittegolfkaart van de zomer van 2023, dag voor dag · NimbleMap">
+<meta property="og:description" content="Een stappenplan in NimbleMap: speel een zomer aan dagelijkse hittegolfgegevens af met de tijdbalk, lees losse cellen af en exporteer een kant-en-klare kaartafbeelding.">
+<meta property="og:url" content="workflow-heatwave.html">
+<meta property="og:image" content="../img/heatwave-slider.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/site.css">
+<script src="../assets/site.js"></script>
+</head>
+<body>
+<header class="site-head">
+  <div class="wrap">
+    <a class="brand" href="index.html"><img src="../assets/logo.svg" alt="" width="30" height="30">NimbleMap</a>
+    <nav class="nav" aria-label="Website">
+      <a href="index.html">Start</a>
+      <a href="help.html" aria-current="page">Help</a>
+      <a href="glossary.html">Woordenlijst</a>
+      <a href="download.html">Downloaden</a>
+      <details class="lang-menu">
+        <summary aria-label="Taal: Nederlands" title="Taal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.6 3.9 5.6 3.9 9s-1.3 6.4-3.9 9c-2.6-2.6-3.9-5.6-3.9-9S9.4 5.6 12 3z"/></svg><span>NL</span></summary>
+        <ul>
+          <li><a href="../workflow-heatwave.html" hreflang="en" lang="en">English</a></li>
+          <li><a href="../zh/workflow-heatwave.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li>
+          <li><a href="../de/workflow-heatwave.html" hreflang="de" lang="de">Deutsch</a></li>
+          <li><a href="../es/workflow-heatwave.html" hreflang="es" lang="es">Español</a></li>
+          <li><a href="../fr/workflow-heatwave.html" hreflang="fr" lang="fr">Français</a></li>
+          <li><a href="../it/workflow-heatwave.html" hreflang="it" lang="it">Italiano</a></li>
+          <li><a href="workflow-heatwave.html" hreflang="nl" lang="nl" aria-current="true">Nederlands</a></li>
+          <li><a href="../pt-br/workflow-heatwave.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li>
+          <li><a href="../ru/workflow-heatwave.html" hreflang="ru" lang="ru">Русский</a></li>
+          <li><a href="../ja/workflow-heatwave.html" hreflang="ja" lang="ja">日本語</a></li>
+          <li><a href="../ko/workflow-heatwave.html" hreflang="ko" lang="ko">한국어</a></li>
+        </ul>
+      </details>
+      <button class="theme-btn" type="button" aria-label="Thema wisselen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></svg></button>
+    </nav>
+  </div>
+</header>
+<main>
+<div class="page-head contours">
+  <div class="narrow">
+    <p class="eyebrow">Stappenplan 2 · Gratis</p>
+    <h1>De hittegolf van 2023 door de tijd</h1>
+    <p class="lede">In de zomer van 2023 sneuvelden op meerdere continenten hitterecords. Dit voorbeeld bevat 92 dagen hittegolfintensiteit voor de hele wereld, van 1 juni tot en met 31 augustus. Je speelt het af als een film, stopt op een dag, leest losse plekken af en exporteert de kaart als afbeelding.</p>
+    <div class="toc">Je gebruikt: <a class="term" href="glossary.html#netcdf">NetCDF</a>, <a class="term" href="glossary.html#raster">rasters</a>, <a class="term" href="glossary.html#timestep">tijdstappen</a>, <a class="term" href="glossary.html#nodata">geen gegevens</a> en <a class="term" href="glossary.html#export">kaartafbeeldingen</a>.</div>
+  </div>
+</div>
+<div class="narrow">
+<ol class="steps">
+  <li id="open">
+    <h3>Open het voorbeeld</h3>
+    <p>Klik op de infokaart van het welkomstscherm op <span class="ui">Examples</span> (Voorbeelden) (of kies File › Open Example) en kies <span class="ui">Heatwaves, summer 2023</span> (Hittegolven, zomer 2023).</p>
+    <p>De kaartlaag <span class="ui">heatwaves summer 2023</span> verschijnt, met de naam van de <a class="term" href="glossary.html#variable">variabele</a> eronder: <span class="ui">Heat-wave intensity (°C)</span> (Hittegolfintensiteit (°C)). De infokaart legt het bestand in gewone woorden uit: een NetCDF-4-bestand met één variabele op een rooster van 720 × 360, <span class="ui">Time: 1 Jun 2023 to 31 Aug 2023 (92 steps)</span> (Tijd: 1 jun 2023 t/m 31 aug 2023 (92 stappen)). De eerste regel, <span class="ui">Treated as measured values (averaged, not summed)</span> (Behandeld als meetwaarden (gemiddeld, niet opgeteld)), is een <a class="term" href="glossary.html#assumption">aanname</a> die je kunt wijzigen met <span class="ui">Change</span> (Wijzigen).</p>
+  </li>
+  <li id="slider">
+    <h3>Speel de zomer af</h3>
+    <p>Onderaan de kaart verschijnt een tijdbalk, omdat de kaartlaag datums heeft. Druk op <span class="ui">Play</span> (Afspelen), sleep het schuifje, of gebruik <span class="ui">Previous step (←)</span> (Vorige stap) en <span class="ui">Next step (→)</span> (Volgende stap); de pijltoetsen op je toetsenbord werken ook. Rechts staan de datum van de getoonde dag, zoals <span class="ui">16 Jul 2023</span> (16 jul 2023), en de stap (<span class="ui">46 of 92</span>, 46 van 92).</p>
+    <figure class="frame shot"><img src="../img/heatwave-slider.jpg" alt="De wereld op 16 juli 2023, met hittegolven boven de Middellandse Zee, het zuiden van de Verenigde Staten en Zuid-Amerika, en de tijdbalk op stap 46 van 92." width="1600" height="996" loading="lazy"><figcaption>16 juli 2023: hitte boven de Middellandse Zee, het zuiden van de Verenigde Staten, Mexico en China, en sterke zeehitte voor de kust van West-Afrika en Zuid-Amerika.</figcaption></figure>
+    <p class="note">Het kleurbereik blijft elke dag hetzelfde, dus een rodere kleur betekent altijd een zwaardere hittegolf, nooit alleen een andere schaal. De legenda noemt de dag: <span class="ui">Heat-wave intensity (°C), 16 Jul 2023</span>.</p>
+  </li>
+  <li id="click">
+    <h3>Lees één plek af</h3>
+    <p>Zoom in op een gebied (scrollen of knijpen, of typ een plaats in het zoekvak) en klik op een gekleurde cel. De infokaart toont de waarde van die cel op die dag, en hoe die zich verhoudt: <span class="ui">1.70 °C</span> (1,70 °C), <span class="ui">lower than 58% of this layer’s cells (estimated from a sample)</span> (lager dan 58% van de cellen van deze laag (geschat op basis van een steekproef)).</p>
+    <figure class="frame shot"><img src="../img/heatwave-click.jpg" alt="Europa en Noord-Afrika op 16 juli 2023; een cel in het noorden van Algerije is geselecteerd en de infokaart meldt 1,70 °C, lager dan 58% van de cellen van deze laag." width="1600" height="996" loading="lazy"></figure>
+    <p>Cellen die leeg blijven, zijn <a class="term" href="glossary.html#nodata">geen gegevens</a>: daar is die dag geen hittegolf vastgelegd. Klik je erop, dan staat er <span class="ui">No value</span> (Geen waarde), <span class="ui">This cell has no data.</span> (Deze cel heeft geen gegevens.) Dat is niet hetzelfde als nul.</p>
+    <p class="note">Elke cel is 0,5° breed, ongeveer 55 km op de evenaar, dus een waarde beschrijft een groot vierkant, niet één stad. Zie <a href="glossary.html#resolution">resolutie</a>.</p>
+  </li>
+  <li id="colors">
+    <h3>Laat de heetste plekken opvallen</h3>
+    <p>Klik op de infokaart van de kaartlaag op <span class="ui">Show only values above…</span> (Alleen waarden boven… tonen) om alles onder een drempel die je zelf kiest grijs te maken, of op <span class="ui">Change colors and range</span> (Kleuren en waardebereik wijzigen) om een ander <span class="ui">Palette</span> (Kleurenpalet) of <span class="ui">Range</span> (Waardebereik) te kiezen in het tabblad <span class="ui">Style</span> (Stijl). Met een geselecteerde cel markeert <span class="ui">Show where values are like this</span> (Tonen waar waarden hierop lijken) elke cel met een vergelijkbare waarde.</p>
+  </li>
+  <li id="export">
+    <h3>Exporteer de kaart als afbeelding</h3>
+    <p>Stop op de dag die je wilt en klik op <span class="ui">Share</span> (Delen) › <span class="ui">Map image…</span> (Kaartafbeelding…) (⌘E). Het venster toont de afbeelding precies zoals die wordt opgeslagen.</p>
+    <figure class="frame shot"><img src="../img/heatwave-export.jpg" alt="Het venster Export map image: een wereldkaart van 16 juli 2023 met breedte- en lengtegraden op de rand en een legenda, en opties voor formaat, noordpijl, schaalbalk, labels, titel, bijschrift en legenda." width="1600" height="996" loading="lazy"></figure>
+    <ul>
+      <li><span class="ui">Size</span> (Formaat): <span class="ui">Slide 16:9</span> (Dia 16:9, 1920 × 1080), <span class="ui">Report A4</span> (Rapport A4) of <span class="ui">Square</span> (Vierkant).</li>
+      <li><span class="ui">Show</span> (Tonen): <span class="ui">Fit to data</span> (Passend op gegevens) of <span class="ui">Current view</span> (Huidige weergave: wat je in het venster ziet).</li>
+      <li><span class="ui">North arrow</span> (Noordpijl), <span class="ui">Scale bar</span> (Schaalbalk) en <span class="ui">Lat/lon labels</span> (Lengte/breedte-labels): <span class="ui">Auto</span> (Automatisch) kiest wat bij de kaart past; een wereldkaart krijgt breedte- en lengtegraden op de rand in plaats van een schaalbalk, omdat afstanden daarop te sterk verschillen.</li>
+      <li><span class="ui">Title</span> (Titel): bijvoorbeeld “Hittegolven op 16 juli 2023”. Het <span class="ui">Caption</span> (Bijschrift) wordt samengesteld uit de kaartlagen en bronnen; pas het gerust aan.</li>
+    </ul>
+    <p>Klik op <span class="ui">Save…</span> (Opslaan…) om een PNG te bewaren. De legenda vermeldt de datum, zodat de afbeelding voor zich spreekt als je hem deelt.</p>
+    <p class="note">Wil je een reeks? Ga naar de volgende dag en exporteer opnieuw. Elke afbeelding houdt hetzelfde kleurbereik, zodat je de beelden eerlijk kunt vergelijken.</p>
+  </li>
+</ol>
+<div class="pro-note" style="margin-bottom:30px"><strong>NimbleMap Pro.</strong> Stel vragen over de hitte in gewone woorden, bijvoorbeeld “Which countries had the strongest heatwave on this day?” (Welke landen hadden op deze dag de zwaarste hittegolf?), met de ingebouwde wereldlanden van Pro. Het antwoord werkt met de getoonde variabele en dag, en het recept noemt ze allebei.</div>
+<p class="coords" style="margin:10px 0 60px">Gegevens: Copernicus Global Drought Observatory (Europese Commissie, JRC), GDO Warm Spell Intensity (ERA5), 2023; © Europese Unie, 1995–2026, CC BY 4.0. Voor NimbleMap ingekort tot juni–augustus, gemiddeld naar 0,5°, dagen zonder warme periode op geen gegevens gezet. Achtergrondkaart © OpenStreetMap-bijdragers, Protomaps, Natural Earth.</p>
+</div>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <div>
+      <p><strong>NimbleMap Help</strong> · Deze pagina's zitten in de app (Help › NimbleMap Help) en werken offline.</p>
+      <p>Schermafbeeldingen tonen kaartgegevens © OpenStreetMap-bijdragers (ODbL) via Protomaps, Natural Earth (publiek domein) en NASA Blue Marble-beelden (NASA Earth Observatory, GIBS). De bronnen van de voorbeeldgegevens staan op elke pagina.</p>
+    </div>
+    <div><a href="help.html">Help</a> · <a href="glossary.html">Woordenlijst</a><p class="foot-langs"><a href="../workflow-heatwave.html" hreflang="en" lang="en">English</a> · <a href="../zh/workflow-heatwave.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="../de/workflow-heatwave.html" hreflang="de" lang="de">Deutsch</a> · <a href="../es/workflow-heatwave.html" hreflang="es" lang="es">Español</a> · <a href="../fr/workflow-heatwave.html" hreflang="fr" lang="fr">Français</a> · <a href="../it/workflow-heatwave.html" hreflang="it" lang="it">Italiano</a> · <a href="../pt-br/workflow-heatwave.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ru/workflow-heatwave.html" hreflang="ru" lang="ru">Русский</a> · <a href="../ja/workflow-heatwave.html" hreflang="ja" lang="ja">日本語</a> · <a href="../ko/workflow-heatwave.html" hreflang="ko" lang="ko">한국어</a></p></div>
+  </div>
+</footer>
+</body>
+</html>

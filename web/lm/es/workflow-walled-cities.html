@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ciudades amuralladas de China en 1866, en un mapa · NimbleMap</title>
+<meta name="description" content="Un flujo de trabajo paso a paso en NimbleMap: pon 1789 murallas de ciudades de la China imperial tardía sobre imágenes de satélite, ordénalas por tamaño, filtra las capitales de provincia y comparte un mapa.">
+<link rel="canonical" href="workflow-walled-cities.html">
+<link rel="alternate" hreflang="en" href="../workflow-walled-cities.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/workflow-walled-cities.html">
+<link rel="alternate" hreflang="de" href="../de/workflow-walled-cities.html">
+<link rel="alternate" hreflang="es" href="workflow-walled-cities.html">
+<link rel="alternate" hreflang="fr" href="../fr/workflow-walled-cities.html">
+<link rel="alternate" hreflang="it" href="../it/workflow-walled-cities.html">
+<link rel="alternate" hreflang="nl" href="../nl/workflow-walled-cities.html">
+<link rel="alternate" hreflang="pt-BR" href="../pt-br/workflow-walled-cities.html">
+<link rel="alternate" hreflang="ru" href="../ru/workflow-walled-cities.html">
+<link rel="alternate" hreflang="ja" href="../ja/workflow-walled-cities.html">
+<link rel="alternate" hreflang="ko" href="../ko/workflow-walled-cities.html">
+<link rel="alternate" hreflang="x-default" href="../workflow-walled-cities.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="NimbleMap">
+<meta property="og:locale" content="es_ES">
+<meta property="og:title" content="Ciudades amuralladas de China en 1866, en un mapa · NimbleMap">
+<meta property="og:description" content="Un flujo de trabajo paso a paso en NimbleMap: pon 1789 murallas de ciudades de la China imperial tardía sobre imágenes de satélite, ordénalas por tamaño, filtra las capitales de provincia y comparte un mapa.">
+<meta property="og:url" content="workflow-walled-cities.html">
+<meta property="og:image" content="../img/walls-satellite.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/site.css">
+<script src="../assets/site.js"></script>
+</head>
+<body>
+<header class="site-head">
+  <div class="wrap">
+    <a class="brand" href="index.html"><img src="../assets/logo.svg" alt="" width="30" height="30">NimbleMap</a>
+    <nav class="nav" aria-label="Sitio">
+      <a href="index.html">Inicio</a>
+      <a href="help.html" aria-current="page">Ayuda</a>
+      <a href="glossary.html">Glosario</a>
+      <a href="download.html">Descargar</a>
+      <details class="lang-menu">
+        <summary aria-label="Idioma: Español" title="Idioma"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.6 3.9 5.6 3.9 9s-1.3 6.4-3.9 9c-2.6-2.6-3.9-5.6-3.9-9S9.4 5.6 12 3z"/></svg><span>ES</span></summary>
+        <ul>
+          <li><a href="../workflow-walled-cities.html" hreflang="en" lang="en">English</a></li>
+          <li><a href="../zh/workflow-walled-cities.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li>
+          <li><a href="../de/workflow-walled-cities.html" hreflang="de" lang="de">Deutsch</a></li>
+          <li><a href="workflow-walled-cities.html" hreflang="es" lang="es" aria-current="true">Español</a></li>
+          <li><a href="../fr/workflow-walled-cities.html" hreflang="fr" lang="fr">Français</a></li>
+          <li><a href="../it/workflow-walled-cities.html" hreflang="it" lang="it">Italiano</a></li>
+          <li><a href="../nl/workflow-walled-cities.html" hreflang="nl" lang="nl">Nederlands</a></li>
+          <li><a href="../pt-br/workflow-walled-cities.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li>
+          <li><a href="../ru/workflow-walled-cities.html" hreflang="ru" lang="ru">Русский</a></li>
+          <li><a href="../ja/workflow-walled-cities.html" hreflang="ja" lang="ja">日本語</a></li>
+          <li><a href="../ko/workflow-walled-cities.html" hreflang="ko" lang="ko">한국어</a></li>
+        </ul>
+      </details>
+      <button class="theme-btn" type="button" aria-label="Cambiar tema"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></svg></button>
+    </nav>
+  </div>
+</header>
+<main>
+<div class="page-head contours">
+  <div class="narrow">
+    <p class="eyebrow">Flujo de trabajo 3 · Gratis</p>
+    <h1>Ciudades amuralladas de China, 1866</h1>
+    <p class="lede">En 1866, casi todas las sedes de gobierno de China, desde la capital hasta las cabeceras de distrito y los puestos de guarnición, estaban rodeadas por una muralla. Este ejemplo cartografía 1789 de ellas. Las superpondrás a imágenes de satélite, encontrarás las más grandes, conservarás solo las capitales de provincia y harás un mapa para compartir.</p>
+    <div class="toc">Usarás: el <a class="term" href="glossary.html#basemap">mapa base de satélite</a>, <a class="term" href="glossary.html#feature">elementos</a>, <a class="term" href="glossary.html#insight">comparaciones</a>, <a class="term" href="glossary.html#filter">filtros</a>, el <a class="term" href="glossary.html#style">estilo</a> e <a class="term" href="glossary.html#export">imágenes de mapa</a>.</div>
+  </div>
+</div>
+<div class="narrow">
+<ol class="steps">
+  <li id="open">
+    <h3>Abre el ejemplo</h3>
+    <p>Haz clic en <span class="ui">Examples</span> (Ejemplos) en la ficha de bienvenida (o en File › Open Example, es decir, Archivo › Abrir ejemplo) y elige <span class="ui">Walled cities of China, 1866</span> (Ciudades amuralladas de China, 1866). La ficha dice <span class="ui">1,789 areas · walled cities 1866.geojson</span> (1789 áreas · walled cities 1866.geojson); cada área es el terreno que queda dentro de una muralla.</p>
+    <p>La primera línea de la ficha es un <a class="term" href="glossary.html#assumption">supuesto</a>: <span class="ui">If these came from a Chinese map app (Amap, Tencent or Baidu), they may sit a few hundred meters off.</span> (Si proceden de una app de mapas china (Amap, Tencent o Baidu), pueden estar desplazados unos cientos de metros.) Estos contornos se dibujaron sobre coordenadas GPS, así que déjalos como están. Con tus propios datos de una app de mapas china, haz clic en <span class="ui">Compare</span> (Comparar) para ver ambas posiciones; consulta <a href="glossary.html#gcj02">GCJ-02</a>.</p>
+  </li>
+  <li id="satellite">
+    <h3>Cambia al mapa base de satélite</h3>
+    <p>Haz clic en el botón del mapa base, abajo a la derecha del mapa (el icono del mapa plegado, <span class="ui">Basemap</span>, Mapa base), y elige <span class="ui">Satellite</span> (Satélite). La llanura, las montañas y la costa del norte de China aparecen en las imágenes Blue Marble de la NASA, con los nombres de lugares encima.</p>
+    <figure class="frame shot"><img src="../img/walls-region.jpg" alt="El norte de China en imágenes de satélite, de Hohhot a Qingdao, con la capa de ciudades amuralladas abierta y su ficha mostrando una leyenda por fiabilidad." width="1600" height="996" loading="lazy"><figcaption>A esta distancia, las murallas son motas diminutas: las de las cabeceras de distrito solían encerrar menos de un kilómetro cuadrado.</figcaption></figure>
+    <p class="note">Las imágenes de satélite se ven nítidas hasta la escala de una ciudad, más o menos. Si te acercas más, la aplicación cambia sola al callejero y vuelve a las imágenes cuando te alejas.</p>
+  </li>
+  <li id="find">
+    <h3>Encuentra Pekín y mira lo grande que era</h3>
+    <p>Escribe <strong>Beijing</strong> (así figura en los datos) en <span class="ui">Find in walled cities 1866</span> (Buscar en walled cities 1866), en la ficha de la capa (o en el cuadro de búsqueda de la barra de herramientas), y acércate. Haz clic dentro de la muralla. La ficha muestra sus datos y cómo se compara: <span class="ui">area_km2 35.32 km²</span>, <span class="ui">higher than 99% of 1,789 areas</span> (mayor que el 99&nbsp;% de las 1789 áreas).</p>
+    <figure class="frame shot"><img src="../img/walls-satellite.jpg" alt="Las murallas de Pekín perfiladas sobre imágenes de satélite; la ficha muestra un área de 35.32 km², mayor que el 99&nbsp;% de las 1789 áreas, tipo Provincial Capital." width="1600" height="996" loading="lazy"></figure>
+  </li>
+  <li id="compare">
+    <h3>Ordena todas las ciudades amuralladas</h3>
+    <p>Haz clic en <span class="ui">Compare with other walled cities 1866</span> (Comparar con otros elementos de walled cities 1866). La ficha se convierte en una lista ordenada, <span class="ui">1,789 areas, highest first</span> (1789 áreas, de mayor a menor), con la muralla seleccionada resaltada. Nankín, la antigua capital del sur, encabeza la lista con 40.85 km²; el conjunto de datos registra dos recintos amurallados llamados Pekín. <span class="ui">Compare by</span> (Comparar por) cambia el campo; <span class="ui">Back</span> (Atrás) vuelve a la ficha.</p>
+    <figure class="frame shot"><img src="../img/walls-compare.jpg" alt="Una lista de barras ordenada: Nanjing 40.85 km², Beijing 35.32, Beijing 25.38, Tianjin 24.39, Suzhou 13.62, Shengjing, Kaifeng, Hangzhou, Chengdu…" width="1600" height="996" loading="lazy"></figure>
+  </li>
+  <li id="filter">
+    <h3>Conserva las capitales</h3>
+    <p>Haz clic en <span class="ui">View in table</span> (Ver en la tabla) y luego en <span class="ui">+ Filter</span> (+ Filtro). Completa la frase así: <span class="ui">Show areas where type is any of Provincial Capital</span> (Mostrar las áreas cuyo tipo sea Provincial Capital); indica <span class="ui">19 match</span> (19 coincidencias). Si también quieres las capitales imperiales, añade <span class="ui">Capital</span> a la misma lista y haz clic en <span class="ui">Apply</span> (Aplicar).</p>
+    <figure class="frame shot"><img src="../img/walls-filter.jpg" alt="La frase del filtro “Show areas where type is any of Provincial Capital”, 19 match, encima de la tabla de ciudades amuralladas." width="1600" height="996" loading="lazy"></figure>
+    <p class="note">El campo <span class="ui">type</span> sigue la jerarquía Qing: Capital (capital imperial), Provincial Capital (capital de provincia), Fu (prefectura), Zhou, Ting, County (distrito) y puestos militares (Wei, Suo, guarniciones manchúes). <span class="ui">reliability</span> es la calificación de fiabilidad del propio conjunto de datos, de la A a la D; la D marca lugares que no tenían muralla.</p>
+  </li>
+  <li id="color">
+    <h3>Colorea las murallas por tipo</h3>
+    <p>Quita el filtro (la × de su etiqueta) para volver a ver todas las murallas; luego abre la pestaña <span class="ui">Style</span> (Estilo) de la capa y elige <span class="ui">type</span> en el menú <span class="ui">Color</span>. Cada tipo de localidad recibe su propio color y la <span class="ui">Legend</span> (Leyenda) los enumera. Sube la <span class="ui">Opacity</span> (Opacidad) o el <span class="ui">Width</span> (Grosor) del <span class="ui">Outline</span> (Contorno) para que las murallas pequeñas se distingan sobre las imágenes.</p>
+  </li>
+  <li id="share">
+    <h3>Compártelo</h3>
+    <p>Acércate a la región que quieras mostrar; el curso bajo del Yangtsé, en torno a Nankín y Suzhou, está lleno de localidades amuralladas. Después, haz clic en <span class="ui">Share</span> › <span class="ui">Map image…</span> (Compartir › Imagen del mapa…), pon <span class="ui">Show</span> (Mostrar) en <span class="ui">Current view</span> (Vista actual) (con toda China a la vista, las murallas son demasiado pequeñas para verse), añade un <span class="ui">Title</span> (Título) como “Ciudades amuralladas del bajo Yangtsé, 1866” y haz clic en <span class="ui">Save…</span> (Guardar…). La <a href="workflow-heatwave.html#export">ventana de exportación</a> funciona igual para cualquier mapa.</p>
+    <p><span class="ui">Share</span> › <span class="ui">Data…</span> (Compartir › Datos…) guarda las murallas que has filtrado en un archivo GeoJSON o CSV, para una hoja de cálculo u otro SIG. Para conservar el mapa entero, con sus capas, estilos y filtros, usa File › <span class="ui">Save</span> (Archivo › Guardar, ⌘S).</p>
+    <p class="note">El conjunto de datos tiene licencia CC BY 4.0: cuando compartas un mapa, cita a Xue et al. 2021 (el pie de imagen que escribe la aplicación nombra el archivo; añade los autores).</p>
+  </li>
+</ol>
+<div class="note" style="margin-bottom:24px"><strong>Añadir tus propios datos.</strong> Puedes vincular una hoja de cálculo a lugares mediante una columna común, lo que se llama una <a href="glossary.html#join">unión</a>: abre la hoja de cálculo mientras la capa está abierta y NimbleMap las empareja. Una unión necesita una columna cuyos valores no se repitan en la capa. En este conjunto de datos, varias localidades comparten nombre (hay dos Pekín y muchos Taizhou), así que los nombres no sirven como clave; en cambio, una tabla de países unida por nombre o código de país funciona a la primera.</div>
+<div class="pro-note" style="margin-bottom:30px"><strong>NimbleMap Pro.</strong> Pregunta, por ejemplo, “Which walled cities sat highest above sea level?” (¿qué ciudades amuralladas estaban a mayor altitud sobre el nivel del mar?). La capa de elevación que Pro trae incluida y el cuadro de preguntas responden con una lista ordenada y una vista previa en el mapa, siguiendo los mismos pasos comprobados que podrías leer en su receta.</div>
+<p class="coords" style="margin:10px 0 60px">Datos: Xue, Q., Jin, X., Cheng, Y., Yang, X., Zhou, Y. (2021). The dataset of walled cities and urban extent in late imperial China in the 15th–19th centuries. Earth Syst. Sci. Data 13, 5071–5085, doi:10.5194/essd-13-5071-2021; CC BY 4.0. Imágenes de satélite: NASA Blue Marble (NASA Earth Observatory, GIBS). Etiquetas © colaboradores de OpenStreetMap, Natural Earth.</p>
+</div>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <div>
+      <p><strong>Ayuda de NimbleMap</strong> · Estas páginas vienen incluidas en la aplicación (Help › NimbleMap Help, es decir, Ayuda › Ayuda de NimbleMap) y funcionan sin conexión.</p>
+      <p>Las capturas de pantalla muestran datos cartográficos © colaboradores de OpenStreetMap (ODbL) a través de Protomaps, Natural Earth (dominio público) e imágenes NASA Blue Marble (NASA Earth Observatory, GIBS). Los créditos de los datos de ejemplo figuran en cada página.</p>
+    </div>
+    <div><a href="help.html">Ayuda</a> · <a href="glossary.html">Glosario</a><p class="foot-langs"><a href="../workflow-walled-cities.html" hreflang="en" lang="en">English</a> · <a href="../zh/workflow-walled-cities.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="../de/workflow-walled-cities.html" hreflang="de" lang="de">Deutsch</a> · <a href="../fr/workflow-walled-cities.html" hreflang="fr" lang="fr">Français</a> · <a href="../it/workflow-walled-cities.html" hreflang="it" lang="it">Italiano</a> · <a href="../nl/workflow-walled-cities.html" hreflang="nl" lang="nl">Nederlands</a> · <a href="../pt-br/workflow-walled-cities.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ru/workflow-walled-cities.html" hreflang="ru" lang="ru">Русский</a> · <a href="../ja/workflow-walled-cities.html" hreflang="ja" lang="ja">日本語</a> · <a href="../ko/workflow-walled-cities.html" hreflang="ko" lang="ko">한국어</a></p></div>
+  </div>
+</footer>
+</body>
+</html>

@@ -394,3 +394,49 @@ code { font: .88em var(--mono); background: var(--paper-2); padding: 1px 5px; bo
 .showcase .pause[aria-pressed="true"] .play { display: inline; }
 .showcase .kind-caption { margin: 8px 2px 0; font-size: 14px; color: var(--ink-3); min-height: 1.5em; }
 @media (prefers-reduced-motion: reduce) { .showcase .slide { transition: none; } }
+
+/* ---- Languages (tools/lm/site/langs.py writes the markup) ---- */
+/* Japanese and Korean faces before the Chinese ones in --sans, so kanji take Japanese forms and
+   hangul has a face (Windows and Android fall back to Meiryo/Yu Gothic, Malgun Gothic, Noto). */
+:lang(ja) { --sans: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Yu Gothic", Meiryo, "Noto Sans CJK JP", "Noto Sans JP", "Segoe UI", sans-serif;
+            --serif: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif CJK JP", "Noto Serif JP", Georgia, serif; }
+:lang(ko) { --sans: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans CJK KR", "Noto Sans KR", "Segoe UI", sans-serif;
+            --serif: "AppleMyungjo", "Nanum Myeongjo", "Noto Serif CJK KR", "Noto Serif KR", Georgia, serif; }
+:lang(ja) body, body:lang(ja), :lang(ko) body, body:lang(ko) { line-height: 1.8; }
+:lang(ja) h1, :lang(ja) h2, :lang(ja) h3, :lang(ko) h1, :lang(ko) h2, :lang(ko) h3 { letter-spacing: 0; line-height: 1.35; }
+:lang(ko) { word-break: keep-all; }  /* Korean breaks between words, not inside them */
+:lang(ja) .eyebrow, :lang(ko) .eyebrow, :lang(zh) .eyebrow { letter-spacing: .08em; }
+
+/* The language menu: a <details> list, so it opens without JavaScript. Its list hangs from the
+   header's right edge (inside the 16px gutters at any width), in two columns. */
+.site-head .wrap { position: relative; }
+.lang-menu { position: static; }
+.lang-menu summary {
+  list-style: none; display: flex; align-items: center; gap: 5px; cursor: pointer;
+  color: var(--ink-2); font-size: 15px; padding: 6px 9px; border-radius: 8px; border: 1px solid var(--rule);
+}
+.lang-menu summary::-webkit-details-marker { display: none; }
+.lang-menu summary::after { content: ""; width: 6px; height: 6px; border: solid currentColor; border-width: 0 1.5px 1.5px 0; transform: translateY(-2px) rotate(45deg); margin-left: 2px; }
+.lang-menu[open] summary::after { transform: translateY(1px) rotate(-135deg); }
+.lang-menu summary:hover, .lang-menu[open] summary { background: var(--paper-2); color: var(--ink); }
+.lang-menu summary svg { width: 17px; height: 17px; flex: none; }
+.lang-menu ul {
+  position: absolute; right: 0; top: calc(100% + 6px); z-index: 20; margin: 0; padding: 6px; list-style: none;
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px; width: max-content; max-width: 100%;
+  background: var(--card); border: 1px solid var(--rule); border-radius: 12px; box-shadow: var(--shadow);
+}
+.nav .lang-menu a { display: block; padding: 7px 12px; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nav .lang-menu a[aria-current="true"] { color: var(--ink); font-weight: 600; background: var(--paper-2); }
+@media (max-width: 640px) {
+  .lang-menu summary { padding: 6px 7px; font-size: 14px; }
+  .lang-menu ul { left: 0; right: 0; width: auto; top: 100%; }
+}
+/* On a phone the globe alone marks the menu (its name says which language), so the links fit on
+   one row in most languages. */
+@media (max-width: 420px) {
+  .lang-menu summary span, .lang-menu summary::after { display: none; }
+  .nav { gap: 0; }
+  .nav a, .nav button, .lang-menu summary { padding: 6px 6px; }
+}
+.foot-langs { margin: 10px 0 0; line-height: 1.9; }
+.foot-langs a { white-space: nowrap; }

@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Карта аномальной жары летом 2023 года, день за днём · NimbleMap</title>
+<meta name="description" content="Пошаговый сценарий в NimbleMap: проиграйте целое лето ежедневных данных о волнах жары ползунком времени, узнайте значения отдельных ячеек и экспортируйте готовое изображение карты.">
+<link rel="canonical" href="workflow-heatwave.html">
+<link rel="alternate" hreflang="en" href="../workflow-heatwave.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/workflow-heatwave.html">
+<link rel="alternate" hreflang="de" href="../de/workflow-heatwave.html">
+<link rel="alternate" hreflang="es" href="../es/workflow-heatwave.html">
+<link rel="alternate" hreflang="fr" href="../fr/workflow-heatwave.html">
+<link rel="alternate" hreflang="it" href="../it/workflow-heatwave.html">
+<link rel="alternate" hreflang="nl" href="../nl/workflow-heatwave.html">
+<link rel="alternate" hreflang="pt-BR" href="../pt-br/workflow-heatwave.html">
+<link rel="alternate" hreflang="ru" href="workflow-heatwave.html">
+<link rel="alternate" hreflang="ja" href="../ja/workflow-heatwave.html">
+<link rel="alternate" hreflang="ko" href="../ko/workflow-heatwave.html">
+<link rel="alternate" hreflang="x-default" href="../workflow-heatwave.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="NimbleMap">
+<meta property="og:locale" content="ru_RU">
+<meta property="og:title" content="Карта аномальной жары летом 2023 года, день за днём · NimbleMap">
+<meta property="og:description" content="Пошаговый сценарий в NimbleMap: проиграйте целое лето ежедневных данных о волнах жары ползунком времени, узнайте значения отдельных ячеек и экспортируйте готовое изображение карты.">
+<meta property="og:url" content="workflow-heatwave.html">
+<meta property="og:image" content="../img/heatwave-slider.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/site.css">
+<script src="../assets/site.js"></script>
+</head>
+<body>
+<header class="site-head">
+  <div class="wrap">
+    <a class="brand" href="index.html"><img src="../assets/logo.svg" alt="" width="30" height="30">NimbleMap</a>
+    <nav class="nav" aria-label="Разделы сайта">
+      <a href="index.html">Главная</a>
+      <a href="help.html" aria-current="page">Справка</a>
+      <a href="glossary.html">Словарь</a>
+      <a href="download.html">Скачать</a>
+      <details class="lang-menu">
+        <summary aria-label="Язык: Русский" title="Язык"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.6 3.9 5.6 3.9 9s-1.3 6.4-3.9 9c-2.6-2.6-3.9-5.6-3.9-9S9.4 5.6 12 3z"/></svg><span>RU</span></summary>
+        <ul>
+          <li><a href="../workflow-heatwave.html" hreflang="en" lang="en">English</a></li>
+          <li><a href="../zh/workflow-heatwave.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li>
+          <li><a href="../de/workflow-heatwave.html" hreflang="de" lang="de">Deutsch</a></li>
+          <li><a href="../es/workflow-heatwave.html" hreflang="es" lang="es">Español</a></li>
+          <li><a href="../fr/workflow-heatwave.html" hreflang="fr" lang="fr">Français</a></li>
+          <li><a href="../it/workflow-heatwave.html" hreflang="it" lang="it">Italiano</a></li>
+          <li><a href="../nl/workflow-heatwave.html" hreflang="nl" lang="nl">Nederlands</a></li>
+          <li><a href="../pt-br/workflow-heatwave.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li>
+          <li><a href="workflow-heatwave.html" hreflang="ru" lang="ru" aria-current="true">Русский</a></li>
+          <li><a href="../ja/workflow-heatwave.html" hreflang="ja" lang="ja">日本語</a></li>
+          <li><a href="../ko/workflow-heatwave.html" hreflang="ko" lang="ko">한국어</a></li>
+        </ul>
+      </details>
+      <button class="theme-btn" type="button" aria-label="Сменить тему"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></svg></button>
+    </nav>
+  </div>
+</header>
+<main>
+<div class="page-head contours">
+  <div class="narrow">
+    <p class="eyebrow">Сценарий 2 · Бесплатно</p>
+    <h1>Волна жары 2023 года день за днём</h1>
+    <p class="lede">Летом 2023 года температурные рекорды были побиты на нескольких континентах. В этом примере — 92 дня данных об интенсивности волн жары по всему миру, с 1 июня по 31 августа. Вы проиграете их как фильм, остановитесь на нужном дне, узнаете значения в отдельных местах и экспортируете карту как изображение.</p>
+    <div class="toc">Вам понадобятся: <a class="term" href="glossary.html#netcdf">NetCDF</a>, <a class="term" href="glossary.html#raster">растры</a>, <a class="term" href="glossary.html#timestep">временные шаги</a>, <a class="term" href="glossary.html#nodata">«нет данных»</a> и <a class="term" href="glossary.html#export">изображения карты</a>.</div>
+  </div>
+</div>
+<div class="narrow">
+<ol class="steps">
+  <li id="open">
+    <h3>Откройте пример</h3>
+    <p>Нажмите <span class="ui">Examples</span> (Примеры) на приветственной карточке (или File › Open Example — Файл › Открыть пример) и выберите <span class="ui">Heatwaves, summer 2023</span> (Волны жары, лето 2023).</p>
+    <p>Появится слой <span class="ui">heatwaves summer 2023</span>, а под ним — название его <a class="term" href="glossary.html#variable">переменной</a>: <span class="ui">Heat-wave intensity (°C)</span> (Интенсивность волны жары, °C). Карточка простыми словами описывает файл: NetCDF-4 с одной переменной на сетке 720 × 360, <span class="ui">Time: 1 Jun 2023 to 31 Aug 2023 (92 steps)</span> (Время: с 1 июня 2023 по 31 августа 2023, 92 шага). Её первая строка, <span class="ui">Treated as measured values (averaged, not summed)</span> (Считаются измеренными величинами: усредняются, а не суммируются), — это <a class="term" href="glossary.html#assumption">допущение</a>, которое можно изменить кнопкой <span class="ui">Change</span> (Изменить).</p>
+  </li>
+  <li id="slider">
+    <h3>Проиграйте лето</h3>
+    <p>Внизу карты появляется ползунок времени, потому что у слоя есть даты. Нажмите <span class="ui">Play</span> (Воспроизвести), перетащите бегунок или пользуйтесь кнопками <span class="ui">Previous step (←)</span> (Предыдущий шаг) и <span class="ui">Next step (→)</span> (Следующий шаг); клавиши со стрелками на клавиатуре тоже работают. Справа видны дата показанного дня, например <span class="ui">16 Jul 2023</span> (16 июля 2023), и номер шага (<span class="ui">46 of 92</span> — 46 из 92).</p>
+    <figure class="frame shot"><img src="../img/heatwave-slider.jpg" alt="Мир 16 июля 2023 года: волны жары над Средиземноморьем, югом США и Южной Америкой; ползунок времени на шаге 46 из 92." width="1600" height="996" loading="lazy"><figcaption>16 июля 2023 года: жара над Средиземноморьем, югом США, Мексикой и Китаем и сильная морская жара у берегов Западной Африки и Южной Америки.</figcaption></figure>
+    <p class="note">Диапазон цветов одинаков для всех дней, поэтому более красный цвет всегда означает более сильную волну жары, а не просто другую шкалу. В легенде указан день: <span class="ui">Heat-wave intensity (°C), 16 Jul 2023</span>.</p>
+  </li>
+  <li id="click">
+    <h3>Узнайте значение в отдельном месте</h3>
+    <p>Приблизьте нужный регион (колёсиком мыши или жестом на трекпаде либо введя название места в поле поиска) и щёлкните цветную ячейку. Карточка покажет значение в этой ячейке в этот день и его место среди остальных: <span class="ui">1.70 °C</span> (1,70 °C), <span class="ui">lower than 58% of this layer’s cells (estimated from a sample)</span> (ниже, чем у 58 % ячеек слоя, оценка по выборке).</p>
+    <figure class="frame shot"><img src="../img/heatwave-click.jpg" alt="Европа и Северная Африка 16 июля 2023 года; выбрана ячейка на севере Алжира, на её карточке: 1,70 °C, ниже, чем у 58 % ячеек слоя." width="1600" height="996" loading="lazy"></figure>
+    <p>Прозрачные ячейки — это <a class="term" href="glossary.html#nodata">«нет данных»</a>: в тот день там не было зарегистрировано волны жары. Если щёлкнуть такую ячейку, появится <span class="ui">No value</span> (Нет значения), <span class="ui">This cell has no data.</span> (В этой ячейке нет данных.) Это не то же самое, что ноль.</p>
+    <p class="note">Каждая ячейка имеет размер 0,5°, около 55 км на экваторе, поэтому значение описывает большой квадрат, а не отдельный город. См. <a href="glossary.html#resolution">разрешение</a>.</p>
+  </li>
+  <li id="colors">
+    <h3>Выделите самые жаркие места</h3>
+    <p>Нажмите <span class="ui">Show only values above…</span> (Показать только значения выше…) на карточке слоя, чтобы сделать серым всё ниже заданного вами порога, или <span class="ui">Change colors and range</span> (Изменить цвета и диапазон), чтобы выбрать другую <span class="ui">Palette</span> (Палитра) или <span class="ui">Range</span> (Диапазон) на вкладке <span class="ui">Style</span> (Стиль). Если выбрана ячейка, кнопка <span class="ui">Show where values are like this</span> (Показать, где значения похожи) подсветит все ячейки с похожим значением.</p>
+  </li>
+  <li id="export">
+    <h3>Экспортируйте карту как изображение</h3>
+    <p>Остановитесь на нужном дне и нажмите <span class="ui">Share</span> › <span class="ui">Map image…</span> (Поделиться › Изображение карты…, ⌘E). В открывшемся окне изображение показано ровно таким, каким оно будет сохранено.</p>
+    <figure class="frame shot"><img src="../img/heatwave-export.jpg" alt="Окно Export map image (Экспорт изображения карты): карта мира на 16 июля 2023 года с широтой и долготой по рамке и легендой, а также параметры размера, стрелки севера, масштабной линейки, подписей, заголовка, подписи к карте и легенды." width="1600" height="996" loading="lazy"></figure>
+    <ul>
+      <li><span class="ui">Size</span> (Размер): <span class="ui">Slide 16:9</span> (Слайд 16:9, 1920 × 1080), <span class="ui">Report A4</span> (Отчёт A4) или <span class="ui">Square</span> (Квадрат).</li>
+      <li><span class="ui">Show</span> (Показать): <span class="ui">Fit to data</span> (По данным) или <span class="ui">Current view</span> (Текущий вид — то, что вы видите в окне).</li>
+      <li><span class="ui">North arrow</span> (Стрелка севера), <span class="ui">Scale bar</span> (Масштабная линейка) и <span class="ui">Lat/lon labels</span> (Подписи широты и долготы): <span class="ui">Auto</span> (Авто) выбирает то, что подходит карте; на карте мира вместо масштабной линейки по рамке ставятся широта и долгота, потому что расстояния на ней слишком сильно различаются.</li>
+      <li><span class="ui">Title</span> (Заголовок): например, «Волны жары 16 июля 2023 года». <span class="ui">Caption</span> (Подпись к карте) составляется из названий слоёв и источников данных; при желании её можно отредактировать.</li>
+    </ul>
+    <p>Нажмите <span class="ui">Save…</span> (Сохранить…), чтобы записать PNG. В легенде указана дата, поэтому картинка говорит сама за себя, когда вы ею делитесь.</p>
+    <p class="note">Нужна серия? Перейдите к следующему дню и экспортируйте снова. Диапазон цветов на всех изображениях одинаков, поэтому кадры можно честно сравнивать.</p>
+  </li>
+</ol>
+<div class="pro-note" style="margin-bottom:30px"><strong>NimbleMap Pro.</strong> Спрашивайте о жаре простыми словами, например «В каких странах в этот день была самая сильная волна жары?», — со встроенным в Pro слоем стран мира. Ответ строится по показанной переменной и показанному дню, и в его рецепте названы и то, и другое.</div>
+<p class="coords" style="margin:10px 0 60px">Данные: Copernicus Global Drought Observatory (European Commission, JRC), GDO Warm Spell Intensity (ERA5), 2023; © European Union, 1995–2026, CC BY 4.0. Для NimbleMap данные обрезаны до периода июнь–август, усреднены до 0,5°, а дни без волны тепла помечены как «нет данных». Подложка © участники OpenStreetMap, Protomaps, Natural Earth.</p>
+</div>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <div>
+      <p><strong>Справка NimbleMap</strong> · Эти страницы входят в состав приложения (Help › NimbleMap Help — Справка › Справка NimbleMap) и работают офлайн.</p>
+      <p>На снимках экрана картографические данные © участники OpenStreetMap (ODbL) через Protomaps, Natural Earth (общественное достояние) и снимки NASA Blue Marble (NASA Earth Observatory, GIBS). Источники данных примеров указаны на каждой странице.</p>
+    </div>
+    <div><a href="help.html">Справка</a> · <a href="glossary.html">Словарь</a><p class="foot-langs"><a href="../workflow-heatwave.html" hreflang="en" lang="en">English</a> · <a href="../zh/workflow-heatwave.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="../de/workflow-heatwave.html" hreflang="de" lang="de">Deutsch</a> · <a href="../es/workflow-heatwave.html" hreflang="es" lang="es">Español</a> · <a href="../fr/workflow-heatwave.html" hreflang="fr" lang="fr">Français</a> · <a href="../it/workflow-heatwave.html" hreflang="it" lang="it">Italiano</a> · <a href="../nl/workflow-heatwave.html" hreflang="nl" lang="nl">Nederlands</a> · <a href="../pt-br/workflow-heatwave.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ja/workflow-heatwave.html" hreflang="ja" lang="ja">日本語</a> · <a href="../ko/workflow-heatwave.html" hreflang="ko" lang="ko">한국어</a></p></div>
+  </div>
+</footer>
+</body>
+</html>

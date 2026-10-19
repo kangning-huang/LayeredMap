@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NimbleMap: kostenlose Mac-Karten-App für Shapefile, GeoJSON, CSV, GeoTIFF</title>
+<meta name="description" content="NimbleMap ist eine kostenlose Karten-App für den Mac, für alle, die Karten lieben, aber nie mit einem GIS gearbeitet haben. Doppelklick auf ein Shapefile, GeoJSON, CSV oder GeoTIFF, um es auf der Karte zu sehen, klick etwas an, um zu sehen, wo es steht, und exportiere eine fertige Karte.">
+<link rel="canonical" href="index.html">
+<link rel="alternate" hreflang="en" href="../index.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/index.html">
+<link rel="alternate" hreflang="de" href="index.html">
+<link rel="alternate" hreflang="es" href="../es/index.html">
+<link rel="alternate" hreflang="fr" href="../fr/index.html">
+<link rel="alternate" hreflang="it" href="../it/index.html">
+<link rel="alternate" hreflang="nl" href="../nl/index.html">
+<link rel="alternate" hreflang="pt-BR" href="../pt-br/index.html">
+<link rel="alternate" hreflang="ru" href="../ru/index.html">
+<link rel="alternate" hreflang="ja" href="../ja/index.html">
+<link rel="alternate" hreflang="ko" href="../ko/index.html">
+<link rel="alternate" hreflang="x-default" href="../index.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="NimbleMap">
+<meta property="og:locale" content="de_DE">
+<meta property="og:title" content="NimbleMap: kostenlose Mac-Karten-App für Shapefile, GeoJSON, CSV, GeoTIFF">
+<meta property="og:description" content="NimbleMap ist eine kostenlose Karten-App für den Mac, für alle, die Karten lieben, aber nie mit einem GIS gearbeitet haben. Doppelklick auf ein Shapefile, GeoJSON, CSV oder GeoTIFF, um es auf der Karte zu sehen, klick etwas an, um zu sehen, wo es steht, und exportiere eine fertige Karte.">
+<meta property="og:url" content="index.html">
+<meta property="og:image" content="../img/typhoons-card.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/site.css">
+<script src="../assets/site.js"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "NimbleMap",
+  "inLanguage": "de",
+  "operatingSystem": "macOS 13 oder neuer (Apple Silicon)",
+  "applicationCategory": "UtilitiesApplication",
+  "description": "NimbleMap ist eine kostenlose Karten-App für den Mac, für alle, die Karten lieben, aber nie mit einem GIS gearbeitet haben. Doppelklick auf ein Shapefile, GeoJSON, CSV oder GeoTIFF, um es auf der Karte zu sehen, klick etwas an, um zu sehen, wo es steht, und exportiere eine fertige Karte.",
+  "isAccessibleForFree": true,
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" }
+}
+</script>
+</head>
+<body>
+<header class="site-head">
+  <div class="wrap">
+    <a class="brand" href="index.html"><img src="../assets/logo.svg" alt="" width="30" height="30">NimbleMap</a>
+    <nav class="nav" aria-label="Website">
+      <a href="index.html" aria-current="page">Startseite</a>
+      <a href="help.html">Hilfe</a>
+      <a href="glossary.html">Glossar</a>
+      <a href="download.html">Download</a>
+      <details class="lang-menu">
+        <summary aria-label="Sprache: Deutsch" title="Sprache"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.6 3.9 5.6 3.9 9s-1.3 6.4-3.9 9c-2.6-2.6-3.9-5.6-3.9-9S9.4 5.6 12 3z"/></svg><span>DE</span></summary>
+        <ul>
+          <li><a href="../index.html" hreflang="en" lang="en">English</a></li>
+          <li><a href="../zh/index.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li>
+          <li><a href="index.html" hreflang="de" lang="de" aria-current="true">Deutsch</a></li>
+          <li><a href="../es/index.html" hreflang="es" lang="es">Español</a></li>
+          <li><a href="../fr/index.html" hreflang="fr" lang="fr">Français</a></li>
+          <li><a href="../it/index.html" hreflang="it" lang="it">Italiano</a></li>
+          <li><a href="../nl/index.html" hreflang="nl" lang="nl">Nederlands</a></li>
+          <li><a href="../pt-br/index.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li>
+          <li><a href="../ru/index.html" hreflang="ru" lang="ru">Русский</a></li>
+          <li><a href="../ja/index.html" hreflang="ja" lang="ja">日本語</a></li>
+          <li><a href="../ko/index.html" hreflang="ko" lang="ko">한국어</a></li>
+        </ul>
+      </details>
+      <button class="theme-btn" type="button" aria-label="Hell/Dunkel umschalten"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></svg></button>
+    </nav>
+  </div>
+</header>
+
+<main>
+<section class="hero contours">
+  <div class="wrap hero-grid">
+    <div>
+      <p class="eyebrow">Eine Karten-App für Neugierige</p>
+      <h1>Kartendatei öffnen. Sehen, was drinsteckt.</h1>
+      <p class="lede">NimbleMap ist für alle, die Karten lieben, aber noch nie mit einem GIS gearbeitet haben. Doppelklick auf eine Datei mit Orten, Routen oder Klimadaten, und schon ist sie auf der Karte. Klick auf einen Ort oder ein Objekt, um zu sehen, was daran besonders ist: der stärkste Sturm, die größte ummauerte Stadt, die heißeste Woche.</p>
+      <div class="actions">
+        <a class="btn btn-primary" href="download.html">Für Mac herunterladen</a>
+        <a class="btn btn-quiet" href="help.html">Eine Anleitung ausprobieren</a>
+      </div>
+      <p class="coords" style="margin-top:28px">Kostenlos · macOS · Englisch, mit chinesischen Ortsnamen</p>
+    </div>
+    <div class="hero-shot showcase" data-rotate="3000">
+      <figure class="frame stage">
+        <img class="slide is-on" src="../img/points-earthquakes.jpg" alt="NimbleMap zeigt 14.537 starke Erdbeben seit 1900 als Punkte rund um den Pazifik, eingefärbt nach Magnitude; das Tōhoku-Erdbeben von 2011 ist ausgewählt, und seine Infokarte sagt, dass seine Magnitude von 9,1 höher ist als bei 99 % davon." width="1600" height="996">
+        <img class="slide" src="../img/typhoons-card.jpg" alt="NimbleMap mit 4.999 Taifun-Zugbahnen über Asien und dem Pazifik; Taifun Haiyan ist ausgewählt, und seine Infokarte sagt, dass seine Spitzenwindgeschwindigkeit von 170 Knoten höher ist als bei 99 % von 4.547 Stürmen." width="1600" height="996" loading="lazy" aria-hidden="true">
+        <img class="slide" src="../img/areas-countries.jpg" alt="NimbleMap zeigt die Länder der Welt, eingefärbt nach Bevölkerung; Indien ist ausgewählt, und seine Infokarte sagt, dass seine Bevölkerung die zweitgrößte von 177 Ländern ist." width="1600" height="996" loading="lazy" aria-hidden="true">
+        <img class="slide" src="../img/heatwave-slider.jpg" alt="Das Beispiel zur Hitzewelle 2023 am 16. Juli, mit dem Zeitschieberegler unten auf der Karte." width="1600" height="996" loading="lazy" aria-hidden="true">
+      </figure>
+      <div class="kinds" role="group" aria-label="Arten von Kartendaten">
+        <button type="button" class="kind" data-i="0" data-caption="Starke Erdbeben seit 1900, eingefärbt nach Magnitude" aria-pressed="true">Punkte</button>
+        <button type="button" class="kind" data-i="1" data-caption="Zugbahnen von Taifunen und Hurrikanen seit 1980" aria-pressed="false">Linien</button>
+        <button type="button" class="kind" data-i="2" data-caption="Länder, eingefärbt nach Bevölkerung" aria-pressed="false">Flächen</button>
+        <button type="button" class="kind" data-i="3" data-caption="Tägliche Hitzewellen-Raster, Sommer 2023" aria-pressed="false">Raster</button>
+        <button type="button" class="pause" aria-label="Diashow anhalten" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><rect class="bars" x="4" y="3" width="2.6" height="10" rx="1"/><rect class="bars" x="9.4" y="3" width="2.6" height="10" rx="1"/><path class="play" d="M5 3.2v9.6a.6.6 0 0 0 .9.5l7.4-4.8a.6.6 0 0 0 0-1L5.9 2.7a.6.6 0 0 0-.9.5z"/></svg></button>
+      </div>
+      <p class="kind-caption">Starke Erdbeben seit 1900, eingefärbt nach Magnitude</p>
+    </div>
+  </div>
+</section>
+
+<section id="why">
+  <div class="wrap">
+    <div class="why-grid">
+    <div class="section-head">
+      <p class="eyebrow">Was anders ist</p>
+      <h2>Was wäre, wenn GIS so einfach wäre wie eine Apple-App?</h2>
+      <p class="lede">QGIS und ArcGIS sind leistungsstarke Werkzeuge für räumliche Daten. Doch wer sie zum ersten Mal öffnet, tut sich schon mit einer einfachen Karte schwer. Hunderte Werkzeuge und Einstellungen stehen zwischen dir und der Karte. Wie sähe ein GIS aus, wenn es die Leute entworfen hätten, die das iPhone gemacht haben? Welche Werkzeuge würden sie behalten, welche verstecken und welche ganz weglassen? NimbleMap geht dieser Idee nach. Es bringt die nützlichen Teile eines GIS in eine Karten-App, die alle nutzen können, die sich für Orte interessieren.</p>
+    </div>
+    <figure class="sketch" aria-label="Skizze: ein typisches GIS-Fenster voller Symbolleisten und mit einem Dialog, daneben NimbleMap mit einer Karte und einer Infokarte">
+  <svg viewBox="0 0 600 270" role="img" aria-labelledby="sk-cap">
+    <g>
+      <rect x="6" y="6" width="282" height="230" rx="10" class="sk-win"/>
+      <circle cx="20" cy="20" r="3.5" class="sk-dot"/><circle cx="31" cy="20" r="3.5" class="sk-dot"/><circle cx="42" cy="20" r="3.5" class="sk-dot"/>
+      <rect x="18" y="40" width="10" height="8" rx="2" class="sk-tool"/><rect x="33" y="40" width="10" height="8" rx="2" class="sk-tool"/><rect x="48" y="40" width="10" height="8" rx="2" class="sk-tool"/><rect x="63" y="40" width="10" height="8" rx="2" class="sk-tool"/><rect x="78" y="40" width="10" height="8" rx="2" class="sk-tool"/><rect x="93" y="40" width="10" height="8" rx="2" class="sk-tool"/><rect x="108" y="40" width="10" height="8" rx="2" class="sk-tool"/><rect x="123" y="40" width="10" height="8" rx="2" class="sk-tool"/><rect x="138" y="40" width="10" height="8" rx="2" class="sk-tool"/><rect x="153" y="40" width="10" height="8" rx="2" class="sk-tool"/><rect x="168" y="40" width="10" height="8" rx="2" class="sk-tool"/><rect x="183" y="40" width="10" height="8" rx="2" class="sk-tool"/><rect x="198" y="40" width="10" height="8" rx="2" class="sk-tool"/><rect x="213" y="40" width="10" height="8" rx="2" class="sk-tool"/><rect x="228" y="40" width="10" height="8" rx="2" class="sk-tool"/><rect x="18" y="53" width="10" height="8" rx="2" class="sk-tool"/><rect x="33" y="53" width="10" height="8" rx="2" class="sk-tool"/><rect x="48" y="53" width="10" height="8" rx="2" class="sk-tool"/><rect x="63" y="53" width="10" height="8" rx="2" class="sk-tool"/><rect x="78" y="53" width="10" height="8" rx="2" class="sk-tool"/><rect x="93" y="53" width="10" height="8" rx="2" class="sk-tool"/><rect x="108" y="53" width="10" height="8" rx="2" class="sk-tool"/><rect x="123" y="53" width="10" height="8" rx="2" class="sk-tool"/><rect x="138" y="53" width="10" height="8" rx="2" class="sk-tool"/><rect x="153" y="53" width="10" height="8" rx="2" class="sk-tool"/><rect x="168" y="53" width="10" height="8" rx="2" class="sk-tool"/><rect x="183" y="53" width="10" height="8" rx="2" class="sk-tool"/><rect x="198" y="53" width="10" height="8" rx="2" class="sk-tool"/><rect x="213" y="53" width="10" height="8" rx="2" class="sk-tool"/><rect x="228" y="53" width="10" height="8" rx="2" class="sk-tool"/><rect x="18" y="66" width="10" height="8" rx="2" class="sk-tool"/><rect x="33" y="66" width="10" height="8" rx="2" class="sk-tool"/><rect x="48" y="66" width="10" height="8" rx="2" class="sk-tool"/><rect x="63" y="66" width="10" height="8" rx="2" class="sk-tool"/><rect x="78" y="66" width="10" height="8" rx="2" class="sk-tool"/><rect x="93" y="66" width="10" height="8" rx="2" class="sk-tool"/><rect x="108" y="66" width="10" height="8" rx="2" class="sk-tool"/><rect x="123" y="66" width="10" height="8" rx="2" class="sk-tool"/><rect x="138" y="66" width="10" height="8" rx="2" class="sk-tool"/><rect x="153" y="66" width="10" height="8" rx="2" class="sk-tool"/><rect x="168" y="66" width="10" height="8" rx="2" class="sk-tool"/><rect x="183" y="66" width="10" height="8" rx="2" class="sk-tool"/><rect x="198" y="66" width="10" height="8" rx="2" class="sk-tool"/><rect x="213" y="66" width="10" height="8" rx="2" class="sk-tool"/><rect x="228" y="66" width="10" height="8" rx="2" class="sk-tool"/>
+      <rect x="14" y="84" width="62" height="144" rx="4" class="sk-panel"/><rect x="22" y="92" width="44" height="4" rx="2" class="sk-line"/><rect x="28" y="105" width="38" height="4" rx="2" class="sk-line"/><rect x="34" y="118" width="32" height="4" rx="2" class="sk-line"/><rect x="22" y="131" width="44" height="4" rx="2" class="sk-line"/><rect x="28" y="144" width="38" height="4" rx="2" class="sk-line"/><rect x="34" y="157" width="32" height="4" rx="2" class="sk-line"/><rect x="22" y="170" width="44" height="4" rx="2" class="sk-line"/><rect x="28" y="183" width="38" height="4" rx="2" class="sk-line"/>
+      <rect x="82" y="84" width="198" height="144" rx="4" class="sk-empty"/>
+      <rect x="120" y="120" width="124" height="74" rx="6" class="sk-dialog"/>
+      <rect x="130" y="132" width="80" height="5" rx="2.5" class="sk-line-strong"/>
+      <rect x="130" y="144" width="104" height="4" rx="2" class="sk-line"/><rect x="130" y="153" width="92" height="4" rx="2" class="sk-line"/><rect x="130" y="162" width="98" height="4" rx="2" class="sk-line"/>
+      <rect x="182" y="176" width="26" height="10" rx="3" class="sk-tool"/><rect x="212" y="176" width="26" height="10" rx="3" class="sk-btn"/>
+    </g>
+    <g transform="translate(312 0)">
+      <rect x="6" y="6" width="282" height="230" rx="10" class="sk-win"/>
+      <circle cx="20" cy="20" r="3.5" class="sk-dot"/><circle cx="31" cy="20" r="3.5" class="sk-dot"/><circle cx="42" cy="20" r="3.5" class="sk-dot"/>
+      <rect x="86" y="34" width="110" height="12" rx="6" class="sk-tool"/>
+      <rect x="214" y="37" width="14" height="6" rx="3" class="sk-tool"/><rect x="234" y="37" width="14" height="6" rx="3" class="sk-tool"/><rect x="254" y="37" width="14" height="6" rx="3" class="sk-tool"/>
+      <rect x="6" y="54" width="282" height="182" class="sk-water"/>
+      <path d="M6 96c22-8 40 6 62-2s30-30 58-26 38 22 64 20 30-18 58-14 26 12 40 10v152H6z" class="sk-land"/>
+      <path d="M150 54c4 10-6 18 4 26s22 2 26 12" class="sk-coast"/>
+      <g class="sk-data"><circle cx="40" cy="120" r="3"/><circle cx="58" cy="138" r="2.5"/><circle cx="74" cy="114" r="3.5"/><circle cx="96" cy="150" r="2.5"/><circle cx="112" cy="128" r="3"/><circle cx="130" cy="170" r="2.5"/><circle cx="84" cy="186" r="3"/><circle cx="56" cy="200" r="2.5"/><circle cx="150" cy="140" r="2.5"/></g>
+      <circle cx="74" cy="114" r="7" class="sk-sel"/>
+      <rect x="176" y="66" width="104" height="122" rx="7" class="sk-card"/>
+      <rect x="186" y="78" width="68" height="6" rx="3" class="sk-line-strong"/>
+      <rect x="186" y="92" width="44" height="4" rx="2" class="sk-line"/>
+      <rect x="186" y="108" width="84" height="5" rx="2.5" class="sk-track"/><rect x="186" y="108" width="80" height="5" rx="2.5" class="sk-bar"/>
+      <rect x="186" y="120" width="58" height="4" rx="2" class="sk-line"/>
+      <rect x="186" y="136" width="84" height="5" rx="2.5" class="sk-track"/><rect x="186" y="136" width="46" height="5" rx="2.5" class="sk-bar"/>
+      <rect x="186" y="148" width="64" height="4" rx="2" class="sk-line"/>
+      <rect x="186" y="166" width="84" height="12" rx="4" class="sk-tool"/>
+    </g>
+    <text x="147" y="258" class="sk-label">Typisches GIS, erster Start</text>
+    <text x="459" y="258" class="sk-label">NimbleMap, erster Klick</text>
+  </svg>
+  <figcaption id="sk-cap">Skizzen, keine Bildschirmfotos.</figcaption>
+</figure>
+    </div>
+    <div class="principles">
+      <div><svg class="p-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v9a1.5 1.5 0 0 1-1.5 1.5H10l-4.2 3.6V16H5.5A1.5 1.5 0 0 1 4 14.5z"/><path d="M10.2 8.4a1.9 1.9 0 1 1 2.6 1.8c-.5.2-.8.6-.8 1.1v.4"/><circle cx="12" cy="13.6" r=".6" class="dot"/></svg><h3>Antworten vor Werkzeugen</h3><p>Die meisten GIS-Programme beginnen mit Werkzeugen. NimbleMap beginnt mit Fragen. Klick etwas auf der Karte an, und die App sagt dir, was es ist und wie es im Vergleich zum Rest seines Layers dasteht.</p></div>
+      <div><svg class="p-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 20h17"/><path d="M6.5 20v-6M11 20V8M15.5 20v-9M20 20V5"/><path d="M5 9.5l3.5-3 3 2L17 4"/></svg><h3>Ehrliche Zahlen</h3><p>Jede Zahl kommt aus deinen Daten, nicht nur aus dem, was gerade auf dem Bildschirm zu sehen ist. Lassen sich einige Datensätze nicht auf der Karte platzieren, sagt NimbleMap dir, wie viele und warum. Deine Originaldateien bleiben unverändert.</p></div>
+      <div><svg class="p-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg><h3>Alles ausprobieren</h3><p>Du kannst jeden Schritt widerrufen. Und zu jedem Ergebnis gibt es eine Erklärung in einfachen Worten, wie es entstanden ist.</p></div>
+    </div>
+    <p class="aside-note">NimbleMap ist ein unabhängiges Projekt und steht in keiner Verbindung zu Apple, Esri oder dem QGIS-Projekt.</p>
+  </div>
+</section>
+
+<section id="what">
+  <div class="wrap">
+    <div class="why-grid layers-grid">
+    <div class="section-head">
+      <p class="eyebrow">So funktioniert’s</p>
+      <h2>Layer wie Transparentpapier</h2>
+      <p class="lede">Eine Karte in NimbleMap besteht aus Layern, die über einer Hintergrundkarte liegen, ganz wie Blätter Transparentpapier. Öffne eine Datei, und sie wird zu einem neuen Layer. Kein Einrichtungsassistent, kein Projekt anlegen, kein leerer Werkzeugkasten, in dem man sich zurechtfinden muss.</p>
+    </div>
+    <figure class="layer-art">
+  <svg viewBox="0 0 420 300" role="img" aria-label="Vier Blätter, gestapelt wie Transparentpapier: eine Hintergrundkarte, darüber Flächen, Linien und Punkte">
+      <g transform="matrix(1 0 1.5 1 24 216)"><rect width="210" height="52" rx="4" class="ly-sheet"/><path d="M0 30c20-6 34 8 56 2s28-20 52-16 30 18 52 16 34-12 50-8v28H0z" class="ly-land"/></g>
+      <path d="M273.0 242h18" class="ly-lead"/><text x="297.0" y="246" class="ly-label">Hintergrund</text>
+      <g transform="matrix(1 0 1.5 1 24 156)"><rect width="210" height="52" rx="4" class="ly-sheet"/><path d="M20 8h44l10 18-16 18H24z" class="ly-a1"/><path d="M78 6h46l-6 24-34 10-12-16z" class="ly-a2"/><path d="M130 10h52l4 30h-46z" class="ly-a3"/></g>
+      <path d="M273.0 182h18" class="ly-lead"/><text x="297.0" y="186" class="ly-label">Flächen</text>
+      <g transform="matrix(1 0 1.5 1 24 96)"><rect width="210" height="52" rx="4" class="ly-sheet"/><path d="M8 44c30-6 50-30 90-26s60-10 100-12" class="ly-l1"/><path d="M30 6c20 10 40 30 80 32s60 4 88-6" class="ly-l2"/></g>
+      <path d="M273.0 122h18" class="ly-lead"/><text x="297.0" y="126" class="ly-label">Linien</text>
+      <g transform="matrix(1 0 1.5 1 24 36)"><rect width="210" height="52" rx="4" class="ly-sheet"/></g><circle cx="91" cy="66" r="3.5" class="ly-pt"/><circle cx="91" cy="50" r="3" class="ly-pt"/><circle cx="148" cy="72" r="4.5" class="ly-pt"/><circle cx="150" cy="56" r="3" class="ly-pt"/><circle cx="204" cy="76" r="3.5" class="ly-pt"/><circle cx="188" cy="48" r="4" class="ly-pt"/><circle cx="239" cy="66" r="3" class="ly-pt"/><circle cx="243" cy="54" r="3.5" class="ly-pt"/><circle cx="120" cy="60" r="2.5" class="ly-pt"/><circle cx="200" cy="64" r="2.5" class="ly-pt"/>
+      <path d="M273.0 62h18" class="ly-lead"/><text x="297.0" y="66" class="ly-label">Punkte</text>
+  </svg>
+</figure>
+    </div>
+    <div class="strata">
+      <div><img class="step-shot" src="../img/step-open.jpg" alt="Die Willkommens-Infokarte von NimbleMap auf der Karte: Open file, Examples, Browse data library." width="800" height="500" loading="lazy"><h3>Öffnen</h3><p>Zieh eine CSV mit Koordinaten, ein GeoJSON, ein Shapefile, ein GeoPackage, ein GeoTIFF oder eine NetCDF-Klimadatei ins Fenster. Muss NimbleMap etwas annehmen, etwa welche Spalten Koordinaten enthalten, sagt die App dir, was sie angenommen hat, und lässt dich das ändern.</p></div>
+      <div><img class="step-shot" src="../img/step-click.jpg" alt="Eine Infokarte zu einem Objekt: Die Magnitude des Tōhoku-Erdbebens von 2011, 9,1, ist höher als bei 99 % von 14.537 Erdbeben." width="800" height="500" loading="lazy"><h3>Anklicken</h3><p>Klick auf eine Stadt, einen Sturm oder eine einzelne Zelle eines Klimarasters. NimbleMap zeigt dir zuerst, was es ist und wie es im Vergleich zum Rest seines Layers dasteht: „höchster von 4.999“ oder „niedriger als 80 % der anderen“. Passende Werkzeuge erscheinen, wenn du sie brauchst.</p></div>
+      <div><img class="step-shot" src="../img/step-share.jpg" alt="Eine exportierte Karte der Hitzewellen 2023, mit Legende, Beschriftung der Breiten- und Längengrade und Quellenangaben." width="800" height="500" loading="lazy"><h3>Teilen</h3><p>Färbe deine Karte nach einem Wert ein, filtere die Daten und exportiere das Ergebnis als Bild. Füg Titel, Legende, Maßstabsleiste und Quellenangaben hinzu. Wähl eine Größe, die zu einer Präsentationsfolie, einer A4-Seite oder einem quadratischen Post passt.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="examples">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Mitgelieferte Beispiele</p>
+      <h2>Was dir eine gewöhnliche Karten-App nicht zeigen kann</h2>
+      <p class="lede">NimbleMap bringt acht Beispieldatensätze mit, mit einem Klick erreichbar unter <span class="ui">Examples</span> (Beispiele). Hier ein paar davon:</p>
+    </div>
+    <div class="examples">
+      <article class="example">
+        <figure class="frame"><img src="../img/typhoons-color.jpg" alt="Sturmbahnen über Asien und dem Pazifik, im Tab Style nach Saison eingefärbt." loading="lazy" width="1600" height="996"></figure>
+        <h3>Taifune und Hurrikane</h3>
+        <p>4.999 Sturmbahnen seit 1980 aus allen Ozeanen, aus dem IBTrACS-Archiv der NOAA. Finde Haiyan, färbe die Bahnen nach Windgeschwindigkeit ein und sieh, wo die stärksten Stürme auftreten.</p>
+        <span class="coords">IBTrACS v04r01 · 1980–2026</span>
+      </article>
+      <article class="example">
+        <figure class="frame"><img src="../img/walls-satellite.jpg" alt="Die Mauern von Peking im Jahr 1866 über Satellitenbildern, mit einer Infokarte, laut der die Stadt 35,3 km² umfasste – mehr als 99 % der 1.789 ummauerten Städte." loading="lazy" width="1600" height="996"></figure>
+        <h3>Ummauerte Städte Chinas, 1866</h3>
+        <p>1.789 Stadtmauern aus dem späten Kaiserreich China, darunter die Hauptstadt, Kreisstädte und Mandschu-Garnisonen. Sieh, wo diese Städte standen, über Satellitenbilder gezeichnet.</p>
+        <span class="coords">Xue et al. 2021 · CC BY 4.0</span>
+      </article>
+      <article class="example">
+        <figure class="frame"><img src="../img/heatwave-click.jpg" alt="Hitzewellen-Intensität über Europa und Nordafrika am 16. Juli 2023, mit einer ausgewählten Zelle und dem Zeitschieberegler darunter." loading="lazy" width="1600" height="996"></figure>
+        <h3>Hitzewellen, Sommer 2023</h3>
+        <p>Tägliche Hitzewellen-Intensität weltweit von Juni bis August 2023, gespeichert in einer NetCDF-Klimadatei. Beweg den Zeitschieberegler oder drück auf <span class="ui">Play</span> (Abspielen), um zu sehen, wie sich Hitzewellen über den Sommer entwickelten und verlagerten.</p>
+        <span class="coords">Copernicus GDO (JRC) · CC BY 4.0</span>
+      </article>
+    </div>
+    <p style="margin-top:30px;color:var(--ink-2)">Außerdem dabei: starke Erdbeben seit 1900, Vulkane, Flughäfen, Kraftwerke sowie Städte, Länder und Höhen der Welt.</p>
+  </div>
+</section>
+
+<section id="pro">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Kostenlos und Pro</p>
+      <h2>Kostenlos zum Schauen. Pro zum Fragen.</h2>
+      <p class="lede">Mit der kostenlosen Version kannst du räumliche Daten öffnen, übereinanderlegen, gestalten und teilen. NimbleMap Pro fügt einen Assistenten hinzu, dem du in einfachen Worten Fragen zu deinen Layern stellen kannst.</p>
+    </div>
+    <div class="tiers">
+      <div class="tier">
+        <h3>Kostenlos</h3>
+        <p class="sub">Kostenloser Download</p>
+        <ul>
+          <li>Öffnet CSV, Excel, GeoJSON, Shapefile, GeoPackage, KML, GPX, GeoTIFF und NetCDF</li>
+          <li>Alles anklicken, um seine Informationen zu sehen und wie es im Vergleich zu anderen Objekten dasteht</li>
+          <li>Nach Wert einfärben, filtern, vergleichen und beschriften</li>
+          <li>Eine Tabelle über eine gemeinsame Spalte mit Orten verknüpfen</li>
+          <li>Zeitschieberegler für Klimaraster</li>
+          <li>Helle, dunkle und Satelliten-Hintergrundkarten; funktioniert offline</li>
+          <li>Unterstützt Chinas Kartenkoordinaten (GCJ-02, BD-09)</li>
+          <li>Exportiert Kartenbilder und Daten</li>
+        </ul>
+      </div>
+      <div class="tier">
+        <h3>Pro <span class="tag">PRO</span></h3>
+        <p class="sub">Alles aus der kostenlosen Version, dazu:</p>
+        <ul>
+          <li>Das Fragefeld: Stell Fragen zu deinen Layern auf Englisch oder Chinesisch, getippt oder gesprochen</li>
+          <li>Antworten erscheinen als Vorschau auf der Karte, mit einem Schritt-für-Schritt-Protokoll, das du prüfen kannst. Kein Rätselraten.</li>
+          <li>Eingebaute Welt-Layer: Länder, Provinzen, Städte, Flüsse, Seen und Höhen. Stell Fragen wie „Which country has the most power plants?“ (Welches Land hat die meisten Kraftwerke?)</li>
+          <li>Analyse-Schaltflächen erscheinen auf Infokarten, wenn sie passen, etwa <span class="ui">Show an area within a distance</span> (Bereich im Umkreis anzeigen)</li>
+          <li>Deine Daten bleiben auf deinem Mac. Gesendet werden nur Layernamen, Felder und Ausdehnungen, niemals die Werte.</li>
+        </ul>
+        <div class="ask-sample">Which capital city sits highest above sea level? (Welche Hauptstadt liegt am höchsten über dem Meeresspiegel?)</div>
+      </div>
+    </div>
+    <figure class="frame shot" style="margin-top:34px"><img src="../img/pro-ask.jpg" alt="NimbleMap Pro beantwortet „Which country has the most cities?“ (Welches Land hat die meisten Städte?) mit einer Rangliste und einer Vorschau auf der Karte." loading="lazy" width="1600" height="1040"><figcaption>NimbleMap Pro beantwortet „Which country has the most cities?“ (Welches Land hat die meisten Städte?) mit den eingebauten Ländern der Welt. Das Ergebnis wird erst gespeichert, wenn du auf <span class="ui">Keep</span> (Behalten) drückst.</figcaption></figure>
+  </div>
+</section>
+
+<section id="download">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Download</p>
+      <h2>NimbleMap herunterladen</h2>
+      <p class="lede">NimbleMap ist kostenlos für Macs mit Apple Silicon und macOS 13 oder neuer. Doppelklick auf ein Shapefile, GeoJSON, CSV, GeoTIFF oder eine andere unterstützte Datei, und sie öffnet sich auf der Karte. Deine Dateien bleiben auf deinem Mac. Eine Windows-Version ist in Arbeit.</p>
+    </div>
+    <div class="cta-actions">
+      <a class="btn btn-primary" href="download.html#get">Für Mac herunterladen</a>
+      <a class="btn btn-quiet" href="download.html#formats">Was die App öffnet</a>
+      <a class="btn btn-quiet" href="download.html#qgis">NimbleMap oder QGIS?</a>
+    </div>
+    <p style="margin-top:24px;color:var(--ink-3);font-size:15px">NimbleMap basiert auf <a href="https://github.com/opengeos/RustGIS">RustGIS</a>.</p>
+  </div>
+</section>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <div>
+      <p><strong>NimbleMap</strong> · eine Karten-App auf Basis von RustGIS.</p>
+      <p>Die Bildschirmfotos zeigen Kartendaten © OpenStreetMap-Mitwirkende (ODbL) über Protomaps, Natural Earth (gemeinfrei) und NASA-Blue-Marble-Bilder (NASA Earth Observatory, GIBS). Beispieldaten: NOAA IBTrACS, Xue et al. 2021 (CC BY 4.0), Copernicus Global Drought Observatory / JRC (CC BY 4.0).</p>
+    </div>
+    <div><a href="help.html">Hilfe</a> · <a href="glossary.html">Glossar</a><p class="foot-langs"><a href="../index.html" hreflang="en" lang="en">English</a> · <a href="../zh/index.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="../es/index.html" hreflang="es" lang="es">Español</a> · <a href="../fr/index.html" hreflang="fr" lang="fr">Français</a> · <a href="../it/index.html" hreflang="it" lang="it">Italiano</a> · <a href="../nl/index.html" hreflang="nl" lang="nl">Nederlands</a> · <a href="../pt-br/index.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ru/index.html" hreflang="ru" lang="ru">Русский</a> · <a href="../ja/index.html" hreflang="ja" lang="ja">日本語</a> · <a href="../ko/index.html" hreflang="ko" lang="ko">한국어</a></p></div>
+  </div>
+</footer>
+</body>
+</html>
