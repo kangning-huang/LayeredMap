@@ -12,6 +12,7 @@
 //! at_most (inclusive), between (inclusive), before, after, any_of; `find_where` conditions as `"raster|test|a|b;…"` with raster names, or a list of
 //! `{raster, op, value, value2}` (or filter-shaped `{field: raster, op: above|below|between…}`).
 
+use lm_core::brand::NAME as APP;
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 
@@ -222,7 +223,7 @@ pub fn execute(layers: &mut Vec<PlanLayer>, steps: &[Step], computed_at: i64, ct
                     params,
                     method: lm_actions_method(action),
                     computed_at,
-                    software: format!("LayeredMap {}", env!("CARGO_PKG_VERSION")),
+                    software: lm_core::brand::with_version(env!("CARGO_PKG_VERSION")),
                 };
                 let r = actions::run(&plan, ctl).map_err(|e| match e {
                     ActionError::Cancelled => err(n, "cancelled"),
@@ -256,7 +257,7 @@ pub fn execute(layers: &mut Vec<PlanLayer>, steps: &[Step], computed_at: i64, ct
                     }
                 }
             }
-            other => return Err(err(n, format!("“{other}” isn't an action LayeredMap knows"))),
+            other => return Err(err(n, format!("“{other}” isn't an action {APP} knows"))),
         }
     }
     Ok(out)
@@ -265,7 +266,7 @@ pub fn execute(layers: &mut Vec<PlanLayer>, steps: &[Step], computed_at: i64, ct
 /// The recipe method for an action (the runner's tests use fixed text; the app takes it from
 /// the registry, which this crate doesn't depend on).
 fn lm_actions_method(action: &str) -> String {
-    format!("LayeredMap certified action “{action}”")
+    format!("{APP} certified action “{action}”")
 }
 
 /// The runner's inputs (in its order) and parameters for an assistant step.

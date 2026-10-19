@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<!-- LayeredMap's application manifest (WP6.2), embedded in layeredmap.exe by apps/layeredmap/build.rs.
+<!-- NimbleMap's application manifest (WP6.2), embedded in layeredmap.exe by apps/layeredmap/build.rs.
      - DPI: per-monitor v2, so Windows never bitmap-stretches the window at 125 % or 150 %; winit asks
        for the same at startup, and the manifest makes it hold from the first message.
      - Long paths: file paths over 260 characters work where the system allows them.
@@ -8,7 +8,7 @@
      - asInvoker: never asks to run as administrator. -->
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
   <assemblyIdentity type="win32" name="LayeredMap.App" version="1.0.0.0" processorArchitecture="*"/>
-  <description>LayeredMap</description>
+  <description>NimbleMap</description>
   <dependency>
     <dependentAssembly>
       <assemblyIdentity type="win32" name="Microsoft.Windows.Common-Controls" version="6.0.0.0"

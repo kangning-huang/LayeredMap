@@ -117,7 +117,7 @@ pub struct Compare {
 /// The map id of the Compare view's converted points.
 const COMPARE_MAP_ID: u32 = MAP_ID_BASE - 1;
 
-/// Map layer ids for LayeredMap's layers start here, clear of anything the map assigns itself.
+/// Map layer ids for NimbleMap's layers start here, clear of anything the map assigns itself.
 const MAP_ID_BASE: u32 = 1_000_000;
 
 mod analysis;
@@ -1602,7 +1602,7 @@ fn apply_style(l: &mut lm_mapview::map::Layer, s: &Style, kind: LayerKind) {
         {
             use lm_mapview::map::color::{CustomRamp, RampKind};
             let stops = stops.into_iter().map(|(x, c)| (Some(x), rgba(c))).collect();
-            if let Ok(custom) = CustomRamp::new("LayeredMap", RampKind::Sequential, stops) {
+            if let Ok(custom) = CustomRamp::new(lm_core::brand::NAME, RampKind::Sequential, stops) {
                 *band = lm_jobs::inspect::style_band(&data, s);
                 *ramp = lm_mapview::map::Ramp::Custom(Box::new(custom));
                 *invert = false;

@@ -1,4 +1,4 @@
-# cargo-about (Gate 5 license audit): the licences of every crate built into the LayeredMap app.
+# cargo-about (Gate 5 license audit): the licences of every crate built into the NimbleMap app.
 # `cargo xtask licenses` renders packaging/lm/about.hbs into ATTRIBUTION-crates.md; the asset,
 # data and font sources stay in the hand-written ATTRIBUTION.md. The allowed list matches
 # deny.toml's.

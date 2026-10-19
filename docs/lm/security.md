@@ -9,7 +9,7 @@ What runs where, and how to run it by hand.
 | Known vulnerabilities (RustSec) | `cargo audit` | CI `security` job; `cargo xtask audit` | yes (advisory database) |
 | Licences, bans, sources, advisories | `cargo deny check` (`deny.toml`) | CI `security` job; `cargo xtask audit` | yes |
 | Crate licence texts (ATTRIBUTION) | `cargo xtask licenses` → `ATTRIBUTION-crates.md` | by hand, before a release | no |
-| Software bill of materials | `cargo xtask sbom [--out FILE] [--target TRIPLE]` | CI `security` job (artifact `LayeredMap-sbom`) | no |
+| Software bill of materials | `cargo xtask sbom [--out FILE] [--target TRIPLE]` | CI `security` job (artifact `NimbleMap-sbom`) | no |
 | Fuzzing, smoke | `cargo xtask fuzz --secs 60` | by hand | no |
 | Fuzzing, 24 h per adapter (Gate 6) | `.github/workflows/lm-fuzz.yml` (manual) | Linux runners | no |
 
@@ -18,7 +18,7 @@ Tools: `cargo install --locked cargo-audit cargo-deny`, `cargo install --locked 
 
 ## The network gate and strict offline mode
 
-Every network request in LayeredMap asks `lm_net::allowed(purpose)` right before it is sent:
+Every network request in NimbleMap asks `lm_net::allowed(purpose)` right before it is sent:
 
 | Request | Where | Purpose |
 |---|---|---|
@@ -31,7 +31,7 @@ Every network request in LayeredMap asks `lm_net::allowed(purpose)` right before
 Not network: place search reads the bundled GeoNames index. Dictation uses Apple's recognizer
 on the Mac; offline it refuses to fall back to Apple's server. RustGIS's own network code (the
 plugin registry, the AI Assistant, the GeoLibre installer, S3/STAC/portal commands) is not
-reachable from LayeredMap; the engine's remote reads go through the same tile fetcher, so they
+reachable from NimbleMap; the engine's remote reads go through the same tile fetcher, so they
 would meet the gate too.
 
 View › Work Offline turns strict offline mode on: every purpose is refused, the map draws the

@@ -1,4 +1,4 @@
-"""Reference solver for the LayeredMap Pro geographic puzzles (docs/lm/puzzles/).
+"""Reference solver for the NimbleMap Pro geographic puzzles (docs/lm/puzzles/).
 
     python -I tools/lm/puzzles/solve.py                       # all puzzles, counts and robustness
     python -I tools/lm/puzzles/solve.py --only P3 P7          # some puzzles
@@ -18,7 +18,7 @@ candidates remain after each clue, then re-runs the puzzle with every numeric th
 by the stated step, one at a time, to show how far each threshold can move before the answer
 changes.
 
-Method notes (the tolerances a LayeredMap action must meet are in docs/lm/puzzles/mechanics.md):
+Method notes (the tolerances a NimbleMap action must meet are in docs/lm/puzzles/mechanics.md):
 - Raster values at a city are the value of the cell containing it (rasterio sample, no
   interpolation). At an island they are the mean of the valid cells the island touches, because
   most islands are smaller than one 10' cell (about 18 km).

@@ -517,7 +517,7 @@ fn rustgis_lat(c: Camera) -> f64 {
     lm_mapview::camera::center_lonlat(&c).y
 }
 
-/// "Data: Districts (districts.geojson); Heat (lst_july.tif). Made with LayeredMap."
+/// "Data: Districts (districts.geojson); Heat (lst_july.tif). Made with NimbleMap."
 pub fn auto_caption(shell: &Shell) -> String {
     let parts: Vec<String> = shell
         .ws
@@ -531,7 +531,8 @@ pub fn auto_caption(shell: &Shell) -> String {
             if file.is_empty() || file == l.display_name { l.display_name.clone() } else { format!("{} ({file})", l.display_name) }
         })
         .collect();
-    if parts.is_empty() { "Made with LayeredMap.".into() } else { format!("Data: {}. Made with LayeredMap.", parts.join("; ")) }
+    let app = lm_core::brand::NAME;
+    if parts.is_empty() { format!("Made with {app}.") } else { format!("Data: {}. Made with {app}.", parts.join("; ")) }
 }
 
 /// A legend swatch for a layer's colour as the map draws it: areas translucent with a darker

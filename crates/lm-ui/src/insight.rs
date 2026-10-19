@@ -123,6 +123,13 @@ pub fn perform(shell: &mut Shell, id: LayerId, row: Option<usize>, a: &Suggested
                 && let Some((_, s)) =
                     lm_jobs::inspect::presets(&l).into_iter().find(|(_, s)| s.color_by.as_ref().is_some_and(|c| !c.categories))
             {
+                let mut s = s;
+                // A script naming a field (`card style_by_value magnitude`) colors by that field.
+                if let (Some(f), Some(c)) = (a.field.as_ref(), s.color_by.as_mut())
+                    && l.profile.fields.iter().any(|p| &p.name == f)
+                {
+                    c.field = f.clone();
+                }
                 let tx = shell.ws.doc.set_style_tx(id, s);
                 shell.ws.commit(tx);
             }

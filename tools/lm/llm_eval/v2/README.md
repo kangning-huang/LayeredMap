@@ -1,4 +1,4 @@
-# Harness v2 for the LayeredMap Pro assistant
+# Harness v2 for the NimbleMap Pro assistant
 
 v2 sits beside v1 (`../`), which is unchanged and still runs (`../run_eval.py`, `../cases.jsonl`).
 The plan for v2 came from `docs/lm/llm-eval-failures.md`; the results are in `docs/lm/llm-eval.md`

@@ -90,7 +90,7 @@ def fetch(scratch, offline):
         path = scratch / name
         if offline and path.exists():
             continue
-        req = urllib.request.Request(BASE + name, headers={"User-Agent": "LayeredMap-build/1"})
+        req = urllib.request.Request(BASE + name, headers={"User-Agent": "NimbleMap-build/1"})
         with urllib.request.urlopen(req, timeout=120) as r:
             path.write_bytes(r.read())
     with zipfile.ZipFile(scratch / "cities15000.zip") as z:

@@ -1,6 +1,6 @@
 # Promo storyboards: three puzzles solved by Pro
 
-Storyboards for 30–45 second release clips in which LayeredMap Pro solves a puzzle from
+Storyboards for 30–45 second release clips in which NimbleMap Pro solves a puzzle from
 [puzzles.md](puzzles.md). The three chosen are the most visual: P4 (areas growing and shrinking
 over Yunnan as conditions are added), P7 (three borders meeting by a river) and P8 (a hunt across
 every ocean that ends on one island).
@@ -28,13 +28,13 @@ one region with a town in it.
 
 | Time | Screen | Caption |
 |---|---|---|
-| 0–4 s | Close-up of an old notebook page beside a laptop (live action or illustration), then cut to LayeredMap showing south China; the layer shelf lists Elevation, Annual mean temperature, Annual precipitation, January mean temperature, Countries, Populated places. | 曾曾祖父的茶马笔记 · Great-great-grandfather's tea notebook |
+| 0–4 s | Close-up of an old notebook page beside a laptop (live action or illustration), then cut to NimbleMap showing south China; the layer shelf lists Elevation, Annual mean temperature, Annual precipitation, January mean temperature, Countries, Populated places. | 曾曾祖父的茶马笔记 · Great-great-grandfather's tea notebook |
 | 4–10 s | The cursor clicks the microphone in the Ask box; the Chinese request from P4 appears word by word as it is dictated: "在中国找出海拔1000到2000米、年平均气温不低于17°C……其中哪一片面积超过一万平方公里？里面是哪座城镇？" | 用一句话提问 · Ask in one sentence |
 | 10–14 s | A plan summary above the Ask box lists the steps (Find areas where conditions hold → Keep the part inside China → Add area → Filter → What's inside?). The spec does not yet define a plan summary; drop this shot if the Ask box does not show one. | Pro plans the steps with certified actions |
 | 14–24 s | Preview banner "Preview — not saved". Striped areas build up as each condition joins: first all the 1,000–2,000 m hills (a large orange band across south-west China and beyond), then warmer, then wetter, then frost-free in January. A small counter in the card summary updates: 1,075 → 573 → 355 → 356 areas. The view eases from all of Asia to Yunnan. | 海拔 · 年均温 · 降水 · 一月气温 |
 | 24–30 s | Everything outside China fades away (15 areas left), then the small ones fade; one large area remains over south-west Yunnan, outlined. | 只剩一片：五万七千平方公里 · One stretch left: 57,516 km² |
 | 30–36 s | Keep is clicked. The result card slides in: title "茶山在哪里" (Where the tea hills are), big number 57,516 km², context line "Inside: Simao (思茅), 162,725 people". The map pin on Simao pulses; its label shows 思茅 · 普洱. | 答案：普洱（思茅）的茶山 · Answer: the tea hills of Pu'er |
-| 36–40 s | "How this was calculated" opens for two seconds, showing the recipe lines (inputs, thresholds, method "cells on the WorldClim 10′ grid, 8-connected"). End card with the LayeredMap Pro logo and data credits. | 每一步都可以复查 · Every step is checkable |
+| 36–40 s | "How this was calculated" opens for two seconds, showing the recipe lines (inputs, thresholds, method "cells on the WorldClim 10′ grid, 8-connected"). End card with the NimbleMap Pro logo and data credits. | 每一步都可以复查 · Every step is checkable |
 
 ## Clip 2 · P7 "Three Flags and a Thousand Waterfalls" (35 s, English)
 
@@ -70,5 +70,5 @@ Visual hook: a whole-globe search where thousands of islands blink out until one
   certified actions give different counts, update the captions, not the data.
 - Chinese captions for clip 1 should be checked by a native speaker; the request text is in
   `puzzles.json`.
-- Stock photos and footage (waterfall, crabs) need their own licences; LayeredMap screens and the
+- Stock photos and footage (waterfall, crabs) need their own licences; NimbleMap screens and the
   data credits above cover the maps.

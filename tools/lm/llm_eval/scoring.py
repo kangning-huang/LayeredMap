@@ -2,7 +2,7 @@
 
 Two scores (README.md › Scoring):
 
-* strict: what LayeredMap could run as is. Same calls in the same order, nothing extra; layer
+* strict: what NimbleMap could run as is. Same calls in the same order, nothing extra; layer
   and field names exactly as listed; objects named by a (field, value) pair that exists in the
   data; distances that the runner's own parser reads (``parse_distance`` in
   ``crates/lm-jobs/src/actions.rs``) within 0.5 %; filter numbers that parse as numbers.

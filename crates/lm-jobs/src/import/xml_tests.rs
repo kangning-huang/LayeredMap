@@ -1,5 +1,5 @@
 //! KML, KMZ and GPX (WP6.7) against fixtures V11 and V12: layers, fields, styles and exclusions
-//! as LayeredMap defines them, and features, vertices and bounds against GDAL's reading recorded
+//! as NimbleMap defines them, and features, vertices and bounds against GDAL's reading recorded
 //! in each `expected.json` (`reference/make_kml_gpx_fixtures.py`).
 
 use lm_core::model::{Crs, ImportStatus, LayerKind};
@@ -58,7 +58,7 @@ fn vertices_and_bounds(layers: &[&ImportedLayer]) -> (u64, [f64; 4], [f64; 2]) {
 }
 
 /// Each expected layer (name, kind, count, style), and per GDAL layer the vertices, bounds,
-/// coordinate sums and (where LayeredMap didn't split it) the feature count of the LayeredMap
+/// coordinate sums and (where NimbleMap didn't split it) the feature count of the NimbleMap
 /// layers of that group.
 fn check_against_gdal(id: &str, file: &str, layers: &[ImportedLayer]) {
     let exp = expected(id);
@@ -237,7 +237,7 @@ fn malformed_kml_and_gpx_fail_plainly_or_list_what_was_left_out() {
             "Coordinates outside longitude ±180 and latitude ±90",
             "An area with fewer than three corners",
             "A line with fewer than two points",
-            "A 3D model, which LayeredMap doesn't show",
+            "A 3D model, which NimbleMap doesn't show",
         ]
     );
     // Rows are the records' positions in the layer (the good point is row 1).

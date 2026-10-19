@@ -57,7 +57,7 @@ set, and only from Phase 5 on (or on the developer surface: `LM_DEV=1` or a debu
 | Field | Required | Meaning |
 |---|---|---|
 | `format` | yes | Always `"layeredmap-library"`. Anything else is refused. |
-| `version` | yes | `1`. A higher version is refused ("needs a newer LayeredMap"); add fields within version 1 only if older apps can ignore them. |
+| `version` | yes | `1`. A higher version is refused ("needs a newer NimbleMap"); add fields within version 1 only if older apps can ignore them. |
 | `updated` | no | When the catalog was last edited (ISO date). |
 | `datasets` | yes | The entries, in the order the panel shows them. |
 

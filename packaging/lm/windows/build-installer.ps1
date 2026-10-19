@@ -1,10 +1,10 @@
-# Builds the LayeredMap installer for Windows (WP6.2), the counterpart of bundle-macos.sh and
+# Builds the NimbleMap installer for Windows (WP6.2), the counterpart of bundle-macos.sh and
 # build-dmg.sh. Run on Windows with Rust (MSVC) and Inno Setup 6:
 #
 #   pwsh packaging/lm/windows/build-installer.ps1 [-OutDir dist\lm]
-#   $env:LM_TIER = "pro"; pwsh packaging/lm/windows/build-installer.ps1   # LayeredMap Pro
+#   $env:LM_TIER = "pro"; pwsh packaging/lm/windows/build-installer.ps1   # NimbleMap Pro
 #
-# Writes LayeredMap-<version>-<build>-windows-x64-setup.exe (or LayeredMap-Pro-...) to OutDir.
+# Writes NimbleMap-<version>-<build>-windows-x64-setup.exe (or NimbleMap-Pro-...) to OutDir.
 #
 # Signing runs only when LM_SIGNTOOL_ARGS is set: the arguments signtool needs after `sign` to
 # reach the certificate, for example (docs/lm/signing.md):
@@ -21,6 +21,10 @@
 param([string]$OutDir = "")
 
 $ErrorActionPreference = "Stop"
+
+# The display name in the installer's file name; keep in step with lm_core::brand and the
+# Brand define in layeredmap.iss (docs/lm/naming.md).
+$brand = "NimbleMap"
 Set-StrictMode -Version Latest
 
 $root = (Resolve-Path (Join-Path $PSScriptRoot "..\..\..")).Path
@@ -63,6 +67,7 @@ if ($tier -eq "pro") {
   }
   # Test builds only: the owner's key, scrambled the same way as on macOS (not a secret store).
   if ($env:LM_OPENROUTER_KEY -and -not $env:LM_NO_KEY -and -not $env:CI) {
+    # The old name is part of the scrambling key (lm-ask/src/openrouter.rs PAD): not display text.
     $pad = [Text.Encoding]::ASCII.GetBytes("LayeredMap Pro test build: not a secret store.")
     $key = [Text.Encoding]::UTF8.GetBytes($env:LM_OPENROUTER_KEY)
     $hex = -join (0..($key.Length - 1) | ForEach-Object { "{0:x2}" -f ($key[$_] -bxor $pad[$_ % $pad.Length]) })
@@ -110,7 +115,7 @@ if ($sign) {
 & $iscc @isccArgs (Join-Path $PSScriptRoot "layeredmap.iss")
 if ($LASTEXITCODE -ne 0) { throw "ISCC failed" }
 
-$prefix = if ($tier -eq "pro") { "LayeredMap-Pro" } else { "LayeredMap" }
+$prefix = if ($tier -eq "pro") { "$brand-Pro" } else { $brand }
 $setup = Join-Path $OutDir "$prefix-$version-$build-windows-x64-setup.exe"
 if (-not (Test-Path $setup)) { throw "no installer at $setup" }
 if ($sign) {

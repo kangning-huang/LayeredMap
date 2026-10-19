@@ -426,11 +426,13 @@ fn read_header(file: NcFile, name: &str) -> Result<Opened, ImportError> {
             || vars.iter().any(|v| attr_text(v, "standard_name").is_some_and(|s| s.starts_with("projection_")));
         let msg = if curvilinear {
             format!(
-                "{name} uses a curvilinear grid (latitude and longitude that vary in two directions), which LayeredMap can't draw yet. Your file has not been changed."
+                "{name} uses a curvilinear grid (latitude and longitude that vary in two directions), which {} can't draw yet. Your file has not been changed.",
+                lm_core::brand::NAME
             )
         } else if projected {
             format!(
-                "{name} uses a projected grid (x and y instead of latitude and longitude), which LayeredMap can't draw yet. Your file has not been changed."
+                "{name} uses a projected grid (x and y instead of latitude and longitude), which {} can't draw yet. Your file has not been changed.",
+                lm_core::brand::NAME
             )
         } else if let Some(e) = geom_error {
             format!("{name} can't be drawn: {e}. Your file has not been changed.")

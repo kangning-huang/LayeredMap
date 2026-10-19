@@ -3,6 +3,7 @@
 //! notice; a missing `.shx` is rebuilt by reading the shapes in order; the text encoding comes
 //! from the `.cpg` or is detected (`lm_profile::shapefile_encoding`).
 
+use lm_core::brand::NAME as APP;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -139,8 +140,7 @@ fn read_parts(
         notices.push("No .shx file: the shapes were read in order instead.".to_string());
     }
     if prj.is_some() && prj_ok.is_none() {
-        notices
-            .push("The .prj file names a coordinate system LayeredMap doesn't know, so the coordinates were read as stored.".to_string());
+        notices.push(format!("The .prj file names a coordinate system {APP} doesn't know, so the coordinates were read as stored."));
     }
     let parts = ShapefileParts { shp, shx, dbf, prj: if prj_ok.is_some() { prj } else { None } };
     let (mut ds, report) = read_shapefile_parts_with(parts, name, opts).map_err(|e| ImportError::read(&file_name(path), e))?;
@@ -236,7 +236,7 @@ impl FormatAdapter for ZippedShapefile {
         let size = std::fs::metadata(path).map_err(|e| ImportError::read(&name, e))?.len();
         if size > super::limits::ZIP_MAX_EXPANDED {
             return Err(ImportError::Refused(format!(
-                "{name} is larger than 2 GB, the most LayeredMap reads as a zipped Shapefile. Unzip it and open the .shp. Your file has not been changed."
+                "{name} is larger than 2 GB, the most {APP} reads as a zipped Shapefile. Unzip it and open the .shp. Your file has not been changed."
             )));
         }
         let bytes = std::fs::read(path).map_err(|e| ImportError::read(&name, e))?;
@@ -256,7 +256,7 @@ impl FormatAdapter for ZippedShapefile {
         if shps.is_empty() {
             let others: Vec<String> = entries.iter().map(|e| e.name.clone()).filter(|n| !is_fork(n) && !n.ends_with('/')).take(5).collect();
             return Err(ImportError::Unsupported(format!(
-                "{name} holds no Shapefile. LayeredMap opens zipped Shapefiles; open other files directly{}.",
+                "{name} holds no Shapefile. {APP} opens zipped Shapefiles; open other files directly{}.",
                 if others.is_empty() { String::new() } else { format!(" (it holds {})", others.join(", ")) }
             )));
         }

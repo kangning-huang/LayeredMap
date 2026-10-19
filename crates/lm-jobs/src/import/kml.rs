@@ -16,6 +16,7 @@
 //! NetworkLink, GroundOverlay, ScreenOverlay and PhotoOverlay are not opened; a notice says what
 //! was left out.
 
+use lm_core::brand::NAME as APP;
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
@@ -79,7 +80,7 @@ impl FormatAdapter for Kmz {
         let m = std::fs::metadata(path).map_err(|e| ImportError::read(&file_name(path), e))?;
         if m.len() > super::limits::ZIP_MAX_EXPANDED {
             return Err(ImportError::Refused(format!(
-                "{} is larger than 2 GB, the most LayeredMap reads as KMZ. Your file has not been changed.",
+                "{} is larger than 2 GB, the most {APP} reads as KMZ. Your file has not been changed.",
                 file_name(path)
             )));
         }
@@ -115,7 +116,7 @@ impl FormatAdapter for Kmz {
         let mut notices = Vec::new();
         if kmls.len() > 1 {
             notices.push(format!(
-                "This KMZ holds {} KML documents; LayeredMap opened the main one, {}.",
+                "This KMZ holds {} KML documents; {APP} opened the main one, {}.",
                 kmls.len(),
                 main.name.rsplit('/').next().unwrap_or(&main.name)
             ));
@@ -124,7 +125,7 @@ impl FormatAdapter for Kmz {
     }
 }
 
-/// A style as far as LayeredMap can show it; each part is set only when the file sets it.
+/// A style as far as NimbleMap can show it; each part is set only when the file sets it.
 #[derive(Clone, Debug, Default, PartialEq)]
 struct KmlStyle {
     line: Option<[u8; 4]>,
@@ -424,8 +425,9 @@ fn shapes(g: &roxmltree::Node, depth: usize) -> Result<Vec<Geometry>, &'static s
             }
             if out.is_empty() { Err("An empty shape") } else { Ok(out) }
         }
-        "Model" => Err("A 3D model, which LayeredMap doesn't show"),
-        _ => Err("A shape LayeredMap can't read"),
+        // These are `&'static str`, so the name is a literal: keep it in step with lm_core::brand::NAME.
+        "Model" => Err("A 3D model, which NimbleMap doesn't show"),
+        _ => Err("A shape NimbleMap can't read"),
     }
 }
 
@@ -607,14 +609,14 @@ fn read_kml(path: &Path, bytes: &[u8], format: &str, mut notices: Vec<String>, c
             format!("{name} holds no places (Placemarks), so there is nothing to show. Your file has not been changed.")
         } else {
             format!(
-                "{name} holds no places LayeredMap can show, only {}, which it doesn't open. Your file has not been changed.",
+                "{name} holds no places {APP} can show, only {}, which it doesn't open. Your file has not been changed.",
                 left_out.join(" and ")
             )
         };
         return Err(ImportError::Unsupported(message));
     }
     if !left_out.is_empty() {
-        notices.push(format!("This file also has {}, which LayeredMap doesn't open.", left_out.join(" and ")));
+        notices.push(format!("This file also has {}, which {APP} doesn't open.", left_out.join(" and ")));
     }
     ctx.stage(Stage::Extent)?;
     // Folders → layers, unless there are too many.
@@ -628,7 +630,7 @@ fn read_kml(path: &Path, bytes: &[u8], format: &str, mut notices: Vec<String>, c
     let combined = folders.len() > MAX_FOLDER_LAYERS;
     if combined {
         notices.push(format!(
-            "This file has {} folders, more than LayeredMap shows as separate layers; each place's folder is in the field folder.",
+            "This file has {} folders, more than {APP} shows as separate layers; each place's folder is in the field folder.",
             folders.len()
         ));
         for p in &mut places {

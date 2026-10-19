@@ -1,6 +1,6 @@
 //! Built-in reference layers (owner's design, 2026-10-18): Natural Earth 1:10m countries,
 //! states and provinces, cities, rivers, lakes, coastline, land, minor islands, regions and seas,
-//! and NOAA ETOPO 2022 elevation, inside LayeredMap Pro. They never show on the map; the assistant
+//! and NOAA ETOPO 2022 elevation, inside NimbleMap Pro. They never show on the map; the assistant
 //! sees them in the map context and a plan may name them like any layer ("count Power plants in
 //! each World country"), which loads them then. Country borders follow the system region: the
 //! Natural Earth point of view for that region (China's on a Mac set to mainland China), applied

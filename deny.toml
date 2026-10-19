@@ -1,5 +1,5 @@
 # cargo-deny (WP6.8, Gate 5 license audit): `cargo deny check` — advisories, licenses, bans and
-# sources for the whole workspace (RustGIS and LayeredMap). CI runs it in .github/workflows/lm-ci.yml;
+# sources for the whole workspace (RustGIS and NimbleMap). CI runs it in .github/workflows/lm-ci.yml;
 # locally `cargo xtask audit` (it needs the network for the advisory database).
 
 [graph]
@@ -52,7 +52,7 @@ allow = [
 confidence-threshold = 0.8
 
 [licenses.private]
-# Workspace crates that are never published (LayeredMap's, the xtask) are the project's own.
+# Workspace crates that are never published (NimbleMap's, the xtask) are the project's own.
 ignore = true
 
 [bans]

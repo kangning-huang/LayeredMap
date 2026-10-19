@@ -1,4 +1,4 @@
-//! LayeredMap's security and licence tasks (WP6.8; Gate 5's licence audit):
+//! NimbleMap's security and licence tasks (WP6.8; Gate 5's licence audit):
 //!
 //! - `cargo xtask audit`: `cargo audit` and `cargo deny check` (both need the network for the
 //!   advisory database, so they are not part of `cargo xtask ci`; CI runs them as their own job).
@@ -6,7 +6,7 @@
 //!   into `ATTRIBUTION-crates.md`.
 //! - `cargo xtask sbom [--out FILE]`: a CycloneDX 1.5 software bill of materials for the app,
 //!   from `cargo metadata` and the lockfile's checksums.
-//! - The network-gate check (part of `cargo xtask layers` and `ci`): a LayeredMap source file
+//! - The network-gate check (part of `cargo xtask layers` and `ci`): a NimbleMap source file
 //!   that uses `ureq` must ask `lm_net`'s gate.
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -162,7 +162,7 @@ pub fn cyclonedx(metadata: &Value, checksums: &BTreeMap<(String, String), String
         "serialNumber": serial,
         "version": 1,
         "metadata": {
-            "tools": [{ "vendor": "LayeredMap", "name": "cargo xtask sbom" }],
+            "tools": [{ "vendor": "NimbleMap", "name": "cargo xtask sbom" }],
             "component": {
                 "type": "application",
                 "bom-ref": purl(root),
@@ -242,7 +242,7 @@ fn rust_files(dir: &Path, out: &mut Vec<(String, String)>, root: &Path) {
     }
 }
 
-/// The network-gate check over every LayeredMap crate and the app, plus the tile fetcher's gate.
+/// The network-gate check over every NimbleMap crate and the app, plus the tile fetcher's gate.
 pub fn net_lint(root: &Path) -> Result<(), String> {
     let mut files = Vec::new();
     for e in std::fs::read_dir(root.join("crates")).into_iter().flatten().flatten() {

@@ -1,5 +1,5 @@
 ---
-name: LayeredMap gate issue
+name: NimbleMap gate issue
 about: An issue found during a gate validation session or stress test
 labels: [gate]
 ---

@@ -5,11 +5,15 @@ app (Contents/Resources/help). Search engines and link previews need absolute UR
 goes through this script, which copies the site (minus its README) to an output folder and:
 
 - makes the canonical, hreflang, og:url and og:image URLs absolute against ORIGIN;
-- writes sitemap.xml (every page, with its language alternates) and robots.txt.
+- writes sitemap.xml (every page, with its language alternates) and robots.txt;
+- drops the `<!-- TODO(owner): ... -->` notes, which are for us, not for visitors.
 
     python3 -I tools/lm/site/stamp.py https://example.org /tmp/site-out
+    python3 -I tools/lm/site/stamp.py https://kangning-huang.github.io/NimbleMap /tmp/site-out
 
-Standard library only. ORIGIN is the site's root URL, without a trailing path.
+Standard library only. ORIGIN is the URL the site's index.html is served at: a host root, or a
+folder on it such as a GitHub Pages project site. Crawlers only read robots.txt at a host root,
+so it is written only when ORIGIN is one; submit the sitemap by hand otherwise.
 """
 
 from __future__ import annotations
@@ -31,6 +35,7 @@ ABSOLUTE = [
     re.compile(r'(<meta property="og:url" content=")([^"]*)(")'),
     re.compile(r'(<meta property="og:image" content=")([^"]*)(")'),
 ]
+TODO_NOTE = re.compile(r"[ \t]*<!-- TODO\(owner\):.*?-->\n?", re.S)
 ALTERNATE = re.compile(r'<link rel="alternate" hreflang="([^"]*)" href="([^"]*)">')
 
 
@@ -54,8 +59,8 @@ def absolutize(text: str, base: str, origin: str) -> str:
 
 def stamp(origin: str, out: Path, site: Path = SITE) -> list[str]:
     parts = urlsplit(origin)
-    if parts.scheme != "https" or not parts.netloc or parts.path not in ("", "/") or parts.query:
-        raise ValueError(f"ORIGIN must be an https root URL such as https://example.org, not {origin!r}")
+    if parts.scheme != "https" or not parts.netloc or parts.query or parts.fragment or parts.path.endswith(".html"):
+        raise ValueError(f"ORIGIN must be an https site URL such as https://example.org, not {origin!r}")
     origin = origin.rstrip("/")
     if out.exists():
         raise ValueError(f"{out} already exists; give a new folder")
@@ -65,7 +70,7 @@ def stamp(origin: str, out: Path, site: Path = SITE) -> list[str]:
     for page in sorted(out.rglob("*.html")):
         rel = page.relative_to(out).as_posix()
         base = f"{origin}/{rel}"
-        text = absolutize(page.read_text(encoding="utf-8"), base, origin)
+        text = TODO_NOTE.sub("", absolutize(page.read_text(encoding="utf-8"), base, origin))
         page.write_text(text, encoding="utf-8")
         alternates = ALTERNATE.findall(text)
         entries.append((page_url(origin, rel), alternates))
@@ -80,7 +85,8 @@ def stamp(origin: str, out: Path, site: Path = SITE) -> list[str]:
         lines.append("  </url>")
     lines.append("</urlset>")
     (out / "sitemap.xml").write_text("\n".join(lines) + "\n", encoding="utf-8")
-    (out / "robots.txt").write_text(f"User-agent: *\nAllow: /\n\nSitemap: {origin}/sitemap.xml\n", encoding="utf-8")
+    if parts.path in ("", "/"):
+        (out / "robots.txt").write_text(f"User-agent: *\nAllow: /\n\nSitemap: {origin}/sitemap.xml\n", encoding="utf-8")
     return [loc for loc, _ in entries]
 
 
@@ -93,7 +99,8 @@ def main(argv: list[str]) -> int:
     except ValueError as e:
         print(f"stamp.py: {e}", file=sys.stderr)
         return 2
-    print(f"{len(pages)} pages stamped into {argv[2]}, with sitemap.xml and robots.txt")
+    extra = "sitemap.xml and robots.txt" if (Path(argv[2]) / "robots.txt").exists() else "sitemap.xml (no robots.txt below a host root)"
+    print(f"{len(pages)} pages stamped into {argv[2]}, with {extra}")
     return 0
 
 

@@ -50,7 +50,7 @@ pub fn apply(map: &mut Map, prefs: &Prefs, dark_ui: bool) {
     let dark = look_dark(&p, dark_ui);
     map.basemap = quiet(dark);
     map.graticule = false;
-    // The tile layer is the only web layer LayeredMap's chrome manages; others are kept.
+    // The tile layer is the only web layer NimbleMap's chrome manages; others are kept.
     map.tiles.retain(|t| !t.id.starts_with("lm-basemap"));
     if p.source == Source::VectorArchive {
         // Developer override, for testing a host or simulating being offline (an unreachable address).
@@ -162,7 +162,7 @@ pub fn start_archive_lookup(ctx: &egui::Context) {
 
 /// The starting map: the saved view, or the whole world on first launch.
 pub fn initial_map(prefs: &Prefs, dark_ui: bool) -> Map {
-    let mut map = Map::new("LayeredMap");
+    let mut map = Map::new(lm_core::brand::NAME);
     apply(&mut map, prefs, dark_ui);
     map.camera = match prefs.view {
         Some((lon, lat, zoom)) if lon.is_finite() && lat.is_finite() && zoom.is_finite() => {

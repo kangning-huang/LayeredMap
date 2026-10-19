@@ -5,12 +5,12 @@
 > **Step by step (2026-10-18):** the same eight puzzles as 57 one-at-a-time requests: Haiku carried out all 57 and reached 7 of the 8 answers following its own plans. See [stepwise.md](stepwise.md).
 
 Branch `puzzle-e2e`, 2026-10-17. What was run: each puzzle as a hand-written gold plan through
-LayeredMap's plan executor (`run_plan`), then each puzzle's request (English, and Chinese where the
+NimbleMap's plan executor (`run_plan`), then each puzzle's request (English, and Chinese where the
 puzzle has one) through the Pro assistant pipeline: the v2 harness in the `submit_plan` design,
 the plan checker, `resolve_feature`, then `run_plan` on the real files, then an answer check
 against `puzzles.json`. Models: Claude Haiku 5.5 and GLM 5.3 Flash, two runs each.
 
-**In short.** LayeredMap's certified actions solve all eight puzzles: every gold plan reaches the
+**In short.** NimbleMap's certified actions solve all eight puzzles: every gold plan reaches the
 answer, and its candidate counts match the reference solver's wherever both test the same thing.
 From the request alone, the assistant solved 24 of 52 requests in the reported run. P1, P2 and P5
 were solved every time (16 of 16), P6 3 of 4 times (after one harness fix). P4 3 of 8, P8 2 of 8,
@@ -38,7 +38,7 @@ The check uses the last layer the plan filters, skipping layers that are only us
 distance target. "Solved" means exactly one object is left and it is the answer. "Solved with cards"
 means several are left, but the plan's "N countries inside <city>" cards leave only the answer.
 
-| Puzzle | Answer | Gold steps | Solves? | LayeredMap candidates per clue | `solve.py` per clue | Run time |
+| Puzzle | Answer | Gold steps | Solves? | NimbleMap candidates per clue | `solve.py` per clue | Run time |
 |---|---|---|---|---|---|---|
 | P1 | Kunming | 5 | yes | 45 → 2 → 1 | 45 → 2 → 1 | 0.04 s |
 | P2 | Winnipeg | 5 | yes | 1,438 → 146 → 1 | 1,448 → 146 → 1 | 0.15 s |
@@ -68,7 +68,7 @@ The plans, briefly:
   nearest_distance (Minor islands), filter, summarize_each (rain), then calculate_field twice
   (ratio, then ratio²) and a final filter.
 
-### Where LayeredMap's counts differ from `solve.py`, and why each answer stays unique
+### Where NimbleMap's counts differ from `solve.py`, and why each answer stays unique
 
 - **P2, P5, P7, first clue: 10, 1 and 5 fewer places.** `join_by_location` matches a point only to
   a country polygon it lies in or on. 18 of 7,342 places are coastal points just outside the 1:10m

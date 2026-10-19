@@ -210,7 +210,7 @@ def test_ask_and_refuse():
     assert not r["lenient"] and r["reason"] == "refused_instead_of_asking"
     r = score("x02", tc("ask_user", question="?"))
     assert not r["lenient"] and r["reason"] == "asked_instead_of_refusing"
-    r = score("x02", text="Sorry, LayeredMap can't forecast population.")
+    r = score("x02", text="Sorry, NimbleMap can't forecast population.")
     assert not r["strict"] and r["lenient"] and r["reason"] == "no_call"
     r = score("v01", text="Which analysis would you like?")
     assert not r["strict"] and r["lenient"]

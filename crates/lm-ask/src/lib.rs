@@ -1,5 +1,5 @@
-//! LayeredMap Pro's Ask box (Phase 7, early test build): a request in plain words becomes a plan
-//! of LayeredMap's certified actions, checked and run as a preview before the user keeps it.
+//! NimbleMap Pro's Ask box (Phase 7, early test build): a request in plain words becomes a plan
+//! of NimbleMap's certified actions, checked and run as a preview before the user keeps it.
 //!
 //! The prompt, rules, worked examples and tools are the ones the evaluation harness measured
 //! (`tools/lm/assistant/export_assets.py`). The model sees the map's layers, fields, filters and

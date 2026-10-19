@@ -1,4 +1,4 @@
-# LayeredMap: Gate 2 fuzzing (`cargo xtask fuzz`, or `cargo +nightly fuzz run <target>` from the
+# NimbleMap: Gate 2 fuzzing (`cargo xtask fuzz`, or `cargo +nightly fuzz run <target>` from the
 # repository root). Kept out of the main workspace, as cargo-fuzz expects: it needs a nightly
 # toolchain and the sanitizer runtime.
 [package]
@@ -94,7 +94,7 @@ test = false
 doc = false
 bench = false
 
-# Not part of the LayeredMap workspace.
+# Not part of the NimbleMap workspace.
 [workspace]
 members = ["."]
 

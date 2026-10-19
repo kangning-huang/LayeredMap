@@ -1,7 +1,7 @@
 # RustGIS capability audit (WP0.2)
 
 **As of 2026-10-15, upstream `75129448`.** Upstream already reads most of the formats and draws
-online vector basemaps. Its analysis does not meet LayeredMap's definitions: every certified
+online vector basemaps. Its analysis does not meet NimbleMap's definitions: every certified
 action in Phase 4 needs a new implementation in `lm-analysis`. One finding matters for Gate 0:
 the renderer drops Chinese basemap labels.
 
@@ -16,8 +16,8 @@ the renderer drops Chinese basemap labels.
 | 5 | Summarize Within (`countPoints`) uses `intersects` (boundary counts in every area — matches) but runs in Web Mercator, so points on sloped edges can be missed; a MultiPoint counts once. | Close, not certified. | Phase 4. |
 | 6 | No GCJ-02/BD-09 conversion. | As expected. | Phase 2 WP2.5. |
 | 7 | GeoTIFF scale/offset ignored (only Zarr applies it). | R6 values decode wrong; Landsat ST_B10 assumption needs it. | Phase 2 WP2.2 (`upstream:` change). |
-| 8 | CSV must be UTF-8 (T4, GBK, is refused); Chinese coordinate column names (经度/纬度) aren't recognised; Shapefile `.cpg` is never read (GBK .dbf with no code page decodes as lossy UTF-8, per code reading — not verified by printing). | Encoding detection is LayeredMap's to build. | Phase 2 WP2.2/WP2.3. |
-| 9 | Mixed-geometry GeoJSON (V2) loads as one layer typed "Point" holding all 10 features. | LayeredMap must split it (assumption catalog row). | Phase 2. |
+| 8 | CSV must be UTF-8 (T4, GBK, is refused); Chinese coordinate column names (经度/纬度) aren't recognised; Shapefile `.cpg` is never read (GBK .dbf with no code page decodes as lossy UTF-8, per code reading — not verified by printing). | Encoding detection is NimbleMap's to build. | Phase 2 WP2.2/WP2.3. |
+| 9 | Mixed-geometry GeoJSON (V2) loads as one layer typed "Point" holding all 10 features. | NimbleMap must split it (assumption catalog row). | Phase 2. |
 | 10 | No EPSG area of use in the bundled CRS definitions (CGCS2000 GK, Xian 1980, Beijing 1954 are present). | "Where should this data be?" needs its own bounds table. | Phase 2 WP2.4. |
 | 11 | `read_path` refuses `.xlsx` (T5: "unsupported file type") although calamine is in the tree. | Excel needs its own path. | Phase 2 (P1). |
 | 12 | Map view: `ui-egui/src/mapview.rs` (1,500 lines) is tied to `RustGisApp`, `Session` and 19 engine commands. A clean core of ~450 lines (texture cache, labels, camera, scale bar) extracts easily; ~300 lines of interaction go behind a host trait; ~750 lines are cut. | Extraction ≈ 3–4 days; the spike's ~900 lines already cover the core. | Phase 1 WP1.2. |
@@ -31,7 +31,7 @@ through `Command::Open` (the Open button's pipeline). `packaging/lm/bundle-macos
 CSV/TSV, GeoJSON/JSON, Shapefile (.shp, .zip), GeoTIFF, GeoPackage, .xlsx, and (WP6.7) KML/KMZ and GPX as a Viewer with
 `LSHandlerRank` Alternate (never the default app).
 
-Verified on the bundled app with `open -a LayeredMap.app <files>` (the same Apple event as a Dock
+Verified on the bundled app with `open -a NimbleMap.app <files>` (the same Apple event as a Dock
 drop or Open With), looking at window screenshots:
 - not running: `T1/schools.csv` launches the app and "schools" (248 points) is in the Layers panel;
 - running: `V1/districts.geojson` + `T5/survey.xlsx` in one event both arrive (districts draws;

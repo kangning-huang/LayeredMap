@@ -70,7 +70,7 @@ fn contacts() -> Dataset {
 }
 
 /// A user's folder with a CSV, a Shapefile's parts and a file with personal data, and a map of
-/// them: a styled layer, two layers from one file, and a result of LayeredMap's own.
+/// them: a styled layer, two layers from one file, and a result of NimbleMap's own.
 struct Scene {
     home: TempDir,
     doc: Document,

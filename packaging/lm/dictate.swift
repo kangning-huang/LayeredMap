@@ -1,4 +1,4 @@
-// lm-dictate: speech to text for LayeredMap Pro's Ask box (WP7.1, "speaking instead of typing").
+// lm-dictate: speech to text for NimbleMap Pro's Ask box (WP7.1, "speaking instead of typing").
 //
 // The app starts this helper (Contents/MacOS/lm-dictate) when the microphone is clicked and reads
 // its standard output, one line per event:
@@ -8,7 +8,7 @@
 //   error<TAB>message     a reason in plain words; the helper then exits
 // It stops when its standard input closes (the microphone clicked again), after 2 s of silence
 // once something was heard, or after 60 s. Recognition runs on the Mac when the language
-// supports it (Apple silicon: English and Chinese among others); nothing is sent to LayeredMap.
+// supports it (Apple silicon: English and Chinese among others); nothing is sent to NimbleMap.
 // The language is the system's, or the first argument ("zh-CN", "en-US").
 
 import AVFoundation
@@ -16,6 +16,10 @@ import Foundation
 import Speech
 
 setvbuf(stdout, nil, _IOLBF, 0)
+
+// The display names; keep in step with lm_core::brand (docs/lm/naming.md).
+let appName = "NimbleMap"
+let proName = "NimbleMap Pro"
 
 func emit(_ kind: String, _ text: String = "") {
     let clean = text.replacingOccurrences(of: "\n", with: " ").replacingOccurrences(of: "\t", with: " ")
@@ -39,7 +43,7 @@ if recognizer.supportsOnDeviceRecognition {
     request.requiresOnDeviceRecognition = true
 } else if ProcessInfo.processInfo.environment["LM_OFFLINE"] == "1" {
     // Strict offline mode (WP6.6): Apple's server recognizer would go online.
-    fail("Speaking needs on-device speech recognition while LayeredMap is working offline.")
+    fail("Speaking needs on-device speech recognition while \(appName) is working offline.")
 }
 
 var latest = ""
@@ -112,10 +116,10 @@ func askMicrophone() {
         DispatchQueue.main.async { start() }
     case .notDetermined:
         AVCaptureDevice.requestAccess(for: .audio) { ok in
-            if ok { DispatchQueue.main.async { start() } } else { fail("LayeredMap Pro isn't allowed to use the microphone. Allow it in System Settings › Privacy & Security › Microphone.") }
+            if ok { DispatchQueue.main.async { start() } } else { fail("\(proName) isn't allowed to use the microphone. Allow it in System Settings › Privacy & Security › Microphone.") }
         }
     default:
-        fail("LayeredMap Pro isn't allowed to use the microphone. Allow it in System Settings › Privacy & Security › Microphone.")
+        fail("\(proName) isn't allowed to use the microphone. Allow it in System Settings › Privacy & Security › Microphone.")
     }
 }
 
@@ -124,7 +128,7 @@ SFSpeechRecognizer.requestAuthorization { status in
     case .authorized:
         askMicrophone()
     case .denied, .restricted:
-        fail("Speech recognition is turned off for LayeredMap Pro. Allow it in System Settings › Privacy & Security › Speech Recognition.")
+        fail("Speech recognition is turned off for \(proName). Allow it in System Settings › Privacy & Security › Speech Recognition.")
     default:
         fail("Speech recognition isn't available right now.")
     }

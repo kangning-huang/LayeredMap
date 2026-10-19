@@ -84,7 +84,7 @@
     {
       "error": {
         "kind": "Refused",
-        "message": "r8_curvilinear.nc uses a curvilinear grid (latitude and longitude that vary in two directions), which LayeredMap can't draw yet. Your file has not been changed."
+        "message": "r8_curvilinear.nc uses a curvilinear grid (latitude and longitude that vary in two directions), which NimbleMap can't draw yet. Your file has not been changed."
       },
       "file": "r8_curvilinear.nc"
     },

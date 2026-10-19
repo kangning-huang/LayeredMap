@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>在 Mac 上免费打开 Shapefile、GeoJSON、CSV 和 GeoTIFF · LayeredMap</title>
+<title>在 Mac 上免费打开 Shapefile、GeoJSON、CSV 和 GeoTIFF · 千层图</title>
 <meta name="description" content="一款免费的 Mac 地图应用：双击就能把 Shapefile、GeoJSON、带经纬度的 CSV 和 GeoTIFF 放到地图上。不用设置坐标系，图层自动对齐；支持 GCJ-02、BD-09 坐标纠偏；文件始终留在你的 Mac 上。">
 <link rel="canonical" href="download.html">
 <link rel="alternate" hreflang="en" href="../download.html">
 <link rel="alternate" hreflang="zh-Hans" href="download.html">
 <link rel="alternate" hreflang="x-default" href="../download.html">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="LayeredMap">
+<meta property="og:site_name" content="千层图">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:title" content="在 Mac 上免费打开 Shapefile、GeoJSON、CSV 和 GeoTIFF">
 <meta property="og:description" content="双击地图文件，它就出现在地图上。图层自动对齐，文件不离开你的 Mac。">
@@ -24,12 +24,12 @@
 {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
-  "name": "LayeredMap",
+  "name": "千层图",
+  "alternateName": "NimbleMap",
   "inLanguage": "zh-Hans",
   "operatingSystem": "macOS 13 或更高版本（Apple 芯片）",
   "applicationCategory": "UtilitiesApplication",
   "description": "一款 Mac 地图应用，双击或拖入即可打开 Shapefile、GeoJSON、CSV、GeoTIFF、GeoPackage、Excel、KML、GPX 和 NetCDF 文件，文件不离开电脑。",
-  "license": "https://www.apache.org/licenses/LICENSE-2.0",
   "isAccessibleForFree": true,
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "CNY" }
 }
@@ -38,7 +38,7 @@
 <body>
 <header class="site-head">
   <div class="wrap">
-    <a class="brand" href="index.html"><img src="../assets/logo.svg" alt="" width="30" height="30">LayeredMap</a>
+    <a class="brand" href="index.html"><img src="../assets/logo.svg" alt="" width="30" height="30">千层图</a>
     <nav class="nav" aria-label="网站导航">
       <a href="index.html">首页</a>
       <a href="help.html">帮助</a>
@@ -61,10 +61,10 @@
         <a class="btn btn-primary" href="#get">下载 Mac 版</a>
         <a class="btn btn-quiet" href="#formats">支持哪些格式</a>
       </div>
-      <p class="coords" style="margin-top:28px">免费开源 · 约 70 MB · macOS 13 或更高版本，Apple 芯片</p>
+      <p class="coords" style="margin-top:28px">免费 · 约 70 MB · macOS 13 或更高版本，Apple 芯片</p>
     </div>
     <div class="hero-shot">
-      <figure class="frame"><img src="../img/walls-compare.jpg" alt="在 LayeredMap 里并排比较两座 1866 年的城池，它们都画在地图上的正确位置。" width="1600" height="996"></figure>
+      <figure class="frame"><img src="../img/walls-compare.jpg" alt="在千层图里并排比较两座 1866 年的城池，它们都画在地图上的正确位置。" width="1600" height="996"></figure>
     </div>
   </div>
 </section>
@@ -108,12 +108,12 @@
   <div class="wrap">
     <div class="section-head">
       <p class="eyebrow">下载</p>
-      <h2>获取 LayeredMap</h2>
+      <h2>获取千层图（NimbleMap）</h2>
       <p class="lede">适用于搭载 Apple 芯片、macOS 13 或更高版本的 Mac。Windows 版正在制作中。</p>
     </div>
     <div class="downloads">
       <div class="dl">
-        <h3>LayeredMap Mac 版</h3>
+        <h3>千层图 Mac 版</h3>
         <p>免费 · 已签名并经过 Apple 公证</p>
         <!-- TODO(owner): link the signed .dmg once a host reachable from mainland China and elsewhere is chosen. -->
         <a class="btn btn-primary disabled" href="#get" aria-disabled="true">下载</a>
@@ -127,14 +127,14 @@
         <p style="margin-top:12px">首个公开版本发布时提供。</p>
       </div>
       <div class="dl">
-        <h3>LayeredMap Pro</h3>
+        <h3>千层图 Pro</h3>
         <p>订阅制 · 提问框和内置世界图层</p>
         <!-- TODO(owner): Pro sign-up and pricing (Phase 7). -->
         <a class="btn btn-quiet disabled" href="#get" aria-disabled="true">即将推出</a>
         <p style="margin-top:12px"><a href="index.html#pro">Pro 多了什么</a></p>
       </div>
     </div>
-    <p style="margin-top:24px;color:var(--ink-3);font-size:15px">LayeredMap 基于 <a href="https://github.com/opengeos/RustGIS">RustGIS</a> 构建。免费版源代码采用 Apache-2.0 许可。</p>
+    <p style="margin-top:24px;color:var(--ink-3);font-size:15px">千层图基于 <a href="https://github.com/opengeos/RustGIS">RustGIS</a> 构建。</p>
   </div>
 </section>
 
@@ -142,12 +142,12 @@
   <div class="wrap">
     <div class="section-head">
       <p class="eyebrow">坦白比较</p>
-      <h2>用 LayeredMap 还是 QGIS？</h2>
-      <p class="lede">QGIS 是免费的完整 GIS，而且非常好用。LayeredMap 适合那些用 QGIS 有点“杀鸡用牛刀”的时候。</p>
+      <h2>用千层图还是 QGIS？</h2>
+      <p class="lede">QGIS 是免费的完整 GIS，而且非常好用。千层图适合那些用 QGIS 有点“杀鸡用牛刀”的时候。</p>
     </div>
     <div class="tiers compare">
       <div class="tier">
-        <h3>这些事 LayeredMap 就够了</h3>
+        <h3>这些事千层图就够了</h3>
         <ul>
           <li>看看文件里有什么、在哪里</li>
           <li>确认两个图层对得上</li>
@@ -167,7 +167,7 @@
         </ul>
       </div>
     </div>
-    <p style="margin-top:22px;color:var(--ink-2)">在线查看器看一眼更快，但文件要上传，或者整个塞进浏览器标签页。LayeredMap 让文件留在本地，大文件也能打开。</p>
+    <p style="margin-top:22px;color:var(--ink-2)">在线查看器看一眼更快，但文件要上传，或者整个塞进浏览器标签页。千层图让文件留在本地，大文件也能打开。</p>
   </div>
 </section>
 
@@ -179,16 +179,16 @@
     </div>
     <div class="faq">
       <h3>Mac 上有免费打开 Shapefile 的软件吗？</h3>
-      <p>有。LayeredMap 免费且开源。在访达里双击 <code>.shp</code>，或者把它（或它所在的 .zip）拖进窗口。记得让 <code>.dbf</code>、<code>.shx</code> 和 <code>.prj</code> 和它放在一起：一个 Shapefile 其实是一组文件。</p>
+      <p>有。千层图免费。在访达里双击 <code>.shp</code>，或者把它（或它所在的 .zip）拖进窗口。记得让 <code>.dbf</code>、<code>.shx</code> 和 <code>.prj</code> 和它放在一起：一个 Shapefile 其实是一组文件。</p>
 
       <h3>为什么我的 CSV 点和 Shapefile 叠不到一起？</h3>
-      <p>通常是因为 Shapefile 用的是投影坐标系（以米为单位），而 CSV 存的是经纬度，两者落在了不同的地方。LayeredMap 会读取 Shapefile 的 <code>.prj</code>，把它转换成经纬度，两者就对齐了。如果 <code>.prj</code> 缺失或读不懂，它会直接告诉你，而不是悄悄猜一个。</p>
+      <p>通常是因为 Shapefile 用的是投影坐标系（以米为单位），而 CSV 存的是经纬度，两者落在了不同的地方。千层图会读取 Shapefile 的 <code>.prj</code>，把它转换成经纬度，两者就对齐了。如果 <code>.prj</code> 缺失或读不懂，它会直接告诉你，而不是悄悄猜一个。</p>
 
       <h3>为什么我的点在高德、百度底图上是准的，换到别的底图就偏了几百米？</h3>
-      <p>中国的地图服务使用加密偏移后的坐标：高德、腾讯用 GCJ-02，百度用 BD-09。从这些服务导出的坐标放到国际标准（WGS 84）的地图上，会整体偏移几百米。LayeredMap 发现图层可能用的是这两种坐标时会提示你，点一下就能纠偏，让点和底图对齐。</p>
+      <p>中国的地图服务使用加密偏移后的坐标：高德、腾讯用 GCJ-02，百度用 BD-09。从这些服务导出的坐标放到国际标准（WGS 84）的地图上，会整体偏移几百米。千层图发现图层可能用的是这两种坐标时会提示你，点一下就能纠偏，让点和底图对齐。</p>
 
       <h3>为什么“预览”能打开 GeoTIFF，却不显示在地图上？</h3>
-      <p>“预览”和“照片”把 GeoTIFF 当作普通图片，忽略了文件里存的位置信息。LayeredMap 会读取这些信息，把影像画在正确的位置，和其他图层叠在一起，点任意像元还能看到它的值。</p>
+      <p>“预览”和“照片”把 GeoTIFF 当作普通图片，忽略了文件里存的位置信息。千层图会读取这些信息，把影像画在正确的位置，和其他图层叠在一起，点任意像元还能看到它的值。</p>
 
       <h3>需要懂 GIS 或坐标系吗？</h3>
       <p>不需要。打开文件不用任何设置；应用需要猜测时（比如哪两列是坐标），会用一句话告诉你，并让你修改。<a href="glossary.html">术语表</a>用大白话解释地图术语。</p>
@@ -197,7 +197,7 @@
       <p>免费版不会：所有文件都在你的 Mac 上读取和绘制，断网也能用。联网时会下载底图瓦片，但你的数据从不发送出去。Pro 版的提问框会把图层名、字段名和范围发给助手，以便理解你的问题，但从不发送具体数值。</p>
 
       <h3>有 Windows 版吗？</h3>
-      <p>正在制作中。目前 LayeredMap 支持搭载 Apple 芯片、macOS 13 或更高版本的 Mac。</p>
+      <p>正在制作中。目前千层图支持搭载 Apple 芯片、macOS 13 或更高版本的 Mac。</p>
     </div>
   </div>
 </section>
@@ -206,7 +206,7 @@
 <footer class="site-foot">
   <div class="wrap">
     <div>
-      <p><strong>LayeredMap</strong> · 基于 RustGIS 的地图优先应用。</p>
+      <p><strong>千层图</strong> · 基于 RustGIS 的地图优先应用。</p>
       <p>截图中的地图数据：© OpenStreetMap 贡献者（ODbL），经 Protomaps 提供；Natural Earth（公有领域）；NASA Blue Marble 影像（NASA Earth Observatory、GIBS）。示例数据：Xue et al. 2021（CC BY 4.0）。</p>
     </div>
     <div><a href="help.html">帮助</a> · <a href="glossary.html">术语表</a> · <a href="../download.html" lang="en">English</a></div>

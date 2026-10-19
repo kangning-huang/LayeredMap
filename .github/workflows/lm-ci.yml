@@ -1,10 +1,12 @@
-# LayeredMap CI (build plan WP0.1): `cargo xtask ci` and a LayeredMap.app and .dmg on macOS arm64
+# LayeredMap CI (build plan WP0.1): `cargo xtask ci` and a NimbleMap.app and .dmg on macOS arm64
 # for every push to a phase or task branch, and for pull requests. Signing and notarization run
 # when the Apple Developer secrets are present (docs/lm/signing.md); otherwise the app is ad-hoc
 # signed. `security` runs cargo audit and cargo deny and writes the SBOM (WP6.8, docs/lm/security.md).
 # `windows` runs the same `cargo xtask ci` on Windows x64 (WP6.2, Gate 6: every suite on both
 # systems), and `windows-installer` builds the Free installer, signed when a Windows signing
 # account is configured (docs/lm/signing.md), unsigned otherwise (docs/lm/windows.md).
+# The workflow and job names keep "LayeredMap": they are the status-check names branch rules
+# refer to (the app was renamed NimbleMap; docs/lm/naming.md).
 name: LayeredMap CI
 
 on:
@@ -101,7 +103,7 @@ jobs:
         run: packaging/lm/windows/build-installer.ps1 -OutDir dist/lm
       - uses: actions/upload-artifact@v7
         with:
-          name: LayeredMap-windows-x64
+          name: NimbleMap-windows-x64
           path: dist/lm/*-windows-x64-setup.exe
           if-no-files-found: error
 
@@ -152,7 +154,7 @@ jobs:
         run: packaging/lm/build-dmg.sh dist/lm
       - uses: actions/upload-artifact@v7
         with:
-          name: LayeredMap-macos-arm64
+          name: NimbleMap-macos-arm64
           path: |
             dist/lm/*.zip
             dist/lm/*.dmg
@@ -176,7 +178,7 @@ jobs:
         run: cargo xtask sbom --out dist/lm/layeredmap.cdx.json
       - uses: actions/upload-artifact@v7
         with:
-          name: LayeredMap-sbom
+          name: NimbleMap-sbom
           path: dist/lm/layeredmap.cdx.json
 
   spike:

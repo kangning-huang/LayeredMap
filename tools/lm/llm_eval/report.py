@@ -135,7 +135,7 @@ def chart(summ: dict, path: Path, run: str) -> None:
     axes[0].scatter([], [], color=blue, label="Pareto-optimal (cost vs accuracy)")
     axes[0].scatter([], [], color=muted, label="Dominated")
     axes[0].legend(frameon=False, fontsize=8, loc="lower right")
-    fig.suptitle(f"LayeredMap assistant: accuracy vs cost and latency ({len(CASES)} cases, {run})", color=ink, fontsize=11)
+    fig.suptitle(f"NimbleMap assistant: accuracy vs cost and latency ({len(CASES)} cases, {run})", color=ink, fontsize=11)
     fig.tight_layout()
     path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(path, facecolor=surface)

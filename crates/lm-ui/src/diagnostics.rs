@@ -11,7 +11,7 @@ pub(crate) fn open(shell: &mut Shell, report: String) {
     shell.diagnostics = Some(report);
 }
 
-/// The suggested file name: "LayeredMap diagnostics 2026-10-18.txt".
+/// The suggested file name: "NimbleMap diagnostics 2026-10-18.txt".
 pub fn file_name(app: &str, today: &str) -> String {
     format!("{app} diagnostics {today}.txt")
 }
@@ -78,7 +78,7 @@ pub(crate) fn window(shell: &mut Shell, ctx: &egui::Context) {
 mod tests {
     #[test]
     fn the_file_is_named_for_the_app_and_day() {
-        assert_eq!(super::file_name("LayeredMap Pro", "2026-10-18"), "LayeredMap Pro diagnostics 2026-10-18.txt");
+        assert_eq!(super::file_name(lm_core::brand::PRO_NAME, "2026-10-18"), "NimbleMap Pro diagnostics 2026-10-18.txt");
         let t = super::today();
         assert_eq!((t.len(), &t[4..5], &t[7..8]), (10, "-", "-"));
     }

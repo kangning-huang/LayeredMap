@@ -1,6 +1,6 @@
 # Puzzle mechanics and the action gaps they expose
 
-This note looks at how clue-based "where is it?" geography puzzles work, so that LayeredMap Pro can
+This note looks at how clue-based "where is it?" geography puzzles work, so that NimbleMap Pro can
 solve original puzzles of the same kind (`puzzles.md`) with certified actions. It reads ten Esri
 "ArcGIS Puzzles" StoryMaps for their spatial reasoning only. Their stories, characters, wording and
 answers are Esri's and are not reproduced here or anywhere in the repository; each is referred to
@@ -41,7 +41,7 @@ arithmetic and island geometry.
 6. **A final pick.** Rank and take the top one, or "the city inside the area", or coordinates
    snapped to a grid.
 
-## 2. Operation → LayeredMap today → gap
+## 2. Operation → NimbleMap today → gap
 
 "Today" means the Phase 4 certified actions (`crates/lm-actions/rules.toml`, `crates/lm-jobs/src/actions.rs`,
 `docs/lm/spec.md` › Phase 4 › WP4.5) and the display filter (`crates/lm-core/src/filter.rs`). The
@@ -52,16 +52,16 @@ Upstream geometry tools work on longitude/latitude coordinates: `buffer` and
 point), `calculateGeometry` and `network::within` use a sphere (haversine), and the overlay tools
 use the `geo` crate's planar boolean operations on longitude/latitude.
 
-| # | Operation | LayeredMap today | Upstream to wrap (crates/analysis unless noted) | Gap and what certifying needs |
+| # | Operation | NimbleMap today | Upstream to wrap (crates/analysis unless noted) | Gap and what certifying needs |
 |---|---|---|---|---|
 | O1 | Attribute test on a number or category (population over X, country is Y) | **Yes.** `filter` (display filter: Is, IsNot, Contains, Above, Below, Between, AnyOf, dates; all conditions must hold) | `selectByAttributes` → `rustgis_data::query::select` (SQL WHERE) | None. |
 | O2 | Name starts with / ends with | **No.** `filter.rs` has `Contains` only | `rustgis_data::query::like(text, pat)`: SQL LIKE with `%` and `_`, case-insensitive | Add `StartsWith` and `EndsWith` tests to `filter::Test` (reuse `like` semantics with `pat%` / `%pat`). Certify: exact against Python `str.lower().startswith()` after trimming and NFC normalisation, including names with diacritics (Zürich, Ürümqi) and CJK names (`NAME_ZH`). |
 | O3 | Raster value at each point | **Yes.** `add_raster_values` (`zonal::sample`, the cell containing the point, exact vs rasterio) | (`rasterops::elevation_at` is bilinear; not used) | None. |
-| O4 | Raster summary for each area (rain on each island) | **Yes.** `summarize_each` (fractional coverage, ellipsoidal cell areas, exact vs exactextract) | `rasterops::zonal_means` (cell centres only: not certifiable for small islands) | None; keep LayeredMap's own. |
+| O4 | Raster summary for each area (rain on each island) | **Yes.** `summarize_each` (fractional coverage, ellipsoidal cell areas, exact vs exactextract) | `rasterops::zonal_means` (cell centres only: not certifiable for small islands) | None; keep NimbleMap's own. |
 | O5 | One raster above or below a value, shown | **Display only.** `threshold` card ("Show only values above…"); no layer, no area | `rasterops::remap(r, b, ranges, keep)` | Covered by A1 below. |
 | O6 | Several raster conditions → areas | **No** | `rasterops::resample_to(src, b, target)` (nearest neighbour onto one grid) → `remap` per raster to 1 or `NODATA` → `band_math(r, expr)` (`NODATA` in any band gives `NODATA`, so a product of the 1/NODATA masks is the AND). **Missing upstream:** a raster-to-polygon step and connected-region labelling (only in the optional `crates/geolibre` runner, Whitebox `RasterToVectorPolygons` and `Clump`, native-only and file-staged, so not usable as a certified built-in). `band_math` works on the bands of one raster, so the inputs must first be stacked on one grid, a step upstream lacks. | New action A1. Certify cell membership exactly (inclusive bounds, NoData is never inside), polygons tracing cell edges exactly, areas from `zonal::lat_band_area_m2`. |
 | O7 | Derived raster or field (July minus January; latitude plus longitude; a ratio) | **No** | `band_math` (raster bands only, + − × ÷); no field calculator upstream | New action A5 for fields. For rasters, A1 accepts a difference of two rasters as a condition. |
-| O8 | Area within a distance of features | **Yes.** `buffer` (geodesic; certified) | `buffer` (Web Mercator with per-feature latitude scale: approximate for features spanning latitude) | None; keep LayeredMap's. |
+| O8 | Area within a distance of features | **Yes.** `buffer` (geodesic; certified) | `buffer` (Web Mercator with per-feature latitude scale: approximate for features spanning latitude) | None; keep NimbleMap's. |
 | O9 | Features near / away from other features, layer-wide (cities within 50 km of a fault; at least 300 km from the sea) | **Partly.** `buffer` (merged) then `whats_inside` gives "near", but buffering 13,696 fault traces geodesically is slow and "away from" needs an erase | `selectByLocation` (search distance, `invert` = away from): distances are Web Mercator buffers scaled at each selector's label-point latitude, so a long fault or coastline that spans latitudes gets a wrong radius away from its label point; `network::within(ds, rows, at, radius_m)`: per point, spherical with one scale factor | New action A3 (a distance field, then `filter`). Certify against geodesic reference distances (below); the upstream Web Mercator scaling cannot be certified as is. |
 | O10 | Distance to the nearest other feature of the same layer (island isolation) | **No** | None (A3 with "other features of the same layer") | A3, same-layer variant; a multipart feature's own parts are not "other". |
 | O11 | Area of every feature, coordinates of every feature | **Card only.** `measure_area` for one area; `map_coordinates` builds points from columns | `calculateGeometry`: area_km2 and perimeter (spherical, rounded to 0.01 km²), point_x/point_y for point layers only (label point) | New action A4. The spherical area differs from WGS 84 by up to about 0.5%, outside the 0.01% tolerance of `measure_area`; use `lm-analysis::geodesic::polygon_area_perimeter` instead. |
@@ -101,7 +101,7 @@ None is implemented here.
   `cells`, and the mean of each input raster over the area. The card says how many areas and the
   total area.
 - **Upstream to wrap:** `rasterops::resample_to` (grid alignment), `rasterops::remap` (conditions).
-  Build in LayeredMap: the labelling and the cell-edge tracer (simple: union of cell squares per
+  Build in NimbleMap: the labelling and the cell-edge tracer (simple: union of cell squares per
   label), since upstream has no raster-to-polygon step.
 - **Reference:** numpy comparisons on arrays read with rasterio; `scipy.ndimage.label` with a 3×3
   structure; `rasterio.features.shapes` for the polygons; areas by the latitude-band formula.

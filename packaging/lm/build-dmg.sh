@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Builds the LayeredMap installer disk image (WP5.7): the app beside a link to /Applications, so
+# Builds the NimbleMap installer disk image (WP5.7): the app beside a link to /Applications, so
 # installing is one drag. Uses only hdiutil and the tools bundle-macos.sh already needs.
 #
 #   packaging/lm/build-dmg.sh [out-dir]
-#   LM_TIER=pro packaging/lm/build-dmg.sh [out-dir]   # LayeredMap Pro
+#   LM_TIER=pro packaging/lm/build-dmg.sh [out-dir]   # NimbleMap Pro
 #
 # The app is built (and, with credentials, signed, notarized and stapled) by bundle-macos.sh.
 # With the same environment as there (docs/lm/signing.md), the .dmg is then signed, notarized,
@@ -19,6 +19,10 @@
 #   LM_RELEASE_NOTES, LM_RELEASE_NOTES_ZH   one-line notes for the feed (optional).
 set -euo pipefail
 
+# The display name (app, volume and .dmg names); keep in step with lm_core::brand and
+# bundle-macos.sh (docs/lm/naming.md).
+brand="NimbleMap"
+
 root="$(cd "$(dirname "$0")/../.." && pwd)"
 out="${1:-$root/dist/lm}"
 mkdir -p "$out"
@@ -26,7 +30,7 @@ out="$(cd "$out" && pwd)"
 version="$(sed -n 's/^version = "\(.*\)"/\1/p' "$root/Cargo.toml" | head -1)"
 build="${LM_BUILD_NUMBER:-0}"
 tier="${LM_TIER:-free}"
-if [[ "$tier" == "pro" ]]; then name="LayeredMap Pro"; else name="LayeredMap"; fi
+if [[ "$tier" == "pro" ]]; then name="$brand Pro"; else name="$brand"; fi
 arch="$(uname -m)"
 [[ "$arch" == "x86_64" ]] || arch="arm64"
 

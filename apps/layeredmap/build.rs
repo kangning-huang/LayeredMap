@@ -6,6 +6,11 @@
 
 use std::path::PathBuf;
 
+/// The display name in the version information (Explorer's Properties › Details, Task Manager).
+/// This build script doesn't depend on lm-core, so keep this in step with `lm_core::brand` (docs/lm/naming.md).
+/// The file and internal names stay `layeredmap.exe`.
+const BRAND: &str = "NimbleMap";
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let dir = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR")?).join("../../packaging/lm/windows");
     let (ico, manifest) = (dir.join("layeredmap.ico"), dir.join("layeredmap.exe.manifest"));
@@ -40,13 +45,13 @@ BEGIN
   BEGIN
     BLOCK "040904B0"
     BEGIN
-      VALUE "CompanyName", "LayeredMap"
-      VALUE "FileDescription", "LayeredMap"
+      VALUE "CompanyName", "{brand}"
+      VALUE "FileDescription", "{brand}"
       VALUE "FileVersion", "{version}"
       VALUE "InternalName", "layeredmap"
-      VALUE "LegalCopyright", "Copyright the LayeredMap and RustGIS contributors. Apache-2.0."
+      VALUE "LegalCopyright", "Copyright the {brand} and RustGIS contributors. Apache-2.0."
       VALUE "OriginalFilename", "layeredmap.exe"
-      VALUE "ProductName", "LayeredMap"
+      VALUE "ProductName", "{brand}"
       VALUE "ProductVersion", "{version}"
     END
   END
@@ -58,6 +63,7 @@ END
 "#,
             ico = path(&ico),
             manifest = path(&manifest),
+            brand = BRAND,
         ),
     )?;
     // Without a resource compiler (rc.exe, llvm-rc or windres) the exe has no icon or manifest:

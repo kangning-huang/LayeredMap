@@ -4,7 +4,7 @@
 
 **Title:** A second, map-first front end on RustGIS's engine crates — would pieces of it be welcome upstream?
 
-Hi, and thank you for RustGIS. I teach at NYU Shanghai and am building **LayeredMap**, a
+Hi, and thank you for RustGIS. I teach at NYU Shanghai and am building **NimbleMap**, a
 deliberately small, map-first desktop app for novice students: open a file, click something, see
 where it stands ("3rd hottest of 17 districts"), and ask one of three suggested questions with a
 preview and a plain-language recipe. It is a separate egui front end on top of the `geom`, `data`,

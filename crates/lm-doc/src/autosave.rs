@@ -63,7 +63,7 @@ pub struct Recovery {
 }
 
 impl Recovery {
-    /// "LayeredMap quit unexpectedly. Restore 'Heat study' from 2 minutes ago?"
+    /// "NimbleMap quit unexpectedly. Restore 'Heat study' from 2 minutes ago?"
     pub fn question(&self, app: &str, now: i64) -> String {
         format!("{app} quit unexpectedly. Restore '{}' from {}?", self.name, ago(now - self.saved_at))
     }
@@ -276,8 +276,8 @@ mod tests {
         let r = r.unwrap();
         assert_eq!(load_lmap(&r.autosave).unwrap().doc, d);
         assert!(
-            r.question("LayeredMap", r.saved_at + 125)
-                .starts_with("LayeredMap quit unexpectedly. Restore 'Heat study' from 2 minutes ago?")
+            r.question(lm_core::brand::NAME, r.saved_at + 125)
+                .starts_with("NimbleMap quit unexpectedly. Restore 'Heat study' from 2 minutes ago?")
         );
     }
 

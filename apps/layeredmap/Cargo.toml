@@ -4,7 +4,7 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 publish = false
-description = "LayeredMap desktop app: window, menu bar, file associations, packaging"
+description = "NimbleMap desktop app: window, menu bar, file associations, packaging"
 
 # The workspace forbids unsafe code. The app alone relaxes that to `deny`, so its macOS module
 # (Open With, Dock drops, the Edited state) and Windows module (the menu bar) can opt in with `#[allow(unsafe_code)]`, a SAFETY

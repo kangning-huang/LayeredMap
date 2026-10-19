@@ -194,7 +194,9 @@ impl PdfCanvas {
         if !title.is_empty() {
             i.title(TextStr(&title));
         }
-        i.creator(TextStr("LayeredMap")).producer(TextStr(concat!("LayeredMap ", env!("CARGO_PKG_VERSION"))));
+        // This crate doesn't depend on lm-core, and concat! needs literals: keep the name in step
+        // with lm_core::brand::NAME.
+        i.creator(TextStr("NimbleMap")).producer(TextStr(concat!("NimbleMap ", env!("CARGO_PKG_VERSION"))));
         i.finish();
         Ok(pdf.finish())
     }

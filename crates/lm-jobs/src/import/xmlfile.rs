@@ -2,6 +2,7 @@
 //! parsing it with `roxmltree` (no DTDs, a node limit), and turning the text values of each record
 //! into typed columns.
 
+use lm_core::brand::NAME as APP;
 use std::collections::HashMap;
 use std::io::Read;
 use std::path::Path;
@@ -32,7 +33,7 @@ pub(super) fn read_capped(path: &Path, format: &str, ctx: &Ctx) -> Result<Vec<u8
 
 pub(super) fn too_large(name: &str, format: &str) -> ImportError {
     ImportError::Refused(format!(
-        "{name} is larger than 256 MB, the most LayeredMap reads as {format}. Converting it to GeoPackage makes it open quickly. Your file has not been changed."
+        "{name} is larger than 256 MB, the most {APP} reads as {format}. Converting it to GeoPackage makes it open quickly. Your file has not been changed."
     ))
 }
 
@@ -76,10 +77,10 @@ pub(super) fn parse<'a>(text: &'a str, name: &str, format: &str) -> Result<roxml
     roxmltree::Document::parse_with_options(text, opts).map_err(|e| {
         let message = match &e {
             roxmltree::Error::DtdDetected => {
-                format!("{name} declares its own entities (a DTD), which LayeredMap doesn't read for safety. Your file has not been changed.")
+                format!("{name} declares its own entities (a DTD), which {APP} doesn't read for safety. Your file has not been changed.")
             }
             roxmltree::Error::NodesLimitReached => format!(
-                "{name} has more elements than LayeredMap reads from one {format} file. Converting it to GeoPackage makes it open. Your file has not been changed."
+                "{name} has more elements than {APP} reads from one {format} file. Converting it to GeoPackage makes it open. Your file has not been changed."
             ),
             _ => format!(
                 "{name} isn't valid {format} (a problem on line {}). Your file has not been changed.",

@@ -1,5 +1,5 @@
-//! LayeredMap: the app entry point (WP1.1). A window that remembers its size and position, the
-//! native macOS menu bar (LayeredMap, File, Edit, View, Window, Help) or the Windows window menu
+//! NimbleMap: the app entry point (WP1.1). A window that remembers its size and position, the
+//! native macOS menu bar (NimbleMap, File, Edit, View, Window, Help) or the Windows window menu
 //! (WP6.2), stored preferences, and the map-first shell from `lm-ui`.
 // A release build on Windows is a windowed app: no console window opens beside it. Output still
 // reaches a pipe (the launch probe, `--version`), which is how the harnesses read it.
@@ -248,7 +248,7 @@ impl eframe::App for App {
                     if let Some(path) = rfd::FileDialog::new()
                         .set_title("Save")
                         .set_file_name(suggested_name)
-                        .add_filter("LayeredMap map", &["lmap"])
+                        .add_filter(format!("{} map", lm_core::brand::NAME), &["lmap"])
                         .save_file()
                     {
                         self.shell.command(ctx, Command::SaveTo(path));
@@ -264,7 +264,7 @@ impl eframe::App for App {
                     if let Some(path) = rfd::FileDialog::new()
                         .set_title("Save map package")
                         .set_file_name(suggested_name)
-                        .add_filter("LayeredMap map", &["lmap"])
+                        .add_filter(format!("{} map", lm_core::brand::NAME), &["lmap"])
                         .save_file()
                     {
                         self.shell.command(ctx, Command::SavePackageTo(path));
@@ -325,7 +325,8 @@ impl eframe::App for App {
 /// `ask TEXT` sends a request to Pro's Ask box (waits 15 s); `keep-ask` keeps its plan;
 /// `card ID [FIELD]` runs a card's display action (`filter strength`, `style_by_value`, …) on the
 /// selected layer (`card apply_filter` presses the filter's Apply); `time N` shows the n-th time step;
-/// `export` or `export-image` opens the map image sheet; `package` opens the map package dialog.
+/// `export` or `export-image` opens the map image sheet; `package` opens the map package dialog;
+/// `theme light|dark|system` sets the appearance (for screenshots; tour runs never save prefs).
 #[derive(Clone, Debug, PartialEq)]
 enum Step {
     Fly(f64, f64, f64),
@@ -384,6 +385,12 @@ impl Step {
             "export-image" => Step::Other(Command::ExportMapImage),
             "package" => Step::Other(Command::ExportPackage),
             "redo" => Step::Other(Command::Redo),
+            "theme" => Step::Other(Command::SetTheme(match rest.trim() {
+                "light" => ThemePref::Light,
+                "dark" => ThemePref::Dark,
+                "system" => ThemePref::System,
+                _ => return None,
+            })),
             _ => match nums(s).as_slice() {
                 [lon, lat, z] => Step::Fly(*lon, *lat, *z),
                 _ => return None,
@@ -399,7 +406,7 @@ impl Step {
     }
 }
 
-/// LayeredMap Pro: the Pro app bundle carries `Contents/Resources/tier` reading "pro"
+/// NimbleMap Pro: the Pro app bundle carries `Contents/Resources/tier` reading "pro"
 /// (`packaging/lm/bundle-macos.sh` with `LM_TIER=pro`; on Windows `Resources\tier` beside the exe,
 /// from the Pro installer); `LM_TIER=pro` does the same for a run
 /// outside a bundle. Until accounts exist (Phase 7) the tier is the app you open.
@@ -437,7 +444,7 @@ fn main() -> eframe::Result {
     let flags = Flags::from_env(std::env::var("LM_PHASE").ok().as_deref());
     let developer = cfg!(debug_assertions) || std::env::var_os("LM_DEV").is_some();
     let pro = is_pro();
-    let app_name = if pro { "LayeredMap Pro" } else { "LayeredMap" };
+    let app_name = lm_core::brand::name(pro);
     // Crash logs and the log file stay on this computer (~/Library/Logs/LayeredMap,
     // %LOCALAPPDATA%\LayeredMap\Logs).
     diagnostics::install_logger();

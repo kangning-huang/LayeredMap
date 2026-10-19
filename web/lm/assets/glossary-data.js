@@ -1,4 +1,4 @@
-// LayeredMap glossary (WP6.10): the map words you meet in the app, in plain English and Chinese.
+// NimbleMap glossary (WP6.10): the map words you meet in the app, in plain English and Chinese.
 // Both glossary pages read this file; glossary.js draws and searches it in the browser.
 // Fields: id (the #anchor), en/zh (the term), alt (other names people search for), d_en/d_zh
 // (meaning), w_en/w_zh (where it shows in the app, with its labels as the app writes them),
@@ -79,8 +79,8 @@ window.LM_GLOSSARY = [
   {
     id: "join", en: "Join", zh: "连接（表连接）",
     alt: ["table join", "attribute join", "merge", "match", "关联", "合并表格", "匹配"],
-    d_en: "Attaching a table of facts to places by a column they share, such as a spreadsheet of GDP by country name added to a map of countries. LayeredMap finds the shared column itself and says how many places matched.",
-    d_zh: "按双方共有的一列，把一张表格里的信息接到地图上的地方去。例如把一张按国家名称列出 GDP 的表格，接到国家地图上。LayeredMap 会自己找出这个共有列，并告诉你有多少个地方匹配上了。",
+    d_en: "Attaching a table of facts to places by a column they share, such as a spreadsheet of GDP by country name added to a map of countries. NimbleMap finds the shared column itself and says how many places matched.",
+    d_zh: "按双方共有的一列，把一张表格里的信息接到地图上的地方去。例如把一张按国家名称列出 GDP 的表格，接到国家地图上。千层图会自己找出这个共有列，并告诉你有多少个地方匹配上了。",
     w_en: "Open a table (a CSV or Excel file without coordinates) while a map layer is open. The table appears indented under the layer, for example <span class=\"ui\">joined · 172 of 177 matched</span>. Its menu has <span class=\"ui\">Show joined fields</span> and <span class=\"ui\">Unjoin</span>. A join needs a column whose values are unique in the layer (each country once); a column that repeats, like a type, can't be the key.",
     w_zh: "在已打开地图图层的情况下，再打开一张表格（不带坐标的 CSV 或 Excel 文件）。表格会缩进显示在图层下方，例如 “joined · 172 of 177 matched”（已连接，177 个中匹配 172 个）。它的菜单里有 <span class=\"ui\">Show joined fields</span>（显示连接的字段）和 <span class=\"ui\">Unjoin</span>（取消连接）。连接需要一列在图层里各不相同的值（每个国家只出现一次）；像 “类型” 这种会重复的列不能当作连接键。",
     see: ""
@@ -106,8 +106,8 @@ window.LM_GLOSSARY = [
   {
     id: "projection", en: "Projection", zh: "投影",
     alt: ["map projection", "Web Mercator", "Mercator", "墨卡托", "地图投影"],
-    d_en: "The way the round Earth is flattened onto a flat map. Every flat map stretches something: on the usual web map (Web Mercator) Greenland looks as big as Africa, though Africa is about 14 times larger. LayeredMap draws in Web Mercator, like most map apps, but measures distances and areas on the real globe.",
-    d_zh: "把圆圆的地球摊平成平面地图的方法。任何平面地图都会有变形：在常见的网络地图（Web 墨卡托投影）上，格陵兰看上去和非洲差不多大，其实非洲约是它的 14 倍。LayeredMap 和大多数地图应用一样用 Web 墨卡托投影来显示，但计算距离和面积时按真实的地球来算。",
+    d_en: "The way the round Earth is flattened onto a flat map. Every flat map stretches something: on the usual web map (Web Mercator) Greenland looks as big as Africa, though Africa is about 14 times larger. NimbleMap draws in Web Mercator, like most map apps, but measures distances and areas on the real globe.",
+    d_zh: "把圆圆的地球摊平成平面地图的方法。任何平面地图都会有变形：在常见的网络地图（Web 墨卡托投影）上，格陵兰看上去和非洲差不多大，其实非洲约是它的 14 倍。千层图和大多数地图应用一样用 Web 墨卡托投影来显示，但计算距离和面积时按真实的地球来算。",
     w_en: "You don't need to choose one. A layer's <span class=\"ui\">Details</span> tab shows the file's own <span class=\"ui\">Coordinate system</span>; the app reprojects it for display and leaves the file untouched.",
     w_zh: "不需要你来选。图层的 <span class=\"ui\">Details</span>（详情）标签页会显示文件自带的 <span class=\"ui\">Coordinate system</span>（坐标系）；应用会自动换算以便显示，原文件不会被改动。",
     see: ""
@@ -169,8 +169,8 @@ window.LM_GLOSSARY = [
   {
     id: "geodesic", en: "Geodesic", zh: "测地线（大地线）",
     alt: ["great circle", "true distance", "ellipsoid", "大圆", "球面距离", "真实距离"],
-    d_en: "Measured along the curved surface of the Earth, the way a plane actually flies, instead of along a straight line on a flat map. On a flat map the shortest route from Shanghai to New York looks curved; geodesically, it is the straight one. LayeredMap measures distances and areas this way, so a 100 km circle is 100 km everywhere, near the equator or near the poles.",
-    d_zh: "沿着弯曲的地球表面来量，就像飞机真正飞的航线，而不是在平面地图上拉一条直线。在平面地图上，上海飞纽约的最短航线看起来是弯的；按测地线算，它才是 “直” 的。LayeredMap 计算距离和面积都用这种方法，所以 100 公里的圆，在赤道附近和在两极附近都是真正的 100 公里。",
+    d_en: "Measured along the curved surface of the Earth, the way a plane actually flies, instead of along a straight line on a flat map. On a flat map the shortest route from Shanghai to New York looks curved; geodesically, it is the straight one. NimbleMap measures distances and areas this way, so a 100 km circle is 100 km everywhere, near the equator or near the poles.",
+    d_zh: "沿着弯曲的地球表面来量，就像飞机真正飞的航线，而不是在平面地图上拉一条直线。在平面地图上，上海飞纽约的最短航线看起来是弯的；按测地线算，它才是 “直” 的。千层图计算距离和面积都用这种方法，所以 100 公里的圆，在赤道附近和在两极附近都是真正的 100 公里。",
     w_en: "Behind every distance and area the app shows: the scale bar, area facts such as <span class=\"ui\">area · 23.4 km²</span>, and in Pro, distances such as “within 100 km”.",
     w_zh: "应用里显示的所有距离和面积都按这种方式计算：比例尺、“area · 23.4 km²” 这样的面积信息，以及 Pro 版里 “100 公里以内” 这类距离。",
     see: ""
@@ -178,10 +178,10 @@ window.LM_GLOSSARY = [
   {
     id: "buffer", en: "Buffer", zh: "缓冲区",
     alt: ["within a distance", "radius", "circle around", "距离范围", "周边", "半径"],
-    d_en: "The area within a set distance of something: everywhere within 100 km of Hong Kong, or within 50 km of each storm track. GIS software calls it a buffer; LayeredMap calls it “Show an area within a distance”.",
-    d_zh: "离某个东西一定距离以内的区域，比如香港周边 100 公里以内，或每条台风路径两侧 50 公里以内。GIS 软件里叫 “缓冲区”，LayeredMap 里叫 “Show an area within a distance”（显示一定距离内的区域）。",
-    w_en: "LayeredMap Pro: the card's <span class=\"ui\">Show an area within a distance of each</span> button, or ask in the Ask box, for example “Show everything within 100 km of Hong Kong”.",
-    w_zh: "LayeredMap Pro：卡片上的 <span class=\"ui\">Show an area within a distance of each</span> 按钮，或者在提问框里直接问，例如 “显示香港周边 100 公里以内的范围”。",
+    d_en: "The area within a set distance of something: everywhere within 100 km of Hong Kong, or within 50 km of each storm track. GIS software calls it a buffer; NimbleMap calls it “Show an area within a distance”.",
+    d_zh: "离某个东西一定距离以内的区域，比如香港周边 100 公里以内，或每条台风路径两侧 50 公里以内。GIS 软件里叫 “缓冲区”，千层图里叫 “Show an area within a distance”（显示一定距离内的区域）。",
+    w_en: "NimbleMap Pro: the card's <span class=\"ui\">Show an area within a distance of each</span> button, or ask in the Ask box, for example “Show everything within 100 km of Hong Kong”.",
+    w_zh: "千层图 Pro：卡片上的 <span class=\"ui\">Show an area within a distance of each</span> 按钮，或者在提问框里直接问，例如 “显示香港周边 100 公里以内的范围”。",
     see: "workflow-typhoons.html#pro"
   },
   {
@@ -189,15 +189,15 @@ window.LM_GLOSSARY = [
     alt: ["cut", "keep inside", "crop", "intersect", "相交", "截取"],
     d_en: "Keeping only the part of a layer that lies inside an area, like cutting a map with scissors along a border. The source file is never changed; the result is a new layer.",
     d_zh: "只保留图层落在某个区域里的那部分，就像沿着边界用剪刀剪地图。原文件不会被改动，结果是一个新图层。",
-    w_en: "LayeredMap Pro: ask, for example “Keep the part of the storm tracks inside the area I drew”. The action reads <span class=\"ui\">Keep the part of [layer] inside [other]</span> in the answer's recipe.",
-    w_zh: "LayeredMap Pro：直接提问，例如 “只保留我画的区域里面那一段台风路径”。答案里的步骤说明会写作 “Keep the part of [图层] inside [另一图层]”。",
+    w_en: "NimbleMap Pro: ask, for example “Keep the part of the storm tracks inside the area I drew”. The action reads <span class=\"ui\">Keep the part of [layer] inside [other]</span> in the answer's recipe.",
+    w_zh: "千层图 Pro：直接提问，例如 “只保留我画的区域里面那一段台风路径”。答案里的步骤说明会写作 “Keep the part of [图层] inside [另一图层]”。",
     see: ""
   },
   {
     id: "netcdf", en: "NetCDF", zh: "NetCDF",
     alt: [".nc", "nc4", "climate data", "ERA5", "CMIP6", "气候数据", "再分析"],
-    d_en: "A file format scientists use for climate and ocean data: grids that change over time and often hold several variables (temperature, rainfall, wind). LayeredMap opens .nc, .nc4 and .cdf files like any raster, with a time slider and a variable picker.",
-    d_zh: "科学家常用来存气候和海洋数据的文件格式：随时间变化的格网，里面往往有好几个变量（气温、降水、风速等）。LayeredMap 能像打开普通栅格一样打开 .nc、.nc4、.cdf 文件，并配有时间滑块和变量选择。",
+    d_en: "A file format scientists use for climate and ocean data: grids that change over time and often hold several variables (temperature, rainfall, wind). NimbleMap opens .nc, .nc4 and .cdf files like any raster, with a time slider and a variable picker.",
+    d_zh: "科学家常用来存气候和海洋数据的文件格式：随时间变化的格网，里面往往有好几个变量（气温、降水、风速等）。千层图能像打开普通栅格一样打开 .nc、.nc4、.cdf 文件，并配有时间滑块和变量选择。",
     w_en: "The example <span class=\"ui\">Heatwaves, summer 2023</span>. Under the layer's name in the <span class=\"ui\">Layers</span> panel, the <span class=\"ui\">Variable shown</span> pop-up picks the variable; a <span class=\"ui\">Level shown</span> pop-up appears for data with depths or heights.",
     w_zh: "示例 <span class=\"ui\">Heatwaves, summer 2023</span>（2023 年夏季热浪）。在 <span class=\"ui\">Layers</span> 面板里图层名下方，<span class=\"ui\">Variable shown</span> 弹出菜单用来选变量；数据有深度或高度层时，还会出现 <span class=\"ui\">Level shown</span>（显示的层）。",
     see: "workflow-heatwave.html#open"
@@ -250,8 +250,8 @@ window.LM_GLOSSARY = [
   {
     id: "assumption", en: "Assumption", zh: "假设",
     alt: ["guess", "interpretation", "detected", "推断", "识别"],
-    d_en: "A choice the app made for you when opening a file, such as which columns hold coordinates or what a column means. Instead of asking questions, LayeredMap applies its best guess, says it in one line, and lets you change it in one click.",
-    d_zh: "打开文件时应用替你做的判断，比如哪几列是坐标、某一列是什么意思。LayeredMap 不会一上来就问一堆问题，而是先按最可能的理解处理，用一行字告诉你，需要时点一下就能改。",
+    d_en: "A choice the app made for you when opening a file, such as which columns hold coordinates or what a column means. Instead of asking questions, NimbleMap applies its best guess, says it in one line, and lets you change it in one click.",
+    d_zh: "打开文件时应用替你做的判断，比如哪几列是坐标、某一列是什么意思。千层图不会一上来就问一堆问题，而是先按最可能的理解处理，用一行字告诉你，需要时点一下就能改。",
     w_en: "The <span class=\"ui\">Assumptions</span> part of a layer's card, each with <span class=\"ui\">Change</span>.",
     w_zh: "图层卡片里的 <span class=\"ui\">Assumptions</span>（假设）部分，每条后面都有 <span class=\"ui\">Change</span>（更改）。",
     see: ""
@@ -261,8 +261,8 @@ window.LM_GLOSSARY = [
     alt: ["result card", "method", "provenance", "how it was made", "方法", "来源"],
     d_en: "The plain-words record of how a result was made: which layers went in, which step ran, over what scope, and what was left out. You can copy it as text and check it.",
     d_zh: "用大白话记录一个结果是怎么得出来的：用了哪些图层、做了哪一步、范围是什么、排除了什么。可以复制成文字，方便核对。",
-    w_en: "LayeredMap Pro: every answer to the Ask box comes as a result card with its steps listed, a preview on the map, and <span class=\"ui\">Keep</span> or <span class=\"ui\">Discard</span>.",
-    w_zh: "LayeredMap Pro：提问框给出的每个答案都带一张结果卡片，列出各个步骤，并在地图上预览，你可以选 <span class=\"ui\">Keep</span>（保留）或 <span class=\"ui\">Discard</span>（放弃）。",
+    w_en: "NimbleMap Pro: every answer to the Ask box comes as a result card with its steps listed, a preview on the map, and <span class=\"ui\">Keep</span> or <span class=\"ui\">Discard</span>.",
+    w_zh: "千层图 Pro：提问框给出的每个答案都带一张结果卡片，列出各个步骤，并在地图上预览，你可以选 <span class=\"ui\">Keep</span>（保留）或 <span class=\"ui\">Discard</span>（放弃）。",
     see: "workflow-typhoons.html#pro"
   },
   {
@@ -295,8 +295,8 @@ window.LM_GLOSSARY = [
   {
     id: "offline", en: "Work offline", zh: "离线工作",
     alt: ["offline", "no internet", "network", "privacy", "断网", "隐私"],
-    d_en: "LayeredMap reads your files on your own computer; nothing you open is uploaded. Online services are used only for the basemap, place search and update checks, and one switch turns all of them off.",
-    d_zh: "LayeredMap 在你自己的电脑上读取文件，你打开的任何数据都不会上传。只有底图、地名搜索和检查更新会用到网络，而且一个开关就能把它们全部关掉。",
+    d_en: "NimbleMap reads your files on your own computer; nothing you open is uploaded. Online services are used only for the basemap, place search and update checks, and one switch turns all of them off.",
+    d_zh: "千层图在你自己的电脑上读取文件，你打开的任何数据都不会上传。只有底图、地名搜索和检查更新会用到网络，而且一个开关就能把它们全部关掉。",
     w_en: "View › <span class=\"ui\">Work Offline</span>. The basemap then switches to the offline outline map (<span class=\"ui\">Working offline: online backgrounds are off</span>).",
     w_zh: "View 菜单 › <span class=\"ui\">Work Offline</span>。开启后底图会换成离线轮廓图，并提示 “Working offline: online backgrounds are off”。",
     see: ""
@@ -304,8 +304,8 @@ window.LM_GLOSSARY = [
   {
     id: "ask", en: "Ask box (Pro)", zh: "提问框（Pro）",
     alt: ["assistant", "AI", "natural language", "question", "chat", "LLM", "助手", "人工智能", "自然语言"],
-    d_en: "In LayeredMap Pro, a box at the bottom of the map where you ask about your layers in plain words, typed or spoken, in English or Chinese. The assistant picks the app's own checked steps; the numbers are always computed on your computer, and only descriptions of your layers (names, fields, extent), never their values, are sent.",
-    d_zh: "LayeredMap Pro 里位于地图底部的输入框，你可以用大白话（打字或语音，中英文都行）询问关于图层的问题。助手只负责挑选应用里经过检验的分析步骤；所有数字都在你的电脑上计算，发送出去的只有图层的描述（名称、字段、范围），绝不包括数据值本身。",
+    d_en: "In NimbleMap Pro, a box at the bottom of the map where you ask about your layers in plain words, typed or spoken, in English or Chinese. The assistant picks the app's own checked steps; the numbers are always computed on your computer, and only descriptions of your layers (names, fields, extent), never their values, are sent.",
+    d_zh: "千层图 Pro 里位于地图底部的输入框，你可以用大白话（打字或语音，中英文都行）询问关于图层的问题。助手只负责挑选应用里经过检验的分析步骤；所有数字都在你的电脑上计算，发送出去的只有图层的描述（名称、字段、范围），绝不包括数据值本身。",
     w_en: "The field <span class=\"ui\">Ask about your layers</span> at the bottom of the map, with a microphone for dictation.",
     w_zh: "地图底部写着 “Ask about your layers” 的输入框，旁边有麦克风按钮可以语音输入。",
     see: "workflow-typhoons.html#pro"

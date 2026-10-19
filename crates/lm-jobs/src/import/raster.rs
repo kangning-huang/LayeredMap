@@ -3,6 +3,7 @@
 //! read sparsely (the "Preparing a faster preview…" step), cancelable at any point because the
 //! file is read through a [`Counting`] reader.
 
+use lm_core::brand::NAME as APP;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -91,7 +92,7 @@ impl FormatAdapter for GeoTiff {
         let (w, h) = (u64::from(w), u64::from(h));
         if w > RASTER_MAX_SIDE || h > RASTER_MAX_SIDE {
             return Err(ImportError::Refused(format!(
-                "{name} says it is {} × {} pixels, more than the {} pixels per side LayeredMap opens. Your file has not been changed.",
+                "{name} says it is {} × {} pixels, more than the {} pixels per side {APP} opens. Your file has not been changed.",
                 lm_core::model::group_thousands(w),
                 lm_core::model::group_thousands(h),
                 lm_core::model::group_thousands(RASTER_MAX_SIDE)

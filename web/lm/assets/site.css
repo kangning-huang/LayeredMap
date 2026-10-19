@@ -1,4 +1,4 @@
-/* LayeredMap website and help (WP6.10). Plain CSS, no web fonts: every face below is a font the
+/* NimbleMap website and help (WP6.10). Plain CSS, no web fonts: every face below is a font the
    reader's system already has, so pages load fast from any host, mainland China included. */
 
 :root {
@@ -300,3 +300,28 @@ code { font: .88em var(--mono); background: var(--paper-2); padding: 1px 5px; bo
 .faq h3:first-child { margin-top: 0; }
 .faq p { margin: 0; color: var(--ink-2); }
 .cta-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+
+/* ---- Hero showcase: one large shot per kind of map data, rotating ---- */
+.showcase .frame { transform: none; }
+.showcase .stage { position: relative; aspect-ratio: 1600 / 996; }
+.showcase .slide { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .6s ease; }
+.showcase .slide.is-on { opacity: 1; }
+.showcase .kinds { display: none; gap: 6px; margin-top: 14px; flex-wrap: wrap; align-items: center; }
+.js .showcase .kinds { display: flex; }
+.showcase .kind {
+  font: 600 14px/1 var(--sans); color: var(--ink-2); background: var(--card); cursor: pointer;
+  border: 1px solid var(--rule); border-radius: 999px; padding: 8px 14px; min-height: 34px;
+}
+.showcase .kind:hover { border-color: var(--ink-3); color: var(--ink); }
+.showcase .kind[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+:root[data-theme="dark"] .showcase .kind[aria-pressed="true"] { color: #0b1220; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .showcase .kind[aria-pressed="true"] { color: #0b1220; } }
+.showcase .pause {
+  margin-left: auto; width: 34px; height: 34px; display: grid; place-items: center; cursor: pointer;
+  border: 1px solid var(--rule); border-radius: 50%; background: var(--card); color: var(--ink-2);
+}
+.showcase .pause svg { width: 14px; height: 14px; fill: currentColor; }
+.showcase .pause .play, .showcase .pause[aria-pressed="true"] .bars { display: none; }
+.showcase .pause[aria-pressed="true"] .play { display: inline; }
+.showcase .kind-caption { margin: 8px 2px 0; font-size: 14px; color: var(--ink-3); min-height: 1.5em; }
+@media (prefers-reduced-motion: reduce) { .showcase .slide { transition: none; } }

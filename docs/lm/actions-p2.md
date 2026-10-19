@@ -107,7 +107,7 @@ J6's `ward_people.csv` (key `ward`, against the layer's `ward_code`) is the diff
 it runs through the action with both columns named, and through `join::apply`. Deliberate
 differences: rows with a blank key
 are dropped before merging (pandas matches a blank with a blank, and counts two blanks as a
-repeated key); keys are compared exactly in the reference, while LayeredMap compares them at the
+repeated key); keys are compared exactly in the reference, while NimbleMap compares them at the
 join's level (the ladder is tested separately, J1–J5).
 
 **Tolerance.** Everything exact: the cardinality, all five counts, the unmatched keys and rows
@@ -137,7 +137,7 @@ back to longitude and latitude, and measures between them with pyproj `Geod.inv`
 asserts that the two distances agree within 0.1%, and N14's sources are kept only when the
 nearest target is at least 2% closer than the next, so the projection can't change the answer.
 `Geod.inv` is exact between two points; to a line or an area the reference's nearest point is
-on a straight edge in UTM rather than on the geodesic edge LayeredMap follows, which over these
+on a straight edge in UTM rather than on the geodesic edge NimbleMap follows, which over these
 1–10 km edges is a few centimetres apart.
 
 **Tolerance.** The nearest target exactly; touching features exactly 0; point to point within
@@ -198,7 +198,7 @@ One real discrepancy was found and fixed: a layer whose key repeats (J6's `wards
 data at all, or lost the repeated records, because the join matched only keys that are unique
 in the layer. Nearest and clip matched their references without changes; the edge cases GeoPandas
 `clip` drops (an area sharing only an edge or a corner, a line touching at one point) are
-dropped by LayeredMap too.
+dropped by NimbleMap too.
 
 ## Decisions
 

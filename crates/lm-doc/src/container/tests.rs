@@ -164,7 +164,7 @@ fn the_file_is_a_zip_with_mimetype_first_and_the_tables_filled() {
     assert_eq!(m["owned"][0]["format"], "FlatGeobuf");
     assert_eq!(m["owned"][2]["format"], "GeoJSON");
     assert_eq!(m["owned"][3]["format"], "GeoTIFF");
-    assert!(m["software"].as_str().unwrap().starts_with("LayeredMap "));
+    assert!(m["software"].as_str().unwrap().starts_with(&format!("{} ", lm_core::brand::NAME)));
 }
 
 #[test]
@@ -379,6 +379,7 @@ fn gate_document(gate: u8) -> Document {
             action: "count_in_areas".into(),
             params: Default::default(),
             computed_at: 1_797_206_400,
+            // As saved in the Gate 4 fixture (fixtures/D/D3), before the rename to NimbleMap.
             software: "LayeredMap 0.4.0".into(),
             inputs: vec![RecipeInput {
                 name: "Schools".into(),

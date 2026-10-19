@@ -1,4 +1,4 @@
-# LayeredMap website and help (WP6.10)
+# NimbleMap website and help (WP6.10)
 
 A landing page, a searchable glossary and three step-by-step workflows, in English and
 Simplified Chinese. Plain HTML, CSS and JavaScript: no build step, no libraries, no web fonts, no
@@ -22,9 +22,9 @@ touches no upstream file or workflow.
 
 | English | 中文 | What |
 |---|---|---|
-| `index.html` | `zh/index.html` | Landing for the map-curious: what LayeredMap is, examples, Free vs Pro, a link to the download page |
-| `download.html` | `zh/download.html` | For people who already have a GIS file: what it opens, why layers line up, the download buttons (placeholders), LayeredMap or QGIS, and a FAQ in the words people search with |
-| `help.html` | `zh/help.html` | Help start page (what Help › LayeredMap Help opens): the workflows and the window in one minute |
+| `index.html` | `zh/index.html` | Landing for the map-curious: what NimbleMap is, examples, Free vs Pro, a link to the download page |
+| `download.html` | `zh/download.html` | For people who already have a GIS file: what it opens, why layers line up, the download buttons (placeholders), NimbleMap or QGIS, and a FAQ in the words people search with |
+| `help.html` | `zh/help.html` | Help start page (what Help › NimbleMap Help opens): the workflows and the window in one minute |
 | `glossary.html` | `zh/glossary.html` | 34 terms, searched in the browser in both languages (`?q=buffer`, `#gcj02` deep links, `/` focuses the box) |
 | `workflow-typhoons.html` | `zh/…` | Typhoon tracks: click, rank, colour, filter to Category 5; Pro for counting near cities |
 | `workflow-heatwave.html` | `zh/…` | Heatwave NetCDF: time slider, reading cells, no data, export a map image |
@@ -58,14 +58,30 @@ python3 -I -m pytest -q tools/lm/site    # checks every page's head tags and lin
 ```
 
 Placeholders such as the download links stay in HTML comments (`TODO(owner)`), never as visible
-text; the tests check this.
+text; the tests check this, and the stamp script drops them from the published copy.
+
+### Where it is published
+
+Until the domain is bought, the stamped site is served by GitHub Pages from the public
+[NimbleMap](https://github.com/kangning-huang/NimbleMap) repository (`main` › `/docs`) at
+https://kangning-huang.github.io/NimbleMap/. That repository holds only the website, the changelog
+and user feedback: never source code, packaging scripts or keys. To update it, stamp into a new
+folder, replace that repository's `docs/` with it (keep `docs/.nojekyll`) and push:
+
+```sh
+python3 -I tools/lm/site/stamp.py https://kangning-huang.github.io/NimbleMap /path/to/new/folder
+```
+
+A project site lives below the host root, where crawlers don't read `robots.txt`, so the script
+writes none; submit `sitemap.xml` in Search Console instead. When the domain is bought, stamp with
+it, add a `docs/CNAME` file holding the domain, and set it under the repository's Pages settings.
 
 ## In the app
 
-Help › **LayeredMap Help** (`apps/layeredmap/src/help.rs`) opens `help.html`, or
+Help › **NimbleMap Help** (`apps/layeredmap/src/help.rs`) opens `help.html`, or
 `zh/help.html` when the Mac's first language is Chinese, in the default browser. The pages ship
 inside the app: `packaging/lm/bundle-macos.sh` copies this folder (minus this README) to
-`LayeredMap.app/Contents/Resources/help/`; a development build opens the checkout's copy. Opening a
+`NimbleMap.app/Contents/Resources/help/`; a development build opens the checkout's copy. Opening a
 local file makes no network request, so the network gate is not involved.
 
 ## TODO (owner)
@@ -93,18 +109,28 @@ local file makes no network request, so the network gate is not involved.
 
 ## Screenshots: sources and licences
 
-All screenshots are real captures of the LayeredMap window (dark appearance) from this branch,
-taken 2026-10-18 with the app's `--tour` script steps (`apps/layeredmap/src/main.rs`; `card`,
-`time` and `export` were added for these pages) and `screencapture -l` on the app's window only,
-then scaled to 1600 px and saved as JPEG. `pro-ask.jpg` is an earlier capture of the Pro test
-build with the test build's cost line removed.
+All screenshots are real captures of the NimbleMap window from this branch, taken with the app's
+`--tour` script steps (`apps/layeredmap/src/main.rs`; `card`, `time` and `export` were added for
+these pages, `theme` on 2026-10-19) and `screencapture -l` on the app's window only, then scaled to
+1600 px and saved as JPEG.
+
+- **Light appearance, retaken 2026-10-19** (`theme light`, the Light basemap except the satellite
+  shots `walls-satellite.jpg` and `walls-region.jpg`): every image except the two Pro shots below.
+  Two were added for the landing page's rotating hero: `points-earthquakes.jpg` (the earthquakes
+  example coloured by magnitude, `card style_by_value magnitude`, with the 2011 Tohoku earthquake
+  selected) and `areas-countries.jpg` (`countries.geojson` coloured by `pop_est`, India selected).
+  The hero's Lines and Grids slides reuse `typhoons-card.jpg` and `heatwave-slider.jpg`.
+- **Still dark, not retaken:** `pro-ask.jpg` and `typhoons-pro.jpg` need the paid Ask step. They
+  date from 2026-10-18; `pro-ask.jpg` is an earlier capture of the Pro test build with the test
+  build's cost line removed. Retake them in light when the owner approves an Ask run.
 
 Map content in the screenshots, and the credit each needs:
 
 | Source | Where | Credit / licence |
 |---|---|---|
 | OpenStreetMap, via Protomaps basemap tiles | Light, dark and satellite labels | © OpenStreetMap contributors, ODbL; Protomaps |
-| Natural Earth | Offline outline, borders | Public domain |
+| Natural Earth | Offline outline, borders; countries (`areas-countries.jpg`) | Public domain |
+| USGS earthquake catalogue | Earthquakes (`points-earthquakes.jpg`) | Public domain (U.S. Geological Survey) |
 | NASA Blue Marble Next Generation via NASA GIBS | Satellite basemap (walled cities) | NASA Earth Observatory, GIBS; not copyrighted, credit NASA, no endorsement implied |
 | NOAA NCEI IBTrACS v04r01 | Typhoon tracks | NOAA/WMO open access; cite Knapp et al. 2010 and Gahtan et al. 2024 (WMO Resolution 40 for commercial use is the owner's call) |
 | Copernicus GDO (JRC) warm spell intensity, ERA5, 2023 | Heatwave grids | CC BY 4.0, © European Union 1995–2026 |

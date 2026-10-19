@@ -92,7 +92,7 @@ fn to_owned(d: &LayerData) -> lm_doc::OwnedData {
     }
 }
 
-/// The licence of the source at `path`, when LayeredMap knows it: an example's, or a data
+/// The licence of the source at `path`, when NimbleMap knows it: an example's, or a data
 /// library dataset's (from the catalog, when it has been read).
 pub fn license_of(shell: &Shell, path: &Path) -> Option<String> {
     if let Some(l) = crate::examples::license_of(path) {

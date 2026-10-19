@@ -284,7 +284,8 @@ fn body(shell: &Shell, ui: &mut Ui, t: &theme::Theme, d: &mut DataDialog) {
     }
     ui.add(
         egui::Label::new(
-            RichText::new("Styles and recipes stay in LayeredMap: these formats carry only locations and values.").color(t.text_secondary),
+            RichText::new(format!("Styles and recipes stay in {}: these formats carry only locations and values.", lm_core::brand::NAME))
+                .color(t.text_secondary),
         )
         .wrap(),
     );

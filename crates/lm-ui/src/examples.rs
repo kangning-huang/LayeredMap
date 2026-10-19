@@ -117,8 +117,8 @@ fn all_files() -> impl Iterator<Item = &'static str> {
 /// Where the files are in a development checkout.
 const DEV_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../assets/examples");
 
-/// The examples folder inside an app bundle, `<LayeredMap.app>/Contents/Resources/examples`, for
-/// an executable at `<LayeredMap.app>/Contents/MacOS/layeredmap` (on Windows `Resources\examples`
+/// The examples folder inside an app bundle, `<NimbleMap.app>/Contents/Resources/examples`, for
+/// an executable at `<NimbleMap.app>/Contents/MacOS/layeredmap` (on Windows `Resources\examples`
 /// beside `layeredmap.exe`).
 fn bundle_dir(exe: &Path) -> Option<PathBuf> {
     Some(lm_core::platform::resources_dir(exe, lm_core::platform::Os::CURRENT)?.join("examples"))
@@ -149,11 +149,11 @@ mod tests {
     #[test]
     fn bundle_folder_is_next_to_the_executable() {
         let (exe, want) = if cfg!(windows) {
-            (Path::new(r"C:\Program Files\LayeredMap\layeredmap.exe"), PathBuf::from(r"C:\Program Files\LayeredMap\Resources\examples"))
+            (Path::new(r"C:\Program Files\NimbleMap\layeredmap.exe"), PathBuf::from(r"C:\Program Files\NimbleMap\Resources\examples"))
         } else {
             (
-                Path::new("/Applications/LayeredMap.app/Contents/MacOS/layeredmap"),
-                PathBuf::from("/Applications/LayeredMap.app/Contents/Resources/examples"),
+                Path::new("/Applications/NimbleMap.app/Contents/MacOS/layeredmap"),
+                PathBuf::from("/Applications/NimbleMap.app/Contents/Resources/examples"),
             )
         };
         assert_eq!(bundle_dir(exe), Some(want.clone()));

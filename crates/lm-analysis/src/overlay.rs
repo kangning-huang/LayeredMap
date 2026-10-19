@@ -923,7 +923,7 @@ mod tests {
                     Some(g) => crate::measure::label_point(g).into_iter().collect(),
                     None => vec![],
                 };
-                // Lines and areas: the reference doesn't know LayeredMap's label point, so the
+                // Lines and areas: the reference doesn't know NimbleMap's label point, so the
                 // boundary flag is recomputed from it here.
                 let on = probes.iter().any(|p| {
                     a.features.iter().any(|af| matches!(&af.geometry, Some(Geometry::Polygon(ps)) if ps.iter().any(|rings| locate_in_polygon(rings, *p) == Location::Boundary)))

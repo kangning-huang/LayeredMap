@@ -4,7 +4,7 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 publish = false
-description = "LayeredMap: action registry, eligibility and relevance ranking"
+description = "NimbleMap: action registry, eligibility and relevance ranking"
 
 [lints]
 workspace = true

@@ -15,10 +15,27 @@ import pytest  # noqa: E402
 PAGES = sorted(p.relative_to(stamp.SITE).as_posix() for p in stamp.SITE.rglob("*.html") if not p.name.startswith("._"))
 
 
-def test_rejects_origins_that_are_not_https_roots(tmp_path):
-    for bad in ["http://example.org", "https://example.org/docs", "example.org", "https://"]:
+def test_rejects_origins_that_are_not_https_sites(tmp_path):
+    for bad in ["http://example.org", "https://example.org/index.html", "example.org", "https://", "https://example.org/?q=1"]:
         with pytest.raises(ValueError):
             stamp.stamp(bad, tmp_path / "out")
+
+
+def test_stamps_a_project_site_below_the_host_root(tmp_path):
+    out = tmp_path / "out"
+    stamp.stamp("https://someone.github.io/NimbleMap/", out)
+    home = (out / "index.html").read_text(encoding="utf-8")
+    assert '<link rel="canonical" href="https://someone.github.io/NimbleMap/">' in home
+    assert '<link rel="alternate" hreflang="zh-Hans" href="https://someone.github.io/NimbleMap/zh/">' in home
+    assert "<loc>https://someone.github.io/NimbleMap/download.html</loc>" in (out / "sitemap.xml").read_text()
+    assert not (out / "robots.txt").exists()
+
+
+def test_drops_owner_notes(tmp_path):
+    out = tmp_path / "out"
+    stamp.stamp("https://maps.example", out)
+    for page in out.rglob("*.html"):
+        assert "TODO(owner)" not in page.read_text(encoding="utf-8"), page
 
 
 def test_stamps_absolute_urls_sitemap_and_robots(tmp_path):

@@ -38,6 +38,7 @@
 //! automatic join does) and `repeats` (auto, latest or combine: what several table rows for one
 //! record become; auto picks the latest by a year or date column, otherwise combines).
 
+use lm_core::brand::NAME as APP;
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -163,7 +164,7 @@ pub struct Plan {
     pub params: BTreeMap<String, String>,
     /// The recipe's method line (the action's `method` in the registry).
     pub method: String,
-    /// Seconds since the Unix epoch and "LayeredMap 0.4.0", for the recipe.
+    /// Seconds since the Unix epoch and "NimbleMap 0.4.0", for the recipe.
     pub computed_at: i64,
     pub software: String,
 }
@@ -291,7 +292,7 @@ pub fn run(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
         "join_by_location" => join_action(plan, ctl),
         "add_measurements" => measure_fields(plan, ctl),
         "match_table" => match_table(plan, ctl),
-        other => Err(ActionError::Input(format!("LayeredMap can't run “{other}” yet."))),
+        other => Err(ActionError::Input(format!("{APP} can't run “{other}” yet."))),
     }
 }
 
@@ -1318,7 +1319,7 @@ fn calculate_field(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionErr
         .iter()
         .find(|(k, _, _)| *k == op)
         .copied()
-        .ok_or_else(|| ActionError::Input(format!("“{op}” isn't an operation LayeredMap knows.")))?;
+        .ok_or_else(|| ActionError::Input(format!("“{op}” isn't an operation {APP} knows.")))?;
     let b_text = plan.param("b").ok_or_else(|| ActionError::Input("Choose the second value: a field or a number.".into()))?;
     // The second value: a field of the layer, or a number.
     let b = match full.field_index(b_text) {
@@ -1479,7 +1480,7 @@ pub fn parse_conditions(s: &str) -> Result<Vec<WhereCondition>, String> {
             Some("at_most") => Test::AtMost(num(a)?),
             Some("between") => Test::Between(num(a)?, num(parts.get(3).copied().unwrap_or(""))?),
             Some("any_of") => Test::AnyOf(a.split(',').map(num).collect::<Result<Vec<_>, _>>()?),
-            other => return Err(format!("“{}” isn't a condition LayeredMap knows", other.unwrap_or(""))),
+            other => return Err(format!("“{}” isn't a condition {APP} knows", other.unwrap_or(""))),
         };
         out.push(WhereCondition { input, test });
     }

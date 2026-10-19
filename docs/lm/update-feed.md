@@ -1,9 +1,9 @@
 # Update feed (WP5.7)
 
-At launch LayeredMap reads one small JSON file from the download host and, when it names a newer
+At launch NimbleMap reads one small JSON file from the download host and, when it names a newer
 version, shows a quiet notice in the map's lower right: "A new version is available" with a
 download link. The app downloads and installs nothing itself, and sends nothing but the request
-for the file (no identifiers, no usage data; the User-Agent is `LayeredMap/<version>`).
+for the file (no identifiers, no usage data; the User-Agent is `NimbleMap/<version>`).
 
 ## When the check runs
 
@@ -25,12 +25,12 @@ for the file (no identifiers, no usage data; the User-Agent is `LayeredMap/<vers
   "released": "2026-11-02",
   "notes": { "en": "Saving and exporting.", "zh": "保存与导出。" },
   "download": {
-    "free": "https://download.example.cn/layeredmap/LayeredMap-0.3.0-0-macos-arm64.dmg",
-    "pro": "https://download.example.cn/layeredmap/LayeredMap-Pro-0.3.0-0-macos-arm64.dmg"
+    "free": "https://download.example.cn/layeredmap/NimbleMap-0.3.0-0-macos-arm64.dmg",
+    "pro": "https://download.example.cn/layeredmap/NimbleMap-Pro-0.3.0-0-macos-arm64.dmg"
   },
   "download_windows": {
-    "free": "https://download.example.cn/layeredmap/LayeredMap-0.3.0-0-windows-x64-setup.exe",
-    "pro": "https://download.example.cn/layeredmap/LayeredMap-Pro-0.3.0-0-windows-x64-setup.exe"
+    "free": "https://download.example.cn/layeredmap/NimbleMap-0.3.0-0-windows-x64-setup.exe",
+    "pro": "https://download.example.cn/layeredmap/NimbleMap-Pro-0.3.0-0-windows-x64-setup.exe"
   },
   "sha256": { "free": "…", "pro": "…" },
   "page": "https://download.example.cn/layeredmap/",
@@ -44,7 +44,7 @@ for the file (no identifiers, no usage data; the User-Agent is `LayeredMap/<vers
 | `version` | yes | The newest release, `MAJOR.MINOR.PATCH` with an optional `-pre` suffix. Compared numerically with the running version; a pre-release sorts before its release. The notice shows only when this is newer. |
 | `released` | no | The release date, `YYYY-MM-DD` (informational). |
 | `notes` | no | One line on what changed, by language (`en`, `zh`). Shown when the pointer rests on the notice; Chinese when the system's first language is Chinese and `zh` is present, else English. |
-| `download.free`, `download.pro` | no | The .dmg for each tier. LayeredMap links its own tier's. |
+| `download.free`, `download.pro` | no | The .dmg for each tier. NimbleMap links its own tier's. |
 | `download_windows.free`, `download_windows.pro` | no | The Windows installer for each tier (WP6.2). A Windows build links its own tier's, else `page`; it never links a .dmg. macOS builds ignore the field. |
 | `page` | yes, unless both downloads are given | The download page, linked when the tier has no `download` entry. |
 | `sha256` | no | The .dmg's SHA-256 by tier, for people who verify downloads (the app doesn't read it). |

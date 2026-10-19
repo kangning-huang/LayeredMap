@@ -22,7 +22,7 @@ pub struct RecipeInput {
     pub noun: String,
 }
 
-/// An assumption the result rests on, with how sure LayeredMap was.
+/// An assumption the result rests on, with how sure NimbleMap was.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RecipeAssumption {
     pub text: String,
@@ -41,7 +41,7 @@ pub struct Recipe {
     pub params: std::collections::BTreeMap<String, String>,
     /// Seconds since the Unix epoch.
     pub computed_at: i64,
-    /// "LayeredMap 0.4.0".
+    /// "NimbleMap 0.4.0" (`brand::with_version`).
     pub software: String,
     pub inputs: Vec<RecipeInput>,
     /// "all schools; all districts".
@@ -210,7 +210,7 @@ mod tests {
             action: "count_in_areas".into(),
             params: Default::default(),
             computed_at: 1_797_206_400, // 14 Dec 2026
-            software: "LayeredMap 0.4.0".into(),
+            software: "NimbleMap 0.4.0".into(),
             inputs: vec![
                 RecipeInput {
                     name: "Schools".into(),
@@ -242,7 +242,7 @@ mod tests {
         assert_eq!(
             schools().text(),
             "Schools in each district\n\
-             Computed 14 Dec 2026 with LayeredMap 0.4.0\n\
+             Computed 14 Dec 2026 with NimbleMap 0.4.0\n\
              Inputs: Schools (schools.csv, 248 points); Districts (districts.geojson, 17 areas)\n\
              Scope: all schools; all districts\n\
              Method: point-in-area count; a point on a boundary counts in every area it touches\n\

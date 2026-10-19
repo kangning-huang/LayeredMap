@@ -1,9 +1,9 @@
 # Example data (the Examples menu)
 
-The three files LayeredMap opens from the welcome card's **Try an example** button and
+The three files NimbleMap opens from the welcome card's **Try an example** button and
 **File › Open example data** (build plan, WP2.9). Built by `tools/lm/make_examples.py` from the
 sources below; nothing else was changed. `cities.geojson` was called `populated_places.geojson` until 18 Oct 2026 (renamed, contents unchanged): "populated places" is Natural Earth's term, and the layer's name is what people see. The macOS bundle copies this folder to
-`LayeredMap.app/Contents/Resources/examples/`.
+`NimbleMap.app/Contents/Resources/examples/`.
 
 | File | What | Size |
 |---|---|---|
