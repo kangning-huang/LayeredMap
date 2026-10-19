@@ -61,10 +61,11 @@ US$35 a month, so roughly 45–50 subscribers to break even.
 2.9 % + US$0.30), and merchants of record take more on small amounts. On the direct channel,
 offer the yearly price only, or keep Pro free with an account.
 
-**Until then (free Pro).** The server's allowance is 60 questions a day per account
-(`ASK_DAILY_REQUESTS`), which a heavy user could turn into about 1,800 questions (about US$2.90) a
-month. With Pro free for everyone, a monthly cap of about 300 questions keeps a popular launch
-affordable; it's a server setting and a small change to the allowance function.
+**Until then (free Pro).** Each account has a monthly allowance of about 300 questions (owner,
+2026-10-19): 1,000 model calls and 3 million tokens per UTC month (`ASK_MONTHLY_REQUESTS`,
+`ASK_MONTHLY_TOKENS`; one question is usually 2–4 calls), at most about US$0.24–0.48 a month per
+account. The daily allowance (60 calls, about 20 questions) stays as a burst guard. When the month's
+allowance is used up, the Ask box says so and when it renews.
 
 ## Pro as an in-app purchase
 

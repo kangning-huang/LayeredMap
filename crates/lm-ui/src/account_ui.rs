@@ -40,7 +40,7 @@ pub struct AccountUi {
     verifying: Option<Receiver<Result<User, AccountError>>>,
 }
 
-/// The code-entry state after "Email me a sign-in link".
+/// The code-entry state after "Email me a sign-in code".
 #[derive(Clone, Debug)]
 pub(crate) struct EmailCode {
     pub(crate) address: String,

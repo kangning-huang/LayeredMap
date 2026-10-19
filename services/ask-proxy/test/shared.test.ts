@@ -8,9 +8,11 @@ import { bearer, userFromClaims } from "../supabase/functions/_shared/auth.ts";
 import { type AccountDeps, type AskDeps, handleAccount, handleAsk } from "../supabase/functions/_shared/handler.ts";
 import {
   DEFAULT_LIMITS,
+  type Limits,
   limitsFromEnv,
   type Reservation,
   reservationFromRpc,
+  secondsUntilMonthReset,
   secondsUntilReset,
   utcDay,
 } from "../supabase/functions/_shared/limits.ts";
@@ -27,7 +29,11 @@ const MODEL = DEFAULT_SHAPE.models[0];
 test("limits come from the secrets, with defaults for missing or bad values", () => {
   assert.deepEqual(limitsFromEnv(() => undefined), DEFAULT_LIMITS);
   const env: Record<string, string> = { ASK_DAILY_REQUESTS: " 30 ", ASK_DAILY_TOKENS: "-5" };
-  assert.deepEqual(limitsFromEnv((k) => env[k]), { requests: 30, tokens: DEFAULT_LIMITS.tokens });
+  assert.deepEqual(limitsFromEnv((k) => env[k]), { ...DEFAULT_LIMITS, requests: 30 });
+  const month: Record<string, string> = { ASK_MONTHLY_REQUESTS: "900", ASK_MONTHLY_TOKENS: "x" };
+  assert.deepEqual(limitsFromEnv((k) => month[k]), { ...DEFAULT_LIMITS, monthRequests: 900 });
+  // About 300 questions a month at 2–4 model calls each (owner, 2026-10-19).
+  assert.deepEqual([DEFAULT_LIMITS.monthRequests, DEFAULT_LIMITS.monthTokens], [1_000, 3_000_000]);
   assert.equal(limitsFromEnv((k) => (k === "ASK_DAILY_REQUESTS" ? "1e3" : undefined)).requests, DEFAULT_LIMITS.requests);
   assert.equal(limitsFromEnv((k) => (k === "ASK_DAILY_REQUESTS" ? "0" : undefined)).requests, DEFAULT_LIMITS.requests);
 });
@@ -37,11 +43,18 @@ test("the day is the UTC day, and the allowance resets at UTC midnight", () => {
   assert.equal(utcDay(new Date("2026-10-19T23:59:59.999-08:00")), "2026-10-20");
   assert.equal(secondsUntilReset(NOW), 90 * 60);
   assert.equal(secondsUntilReset(new Date("2026-10-19T23:59:59.500Z")), 1);
+  assert.equal(secondsUntilMonthReset(new Date("2026-10-31T23:00:00Z")), 3600);
+  assert.equal(secondsUntilMonthReset(new Date("2026-12-31T23:59:59.500Z")), 1);
 });
 
 test("reserve_request's row reads as a reservation", () => {
-  assert.deepEqual(reservationFromRpc([{ allowed: true, requests: 3, tokens: "1200" }]), { allowed: true, requests: 3, tokens: 1200 });
-  assert.deepEqual(reservationFromRpc({ allowed: false, requests: 60, tokens: 0 }), { allowed: false, requests: 60, tokens: 0 });
+  assert.deepEqual(reservationFromRpc([{ allowed: true, requests: 3, tokens: "1200", month_requests: 40, month_tokens: "9000", blocked: null }]), {
+    allowed: true, requests: 3, tokens: 1200, monthRequests: 40, monthTokens: 9000, blocked: null,
+  });
+  assert.deepEqual(reservationFromRpc({ allowed: false, requests: 5, tokens: 0, month_requests: 1000, blocked: "month" }), {
+    allowed: false, requests: 5, tokens: 0, monthRequests: 1000, monthTokens: 0, blocked: "month",
+  });
+  assert.equal(reservationFromRpc({ allowed: false, requests: 60, tokens: 0, blocked: "week" })?.blocked, null);
   assert.equal(reservationFromRpc([]), null);
   assert.equal(reservationFromRpc([{ requests: 1 }]), null);
 });
@@ -271,18 +284,37 @@ test("over the daily allowance: 429 with when it resets, and nothing forwarded",
   assert.equal(seen.upstream.length, 0);
 });
 
+test("over the monthly allowance: 429 monthly_limit, reset on the first of next month", async () => {
+  const seen: Seen = { upstream: [], recorded: [], logs: [] };
+  const deps = askDeps({ reserve: async () => ({ allowed: false, requests: 4, tokens: 9, monthRequests: 1_000, blocked: "month" as const }) }, seen);
+  const r = await handleAsk(askRequest("good"), deps);
+  assert.equal(r.status, 429);
+  const e = ((await r.json()) as { error: Record<string, unknown> }).error;
+  assert.equal(e.code, "monthly_limit");
+  assert.equal(e.resets_in_seconds, secondsUntilMonthReset(NOW));
+  assert.equal(e.limit_requests, DEFAULT_LIMITS.monthRequests);
+  assert.equal(seen.upstream.length, 0);
+  assert.ok(seen.logs.some((l) => l.includes("status=429 month")));
+});
+
 test("the allowance counts each user's calls separately and stops at the limit", async () => {
   // An in-memory reserve_request with the SQL function's rule.
   const rows = new Map<string, { requests: number; tokens: number }>();
-  const reserve = async (u: string, d: string, l: { requests: number; tokens: number }) => {
+  const reserve = async (u: string, d: string, l: Limits) => {
     const k = `${u}/${d}`;
     const row = rows.get(k) ?? { requests: 0, tokens: 0 };
     rows.set(k, row);
-    if (row.requests < l.requests && row.tokens < l.tokens) {
-      row.requests += 1;
-      return { allowed: true, requests: row.requests, tokens: row.tokens };
+    const month = [...rows].filter(([key]) => key.startsWith(`${u}/${d.slice(0, 7)}`)).map(([, v]) => v);
+    const mReq = month.reduce((a, v) => a + v.requests, 0);
+    const mTok = month.reduce((a, v) => a + v.tokens, 0);
+    if (row.requests >= l.requests || row.tokens >= l.tokens) {
+      return { allowed: false, requests: row.requests, tokens: row.tokens, blocked: "day" as const };
     }
-    return { allowed: false, requests: row.requests, tokens: row.tokens };
+    if (mReq >= l.monthRequests || mTok >= l.monthTokens) {
+      return { allowed: false, requests: row.requests, tokens: row.tokens, blocked: "month" as const };
+    }
+    row.requests += 1;
+    return { allowed: true, requests: row.requests, tokens: row.tokens, blocked: null };
   };
   const record = async (u: string, d: string, t: TokenUsage) => {
     const row = rows.get(`${u}/${d}`);
@@ -294,14 +326,20 @@ test("the allowance counts each user's calls separately and stops at the limit",
     await r.text();
     return r.status;
   };
-  const deps = askDeps({ reserve, record, limits: { requests: 3, tokens: 1_000 } });
+  const deps = askDeps({ reserve, record, limits: { ...DEFAULT_LIMITS, requests: 3, tokens: 1_000 } });
   const statuses = [];
   for (let i = 0; i < 4; i++) statuses.push(await ask(deps));
   assert.deepEqual(statuses, [200, 200, 200, 429]);
   // 30 tokens used of 1,000: the request count stopped it. Then a token cap stops it too.
-  const tight = askDeps({ reserve, record, limits: { requests: 100, tokens: 35 } });
+  const tight = askDeps({ reserve, record, limits: { ...DEFAULT_LIMITS, requests: 100, tokens: 35 } });
   assert.equal(await ask(tight), 200);
   assert.equal(await ask(tight), 429);
+  // The month counts every day of it: earlier days' calls use up the monthly allowance.
+  rows.clear();
+  rows.set(`${USER}/2026-10-02`, { requests: 5, tokens: 0 });
+  const monthly = askDeps({ reserve, record, limits: { ...DEFAULT_LIMITS, monthRequests: 6 } });
+  assert.equal(await ask(monthly), 200);
+  assert.equal(await ask(monthly), 429);
 });
 
 test("the model service's failures become the proxy's own words, never its message", async () => {
@@ -346,7 +384,13 @@ function accountDeps(over: Partial<AccountDeps> = {}, deleted: string[] = []): A
 test("GET /account shows Pro and today's use", async () => {
   const r = await handleAccount(new Request("https://x/account", { headers: { Authorization: "Bearer good" } }), accountDeps());
   assert.equal(r.status, 200);
-  assert.deepEqual(await r.json(), { pro: true, plan: null, today: { requests: 4, tokens: 5000 }, limits: DEFAULT_LIMITS });
+  assert.deepEqual(await r.json(), {
+    pro: true,
+    plan: null,
+    today: { requests: 4, tokens: 5000 },
+    limits: { requests: DEFAULT_LIMITS.requests, tokens: DEFAULT_LIMITS.tokens },
+    month_limits: { requests: DEFAULT_LIMITS.monthRequests, tokens: DEFAULT_LIMITS.monthTokens },
+  });
 });
 
 test("DELETE /account deletes the caller, and only a signed-in caller", async () => {

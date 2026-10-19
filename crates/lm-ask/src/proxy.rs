@@ -35,6 +35,11 @@ pub fn error_words(status: u16, json: &Json) -> String {
         (401, _) => format!("You're signed out. Sign in again in Settings › Account to use {pro}."),
         (403, "not_pro") => format!("{pro} isn't on for this account."),
         (403, _) => format!("This account can't use {pro} yet. Try again in a minute."),
+        (429, "monthly_limit") => {
+            let days = e["resets_in_seconds"].as_u64().map(|s| s.div_ceil(86_400)).unwrap_or(30).max(1);
+            let when = if days == 1 { "tomorrow".to_string() } else { format!("in {days} days") };
+            format!("You've used this month's assistant allowance. It renews {when}.")
+        }
         (429, _) => {
             let hours = e["resets_in_seconds"].as_u64().map(|s| s.div_ceil(3600)).unwrap_or(24).max(1);
             let when = if hours == 1 { "within the hour".to_string() } else { format!("in about {hours} hours") };
@@ -147,6 +152,11 @@ pub(crate) mod tests {
         assert_eq!(e(403, json!({"error": {"code": "not_pro"}})), format!("{pro} isn't on for this account."));
         assert!(e(429, json!({"error": {"code": "daily_limit", "resets_in_seconds": 5400}})).ends_with("in about 2 hours."));
         assert!(e(429, json!({"error": {"code": "daily_limit", "resets_in_seconds": 60}})).ends_with("within the hour."));
+        assert!(
+            e(429, json!({"error": {"code": "monthly_limit", "resets_in_seconds": 12 * 86_400 - 5}}))
+                .ends_with("this month's assistant allowance. It renews in 12 days.")
+        );
+        assert!(e(429, json!({"error": {"code": "monthly_limit", "resets_in_seconds": 3_600}})).ends_with("It renews tomorrow."));
         assert!(e(503, json!({"error": {"code": "upstream_credit"}})).contains("out of credit"));
         assert!(e(502, json!({"error": {"code": "upstream", "message": "The model service answered 500."}})).contains("answered 500"));
         // Through the transport.

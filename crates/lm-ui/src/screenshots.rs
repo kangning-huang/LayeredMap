@@ -1612,7 +1612,7 @@ mod account {
     fn account_signed_out() {
         let mut h = settings(false, Region::International, |_| {});
         use egui_kittest::kittest::Queryable as _;
-        for b in ["Continue with Apple", "Continue with Google", "Continue with X", "Email me a sign-in link"] {
+        for b in ["Continue with Apple", "Continue with Google", "Continue with X", "Email me a sign-in code"] {
             assert!(h.query_by_label(b).is_some(), "{b}");
         }
         h.snapshot("account_signed_out");
@@ -1644,7 +1644,7 @@ mod account {
         s.account.email_code = Some(crate::account_ui::EmailCode::new("kim@example.com".into(), Region::International));
     }
 
-    /// After "Email me a sign-in link": the link works on this Mac, or the 6-digit code is typed.
+    /// After "Email me a sign-in code": the link works on this Mac, or the 6-digit code is typed.
     #[test]
     #[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
     fn account_email_code() {

@@ -224,7 +224,10 @@ built-in runner; the two `index.ts` files only wire Deno, supabase-js and `fetch
   forced), forwards it to OpenRouter with `OPENROUTER_API_KEY` from the function's secrets,
   streams the answer back, and records the tokens the answer reports. Limits come from secrets:
   `ASK_DAILY_REQUESTS` (default 60 model calls, about 20 questions) and `ASK_DAILY_TOKENS`
-  (default 400,000).
+  (default 400,000) per UTC day, and `ASK_MONTHLY_REQUESTS` (default 1,000 calls, about 300
+  questions) and `ASK_MONTHLY_TOKENS` (default 3,000,000) per UTC month (owner, 2026-10-19). Over
+  the month's allowance the answer is 429 `monthly_limit` with the seconds until the first of next
+  month; the Ask box says "You've used this month's assistant allowance. It renews in N days."
 - `account`: `GET` status, `DELETE` the user.
 
 Deploy steps: `services/ask-proxy/README.md`.

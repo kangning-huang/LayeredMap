@@ -3,7 +3,7 @@
 // the app turns into its own words (crates/lm-ask/src/proxy.rs).
 
 import { bearer, type Claims, userFromClaims } from "./auth.ts";
-import { type Limits, type Reservation, secondsUntilReset, utcDay } from "./limits.ts";
+import { type Limits, type Reservation, secondsUntilMonthReset, secondsUntilReset, utcDay } from "./limits.ts";
 import { type ShapeOptions, shapeRequest } from "./shape.ts";
 import { type TokenUsage, usageTap } from "./usage.ts";
 
@@ -52,7 +52,8 @@ async function caller(req: Request, deps: Deps): Promise<string | null> {
   return userFromClaims(claims, Math.floor(deps.now().getTime() / 1000));
 }
 
-/** `POST /ask`: one chat-completions call for a signed-in Pro user within today's allowance. */
+/** `POST /ask`: one chat-completions call for a signed-in Pro user within today's and this month's
+ * allowances. */
 export async function handleAsk(req: Request, deps: AskDeps): Promise<Response> {
   if (req.method !== "POST") return errorResponse(405, "method", "Use POST.");
   const user = await caller(req, deps);
@@ -68,7 +69,15 @@ export async function handleAsk(req: Request, deps: AskDeps): Promise<Response> 
   const r = await deps.reserve(user, day, deps.limits).catch(() => null);
   if (!r) return errorResponse(503, "unavailable", "The allowance couldn't be checked. Try again shortly.");
   if (!r.allowed) {
-    deps.log(`ask user=${user} status=429 requests=${r.requests} tokens=${r.tokens}`);
+    const month = r.blocked === "month";
+    deps.log(`ask user=${user} status=429 ${month ? "month" : "day"} requests=${r.requests} tokens=${r.tokens}`);
+    if (month) {
+      return errorResponse(429, "monthly_limit", "This month's allowance is used up.", {
+        resets_in_seconds: secondsUntilMonthReset(now),
+        limit_requests: deps.limits.monthRequests,
+        limit_tokens: deps.limits.monthTokens,
+      });
+    }
     return errorResponse(429, "daily_limit", "Today's allowance is used up.", {
       resets_in_seconds: secondsUntilReset(now),
       limit_requests: deps.limits.requests,
@@ -120,7 +129,13 @@ export async function handleAccount(req: Request, deps: AccountDeps): Promise<Re
   const day = utcDay(deps.now());
   const today = await deps.usageToday(user, day).catch(() => ({ requests: 0, tokens: 0 }));
   return new Response(
-    JSON.stringify({ pro: p.pro, plan: p.plan, today, limits: { requests: deps.limits.requests, tokens: deps.limits.tokens } }),
+    JSON.stringify({
+      pro: p.pro,
+      plan: p.plan,
+      today,
+      limits: { requests: deps.limits.requests, tokens: deps.limits.tokens },
+      month_limits: { requests: deps.limits.monthRequests, tokens: deps.limits.monthTokens },
+    }),
     { status: 200, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } },
   );
 }

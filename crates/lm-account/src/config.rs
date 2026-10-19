@@ -84,7 +84,7 @@ impl Provider {
             Provider::Apple => "Continue with Apple",
             Provider::Google => "Continue with Google",
             Provider::X => "Continue with X",
-            Provider::Email => "Email me a sign-in link",
+            Provider::Email => "Email me a sign-in code",
             Provider::WeChat => "Continue with WeChat",
             Provider::Alipay => "Continue with Alipay",
             Provider::Phone => "Text me a code",

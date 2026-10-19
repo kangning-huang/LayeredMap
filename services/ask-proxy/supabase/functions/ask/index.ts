@@ -1,6 +1,7 @@
 // The Ask proxy (Supabase Edge Function `ask`): the Ask box's chat-completions call, for a signed-in
 // Pro user within today's allowance, forwarded to OpenRouter with the key held here only.
-// Secrets: OPENROUTER_API_KEY; optional ASK_DAILY_REQUESTS, ASK_DAILY_TOKENS, ASK_MODELS.
+// Secrets: OPENROUTER_API_KEY; optional ASK_DAILY_REQUESTS, ASK_DAILY_TOKENS, ASK_MONTHLY_REQUESTS,
+// ASK_MONTHLY_TOKENS, ASK_MODELS.
 // SUPABASE_URL, SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY are provided by Supabase.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -36,6 +37,8 @@ Deno.serve((req) => {
         p_day: day,
         p_max_requests: l.requests,
         p_max_tokens: l.tokens,
+        p_max_month_requests: l.monthRequests,
+        p_max_month_tokens: l.monthTokens,
       });
       return error ? null : reservationFromRpc(data);
     },

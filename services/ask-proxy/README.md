@@ -37,6 +37,7 @@ not for deploying.
    ```sh
    supabase secrets set OPENROUTER_API_KEY=<a new key made for the proxy, with a credit limit>
    supabase secrets set ASK_DAILY_REQUESTS=60 ASK_DAILY_TOKENS=400000   # optional; these are the defaults
+   supabase secrets set ASK_MONTHLY_REQUESTS=1000 ASK_MONTHLY_TOKENS=3000000   # optional; defaults, about 300 questions
    ```
    `SUPABASE_URL`, `SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` are provided to functions
    automatically.
