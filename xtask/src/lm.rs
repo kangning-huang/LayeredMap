@@ -21,7 +21,9 @@ pub const ALLOWED: &[(&str, &[&str])] = &[
     ("lm-doc", &["lm-core", "rustgis-data"]),
     ("lm-mapview", &["lm-net", "rustgis-map", "rustgis-tiles", "rustgis-render", "rustgis-geom"]),
     ("lm-ask", &["lm-core", "lm-jobs", "lm-net"]),
-    ("lm-ui", &["lm-core", "lm-actions", "lm-jobs", "lm-doc", "lm-mapview", "lm-ask", "lm-net"]),
+    // Pro's account (WP7.4): sign-in, the session, the credential store; asks the network gate.
+    ("lm-account", &["lm-core", "lm-net"]),
+    ("lm-ui", &["lm-core", "lm-actions", "lm-jobs", "lm-doc", "lm-mapview", "lm-ask", "lm-account", "lm-net"]),
     ("layeredmap", &["lm-ui", "lm-core", "lm-net"]),
 ];
 

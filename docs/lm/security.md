@@ -24,7 +24,8 @@ Every network request in NimbleMap asks `lm_net::allowed(purpose)` right before 
 |---|---|---|
 | Basemap and imagery tiles (every remote read of the tile fetcher) | `rustgis-tiles` `cache::native::get`, through the gate hook `lm-mapview` installs | Basemap |
 | Newest daily basemap build (`builds.json`, then HEAD requests) | `lm-mapview` `archive` | Basemap |
-| Pro's assistant (OpenRouter) | `lm-ask` `openrouter` | Assistant |
+| Pro's assistant (OpenRouter directly in test builds, or the Ask proxy) | `lm-ask` `openrouter`, `proxy` | Assistant |
+| Pro's account: sign-in, refresh, sign-out, delete (docs/lm/accounts-design.md) | `lm-account` `http` (`GatedHttp`) | Account |
 | Update feed | `lm-ui` `update`, through `lm_net::get_text` | UpdateCheck |
 | Data library (WP5.4, not on this branch yet) | must use `lm_net::get_text` or ask `allowed(Purpose::Library)` | Library |
 
