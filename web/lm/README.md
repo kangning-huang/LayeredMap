@@ -58,7 +58,23 @@ python3 -I -m pytest -q tools/lm/site    # checks every page's head tags and lin
 ```
 
 Placeholders such as the download links stay in HTML comments (`TODO(owner)`), never as visible
-text; the tests check this.
+text; the tests check this, and the stamp script drops them from the published copy.
+
+### Where it is published
+
+Until the domain is bought, the stamped site is served by GitHub Pages from the public
+[NimbleMap](https://github.com/kangning-huang/NimbleMap) repository (`main` › `/docs`) at
+https://kangning-huang.github.io/NimbleMap/. That repository holds only the website, the changelog
+and user feedback: never source code, packaging scripts or keys. To update it, stamp into a new
+folder, replace that repository's `docs/` with it (keep `docs/.nojekyll`) and push:
+
+```sh
+python3 -I tools/lm/site/stamp.py https://kangning-huang.github.io/NimbleMap /path/to/new/folder
+```
+
+A project site lives below the host root, where crawlers don't read `robots.txt`, so the script
+writes none; submit `sitemap.xml` in Search Console instead. When the domain is bought, stamp with
+it, add a `docs/CNAME` file holding the domain, and set it under the repository's Pages settings.
 
 ## In the app
 
