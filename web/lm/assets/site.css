@@ -287,3 +287,16 @@ mark { background: #f5e3a3; background: color-mix(in srgb, #f5c542 45%, transpar
 .site-foot a { color: var(--ink-2); }
 .site-foot p { margin: 0 0 6px; max-width: 46em; }
 @media (max-width: 640px) { .search { position: static; } .entry { scroll-margin-top: 20px; } }
+
+/* ---- Download page ---- */
+.claims, .formats { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 18px; }
+.claims > div, .formats > div { padding: 22px 22px 20px; background: var(--card); border: 1px solid var(--rule); border-radius: var(--radius); }
+.claims h3, .formats h3 { margin: 0 0 6px; font-size: 1.2rem; }
+.claims p, .formats p { margin: 0; color: var(--ink-2); font-size: 15.5px; }
+.formats > div { scroll-margin-top: 80px; }
+code { font: .88em var(--mono); background: var(--paper-2); padding: 1px 5px; border-radius: 5px; }
+.compare .tier h3 { font-size: 1.25rem; margin-bottom: 14px; }
+.faq h3 { font-size: 1.2rem; margin: 1.8em 0 .4em; }
+.faq h3:first-child { margin-top: 0; }
+.faq p { margin: 0; color: var(--ink-2); }
+.cta-actions { display: flex; gap: 12px; flex-wrap: wrap; }

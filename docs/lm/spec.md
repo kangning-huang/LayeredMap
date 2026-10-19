@@ -1637,7 +1637,7 @@ The two biggest risks are builder time and map feel. Phase 0 settles the second;
 | 11 | Library datasets have unclear licenses | Medium | Medium | Any entry without a written license | Open-licensed datasets only, with citations recorded |
 | 12 | Pilot logs count as research data | Medium | Medium | Plans to publish on the pilot | Seek IRB approval or exemption before the first hallway test |
 | 13 | Apple signing or notarization delays | Low | Medium | Enrollment not done in week 1 of Phase 0 | Internal gates use locally built, unsigned apps; the pilot waits for signing |
-| 14 | Name conflict | Low | Low | Trademark search results | Choose the name at Gate 5, before installers and domains exist |
+| 14 | Name conflict | Medium | Medium | Seen 2026-10-19: layeredmaps.app and layeredmaps.com exist; "layered map" is also a generic GIS term, which weakens a trademark and search | Rebrand research under way; choose the name before the website, domain and installers go public |
 
 ### Open decisions
 
@@ -1652,4 +1652,6 @@ The two biggest risks are builder time and map feel. Phase 0 settles the second;
 | Final name | LayeredMap · another name | Gate 5 | Trademark search |
 | Windows timing | Phase 5 · Phase 6 | Once the course roster is known | Student survey |
 | Natural-language experiment | Run WP6.11 · skip | Gate 5 | Pilot question log |
+| Finder Quick Look preview | A Quick Look extension that previews .shp, .geojson, .gpx, .kml and .tif in Finder (space bar) · not now | A phase start after Phase 6 | Reddit pains survey (2026-10-19): people want to peek at a GIS file without launching a full app |
+| Editing | Table edits only (cells, rename/delete/add columns, with undo) · also geometry (move points, vertices) · neither | A phase start after Phase 6 | Table edits are cheap and match the audience; vertex editing is a large surface (snapping, topology, undo, saving back to each format) and is QGIS's job. Proposed: table edits only |
 

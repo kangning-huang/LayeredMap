@@ -1,0 +1,62 @@
+"""Tests for stamp.py, and checks that every page carries the head tags it needs.
+
+    python3 -I -m pytest -q tools/lm/site
+"""
+
+import re
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent))
+import stamp  # noqa: E402
+
+import pytest  # noqa: E402
+
+PAGES = sorted(p.relative_to(stamp.SITE).as_posix() for p in stamp.SITE.rglob("*.html") if not p.name.startswith("._"))
+
+
+def test_rejects_origins_that_are_not_https_roots(tmp_path):
+    for bad in ["http://example.org", "https://example.org/docs", "example.org", "https://"]:
+        with pytest.raises(ValueError):
+            stamp.stamp(bad, tmp_path / "out")
+
+
+def test_stamps_absolute_urls_sitemap_and_robots(tmp_path):
+    out = tmp_path / "out"
+    pages = stamp.stamp("https://maps.example/", out)
+    assert len(pages) == len(PAGES)
+    assert not (out / "README.md").exists()
+    home = (out / "index.html").read_text(encoding="utf-8")
+    assert '<link rel="canonical" href="https://maps.example/">' in home
+    assert '<link rel="alternate" hreflang="zh-Hans" href="https://maps.example/zh/">' in home
+    assert '<meta property="og:image" content="https://maps.example/img/typhoons-card.jpg">' in home
+    zh = (out / "zh" / "download.html").read_text(encoding="utf-8")
+    assert '<link rel="alternate" hreflang="en" href="https://maps.example/download.html">' in zh
+    assert '<meta property="og:image" content="https://maps.example/img/walls-compare.jpg">' in zh
+    sitemap = (out / "sitemap.xml").read_text(encoding="utf-8")
+    assert "<loc>https://maps.example/zh/workflow-heatwave.html</loc>" in sitemap
+    assert sitemap.count("<url>") == len(PAGES)
+    assert "Sitemap: https://maps.example/sitemap.xml" in (out / "robots.txt").read_text()
+    # Nothing relative is left in the stamped tags.
+    for page in out.rglob("*.html"):
+        for pat in stamp.ABSOLUTE:
+            for m in pat.finditer(page.read_text(encoding="utf-8")):
+                assert m.group(2).startswith("https://maps.example/"), (page, m.group(0))
+
+
+@pytest.mark.parametrize("rel", PAGES)
+def test_every_page_has_search_and_preview_tags(rel):
+    text = (stamp.SITE / rel).read_text(encoding="utf-8")
+    name = Path(rel).name
+    assert f'<link rel="canonical" href="{name}">' in text
+    langs = set(re.findall(r'<link rel="alternate" hreflang="([^"]*)"', text))
+    assert langs == {"en", "zh-Hans", "x-default"}, langs
+    for tag in ["og:title", "og:description", "og:url", "og:image"]:
+        assert f'property="{tag}"' in text, tag
+    title = re.search(r"<title>(.*?)</title>", text).group(1)
+    assert len(title) <= 75, title
+    # Placeholders stay in HTML comments, never on the page.
+    assert 'class="todo"' not in text
+    # Every linked page and image in the site exists.
+    for href in re.findall(r'(?:href|src|content)="([^"#:]+\.(?:html|jpg|svg|css|js))(?:#[^"]*)?"', text):
+        assert (stamp.SITE / rel).parent.joinpath(href).resolve().exists(), href

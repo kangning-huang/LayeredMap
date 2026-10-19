@@ -22,7 +22,8 @@ touches no upstream file or workflow.
 
 | English | 中文 | What |
 |---|---|---|
-| `index.html` | `zh/index.html` | Landing: what LayeredMap is, examples, Free vs Pro, download (placeholders) |
+| `index.html` | `zh/index.html` | Landing for the map-curious: what LayeredMap is, examples, Free vs Pro, a link to the download page |
+| `download.html` | `zh/download.html` | For people who already have a GIS file: what it opens, why layers line up, the download buttons (placeholders), LayeredMap or QGIS, and a FAQ in the words people search with |
 | `help.html` | `zh/help.html` | Help start page (what Help › LayeredMap Help opens): the workflows and the window in one minute |
 | `glossary.html` | `zh/glossary.html` | 34 terms, searched in the browser in both languages (`?q=buffer`, `#gcj02` deep links, `/` focuses the box) |
 | `workflow-typhoons.html` | `zh/…` | Typhoon tracks: click, rank, colour, filter to Category 5; Pro for counting near cities |
@@ -32,7 +33,7 @@ touches no upstream file or workflow.
 `assets/site.css` (light and dark, follows the system, with a switch remembered in
 `localStorage`), `assets/site.js` (the switch), `assets/glossary-data.js` (every term, both
 languages, with where it appears in the app) and `assets/glossary.js` (drawing and search).
-Header and footer are repeated in each page; change them in all twelve.
+Header and footer are repeated in each page; change them in all fourteen.
 
 ## Preview
 
@@ -41,6 +42,23 @@ Open `web/lm/index.html` in a browser, or serve the folder:
 ```sh
 python3 -m http.server --directory web/lm 8000   # then http://localhost:8000/
 ```
+
+## Search and link previews
+
+Every page carries a canonical link, `hreflang` links (English, Chinese, and English as the
+default), Open Graph tags for link previews, and a title that says what the page shows in the words
+people search with. The landing and download pages also carry `SoftwareApplication` structured
+data. In this folder those URLs are relative, so the pages still work offline and inside the app.
+Publishing goes through the stamp script, which makes them absolute and writes `sitemap.xml` and
+`robots.txt`:
+
+```sh
+python3 -I tools/lm/site/stamp.py https://<the site's domain> /path/to/new/folder
+python3 -I -m pytest -q tools/lm/site    # checks every page's head tags and links
+```
+
+Placeholders such as the download links stay in HTML comments (`TODO(owner)`), never as visible
+text; the tests check this.
 
 ## In the app
 
@@ -52,10 +70,15 @@ local file makes no network request, so the network gate is not involved.
 
 ## TODO (owner)
 
+- **Name and domain.** Settle the name (spec risk 14) before publishing; the name appears in every title,
+  the structured data and the stamp script's ORIGIN.
+- **Demo video.** A short muted clip of a file being dropped in and lining up, for the download
+  page's hero (an mp4 with a poster, not a GIF).
+
 - **Hosting.** Choose a host reachable from mainland China and elsewhere (and an ICP filing if
   the site is hosted in mainland China). Then add the public URL to `help.rs` as a fallback if the
   bundled pages are missing.
-- **Download links.** The three download buttons in `index.html` and `zh/index.html` are disabled
+- **Download links.** The three download buttons in `download.html` and `zh/download.html` are disabled
   placeholders marked `TODO(owner)`: the signed .dmg, a mainland China mirror, Pro sign-up and
   pricing.
 - **Chinese interface.** The app is English-only for now, so the Chinese pages quote the English
