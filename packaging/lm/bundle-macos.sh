@@ -6,7 +6,8 @@
 #
 # Signing runs only when these are set (CI secrets; see docs/lm/signing.md):
 #   LM_SIGN_IDENTITY   "Developer ID Application: <name> (<team id>)" — in the keychain
-#   LM_NOTARY_APPLE_ID, LM_NOTARY_TEAM_ID, LM_NOTARY_PASSWORD (an app-specific password)
+#   LM_NOTARY_PROFILE  a notarytool keychain profile (xcrun notarytool store-credentials), on a Mac;
+#   or LM_NOTARY_APPLE_ID, LM_NOTARY_TEAM_ID, LM_NOTARY_PASSWORD (an app-specific password), in CI
 # Without them the bundle is ad-hoc signed, which runs locally but warns on other Macs.
 set -euo pipefail
 
@@ -250,20 +251,26 @@ if [[ -n "${LM_SIGN_IDENTITY:-}" ]]; then
   ent=()
   if [[ "$tier" == "pro" ]]; then
     ent=(--entitlements "$root/packaging/lm/pro.entitlements")
-    codesign --force --options runtime --timestamp "${ent[@]}" --sign "$LM_SIGN_IDENTITY" "$app/Contents/MacOS/lm-dictate"
+    codesign --force --options runtime --timestamp ${ent[@]+"${ent[@]}"} --sign "$LM_SIGN_IDENTITY" "$app/Contents/MacOS/lm-dictate"
   fi
-  codesign --force --options runtime --timestamp "${ent[@]}" --sign "$LM_SIGN_IDENTITY" "$app"
+  codesign --force --options runtime --timestamp ${ent[@]+"${ent[@]}"} --sign "$LM_SIGN_IDENTITY" "$app"
   codesign --verify --strict --verbose=2 "$app"
   # The hardened runtime (WP5.7), which notarization requires: the signature must carry it.
   if ! codesign --display --verbose=2 "$app" 2>&1 | grep -q 'flags=.*runtime'; then
     echo "bundle-macos: $app is signed without the hardened runtime" >&2
     exit 1
   fi
-  if [[ -n "${LM_NOTARY_APPLE_ID:-}" ]]; then
+  if [[ -n "${LM_NOTARY_PROFILE:-}" ]]; then
+    notary=(--keychain-profile "$LM_NOTARY_PROFILE")
+  elif [[ -n "${LM_NOTARY_APPLE_ID:-}" ]]; then
+    notary=(--apple-id "$LM_NOTARY_APPLE_ID" --team-id "$LM_NOTARY_TEAM_ID" --password "$LM_NOTARY_PASSWORD")
+  else
+    notary=()
+  fi
+  if (( ${#notary[@]} )); then
     zip="$out/${brand}-notarize.zip"
     ditto -c -k --keepParent "$app" "$zip"
-    xcrun notarytool submit "$zip" --apple-id "$LM_NOTARY_APPLE_ID" --team-id "$LM_NOTARY_TEAM_ID" \
-      --password "$LM_NOTARY_PASSWORD" --wait
+    xcrun notarytool submit "$zip" "${notary[@]}" --wait
     xcrun stapler staple "$app"
     xcrun stapler validate "$app"
     spctl --assess --type execute --verbose "$app"

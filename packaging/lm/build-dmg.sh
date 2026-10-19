@@ -8,7 +8,8 @@
 # The app is built (and, with credentials, signed, notarized and stapled) by bundle-macos.sh.
 # With the same environment as there (docs/lm/signing.md), the .dmg is then signed, notarized,
 # stapled, and checked with `stapler validate` and `spctl`:
-#   LM_SIGN_IDENTITY, and LM_NOTARY_APPLE_ID, LM_NOTARY_TEAM_ID, LM_NOTARY_PASSWORD
+#   LM_SIGN_IDENTITY, and LM_NOTARY_PROFILE (a notarytool keychain profile) or
+#   LM_NOTARY_APPLE_ID, LM_NOTARY_TEAM_ID, LM_NOTARY_PASSWORD
 # Without them the .dmg is unsigned (macOS warns when an app from it is first opened elsewhere).
 #
 # Download host (an owner decision: spec › WP5.7, "the China-reachable download host"):
@@ -55,15 +56,21 @@ echo "build-dmg: $dmg"
 if [[ -n "${LM_SIGN_IDENTITY:-}" ]]; then
   codesign --force --timestamp --sign "$LM_SIGN_IDENTITY" "$dmg"
   codesign --verify --strict --verbose=2 "$dmg"
-  if [[ -n "${LM_NOTARY_APPLE_ID:-}" ]]; then
-    xcrun notarytool submit "$dmg" --apple-id "$LM_NOTARY_APPLE_ID" --team-id "$LM_NOTARY_TEAM_ID" \
-      --password "$LM_NOTARY_PASSWORD" --wait
+  if [[ -n "${LM_NOTARY_PROFILE:-}" ]]; then
+    notary=(--keychain-profile "$LM_NOTARY_PROFILE")
+  elif [[ -n "${LM_NOTARY_APPLE_ID:-}" ]]; then
+    notary=(--apple-id "$LM_NOTARY_APPLE_ID" --team-id "$LM_NOTARY_TEAM_ID" --password "$LM_NOTARY_PASSWORD")
+  else
+    notary=()
+  fi
+  if (( ${#notary[@]} )); then
+    xcrun notarytool submit "$dmg" "${notary[@]}" --wait
     xcrun stapler staple "$dmg"
     # Gate 5: "The .dmg passes xcrun stapler validate and an spctl assessment."
     xcrun stapler validate "$dmg"
     spctl --assess --type open --context context:primary-signature --verbose=2 "$dmg"
   else
-    echo "build-dmg: signed but not notarized (no LM_NOTARY_APPLE_ID)" >&2
+    echo "build-dmg: signed but not notarized (no LM_NOTARY_PROFILE or LM_NOTARY_APPLE_ID)" >&2
   fi
 else
   echo "build-dmg: no LM_SIGN_IDENTITY; the .dmg is unsigned" >&2

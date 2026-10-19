@@ -124,7 +124,9 @@ mod tests {
         assert_eq!(resources_dir(win, Os::Windows), Some(PathBuf::from("C:/Program Files/NimbleMap/Resources")));
     }
 
+    /// `/Users/me` is only absolute off Windows, where the rule refuses it as it should.
     #[test]
+    #[cfg_attr(windows, ignore = "Unix paths are not absolute on Windows")]
     fn macos_folders_are_under_library() {
         let e = env(&[("HOME", "/Users/me")]);
         assert_eq!(user_dir(Folder::Support, Os::MacOs, &e), Some(PathBuf::from("/Users/me/Library/Application Support/LayeredMap")));
