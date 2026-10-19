@@ -1,0 +1,184 @@
+English	Nederlands	note
+Layer	Kaartlaag	QGIS term; in running text often shortened to "laag"
+Layers (panel)	Lagen	QGIS panel name "Lagen"
+Basemap	Achtergrondkaart	QGIS/PDOK usage
+Satellite	Satelliet	
+Offline	Offline	
+Light	Licht	basemap style
+Dark	Donker	basemap style
+Auto	Automatisch	
+Background strength	Sterkte achtergrond	
+Attribute table	Attributentabel	QGIS term
+Table	Tabel	
+Field	Veld	QGIS term
+Feature	Object	QGIS nl uses "object" for feature
+Record	Record	QGIS uses "record" for a table row; everyday: "rij"
+Point	Punt	
+Line	Lijn	
+Area (polygon)	Vlak	everyday word; QGIS geometry type is "Polygoon"
+Raster	Raster	QGIS term
+Grid	Rooster	everyday word for a data grid; QGIS also uses "raster"/"grid"
+Cell	Cel	QGIS also "pixel"
+Vector data	Vectordata	QGIS: "vectorlaag"
+Coordinate system (CRS)	Coördinatenstelsel (CRS)	everyday word; QGIS: "Coördinaten ReferentieSysteem (CRS)"
+Projection	Projectie	
+Legend	Legenda	
+Scale bar	Schaalbalk	QGIS term
+Title	Titel	
+Credits	Bronvermelding	
+Filter	Filter	
++ Filter	+ Filter	
+Filtered:	Gefilterd:	
+Clear	Wissen	
+Apply	Toepassen	
+Style	Stijl	everyday word; QGIS calls it "Symbologie"
+Style…	Stijl…	
+Colour by value	Kleuren naar waarde	
+Color by a value	Kleuren naar een waarde	
+Color	Kleur	
+Palette	Palet	
+Range	Waardebereik	kept distinct from Extent ("Bereik")
+Label	Label	
+Labels	Labels	
+Join	Koppeling	QGIS: "Koppelingen" (joins)
+Unjoin	Koppeling verwijderen	
+Show joined fields	Gekoppelde velden tonen	
+joined · 172 of 177 matched	gekoppeld · 172 van 177 gevonden	
+Buffer	Buffer	QGIS term; NimbleMap's label is the phrase below
+Show an area within a distance	Gebied binnen een afstand tonen	NimbleMap's everyday name for a buffer
+Show an area within a distance of each	Gebied binnen een afstand van elk tonen	
+Clip	Clippen	QGIS term; everyday: "bijsnijden"
+Keep the part of [layer] inside [other]	Het deel van [laag] binnen [andere] behouden	
+Overview	Overzicht	
+Details	Details	
+Card	Infokaart	"kaart" alone would clash with the map
+Examples	Voorbeelden	
+Open	Openen	
+Open file…	Bestand openen…	
+Share	Delen	
+Map image…	Kaartafbeelding…	
+Data…	Gegevens…	
+Export	Exporteren	
+Undo	Ongedaan maken	
+Search places or your data	Zoek plaatsen of je gegevens	
+Zoom in	Inzoomen	
+Zoom out	Uitzoomen	
+Zoom to layer	Zoomen naar laag	QGIS term
+Zoom to All Data	Zoomen naar alle gegevens	
+Rename	Naam wijzigen	
+Remove from map	Van kaart verwijderen	
+Time slider	Tijdbalk	everyday word; QGIS: "Tijdbeheer"
+Time step	Tijdstap	
+Play	Afspelen	
+Previous step (←)	Vorige stap (←)	
+Next step (→)	Volgende stap (→)	
+No data	Geen gegevens	QGIS: "Geen data"/"NoData"
+No value	Geen waarde	
+This cell has no data.	Deze cel heeft geen gegevens.	
+Median	Mediaan	
+Rank	Rang	
+Selected	Geselecteerd	
+Keep	Behouden	
+Discard	Verwerpen	
+Ask	Vragen	
+Ask box	Vraagvak	
+Ask about your layers	Vraag iets over je lagen	
+Pro	Pro	
+Free	Gratis	
+Help	Help	
+Glossary	Woordenlijst	
+Download	Downloaden	
+Home	Start	
+Insight line	Inzichtregel	
+Assumption	Aanname	
+Assumptions	Aannames	
+Change	Wijzigen	
+Recipe	Recept	
+Variable	Variabele	
+Variable shown	Getoonde variabele	
+Level shown	Getoond niveau	
+Resolution (cell size)	Resolutie (celgrootte)	
+Extent	Bereik	QGIS term
+Coordinate system	Coördinatenstelsel	
+Format	Formaat	
+Fields	Velden	
+Value	Waarde	field type
+Values	Waarden	
+Category	Categorie	
+Name	Naam	
+Date	Datum	
+View data	Gegevens bekijken	
+View in table	In tabel bekijken	
+Find in storms	Zoeken in storms	layer name stays as in the data
+Find in walled cities 1866	Zoeken in walled cities 1866	layer name stays as in the data
+Your data	Jouw gegevens	
+4 objects here	4 objecten hier	
+4,999 lines	4.999 lijnen	
+1,251 points	1.251 punten	
+4,999 lines · storm tracks.gpkg	4.999 lijnen · storm tracks.gpkg	
+1,789 areas · walled cities 1866.geojson	1.789 vlakken · walled cities 1866.geojson	
+1,789 areas, highest first	1.789 vlakken, hoogste eerst	
+Haiyan · storms	Haiyan · storms	data values, not translated
+higher than 99% of 4,547 storms with values	hoger dan 99% van 4.547 stormen met waarden	
+higher than 99% of 1,789 areas	hoger dan 99% van 1.789 vlakken	
+lower than 58% of this layer’s cells (estimated from a sample)	lager dan 58% van de cellen van deze laag (geschat op basis van een steekproef)	
+tied 2nd highest of 228 filtered	gedeeld 2e hoogste van 228 gefilterde	
+Show storms where strength is any of Category 5	Toon storms waar strength een van Category 5 is	data values stay English
+Show areas where type is any of Provincial Capital	Toon vlakken waar type een van Provincial Capital is	data values stay English
+228 match	228 gevonden	
+19 match	19 gevonden	
+Showing 228 of 4,999	228 van 4.999 getoond	
+By basin	Per bekken	
+Groups	Groepen	
+Smooth	Vloeiend	
+Heat	Hitte	palette name
+Compare	Vergelijken	
+Compare by	Vergelijken op	
+Compare with other [layer]	Vergelijken met andere [laag]	
+Compare with other walled cities 1866	Vergelijken met andere walled cities 1866	layer name stays as in the data
+Compare on the map first	Eerst op de kaart vergelijken	
+Back	Terug	
+Measure length	Lengte meten	
+Show only values above…	Alleen waarden boven… tonen	
+Change colors and range	Kleuren en waardebereik wijzigen	
+Show where values are like this	Tonen waar waarden hierop lijken	
+Size	Formaat	export sheet: image size; Style tab "Size" = Grootte
+Size (symbol)	Grootte	Style tab
+Slide 16:9	Dia 16:9	
+Report A4	Rapport A4	
+Square	Vierkant	
+Show	Tonen	
+Fit to data	Passend op gegevens	
+Current view	Huidige weergave	
+North arrow	Noordpijl	QGIS term
+Lat/lon labels	Lengte/breedte-labels	
+Grid lines	Rasterlijnen	
+Caption	Bijschrift	
+Save…	Opslaan…	
+Save	Opslaan	
+Opacity	Dekking	QGIS term
+Outline	Omtrek	
+Width	Breedte	
+Typhoons and hurricanes	Tyfoons en orkanen	example name
+Heatwaves, summer 2023	Hittegolven, zomer 2023	example name
+Walled cities of China, 1866	Ommuurde steden in China, 1866	example name
+World basics	Wereld: basis	example name
+Heat-wave intensity (°C)	Hittegolfintensiteit (°C)	
+Heat-wave intensity (°C), 16 Jul 2023	Hittegolfintensiteit (°C), 16 jul 2023	
+Time: 1 Jun 2023 to 31 Aug 2023 (92 steps)	Tijd: 1 jun 2023 t/m 31 aug 2023 (92 stappen)	
+46 of 92	46 van 92	
+16 Jul 2023	16 jul 2023	
+Treated as measured values (averaged, not summed)	Behandeld als meetwaarden (gemiddeld, niet opgeteld)	
+If these came from a Chinese map app (Amap, Tencent or Baidu), they may sit a few hundred meters off.	Als deze uit een Chinese kaartapp komen (Amap, Tencent of Baidu), kunnen ze een paar honderd meter verschoven liggen.	
+Located using longitude and latitude as GPS coordinates (WGS 84)	Gelokaliseerd met lengte- en breedtegraad als GPS-coördinaten (WGS 84)	
+Amap/Tencent coordinates (GCJ-02): convert	Amap/Tencent-coördinaten (GCJ-02): omzetten	
+GPS coordinates (WGS 84): keep where they are	GPS-coördinaten (WGS 84): laten waar ze zijn	
+Drop to add to the map	Loslaten om aan de kaart toe te voegen	
+Metric Units	Metrische eenheden	
+Imperial Units	Imperiale eenheden	
+Work Offline	Offline werken	
+Working offline: online backgrounds are off	Offline: online achtergronden staan uit	
+area · 23.4 km²	oppervlakte · 23,4 km²	area fact on a card
+File (menu)	Archief	macOS Dutch name of the File menu
+Open Example	Voorbeeld openen	File menu item
+View (menu)	Weergave	macOS Dutch name of the View menu
