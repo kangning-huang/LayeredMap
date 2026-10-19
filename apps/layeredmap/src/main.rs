@@ -325,7 +325,8 @@ impl eframe::App for App {
 /// `ask TEXT` sends a request to Pro's Ask box (waits 15 s); `keep-ask` keeps its plan;
 /// `card ID [FIELD]` runs a card's display action (`filter strength`, `style_by_value`, …) on the
 /// selected layer (`card apply_filter` presses the filter's Apply); `time N` shows the n-th time step;
-/// `export` or `export-image` opens the map image sheet; `package` opens the map package dialog.
+/// `export` or `export-image` opens the map image sheet; `package` opens the map package dialog;
+/// `theme light|dark|system` sets the appearance (for screenshots; tour runs never save prefs).
 #[derive(Clone, Debug, PartialEq)]
 enum Step {
     Fly(f64, f64, f64),
@@ -384,6 +385,12 @@ impl Step {
             "export-image" => Step::Other(Command::ExportMapImage),
             "package" => Step::Other(Command::ExportPackage),
             "redo" => Step::Other(Command::Redo),
+            "theme" => Step::Other(Command::SetTheme(match rest.trim() {
+                "light" => ThemePref::Light,
+                "dark" => ThemePref::Dark,
+                "system" => ThemePref::System,
+                _ => return None,
+            })),
             _ => match nums(s).as_slice() {
                 [lon, lat, z] => Step::Fly(*lon, *lat, *z),
                 _ => return None,

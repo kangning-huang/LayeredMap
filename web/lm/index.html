@@ -60,9 +60,21 @@
       </div>
       <p class="coords" style="margin-top:28px">Free · macOS · English, with Chinese place names</p>
     </div>
-    <div class="hero-shot">
-      <figure class="frame"><img src="img/typhoons-card.jpg" alt="NimbleMap with 4,999 typhoon tracks over Asia and the Pacific; Typhoon Haiyan is selected and its card says its top wind of 170 knots is higher than 99% of 4,547 storms." width="1600" height="996"></figure>
-      <figure class="frame"><img src="img/heatwave-slider.jpg" alt="The 2023 heatwave example on 16 July, with the time slider at the bottom of the map." width="1600" height="996" loading="lazy"></figure>
+    <div class="hero-shot showcase" data-rotate="3000">
+      <figure class="frame stage">
+        <img class="slide is-on" src="img/points-earthquakes.jpg" alt="NimbleMap showing 14,537 big earthquakes since 1900 as points coloured by magnitude around the Pacific; the 2011 Tohoku earthquake is selected and its card says its magnitude of 9.1 is higher than 99% of them." width="1600" height="996">
+        <img class="slide" src="img/typhoons-card.jpg" alt="NimbleMap with 4,999 typhoon tracks over Asia and the Pacific; Typhoon Haiyan is selected and its card says its top wind of 170 knots is higher than 99% of 4,547 storms." width="1600" height="996" loading="lazy" aria-hidden="true">
+        <img class="slide" src="img/areas-countries.jpg" alt="NimbleMap showing the world's countries coloured by population; India is selected and its card says its population is the 2nd highest of 177 countries." width="1600" height="996" loading="lazy" aria-hidden="true">
+        <img class="slide" src="img/heatwave-slider.jpg" alt="The 2023 heatwave example on 16 July, with the time slider at the bottom of the map." width="1600" height="996" loading="lazy" aria-hidden="true">
+      </figure>
+      <div class="kinds" role="group" aria-label="Kinds of map data">
+        <button type="button" class="kind" data-i="0" data-caption="Big earthquakes since 1900, coloured by magnitude" aria-pressed="true">Points</button>
+        <button type="button" class="kind" data-i="1" data-caption="Typhoon and hurricane tracks since 1980" aria-pressed="false">Lines</button>
+        <button type="button" class="kind" data-i="2" data-caption="Countries coloured by population" aria-pressed="false">Areas</button>
+        <button type="button" class="kind" data-i="3" data-caption="Daily heatwave grids, summer 2023" aria-pressed="false">Grids</button>
+        <button type="button" class="pause" aria-label="Pause the slideshow" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><rect class="bars" x="4" y="3" width="2.6" height="10" rx="1"/><rect class="bars" x="9.4" y="3" width="2.6" height="10" rx="1"/><path class="play" d="M5 3.2v9.6a.6.6 0 0 0 .9.5l7.4-4.8a.6.6 0 0 0 0-1L5.9 2.7a.6.6 0 0 0-.9.5z"/></svg></button>
+      </div>
+      <p class="kind-caption">Big earthquakes since 1900, coloured by magnitude</p>
     </div>
   </div>
 </section>

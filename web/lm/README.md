@@ -93,18 +93,28 @@ local file makes no network request, so the network gate is not involved.
 
 ## Screenshots: sources and licences
 
-All screenshots are real captures of the NimbleMap window (dark appearance) from this branch,
-taken 2026-10-18 with the app's `--tour` script steps (`apps/layeredmap/src/main.rs`; `card`,
-`time` and `export` were added for these pages) and `screencapture -l` on the app's window only,
-then scaled to 1600 px and saved as JPEG. `pro-ask.jpg` is an earlier capture of the Pro test
-build with the test build's cost line removed.
+All screenshots are real captures of the NimbleMap window from this branch, taken with the app's
+`--tour` script steps (`apps/layeredmap/src/main.rs`; `card`, `time` and `export` were added for
+these pages, `theme` on 2026-10-19) and `screencapture -l` on the app's window only, then scaled to
+1600 px and saved as JPEG.
+
+- **Light appearance, retaken 2026-10-19** (`theme light`, the Light basemap except the satellite
+  shots `walls-satellite.jpg` and `walls-region.jpg`): every image except the two Pro shots below.
+  Two were added for the landing page's rotating hero: `points-earthquakes.jpg` (the earthquakes
+  example coloured by magnitude, `card style_by_value magnitude`, with the 2011 Tohoku earthquake
+  selected) and `areas-countries.jpg` (`countries.geojson` coloured by `pop_est`, India selected).
+  The hero's Lines and Grids slides reuse `typhoons-card.jpg` and `heatwave-slider.jpg`.
+- **Still dark, not retaken:** `pro-ask.jpg` and `typhoons-pro.jpg` need the paid Ask step. They
+  date from 2026-10-18; `pro-ask.jpg` is an earlier capture of the Pro test build with the test
+  build's cost line removed. Retake them in light when the owner approves an Ask run.
 
 Map content in the screenshots, and the credit each needs:
 
 | Source | Where | Credit / licence |
 |---|---|---|
 | OpenStreetMap, via Protomaps basemap tiles | Light, dark and satellite labels | © OpenStreetMap contributors, ODbL; Protomaps |
-| Natural Earth | Offline outline, borders | Public domain |
+| Natural Earth | Offline outline, borders; countries (`areas-countries.jpg`) | Public domain |
+| USGS earthquake catalogue | Earthquakes (`points-earthquakes.jpg`) | Public domain (U.S. Geological Survey) |
 | NASA Blue Marble Next Generation via NASA GIBS | Satellite basemap (walled cities) | NASA Earth Observatory, GIBS; not copyrighted, credit NASA, no endorsement implied |
 | NOAA NCEI IBTrACS v04r01 | Typhoon tracks | NOAA/WMO open access; cite Knapp et al. 2010 and Gahtan et al. 2024 (WMO Resolution 40 for commercial use is the owner's call) |
 | Copernicus GDO (JRC) warm spell intensity, ERA5, 2023 | Heatwave grids | CC BY 4.0, © European Union 1995–2026 |
