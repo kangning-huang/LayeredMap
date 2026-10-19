@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NimbleMap: app de mapas grátis para Mac (Shapefile, GeoJSON, CSV, GeoTIFF)</title>
+<meta name="description" content="O NimbleMap é um app de mapas gratuito para Mac, para quem adora mapas mas nunca usou SIG. Clique duas vezes num Shapefile, GeoJSON, CSV ou GeoTIFF para vê-lo no mapa, clique em qualquer coisa para ver como ela se compara e exporte um mapa pronto.">
+<link rel="canonical" href="index.html">
+<link rel="alternate" hreflang="en" href="../index.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/index.html">
+<link rel="alternate" hreflang="de" href="../de/index.html">
+<link rel="alternate" hreflang="es" href="../es/index.html">
+<link rel="alternate" hreflang="fr" href="../fr/index.html">
+<link rel="alternate" hreflang="it" href="../it/index.html">
+<link rel="alternate" hreflang="nl" href="../nl/index.html">
+<link rel="alternate" hreflang="pt-BR" href="index.html">
+<link rel="alternate" hreflang="ru" href="../ru/index.html">
+<link rel="alternate" hreflang="ja" href="../ja/index.html">
+<link rel="alternate" hreflang="ko" href="../ko/index.html">
+<link rel="alternate" hreflang="x-default" href="../index.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="NimbleMap">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:title" content="NimbleMap: app de mapas grátis para Mac (Shapefile, GeoJSON, CSV, GeoTIFF)">
+<meta property="og:description" content="O NimbleMap é um app de mapas gratuito para Mac, para quem adora mapas mas nunca usou SIG. Clique duas vezes num Shapefile, GeoJSON, CSV ou GeoTIFF para vê-lo no mapa, clique em qualquer coisa para ver como ela se compara e exporte um mapa pronto.">
+<meta property="og:url" content="index.html">
+<meta property="og:image" content="../img/typhoons-card.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/site.css">
+<script src="../assets/site.js"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "NimbleMap",
+  "inLanguage": "pt-BR",
+  "operatingSystem": "macOS 13 ou posterior (Apple silicon)",
+  "applicationCategory": "UtilitiesApplication",
+  "description": "O NimbleMap é um app de mapas gratuito para Mac, para quem adora mapas mas nunca usou SIG. Clique duas vezes num Shapefile, GeoJSON, CSV ou GeoTIFF para vê-lo no mapa, clique em qualquer coisa para ver como ela se compara e exporte um mapa pronto.",
+  "isAccessibleForFree": true,
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "BRL" }
+}
+</script>
+</head>
+<body>
+<header class="site-head">
+  <div class="wrap">
+    <a class="brand" href="index.html"><img src="../assets/logo.svg" alt="" width="30" height="30">NimbleMap</a>
+    <nav class="nav" aria-label="Navegação do site">
+      <a href="index.html" aria-current="page">Início</a>
+      <a href="help.html">Ajuda</a>
+      <a href="glossary.html">Glossário</a>
+      <a href="download.html">Baixar</a>
+      <details class="lang-menu">
+        <summary aria-label="Idioma: Português (Brasil)" title="Idioma"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.6 3.9 5.6 3.9 9s-1.3 6.4-3.9 9c-2.6-2.6-3.9-5.6-3.9-9S9.4 5.6 12 3z"/></svg><span>PT</span></summary>
+        <ul>
+          <li><a href="../index.html" hreflang="en" lang="en">English</a></li>
+          <li><a href="../zh/index.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li>
+          <li><a href="../de/index.html" hreflang="de" lang="de">Deutsch</a></li>
+          <li><a href="../es/index.html" hreflang="es" lang="es">Español</a></li>
+          <li><a href="../fr/index.html" hreflang="fr" lang="fr">Français</a></li>
+          <li><a href="../it/index.html" hreflang="it" lang="it">Italiano</a></li>
+          <li><a href="../nl/index.html" hreflang="nl" lang="nl">Nederlands</a></li>
+          <li><a href="index.html" hreflang="pt-BR" lang="pt-BR" aria-current="true">Português (Brasil)</a></li>
+          <li><a href="../ru/index.html" hreflang="ru" lang="ru">Русский</a></li>
+          <li><a href="../ja/index.html" hreflang="ja" lang="ja">日本語</a></li>
+          <li><a href="../ko/index.html" hreflang="ko" lang="ko">한국어</a></li>
+        </ul>
+      </details>
+      <button class="theme-btn" type="button" aria-label="Alternar tema"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></svg></button>
+    </nav>
+  </div>
+</header>
+
+<main>
+<section class="hero contours">
+  <div class="wrap hero-grid">
+    <div>
+      <p class="eyebrow">Um app de mapas para curiosos</p>
+      <h1>Abra um arquivo de mapa. Veja o que ele conta.</h1>
+      <p class="lede">O NimbleMap é para quem adora mapas mas nunca usou SIG. Clique duas vezes num arquivo de lugares, trajetos ou dados climáticos, e ele aparece no mapa. Clique num lugar ou numa feição para ver o que o torna interessante: a tempestade mais forte, a maior cidade murada, a semana mais quente.</p>
+      <div class="actions">
+        <a class="btn btn-primary" href="download.html">Baixar para Mac</a>
+        <a class="btn btn-quiet" href="help.html">Experimentar um tutorial</a>
+      </div>
+      <p class="coords" style="margin-top:28px">Grátis · macOS · em inglês, com nomes de lugares em chinês</p>
+    </div>
+    <div class="hero-shot showcase" data-rotate="3000">
+      <figure class="frame stage">
+        <img class="slide is-on" src="../img/points-earthquakes.jpg" alt="O NimbleMap mostrando 14.537 grandes terremotos desde 1900 como pontos coloridos por magnitude em volta do Pacífico; o terremoto de Tohoku, de 2011, está selecionado e seu cartão diz que a magnitude 9,1 é maior que 99% deles." width="1600" height="996">
+        <img class="slide" src="../img/typhoons-card.jpg" alt="O NimbleMap com 4.999 trajetórias de tufões sobre a Ásia e o Pacífico; o tufão Haiyan está selecionado e seu cartão diz que o vento máximo de 170 nós é maior que 99% de 4.547 tempestades." width="1600" height="996" loading="lazy" aria-hidden="true">
+        <img class="slide" src="../img/areas-countries.jpg" alt="O NimbleMap mostrando os países do mundo coloridos por população; a Índia está selecionada e seu cartão diz que a população dela é a 2ª maior de 177 países." width="1600" height="996" loading="lazy" aria-hidden="true">
+        <img class="slide" src="../img/heatwave-slider.jpg" alt="O exemplo da onda de calor de 2023 em 16 de julho, com o controle de tempo na parte de baixo do mapa." width="1600" height="996" loading="lazy" aria-hidden="true">
+      </figure>
+      <div class="kinds" role="group" aria-label="Tipos de dados de mapa">
+        <button type="button" class="kind" data-i="0" data-caption="Grandes terremotos desde 1900, coloridos por magnitude" aria-pressed="true">Pontos</button>
+        <button type="button" class="kind" data-i="1" data-caption="Trajetórias de tufões e furacões desde 1980" aria-pressed="false">Linhas</button>
+        <button type="button" class="kind" data-i="2" data-caption="Países coloridos por população" aria-pressed="false">Áreas</button>
+        <button type="button" class="kind" data-i="3" data-caption="Grades diárias de ondas de calor, verão de 2023" aria-pressed="false">Grades</button>
+        <button type="button" class="pause" aria-label="Pausar a apresentação" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><rect class="bars" x="4" y="3" width="2.6" height="10" rx="1"/><rect class="bars" x="9.4" y="3" width="2.6" height="10" rx="1"/><path class="play" d="M5 3.2v9.6a.6.6 0 0 0 .9.5l7.4-4.8a.6.6 0 0 0 0-1L5.9 2.7a.6.6 0 0 0-.9.5z"/></svg></button>
+      </div>
+      <p class="kind-caption">Grandes terremotos desde 1900, coloridos por magnitude</p>
+    </div>
+  </div>
+</section>
+
+<section id="why">
+  <div class="wrap">
+    <div class="why-grid">
+    <div class="section-head">
+      <p class="eyebrow">Por que é diferente</p>
+      <h2>E se o SIG fosse tão fácil de usar quanto um app da Apple?</h2>
+      <p class="lede">O QGIS e o ArcGIS são ferramentas poderosas para trabalhar com dados espaciais. Mas, para quem os abre pela primeira vez, até fazer um mapa simples pode ser difícil. Centenas de ferramentas e configurações ficam entre a pessoa e o mapa. Como seria um SIG projetado por quem criou o iPhone? Quais ferramentas essas pessoas manteriam, quais esconderiam e quais tirariam de vez? O NimbleMap explora essa ideia. Ele leva as partes úteis do SIG para um app de mapas que qualquer pessoa curiosa sobre lugares consegue usar.</p>
+    </div>
+    <figure class="sketch" aria-label="Esboço: a janela de um SIG típico, cheia de barras de ferramentas e com uma caixa de diálogo, ao lado do NimbleMap mostrando um mapa e um cartão">
+  <svg viewBox="0 0 600 272" role="img" aria-labelledby="sk-cap">
+    <g><rect x="6" y="6" width="282" height="232" rx="10" class="sk-win"/><path d="M6 16a10 10 0 0 1 10-10h262a10 10 0 0 1 10 10v12H6z" class="sk-bar"/><circle cx="19" cy="17" r="3.2" class="sk-dot"/><circle cx="29" cy="17" r="3.2" class="sk-dot"/><circle cx="39" cy="17" r="3.2" class="sk-dot"/><rect x="118" y="14.5" width="58" height="5" rx="2.5" class="sk-line"/><rect x="16" y="34" width="16" height="4" rx="2" class="sk-line"/><rect x="38" y="34" width="14" height="4" rx="2" class="sk-line"/><rect x="58" y="34" width="18" height="4" rx="2" class="sk-line"/><rect x="82" y="34" width="22" height="4" rx="2" class="sk-line"/><rect x="110" y="34" width="16" height="4" rx="2" class="sk-line"/><rect x="132" y="34" width="20" height="4" rx="2" class="sk-line"/><rect x="158" y="34" width="24" height="4" rx="2" class="sk-line"/><rect x="188" y="34" width="14" height="4" rx="2" class="sk-line"/><rect x="208" y="34" width="18" height="4" rx="2" class="sk-line"/><circle cx="19.5" cy="48.5" r="3.8" class="sk-tool"/><rect x="28" y="44" width="9" height="9" rx="2" class="sk-tool"/><rect x="41" y="44" width="9" height="9" rx="2" class="sk-tool"/><rect x="54" y="44" width="9" height="9" rx="2" class="sk-tool"/><circle cx="71.5" cy="48.5" r="3.8" class="sk-tool"/><path d="M81 44v9" class="sk-sep"/><rect x="85" y="44" width="9" height="9" rx="2" class="sk-tool"/><rect x="98" y="44" width="9" height="9" rx="2" class="sk-tool"/><circle cx="115.5" cy="48.5" r="3.8" class="sk-tool"/><rect x="124" y="44" width="9" height="9" rx="2" class="sk-tool"/><rect x="137" y="44" width="9" height="9" rx="2" class="sk-tool"/><path d="M151 44v9" class="sk-sep"/><circle cx="159.5" cy="48.5" r="3.8" class="sk-tool"/><rect x="168" y="44" width="9" height="9" rx="2" class="sk-tool"/><rect x="181" y="44" width="9" height="9" rx="2" class="sk-tool"/><rect x="194" y="44" width="9" height="9" rx="2" class="sk-tool"/><circle cx="211.5" cy="48.5" r="3.8" class="sk-tool"/><rect x="15" y="57" width="9" height="9" rx="2" class="sk-tool"/><rect x="28" y="57" width="9" height="9" rx="2" class="sk-tool"/><rect x="41" y="57" width="9" height="9" rx="2" class="sk-tool"/><circle cx="58.5" cy="61.5" r="3.8" class="sk-tool"/><rect x="67" y="57" width="9" height="9" rx="2" class="sk-tool"/><path d="M81 57v9" class="sk-sep"/><rect x="85" y="57" width="9" height="9" rx="2" class="sk-tool"/><circle cx="102.5" cy="61.5" r="3.8" class="sk-tool"/><rect x="111" y="57" width="9" height="9" rx="2" class="sk-tool"/><rect x="124" y="57" width="9" height="9" rx="2" class="sk-tool"/><rect x="137" y="57" width="9" height="9" rx="2" class="sk-tool"/><path d="M151 57v9" class="sk-sep"/><rect x="155" y="57" width="9" height="9" rx="2" class="sk-tool"/><rect x="168" y="57" width="9" height="9" rx="2" class="sk-tool"/><rect x="181" y="57" width="9" height="9" rx="2" class="sk-tool"/><circle cx="198.5" cy="61.5" r="3.8" class="sk-tool"/><rect x="207" y="57" width="9" height="9" rx="2" class="sk-tool"/><rect x="15" y="70" width="9" height="9" rx="2" class="sk-tool"/><rect x="28" y="70" width="9" height="9" rx="2" class="sk-tool"/><circle cx="45.5" cy="74.5" r="3.8" class="sk-tool"/><rect x="54" y="70" width="9" height="9" rx="2" class="sk-tool"/><rect x="67" y="70" width="9" height="9" rx="2" class="sk-tool"/><path d="M81 70v9" class="sk-sep"/><circle cx="89.5" cy="74.5" r="3.8" class="sk-tool"/><rect x="98" y="70" width="9" height="9" rx="2" class="sk-tool"/><rect x="111" y="70" width="9" height="9" rx="2" class="sk-tool"/><rect x="124" y="70" width="9" height="9" rx="2" class="sk-tool"/><circle cx="141.5" cy="74.5" r="3.8" class="sk-tool"/><path d="M151 70v9" class="sk-sep"/><rect x="155" y="70" width="9" height="9" rx="2" class="sk-tool"/><rect x="168" y="70" width="9" height="9" rx="2" class="sk-tool"/><circle cx="185.5" cy="74.5" r="3.8" class="sk-tool"/><rect x="194" y="70" width="9" height="9" rx="2" class="sk-tool"/><rect x="207" y="70" width="9" height="9" rx="2" class="sk-tool"/><rect x="14" y="86" width="64" height="128" rx="4" class="sk-panel"/><rect x="20" y="92" width="34" height="4.5" rx="2.2" class="sk-line-strong"/><rect x="20" y="104" width="6" height="6" rx="1.2" class="sk-check"/><rect x="30" y="105" width="38" height="4" rx="2" class="sk-line"/><rect x="25" y="117" width="6" height="6" rx="1.2" class="sk-check"/><rect x="35" y="118" width="25" height="4" rx="2" class="sk-line"/><rect x="30" y="130" width="6" height="6" rx="1.2" class="sk-check"/><rect x="40" y="131" width="28" height="4" rx="2" class="sk-line"/><rect x="20" y="143" width="6" height="6" rx="1.2" class="sk-check"/><rect x="30" y="144" width="30" height="4" rx="2" class="sk-line"/><rect x="25" y="156" width="6" height="6" rx="1.2" class="sk-check"/><rect x="35" y="157" width="33" height="4" rx="2" class="sk-line"/><rect x="30" y="169" width="6" height="6" rx="1.2" class="sk-check"/><rect x="40" y="170" width="20" height="4" rx="2" class="sk-line"/><rect x="20" y="182" width="6" height="6" rx="1.2" class="sk-check"/><rect x="30" y="183" width="38" height="4" rx="2" class="sk-line"/><rect x="25" y="195" width="6" height="6" rx="1.2" class="sk-check"/><rect x="35" y="196" width="25" height="4" rx="2" class="sk-line"/><rect x="84" y="86" width="196" height="128" rx="4" class="sk-empty"/><path d="M182 146v8M178 150h8" class="sk-sep"/><g class="sk-dialog-g"><rect x="114" y="104" width="136" height="94" rx="6" class="sk-dialog"/><path d="M114 110a6 6 0 0 1 6-6h124a6 6 0 0 1 6 6v6H114z" class="sk-bar"/><rect x="122" y="108" width="54" height="4" rx="2" class="sk-line-strong"/><path d="M240 107.5l4 4m0-4l-4 4" class="sk-x"/><rect x="122" y="122" width="120" height="10" rx="2.5" class="sk-field"/><path d="M234 125.5l3 3 3-3" class="sk-x"/><rect x="122" y="137" width="120" height="7" rx="1.5" class="sk-row"/><rect x="126" y="139.5" width="70" height="2.5" rx="1.2" class="sk-line"/><rect x="122" y="146" width="120" height="7" rx="1.5" class="sk-row-sel"/><rect x="126" y="148.5" width="61" height="2.5" rx="1.2" class="sk-line"/><rect x="122" y="155" width="120" height="7" rx="1.5" class="sk-row"/><rect x="126" y="157.5" width="52" height="2.5" rx="1.2" class="sk-line"/><rect x="122" y="164" width="120" height="7" rx="1.5" class="sk-row"/><rect x="126" y="166.5" width="43" height="2.5" rx="1.2" class="sk-line"/><rect x="180" y="181" width="28" height="10" rx="3" class="sk-tool"/><rect x="213" y="181" width="29" height="10" rx="3" class="sk-btn"/></g><rect x="6" y="218" width="282" height="20" class="sk-status"/><path d="M6 218h282" class="sk-sep"/><rect x="14" y="225.5" width="66" height="4" rx="2" class="sk-line"/><rect x="200" y="225.5" width="34" height="4" rx="2" class="sk-line"/><rect x="240" y="224" width="40" height="7" rx="2" class="sk-tool"/></g><g transform="translate(312 0)"><defs><linearGradient id="sk-ramp"><stop offset="0" class="sk-r0"/><stop offset="1" class="sk-r1"/></linearGradient><clipPath id="sk-map"><rect x="6" y="50" width="282" height="188" rx="0"/></clipPath></defs><rect x="6" y="6" width="282" height="232" rx="10" class="sk-win"/><circle cx="19" cy="17" r="3.2" class="sk-dot"/><circle cx="29" cy="17" r="3.2" class="sk-dot"/><circle cx="39" cy="17" r="3.2" class="sk-dot"/><circle cx="18" cy="38" r="5" class="sk-logo"/><rect x="27" y="35.5" width="34" height="5" rx="2.5" class="sk-line-strong"/><rect x="92" y="32" width="96" height="12" rx="6" class="sk-search"/><circle cx="100" cy="38" r="2.4" class="sk-x"/><rect x="198" y="35" width="5" height="6" rx="1.2" class="sk-ic"/><rect x="205" y="36.5" width="10" height="3" rx="1.5" class="sk-line"/><rect x="220" y="35" width="5" height="6" rx="1.2" class="sk-ic"/><rect x="227" y="36.5" width="10" height="3" rx="1.5" class="sk-line"/><rect x="242" y="35" width="5" height="6" rx="1.2" class="sk-ic"/><rect x="249" y="36.5" width="10" height="3" rx="1.5" class="sk-line"/><rect x="264" y="35" width="5" height="6" rx="1.2" class="sk-ic"/><rect x="271" y="36.5" width="10" height="3" rx="1.5" class="sk-line"/><g clip-path="url(#sk-map)"><rect x="6" y="50" width="282" height="188" class="sk-water"/><path d="M70 50v188" class="sk-grid"/><path d="M140 50v188" class="sk-grid"/><path d="M210 50v188" class="sk-grid"/><path d="M6 100h282" class="sk-grid"/><path d="M6 160h282" class="sk-grid"/><path d="M6 220h282" class="sk-grid"/><path d="M6 92c18-6 34 4 52-2s26-24 50-22 34 18 56 16 30-14 52-12 34 8 72 6v160H6z" class="sk-land"/><path d="M60 82c6 26-8 50 6 78s4 52 10 78M118 70c-4 30 14 52 4 80s10 50 2 88M160 86c8 30-6 60 10 86" class="sk-border"/><path d="M6 92c18-6 34 4 52-2s26-24 50-22 34 18 56 16 30-14 52-12 34 8 72 6" class="sk-coast"/><circle cx="30" cy="118" r="2.6" class="sk-v sk-v1"/><circle cx="44" cy="134" r="3.4" class="sk-v sk-v2"/><circle cx="56" cy="112" r="2.4" class="sk-v sk-v1"/><circle cx="74" cy="116" r="5" class="sk-v sk-v3"/><circle cx="92" cy="148" r="3" class="sk-v sk-v2"/><circle cx="108" cy="128" r="2.6" class="sk-v sk-v1"/><circle cx="122" cy="170" r="3.6" class="sk-v sk-v2"/><circle cx="88" cy="188" r="2.4" class="sk-v sk-v1"/><circle cx="52" cy="200" r="3" class="sk-v sk-v2"/><circle cx="136" cy="140" r="2.4" class="sk-v sk-v1"/><circle cx="150" cy="196" r="4.2" class="sk-v sk-v3"/><circle cx="34" cy="170" r="2.4" class="sk-v sk-v1"/><circle cx="70" cy="214" r="2.8" class="sk-v sk-v1"/><circle cx="112" cy="212" r="3.2" class="sk-v sk-v2"/><circle cx="160" cy="160" r="2.4" class="sk-v sk-v1"/><circle cx="74" cy="116" r="9.5" class="sk-halo"/><circle cx="74" cy="116" r="14" class="sk-halo2"/></g><rect x="14" y="206" width="62" height="24" rx="4" class="sk-chip"/><rect x="19" y="211" width="38" height="3" rx="1.5" class="sk-line"/><rect x="19" y="219" width="52" height="5" rx="2" class="sk-ramp"/><path d="M84 226h30M84 223v3M114 223v3" class="sk-scale"/><rect x="160" y="200" width="12" height="12" rx="3" class="sk-chip"/><rect x="160" y="214" width="12" height="12" rx="3" class="sk-chip"/><path d="M163 206h6M166 203v6M163 220h6" class="sk-x"/><rect x="180" y="58" width="102" height="148" rx="7" class="sk-card"/><rect x="189" y="68" width="66" height="5.5" rx="2.7" class="sk-line-strong"/><rect x="189" y="77" width="42" height="5.5" rx="2.7" class="sk-line-strong"/><path d="M271 67l5 5m0-5l-5 5" class="sk-x"/><rect x="189" y="88" width="36" height="3" rx="1.5" class="sk-line"/><path d="M189 96h84" class="sk-sep"/><rect x="189" y="103" width="30" height="3.5" rx="1.7" class="sk-line"/><rect x="224" y="102.5" width="16" height="4.5" rx="2" class="sk-line-strong"/><rect x="189" y="111" width="44" height="3" rx="1.5" class="sk-line"/><path d="M238 110v5" class="sk-tick"/><path d="M240.4 110v3" class="sk-tick"/><path d="M242.8 110v3" class="sk-tick"/><path d="M245.2 110v5" class="sk-tick"/><path d="M247.6 110v3" class="sk-tick"/><path d="M250 110v3" class="sk-tick"/><path d="M252.4 110v5" class="sk-tick"/><path d="M254.8 110v3" class="sk-tick"/><path d="M257.2 110v3" class="sk-tick"/><path d="M259.6 110v5" class="sk-tick"/><path d="M262 110v3" class="sk-tick"/><path d="M264.4 110v3" class="sk-tick"/><path d="M266.8 110v5" class="sk-tick"/><path d="M269.2 110v3" class="sk-tick"/><path d="M271.6 110v3" class="sk-tick"/><circle cx="269.96" cy="112" r="2.6" class="sk-mark"/><rect x="189" y="118" width="32" height="2.5" rx="1.2" class="sk-line"/><rect x="189" y="131" width="34" height="3.5" rx="1.7" class="sk-line"/><rect x="228" y="130.5" width="16" height="4.5" rx="2" class="sk-line-strong"/><rect x="189" y="139" width="44" height="3" rx="1.5" class="sk-line"/><path d="M238 138v5" class="sk-tick"/><path d="M240.4 138v3" class="sk-tick"/><path d="M242.8 138v3" class="sk-tick"/><path d="M245.2 138v5" class="sk-tick"/><path d="M247.6 138v3" class="sk-tick"/><path d="M250 138v3" class="sk-tick"/><path d="M252.4 138v5" class="sk-tick"/><path d="M254.8 138v3" class="sk-tick"/><path d="M257.2 138v3" class="sk-tick"/><path d="M259.6 138v5" class="sk-tick"/><path d="M262 138v3" class="sk-tick"/><path d="M264.4 138v3" class="sk-tick"/><path d="M266.8 138v5" class="sk-tick"/><path d="M269.2 138v3" class="sk-tick"/><path d="M271.6 138v3" class="sk-tick"/><circle cx="255.68" cy="140" r="2.6" class="sk-mark"/><rect x="189" y="146" width="32" height="2.5" rx="1.2" class="sk-line"/><rect x="188" y="156" width="86" height="15" rx="4" class="sk-act"/><circle cx="197" cy="163.5" r="3.6" class="sk-acti"/><rect x="205" y="162" width="50" height="3" rx="1.5" class="sk-line"/><rect x="188" y="175" width="86" height="15" rx="4" class="sk-act"/><path d="M194 186l6-5" class="sk-acti-l"/><rect x="205" y="181" width="40" height="3" rx="1.5" class="sk-line"/><rect x="189" y="196" width="28" height="3" rx="1.5" class="sk-link"/><rect x="222" y="196" width="22" height="3" rx="1.5" class="sk-link"/></g>
+    <text x="147" y="262" class="sk-label">Um SIG típico, 1ª abertura</text>
+    <text x="459" y="262" class="sk-label">NimbleMap, 1º clique</text>
+  </svg>
+  <figcaption id="sk-cap">Esboços, não capturas de tela.</figcaption>
+</figure>
+    </div>
+    <div class="principles">
+      <div><svg class="p-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v9a1.5 1.5 0 0 1-1.5 1.5H10l-4.2 3.6V16H5.5A1.5 1.5 0 0 1 4 14.5z"/><path d="M10.2 8.4a1.9 1.9 0 1 1 2.6 1.8c-.5.2-.8.6-.8 1.1v.4"/><circle cx="12" cy="13.6" r=".6" class="dot"/></svg><h3>Respostas antes das ferramentas</h3><p>A maioria dos programas de SIG começa pelas ferramentas. O NimbleMap começa pelas perguntas. Clique em algo no mapa e ele diz o que é e como se compara com o resto da camada.</p></div>
+      <div><svg class="p-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 20h17"/><path d="M6.5 20v-6M11 20V8M15.5 20v-9M20 20V5"/><path d="M5 9.5l3.5-3 3 2L17 4"/></svg><h3>Números honestos</h3><p>Cada número vem dos seus dados, e não só do que por acaso está visível na tela. Se alguns registros não puderem ser colocados no mapa, o NimbleMap diz quantos e por quê. Seus arquivos originais continuam intactos.</p></div>
+      <div><svg class="p-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg><h3>Experimente à vontade</h3><p>Você pode desfazer cada passo. E cada resultado vem com uma explicação, em palavras simples, de como foi produzido.</p></div>
+    </div>
+    <p class="aside-note">O NimbleMap é um projeto independente, sem vínculo com a Apple, a Esri ou o projeto QGIS.</p>
+  </div>
+</section>
+
+<section id="what">
+  <div class="wrap">
+    <div class="why-grid layers-grid">
+    <div class="section-head">
+      <p class="eyebrow">Como funciona</p>
+      <h2>Camadas, como papel vegetal</h2>
+      <p class="lede">Um mapa no NimbleMap é feito de camadas empilhadas sobre um mapa de fundo, como folhas de papel vegetal. Abra um arquivo e ele vira uma nova camada. Não há assistente de configuração, nem projeto para criar, nem caixa de ferramentas vazia para explorar.</p>
+    </div>
+    <figure class="layer-art">
+  <svg viewBox="0 0 470 312" role="img" aria-label="Quatro folhas empilhadas como papel vegetal: um mapa de fundo e, por cima, áreas, linhas e pontos">
+    <path d="M153.8 53V263" class="ly-guide"/><g transform="matrix(1 0 1.4 1 28 241)"><rect width="230" height="60" rx="5" class="ly-shadow"/></g><g transform="matrix(1 0 1.4 1 24 236)"><rect width="230" height="60" rx="5" class="ly-sheet"/><rect width="230" height="60" rx="5" class="ly-water"/><path d="M0 0h116c-6 9 3 16-3 26s-20 12-17 34H0z" class="ly-land"/><path d="M150 60c5-11 17-13 22-25s16-19 33-21 25 3 25 3v43z" class="ly-land"/><path d="M18 52c14-6 20-16 34-18s22-12 28-24" class="ly-river"/><path d="M58 0v60" class="ly-grid"/><path d="M115 0v60" class="ly-grid"/><path d="M172 0v60" class="ly-grid"/><path d="M0 20h230" class="ly-grid"/><path d="M0 40h230" class="ly-grid"/><rect width="230" height="60" rx="5" class="ly-edge"/></g><circle cx="153.8" cy="263" r="2.2" class="ly-pin"/><path d="M302 266h16" class="ly-lead"/><g transform="translate(324 259)"><svg width="14" height="14" viewBox="0 0 14 14" class="ly-ic"><path d="M1.5 3.5l3.5-1.5 4 1.5 3.5-1.5v8.5L9 12 5 10.5 1.5 12z"/><path d="M5 2v8.5M9 3.5V12"/></svg></g><text x="342" y="270.5" class="ly-label">Mapa de fundo</text><g transform="matrix(1 0 1.4 1 28 171)"><rect width="230" height="60" rx="5" class="ly-shadow"/></g><g transform="matrix(1 0 1.4 1 24 166)"><rect width="230" height="60" rx="5" class="ly-sheet"/><path d="M20 10L70 6L78 30L44 40L18 32Z" class="ly-a ly-a1"/><path d="M70 6L120 10L116 34L78 30Z" class="ly-a ly-a3"/><path d="M44 40L78 30L116 34L112 54L52 56Z" class="ly-a ly-a2"/><path d="M120 10L170 12L176 40L116 34Z" class="ly-a ly-a4"/><path d="M116 34L176 40L168 56L112 54Z" class="ly-a ly-a1"/><path d="M170 12L210 16L212 46L176 40Z" class="ly-a ly-a2"/><path d="M70 6L120 10L116 34L78 30Z" class="ly-hl"/><rect width="230" height="60" rx="5" class="ly-edge"/></g><path d="M302 196h16" class="ly-lead"/><g transform="translate(324 189)"><svg width="14" height="14" viewBox="0 0 14 14" class="ly-ic"><path d="M2 3l6-1.5 4 4-2 6.5-6.5-1z"/></svg></g><text x="342" y="200.5" class="ly-label">Áreas</text><g transform="matrix(1 0 1.4 1 28 101)"><rect width="230" height="60" rx="5" class="ly-shadow"/></g><g transform="matrix(1 0 1.4 1 24 96)"><rect width="230" height="60" rx="5" class="ly-sheet"/><path d="M0 32C40 36 80 50 122 52" class="ly-l ly-l3"/><path d="M28 6C60 16 92 36 132 39S192 44 222 40" class="ly-l ly-l2"/><path d="M8 50C38 46 60 32 92 27S152 14 204 8" class="ly-l ly-l1"/><rect width="230" height="60" rx="5" class="ly-edge"/></g><circle cx="102" cy="146" r="1.7" class="ly-fix"/><circle cx="123.1" cy="142.5" r="1.7" class="ly-fix"/><circle cx="134.4" cy="132" r="1.7" class="ly-fix"/><circle cx="153.8" cy="123" r="1.7" class="ly-fix"/><circle cx="175.4" cy="117" r="1.7" class="ly-fix"/><circle cx="197.7" cy="111.5" r="1.7" class="ly-fix"/><circle cx="219.4" cy="107" r="1.7" class="ly-fix"/><circle cx="239.2" cy="104" r="1.7" class="ly-fix"/><path d="M302 126h16" class="ly-lead"/><g transform="translate(324 119)"><svg width="14" height="14" viewBox="0 0 14 14" class="ly-ic"><path d="M1.5 11.5C4 6 7 9 12.5 2.5"/></svg></g><text x="342" y="130.5" class="ly-label">Linhas</text><g transform="matrix(1 0 1.4 1 28 31)"><rect width="230" height="60" rx="5" class="ly-shadow"/></g><g transform="matrix(1 0 1.4 1 24 26)"><rect width="230" height="60" rx="5" class="ly-sheet"/><rect width="230" height="60" rx="5" class="ly-edge"/></g><circle cx="89.6" cy="60" r="2.4" class="ly-pt ly-pt1"/><circle cx="86.4" cy="42" r="3.2" class="ly-pt ly-pt2"/><circle cx="143.6" cy="70" r="2.2" class="ly-pt ly-pt1"/><circle cx="127.6" cy="50" r="4.2" class="ly-pt ly-pt3"/><circle cx="153.8" cy="53" r="5.2" class="ly-pt ly-pt3"/><circle cx="200.4" cy="72" r="2.6" class="ly-pt ly-pt1"/><circle cx="177.2" cy="44" r="3.4" class="ly-pt ly-pt2"/><circle cx="223.2" cy="64" r="2.4" class="ly-pt ly-pt1"/><circle cx="204.8" cy="38" r="3.8" class="ly-pt ly-pt3"/><circle cx="250.8" cy="58" r="2.8" class="ly-pt ly-pt2"/><circle cx="252" cy="46" r="2.2" class="ly-pt ly-pt1"/><circle cx="299.6" cy="70" r="3" class="ly-pt ly-pt2"/><circle cx="153.8" cy="53" r="9" class="ly-halo"/><path d="M302 56h16" class="ly-lead"/><g transform="translate(324 49)"><svg width="14" height="14" viewBox="0 0 14 14" class="ly-ic"><circle cx="4" cy="9" r="2"/><circle cx="9" cy="4" r="2"/><circle cx="10.5" cy="10.5" r="1.4"/></svg></g><text x="342" y="60.5" class="ly-label">Pontos</text>
+  </svg>
+</figure>
+    </div>
+    <div class="strata">
+      <div><img class="step-shot" src="../img/step-open.jpg" alt="O cartão de boas-vindas do NimbleMap sobre o mapa: Open file (Abrir arquivo), Examples (Exemplos), Browse data library (Explorar biblioteca de dados)." width="800" height="500" loading="lazy"><h3>Abrir</h3><p>Arraste para a janela um CSV com coordenadas, um GeoJSON, um Shapefile, um GeoPackage, um GeoTIFF ou um arquivo climático NetCDF. Se o NimbleMap precisar fazer uma suposição, como quais colunas contêm coordenadas, ele diz o que supôs e deixa você mudar.</p></div>
+      <div><img class="step-shot" src="../img/step-click.jpg" alt="O cartão de um objeto: a magnitude 9,1 do terremoto de Tohoku, de 2011, é maior que 99% de 14.537 terremotos." width="800" height="500" loading="lazy"><h3>Clicar</h3><p>Clique numa cidade, numa tempestade ou numa única célula de uma grade climática. Primeiro o NimbleMap mostra o que é e como se compara com o resto da camada: “a maior de 4.999” ou “menor que 80% das outras”. As ferramentas certas aparecem quando você precisa delas.</p></div>
+      <div><img class="step-shot" src="../img/step-share.jpg" alt="Um mapa exportado das ondas de calor de 2023, com legenda, rótulos de latitude e longitude e créditos." width="800" height="500" loading="lazy"><h3>Compartilhar</h3><p>Pinte o mapa por um valor, filtre os dados e exporte o resultado como imagem. Acrescente título, legenda, barra de escala e créditos. Escolha um tamanho que caiba num slide de apresentação, numa página A4 ou numa postagem quadrada.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="examples">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Exemplos incluídos</p>
+      <h2>Coisas que um app de mapas comum não mostra</h2>
+      <p class="lede">O NimbleMap vem com oito conjuntos de exemplos, a um clique em <span class="ui">Examples</span> (Exemplos). Aqui estão alguns:</p>
+    </div>
+    <div class="examples">
+      <article class="example">
+        <figure class="frame"><img src="../img/typhoons-color.jpg" alt="Trajetórias de tempestades sobre a Ásia e o Pacífico, coloridas por temporada na aba Style (Estilo)." loading="lazy" width="1600" height="996"></figure>
+        <h3>Tufões e furacões</h3>
+        <p>4.999 trajetórias de tempestades desde 1980, em todos os oceanos, do arquivo IBTrACS da NOAA. Encontre o Haiyan, pinte as trajetórias pela velocidade do vento e veja onde ocorrem as tempestades mais fortes.</p>
+        <span class="coords">IBTrACS v04r01 · 1980–2026</span>
+      </article>
+      <article class="example">
+        <figure class="frame"><img src="../img/walls-satellite.jpg" alt="As muralhas de Pequim em 1866 sobre imagens de satélite, com um cartão dizendo que a cidade ocupava 35,3 km², mais que 99% das 1.789 cidades muradas." loading="lazy" width="1600" height="996"></figure>
+        <h3>Cidades muradas da China, 1866</h3>
+        <p>1.789 muralhas de cidades da China imperial tardia, incluindo a capital, sedes de condado e guarnições manchus. Veja onde essas cidades ficavam, desenhadas sobre imagens de satélite.</p>
+        <span class="coords">Xue et al. 2021 · CC BY 4.0</span>
+      </article>
+      <article class="example">
+        <figure class="frame"><img src="../img/heatwave-click.jpg" alt="Intensidade das ondas de calor sobre a Europa e o Norte da África em 16 de julho de 2023, com uma célula selecionada e o controle de tempo embaixo." loading="lazy" width="1600" height="996"></figure>
+        <h3>Ondas de calor, verão de 2023</h3>
+        <p>A intensidade diária das ondas de calor no mundo todo, de junho a agosto de 2023, guardada num arquivo climático NetCDF. Mova o controle de tempo ou clique em <span class="ui">Play</span> (Reproduzir) para ver como as ondas de calor surgiram e se deslocaram ao longo do verão do hemisfério norte.</p>
+        <span class="coords">Copernicus GDO (JRC) · CC BY 4.0</span>
+      </article>
+    </div>
+    <p style="margin-top:30px;color:var(--ink-2)">Também incluídos: grandes terremotos desde 1900, vulcões, aeroportos, usinas de energia, e cidades, países e elevação do mundo.</p>
+  </div>
+</section>
+
+<section id="pro">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Grátis e Pro</p>
+      <h2>Grátis para olhar. Pro para perguntar.</h2>
+      <p class="lede">A versão gratuita permite abrir, sobrepor, estilizar e compartilhar dados espaciais. O NimbleMap Pro acrescenta um assistente que responde a perguntas sobre as camadas do seu mapa feitas em palavras simples.</p>
+    </div>
+    <div class="tiers">
+      <div class="tier">
+        <h3>Grátis</h3>
+        <p class="sub">Download gratuito</p>
+        <ul>
+          <li>Abre CSV, Excel, GeoJSON, Shapefile, GeoPackage, KML, GPX, GeoTIFF e NetCDF</li>
+          <li>Clique em qualquer coisa para ver as informações dela e como se compara com as outras feições</li>
+          <li>Colorir por um valor, filtrar, comparar e rotular</li>
+          <li>Unir uma planilha a lugares por uma coluna em comum</li>
+          <li>Controle de tempo para grades climáticas</li>
+          <li>Mapas base claro, escuro e de satélite; funciona offline</li>
+          <li>Suporte às coordenadas dos mapas chineses (GCJ-02, BD-09)</li>
+          <li>Exporta imagens do mapa e dados</li>
+        </ul>
+      </div>
+      <div class="tier">
+        <h3>Pro <span class="tag">PRO</span></h3>
+        <p class="sub">Tudo o que há no Grátis, mais:</p>
+        <ul>
+          <li>A caixa Ask: faça perguntas sobre suas camadas em inglês ou chinês, digitando ou falando</li>
+          <li>Veja as respostas como prévias no mapa, com um registro passo a passo que você pode conferir. Nada de chute.</li>
+          <li>Camadas do mundo incluídas: países, províncias, cidades, rios, lagos e elevação. Faça perguntas como “Which country has the most power plants?” (Qual país tem mais usinas de energia?)</li>
+          <li>Botões de análise aparecem nos cartões quando fazem sentido, como “Show an area within a distance” (Mostrar uma área a uma distância)</li>
+          <li>Seus dados ficam no seu Mac. Só os nomes das camadas, os campos e as extensões são enviados, nunca os valores.</li>
+        </ul>
+        <div class="ask-sample">Which capital city sits highest above sea level? (Qual capital fica mais acima do nível do mar?)</div>
+      </div>
+    </div>
+    <figure class="frame shot" style="margin-top:34px"><img src="../img/pro-ask.jpg" alt="O NimbleMap Pro respondendo a “Which country has the most cities?” (Qual país tem mais cidades?) com uma lista ordenada e uma prévia no mapa." loading="lazy" width="1600" height="1040"><figcaption>O NimbleMap Pro responde a “Which country has the most cities?” (Qual país tem mais cidades?) usando os países do mundo incluídos. O resultado só é salvo quando você clica em <span class="ui">Keep</span> (Manter).</figcaption></figure>
+  </div>
+</section>
+
+<section id="download">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Download</p>
+      <h2>Baixe o NimbleMap</h2>
+      <p class="lede">O NimbleMap é gratuito para Macs com Apple silicon e macOS 13 ou posterior. Clique duas vezes num Shapefile, GeoJSON, CSV, GeoTIFF ou outro arquivo compatível para abri-lo no mapa. Seus arquivos ficam no seu Mac. Uma versão para Windows está a caminho.</p>
+    </div>
+    <div class="cta-actions">
+      <a class="btn btn-primary" href="download.html#get">Baixar para Mac</a>
+      <a class="btn btn-quiet" href="download.html#formats">O que ele abre</a>
+      <a class="btn btn-quiet" href="download.html#qgis">NimbleMap ou QGIS?</a>
+    </div>
+    <div class="share" role="group" aria-label="Compartilhar"><span class="share-label">Compartilhar</span><a class="share-btn" data-net="x" href="#" target="_blank" rel="noopener" aria-label="Compartilhar: X">X</a><a class="share-btn" data-net="facebook" href="#" target="_blank" rel="noopener" aria-label="Compartilhar: Facebook">Facebook</a><a class="share-btn" data-net="reddit" href="#" target="_blank" rel="noopener" aria-label="Compartilhar: Reddit">Reddit</a><a class="share-btn" data-net="linkedin" href="#" target="_blank" rel="noopener" aria-label="Compartilhar: LinkedIn">LinkedIn</a></div>
+    <p style="margin-top:24px;color:var(--ink-3);font-size:15px">O NimbleMap é feito com o <a href="https://github.com/opengeos/RustGIS">RustGIS</a>.</p>
+  </div>
+</section>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <div>
+      <p><strong>NimbleMap</strong> · um app que põe o mapa em primeiro lugar, feito com RustGIS.</p>
+      <p>As capturas de tela mostram dados de mapa © colaboradores do OpenStreetMap (ODbL) via Protomaps, Natural Earth (domínio público) e imagens NASA Blue Marble (NASA Earth Observatory, GIBS). Dados de exemplo: NOAA IBTrACS, Xue et al. 2021 (CC BY 4.0), Copernicus Global Drought Observatory / JRC (CC BY 4.0).</p>
+    </div>
+    <div><a href="help.html">Ajuda</a> · <a href="glossary.html">Glossário</a><p class="foot-langs"><a href="../index.html" hreflang="en" lang="en">English</a> · <a href="../zh/index.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="../de/index.html" hreflang="de" lang="de">Deutsch</a> · <a href="../es/index.html" hreflang="es" lang="es">Español</a> · <a href="../fr/index.html" hreflang="fr" lang="fr">Français</a> · <a href="../it/index.html" hreflang="it" lang="it">Italiano</a> · <a href="../nl/index.html" hreflang="nl" lang="nl">Nederlands</a> · <a href="../ru/index.html" hreflang="ru" lang="ru">Русский</a> · <a href="../ja/index.html" hreflang="ja" lang="ja">日本語</a> · <a href="../ko/index.html" hreflang="ko" lang="ko">한국어</a></p></div>
+  </div>
+</footer>
+</body>
+</html>

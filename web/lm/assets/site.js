@@ -9,6 +9,22 @@
   function store(v) {
     try { if (v) { localStorage.setItem(KEY, v); } else { localStorage.removeItem(KEY); } } catch (e) { /* private window */ }
   }
+  // The few words this script writes, per page language (the pages carry everything else).
+  var WORDS = {
+    en: { dark: "Switch to dark mode", light: "Switch to light mode", play: "Play the slideshow", pause: "Pause the slideshow" },
+    zh: { dark: "切换到深色", light: "切换到浅色", play: "继续轮播", pause: "暂停轮播" },
+    de: { dark: "Dunkles Design", light: "Helles Design", play: "Diashow abspielen", pause: "Diashow anhalten" },
+    es: { dark: "Cambiar a modo oscuro", light: "Cambiar a modo claro", play: "Reanudar la presentación", pause: "Pausar la presentación" },
+    fr: { dark: "Passer en mode sombre", light: "Passer en mode clair", play: "Lire le diaporama", pause: "Mettre le diaporama en pause" },
+    it: { dark: "Passa al tema scuro", light: "Passa al tema chiaro", play: "Riproduci la presentazione", pause: "Metti in pausa la presentazione" },
+    nl: { dark: "Donkere modus", light: "Lichte modus", play: "Diavoorstelling afspelen", pause: "Diavoorstelling pauzeren" },
+    pt: { dark: "Mudar para o modo escuro", light: "Mudar para o modo claro", play: "Retomar a apresentação", pause: "Pausar a apresentação" },
+    ru: { dark: "Тёмная тема", light: "Светлая тема", play: "Продолжить показ", pause: "Приостановить показ" },
+    ja: { dark: "ダークモードに切り替え", light: "ライトモードに切り替え", play: "スライドショーを再生", pause: "スライドショーを一時停止" },
+    ko: { dark: "다크 모드로 전환", light: "라이트 모드로 전환", play: "슬라이드쇼 재생", pause: "슬라이드쇼 일시 정지" }
+  };
+  var W = WORDS[(root.lang || "en").split("-")[0].toLowerCase()] || WORDS.en;
+
   var t = stored();
   if (t === "light" || t === "dark") { root.setAttribute("data-theme", t); }
 
@@ -20,10 +36,9 @@
   document.addEventListener("DOMContentLoaded", function () {
     var btn = document.querySelector(".theme-btn");
     if (!btn) { return; }
-    var zh = (root.lang || "").indexOf("zh") === 0;
     function label() {
       var next = current() === "dark" ? "light" : "dark";
-      btn.setAttribute("aria-label", zh ? (next === "dark" ? "切换到深色" : "切换到浅色") : "Switch to " + next + " mode");
+      btn.setAttribute("aria-label", W[next]);
       btn.title = btn.getAttribute("aria-label");
     }
     label();
@@ -32,6 +47,17 @@
       root.setAttribute("data-theme", next);
       store(next);
       label();
+    });
+  });
+
+  // The language menu: closes on Escape or a click elsewhere (without JavaScript it closes on its
+  // own summary, which is enough).
+  document.addEventListener("DOMContentLoaded", function () {
+    var menu = document.querySelector(".lang-menu");
+    if (!menu) { return; }
+    document.addEventListener("click", function (ev) { if (menu.open && !menu.contains(ev.target)) { menu.open = false; } });
+    document.addEventListener("keydown", function (ev) {
+      if (ev.key === "Escape" && menu.open) { menu.open = false; menu.querySelector("summary").focus(); }
     });
   });
 
@@ -64,8 +90,7 @@
       stopped = v;
       if (pause) {
         pause.setAttribute("aria-pressed", v ? "true" : "false");
-        var zh = (root.lang || "").indexOf("zh") === 0;
-        pause.setAttribute("aria-label", v ? (zh ? "继续轮播" : "Play the slideshow") : (zh ? "暂停轮播" : "Pause the slideshow"));
+        pause.setAttribute("aria-label", v ? W.play : W.pause);
       }
       run();
     }
@@ -80,3 +105,23 @@
     setStopped(stopped);
   });
 })();
+
+// Share buttons: built from the page's canonical address and title, so each language shares
+// itself. Hidden without JavaScript (see .share in site.css).
+document.addEventListener("DOMContentLoaded", function () {
+  var links = document.querySelectorAll(".share a[data-net]");
+  if (!links.length) return;
+  var canon = document.querySelector('link[rel="canonical"]');
+  var url = encodeURIComponent(canon ? canon.href : location.href);
+  var title = encodeURIComponent(document.title);
+  var to = {
+    x: "https://x.com/intent/post?url=" + url + "&text=" + title,
+    facebook: "https://www.facebook.com/sharer/sharer.php?u=" + url,
+    reddit: "https://www.reddit.com/submit?url=" + url + "&title=" + title,
+    linkedin: "https://www.linkedin.com/sharing/share-offsite/?url=" + url,
+  };
+  for (var i = 0; i < links.length; i++) {
+    var net = links[i].getAttribute("data-net");
+    if (to[net]) links[i].href = to[net];
+  }
+});

@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2023년 여름 폭염 지도, 날짜별로 보기 · NimbleMap</title>
+<meta name="description" content="NimbleMap 단계별 따라 하기: 여름 한 철의 일별 폭염 데이터를 시간 슬라이더로 재생하고, 셀 하나하나의 값을 읽고, 완성된 지도 이미지를 내보냅니다.">
+<link rel="canonical" href="workflow-heatwave.html">
+<link rel="alternate" hreflang="en" href="../workflow-heatwave.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/workflow-heatwave.html">
+<link rel="alternate" hreflang="de" href="../de/workflow-heatwave.html">
+<link rel="alternate" hreflang="es" href="../es/workflow-heatwave.html">
+<link rel="alternate" hreflang="fr" href="../fr/workflow-heatwave.html">
+<link rel="alternate" hreflang="it" href="../it/workflow-heatwave.html">
+<link rel="alternate" hreflang="nl" href="../nl/workflow-heatwave.html">
+<link rel="alternate" hreflang="pt-BR" href="../pt-br/workflow-heatwave.html">
+<link rel="alternate" hreflang="ru" href="../ru/workflow-heatwave.html">
+<link rel="alternate" hreflang="ja" href="../ja/workflow-heatwave.html">
+<link rel="alternate" hreflang="ko" href="workflow-heatwave.html">
+<link rel="alternate" hreflang="x-default" href="../workflow-heatwave.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="NimbleMap">
+<meta property="og:locale" content="ko_KR">
+<meta property="og:title" content="2023년 여름 폭염 지도, 날짜별로 보기 · NimbleMap">
+<meta property="og:description" content="NimbleMap 단계별 따라 하기: 여름 한 철의 일별 폭염 데이터를 시간 슬라이더로 재생하고, 셀 하나하나의 값을 읽고, 완성된 지도 이미지를 내보냅니다.">
+<meta property="og:url" content="workflow-heatwave.html">
+<meta property="og:image" content="../img/heatwave-slider.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/site.css">
+<script src="../assets/site.js"></script>
+</head>
+<body>
+<header class="site-head">
+  <div class="wrap">
+    <a class="brand" href="index.html"><img src="../assets/logo.svg" alt="" width="30" height="30">NimbleMap</a>
+    <nav class="nav" aria-label="사이트 메뉴">
+      <a href="index.html">홈</a>
+      <a href="help.html" aria-current="page">도움말</a>
+      <a href="glossary.html">용어집</a>
+      <a href="download.html">다운로드</a>
+      <details class="lang-menu">
+        <summary aria-label="언어: 한국어" title="언어"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.6 3.9 5.6 3.9 9s-1.3 6.4-3.9 9c-2.6-2.6-3.9-5.6-3.9-9S9.4 5.6 12 3z"/></svg><span>한국어</span></summary>
+        <ul>
+          <li><a href="../workflow-heatwave.html" hreflang="en" lang="en">English</a></li>
+          <li><a href="../zh/workflow-heatwave.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li>
+          <li><a href="../de/workflow-heatwave.html" hreflang="de" lang="de">Deutsch</a></li>
+          <li><a href="../es/workflow-heatwave.html" hreflang="es" lang="es">Español</a></li>
+          <li><a href="../fr/workflow-heatwave.html" hreflang="fr" lang="fr">Français</a></li>
+          <li><a href="../it/workflow-heatwave.html" hreflang="it" lang="it">Italiano</a></li>
+          <li><a href="../nl/workflow-heatwave.html" hreflang="nl" lang="nl">Nederlands</a></li>
+          <li><a href="../pt-br/workflow-heatwave.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li>
+          <li><a href="../ru/workflow-heatwave.html" hreflang="ru" lang="ru">Русский</a></li>
+          <li><a href="../ja/workflow-heatwave.html" hreflang="ja" lang="ja">日本語</a></li>
+          <li><a href="workflow-heatwave.html" hreflang="ko" lang="ko" aria-current="true">한국어</a></li>
+        </ul>
+      </details>
+      <button class="theme-btn" type="button" aria-label="테마 전환"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></svg></button>
+    </nav>
+  </div>
+</header>
+<main>
+<div class="page-head contours">
+  <div class="narrow">
+    <p class="eyebrow">작업 예제 2 · 무료</p>
+    <h1>2023년 폭염의 시간에 따른 변화</h1>
+    <p class="lede">2023년 여름에는 여러 대륙에서 폭염 기록이 깨졌습니다. 이 예제에는 6월 1일부터 8월 31일까지 92일 동안의 전 세계 폭염 강도가 들어 있습니다. 영화처럼 재생하고, 원하는 날에 멈추고, 한 지점의 값을 읽고, 지도를 이미지로 내보내 보겠습니다.</p>
+    <div class="toc">사용할 기능: <a class="term" href="glossary.html#netcdf">NetCDF</a>, <a class="term" href="glossary.html#raster">래스터</a>, <a class="term" href="glossary.html#timestep">시간 단계</a>, <a class="term" href="glossary.html#nodata">데이터 없음</a>, <a class="term" href="glossary.html#export">지도 이미지</a>.</div>
+  </div>
+</div>
+<div class="narrow">
+<ol class="steps">
+  <li id="open">
+    <h3>예제 열기</h3>
+    <p>시작 카드에서 <span class="ui">Examples</span>(예제)를 클릭하고(또는 File › Open Example, 파일 › 예제 열기) <span class="ui">Heatwaves, summer 2023</span>(2023년 여름 폭염)을 고르세요.</p>
+    <p><span class="ui">heatwaves summer 2023</span> 레이어가 나타나고, 그 아래에 <a class="term" href="glossary.html#variable">변수</a> 이름 <span class="ui">Heat-wave intensity (°C)</span>(폭염 강도(°C))가 표시됩니다. 카드는 파일을 쉬운 말로 설명합니다. 720 × 360 격자에 변수 하나가 든 NetCDF-4 파일이며, <span class="ui">Time: 1 Jun 2023 to 31 Aug 2023 (92 steps)</span>(시간: 2023년 6월 1일 ~ 2023년 8월 31일(92단계))라고 나옵니다. 첫 줄의 <span class="ui">Treated as measured values (averaged, not summed)</span>(측정값으로 처리함(합계가 아닌 평균))은 <a class="term" href="glossary.html#assumption">가정</a>이며, <span class="ui">Change</span>(변경)로 바꿀 수 있습니다.</p>
+  </li>
+  <li id="slider">
+    <h3>여름 재생하기</h3>
+    <p>레이어에 날짜가 있으므로 지도 아래쪽에 시간 슬라이더가 나타납니다. <span class="ui">Play</span>(재생)를 누르거나, 손잡이를 끌거나, <span class="ui">Previous step (←)</span>(이전 단계(←))와 <span class="ui">Next step (→)</span>(다음 단계(→))를 쓰세요. 키보드의 화살표 키도 됩니다. 오른쪽에는 표시 중인 날짜(예: <span class="ui">16 Jul 2023</span>, 2023년 7월 16일)와 단계(<span class="ui">46 of 92</span>, 92단계 중 46)가 있습니다.</p>
+    <figure class="frame shot"><img src="../img/heatwave-slider.jpg" alt="2023년 7월 16일의 세계 지도. 지중해, 미국 남부, 남아메리카에 폭염이 있고, 시간 슬라이더는 92단계 중 46단계에 있습니다." width="1600" height="996" loading="lazy"><figcaption>2023년 7월 16일: 지중해, 미국 남부, 멕시코, 중국에 폭염이 있고, 서아프리카와 남아메리카 앞바다에는 강한 해양 폭염이 나타납니다.</figcaption></figure>
+    <p class="note">색 범위는 날마다 똑같이 유지되므로, 더 붉은 색은 언제나 더 강한 폭염을 뜻합니다. 축척이 달라져서 붉어지는 일은 없습니다. 범례에는 날짜가 붙습니다: <span class="ui">Heat-wave intensity (°C), 16 Jul 2023</span>(폭염 강도(°C), 2023년 7월 16일).</p>
+  </li>
+  <li id="click">
+    <h3>한 지점의 값 읽기</h3>
+    <p>원하는 지역으로 확대하고(스크롤이나 핀치, 또는 검색 상자에 장소 입력) 색이 칠해진 셀을 클릭하세요. 카드에 그날 그 셀의 값과, 그 값이 어디쯤인지가 나옵니다: <span class="ui">1.70 °C</span>, <span class="ui">lower than 58% of this layer’s cells (estimated from a sample)</span>(이 레이어 셀의 58%보다 낮음(표본으로 추정)).</p>
+    <figure class="frame shot"><img src="../img/heatwave-click.jpg" alt="2023년 7월 16일의 유럽과 북아프리카. 알제리 북부의 셀 하나가 선택되어 있고, 카드에는 1.70 °C, 이 레이어 셀의 58%보다 낮음이라고 표시되어 있습니다." width="1600" height="996" loading="lazy"></figure>
+    <p>투명하게 남은 셀은 <a class="term" href="glossary.html#nodata">데이터 없음</a>입니다. 그날 그곳에서는 폭염이 기록되지 않았다는 뜻입니다. 그런 셀을 클릭하면 <span class="ui">No value</span>(값 없음), <span class="ui">This cell has no data.</span>(이 셀에는 데이터가 없습니다.)라고 나옵니다. 0과는 다릅니다.</p>
+    <p class="note">셀 하나의 크기는 0.5°, 적도에서 약 55km이므로, 값 하나는 마을 하나가 아니라 큰 정사각형 하나를 나타냅니다. <a href="glossary.html#resolution">해상도</a>를 참고하세요.</p>
+  </li>
+  <li id="colors">
+    <h3>가장 더운 곳 돋보이게 하기</h3>
+    <p>레이어 카드에서 <span class="ui">Show only values above…</span>(다음 값보다 큰 값만 표시…)를 클릭하면 직접 정한 기준값 아래는 모두 회색으로 바뀝니다. <span class="ui">Change colors and range</span>(색상과 범위 변경)를 클릭하면 <span class="ui">Style</span>(스타일) 탭에서 다른 <span class="ui">Palette</span>(팔레트)나 <span class="ui">Range</span>(범위)를 고를 수 있습니다. 셀을 선택한 상태에서 <span class="ui">Show where values are like this</span>(비슷한 값인 곳 표시)를 누르면 비슷한 값을 가진 셀이 모두 강조됩니다.</p>
+  </li>
+  <li id="export">
+    <h3>지도를 이미지로 내보내기</h3>
+    <p>원하는 날에 멈춘 다음 <span class="ui">Share</span>(공유) › <span class="ui">Map image…</span>(지도 이미지…, ⌘E)를 클릭하세요. 시트에 저장될 이미지가 그대로 미리 보입니다.</p>
+    <figure class="frame shot"><img src="../img/heatwave-export.jpg" alt="Export map image 시트: 테두리에 위도와 경도, 범례가 있는 2023년 7월 16일 세계 지도와, 크기, 방위표, 축척 막대, 라벨, 제목, 설명문, 범례 옵션." width="1600" height="996" loading="lazy"></figure>
+    <ul>
+      <li><span class="ui">Size</span>(크기): <span class="ui">Slide 16:9</span>(슬라이드 16:9, 1920 × 1080), <span class="ui">Report A4</span>(보고서 A4), <span class="ui">Square</span>(정사각형).</li>
+      <li><span class="ui">Show</span>(표시): <span class="ui">Fit to data</span>(데이터에 맞춤) 또는 <span class="ui">Current view</span>(현재 화면, 창에 보이는 그대로).</li>
+      <li><span class="ui">North arrow</span>(방위표), <span class="ui">Scale bar</span>(축척 막대), <span class="ui">Lat/lon labels</span>(위경도 라벨): <span class="ui">Auto</span>(자동)는 지도에 맞는 것을 고릅니다. 세계 지도에는 축척 막대 대신 테두리에 위도와 경도를 넣습니다. 세계 지도에서는 위치에 따라 거리가 너무 많이 달라지기 때문입니다.</li>
+      <li><span class="ui">Title</span>(제목): 예를 들어 “2023년 7월 16일의 폭염”. <span class="ui">Caption</span>(설명문)은 레이어와 출처 정보로 자동 작성되며, 원하면 고칠 수 있습니다.</li>
+    </ul>
+    <p><span class="ui">Save…</span>(저장…)를 클릭하면 PNG로 저장됩니다. 범례에 날짜가 들어 있으므로 공유해도 그림만으로 설명이 됩니다.</p>
+    <p class="note">연속된 이미지가 필요하다면 다음 날로 넘겨 다시 내보내세요. 모든 이미지가 같은 색 범위를 쓰므로 공정하게 비교할 수 있습니다.</p>
+  </li>
+</ol>
+<div class="pro-note" style="margin-bottom:30px"><strong>NimbleMap Pro.</strong> Pro에 기본 제공되는 세계 국가 레이어를 이용해 “Which countries had the strongest heatwave on this day?”(이날 폭염이 가장 강했던 나라는 어디야?)처럼 폭염에 대해 평범한 말로 질문해 보세요. 답은 지금 표시된 변수와 날짜를 기준으로 계산되며, 작업 기록에 둘 다 적혀 있습니다.</div>
+<p class="coords" style="margin:10px 0 60px">데이터: Copernicus Global Drought Observatory (European Commission, JRC), GDO Warm Spell Intensity (ERA5), 2023; © European Union, 1995–2026, CC BY 4.0. NimbleMap용으로 6~8월만 잘라 내고, 0.5° 격자로 평균했으며, 고온 현상이 없던 날은 데이터 없음으로 처리했습니다. 배경 지도 © OpenStreetMap 기여자, Protomaps, Natural Earth.</p>
+</div>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <div>
+      <p><strong>NimbleMap 도움말</strong> · 이 페이지들은 앱 안에 함께 들어 있으며(Help › NimbleMap Help, 도움말 › NimbleMap 도움말) 오프라인에서도 볼 수 있습니다.</p>
+      <p>스크린숏의 지도 데이터: © OpenStreetMap 기여자(ODbL), Protomaps 제공, Natural Earth(퍼블릭 도메인), NASA Blue Marble 영상(NASA Earth Observatory, GIBS). 예제 데이터의 출처는 각 페이지에 적혀 있습니다.</p>
+    </div>
+    <div><a href="help.html">도움말</a> · <a href="glossary.html">용어집</a><p class="foot-langs"><a href="../workflow-heatwave.html" hreflang="en" lang="en">English</a> · <a href="../zh/workflow-heatwave.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="../de/workflow-heatwave.html" hreflang="de" lang="de">Deutsch</a> · <a href="../es/workflow-heatwave.html" hreflang="es" lang="es">Español</a> · <a href="../fr/workflow-heatwave.html" hreflang="fr" lang="fr">Français</a> · <a href="../it/workflow-heatwave.html" hreflang="it" lang="it">Italiano</a> · <a href="../nl/workflow-heatwave.html" hreflang="nl" lang="nl">Nederlands</a> · <a href="../pt-br/workflow-heatwave.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ru/workflow-heatwave.html" hreflang="ru" lang="ru">Русский</a> · <a href="../ja/workflow-heatwave.html" hreflang="ja" lang="ja">日本語</a></p></div>
+  </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trajectoires des typhons : les plus violents depuis 1980 · NimbleMap</title>
+<meta name="description" content="Un tutoriel NimbleMap pas à pas : ouvrez 4 999 trajectoires de typhons et d’ouragans, trouvez Haiyan, voyez son rang et ne gardez que les tempêtes de catégorie 5.">
+<link rel="canonical" href="workflow-typhoons.html">
+<link rel="alternate" hreflang="en" href="../workflow-typhoons.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/workflow-typhoons.html">
+<link rel="alternate" hreflang="de" href="../de/workflow-typhoons.html">
+<link rel="alternate" hreflang="es" href="../es/workflow-typhoons.html">
+<link rel="alternate" hreflang="fr" href="workflow-typhoons.html">
+<link rel="alternate" hreflang="it" href="../it/workflow-typhoons.html">
+<link rel="alternate" hreflang="nl" href="../nl/workflow-typhoons.html">
+<link rel="alternate" hreflang="pt-BR" href="../pt-br/workflow-typhoons.html">
+<link rel="alternate" hreflang="ru" href="../ru/workflow-typhoons.html">
+<link rel="alternate" hreflang="ja" href="../ja/workflow-typhoons.html">
+<link rel="alternate" hreflang="ko" href="../ko/workflow-typhoons.html">
+<link rel="alternate" hreflang="x-default" href="../workflow-typhoons.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="NimbleMap">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:title" content="Trajectoires des typhons : les plus violents depuis 1980 · NimbleMap">
+<meta property="og:description" content="Un tutoriel NimbleMap pas à pas : ouvrez 4 999 trajectoires de typhons et d’ouragans, trouvez Haiyan, voyez son rang et ne gardez que les tempêtes de catégorie 5.">
+<meta property="og:url" content="workflow-typhoons.html">
+<meta property="og:image" content="../img/typhoons-hero.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/site.css">
+<script src="../assets/site.js"></script>
+</head>
+<body>
+<header class="site-head">
+  <div class="wrap">
+    <a class="brand" href="index.html"><img src="../assets/logo.svg" alt="" width="30" height="30">NimbleMap</a>
+    <nav class="nav" aria-label="Navigation du site">
+      <a href="index.html">Accueil</a>
+      <a href="help.html" aria-current="page">Aide</a>
+      <a href="glossary.html">Glossaire</a>
+      <a href="download.html">Télécharger</a>
+      <details class="lang-menu">
+        <summary aria-label="Langue: Français" title="Langue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.6 3.9 5.6 3.9 9s-1.3 6.4-3.9 9c-2.6-2.6-3.9-5.6-3.9-9S9.4 5.6 12 3z"/></svg><span>FR</span></summary>
+        <ul>
+          <li><a href="../workflow-typhoons.html" hreflang="en" lang="en">English</a></li>
+          <li><a href="../zh/workflow-typhoons.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li>
+          <li><a href="../de/workflow-typhoons.html" hreflang="de" lang="de">Deutsch</a></li>
+          <li><a href="../es/workflow-typhoons.html" hreflang="es" lang="es">Español</a></li>
+          <li><a href="workflow-typhoons.html" hreflang="fr" lang="fr" aria-current="true">Français</a></li>
+          <li><a href="../it/workflow-typhoons.html" hreflang="it" lang="it">Italiano</a></li>
+          <li><a href="../nl/workflow-typhoons.html" hreflang="nl" lang="nl">Nederlands</a></li>
+          <li><a href="../pt-br/workflow-typhoons.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li>
+          <li><a href="../ru/workflow-typhoons.html" hreflang="ru" lang="ru">Русский</a></li>
+          <li><a href="../ja/workflow-typhoons.html" hreflang="ja" lang="ja">日本語</a></li>
+          <li><a href="../ko/workflow-typhoons.html" hreflang="ko" lang="ko">한국어</a></li>
+        </ul>
+      </details>
+      <button class="theme-btn" type="button" aria-label="Changer de thème"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></svg></button>
+    </nav>
+  </div>
+</header>
+<main>
+<div class="page-head contours">
+  <div class="narrow">
+    <p class="eyebrow">Tutoriel 1 · Gratuit</p>
+    <h1>Typhons : les tempêtes les plus violentes</h1>
+    <p class="lede">Depuis 1980, quelles tempêtes ont été les plus violentes, et où sont-elles passées ? Vous allez ouvrir toutes les trajectoires de cyclones tropicaux enregistrées depuis 1980, les colorer par océan, examiner le typhon Haiyan et ne garder que les tempêtes de catégorie 5.</p>
+    <div class="toc">Vous utiliserez : les <a class="term" href="glossary.html#layer">couches</a>, les <a class="term" href="glossary.html#feature">entités</a>, les <a class="term" href="glossary.html#insight">lignes de comparaison</a>, le <a class="term" href="glossary.html#style">style</a>, les <a class="term" href="glossary.html#filter">filtres</a> et la <a class="term" href="glossary.html#table">table attributaire</a>.</div>
+  </div>
+</div>
+<div class="narrow">
+<ol class="steps">
+  <li id="open">
+    <h3>Ouvrir l’exemple</h3>
+    <p>Sur la fiche en bas d’une nouvelle fenêtre, cliquez sur <span class="ui">Examples</span> (Exemples) et choisissez <span class="ui">Typhoons and hurricanes</span> (Typhons et ouragans). (Plus tard, à tout moment : File › Open Example › Typhoons and hurricanes, soit Fichier › Ouvrir un exemple.)</p>
+    <p>Une couche nommée <span class="ui">storms</span> apparaît dans le panneau <span class="ui">Layers</span> (Couches), et sa fiche à droite indique <span class="ui">4,999 lines · storm tracks.gpkg</span> (4 999 lignes) : une ligne par tempête.</p>
+  </li>
+  <li id="basin">
+    <h3>Colorer les trajectoires par océan</h3>
+    <p>Sur la fiche de la couche, ouvrez l’onglet <span class="ui">Style</span> et cliquez sur la vignette <span class="ui">By basin</span> (Par bassin). La <span class="ui">Legend</span> (Légende) liste maintenant les bassins : West Pacific (Pacifique Ouest), East Pacific (Pacifique Est), North Atlantic (Atlantique Nord), etc.</p>
+    <figure class="frame shot"><img src="../img/typhoons-hero.jpg" alt="Trajectoires de tempêtes colorées par bassin : le Pacifique Ouest, en bleu foncé, couvre la mer des Philippines au Japon." width="1600" height="1215" loading="lazy"><figcaption>Le Pacifique Ouest (bleu foncé) est le bassin le plus actif de la planète. Les typhons qui atteignent Hong Kong, Shanghai, Taïwan et le Japon naissent tous ici.</figcaption></figure>
+  </li>
+  <li id="click">
+    <h3>Cliquer sur une tempête et voir son rang</h3>
+    <p>Cliquez sur n’importe quelle trajectoire. Là où plusieurs trajectoires se chevauchent, une petite liste comme <span class="ui">4 objects here</span> (4 objets ici) vous permet d’en choisir une ; choisissez <span class="ui">Haiyan · storms</span>.</p>
+    <figure class="frame shot"><img src="../img/typhoons-pick.jpg" alt="Une liste intitulée « 4 objects here » proposant Gene, Odessa, Owen et Haiyan." width="1600" height="996" loading="lazy"></figure>
+    <p>La fiche décrit maintenant le typhon Haiyan (2013) et, avant de proposer le moindre outil, elle vous dit comment Haiyan se situe : son <span class="ui">max_wind_kt</span> de 170 nœuds est <span class="ui">higher than 99% of 4,547 storms with values</span> (supérieur à 99 % des 4 547 tempêtes renseignées). La petite barre à côté de chaque ligne montre sa place parmi toutes les autres.</p>
+    <figure class="frame shot"><img src="../img/typhoons-card.jpg" alt="La trajectoire de Haiyan mise en évidence des Philippines au Viêt Nam, et sa fiche : bassin West Pacific, max_wind_kt 170, supérieur à 99 % des 4 547 tempêtes renseignées, intensité Category 5." width="1600" height="996" loading="lazy"><figcaption>Haiyan a traversé le centre des Philippines en novembre 2013, l’une des tempêtes les plus puissantes jamais arrivées sur terre.</figcaption></figure>
+    <p class="note">Vous cherchez une tempête par son nom ? Tapez-le dans <span class="ui">Find in storms</span> (Rechercher dans storms) en haut de la fiche de la couche, ou dans le champ de recherche de la barre d’outils, qui liste les résultats sous <span class="ui">Your data</span> (Vos données).</p>
+  </li>
+  <li id="color">
+    <h3>Colorer selon une valeur</h3>
+    <p>Cliquez sur <span class="ui">Color by a value</span> (Colorer selon une valeur) sur la fiche. L’onglet <span class="ui">Style</span> s’ouvre, avec les trajectoires colorées selon un nombre tiré des données. Pour colorer selon le vent, ouvrez le menu <span class="ui">Color</span> (Couleur) et choisissez <span class="ui">max_wind_kt</span> ; essayez la palette <span class="ui">Heat</span> (Chaleur). <span class="ui">Groups</span> (Groupes) répartit les valeurs en quelques classes ; <span class="ui">Smooth</span> (Continu) utilise un dégradé continu.</p>
+    <figure class="frame shot"><img src="../img/typhoons-color.jpg" alt="L’onglet Style avec Color réglé sur season, la palette Viridis et 5 groupes d’effectifs égaux." width="1600" height="996" loading="lazy"><figcaption>Ici, la couleur suit <span class="ui">season</span> (l’année). Le menu <span class="ui">Color</span> permet de passer à n’importe quel autre champ.</figcaption></figure>
+  </li>
+  <li id="table">
+    <h3>Ouvrir la table</h3>
+    <p>Cliquez sur <span class="ui">View in table</span> (Voir dans la table) en bas de la fiche. La table glisse depuis le bas de la carte : une ligne par tempête, une colonne par <a class="term" href="glossary.html#attribute">attribut</a>. Sélectionner une ligne sélectionne la tempête sur la carte.</p>
+  </li>
+  <li id="filter">
+    <h3>Ne garder que les tempêtes de catégorie 5</h3>
+    <p>Dans la table, cliquez sur <span class="ui">+ Filter</span> (+ Filtre). Une phrase apparaît, à compléter. Réglez-la sur <span class="ui">Show storms where strength is any of Category 5</span> (Afficher les tempêtes dont strength est parmi Category 5). Avant que vous ne validiez, elle indique combien de tempêtes correspondent : <span class="ui">228 match</span> (228 correspondent). Cliquez sur <span class="ui">Apply</span> (Appliquer).</p>
+    <figure class="frame shot"><img src="../img/typhoons-filter.jpg" alt="La phrase de filtre « Show storms where strength is any of Category 5 », 228 correspondent, avec Cancel et Apply, au-dessus de la table." width="1600" height="996" loading="lazy"></figure>
+    <p>Les 4 771 autres trajectoires sont masquées, pas supprimées. La table indique <span class="ui">Showing 228 of 4,999</span> (Affichage de 228 sur 4 999), le filtre apparaît sous forme d’étiquette que l’on retire avec ×, et la ligne de la couche affiche un entonnoir. La fiche compare maintenant Haiyan aux seules tempêtes filtrées : <span class="ui">tied 2nd highest of 228 filtered</span> (2e ex æquo sur 228 filtrées).</p>
+    <figure class="frame shot"><img src="../img/typhoons-filtered.jpg" alt="Seules les trajectoires de catégorie 5 restent sur la carte, serrées à l’est des Philippines ; la table affiche 228 sur 4 999." width="1600" height="996" loading="lazy"><figcaption>Les tempêtes de catégorie 5 se concentrent à l’est des Philippines et s’incurvent vers Taïwan, le sud de la Chine et le Japon.</figcaption></figure>
+    <p class="note">Pour comparer, ajoutez une seconde condition (par exemple <span class="ui">basin</span> est parmi <span class="ui">West Pacific</span>) ou retirez l’étiquette et essayez <span class="ui">North Atlantic</span>. Chaque modification correspond à une étape d’<span class="ui">Undo</span> (Annuler).</p>
+  </li>
+  <li id="pro">
+    <h3>Quelles villes sont le plus souvent touchées ?</h3>
+    <p>Avec le filtre actif, zoomez sur la côte qui vous intéresse (tapez une ville comme Hong Kong ou Manille dans le champ de recherche) et vous verrez quels endroits se trouvent sous l’enchevêtrement de trajectoires le plus dense. Compter les tempêtes passées près de chaque ville est une <em>analyse</em> : elle crée de nouvelles données. Dans NimbleMap, c’est le rôle de Pro.</p>
+    <div class="pro-note"><strong>NimbleMap Pro.</strong> Les fiches gagnent des boutons d’analyse comme <span class="ui">Measure length</span> (Mesurer la longueur) et <span class="ui">Show an area within a distance of each</span> (Afficher une zone à une certaine distance de chacun), et la zone <span class="ui">Ask about your layers</span> (Interrogez vos couches) accepte une question en langage courant, par exemple « Show the area within 100 km of Hong Kong » (Montre la zone à moins de 100 km de Hong Kong), suivie de « Keep the part of the storm tracks inside it » (Garde la partie des trajectoires qui s’y trouve). Chaque réponse est prévisualisée sur la carte avec sa <a class="term" href="glossary.html#recipe">recette</a>, et rien n’est enregistré tant que vous n’avez pas cliqué sur <span class="ui">Keep</span> (Conserver).</div>
+    <figure class="frame shot"><img src="../img/typhoons-pro.jpg" alt="La même fiche de Haiyan dans NimbleMap Pro, avec les boutons Measure length et Show an area within a distance, et la zone Ask about your layers en bas de la carte." width="1600" height="1040" loading="lazy"><figcaption>NimbleMap Pro : des boutons d’analyse sur la fiche et la zone de question en bas.</figcaption></figure>
+  </li>
+</ol>
+<p class="coords" style="margin:10px 0 60px">Données : NOAA NCEI IBTrACS v04r01 (Knapp et al. 2010, doi:10.1175/2009BAMS2755.1 ; Gahtan et al. 2024, doi:10.25921/82ty-9e16). Fond de carte © contributeurs OpenStreetMap, Protomaps, Natural Earth.</p>
+</div>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <div>
+      <p><strong>Aide de NimbleMap</strong> · Ces pages sont fournies avec l’app (Help › NimbleMap Help, Aide › Aide de NimbleMap) et fonctionnent hors ligne.</p>
+      <p>Les captures d’écran montrent des données cartographiques © contributeurs OpenStreetMap (ODbL) via Protomaps, Natural Earth (domaine public) et des images NASA Blue Marble (NASA Earth Observatory, GIBS). Les sources des données d’exemple figurent sur chaque page.</p>
+    </div>
+    <div><a href="help.html">Aide</a> · <a href="glossary.html">Glossaire</a><p class="foot-langs"><a href="../workflow-typhoons.html" hreflang="en" lang="en">English</a> · <a href="../zh/workflow-typhoons.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="../de/workflow-typhoons.html" hreflang="de" lang="de">Deutsch</a> · <a href="../es/workflow-typhoons.html" hreflang="es" lang="es">Español</a> · <a href="../it/workflow-typhoons.html" hreflang="it" lang="it">Italiano</a> · <a href="../nl/workflow-typhoons.html" hreflang="nl" lang="nl">Nederlands</a> · <a href="../pt-br/workflow-typhoons.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ru/workflow-typhoons.html" hreflang="ru" lang="ru">Русский</a> · <a href="../ja/workflow-typhoons.html" hreflang="ja" lang="ja">日本語</a> · <a href="../ko/workflow-typhoons.html" hreflang="ko" lang="ko">한국어</a></p></div>
+  </div>
+</footer>
+</body>
+</html>

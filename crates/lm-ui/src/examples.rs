@@ -5,9 +5,12 @@
 
 use std::path::{Path, PathBuf};
 
+use lm_core::tn;
+
 /// One entry of the Examples menu: its files open together as one batch.
 pub struct Example {
     pub id: &'static str,
+    /// English, the catalog key: translated where it is drawn (`tl!(e.title)`), like `blurb`.
     pub title: &'static str,
     /// One line under the title.
     pub blurb: &'static str,
@@ -22,70 +25,70 @@ pub const EXAMPLES: &[Example] = &[
         id: "world",
         icon: egui_phosphor::regular::GLOBE_HEMISPHERE_EAST,
         tint: [0, 114, 178],
-        title: "World basics",
-        blurb: "Cities, countries and elevation",
+        title: tn!("World basics"),
+        blurb: tn!("Cities, countries and elevation"),
         files: &["cities.geojson", "countries.geojson", "elevation.tif"],
     },
     Example {
         id: "heatwaves",
         icon: egui_phosphor::regular::THERMOMETER_HOT,
         tint: [213, 60, 30],
-        title: "Heatwaves, summer 2023",
-        blurb: "Daily heatwave intensity worldwide, June to August",
+        title: tn!("Heatwaves, summer 2023"),
+        blurb: tn!("Daily heatwave intensity worldwide, June to August"),
         files: &["heatwaves summer 2023.nc"],
     },
     Example {
         id: "storms",
         icon: egui_phosphor::regular::HURRICANE,
         tint: [86, 180, 233],
-        title: "Typhoons and hurricanes",
-        blurb: "4,999 storm tracks since 1980",
+        title: tn!("Typhoons and hurricanes"),
+        blurb: tn!("4,999 storm tracks since 1980"),
         files: &["storm tracks.gpkg"],
     },
     Example {
         id: "walls",
         icon: egui_phosphor::regular::CASTLE_TURRET,
         tint: [166, 118, 29],
-        title: "Walled cities of China, 1866",
-        blurb: "1,789 city walls of late imperial China",
+        title: tn!("Walled cities of China, 1866"),
+        blurb: tn!("1,789 city walls of late imperial China"),
         files: &["walled cities 1866.geojson"],
     },
     Example {
         id: "earthquakes",
         icon: egui_phosphor::regular::PULSE,
         tint: [213, 94, 0],
-        title: "Big earthquakes",
-        blurb: "14,537 of magnitude 6 or more since 1900",
+        title: tn!("Big earthquakes"),
+        blurb: tn!("14,537 of magnitude 6 or more since 1900"),
         files: &["earthquakes.csv"],
     },
     Example {
         id: "volcanoes",
         icon: egui_phosphor::regular::MOUNTAINS,
         tint: [204, 51, 17],
-        title: "Volcanoes",
-        blurb: "1,609 volcanoes and their status",
+        title: tn!("Volcanoes"),
+        blurb: tn!("1,609 volcanoes and their status"),
         files: &["volcanoes.csv"],
     },
     Example {
         id: "airports",
         icon: egui_phosphor::regular::AIRPLANE_TILT,
         tint: [0, 158, 115],
-        title: "Airports",
-        blurb: "5,280 large and medium airports, with elevation",
+        title: tn!("Airports"),
+        blurb: tn!("5,280 large and medium airports, with elevation"),
         files: &["airports.csv"],
     },
     Example {
         id: "power",
         icon: egui_phosphor::regular::LIGHTNING,
         tint: [230, 159, 0],
-        title: "Power plants",
-        blurb: "34,936 plants by fuel and capacity",
+        title: tn!("Power plants"),
+        blurb: tn!("34,936 plants by fuel and capacity"),
         files: &["power plants.csv"],
     },
 ];
 
 /// Each example file's licence, as `assets/examples/README.md` records it (shown in the map
-/// package dialog, WP6.5).
+/// package dialog, WP6.5). They are written into map packages, so they stay English.
 pub const LICENSES: &[(&str, &str)] = &[
     ("cities.geojson", "Public domain (Natural Earth)"),
     ("countries.geojson", "Public domain (Natural Earth)"),

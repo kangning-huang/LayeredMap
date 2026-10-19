@@ -1,0 +1,12 @@
+{
+  "name": "nimblemap-launch-video",
+  "version": "1.0.0",
+  "private": true,
+  "description": "NimbleMap 20-second launch film, rendered deterministically from code (Canvas 2D + headless Chrome, synthesised audio).",
+  "scripts": {
+    "build": "./build.sh"
+  },
+  "dependencies": {
+    "puppeteer-core": "23.11.1"
+  }
+}

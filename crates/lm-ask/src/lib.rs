@@ -9,6 +9,8 @@ pub mod context;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod openrouter;
 mod pov;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod proxy;
 pub mod reference;
 pub mod resolve;
 pub mod session;
@@ -21,3 +23,8 @@ pub const MODEL: &str = "anthropic/claude-haiku-5.5";
 
 #[cfg(test)]
 mod tests;
+
+/// Tests that send through the network gate, and those that turn offline mode on, take turns
+/// (the gate is process-wide and tests run in parallel).
+#[cfg(test)]
+pub(crate) static NET_TESTS: std::sync::Mutex<()> = std::sync::Mutex::new(());

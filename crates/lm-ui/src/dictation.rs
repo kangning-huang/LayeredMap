@@ -11,8 +11,10 @@ use std::path::PathBuf;
 use std::process::{Child, ChildStdin, Command, Stdio};
 use std::sync::mpsc::{Receiver, channel};
 
-/// What the microphone button says on Windows.
-pub const WINDOWS: &str = "Speaking isn't available on Windows yet. Press Windows+H to type with your voice instead.";
+use lm_core::{i18n, tl, tn};
+
+/// What the microphone button says on Windows (in English; shown translated).
+pub const WINDOWS: &str = tn!("Speaking isn't available on Windows yet. Press Windows+H to type with your voice instead.");
 
 pub enum Event {
     Ready,
@@ -40,10 +42,11 @@ impl Dictation {
     /// Starts listening; `wake` repaints the app when words arrive.
     pub fn start(wake: impl Fn() + Send + 'static) -> Result<Dictation, String> {
         if cfg!(windows) && std::env::var_os("LM_DICTATE").is_none() {
-            return Err(WINDOWS.into());
+            return Err(tl!(WINDOWS).into());
         }
-        let path =
-            helper().ok_or_else(|| format!("Speaking needs the {} app (its speech helper isn't here).", lm_core::brand::PRO_NAME))?;
+        let path = helper().ok_or_else(|| {
+            i18n::fmt("Speaking needs the {app} app (its speech helper isn't here).", &[("app", lm_core::brand::shown(true))])
+        })?;
         let mut child = Command::new(path)
             // Offline, the helper refuses to fall back to Apple's server recognizer.
             .env("LM_OFFLINE", if lm_net::offline() { "1" } else { "0" })
@@ -51,8 +54,9 @@ impl Dictation {
             .stdout(Stdio::piped())
             .stderr(Stdio::null())
             .spawn()
-            .map_err(|e| format!("Couldn't start listening: {e}"))?;
-        let stdout = child.stdout.take().ok_or("Couldn't start listening.")?;
+            .map_err(|e| i18n::fmt("Couldn't start listening: {error}", &[("error", &e.to_string())]))?;
+        let stdout = child.stdout.take().ok_or_else(|| tl!("Couldn't start listening.").to_string())?;
+
         let stdin = child.stdin.take();
         let (tx, rx) = channel();
         std::thread::spawn(move || {

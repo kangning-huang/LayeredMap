@@ -17,13 +17,15 @@
 //!   total `N = Σ d_i a_i / unit` (unit = the density's area unit in m², 10⁶ for "per km²");
 //! * category raster shares: `Σ a_i` per class over `Σ a_i` of all valid cells (never a mean of
 //!   class codes);
-//! * coverage `c = Σ_valid a_i / max(A_P, Σ_all a_i)`, where `A_P` is the polygon's area on the
-//!   ellipsoid (edges straight in the raster's coordinates, as the grid sees them) and `Σ_all`
-//!   includes NoData cells. Weighting a planar fraction by a cell's ellipsoidal area is not the
-//!   exact ellipsoidal area of the covered part (a sliver in the poleward half of a 1° cell is
-//!   over-weighted by up to ~1 %), so `Σ_all a_i` can exceed `A_P` slightly; taking the larger as
-//!   the denominator keeps `c ≤ 1` always, and equals `Σ_valid a_i / A_P` (the reference's
-//!   formula) whenever the grid does not over-measure the polygon.
+//! * coverage `c = Σ_valid a_i / (Σ_all a_i + A_out)`, Google Earth Engine's weighted-reducer
+//!   rule (a cell weighs the fraction of it inside the area; cells outside the image's footprint
+//!   are masked, so they weigh in the denominator only): `Σ_all` includes NoData cells, and
+//!   `A_out` is the part of the polygon beyond the raster's extent (`A_P` minus the area of the
+//!   polygon clipped to the extent, both on the ellipsoid). Numerator and denominator are the same
+//!   grid measure, so `c ≤ 1` by construction, and an area inside the raster with no NoData cell
+//!   has `c = 1` exactly. Unlike Earth Engine, fractions are exact (not quantised to 1/256) and each
+//!   is weighted by its cell's ellipsoidal area `A_i`, the same weights as the mean
+//!   (docs/lm/decisions.md, 2026-10-19).
 //!
 //! **Coverage algorithm.** Exact, by signed-area accumulation (the scanline method used by
 //! font rasterisers such as font-rs, and equivalent to exactextract's cell traversal): each edge,
@@ -276,6 +278,9 @@ pub struct ZonalSummary {
     pub covered_area_m2: f64,
     /// `A_P`, the polygon's ellipsoidal area (m²).
     pub polygon_area_m2: f64,
+    /// `A_out`, the part of the polygon beyond the raster's extent (m²); it counts as no data in
+    /// the coverage.
+    pub outside_raster_area_m2: f64,
     pub total: Option<Total>,
     /// Area-weighted median, standard deviation, and `Σ x_i f_i` (see the module notes); `None`
     /// with no valid covered cell, or for a category raster.
@@ -616,6 +621,8 @@ fn summarize_polygon(
     let grid = &ctx.grid;
     // Rings in raster coordinates (for the area) and pixel coordinates (for the coverage).
     let mut polygon_area = 0.0;
+    let mut inside_area = 0.0;
+    let extent = raster_extent(grid);
     let mut px_rings: Vec<(Vec<(f64, f64)>, f64)> = Vec::new();
     let (mut minx, mut miny, mut maxx, mut maxy) = (f64::INFINITY, f64::INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY);
     for (pi, rings) in parts.iter().enumerate() {
@@ -623,6 +630,7 @@ fn summarize_polygon(
             ctl.check()?;
         }
         let mut part_area = 0.0;
+        let mut part_inside = 0.0;
         for (k, ring) in rings.iter().enumerate() {
             let mut native = Vec::with_capacity(ring.len());
             for c in ring.iter().filter(|c| c.is_finite()) {
@@ -639,6 +647,10 @@ fn summarize_polygon(
             }
             let a = ctx.ring_area(&native)?;
             part_area += if k == 0 { a } else { -a };
+            // A ring wholly inside the extent clips to itself, so then `A_out` is exactly 0.
+            let clipped = clip_to_extent(&native, extent);
+            let ai = if clipped.len() >= 3 { ctx.ring_area(&clipped)? } else { 0.0 };
+            part_inside += if k == 0 { ai } else { -ai };
             let px: Vec<(f64, f64)> = native
                 .iter()
                 .map(|n| {
@@ -665,8 +677,13 @@ fn summarize_polygon(
             px_rings.push((px, m));
         }
         polygon_area += part_area.max(0.0);
+        inside_area += part_inside.max(0.0);
     }
-    let mut out = ZonalSummary { polygon_area_m2: polygon_area, ..ZonalSummary::default() };
+    let mut out = ZonalSummary {
+        polygon_area_m2: polygon_area,
+        outside_raster_area_m2: (polygon_area - inside_area).max(0.0),
+        ..ZonalSummary::default()
+    };
     if px_rings.is_empty() {
         return Ok(out);
     }
@@ -828,6 +845,44 @@ fn add_row(sums: &mut Sums, grid: &Grid, role: ValueRole, acc: &[f64], data: &[f
     sums.xf += xf;
 }
 
+/// The raster's extent in its own coordinates: `(xmin, xmax, ymin, ymax)`.
+fn raster_extent(grid: &Grid) -> (f64, f64, f64, f64) {
+    let a = grid.transform.to_world(0.0, 0.0);
+    let b = grid.transform.to_world(f64::from(grid.width), f64::from(grid.height));
+    (a.x.min(b.x), a.x.max(b.x), a.y.min(b.y), a.y.max(b.y))
+}
+
+/// A ring clipped to an axis-aligned rectangle (Sutherland–Hodgman). The result can have edges
+/// along the rectangle that double back; they enclose no area, so the ring's area is right. A
+/// ring wholly inside comes back unchanged.
+fn clip_to_extent(ring: &[Coord], (xmin, xmax, ymin, ymax): (f64, f64, f64, f64)) -> Vec<Coord> {
+    let mut out: Vec<Coord> = ring.to_vec();
+    let sides: [(fn(Coord, f64) -> bool, fn(Coord, Coord, f64) -> Coord, f64); 4] = [
+        (|c, v| c.x >= v, |a, b, v| Coord::new(v, a.y + (b.y - a.y) * (v - a.x) / (b.x - a.x)), xmin),
+        (|c, v| c.x <= v, |a, b, v| Coord::new(v, a.y + (b.y - a.y) * (v - a.x) / (b.x - a.x)), xmax),
+        (|c, v| c.y >= v, |a, b, v| Coord::new(a.x + (b.x - a.x) * (v - a.y) / (b.y - a.y), v), ymin),
+        (|c, v| c.y <= v, |a, b, v| Coord::new(a.x + (b.x - a.x) * (v - a.y) / (b.y - a.y), v), ymax),
+    ];
+    for (inside, cross, v) in sides {
+        let input = std::mem::take(&mut out);
+        let Some(&last) = input.last() else { break };
+        let mut prev = last;
+        for &cur in &input {
+            match (inside(cur, v), inside(prev, v)) {
+                (true, true) => out.push(cur),
+                (true, false) => {
+                    out.push(cross(prev, cur, v));
+                    out.push(cur);
+                }
+                (false, true) => out.push(cross(prev, cur, v)),
+                (false, false) => {}
+            }
+            prev = cur;
+        }
+    }
+    out
+}
+
 /// The smallest value whose cumulative weight reaches half the total.
 fn weighted_median(values: &mut [(f64, f64)]) -> Option<f64> {
     values.sort_by(|a, b| a.0.total_cmp(&b.0));
@@ -852,7 +907,7 @@ fn finish(out: &mut ZonalSummary, mut s: Sums, role: ValueRole) {
     out.covered_valid_area_m2 = s.w_valid;
     out.covered_area_m2 = s.w_all;
     out.nodata_fraction = if s.w_all > 0.0 { (s.w_all - s.w_valid) / s.w_all } else { 0.0 };
-    let denom = out.polygon_area_m2.max(s.w_all);
+    let denom = s.w_all + out.outside_raster_area_m2;
     out.coverage = if denom > 0.0 { (s.w_valid / denom).min(1.0) } else { 0.0 };
     let any = s.n_valid > 0 && s.w_valid > 0.0;
     if role != ValueRole::Category && any {

@@ -1,0 +1,182 @@
+English	Français	Note
+Layer	Couche	QGIS term
+Layers (panel)	Couches	panel name, as in QGIS (panneau Couches)
+Basemap	Fond de carte	QGIS/IGN usage
+Satellite	Satellite	
+Offline	Hors ligne	outline basemap that needs no internet
+Light	Clair	basemap / appearance
+Dark	Sombre	basemap / appearance
+Auto	Auto	follows the system's light or dark mode
+Background strength	Intensité du fond	everyday wording; fades the basemap
+Attribute table	Table attributaire	QGIS term
+Table	Table	
+Field	Champ	QGIS term
+Feature	Entité	QGIS term (entité); everyday text may say « objet »
+Record	Enregistrement	
+Point	Point	
+Line	Ligne	
+Area (polygon)	Surface	everyday word; QGIS says « polygone »
+Raster	Raster	QGIS term
+Grid	Grille	
+Cell	Cellule	QGIS also says « pixel »
+Vector data	Données vectorielles	QGIS term
+Coordinate system (CRS)	Système de coordonnées (SCR)	QGIS: système de coordonnées de référence, SCR
+Coordinate system	Système de coordonnées	label in Details
+Projection	Projection	
+Legend	Légende	
+Scale bar	Barre d’échelle	QGIS term
+Title	Titre	
+Credits	Sources	everyday word for data credits on a map; « crédits » also understood
+Caption	Texte sous la carte	not « Légende », which is reserved for Legend
+Filter	Filtre	
++ Filter	+ Filtre	
+Filtered:	Filtré :	
+Clear	Effacer	
+Style	Style	QGIS term (symbologie in the glossary)
+Style…	Style…	
+Colour by value	Colorer selon une valeur	
+Color by a value	Colorer selon une valeur	card button
+Color	Couleur	
+Palette	Palette	QGIS: palette / rampe de couleurs
+Range	Plage	plage de valeurs
+Label	Étiquette	QGIS term
+Labels	Étiquettes	
+Join	Jointure	QGIS term
+Show joined fields	Afficher les champs joints	
+Unjoin	Supprimer la jointure	
+joined · 172 of 177 matched	joint · 172 sur 177 associés	
+Buffer	Zone tampon	QGIS term
+Show an area within a distance	Afficher une zone à une certaine distance	NimbleMap's everyday name for a buffer
+Show an area within a distance of each	Afficher une zone à une certaine distance de chacun	Pro card button
+Measure length	Mesurer la longueur	Pro card button
+Keep the part of [layer] inside [other]	Conserver la partie de [couche] à l’intérieur de [autre]	clip, in a recipe
+Overview	Aperçu	layer card tab
+Details	Détails	layer card tab
+Card	Fiche	everyday word; « carte » would be confused with the map
+Examples	Exemples	
+Typhoons and hurricanes	Typhons et ouragans	example name
+Heatwaves, summer 2023	Vagues de chaleur, été 2023	example name
+Walled cities of China, 1866	Villes fortifiées de Chine, 1866	example name
+World basics	Le monde : données de base	example name
+Open	Ouvrir	
+Open file…	Ouvrir un fichier…	
+Share	Partager	
+Map image…	Image de la carte…	
+Data…	Données…	
+Export	Exporter	
+Undo	Annuler	macOS term
+Save	Enregistrer	macOS term
+Save…	Enregistrer…	
+Search places or your data	Rechercher des lieux ou vos données	
+Your data	Vos données	search results heading
+Zoom in	Zoom avant	macOS/QGIS term
+Zoom out	Zoom arrière	macOS/QGIS term
+Zoom to layer	Zoomer sur la couche	QGIS term
+Zoom to All Data	Zoomer sur toutes les données	
+Rename	Renommer	
+Remove from map	Retirer de la carte	
+Time slider	Curseur temporel	
+Play	Lire	
+Previous step (←)	Pas précédent (←)	
+Next step (→)	Pas suivant (→)	
+Time step	Pas de temps	
+No data	Aucune donnée	glossary term « sans donnée » / NoData
+No value	Aucune valeur	
+This cell has no data.	Cette cellule n’a pas de données.	
+Median	Médiane	
+Rank	Rang	
+Selected	Sélectionné	
+Keep	Conserver	
+Discard	Abandonner	
+Ask	Demander	Pro feature; the box is « zone de question »
+Ask about your layers	Interrogez vos couches	Pro Ask box placeholder
+Pro	Pro	
+Free	Gratuit	
+Help	Aide	
+Glossary	Glossaire	
+Download	Télécharger	
+Home	Accueil	
+Assumptions	Hypothèses	
+Change	Modifier	
+Compare	Comparer	
+Compare by	Comparer selon	
+Compare with other [layer]	Comparer avec les autres [couche]	
+Compare on the map first	Comparer d’abord sur la carte	
+Back	Retour	
+Apply	Appliquer	
+Category	Catégorie	how a field is read
+Value	Valeur	how a field is read
+Values	Valeurs	section of Overview
+Name	Nom	how a field is read
+Date	Date	how a field is read
+Fields	Champs	
+Format	Format	
+Extent	Emprise	QGIS term
+View in table	Voir dans la table	
+View data	Voir les données	
+Find in [layer]	Rechercher dans [couche]	e.g. Find in storms
+By basin	Par bassin	style tile
+Groups	Groupes	everyday word; QGIS says « classes »
+Smooth	Continu	continuous colour ramp
+Heat	Chaleur	palette name
+Opacity	Opacité	
+Outline	Contour	
+Width	Largeur	
+Size	Taille	
+Show	Afficher	export sheet
+Fit to data	Ajuster aux données	
+Current view	Vue actuelle	
+Slide 16:9	Diapositive 16:9	
+Report A4	Rapport A4	
+Square	Carré	
+North arrow	Flèche du nord	
+Lat/lon labels	Étiquettes lat/lon	
+Grid lines	Quadrillage	everyday word; QGIS says « grille » / « graticule »
+Metric Units	Unités métriques	
+Imperial Units	Unités impériales	
+Work Offline	Travailler hors ligne	
+Working offline: online backgrounds are off	Hors ligne : les fonds de carte en ligne sont désactivés	
+Variable shown	Variable affichée	
+Level shown	Niveau affiché	
+Drop to add to the map	Déposez pour ajouter à la carte	
+Show only values above…	Afficher seulement les valeurs au-dessus de…	
+Change colors and range	Modifier les couleurs et la plage	
+Show where values are like this	Montrer où les valeurs sont semblables	
+Showing 228 of 4,999	Affichage de 228 sur 4 999	counts use a narrow no-break space
+4 objects here	4 objets ici	
+N match	N correspondent	e.g. 228 match
+N lines	N lignes	layer subtitle
+N points	N points	layer subtitle
+N areas	N surfaces	layer subtitle
+N areas, highest first	N surfaces, par valeur décroissante	ranked list
+higher than 99% of N …	supérieur à 99 % des N …	insight line
+lower than 58% of this layer's cells (estimated from a sample)	inférieur à 58 % des cellules de cette couche (estimation sur un échantillon)	insight line
+tied 2nd highest of 228 filtered	2e ex æquo sur 228 filtrées	insight line
+46 of 92	46 sur 92	time slider step count
+Time: 1 Jun 2023 to 31 Aug 2023 (92 steps)	Temps : du 1er juin 2023 au 31 août 2023 (92 pas)	
+Treated as measured values (averaged, not summed)	Traitées comme des mesures (moyennées, pas additionnées)	assumption line
+Heat-wave intensity (°C)	Intensité de la vague de chaleur (°C)	variable name
+Show storms where strength is any of Category 5	Afficher les tempêtes dont strength est parmi Category 5	filter sentence; field and value stay as in the data
+Show areas where type is any of Provincial Capital	Afficher les surfaces dont type est parmi Provincial Capital	filter sentence
+Located using longitude and latitude as GPS coordinates (WGS 84)	Localisé avec la longitude et la latitude comme coordonnées GPS (WGS 84)	
+Amap/Tencent coordinates (GCJ-02): convert	Coordonnées Amap/Tencent (GCJ-02) : convertir	
+GPS coordinates (WGS 84): keep where they are	Coordonnées GPS (WGS 84) : laisser en place	
+If these came from a Chinese map app (Amap, Tencent or Baidu), they may sit a few hundred meters off.	Si ces données viennent d’une application de cartographie chinoise (Amap, Tencent ou Baidu), elles peuvent être décalées de quelques centaines de mètres.	assumption line
+Insight line	Ligne de comparaison	everyday wording
+Recipe	Recette	plain record of how a result was made
+Geodesic	Géodésique	
+Clip	Découper	QGIS: découper (clip)
+Extent (glossary)	Emprise	QGIS term
+Resolution (cell size)	Résolution (taille de cellule)	
+Variable	Variable	
+Assumption	Hypothèse	
+Map image (export)	Image de la carte (export)	
+Ask box (Pro)	Zone de question (Pro)	
+Latitude and longitude	Latitude et longitude	
+Scale and zoom level	Échelle et niveau de zoom	
+File (menu)	Fichier	macOS menu name
+Open Example	Ouvrir un exemple	File menu item
+View (menu)	Présentation	macOS French name of the View menu
+NimbleMap Help	Aide de NimbleMap	Help menu item; Help › NimbleMap Help = Aide › Aide de NimbleMap
+Cancel	Annuler	filter sentence button
+Basemap button	bouton du fond de carte	

@@ -50,16 +50,18 @@ pub fn heading(ui: &mut Ui, title: &str) {
     ui.add_space(2.0);
 }
 
-/// A segmented control of equal segments filling `width`; returns the segment clicked.
+/// A segmented control of equal segments filling `width`; returns the segment clicked. Labels
+/// arrive translated; the segments' ids come from the control's place, not their text, so they
+/// don't change with the language.
 pub fn segmented(ui: &mut Ui, t: &Theme, selected: usize, labels: &[&str], width: f32) -> Option<usize> {
-    let (r, _) = ui.allocate_exact_size(vec2(width, ROW_H - 2.0), Sense::hover());
+    let (r, base) = ui.allocate_exact_size(vec2(width, ROW_H - 2.0), Sense::hover());
     let p = ui.painter();
     p.rect(r, CornerRadius::same(theme::RADIUS_CONTROL), t.surface_raised, Stroke::new(1.0, t.control_stroke), StrokeKind::Inside);
     let w = r.width() / labels.len() as f32;
     let mut out = None;
     for (k, label) in labels.iter().enumerate() {
         let seg = Rect::from_min_size(pos2(r.left() + k as f32 * w, r.top()), vec2(w, r.height()));
-        let resp = ui.interact(seg, ui.id().with(("segment", label, k)), Sense::click()).on_hover_cursor(egui::CursorIcon::PointingHand);
+        let resp = ui.interact(seg, base.id.with(("segment", k)), Sense::click()).on_hover_cursor(egui::CursorIcon::PointingHand);
         let on = k == selected;
         crate::a11y::choice(&resp, *label, on);
         let p = ui.painter();

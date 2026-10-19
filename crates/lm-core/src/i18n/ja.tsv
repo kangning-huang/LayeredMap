@@ -1,0 +1,793 @@
+# NimbleMap interface catalog, ja: English<TAB>translation (format: crates/lm-core/src/i18n.rs).
+# Machine translation awaiting native review: docs/lm/localization.md.
+degrees Celsius	度（セ氏）
+degrees Fahrenheit	度（カ氏）
+square kilometres	平方キロメートル
+square metres	平方メートル
+square miles	平方マイル
+degrees	度
+minus	マイナス
+map	地図
+No data yet	まだデータがありません
+Every layer is hidden	すべてのレイヤーが非表示です
+Open a file or an example to add data. Search places with Command-F.	ファイルかサンプルを開いてデータを追加してください。Command-F で場所を検索できます。
+Arrow keys pan, plus and minus zoom. The layer list and the data table (Command-T) list every record; Command-F finds one.	矢印キーで移動、プラスとマイナスで拡大・縮小します。レイヤーの一覧とデータテーブル（Command-T）にすべてのレコードが並び、Command-F で 1 件を検索できます。
+The whole world	世界全体
+{lat} degrees north, {lon} degrees east	北緯 {lat} 度、東経 {lon} 度
+{lat} degrees north, {lon} degrees west	北緯 {lat} 度、西経 {lon} 度
+{lat} degrees south, {lon} degrees east	南緯 {lat} 度、東経 {lon} 度
+{lat} degrees south, {lon} degrees west	南緯 {lat} 度、西経 {lon} 度
+Selection cleared.	選択を解除しました。
+Cell selected.	セルを選択しました。
+No value	値なし
+Showing {layers}	{layers} を表示中
+Map. {layers}.	地図。{layers}。
+Map. {layers}. {place}.	地図。{layers}。{place}。
+{names} and {last}	{names} と {last}
+About {across} kilometres across, centred at {place}	幅約 {across} キロメートル、中心は {place}
+{layer} layer selected. {subtitle}.	{layer} レイヤーを選択しました。{subtitle}。
+{title} selected.	{title} を選択しました。
+{title} selected. {field} {value}, {phrase}.	{title} を選択しました。{field} {value}、{phrase}。
+{title} selected. {field} {value}.	{title} を選択しました。{field} {value}。
+{n} {noun} selected.	{noun} を {n} 件選択しました。
+{n} objects selected.	{n} 個のオブジェクトを選択しました。
+{layer} cell at {place} selected. {value}.	{place} にある {layer} のセルを選択しました。{value}。
+Summarize in an area I draw	描いた範囲で集計
+The layer was removed.	レイヤーが削除されました。
+A layer is still loading.	読み込み中のレイヤーがあります。
+A condition names no raster.	ラスターを指定していない条件があります。
+Add a condition.	条件を追加してください。
+Add a layer of points to answer this.	答えるには点のレイヤーを追加してください。
+Add a layer of lines to answer this.	答えるには線のレイヤーを追加してください。
+Add a layer of areas to answer this.	答えるには面のレイヤーを追加してください。
+Add a layer of cells to answer this.	答えるにはセルのレイヤーを追加してください。
+Add a layer of points or lines or areas to answer this.	答えるには点・線・面のいずれかのレイヤーを追加してください。
+Analysis	分析
+Developer surface · assistant action	開発者向け · アシスタントのアクション
+Choose a layer	レイヤーを選択
+With	相手
+Distance	距離
+Merge overlaps	重なりを統合
+Choose a value	値を選択
+By	基準
+Choose a raster	ラスターを選択
+a number	数値
+and	〜
+Remove this condition	この条件を削除
++ Add condition	＋ 条件を追加
+or a field	またはフィールド
+Statistic	統計
+of	対象
+Scope	範囲
+Working…	処理中…
+Cancel	キャンセル
+Kept	残しました
+Done	完了
+Preview — not saved	プレビュー — 未保存
+Keep result	結果を残す
+Discard	破棄
+Preview out of date	プレビューが古くなっています
+Preview	プレビュー
+No data	データなし
+Show fewer	表示を減らす
+How this was calculated	計算方法
+Copy	コピー
+All {n} points	すべての点（{n} 個）
+All {n} lines	すべての線（{n} 本）
+All {n} areas	すべての面（{n} 個）
+All {n} cells	すべてのセル（{n} 個）
+All {n} rows	すべての行（{n} 行）
+≥  at least	≥  以上
+≤  at most	≤  以下
+[ ]  between	[ ]  範囲
+“{action}” isn't connected yet.	「{action}」はまだ使えません。
+The question could not be answered. Nothing was added to your map. ({reason})	質問に答えられませんでした。地図には何も追加されていません。（{reason}）
+{n} selected	{n} 件を選択中
+{phase}: {done} of {total}	{phase}：{total} 中 {done}
+{phase}…	{phase}…
+Kept: {title}. {summary}	残しました：{title}。{summary}
+Preview: {summary}	プレビュー：{summary}
+{rank}. {label}: {value} {unit}	{rank}. {label}：{value} {unit}
+Show all {n}	すべて表示（{n}）
+Values: {unit}	値：{unit}
+The assistant isn't set up in this build (it has no assistant key).	このビルドではアシスタントが設定されていません（アシスタントキーがありません）。
+The plan couldn't be kept; nothing changed.	プランを保存できませんでした。何も変更されていません。
+Type your answer, or pick one above	答えを入力するか、上から選んでください
+Ask about your layers	レイヤーについて質問
+Listening… speak your request	聞き取り中… 依頼を話してください
+Stop listening	聞き取りを停止
+Speak your request	依頼を話す
+Ask (Return)	質問（Return）
+Ask	質問
+Planning…	計画中…
+Preview on the map — not saved	地図上のプレビュー — 未保存
+OK	OK
+Keep	残す
+I can't answer that with these layers: {text}	このレイヤーでは答えられません：{text}
+Show only {layer} where {filter}: {shown} of {of}	{layer} のうち {filter} のものだけを表示：{of} 中 {shown}
+New layer: {name}	新しいレイヤー：{name}
+Add {fields} to {layer}	{layer} に {fields} を追加
+Planning “{request}”…	「{request}」を計画中…
+Nothing to undo	取り消す操作はありません
+Map image…	地図画像…
+Data…	データ…
+Open a file first	先にファイルを開いてください
+Map package…	マップパッケージ…
+Search places or your data	場所やデータを検索
+Your data	あなたのデータ
+Loading places…	場所を読み込み中…
+No places match	一致する場所はありません
+Places	場所
+Zoom in	拡大
+Zoom out	縮小
+Basemap	背景地図
+Working offline: online backgrounds are off	オフラインで作業中：オンラインの背景地図はオフです
+Background strength	背景の濃さ
+Credits	出典表記
+Working offline: the detailed background is off	オフラインで作業中：詳細な背景地図はオフです
+Detailed background unavailable offline	詳細な背景地図はオフラインでは使えません
+Detailed background unavailable offline. Your data and tools still work.	詳細な背景地図はオフラインでは使えません。データとツールはそのまま使えます。
+Open a file to see your data on the map.	ファイルを開くと、データが地図に表示されます。
+Close	閉じる
+Open file…	ファイルを開く…
+Examples	サンプル
+Browse data library	データライブラリを見る
+Course datasets to add to the map	地図に追加できる講座用データセット
+Share	共有
+Undo	取り消す
+Layers	レイヤー
+Open	開く
+Map data	地図データ
+© OpenStreetMap contributors (ODbL), through the Protomaps basemap	© OpenStreetMap contributors（ODbL）、Protomaps の背景地図経由
+Offline basemap	オフラインの背景地図
+Natural Earth (public domain)	Natural Earth（パブリックドメイン）
+Place search	地名検索
+GeoNames (geonames.org), CC BY 4.0	GeoNames（geonames.org）、CC BY 4.0
+Fonts	フォント
+Inter and Noto Sans SC (SIL Open Font License 1.1)	Inter と Noto Sans SC（SIL Open Font License 1.1）
+Icons	アイコン
+Phosphor Icons (MIT)	Phosphor Icons（MIT）
+Engine	エンジン
+RustGIS (Apache-2.0)	RustGIS（Apache-2.0）
+{label} arrives in a later phase	{label} は今後のフェーズで追加されます
+Undo {action}	{action} を取り消す
+Open files ({key})	ファイルを開く（{key}）
+Show or hide the layer list ({key})	レイヤーの一覧を表示・非表示（{key}）
+Export a map image ({key}) or data	地図画像（{key}）やデータを書き出す
+{title}, {detail}	{title}、{detail}
+{title}, {detail}, {i} of {n}	{title}、{detail}、{n} 件中 {i} 件目
+{n} km	{n} km
+{n} m	{n} m
+{n} mi	{n} mi
+{n} ft	{n} ft
+Credits: {text}	出典表記：{text}
+Export Diagnostics	診断情報を書き出す
+This is everything the diagnostics file will contain. Nothing is sent: save it, read it, and send it yourself if you want help.	診断ファイルに含まれる内容はこれですべてです。何も送信されません。保存して内容を確認し、サポートが必要なときはご自分で送ってください。
+It holds no data values or file contents; file and folder names may appear in error messages.	データの値やファイルの中身は含まれません。エラーメッセージにファイル名やフォルダ名が含まれることがあります。
+Save…	保存…
+Couldn't start listening.	聞き取りを開始できませんでした。
+Speaking isn't available on Windows yet. Press Windows+H to type with your voice instead.	Windows ではまだ音声入力を使えません。代わりに Windows+H を押すと、声で入力できます。
+Speaking needs the {app} app (its speech helper isn't here).	音声入力には {app} アプリが必要です（音声ヘルパーが見つかりません）。
+Couldn't start listening: {error}	聞き取りを開始できませんでした：{error}
+Drawing — click to add points, double-click to finish, Esc to cancel	描画中 — クリックで点を追加、ダブルクリックで終了、Esc でキャンセル
+Drawing — drag a rectangle, Esc to cancel	描画中 — ドラッグで長方形を描く、Esc でキャンセル
+World basics	世界の基本データ
+Cities, countries and elevation	都市、国、標高
+Heatwaves, summer 2023	2023年夏の熱波
+Daily heatwave intensity worldwide, June to August	6〜8月の世界の日ごとの熱波の強度
+Typhoons and hurricanes	台風とハリケーン
+4,999 storm tracks since 1980	1980年以降の嵐の経路 4,999 本
+Walled cities of China, 1866	1866年の中国の城郭都市
+1,789 city walls of late imperial China	清代後期の中国の城壁 1,789 か所
+Big earthquakes	大地震
+14,537 of magnitude 6 or more since 1900	1900年以降のマグニチュード 6 以上 14,537 件
+Volcanoes	火山
+1,609 volcanoes and their status	1,609 の火山とその活動状況
+Airports	空港
+5,280 large and medium airports, with elevation	大・中規模の空港 5,280 か所（標高付き）
+Power plants	発電所
+34,936 plants by fuel and capacity	燃料と出力別の発電所 34,936 か所
+Slide 16:9	スライド 16:9
+Report A4	レポート A4
+Square	正方形
+2480 × 3508 px · A4 at 300 dpi	2480 × 3508 px · 300 dpi の A4
+slide	スライド
+square	正方形
+Map	地図
+The preview isn't included. Keep it to put it in the image.	プレビューは含まれていません。画像に入れるには、プレビューを残してください。
+Some of the background couldn't be loaded, so the image shows less detail.	背景地図の一部を読み込めなかったため、画像の細部が少なくなっています。
+Export map image	地図画像を書き出す
+Size	サイズ
+Title	タイトル
+Add a title (optional)	タイトルを追加（任意）
+Caption	キャプション
+Use the caption made from the layers	レイヤーから作ったキャプションを使う
+Made from the layers; edit it if you like.	レイヤーから作成しました。必要に応じて編集してください。
+Legend	凡例
+No layers are shown.	表示中のレイヤーがありません。
+It places itself clear of the data; drag it to move it.	データと重ならない位置に自動で配置されます。ドラッグで移動できます。
+Place the legend automatically	凡例を自動で配置
+Drawing the map at full size…	地図を実寸で描画中…
+Fit to data	データに合わせる
+Current view	現在の表示
+No layers are shown, so the map shows the current view.	表示中のレイヤーがないため、現在の表示範囲を使います。
+Grid lines	経緯線
+Auto	自動
+On	オン
+Off	オフ
+Legend: drag to move it	凡例：ドラッグで移動
+Format	形式
+Show	表示
+North arrow	方位記号
+Scale bar	スケールバー
+Lat/lon labels	緯度経度ラベル
+{paper} · PDF, text and symbols as vectors	{paper} · PDF、文字と記号はベクター
+{layer} is colored by value but has no legend.	{layer} は値で色分けされていますが、凡例がありません。
+{layer} is filtered: the image shows {shown} of {total} {nouns}.	{layer} は絞り込まれています：画像には {total} 件中 {shown} 件の {nouns} が表示されます。
+The {basemap} basemap's terms don't allow exported images, so the offline basemap is used.	{basemap} の背景地図は利用規約で画像の書き出しが認められていないため、オフラインの背景地図を使います。
+about {km} km across: a north arrow and a scale bar.	幅約 {km} km：方位記号とスケールバー。
+about {km} km across: latitude and longitude on the frame, and a scale bar.	幅約 {km} km：枠に緯度・経度、スケールバー。
+about {km} km across and {degrees}° tall: latitude and longitude on the frame. No scale bar, as distances stretch with latitude.	幅約 {km} km、高さ {degrees}°：枠に緯度・経度。距離が緯度によって伸びるため、スケールバーはありません。
+about {km} km across: latitude and longitude on the frame. Distances vary too much for one scale bar.	幅約 {km} km：枠に緯度・経度。距離の差が大きすぎて、1 本のスケールバーでは表せません。
+Made with {app}.	{app} で作成。
+Data: {sources}. Made with {app}.	データ：{sources}。{app} で作成。
+No data ({n})	データなし（{n}）
+Credits are always included: {credits}	出典表記は常に入ります：{credits}
+The image couldn't be made: {error}	画像を作成できませんでした：{error}
+Auto: {rules}	自動：{rules}
+{size} · exactly as saved	{size} · 保存されるとおり
+The layer is gone.	レイヤーがなくなりました。
+The layer's data is still loading.	レイヤーのデータはまだ読み込み中です。
+Export data	データを書き出す
+Export…	書き出す…
+Layer	レイヤー
+Filtered	絞り込み後
+Selected	選択中
+Records	レコード
+The layer has no filter and nothing is selected.	このレイヤーにはフィルターも選択もありません。
+The layer has no filter.	このレイヤーにはフィルターがありません。
+Nothing is selected in this layer.	このレイヤーでは何も選択されていません。
+Location	位置
+Longitude, latitude	経度、緯度
+Lines and areas are written as well-known text (WKT).	線と面は WKT（Well-Known Text）で書き出されます。
+Fields	フィールド
+None	なし
+All	すべて
+The band shown, on the raster's own grid and coordinate system: resampling to WGS 84 would change its values.	表示中のバンドを、ラスター自身のグリッドと座標系のまま書き出します。WGS 84 に再サンプリングすると値が変わってしまうためです。
+Coordinates are written in WGS 84 (longitude, latitude).	座標は WGS 84（経度、緯度）で書き出されます。
+{name} (filtered)	{name}（絞り込み後）
+{name} (selected)	{name}（選択中）
+All {n}	すべて（{n}）
+Filtered {n}	絞り込み後（{n}）
+Selected {n}	選択中（{n}）
+{note}: left out unless you check it	{note}：チェックしない限り含まれません
+Styles and recipes stay in {app}: these formats carry only locations and values.	スタイルとレシピは {app} の中に残ります。これらの形式に含まれるのは位置と値だけです。
+Clear	解除
+Clear the search	検索を解除
+Zoom to it	ズーム
+Zoom to all	すべてにズーム
+No points contain “{q}”.	「{q}」を含む点はありません。
+No lines contain “{q}”.	「{q}」を含む線はありません。
+No areas contain “{q}”.	「{q}」を含む面はありません。
+No cells contain “{q}”.	「{q}」を含むセルはありません。
+No rows contain “{q}”.	「{q}」を含む行はありません。
+Find in {layer}	{layer} 内を検索
+{n} found	{n} 件見つかりました
+‹ All {n} found	‹ 見つかった {n} 件すべて
+{title}, {field}: {value}	{title}、{field}：{value}
+{n} more on the map · 	地図上にあと {n} 件 ·
+More actions…	その他の操作…
+Working out how this compares…	ほかとの比較を計算中…
+point	点
+line	線
+area	面
+cell	セル
+row	行
+The data is still loading.	データはまだ読み込み中です。
+Show fewer fields	フィールドの表示を減らす
+View in table	テーブルで表示
+Zoom to	ズーム
+◉ Range fitted to the view	◉ 表示範囲に合わせた範囲
+Color	色
+One color	単色
+Smooth	連続
+Groups	段階
+Palette	パレット
+Equal counts	件数を均等に
+Equal steps	間隔を均等に
+Fit range to view	範囲を表示に合わせる
+Larger areas tend to have higher counts.	面積が大きいほど件数が多くなりがちです。
+Color by count per km² instead?	代わりに 1 km² あたりの件数で色分けしますか？
+Use totals	合計を使う
+Same size	同じサイズ
+Labels	ラベル
+Opacity	不透明度
+Outline	輪郭線
+Width	太さ
+Band	バンド
+From	下限
+To	上限
+Reset to the middle 96% of the time step	この時間ステップの中央 96% に戻す
+Same for every time step: the middle 96% of the time step	すべての時間ステップで共通：この時間ステップの中央 96%
+Covers the middle 96% of cells	セルの中央 96% をカバー
+Reset to the middle 96% of cells	セルの中央 96% に戻す
+Only show values above	指定した値より上だけを表示
+Range	範囲
+Stop highlighting	強調表示をやめる
+{n} point	{n} 個の点
+{n} points	{n} 個の点
+{n} line	{n} 本の線
+{n} lines	{n} 本の線
+{n} area	{n} 個の面
+{n} areas	{n} 個の面
+{n} cell	{n} 個のセル
+{n} cells	{n} 個のセル
+{n} row	{n} 行
+{n} rows	{n} 行
+Blue	青
+Orange	オレンジ
+Bluish green	青緑
+Vermilion	朱色
+Reddish purple	赤紫
+Sky blue	空色
+Yellow	黄
+Black	黒
+Show all {n} fields	すべてのフィールドを表示（{n}）
+Band {n} ({unit})	バンド {n}（{unit}）
+Band {n}	バンド {n}
+Showing only values above {v}	{v} より上の値だけを表示中
+Highlighting {low} to {high}	{low}〜{high} を強調表示中
+{field} per km² (geodesic area)	1 km² あたりの {field}（測地線による面積）
+Band {n} ({name})	バンド {n}（{name}）
+Reset to the middle 96% of {n} time steps	{n} 個の時間ステップの中央 96% に戻す
+Same for every time step: the middle 96% of {n} time steps	すべての時間ステップで共通：{n} 個の時間ステップの中央 96%
+{low} to {high}	{low}〜{high}
+Use this match	この対応を使う
+Use these matches	これらの対応を使う
+Hide the rows not matched	一致しなかった行を隠す
+Keep the original colors	元の色のままにする
+Looking for the places this table describes…	この表が表す場所を探しています…
+None of these: keep it as a table	どれでもない：表のままにする
+Use this	これを使う
+Join	結合
+Keep as a table	表のままにする
+Choose other columns…	ほかの列を選ぶ…
+Open a point, line or area layer to match this table to.	この表を対応付けるには、点・線・面のレイヤーを開いてください。
+Several rows for one place	1 つの場所に複数の行
+{n} name looks like a typo: {examples}	{n} 件の名前が入力ミスのようです：{examples}
+{n} names look like typos: {examples}	{n} 件の名前が入力ミスのようです：{examples}
+{n} row with no {field}	{field} のない行が {n} 行
+{n} rows with no {field}	{field} のない行が {n} 行
+Automatic	自動
+Latest year or date	最新の年または日付
+Combine	まとめる
+{table} now appears under {layer} in Layers.	{table} は「レイヤー」の {layer} の下に表示されるようになりました。
+and {n} more	ほか {n} 件
+Which places does {table} describe?	{table} はどの場所を表していますか？
+Join {table} to {target}?	{table} を {target} に結合しますか？
+Match {layer} to a layer	{layer} をレイヤーに対応付ける
+Column in {layer}	{layer} の列
+{matched} of {total} {nouns} match · {rows_matched} of {rows} rows find a place	{total} 件中 {matched} 件の {nouns} が一致 · {rows} 行中 {rows_matched} 行が場所に対応
+Ctrl+{key}	Ctrl+{key}
+Ctrl+Shift+{key}	Ctrl+Shift+{key}
+Points	点
+Lines	線
+Areas	面
+Grid	グリッド
+Table	テーブル
+Data library	データライブラリ
+Search datasets	データセットを検索
+Offline: showing the list from your last visit	オフライン：前回の一覧を表示しています
+Try again	再試行
+Loading the library…	ライブラリを読み込み中…
+The library is empty.	ライブラリは空です。
+Add to map	地図に追加
+Downloaded: opens without the internet	ダウンロード済み：インターネットなしで開けます
+Downloaded	ダウンロード済み
+{n} GB	{n} GB
+{n} MB	{n} MB
+{n} KB	{n} KB
+No datasets match “{q}”.	「{q}」に一致するデータセットはありません。
+Downloading {done} of {total}	ダウンロード中：{total} 中 {done}
+A layer is still loading. Try again in a moment.	読み込み中のレイヤーがあります。少し待ってからもう一度お試しください。
+Packaging the map and its data…	地図とデータをパッケージにまとめています…
+packaging stopped unexpectedly	パッケージ作成が予期せず停止しました
+Share as a map package	マップパッケージとして共有
+One file with the map and its data, so it opens on another computer.	地図とデータを 1 つのファイルにまとめ、ほかのコンピューターでも開けるようにします。
+Save Package…	パッケージを保存…
+Before compression; text files shrink a lot in the package.	圧縮前のサイズです。テキストファイルはパッケージ内で大きく縮みます。
+Data it includes	含まれるデータ
+No source files: the map's layers are all stored in it already.	元のファイルはありません：地図のレイヤーはすべてパッケージ内に保存済みです。
+can't be found, so it's left out	見つからないため含まれません
+Folder paths	フォルダのパス
+The map names no folders on this computer.	この地図はこのコンピューターのフォルダを参照していません。
+Paths name your account and folders, so they are left out; files keep only their names.	パスにはアカウント名やフォルダ名が含まれるため除外され、ファイルは名前だけが残ります。
+Fields that look personal	個人情報らしいフィールド
+None found: no names, emails, phone or ID numbers.	見つかりませんでした：氏名、メールアドレス、電話番号、ID 番号はありません。
+Checked fields are left out of the package. Your own map keeps them.	チェックしたフィールドはパッケージから除外されます。手元の地図には残ります。
+Unknown — check before sharing	不明 — 共有する前に確認してください
+The map is colored by it	地図の色分けに使われている
+The map sizes points by it	地図の点の大きさに使われている
+The map labels by it	地図のラベルに使われている
+The filter uses it	フィルターに使われている
+{layer} (without the fields left out)	{layer}（除外したフィールドを除く）
+The package couldn't be made: {error}	パッケージを作成できませんでした：{error}
+Saved {name} ({size}), without {missing}: it couldn't be found.	{name}（{size}）を保存しました。{missing} は見つからなかったため含まれていません。
+Saved {name}, but {layer} couldn't be kept in it ({why}).	{name} を保存しましたが、{layer} を含められませんでした（{why}）。
+Saved {name} ({size}): the map and its data, ready to share.	{name}（{size}）を保存しました：地図とデータが入っていて、すぐに共有できます。
+The package couldn't be made. {error}	パッケージを作成できませんでした。{error}
+{name} (package)	{name}（パッケージ）
+About {size}	約 {size}
+Stored in the package itself: {layers}.	パッケージ自体に保存：{layers}。
+Layers: {layers}	レイヤー：{layers}
+Licence: {licence}	ライセンス：{licence}
+Leave out {field} ({layer})	{field} を除外（{layer}）
+{note}. {why}, so it stays.	{note}。{why}ため、残ります。
+Remove all	すべて外す
+Open file	ファイルを開く
+Dismiss	閉じる
+Hide the joined table	結合した表を隠す
+Show the joined table	結合した表を表示
+View data	データを表示
+Match to a layer…	レイヤーに対応付ける…
+Style…	スタイル…
+Zoom to layer	レイヤーにズーム
+Rename	名前を変更
+Remove from map	地図から外す
+Needs a decision: see the layer's panel	判断が必要です：レイヤーのパネルを確認してください
+Variable shown	表示する変数
+Level shown	表示する高度
+joined	結合済み
+Show joined fields	結合したフィールドを表示
+Unjoin	結合を解除
+The table wasn't opened in this session, so it can't be put back	この表はこのセッションで開いたものではないため、元に戻せません
+Where should this data be?	このデータはどこにあるべきですか？
+This file doesn't say where on Earth its coordinates are. Name a place it covers.	このファイルには、座標が地球上のどこを指すかが書かれていません。データが含む場所を 1 つ入力してください。
+A city or town, e.g. Shanghai	都市や町の名前（例：Shanghai）
+Use the middle of the map	地図の中心を使う
+the middle of the map	地図の中心
+Open as a table	表として開く
+Not sure	わからない
+Compare on the map first	まず地図上で比較
+Close the panel	パネルを閉じる
+Back	戻る
+This cell has no data.	このセルにはデータがありません。
+This layer has no values to compare.	このレイヤーには比較できる値がありません。
+Compare by	比較の基準
+Export problem list	問題の一覧を書き出す
+Opened as a table: there is nothing to place on the map yet.	表として開きました：地図に配置できるものはまだありません。
+Compare	比較
+Add unit	単位を追加
+Change	変更
+as in the file	ファイルのまま
+converted from Baidu (BD-09)	Baidu（BD-09）から変換
+converted from Amap/Tencent (GCJ-02)	Amap/Tencent（GCJ-02）から変換
+Keep the set that sits on the streets.	道路にぴったり重なるほうを残してください。
+Keep converted	変換したものを残す
+Keep as in the file	ファイルのまま残す
+Try Amap/Tencent instead	Amap/Tencent で試す
+Try Baidu instead	Baidu で試す
+Filtered:	絞り込み中：
+Values	値
+Source	ソース
+Text encoding	文字コード
+Coordinate system	座標系
+Extent	領域
+Complete	完了
+Needs a decision	判断が必要
+Canceled	キャンセルしました
+Not loaded (the source is read again when the document opens)	未読み込み（書類を開くとソースを読み直します）
+Import	読み込み
+Remove from insight	比較の一文から外す
+Show in insight	比較の一文に表示
+Treat this field as	このフィールドの扱い
+Back to the detected role	自動判定に戻す
+Assumptions	仮定
+Export problem list…	問題の一覧を書き出す…
+Row	行
+Reason	理由
+Drop to add to the map	ドロップして地図に追加
+Overview	概要
+Style	スタイル
+Details	詳細
+{n} {things} opened; {left} has no usable location.	{n} 件の {things} を開きました。{left} 件は使える位置がありません。
+{n} {things} opened; {left} have no usable location.	{n} 件の {things} を開きました。{left} 件は使える位置がありません。
+{n} records opened; {left} has no usable location.	{n} 件のレコードを開きました。{left} 件は使える位置がありません。
+{n} records opened; {left} have no usable location.	{n} 件のレコードを開きました。{left} 件は使える位置がありません。
+{line} (applied quietly; chosen: {choice})	{line}（自動で適用、選択：{choice}）
+{line} (shown; chosen: {choice})	{line}（表示済み、選択：{choice}）
+{line} (answered; chosen: {choice})	{line}（回答済み、選択：{choice}）
+{line} (needs a decision; chosen: {choice})	{line}（判断が必要、選択：{choice}）
+{line} (blocks actions; chosen: {choice})	{line}（操作を停止中、選択：{choice}）
+Count	件数
+Density	密度
+Value	数値
+ID	ID
+Name	名前
+Category	カテゴリ
+Text	テキスト
+Date	日付
+Coordinate	座標
+Unknown	不明
+Remove every layer from the map ({key} brings them back)	すべてのレイヤーを地図から外す（{key} で元に戻せます）
+{error}\n\nDetails: {details}	{error}\n\n詳細：{details}
+Dismiss {name}	{name} を閉じる
+Cancel {name}	{name} をキャンセル
+Show {layer}	{layer} を表示
+Joined tables of {layer}	{layer} に結合した表
+Hide the {n} joined tables	結合した表（{n} 件）を隠す
+Show the {n} joined tables	結合した表（{n} 件）を表示
+joined · {matched} of {total} matched	結合済み · {total} 件中 {matched} 件が一致
+Joined table {table}, {caption}	結合した表 {table}、{caption}
+Joined to {layer}: its fields are part of the layer	{layer} に結合済み：フィールドはレイヤーの一部になっています
+No coordinate system puts this data near {name}. Try another place, or open it as a table.	このデータを {name} の近くに置く座標系はありません。別の場所を試すか、表として開いてください。
+{crs} — lands {km} km from {name}	{crs} — {name} から {km} km の位置
+{choice} (recommended)	{choice}（おすすめ）
+{lat}°, {lon}°	{lat}°, {lon}°
+{layer} · cell	{layer} · セル
+{n} {things}, highest first	{n} 件の {things}（大きい順）
+{n}{plus} objects here	ここに {n}{plus} 個のオブジェクト
+Review {n}	{n} 件を確認
+Compare {layer}	{layer} を比較
++{n} more	ほか {n} 件
+{variable}: {low} to {high}{unit} over {sampled} of {steps} time steps	{variable}：{low}〜{high}{unit}（{steps} 時間ステップ中 {sampled} を抽出）
+{variable}: {low} to {high}{unit}	{variable}：{low}〜{high}{unit}
+Time: {range}	期間：{range}
+Band {n}: {low} to {high}{unit}	バンド {n}：{low}〜{high}{unit}
+Band {n} ({name}): {low} to {high}{unit}	バンド {n}（{name}）：{low}〜{high}{unit}
+{west}° to {east}° E, {south}° to {north}° N	東経 {west}°〜{east}°、北緯 {south}°〜{north}°
+Complete, with {n} records excluded	完了（{n} 件のレコードを除外）
+Failed: {reason}	失敗：{reason}
+From {table}	{table} から
+Show {field} in insight	{field} を比較の一文に表示
+Excluded records — {layer}	除外したレコード — {layer}
+{n} records were left out of the map. Your file has not been changed.	{n} 件のレコードが地図から除外されました。元のファイルは変更されていません。
+Untitled	名称未設定
+Your own file has not been changed.	元のファイルは変更されていません。
+Restore	復元
+Your changes will be lost if you don't save them.	保存しないと、変更内容は失われます。
+Don't Save	保存しない
+Save	保存
+Use It	使用
+Locate…	場所を指定…
+Remove layer	レイヤーを外す
+its size changed	サイズが変わっています
+its contents changed	内容が変わっています
+its modification date changed	変更日が変わっています
+Using {file}. 1 result made from the old file now say Source changed.	{file} を使用します。古いファイルから作った結果 1 件に「Source changed」と表示されます。
+Using {file}. {n} results made from the old file now say Source changed.	{file} を使用します。古いファイルから作った結果 {n} 件に「Source changed」と表示されます。
+This file looks different ({reason}). Use it anyway?	このファイルは以前と違うようです（{reason}）。このまま使いますか？
+Saved, but {name} couldn't be kept in the map file ({why}).	保存しましたが、{name} を地図ファイルに含められませんでした（{why}）。
+The autosaved map could not be restored. {error}	自動保存された地図を復元できませんでした。{error}
+Do you want to save the changes you made to '{name}'?	「{name}」に加えた変更を保存しますか？
+a date	日付
+some text	テキスト
+Remove this filter	このフィルターを削除
+Filter	フィルター
+Add a filter	フィルターを追加
+Close the table	テーブルを閉じる
+Search	検索
+Search the table	テーブルを検索
+no value	値なし
+where	のうち
+choose…	選択…
+Finish the sentence to see how many match.	文を完成させると、一致する件数が表示されます。
+Apply	適用
+is	が次と一致
+is not	が次と不一致
+contains	が次を含む
+starts with	が次で始まる
+ends with	が次で終わる
+is empty	が空
+above	が次より上
+below	が次より下
+between	が次の範囲
+before	が次より前
+after	が次より後
+is any of	が次のいずれか
+Sort by {name}, sorted ascending	{name} で並べ替え（昇順）
+Sort by {name}, sorted descending	{name} で並べ替え（降順）
+Sort by {name}	{name} で並べ替え
+Showing {shown} of {total}	{total} 件中 {shown} 件を表示
+Remove filter: {filter}	フィルターを削除：{filter}
+{n} match	{n} 件が一致
+Previous step (←)	前のステップ（←）
+Pause	一時停止
+Play	再生
+Next step (→)	次のステップ（→）
+Time step	時間ステップ
+{layer} · {step} of {steps}	{layer} · {steps} 中 {step}
+A new version is available	新しいバージョンがあります
+Close the update notice	アップデートのお知らせを閉じる
+{app} {version}: {notes}	{app} {version}：{notes}
+Download {version}	{version} をダウンロード
+That layer is gone.	そのレイヤーはなくなりました。
+This layer has no variables to choose from.	このレイヤーには選べる変数がありません。
+This layer's data isn't loaded.	このレイヤーのデータは読み込まれていません。
+{layer} has no variable {variable}.	{layer} に変数 {variable} はありません。
+The layer isn't loaded yet.	レイヤーはまだ読み込まれていません。
+Pick a column on each side.	両側で列を 1 つずつ選んでください。
+{matched} of {keys} match	{keys} 件中 {matched} 件が一致
+Joined {table} to {layer}: {matched} of {total} {things} matched.	{table} を {layer} に結合しました：{total} 件中 {matched} 件の {things} が一致しました。
+Show the {r} row not matched	一致しなかった {r} 行を表示
+Show the {r} rows not matched	一致しなかった {r} 行を表示
+Show the {k} not matched	一致しなかった {k} 件を表示
+Show the {k} not matched ({r} row)	一致しなかった {k} 件を表示（{r} 行）
+Show the {k} not matched ({r} rows)	一致しなかった {k} 件を表示（{r} 行）
+file	ファイル
+Preparing a faster preview…	高速なプレビューを準備中…
+Still reading a layer. Undo in a moment.	レイヤーをまだ読み込み中です。少し待ってから取り消してください。
+Still reading a layer. Redo in a moment.	レイヤーをまだ読み込み中です。少し待ってからやり直してください。
+That couldn't be done. Nothing was changed.	実行できませんでした。何も変更されていません。
+The layer changed while it was being read again, so that change was not applied.	読み直している間にレイヤーが変わったため、その変更は適用されませんでした。
+That assumption couldn't be changed.	その仮定は変更できませんでした。
+Only points, lines and areas can be converted.	変換できるのは点・線・面だけです。
+The layer changed while it was being converted, so nothing was added.	変換中にレイヤーが変わったため、何も追加されませんでした。
+The converted layer couldn't be added.	変換したレイヤーを追加できませんでした。
+Only points, lines and areas can be compared.	比較できるのは点・線・面だけです。
+This layer has nothing to compare.	このレイヤーには比較するものがありません。
+{file} has changed since this document was saved; it was read as it is now.	{file} はこの書類を保存したあとに変更されています。現在の内容で読み込みました。
+{layer} is no longer in {file}.	{layer} は {file} にもうありません。
+Can't find {file}. It was last seen in {folder}.	{file} が見つかりません。最後にあった場所は {folder} です。
+Can't find {file}. It was last seen in its folder.	{file} が見つかりません。元のフォルダにありません。
+The layer couldn't be read again.	レイヤーを読み直せませんでした。
+Reading {done} of {total}	読み込み中：{total} 中 {done}
+Still reading {layer}. Try again in a moment.	{layer} をまだ読み込み中です。少し待ってからもう一度お試しください。
+Save map package	マップパッケージを保存
+{app} map	{app} の地図
+Locate {file}	{file} の場所を指定
+A map-first GIS. Built on RustGIS.	地図が主役の GIS。RustGIS をベースに作られています。
+File	ファイル
+Open…	開く…
+Open Example	サンプルを開く
+Browse data library…	データライブラリを見る…
+Save As…	別名で保存…
+Export Map Image…	地図画像を書き出す…
+Export Data…	データを書き出す…
+Export Map Package…	マップパッケージを書き出す…
+Close Window	ウインドウを閉じる
+Exit	終了
+Edit	編集
+Find…	検索…
+Remove All Layers	すべてのレイヤーを外す
+Use System Appearance	システムの外観に合わせる
+Light	ライト
+Dark	ダーク
+Metric Units	メートル法
+Imperial Units	ヤード・ポンド法
+System Language	システムの言語
+Language	言語
+Show Frame Rate	フレームレートを表示
+Work Offline	オフラインで作業
+View	表示
+Zoom In	拡大
+Zoom Out	縮小
+Zoom to All Data	すべてのデータにズーム
+Full Screen	フルスクリーン
+Window	ウインドウ
+Help	ヘルプ
+Export Diagnostics…	診断情報を書き出す…
+About {app}	{app} について
+Quit {app}	{app} を終了
+Undo ({key})	取り消す（{key}）
+Redo ({key})	やり直す（{key}）
+{app} Help	{app} ヘルプ
+Satellite	衛星画像
+Offline	オフライン
+Try an example	サンプルを試す
+Color by a value	値で色分け
+Color or size by a value	値で色分け・サイズ分け
+Filter [layer]	[layer] を絞り込む
+Filter by [Type]	[Type] で絞り込む
+Compare with other [layer]	他の [layer] と比較
+Change colors and range	色と範囲を変更
+Change colors	色を変更
+Show only values above…	指定した値より上だけを表示…
+Show where values are like this	似た値の場所を表示
+Map using coordinate columns	座標の列で地図に配置
+Match to [other]	[other] に対応付ける
+Show an area within a distance	一定距離内の範囲を表示
+Show an area within a distance of each	各地物から一定距離内の範囲を表示
+Measure from here	ここから測る
+Which [District] is it in?	どの [District] に含まれる？
+Count [Schools] in each [District]	各 [District] 内の [Schools] を数える
+Add [Heat] values to each [School]	各 [School] に [Heat] の値を追加
+Measure its area	面積を測る
+What's inside?	中に何がある？
+Summarize [Heat] here	ここの [Heat] を集計
+Summarize [Heat] in each [District]	各 [District] の [Heat] を集計
+Rank [layer] by a value	[layer] を値で順位付け
+Measure length	長さを測る
+Summarize data here	ここのデータを集計
+Count [Schools] here	ここの [Schools] を数える
+Add the distance to the nearest of [other] to [layer]	[layer] に最寄りの [other] までの距離を追加
+Add the distance to the nearest neighbour in [layer]	[layer] に最も近い隣の地物までの距離を追加
+Add [other] details to [layer]	[layer] に [other] の情報を追加
+Add area and coordinates to [layer]	[layer] に面積と座標を追加
+Add a field calculated from two values	2 つの値から計算したフィールドを追加
+Split [layer] into separate parts	[layer] を個別のパーツに分割
+Keep the part of [layer] inside [other]	[layer] のうち [other] の内側を残す
+Remove the part of [layer] inside [other]	[layer] のうち [other] の内側を取り除く
+Find areas where [Heat] meets conditions	[Heat] が条件を満たす場所を探す
+Settings	設定
+Account	アカウント
+Delete Account	アカウントを削除
+Sign Out	サインアウト
+Delete Account…	アカウントを削除…
+Working offline: Delete Account needs the network. Sign Out works offline.	オフラインで作業中：アカウントの削除にはネットワークが必要です。サインアウトはオフラインでもできます。
+Region	地域
+Sign-in for mainland China (WeChat, Alipay, phone number) is coming in a later version.	中国本土向けのサインイン（WeChat、Alipay、電話番号）は今後のバージョンで対応します。
+Finish signing in in your browser…	ブラウザでサインインを完了してください…
+Signing out…	サインアウト中…
+Deleting your account…	アカウントを削除中…
+Email address	メールアドレス
+Verify	確認
+The link has stopped working on this Mac; the code still works for an hour.	この Mac ではリンクが使えなくなりました。コードは 1 時間有効です。
+The link has stopped working on this computer; the code still works for an hour.	このコンピューターではリンクが使えなくなりました。コードは 1 時間有効です。
+Send a New Email	メールを再送信
+Use a Different Email	別のメールアドレスを使う
+Asking about your layers needs a free account. Your maps and files stay on this computer.	レイヤーについて質問するには、無料のアカウントが必要です。地図とファイルはこのコンピューターに残ります。
+Sign In…	サインイン…
+You're signed out.	サインアウトしました。
+Your account was deleted.	アカウントを削除しました。
+Signed in with {provider} · {region}	{provider} でサインイン中 · {region}
+{pro} is on for this account.	このアカウントでは {pro} が有効です。
+Delete your {app} account? {pro} stops working on every computer you use. Your maps and files are not affected.	{app} のアカウントを削除しますか？お使いのすべてのコンピューターで {pro} が使えなくなります。地図とファイルには影響しません。
+Sign in to use {pro}	サインインして {pro} を使う
+{pro} is free while it's new. Your account only says who you are: your maps and files never leave this computer.	{pro} は提供開始記念で無料です。アカウントはあなたが誰かを示すだけで、地図やファイルがこのコンピューターの外に出ることはありません。
+Sending an email to {address}…	{address} にメールを送信中…
+We sent an email to {address}. Enter the {n}-digit code in it.	{address} にメールを送信しました。メールに記載された {n} 桁のコードを入力してください。
+We sent an email to {address}. Click the link in it on this Mac, or enter the {n}-digit code.	{address} にメールを送信しました。この Mac でメール内のリンクをクリックするか、{n} 桁のコードを入力してください。
+We sent an email to {address}. Click the link in it on this computer, or enter the {n}-digit code.	{address} にメールを送信しました。このコンピューターでメール内のリンクをクリックするか、{n} 桁のコードを入力してください。
+{n}-digit code	{n} 桁のコード
+Sign in to use {pro} (Settings › Account).	{pro} を使うにはサインインしてください（設定 › アカウント）。
+Settings…	設定…
+International	国際版
+Mainland China	中国本土
+Continue with Apple	Apple で続ける
+Continue with Google	Google で続ける
+Continue with X	X で続ける
+Email me a sign-in code	サインインコードをメールで受け取る
+Continue with WeChat	WeChat で続ける
+Continue with Alipay	Alipay で続ける
+Text me a code	SMS でコードを受け取る
+Sign-in isn't available in this build yet.	このビルドではまだサインインを利用できません。
+{app} is working offline, so it can't reach the sign-in service. Turn off View › Work Offline to sign in.	{app} はオフラインで作業中のため、サインインサービスに接続できません。サインインするには、表示 › オフラインで作業 をオフにしてください。
+Sign-in was cancelled.	サインインがキャンセルされました。
+Sign-in took too long. Try again.	サインインに時間がかかりすぎました。もう一度お試しください。
+Sign-in didn't finish: {reason}	サインインが完了しませんでした：{reason}
+You're signed out. Sign in again to use {pro}.	サインアウトしました。{pro} を使うには、もう一度サインインしてください。
+Couldn't reach the sign-in service: {error}	サインインサービスに接続できませんでした：{error}
+The sign-in service answered {status}: {reason}	サインインサービスの応答 {status}：{reason}
+Couldn't keep the sign-in on this computer: {error}	このコンピューターにサインイン情報を保存できませんでした：{error}
+Couldn't start sign-in: {error}	サインインを開始できませんでした：{error}
+The code is the {n} digits in the email.	コードはメールに記載された {n} 桁の数字です。
+That code didn't work. Check it, or send a new email.	そのコードは使えませんでした。確認するか、メールを再送信してください。
+Too many attempts. Wait a few minutes, then try again.	試行回数が多すぎます。数分待ってから、もう一度お試しください。
+no reason given	理由は示されていません
+that doesn't look like an email address	メールアドレスの形式ではないようです
+too many emails were sent; wait a minute and try again	送信したメールが多すぎます。1 分ほど待ってからもう一度お試しください
+the sign-in service sent no code	サインインサービスからコードが届きませんでした
+Signed in with {provider}	{provider} でサインイン中
+Apple	Apple
+Google	Google
+X	X
+email	メール
+a phone number	電話番号
+WeChat	WeChat
+Alipay	Alipay
+You're signed out. Sign in again in Settings › Account to use {pro}.	サインアウトしました。{pro} を使うには、設定 › アカウント でもう一度サインインしてください。
+{pro} isn't on for this account.	このアカウントでは {pro} が有効になっていません。
+This account can't use {pro} yet. Try again in a minute.	このアカウントではまだ {pro} を使えません。1 分ほどしてからもう一度お試しください。
+You've used this month's assistant allowance. It renews tomorrow.	今月のアシスタント利用枠を使い切りました。明日リセットされます。
+You've used this month's assistant allowance. It renews in {n} days.	今月のアシスタント利用枠を使い切りました。{n} 日後にリセットされます。
+You've used today's assistant allowance. It renews within the hour.	今日のアシスタント利用枠を使い切りました。1 時間以内にリセットされます。
+You've used today's assistant allowance. It renews in about {n} hours.	今日のアシスタント利用枠を使い切りました。約 {n} 時間後にリセットされます。
+The assistant service is out of credit. It has been told; try again later.	アシスタントサービスのクレジットが不足しています。運営者に通知済みです。しばらくしてからもう一度お試しください。
+The assistant service is busy. Try again in a minute.	アシスタントサービスが混み合っています。1 分ほどしてからもう一度お試しください。
+The assistant service answered {status}: {reason}	アシスタントサービスの応答 {status}：{reason}
+The assistant service's address isn't https.	アシスタントサービスのアドレスが https ではありません。
+Couldn't reach the assistant service: {error}	アシスタントサービスに接続できませんでした：{error}
+The assistant service's answer was cut off: {error}	アシスタントサービスの応答が途中で切れました：{error}
+The assistant service answered {status} with something unreadable.	アシスタントサービスの応答 {status} を読み取れませんでした。
+{app} is working offline, so the assistant can't be reached. Turn off View › Work Offline to ask.	{app} はオフラインで作業中のため、アシスタントに接続できません。質問するには、表示 › オフラインで作業 をオフにしてください。

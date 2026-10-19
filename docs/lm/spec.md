@@ -1073,13 +1073,13 @@ There is nothing to roll back yet. If no strategy passes, change stack and repea
 - The independent review checks every number a card can show.
 
 **Your validation — "Explain this map" (75 minutes)**
-1. Open teaching set **K1**: district areas with a July mean temperature field, the surface-temperature raster with its unit set, and school points.
-2. Click five districts and write down their insight rows. Run `validation/gate-3/check_insight.py`, a pandas script the agent provides, and compare every rank and median difference.
+1. Open the bundled **World basics** example (countries with population and GDP). *(Teaching set K1 dropped from this gate, owner 2026-10-19.)*
+2. Click five countries and write down their insight rows. Run `validation/gate-3/check_insight.py`, a pandas script the agent provides, and compare every rank and median difference.
 3. Mark a population field as an identifier. Confirm it leaves the insight strip, then undo.
-4. Style districts with presets. Then color them by a count field, and accept the density suggestion.
+4. Style the countries with presets. Then color them by a count field (population), and accept the density suggestion.
 5. Open the table and filter "population above 500,000". Select rows and watch the map.
 6. Undo ten times and redo ten times. The map must end exactly as it started.
-7. Hallway test with two students: "Which district is hottest, and how do you know?"
+7. Hallway test with two students: "Which country is the most crowded, and how do you know?"
 
 **Stress tests**
 - **V7:** scroll the table of 100,000 polygons.
@@ -1159,9 +1159,16 @@ f_i = \text{fraction of cell } i \text{ inside } P \text{ with valid data (as ex
 The coverage reported on every summary card:
 
 ```latex
-c_P = \frac{\sum_{i} a_i}{A_P},
-\qquad A_P = \text{area of } P \text{ on the same ellipsoid}
+c_P = \frac{\sum_{i\,\text{valid}} a_i}{\sum_{i\,\text{all}} a_i + A_{\text{out}}},
+\qquad A_{\text{out}} = \text{area of the part of } P \text{ beyond the raster, on the same ellipsoid}
 ```
+
+This is Google Earth Engine's weighted-reducer rule: each cell weighs the fraction of it inside
+the area, NoData cells and the area beyond the raster weigh in the denominator only, and both sides
+use the same grid measure, so coverage never exceeds 1 and an area inside the raster with no NoData
+has coverage exactly 1. *(Owner, 2026-10-19; replaces `Σ a_i / A_P`, which could exceed 1 because
+a cell's planar fraction times its ellipsoidal area isn't exactly the covered part's area.)*
+Unlike Earth Engine, fractions are exact rather than quantised to 1/256.
 
 Tests assert that coverage never exceeds 1 by more than one part per billion.
 The estimated total from a raster of counts per cell, assuming people are spread evenly within each cell:
@@ -1479,7 +1486,7 @@ Candidates, in likely order:
 - Pro needs an account (owner, 2026-10-19). At first Pro is free for anyone who registers; a subscription may follow. Design and owner prerequisites: `docs/lm/accounts.md`.
 - Sign-in happens in the system browser (OAuth with PKCE); the app keeps only a refresh token in the keychain. Settings › Account shows who is signed in, with Sign out and Delete account.
 - International: Sign in with Apple, Google, X and an email link, on a hosted sign-in service with a small database (Supabase proposed). Per user only: the provider's user ID, sign-in method, email when given, `pro`, sign-up date, later the plan.
-- Mainland China (千层图): WeChat, Alipay and phone-number codes, plus Sign in with Apple, on a China-hosted identity service. Needs a mainland company, WeChat and Alipay developer verification, an approved SMS signature, an ICP filing and a PIPL privacy policy.
+- Mainland China (凌波微图): WeChat, Alipay and phone-number codes, plus Sign in with Apple, on a China-hosted identity service. Needs a mainland company, WeChat and Alipay developer verification, an approved SMS signature, an ICP filing and a PIPL privacy policy.
 - Never in a git repository, encrypted or not.
 - Subscription later: Stripe or Paddle internationally, WeChat Pay and Alipay in China; a payment webhook sets the plan.
 

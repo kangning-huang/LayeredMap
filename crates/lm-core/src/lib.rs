@@ -11,6 +11,7 @@ pub mod document;
 pub mod filter;
 pub mod format;
 pub mod grid;
+pub mod i18n;
 pub mod model;
 pub mod palette;
 pub mod phase;

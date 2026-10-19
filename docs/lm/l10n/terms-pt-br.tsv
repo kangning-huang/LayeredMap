@@ -1,0 +1,173 @@
+English	Português (Brasil)	Nota
+Layer	Camada	QGIS pt_BR
+Layers (panel)	Camadas	painel e botão da barra de ferramentas
+Basemap	Mapa base	QGIS pt_BR
+Satellite	Satélite
+Offline	Offline	palavra corrente no Brasil; preferida a "Desconectado"
+Light	Claro	tema/mapa base
+Dark	Escuro	tema/mapa base
+Auto	Automático
+Background strength	Intensidade do fundo
+Attribute table	Tabela de atributos	QGIS pt_BR
+Table	Tabela
+Field	Campo	QGIS pt_BR
+Feature	Feição	QGIS pt_BR; no texto corrido às vezes "objeto"
+Record	Registro
+Point	Ponto
+Line	Linha
+Area (polygon)	Área	palavra do dia a dia; QGIS usa "Polígono"
+Raster	Raster	QGIS pt_BR mantém "raster"
+Grid	Grade
+Cell	Célula	QGIS às vezes usa "pixel"
+Vector data	Dados vetoriais	QGIS pt_BR
+Coordinate system (CRS)	Sistema de coordenadas	QGIS usa "Sistema de Referência de Coordenadas (SRC)"; usamos a forma curta do dia a dia
+Coordinate system	Sistema de coordenadas	rótulo em Detalhes
+Projection	Projeção
+Legend	Legenda
+Scale bar	Barra de escala	QGIS pt_BR
+Title	Título
+Credits	Créditos
+Filter	Filtro	verbo: Filtrar
++ Filter	+ Filtro
+Filtered:	Filtrado:
+Clear	Limpar
+Style	Estilo	QGIS usa "Simbologia"; "Estilo" é a palavra comum
+Style…	Estilo…
+Colour by value	Colorir por valor
+Color by a value	Colorir por um valor	botão do cartão
+Color	Cor	menu da aba Estilo
+Palette	Paleta
+Range	Intervalo
+Label	Rótulo	QGIS pt_BR
+Labels	Rótulos
+Join	União	QGIS pt_BR ("Uniões" nas propriedades da camada)
+Show joined fields	Mostrar campos unidos
+Unjoin	Desfazer união
+Buffer	Buffer	termo de SIG mantido no QGIS pt_BR; o app diz "Mostrar uma área a uma distância"
+Show an area within a distance of each	Mostrar uma área a uma distância de cada	nome do buffer no app (Pro)
+Overview	Visão geral
+Details	Detalhes
+Card	Cartão	painel à direita
+Examples	Exemplos
+Open	Abrir
+Open file…	Abrir arquivo…
+Share	Compartilhar
+Map image…	Imagem do mapa…
+Data…	Dados…
+Export	Exportar
+Undo	Desfazer
+Search places or your data	Buscar lugares ou seus dados
+Zoom in	Aproximar	QGIS pt_BR
+Zoom out	Afastar	QGIS pt_BR
+Zoom to layer	Aproximar da camada	QGIS usa "Aproximar para a camada"
+Zoom to All Data	Aproximar de todos os dados
+Rename	Renomear
+Remove from map	Remover do mapa
+Time slider	Controle de tempo
+Play	Reproduzir
+Previous step (←)	Passo anterior (←)
+Next step (→)	Próximo passo (→)
+No data	Sem dados	QGIS: "Sem dados" / NoData
+No value	Sem valor
+This cell has no data.	Esta célula não tem dados.
+Median	Mediana
+Rank	Posição	no sentido de classificação em lista
+Selected	Selecionado
+Keep	Manter
+Discard	Descartar
+Ask	Perguntar
+Ask about your layers	Pergunte sobre suas camadas	caixa Ask (Pro)
+Pro	Pro
+Free	Grátis
+Help	Ajuda
+Glossary	Glossário
+Download	Baixar	navegação e botões; "download" também é usado no Brasil
+Home	Início
+Apply	Aplicar
+Cancel	Cancelar
+Change	Alterar
+Back	Voltar
+Compare	Comparar
+Compare by	Comparar por
+Compare with other [layer]	Comparar com outros [camada]
+Compare on the map first	Comparar no mapa primeiro
+Caption	Legenda da imagem	evita confusão com Legend (Legenda)
+Current view	Vista atual
+Fit to data	Ajustar aos dados
+Groups	Grupos
+Smooth	Contínuo	rampa de cores contínua
+Heat	Calor	nome de paleta
+By basin	Por bacia
+Lat/lon labels	Rótulos de lat/lon
+Grid lines	Linhas de grade
+North arrow	Seta de norte
+Opacity	Opacidade
+Outline	Contorno
+Width	Largura
+Size	Tamanho
+Show	Mostrar
+Slide 16:9	Slide 16:9
+Report A4	Relatório A4
+Square	Quadrado
+Save	Salvar
+Save…	Salvar…
+Measure length	Medir comprimento
+Show only values above…	Mostrar só valores acima de…
+Change colors and range	Alterar cores e intervalo
+Show where values are like this	Mostrar onde os valores são parecidos
+View in table	Ver na tabela
+View data	Ver dados
+Your data	Seus dados
+Find in storms	Buscar em storms	nome da camada fica em inglês
+Find in walled cities 1866	Buscar em walled cities 1866	nome da camada fica em inglês
+Typhoons and hurricanes	Tufões e furacões	nome do exemplo
+Heatwaves, summer 2023	Ondas de calor, verão de 2023	nome do exemplo; verão do hemisfério norte
+Walled cities of China, 1866	Cidades muradas da China, 1866	nome do exemplo
+World basics	Mundo básico	nome do exemplo
+Heat-wave intensity (°C)	Intensidade da onda de calor (°C)
+4 objects here	4 objetos aqui
+higher than 99% of 4,547 storms with values	maior que 99% de 4.547 tempestades com valores	frase de comparação (insight)
+higher than 99% of 1,789 areas	maior que 99% de 1.789 áreas
+lower than 58% of this layer’s cells (estimated from a sample)	menor que 58% das células desta camada (estimado a partir de uma amostra)
+tied 2nd highest of 228 filtered	empatado em 2º maior de 228 filtrados
+1,789 areas, highest first	1.789 áreas, da maior para a menor
+Showing 228 of 4,999	Mostrando 228 de 4.999
+228 match	228 correspondem
+19 match	19 correspondem
+4,999 lines	4.999 linhas
+1,251 points	1.251 pontos
+Show storms where strength is any of Category 5	Mostrar storms em que strength é qualquer um de Category 5	frase de filtro; nomes de campo e valores ficam em inglês
+Show areas where type is any of Provincial Capital	Mostrar áreas em que type é qualquer um de Provincial Capital
+Time: 1 Jun 2023 to 31 Aug 2023 (92 steps)	Tempo: 1º jun. 2023 a 31 ago. 2023 (92 passos)
+Treated as measured values (averaged, not summed)	Tratados como valores medidos (média, não soma)
+If these came from a Chinese map app (Amap, Tencent or Baidu), they may sit a few hundred meters off.	Se vieram de um app de mapas chinês (Amap, Tencent ou Baidu), podem estar deslocados algumas centenas de metros.
+Assumptions	Suposições
+Value	Valor	tipo de campo
+Values	Valores
+Category	Categoria	tipo de campo
+Name	Nome	tipo de campo
+Date	Data	tipo de campo
+Fields	Campos
+Extent	Extensão	QGIS pt_BR
+Format	Formato
+Variable shown	Variável exibida
+Level shown	Nível exibido
+Metric Units	Unidades métricas
+Imperial Units	Unidades imperiais
+Work Offline	Trabalhar offline
+Working offline: online backgrounds are off	Trabalhando offline: fundos on-line desativados
+Drop to add to the map	Solte para adicionar ao mapa
+Located using longitude and latitude as GPS coordinates (WGS 84)	Localizado usando longitude e latitude como coordenadas de GPS (WGS 84)
+Amap/Tencent coordinates (GCJ-02): convert	Coordenadas Amap/Tencent (GCJ-02): converter
+GPS coordinates (WGS 84): keep where they are	Coordenadas de GPS (WGS 84): manter onde estão
+Keep the part of [layer] inside [other]	Manter a parte de [camada] dentro de [outra]
+joined · 172 of 177 matched	unida · 172 de 177 correspondidos
+area · 23.4 km²	área · 23,4 km²
+Insight line	Linha de comparação	frase que situa o item entre os demais
+Recipe	Receita	registro de como o resultado foi feito
+Assumption	Suposição
+Time step	Passo de tempo
+Variable	Variável
+Resolution	Resolução	QGIS: "tamanho do pixel/célula"
+Toolbar	Barra de ferramentas
+Ask box	Caixa Ask	o nome Ask fica em inglês enquanto o app estiver em inglês

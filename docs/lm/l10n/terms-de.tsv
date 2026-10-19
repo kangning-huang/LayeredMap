@@ -1,0 +1,181 @@
+English	Deutsch	Note
+Layer	Layer	QGIS-de term (der Layer, Pl. die Layer); "Ebene" avoided because QGIS uses Layer
+Layers (panel)	Layer	panel title; QGIS "Layer"-Bedienfeld
+Basemap	Hintergrundkarte	QGIS/Geoportal usage
+Satellite	Satellit	basemap option
+Offline	Offline	basemap option
+Light	Hell	appearance/basemap option, as in macOS
+Dark	Dunkel	as in macOS
+Auto	Automatisch	as in macOS
+Background strength	Hintergrundstärke	everyday word; slider fading the basemap
+Attribute table	Attributtabelle	QGIS term
+Table	Tabelle	
+Field	Feld	QGIS term
+Feature	Objekt	QGIS-de translates feature as "Objekt"
+Record	Datensatz	
+Point	Punkt	
+Line	Linie	
+Area (polygon)	Fläche	everyday word; QGIS says "Polygon"
+Raster	Raster	
+Grid	Gitter	"Raster" reserved for the data type
+Cell	Zelle	QGIS also says "Pixel"
+Vector data	Vektordaten	
+Coordinate system (CRS)	Koordinatensystem (KBS)	app label uses everyday "Koordinatensystem"; QGIS: Koordinatenbezugssystem (KBS)
+Coordinate system	Koordinatensystem	app label in Details
+Projection	Projektion	
+Legend	Legende	
+Scale bar	Maßstabsleiste	QGIS term
+Title	Titel	
+Credits	Quellenangaben	
+Filter	Filter	
++ Filter	+ Filter	
+Filtered:	Gefiltert:	
+Style	Stil	QGIS uses "Symbolisierung" for the concept; tab name "Stil"
+Style…	Stil …	German typography: space before ellipsis (as in macOS de)
+Colour by value	Nach Wert einfärben	
+Color by a value	Nach Wert einfärben	card button
+Color	Farbe	
+Palette	Farbpalette	
+Range	Wertebereich	
+Label	Beschriftung	QGIS term
+Labels	Beschriftungen	
+Join	Verknüpfung	QGIS: "Join"/"Tabellenverknüpfung"; everyday word chosen
+Buffer	Puffer	QGIS term; app button uses the everyday phrase below
+Show an area within a distance	Bereich im Umkreis anzeigen	everyday phrase instead of "Puffer"
+Show an area within a distance of each	Bereich im Umkreis um jedes Objekt anzeigen	Pro card button
+Overview	Übersicht	card tab
+Details	Details	card tab
+Card	Infokarte	"Karte" alone would clash with the map
+Examples	Beispiele	
+Open	Öffnen	
+Open file…	Datei öffnen …	
+Share	Teilen	as in macOS
+Map image…	Kartenbild …	
+Data…	Daten …	
+Export	Exportieren	
+Undo	Widerrufen	as in macOS de
+Search places or your data	Orte oder Ihre Daten suchen	formal "Sie" throughout (owner decision)
+Zoom in	Vergrößern	as in macOS de
+Zoom out	Verkleinern	as in macOS de
+Zoom to layer	Auf Layer zoomen	QGIS term
+Zoom to All Data	Auf alle Daten zoomen	View menu
+Rename	Umbenennen	
+Remove from map	Von der Karte entfernen	
+Time slider	Zeitschieberegler	
+Play	Abspielen	
+No data	Keine Daten	QGIS: "NoData"/"Kein Wert"
+No value	Kein Wert	
+This cell has no data.	Diese Zelle hat keine Daten.	
+Median	Median	
+Rank	Rang	
+Selected	Ausgewählt	
+Keep	Behalten	
+Discard	Verwerfen	
+Ask	Fragen	Pro assistant
+Ask about your layers	Fragen zu Ihren Layern	Pro Ask box placeholder
+Pro	Pro	
+Free	Kostenlos	
+Help	Hilfe	
+Glossary	Glossar	
+Download	Download	
+Home	Startseite	
+Apply	Anwenden	
+Cancel	Abbrechen	
+Assumptions	Annahmen	card section
+Back	Zurück	
+By basin	Nach Ozeanbecken	style tile
+Category	Kategorie	field kind
+Value	Wert	field kind
+Values	Werte	Overview section
+Name	Name	field kind
+Date	Datum	field kind
+Fields	Felder	Details section
+Extent	Ausdehnung	QGIS term
+Format	Format	
+Change	Ändern	
+Change colors and range	Farben und Wertebereich ändern	
+Clear	Aufheben	clears a filter
+Compare	Vergleichen	
+Compare by	Vergleichen nach	
+Compare on the map first	Erst auf der Karte vergleichen	
+Compare with other [layer]	Mit anderen Objekten aus [layer] vergleichen	
+Current view	Aktuelle Ansicht	
+Fit to data	An Daten anpassen	
+Show	Anzeigen	export option and filter sentence (one key in the app)
+Size	Größe	
+Slide 16:9	Folie 16:9	
+Report A4	Bericht A4	
+Square	Quadrat	
+North arrow	Nordpfeil	
+Lat/lon labels	Koordinatenbeschriftung	
+Grid lines	Gitterlinien	
+Caption	Bildunterschrift	
+Save	Sichern	as in macOS de (Ablage › Sichern)
+Save…	Sichern …	
+Opacity	Deckkraft	
+Outline	Umriss	
+Width	Breite	
+Groups	Gruppen	classed colouring
+Smooth	Stufenlos	continuous ramp
+Heat	Hitze	palette name
+Drop to add to the map	Zum Hinzufügen auf der Karte ablegen	
+Find in [layer]	In [layer] suchen	e.g. Find in storms
+Your data	Ihre Daten	search results section
+Measure length	Länge messen	Pro
+Next step (→)	Nächster Schritt (→)	
+Previous step (←)	Vorheriger Schritt (←)	
+Variable shown	Angezeigte Variable	
+Level shown	Angezeigte Höhenstufe	depth/height level in NetCDF
+Show joined fields	Verknüpfte Felder anzeigen	
+Unjoin	Verknüpfung aufheben	
+View data	Daten anzeigen	
+View in table	In Tabelle anzeigen	
+Show only values above…	Nur Werte über … anzeigen	
+Show where values are like this	Zeigen, wo die Werte ähnlich sind	
+Work Offline	Offline arbeiten	View menu
+Working offline: online backgrounds are off	Offline: Online-Hintergrundkarten sind aus	
+Metric Units	Metrische Einheiten	
+Imperial Units	Imperiale Einheiten	as in macOS de
+Keep the part of [layer] inside [other]	Den Teil von [layer] innerhalb von [other] behalten	Pro recipe step
+Located using longitude and latitude as GPS coordinates (WGS 84)	Verortet über Längen- und Breitengrad als GPS-Koordinaten (WGS 84)	
+Amap/Tencent coordinates (GCJ-02): convert	Amap/Tencent-Koordinaten (GCJ-02): umrechnen	
+GPS coordinates (WGS 84): keep where they are	GPS-Koordinaten (WGS 84): so lassen	
+If these came from a Chinese map app (Amap, Tencent or Baidu), they may sit a few hundred meters off.	Falls diese aus einer chinesischen Karten-App stammen (Amap, Tencent oder Baidu), liegen sie womöglich einige hundert Meter daneben.	
+Treated as measured values (averaged, not summed)	Als Messwerte behandelt (gemittelt, nicht summiert)	
+Time: 1 Jun 2023 to 31 Aug 2023 (92 steps)	Zeit: 1. Juni 2023 bis 31. Aug. 2023 (92 Schritte)	date format pattern
+Heat-wave intensity (°C)	Hitzewellen-Intensität (°C)	variable name from the file
+[n] lines	[n] Linien	layer subtitle, e.g. 4.999 Linien
+[n] points	[n] Punkte	layer subtitle
+[n] areas	[n] Flächen	layer subtitle
+[n] objects here	[n] Objekte hier	overlap picker
+[n] match	[n] Treffer	filter count
+Showing [n] of [m]	[n] von [m] angezeigt	
+[n] areas, highest first	[n] Flächen, höchste zuerst	ranked list
+higher than [p]% of [n] [things]	höher als [p] % von [n] [things]	insight line
+higher than [p]% of [n] storms with values	höher als [p] % von [n] Stürmen mit Wert	insight line
+lower than [p]% of this layer’s cells (estimated from a sample)	niedriger als [p] % der Zellen dieses Layers (aus einer Stichprobe geschätzt)	insight line
+tied 2nd highest of [n] filtered	gleichauf zweithöchster von [n] gefilterten	insight line
+joined · [n] of [m] matched	verknüpft · [n] von [m] zugeordnet	join row
+area · [x] km²	Fläche · [x] km²	area fact
+Show [layer] where [field] is any of [value]	[layer] anzeigen, bei denen [field] einer der Werte [value] ist	filter sentence
+Typhoons and hurricanes	Taifune und Hurrikane	example name
+Heatwaves, summer 2023	Hitzewellen, Sommer 2023	example name
+Walled cities of China, 1866	Ummauerte Städte Chinas, 1866	example name
+World basics	Welt-Grunddaten	example name
+Toolbar	Symbolleiste	as in macOS de
+Insight line	Einordnung	sentence ranking the selection
+Recipe	Rechenweg	everyday word; literal "Rezept" kept as search synonym
+Assumption	Annahme	
+Time step	Zeitschritt	
+Resolution (cell size)	Auflösung (Zellgröße)	
+Geodesic	Geodätisch	
+Clip	Zuschneiden	QGIS: "Zuschneiden"
+Attribute	Attribut	
+Map image (export)	Kartenbild (Export)	
+File (menu)	Ablage	as in macOS de
+View (menu)	Darstellung	as in macOS de
+Open Example	Beispiel öffnen	File menu item
+NimbleMap Help	NimbleMap-Hilfe	Help menu item
+highest of [n]	höchster von [n]	insight line
+Export map image	Kartenbild exportieren	export sheet title
+Typhoon / storm track	Zugbahn / Sturmbahn	prose only

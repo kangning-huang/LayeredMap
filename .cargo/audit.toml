@@ -4,4 +4,5 @@ ignore = [
   "RUSTSEC-2026-0367", # zip 8 via calamine only; extract() is never called on it
   "RUSTSEC-2026-0368", # zip 8 via calamine only; extract() is never called on it
   "RUSTSEC-2026-0369", # zip 8 via calamine only; extract() is never called on it
+  "RUSTSEC-2026-0192", # ttf-parser unmaintained; parses only the app's bundled fonts
 ]

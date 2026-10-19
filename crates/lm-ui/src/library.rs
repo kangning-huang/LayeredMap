@@ -11,6 +11,7 @@ use std::sync::Arc;
 
 use egui::{Align2, Color32, CornerRadius, RichText, Sense, Stroke, Ui, vec2};
 use egui_phosphor::regular as icon;
+use lm_core::{i18n, tl};
 use lm_jobs::library::{self, Catalog, CatalogEvent, CatalogJob, Dataset, Download, Kind, LibraryError};
 
 use crate::Shell;
@@ -194,14 +195,26 @@ pub(crate) fn poll(shell: &mut Shell, ctx: &egui::Context) {
 /// "12.3 MB", "240 KB".
 pub fn size_text(bytes: u64) -> String {
     let b = bytes as f64;
+    let n = |s: String| i18n::number(&s);
     if b >= 1e9 {
-        format!("{:.1} GB", b / 1e9)
+        i18n::fmt("{n} GB", &[("n", &n(format!("{:.1}", b / 1e9)))])
     } else if b >= 1e8 {
-        format!("{:.0} MB", b / 1e6)
+        i18n::fmt("{n} MB", &[("n", &n(format!("{:.0}", b / 1e6)))])
     } else if b >= 1e6 {
-        format!("{:.1} MB", b / 1e6)
+        i18n::fmt("{n} MB", &[("n", &n(format!("{:.1}", b / 1e6)))])
     } else {
-        format!("{:.0} KB", (b / 1e3).max(1.0))
+        i18n::fmt("{n} KB", &[("n", &n(format!("{:.0}", (b / 1e3).max(1.0))))])
+    }
+}
+
+/// The kind's word on a card (lm-jobs' `Kind::label`, translated).
+fn kind_label(k: Kind) -> &'static str {
+    match k {
+        Kind::Points => tl!("Points"),
+        Kind::Lines => tl!("Lines"),
+        Kind::Areas => tl!("Areas"),
+        Kind::Raster => tl!("Grid"),
+        Kind::Table => tl!("Table"),
     }
 }
 
@@ -232,7 +245,7 @@ pub(crate) fn panel(shell: &mut Shell, ctx: &egui::Context) {
     let mut retry = false;
     // Each card is CARD_W inside a 1 px border.
     let width = (CARD_W + 2.0) * COLUMNS as f32 + GAP * (COLUMNS as f32 - 1.0);
-    egui::Window::new("Data library")
+    egui::Window::new(tl!("Data library"))
         .id(egui::Id::new("lm-library"))
         .open(&mut open)
         .collapsible(false)
@@ -243,10 +256,12 @@ pub(crate) fn panel(shell: &mut Shell, ctx: &egui::Context) {
             let lib = &mut shell.library;
             ui.horizontal(|ui| {
                 ui.label(RichText::new(icon::MAGNIFYING_GLASS).font(theme::icon_font(14.0)).color(t.text_secondary));
-                ui.add(egui::TextEdit::singleline(&mut lib.query).hint_text("Search datasets").desired_width(240.0));
+                ui.add(egui::TextEdit::singleline(&mut lib.query).hint_text(tl!("Search datasets")).desired_width(240.0));
                 if lib.saved_copy {
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        ui.label(RichText::new("Offline: showing the list from your last visit").size(CAPTION).color(t.text_secondary));
+                        ui.label(
+                            RichText::new(tl!("Offline: showing the list from your last visit")).size(CAPTION).color(t.text_secondary),
+                        );
                     });
                 }
             });
@@ -259,10 +274,10 @@ pub(crate) fn panel(shell: &mut Shell, ctx: &egui::Context) {
                             ui.label(RichText::new(icon::WARNING_CIRCLE).font(theme::icon_font(24.0)).color(t.text_secondary));
                             ui.label(RichText::new(e).size(BODY));
                             ui.add_space(theme::SPACE[1]);
-                            retry = ui.button("Try again").clicked();
+                            retry = ui.button(tl!("Try again")).clicked();
                         } else {
                             ui.add(egui::Spinner::new().size(20.0).color(t.text_secondary));
-                            ui.label(RichText::new("Loading the library…").size(BODY).color(t.text_secondary));
+                            ui.label(RichText::new(tl!("Loading the library…")).size(BODY).color(t.text_secondary));
                         }
                     });
                 });
@@ -274,9 +289,9 @@ pub(crate) fn panel(shell: &mut Shell, ctx: &egui::Context) {
                     ui.vertical_centered(|ui| {
                         ui.add_space(48.0);
                         let text = if catalog.datasets.is_empty() {
-                            "The library is empty.".to_string()
+                            tl!("The library is empty.").to_string()
                         } else {
-                            format!("No datasets match “{}”.", lib.query.trim())
+                            i18n::fmt("No datasets match “{q}”.", &[("q", lib.query.trim())])
                         };
                         ui.label(RichText::new(text).size(BODY).color(t.text_secondary));
                     });
@@ -345,7 +360,7 @@ fn card(ui: &mut Ui, t: &theme::Theme, lib: &LibraryState, d: &Dataset) -> Optio
                 ui.add(egui::Label::new(RichText::new(&d.title.zh).font(regular(CAPTION)).color(t.text_secondary)).truncate());
                 ui.add(
                     egui::Label::new(
-                        RichText::new(format!("{} · {} · {}", d.kind.label(), size_text(d.size()), d.license.name))
+                        RichText::new(format!("{} · {} · {}", kind_label(d.kind), size_text(d.size()), d.license.name))
                             .font(regular(CAPTION))
                             .color(t.text_secondary),
                     )
@@ -356,26 +371,29 @@ fn card(ui: &mut Ui, t: &theme::Theme, lib: &LibraryState, d: &Dataset) -> Optio
                     Some(dl) => {
                         ui.horizontal(|ui| {
                             ui.add(egui::ProgressBar::new(dl.fraction()).desired_width(CARD_W - 20.0 - 72.0).desired_height(6.0));
-                            if ui.button("Cancel").clicked() {
+                            if ui.button(tl!("Cancel")).clicked() {
                                 action = Some(CardAction::Cancel);
                             }
                         });
                         ui.label(
-                            RichText::new(format!("Downloading {} of {}", size_text(dl.done()), size_text(dl.total)))
-                                .size(CAPTION)
-                                .color(t.text_secondary),
+                            RichText::new(i18n::fmt(
+                                "Downloading {done} of {total}",
+                                &[("done", &size_text(dl.done())), ("total", &size_text(dl.total))],
+                            ))
+                            .size(CAPTION)
+                            .color(t.text_secondary),
                         );
                     }
                     None => {
                         ui.horizontal(|ui| {
-                            let add = egui::Button::new(RichText::new("Add to map").color(t.on_accent)).fill(t.accent);
+                            let add = egui::Button::new(RichText::new(tl!("Add to map")).color(t.on_accent)).fill(t.accent);
                             if ui.add(add).clicked() {
                                 action = Some(CardAction::Add);
                             }
                             if lib.cached.contains(&d.id) {
                                 ui.label(RichText::new(icon::CHECK_CIRCLE).font(theme::icon_font(14.0)).color(t.success))
-                                    .on_hover_text("Downloaded: opens without the internet");
-                                ui.label(RichText::new("Downloaded").size(CAPTION).color(t.text_secondary));
+                                    .on_hover_text(tl!("Downloaded: opens without the internet"));
+                                ui.label(RichText::new(tl!("Downloaded")).size(CAPTION).color(t.text_secondary));
                             }
                         });
                     }

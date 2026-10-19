@@ -6,7 +6,9 @@
 use egui::{Align2, Color32, CornerRadius, Rect, RichText, Sense, Stroke, Ui, pos2, vec2};
 use egui_phosphor::regular as icon;
 
+use lm_core::i18n::{self, count};
 use lm_core::model::{Assumption, AssumptionKind, Choice, ImportStatus, LayerId, LayerKind, Subject, Treatment, group_thousands};
+use lm_core::{tl, tn};
 
 use crate::theme::{self, BODY, CAPTION, PANEL_MARGIN, ROW_HEIGHT, Theme};
 use crate::{FileRequest, Shell};
@@ -83,12 +85,15 @@ pub fn shelf(shell: &mut Shell, ui: &mut Ui, map: Rect) {
         frame(&t).show(ui, |ui| {
             ui.set_width(SHELF_WIDTH - 2.0 * theme::PANEL_PADDING);
             ui.horizontal(|ui| {
-                ui.label(RichText::new("Layers").font(semibold(theme::HEADLINE)));
+                ui.label(RichText::new(tl!("Layers")).font(semibold(theme::HEADLINE)));
                 if shell.ws.doc.layers.len() > 1 {
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        let link = ui.link(RichText::new("Remove all").size(CAPTION).color(t.text_secondary));
+                        let link = ui.link(RichText::new(tl!("Remove all")).size(CAPTION).color(t.text_secondary));
                         if link
-                            .on_hover_text(format!("Remove every layer from the map ({} brings them back)", crate::keys::shortcut("Z")))
+                            .on_hover_text(i18n::fmt(
+                                "Remove every layer from the map ({key} brings them back)",
+                                &[("key", &crate::keys::shortcut("Z"))],
+                            ))
                             .clicked()
                         {
                             shell.command(ui.ctx(), crate::Command::RemoveAllLayers);
@@ -105,12 +110,12 @@ pub fn shelf(shell: &mut Shell, ui: &mut Ui, map: Rect) {
                     import_rows(shell, ui, &t);
                     layer_rows(shell, ui, &t);
                     let r = ui.allocate_exact_size(vec2(ui.available_width(), ROW_HEIGHT), Sense::click());
-                    crate::a11y::button(&r.1, "Open file");
+                    crate::a11y::button(&r.1, tl!("Open file"));
                     let col = if r.1.hovered() { t.accent } else { t.text_secondary };
                     ui.painter().text(
                         r.0.left_center() + vec2(4.0, 0.0),
                         Align2::LEFT_CENTER,
-                        format!("{}  Open file", icon::PLUS),
+                        format!("{}  {}", icon::PLUS, tl!("Open file")),
                         egui::FontId::proportional(BODY),
                         col,
                     );
@@ -159,13 +164,21 @@ fn import_rows(shell: &mut Shell, ui: &mut Ui, t: &Theme) {
         );
         paint_badge(ui, r.left_top() + vec2(12.0, 16.0), &badge, t);
         if let Some(e) = &row.error {
-            resp.clone().on_hover_text(format!("{e}\n\nDetails: {}", e.details()));
+            resp.clone().on_hover_text(i18n::fmt("{error}\n\nDetails: {details}", &[("error", &e.to_string()), ("details", &e.details())]));
         }
         // × on hover cancels (or dismisses a failed row).
         if resp.hovered() || row.error.is_some() {
             let x = Rect::from_center_size(pos2(r.right() - 12.0, r.top() + 16.0), vec2(22.0, 22.0));
             let xr = ui.interact(x, egui::Id::new(("lm-cancel", row.key)), Sense::click());
-            crate::a11y::button(&xr, format!("{} {}", if row.error.is_some() { "Dismiss" } else { "Cancel" }, row.name()));
+            let name = row.name();
+            crate::a11y::button(
+                &xr,
+                if row.error.is_some() {
+                    i18n::fmt("Dismiss {name}", &[("name", &name)])
+                } else {
+                    i18n::fmt("Cancel {name}", &[("name", &name)])
+                },
+            );
             ui.painter().text(
                 x.center(),
                 Align2::CENTER_CENTER,
@@ -176,7 +189,7 @@ fn import_rows(shell: &mut Shell, ui: &mut Ui, t: &Theme) {
             if xr.clicked() {
                 cancel = Some(row.key);
             }
-            xr.on_hover_text(if row.error.is_some() { "Dismiss" } else { "Cancel" });
+            xr.on_hover_text(if row.error.is_some() { tl!("Dismiss") } else { tl!("Cancel") });
         }
     }
     if let Some(k) = cancel {
@@ -205,7 +218,7 @@ fn layer_rows(shell: &mut Shell, ui: &mut Ui, t: &Theme) {
         // Eye: visibility only.
         let eye = Rect::from_center_size(r.left_center() + vec2(12.0, 0.0), vec2(24.0, 24.0));
         let eye_r = ui.interact(eye, egui::Id::new(("lm-eye", id.0)), Sense::click());
-        crate::a11y::toggle(&eye_r, format!("Show {}", l.display_name), l.visible);
+        crate::a11y::toggle(&eye_r, i18n::fmt("Show {layer}", &[("layer", &l.display_name)]), l.visible);
         ui.painter().text(
             eye.center(),
             Align2::CENTER_CENTER,
@@ -214,6 +227,7 @@ fn layer_rows(shell: &mut Shell, ui: &mut Ui, t: &Theme) {
             if l.visible { t.text_primary } else { t.text_secondary },
         );
         if eye_r.clicked() {
+            // Undo labels stay English, as lm-core's do.
             let tx = shell.ws.doc.set_visible_tx(*id, !l.visible).map(|mut x| {
                 x.label = format!("{} {}", if l.visible { "Hide" } else { "Show" }, l.display_name);
                 x
@@ -319,7 +333,7 @@ fn layer_rows(shell: &mut Shell, ui: &mut Ui, t: &Theme) {
             };
             let c = Rect::from_center_size(pos2(x, r.center().y), vec2(20.0, 24.0));
             let cr = ui.interact(c, egui::Id::new(("lm-sublayers", id.0)), Sense::click());
-            crate::a11y::toggle(&cr, format!("Joined tables of {}", l.display_name), open);
+            crate::a11y::toggle(&cr, i18n::fmt("Joined tables of {layer}", &[("layer", &l.display_name)]), open);
             ui.painter().text(
                 c.center(),
                 Align2::CENTER_CENTER,
@@ -332,10 +346,10 @@ fn layer_rows(shell: &mut Shell, ui: &mut Ui, t: &Theme) {
             }
             let n = subs.len();
             cr.on_hover_text(match (open, n) {
-                (true, 1) => "Hide the joined table".to_string(),
-                (true, _) => format!("Hide the {n} joined tables"),
-                (false, 1) => "Show the joined table".to_string(),
-                (false, _) => format!("Show the {n} joined tables"),
+                (true, 1) => tl!("Hide the joined table").to_string(),
+                (true, _) => i18n::fmt("Hide the {n} joined tables", &[("n", &n.to_string())]),
+                (false, 1) => tl!("Show the joined table").to_string(),
+                (false, _) => i18n::fmt("Show the {n} joined tables", &[("n", &n.to_string())]),
             });
         }
         if resp.clicked() {
@@ -361,30 +375,30 @@ fn layer_rows(shell: &mut Shell, ui: &mut Ui, t: &Theme) {
             shell.drag_from = Some(d);
         }
         resp.context_menu(|ui| {
-            if l.profile.kind != LayerKind::Raster && menu_item(ui, t, icon::TABLE, "View data").clicked() {
+            if l.profile.kind != LayerKind::Raster && menu_item(ui, t, icon::TABLE, tl!("View data")).clicked() {
                 shell.table_for = Some(*id);
                 ui.close();
             }
-            if l.profile.kind == LayerKind::Table && menu_item(ui, t, icon::LINK, "Match to a layer…").clicked() {
+            if l.profile.kind == LayerKind::Table && menu_item(ui, t, icon::LINK, tl!("Match to a layer…")).clicked() {
                 crate::join_ui::open_picker(shell, *id);
                 ui.close();
             }
-            if menu_item(ui, t, icon::PAINT_BRUSH, "Style…").clicked() {
+            if menu_item(ui, t, icon::PAINT_BRUSH, tl!("Style…")).clicked() {
                 shell.ws.select_layer(*id);
                 shell.inspector_tab = 1;
                 ui.close();
             }
-            if menu_item(ui, t, icon::FRAME_CORNERS, "Zoom to layer").clicked() {
+            if menu_item(ui, t, icon::FRAME_CORNERS, tl!("Zoom to layer")).clicked() {
                 shell.zoom_to = shell.ws.extent(*id);
                 ui.close();
             }
-            if menu_item(ui, t, icon::PENCIL_SIMPLE, "Rename").clicked() {
+            if menu_item(ui, t, icon::PENCIL_SIMPLE, tl!("Rename")).clicked() {
                 shell.rename = Some((*id, l.display_name.clone()));
                 shell.rename_started = true;
                 ui.close();
             }
             ui.separator();
-            if menu_item(ui, t, icon::MINUS_CIRCLE, "Remove from map").clicked() {
+            if menu_item(ui, t, icon::MINUS_CIRCLE, tl!("Remove from map")).clicked() {
                 let tx = shell.ws.doc.remove_layer_tx(*id).map(|mut x| {
                     x.label = format!("Remove {}", l.display_name);
                     x
@@ -412,7 +426,7 @@ fn layer_rows(shell: &mut Shell, ui: &mut Ui, t: &Theme) {
         // is open it shows the card there instead, and the row just says so.
         if let Some(q) = l.profile.open_questions().next().cloned() {
             if shell.ws.selected() == Some(*id) {
-                ui.label(RichText::new("Needs a decision: see the layer's panel").size(CAPTION).color(t.warning));
+                ui.label(RichText::new(tl!("Needs a decision: see the layer's panel")).size(CAPTION).color(t.warning));
             } else {
                 question_card(shell, ui, t, *id, &q);
             }
@@ -492,10 +506,10 @@ fn grid_pickers(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &lm_core::document
         ui.add_space(50.0);
         // A file with one variable just names it.
         if g.variables.len() < 2 {
-            ui.label(RichText::new(middle_truncate(&label, 34)).size(CAPTION).color(t.text_secondary)).on_hover_text("Variable shown");
+            ui.label(RichText::new(middle_truncate(&label, 34)).size(CAPTION).color(t.text_secondary)).on_hover_text(tl!("Variable shown"));
             return;
         }
-        let resp = popup_button(ui, t, &label, "Variable shown", width, !busy);
+        let resp = popup_button(ui, t, &label, tl!("Variable shown"), width, !busy);
         let w = menu_width(ui, g.variables.iter().map(|v| v.label()), width);
         egui::Popup::menu(&resp).show(|ui| {
             ui.set_width(w);
@@ -512,7 +526,7 @@ fn grid_pickers(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &lm_core::document
         let n = v.levels.as_ref().map_or(0, |lv| lv.values.len());
         let r = ui.horizontal(|ui| {
             ui.add_space(50.0);
-            let resp = popup_button(ui, t, &v.level_label(g.level), "Level shown", width, !busy);
+            let resp = popup_button(ui, t, &v.level_label(g.level), tl!("Level shown"), width, !busy);
             let w = menu_width(ui, (0..n.min(200)).map(|k| v.level_label(k)), width);
             egui::Popup::menu(&resp).show(|ui| {
                 ui.set_width(w);
@@ -557,8 +571,8 @@ fn sublayer_row(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &lm_core::document
     let text = if l.visible { t.text_primary } else { t.text_secondary };
     p.text(pos2(x + 50.0, r.top() + 4.0), Align2::LEFT_TOP, middle_truncate(&s.table, 24), egui::FontId::proportional(BODY), text);
     let caption = match s.matched {
-        Some((m, n)) => format!("joined · {} of {} matched", group_thousands(m as u64), group_thousands(n as u64)),
-        None => "joined".into(),
+        Some((m, n)) => i18n::fmt("joined · {matched} of {total} matched", &[("matched", &count(m as u64)), ("total", &count(n as u64))]),
+        None => tl!("joined").into(),
     };
     p.text(pos2(x + 50.0, r.top() + 22.0), Align2::LEFT_TOP, &caption, egui::FontId::proportional(CAPTION), t.text_secondary);
     resp.widget_info(|| {
@@ -566,7 +580,7 @@ fn sublayer_row(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &lm_core::document
             egui::WidgetType::SelectableLabel,
             true,
             focused,
-            format!("Joined table {}, {}", s.table, crate::a11y::spoken(&caption)),
+            i18n::fmt("Joined table {table}, {caption}", &[("table", &s.table), ("caption", &crate::a11y::spoken(&caption))]),
         )
     });
     let show = |shell: &mut Shell, details: bool| {
@@ -579,15 +593,15 @@ fn sublayer_row(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &lm_core::document
     if resp.clicked() {
         show(shell, false);
     }
-    resp.clone().on_hover_text(format!("Joined to {}: its fields are part of the layer", l.display_name));
+    resp.clone().on_hover_text(i18n::fmt("Joined to {layer}: its fields are part of the layer", &[("layer", &l.display_name)]));
     resp.context_menu(|ui| {
-        if menu_item(ui, t, icon::LIST_BULLETS, "Show joined fields").clicked() {
+        if menu_item(ui, t, icon::LIST_BULLETS, tl!("Show joined fields")).clicked() {
             show(shell, true);
             ui.close();
         }
         ui.separator();
-        let unjoin = ui.add_enabled_ui(s.can_unjoin, |ui| menu_item(ui, t, icon::LINK_BREAK, "Unjoin")).inner;
-        if unjoin.on_disabled_hover_text("The table wasn't opened in this session, so it can't be put back").clicked() {
+        let unjoin = ui.add_enabled_ui(s.can_unjoin, |ui| menu_item(ui, t, icon::LINK_BREAK, tl!("Unjoin"))).inner;
+        if unjoin.on_disabled_hover_text(tl!("The table wasn't opened in this session, so it can't be put back")).clicked() {
             shell.ws.unjoin(parent, &s.table);
             shell.join_focus = None;
             ui.close();
@@ -612,14 +626,14 @@ fn place_card(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, shown: f64
             ui.set_width(ui.available_width());
             ui.horizontal_wrapped(|ui| {
                 ui.label(RichText::new(icon::WARNING).font(theme::icon_font(14.0)).color(t.warning));
-                ui.label(RichText::new("Where should this data be?").font(semibold(BODY)));
+                ui.label(RichText::new(tl!("Where should this data be?")).font(semibold(BODY)));
             });
             ui.label(
-                RichText::new("This file doesn't say where on Earth its coordinates are. Name a place it covers.")
+                RichText::new(tl!("This file doesn't say where on Earth its coordinates are. Name a place it covers."))
                     .size(CAPTION)
                     .color(t.text_secondary),
             );
-            let te = ui.add(egui::TextEdit::singleline(&mut query).hint_text("A city or town, e.g. Shanghai"));
+            let te = ui.add(egui::TextEdit::singleline(&mut query).hint_text(tl!("A city or town, e.g. Shanghai")));
             let _ = te;
             for r in shell.search.lookup(&query, 4) {
                 if ui.selectable_label(false, format!("{}  ·  {}", r.title, r.detail)).clicked() {
@@ -627,29 +641,30 @@ fn place_card(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, shown: f64
                     query = r.title.clone();
                 }
             }
-            if ui.link("Use the middle of the map").clicked() {
+            if ui.link(tl!("Use the middle of the map")).clicked() {
                 let c = shell.map.center_lonlat();
-                place = Some((c.x, c.y, "the middle of the map".into()));
+                place = Some((c.x, c.y, tl!("the middle of the map").into()));
             }
             if let Some((lon, lat, name)) = &place {
                 let cands = shell.ws.place_candidates(id, (*lon, *lat));
                 ui.add_space(4.0);
                 if cands.is_empty() {
                     ui.label(
-                        RichText::new(format!(
-                            "No coordinate system puts this data near {name}. Try another place, or open it as a table."
+                        RichText::new(i18n::fmt(
+                            "No coordinate system puts this data near {name}. Try another place, or open it as a table.",
+                            &[("name", name)],
                         ))
                         .color(t.text_secondary),
                     );
                 }
                 for c in cands {
                     ui.horizontal_wrapped(|ui| {
-                        ui.label(format!(
-                            "{} — lands {} km from {name}",
-                            c.name,
-                            if c.distance_km < 10.0 { format!("{:.1}", c.distance_km) } else { format!("{:.0}", c.distance_km) }
+                        let km = if c.distance_km < 10.0 { format!("{:.1}", c.distance_km) } else { format!("{:.0}", c.distance_km) };
+                        ui.label(i18n::fmt(
+                            "{crs} — lands {km} km from {name}",
+                            &[("crs", &c.name), ("km", &i18n::number(&km)), ("name", name)],
                         ));
-                        if ui.add(egui::Button::new(RichText::new("Use this").color(t.on_accent)).fill(t.accent)).clicked()
+                        if ui.add(egui::Button::new(RichText::new(tl!("Use this")).color(t.on_accent)).fill(t.accent)).clicked()
                             && let Err(e) = shell.ws.place_layer(id, c.epsg, Some(now - shown))
                         {
                             shell.set_notice(e, now);
@@ -657,7 +672,7 @@ fn place_card(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, shown: f64
                     });
                 }
             }
-            if ui.link("Open as a table").clicked() {
+            if ui.link(tl!("Open as a table")).clicked() {
                 let _ =
                     shell.ws.change_assumption(id, AssumptionKind::NoCrsProjected, Subject::Layer, Choice::not_sure(), Some(now - shown));
             }
@@ -694,17 +709,21 @@ fn question_card(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, q: &Ass
             let key = egui::Id::new(("lm-q", id.0, q.kind as u8));
             let mut pick: String = ui.data(|d| d.get_temp::<String>(key)).unwrap_or_else(|| q.chosen.id.clone());
             for c in &q.alternatives {
-                let label = if c.id == q.chosen.id && c.id != "not_sure" { format!("{} (recommended)", c.label) } else { c.label.clone() };
+                let label = if c.id == q.chosen.id && c.id != "not_sure" {
+                    i18n::fmt("{choice} (recommended)", &[("choice", &c.label)])
+                } else {
+                    c.label.clone()
+                };
                 ui.radio_value(&mut pick, c.id.clone(), label);
             }
             if !q.alternatives.iter().any(|c| c.id == "not_sure") {
-                ui.radio_value(&mut pick, "not_sure".to_string(), "Not sure");
+                ui.radio_value(&mut pick, "not_sure".to_string(), tl!("Not sure"));
             }
             ui.data_mut(|d| d.insert_temp(key, pick.clone()));
-            if q.kind == AssumptionKind::ChinaOffsetNamed && ui.link("Compare on the map first").clicked() {
+            if q.kind == AssumptionKind::ChinaOffsetNamed && ui.link(tl!("Compare on the map first")).clicked() {
                 shell.begin_compare(id, q.chosen.id == "bd09");
             }
-            if ui.add(egui::Button::new(RichText::new("Use this").color(t.on_accent)).fill(t.accent)).clicked() {
+            if ui.add(egui::Button::new(RichText::new(tl!("Use this")).color(t.on_accent)).fill(t.accent)).clicked() {
                 let choice = q.alternatives.iter().find(|c| c.id == pick).cloned().unwrap_or_else(Choice::not_sure);
                 let result = shell.ws.change_assumption(id, q.kind, q.subject.clone(), choice, Some(now - shown));
                 if let Err(e) = result {
@@ -735,9 +754,15 @@ pub fn inspector(shell: &mut Shell, ui: &mut Ui, map: Rect) {
     } else {
         match (rows.as_slice(), &pixel) {
             ([row], _) => crate::inspect::object_header(shell, &l, *row),
-            ([], Some(p)) => (format!("{:.4}°, {:.4}°", p.lat, p.lon), format!("{} · cell", l.display_name)),
+            ([], Some(p)) => (
+                i18n::fmt(
+                    "{lat}°, {lon}°",
+                    &[("lat", &i18n::number(&format!("{:.4}", p.lat))), ("lon", &i18n::number(&format!("{:.4}", p.lon)))],
+                ),
+                i18n::fmt("{layer} · cell", &[("layer", &l.display_name)]),
+            ),
             ([], None) => (l.display_name.clone(), l.profile.subtitle()),
-            (many, _) => (format!("{} selected", group_thousands(many.len() as u64)), l.display_name.clone()),
+            (many, _) => (i18n::fmt("{n} selected", &[("n", &count(many.len() as u64))]), l.display_name.clone()),
         }
     };
     egui::Area::new(egui::Id::new("lm-inspector")).order(egui::Order::Middle).fixed_pos(pos).show(ui.ctx(), |ui| {
@@ -752,8 +777,8 @@ pub fn inspector(shell: &mut Shell, ui: &mut Ui, map: Rect) {
                 });
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
                     let x = ui.add(egui::Button::new(RichText::new(icon::X).font(theme::icon_font(14.0))).frame(false));
-                    crate::a11y::button(&x, "Close the panel");
-                    if x.on_hover_text("Close").clicked() {
+                    crate::a11y::button(&x, tl!("Close the panel"));
+                    if x.on_hover_text(tl!("Close")).clicked() {
                         close = true;
                     }
                 });
@@ -768,12 +793,12 @@ pub fn inspector(shell: &mut Shell, ui: &mut Ui, map: Rect) {
                 ui.add_space(4.0);
                 ui.horizontal(|ui| {
                     let tabs: &[(u8, &str)] = if shell.flags.shows(3) {
-                        &[(0, "Overview"), (1, "Style"), (2, "Details")]
+                        &[(0, tn!("Overview")), (1, tn!("Style")), (2, tn!("Details"))]
                     } else {
-                        &[(0, "Overview"), (2, "Details")]
+                        &[(0, tn!("Overview")), (2, tn!("Details"))]
                     };
                     for &(tab, name) in tabs {
-                        if ui.selectable_label(shell.inspector_tab == tab, name).clicked() {
+                        if ui.selectable_label(shell.inspector_tab == tab, tl!(name)).clicked() {
                             shell.inspector_tab = tab;
                         }
                     }
@@ -781,8 +806,8 @@ pub fn inspector(shell: &mut Shell, ui: &mut Ui, map: Rect) {
             } else if rows.len() > 1 && !finding {
                 // The selection chip: "3 selected · Clear".
                 ui.horizontal(|ui| {
-                    ui.label(RichText::new(format!("{} selected", group_thousands(rows.len() as u64))).size(CAPTION));
-                    if ui.link("Clear").clicked() {
+                    ui.label(RichText::new(i18n::fmt("{n} selected", &[("n", &count(rows.len() as u64))])).size(CAPTION));
+                    if ui.link(tl!("Clear")).clicked() {
                         shell.ws.selection.features.clear();
                     }
                 });
@@ -801,7 +826,7 @@ pub fn inspector(shell: &mut Shell, ui: &mut Ui, map: Rect) {
                         crate::join_ui::picker(shell, ui, &t, &l);
                     } else if let Some((cid, field)) = shell.compare_peers.clone().filter(|(c, _)| *c == id) {
                         ranking(shell, ui, &t, &l, field.as_deref(), rows.first().copied());
-                        if ui.link("Back").clicked() {
+                        if ui.link(tl!("Back")).clicked() {
                             shell.compare_peers = None;
                         }
                         let _ = cid;
@@ -851,7 +876,7 @@ fn pixel_body(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &lm_core::document::
     // variable and date rather than a band number.
     let (value, what) = match &l.profile.grid {
         Some(g) => (lm_jobs::inspect::raster_value_at(&r, band, p.lon, p.lat).unwrap_or(None), g.caption(shell.ws.shown_time(l.id))),
-        None => (p.value, format!("Band {}", band + 1)),
+        None => (p.value, i18n::fmt("Band {n}", &[("n", &(band + 1).to_string())])),
     };
     match value {
         Some(v) => {
@@ -863,8 +888,8 @@ fn pixel_body(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &lm_core::document::
             }
         }
         None => {
-            ui.label(RichText::new("No value").font(semibold(theme::TITLE)).color(t.text_secondary));
-            ui.label(RichText::new("This cell has no data.").color(t.text_secondary));
+            ui.label(RichText::new(tl!("No value")).font(semibold(theme::TITLE)).color(t.text_secondary));
+            ui.label(RichText::new(tl!("This cell has no data.")).color(t.text_secondary));
         }
     }
     crate::insight::actions(shell, ui, t, l, None);
@@ -881,11 +906,11 @@ fn ranking(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &lm_core::document::Doc
         .map(|f| f.name.clone())
         .collect();
     let Some(mut field) = field.map(String::from).or_else(|| measures.first().cloned()) else {
-        ui.label(RichText::new("This layer has no values to compare.").color(t.text_secondary));
+        ui.label(RichText::new(tl!("This layer has no values to compare.")).color(t.text_secondary));
         return;
     };
     ui.horizontal(|ui| {
-        ui.label("Compare by");
+        ui.label(tl!("Compare by"));
         egui::ComboBox::from_id_salt(("lm-rank-field", l.id.0)).selected_text(&field).show_ui(ui, |ui| {
             for m in &measures {
                 ui.selectable_value(&mut field, m.clone(), m);
@@ -897,9 +922,12 @@ fn ranking(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &lm_core::document::Doc
     let ranked = lm_jobs::inspect::ranking(l, &ds, &field, mask.as_deref().map(|m| m.as_slice()));
     let Some(max) = ranked.iter().map(|r| r.3.abs()).fold(None, |m: Option<f64>, v| Some(m.map_or(v, |m| m.max(v)))) else { return };
     ui.label(
-        RichText::new(format!("{} {}, highest first", group_thousands(ranked.len() as u64), lm_jobs::inspect::noun_plural(l)))
-            .size(CAPTION)
-            .color(t.text_secondary),
+        RichText::new(i18n::fmt(
+            "{n} {things}, highest first",
+            &[("n", &count(ranked.len() as u64)), ("things", &lm_jobs::inspect::noun_plural(l))],
+        ))
+        .size(CAPTION)
+        .color(t.text_secondary),
     );
     let w = ui.available_width();
     egui::ScrollArea::vertical().id_salt(("lm-rank", l.id.0)).max_height(420.0).show_rows(ui, 22.0, ranked.len(), |ui, range| {
@@ -947,7 +975,10 @@ pub fn chooser(shell: &mut Shell, ui: &mut Ui) {
                 ui.set_max_width(280.0);
                 // Hit testing keeps the nearest 100 per layer; more than that reads "100+".
                 let many = if hits.len() >= lm_mapview::hit::MAX_HITS_PER_LAYER { "+" } else { "" };
-                ui.label(RichText::new(format!("{}{many} objects here", group_thousands(hits.len() as u64))).font(semibold(BODY)));
+                ui.label(
+                    RichText::new(i18n::fmt("{n}{plus} objects here", &[("n", &count(hits.len() as u64)), ("plus", many)]))
+                        .font(semibold(BODY)),
+                );
                 for f in hits.iter().take(20) {
                     let Some(l) = shell.ws.doc.layer(f.layer) else { continue };
                     let (title, _) = crate::inspect::object_header(shell, l, f.row);
@@ -966,7 +997,11 @@ pub fn chooser(shell: &mut Shell, ui: &mut Ui) {
                     }
                 }
                 if hits.len() > 20 {
-                    ui.label(RichText::new(format!("and {} more", hits.len() - 20)).size(CAPTION).color(t.text_secondary));
+                    ui.label(
+                        RichText::new(i18n::fmt("and {n} more", &[("n", &(hits.len() - 20).to_string())]))
+                            .size(CAPTION)
+                            .color(t.text_secondary),
+                    );
                 }
             });
         });
@@ -988,26 +1023,27 @@ fn status_lines(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, l: &lm_c
     // The count is what was placed; exclusions are the records left out.
     let opened = p.count;
     if !p.exclusions.is_empty() {
-        let (one, many) = p.kind.nouns();
-        let _ = one;
-        let rec = if p.kind == LayerKind::Table { many } else { "records" };
-        ui.label(format!(
-            "{} {rec} opened; {} {} no usable location.",
-            group_thousands(opened),
-            group_thousands(p.exclusions.len() as u64),
-            if p.exclusions.len() == 1 { "has" } else { "have" }
-        ));
+        let (_, many) = p.kind.nouns();
+        let one_left = p.exclusions.len() == 1;
+        let template = match (p.kind == LayerKind::Table, one_left) {
+            (true, true) => tn!("{n} {things} opened; {left} has no usable location."),
+            (true, false) => tn!("{n} {things} opened; {left} have no usable location."),
+            (false, true) => tn!("{n} records opened; {left} has no usable location."),
+            (false, false) => tn!("{n} records opened; {left} have no usable location."),
+        };
+        let left = count(p.exclusions.len() as u64);
+        ui.label(i18n::fmt(template, &[("n", &count(opened)), ("things", many), ("left", &left)]));
         ui.horizontal(|ui| {
-            if ui.link(format!("Review {}", group_thousands(p.exclusions.len() as u64))).clicked() {
+            if ui.link(i18n::fmt("Review {n}", &[("n", &left)])).clicked() {
                 shell.review_for = Some(id);
             }
-            if ui.link("Export problem list").clicked() {
+            if ui.link(tl!("Export problem list")).clicked() {
                 shell.export_problems(id);
             }
         });
     }
     if p.kind == LayerKind::Table && p.extent_wgs84.is_none() {
-        ui.label(RichText::new("Opened as a table: there is nothing to place on the map yet.").color(t.text_secondary));
+        ui.label(RichText::new(tl!("Opened as a table: there is nothing to place on the map yet.")).color(t.text_secondary));
     }
 }
 
@@ -1017,9 +1053,9 @@ fn assumption_line(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, a: &A
         ui.painter().circle_filled(r.center(), 4.0, t.assumption);
         ui.label(&a.line);
         let link = match a.kind {
-            AssumptionKind::ChinaOffsetPossible => "Compare",
-            AssumptionKind::RasterNoUnit => "Add unit",
-            _ => "Change",
+            AssumptionKind::ChinaOffsetPossible => tl!("Compare"),
+            AssumptionKind::RasterNoUnit => tl!("Add unit"),
+            _ => tl!("Change"),
         };
         let resp = ui.link(link);
         if resp.clicked() {
@@ -1049,7 +1085,7 @@ pub fn compare_banner(shell: &mut Shell, ui: &mut Ui, map: Rect) {
         .show(ui.ctx(), |ui| {
             frame(&t).show(ui, |ui| {
                 ui.set_max_width(560.0);
-                ui.label(RichText::new(format!("Compare {name}")).font(semibold(BODY)));
+                ui.label(RichText::new(i18n::fmt("Compare {layer}", &[("layer", &name)])).font(semibold(BODY)));
                 ui.horizontal_wrapped(|ui| {
                     let dot = |ui: &mut Ui, c: Color32| {
                         let (r, _) = ui.allocate_exact_size(vec2(12.0, 12.0), Sense::hover());
@@ -1061,22 +1097,22 @@ pub fn compare_banner(shell: &mut Shell, ui: &mut Ui, map: Rect) {
                         .layer(shell.ws.compare.as_ref().map_or(LayerId(0), |c| c.layer))
                         .map_or(t.accent, |l| color(l.style.key_color(l.profile.kind)));
                     dot(ui, key);
-                    ui.label("as in the file");
+                    ui.label(tl!("as in the file"));
                     dot(ui, Color32::from_rgb(0xD5, 0x5E, 0x00));
-                    ui.label(if bd09 { "converted from Baidu (BD-09)" } else { "converted from Amap/Tencent (GCJ-02)" });
+                    ui.label(if bd09 { tl!("converted from Baidu (BD-09)") } else { tl!("converted from Amap/Tencent (GCJ-02)") });
                 });
-                ui.label(RichText::new("Keep the set that sits on the streets.").size(CAPTION).color(t.text_secondary));
+                ui.label(RichText::new(tl!("Keep the set that sits on the streets.")).size(CAPTION).color(t.text_secondary));
                 ui.horizontal(|ui| {
-                    if ui.add(egui::Button::new(RichText::new("Keep converted").color(t.on_accent)).fill(t.accent)).clicked() {
+                    if ui.add(egui::Button::new(RichText::new(tl!("Keep converted")).color(t.on_accent)).fill(t.accent)).clicked() {
                         action = Some(Some(true));
                     }
-                    if ui.button("Keep as in the file").clicked() {
+                    if ui.button(tl!("Keep as in the file")).clicked() {
                         action = Some(Some(false));
                     }
-                    if ui.link(if bd09 { "Try Amap/Tencent instead" } else { "Try Baidu instead" }).clicked() {
+                    if ui.link(if bd09 { tl!("Try Amap/Tencent instead") } else { tl!("Try Baidu instead") }).clicked() {
                         switch = true;
                     }
-                    if ui.link("Close").clicked() {
+                    if ui.link(tl!("Close")).clicked() {
                         action = Some(None);
                     }
                 });
@@ -1125,7 +1161,7 @@ fn overview(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, l: &lm_core:
         for a in visible.iter().take(if expanded { usize::MAX } else { 2 }) {
             assumption_line(shell, ui, t, id, a);
         }
-        if visible.len() > 2 && !expanded && ui.link(format!("+{} more", visible.len() - 2)).clicked() {
+        if visible.len() > 2 && !expanded && ui.link(i18n::fmt("+{n} more", &[("n", &(visible.len() - 2).to_string())])).clicked() {
             ui.data_mut(|d| d.insert_temp(expanded_key, true));
         }
     }
@@ -1144,9 +1180,9 @@ fn overview(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, l: &lm_core:
     if l.profile.kind != lm_core::model::LayerKind::Table {
         ui.add_space(8.0);
         ui.horizontal(|ui| {
-            ui.label(RichText::new("Legend").font(semibold(BODY)));
+            ui.label(RichText::new(tl!("Legend")).font(semibold(BODY)));
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                if ui.small_button("Style…").clicked() {
+                if ui.small_button(tl!("Style…")).clicked() {
                     shell.inspector_tab = 1;
                 }
             });
@@ -1156,9 +1192,9 @@ fn overview(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, l: &lm_core:
     if let Some(f) = &l.filter {
         ui.horizontal_wrapped(|ui| {
             ui.label(RichText::new(icon::FUNNEL).font(theme::icon_font(14.0)).color(t.accent));
-            ui.label(RichText::new("Filtered:").color(t.accent));
+            ui.label(RichText::new(tl!("Filtered:")).color(t.accent));
             ui.label(f.conditions.iter().map(|c| c.chip()).collect::<Vec<_>>().join("; "));
-            if ui.link("Clear").clicked() {
+            if ui.link(tl!("Clear")).clicked() {
                 let tx = shell.ws.doc.set_filter_tx(id, None);
                 shell.ws.commit(tx);
             }
@@ -1170,7 +1206,7 @@ fn overview(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, l: &lm_core:
             l.profile.fields.iter().filter(|f| index.measures.contains_key(&f.name)).take(5).collect();
         if !measures.is_empty() {
             ui.add_space(8.0);
-            ui.label(RichText::new("Values").font(semibold(BODY)));
+            ui.label(RichText::new(tl!("Values")).font(semibold(BODY)));
             for f in measures {
                 let unit = f.unit.value.clone();
                 if let Some((range, counts)) = lm_jobs::inspect::field_summary(&index, &f.name, unit.as_deref()) {
@@ -1192,27 +1228,30 @@ fn overview(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, l: &lm_core:
     {
         // A grid's range is over the sampled time steps (WP6.12), with the time span.
         let unit = b.unit.value.clone().map(|u| format!(" {u}")).unwrap_or_default();
-        let over =
-            if g.has_time() { format!(" over {} of {} time steps", g.sampled, group_thousands(g.steps() as u64)) } else { String::new() };
-        ui.label(format!(
-            "{}: {} to {}{unit}{over}",
-            g.shown().map_or_else(|| b.name.clone(), |v| v.long_name.clone().unwrap_or_else(|| v.name.clone())),
-            fmt_num(lo),
-            fmt_num(hi)
-        ));
+        let variable = g.shown().map_or_else(|| b.name.clone(), |v| v.long_name.clone().unwrap_or_else(|| v.name.clone()));
+        let (low, high) = (i18n::number(&fmt_num(lo)), i18n::number(&fmt_num(hi)));
+        let (sampled, steps) = (g.sampled.to_string(), count(g.steps() as u64));
+        let args =
+            [("variable", variable.as_str()), ("low", &low), ("high", &high), ("unit", &unit), ("sampled", &sampled), ("steps", &steps)];
+        ui.label(if g.has_time() {
+            i18n::fmt("{variable}: {low} to {high}{unit} over {sampled} of {steps} time steps", &args)
+        } else {
+            i18n::fmt("{variable}: {low} to {high}{unit}", &args)
+        });
         if let Some(range) = g.time_range() {
-            ui.label(RichText::new(format!("Time: {range}")).size(CAPTION).color(t.text_secondary));
+            ui.label(RichText::new(i18n::fmt("Time: {range}", &[("range", &range)])).size(CAPTION).color(t.text_secondary));
         }
     }
     for b in l.profile.bands.iter().filter(|_| l.profile.grid.is_none()) {
         if let (Some(lo), Some(hi)) = (b.min, b.max) {
             let unit = b.unit.value.clone().map(|u| format!(" {u}")).unwrap_or_default();
-            let name = if b.name.is_empty() || b.name.eq_ignore_ascii_case(&format!("band {}", b.index)) {
-                String::new()
+            let (n, low, high) = (b.index.to_string(), i18n::number(&fmt_num(lo)), i18n::number(&fmt_num(hi)));
+            let args = [("n", n.as_str()), ("name", &b.name), ("low", &low), ("high", &high), ("unit", &unit)];
+            ui.label(if b.name.is_empty() || b.name.eq_ignore_ascii_case(&format!("band {}", b.index)) {
+                i18n::fmt("Band {n}: {low} to {high}{unit}", &args)
             } else {
-                format!(" ({})", b.name)
-            };
-            ui.label(format!("Band {}{name}: {} to {}{unit}", b.index, fmt_num(lo), fmt_num(hi)));
+                i18n::fmt("Band {n} ({name}): {low} to {high}{unit}", &args)
+            });
         }
     }
     crate::insight::actions(shell, ui, t, l, None);
@@ -1253,34 +1292,40 @@ fn details(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, l: &lm_core::
     };
     row(
         ui,
-        "Source",
+        tl!("Source"),
         match &p.source.member {
             Some(m) => format!("{} › {m}", p.source.path),
             None => p.source.path.clone(),
         },
     );
-    row(ui, "Format", p.format.clone());
+    row(ui, tl!("Format"), p.format.clone());
     if let Some(e) = &p.encoding {
-        row(ui, "Text encoding", e.clone());
+        row(ui, tl!("Text encoding"), e.clone());
     }
-    row(ui, "Coordinate system", format!("{} — {}", p.crs.value.label(), p.crs.evidence.0));
+    row(ui, tl!("Coordinate system"), format!("{} — {}", p.crs.value.label(), p.crs.evidence.0));
     if let Some(e) = p.extent_wgs84 {
-        row(ui, "Extent", format!("{:.4}° to {:.4}° E, {:.4}° to {:.4}° N", e.min_x, e.max_x, e.min_y, e.max_y));
+        let deg = |v: f64| i18n::number(&format!("{v:.4}"));
+        let (w, east, s, n) = (deg(e.min_x), deg(e.max_x), deg(e.min_y), deg(e.max_y));
+        row(
+            ui,
+            tl!("Extent"),
+            i18n::fmt("{west}° to {east}° E, {south}° to {north}° N", &[("west", &w), ("east", &east), ("south", &s), ("north", &n)]),
+        );
     }
     let status = match shell.ws.data(id).map(|d| d.status.clone()) {
-        Some(ImportStatus::Complete) => "Complete".to_string(),
+        Some(ImportStatus::Complete) => tl!("Complete").to_string(),
         Some(ImportStatus::CompleteWithExclusions) => {
-            format!("Complete, with {} records excluded", group_thousands(p.exclusions.len() as u64))
+            i18n::fmt("Complete, with {n} records excluded", &[("n", &count(p.exclusions.len() as u64))])
         }
-        Some(ImportStatus::NeedsDecision) => "Needs a decision".into(),
-        Some(ImportStatus::Canceled) => "Canceled".into(),
-        Some(ImportStatus::Failed(m)) => format!("Failed: {m}"),
-        None => "Not loaded (the source is read again when the document opens)".into(),
+        Some(ImportStatus::NeedsDecision) => tl!("Needs a decision").into(),
+        Some(ImportStatus::Canceled) => tl!("Canceled").into(),
+        Some(ImportStatus::Failed(m)) => i18n::fmt("Failed: {reason}", &[("reason", &m)]),
+        None => tl!("Not loaded (the source is read again when the document opens)").into(),
     };
-    row(ui, "Import", status);
+    row(ui, tl!("Import"), status);
     if !p.fields.is_empty() {
         ui.add_space(6.0);
-        ui.label(RichText::new("Fields").font(semibold(BODY)));
+        ui.label(RichText::new(tl!("Fields")).font(semibold(BODY)));
         let mut role_change: Option<(String, Option<lm_core::model::FieldRole>)> = None;
         let mut star: Option<(String, bool)> = None;
         // One row per field: star, name with its evidence wrapped beneath, role chip. Fixed widths
@@ -1300,7 +1345,7 @@ fn details(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, l: &lm_core::
                 let c = if focused { t.accent } else { t.text_secondary };
                 let header = ui.horizontal(|ui| {
                     ui.label(RichText::new(icon::LINK).font(theme::icon_font(13.0)).color(c));
-                    ui.label(RichText::new(format!("From {title}")).size(CAPTION).color(c));
+                    ui.label(RichText::new(i18n::fmt("From {table}", &[("table", title)])).size(CAPTION).color(c));
                 });
                 if focused && shell.join_scroll {
                     header.response.scroll_to_me(Some(egui::Align::TOP));
@@ -1322,8 +1367,8 @@ fn details(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, l: &lm_core::
                             egui::Button::new(RichText::new(star_icon).color(if starred { t.accent } else { t.text_secondary }))
                                 .frame(false),
                         );
-                        crate::a11y::toggle(&star_r, format!("Show {} in insight", f.name), starred);
-                        if star_r.on_hover_text(if starred { "Remove from insight" } else { "Show in insight" }).clicked() {
+                        crate::a11y::toggle(&star_r, i18n::fmt("Show {field} in insight", &[("field", &f.name)]), starred);
+                        if star_r.on_hover_text(if starred { tl!("Remove from insight") } else { tl!("Show in insight") }).clicked() {
                             star = Some((f.name.clone(), !starred));
                         }
                     } else {
@@ -1337,18 +1382,18 @@ fn details(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, l: &lm_core::
                     });
                     // The role chip, with Change.
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
-                        let chip = egui::Button::new(RichText::new(role_name(known.value)).size(CAPTION))
+                        let chip = egui::Button::new(RichText::new(tl!(role_name(known.value))).size(CAPTION))
                             .fill(t.accent_weak)
                             .corner_radius(egui::CornerRadius::same(10));
                         egui::containers::menu::MenuButton::from_button(chip).ui(ui, |ui| {
-                            ui.label(RichText::new("Treat this field as").size(CAPTION).color(t.text_secondary));
+                            ui.label(RichText::new(tl!("Treat this field as")).size(CAPTION).color(t.text_secondary));
                             for r in ROLE_CHOICES {
-                                if ui.selectable_label(known.value == r, role_name(r)).clicked() {
+                                if ui.selectable_label(known.value == r, tl!(role_name(r))).clicked() {
                                     role_change = Some((f.name.clone(), Some(r)));
                                     ui.close();
                                 }
                             }
-                            if l.roles.contains_key(&f.name) && ui.button("Back to the detected role").clicked() {
+                            if l.roles.contains_key(&f.name) && ui.button(tl!("Back to the detected role")).clicked() {
                                 role_change = Some((f.name.clone(), None));
                                 ui.close();
                             }
@@ -1368,19 +1413,19 @@ fn details(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, l: &lm_core::
     }
     if !p.assumptions.is_empty() {
         ui.add_space(6.0);
-        ui.label(RichText::new("Assumptions").font(semibold(BODY)));
+        ui.label(RichText::new(tl!("Assumptions")).font(semibold(BODY)));
         for a in p.assumptions.clone() {
-            let how = match a.treatment {
-                Treatment::Silent => "applied quietly",
-                Treatment::Visible => "shown",
-                Treatment::Question if a.confirmed_by_user => "answered",
-                Treatment::Question => "needs a decision",
-                Treatment::Block => "blocks actions",
+            let template = match a.treatment {
+                Treatment::Silent => tn!("{line} (applied quietly; chosen: {choice})"),
+                Treatment::Visible => tn!("{line} (shown; chosen: {choice})"),
+                Treatment::Question if a.confirmed_by_user => tn!("{line} (answered; chosen: {choice})"),
+                Treatment::Question => tn!("{line} (needs a decision; chosen: {choice})"),
+                Treatment::Block => tn!("{line} (blocks actions; chosen: {choice})"),
             };
             ui.horizontal_wrapped(|ui| {
-                ui.label(format!("{} ({how}; chosen: {})", a.line, a.chosen.label));
+                ui.label(i18n::fmt(template, &[("line", &a.line), ("choice", &a.chosen.label)]));
                 if a.alternatives.len() > 1 {
-                    let resp = ui.link("Change");
+                    let resp = ui.link(tl!("Change"));
                     if resp.clicked() {
                         shell.change_for = Some((id, a.kind, a.subject.clone(), resp.rect));
                     }
@@ -1400,20 +1445,20 @@ const ROLE_CHOICES: [lm_core::model::FieldRole; 6] = [
     lm_core::model::FieldRole::Text,
 ];
 
-/// A role in words for chips.
+/// A role in words for chips (English: translated where drawn).
 fn role_name(r: lm_core::model::FieldRole) -> &'static str {
     use lm_core::model::{FieldRole, MeasureKind};
     match r {
-        FieldRole::Measure(MeasureKind::Count) => "Count",
-        FieldRole::Measure(MeasureKind::Density) => "Density",
-        FieldRole::Measure(_) => "Value",
-        FieldRole::Identifier => "ID",
-        FieldRole::Name => "Name",
-        FieldRole::Category => "Category",
-        FieldRole::Text => "Text",
-        FieldRole::Date => "Date",
-        FieldRole::Coordinate => "Coordinate",
-        FieldRole::Unknown => "Unknown",
+        FieldRole::Measure(MeasureKind::Count) => tn!("Count"),
+        FieldRole::Measure(MeasureKind::Density) => tn!("Density"),
+        FieldRole::Measure(_) => tn!("Value"),
+        FieldRole::Identifier => tn!("ID"),
+        FieldRole::Name => tn!("Name"),
+        FieldRole::Category => tn!("Category"),
+        FieldRole::Text => tn!("Text"),
+        FieldRole::Date => tn!("Date"),
+        FieldRole::Coordinate => tn!("Coordinate"),
+        FieldRole::Unknown => tn!("Unknown"),
     }
 }
 
@@ -1439,7 +1484,7 @@ pub fn change_popover(shell: &mut Shell, ui: &mut Ui) {
                 let mut alts = a.alternatives.clone();
                 // "Add unit": the common units for cell values, to pick from.
                 if kind == AssumptionKind::RasterNoUnit {
-                    alts = std::iter::once(Choice::new("unknown", "Unknown"))
+                    alts = std::iter::once(Choice::new("unknown", tn!("Unknown")))
                         .chain(
                             ["°C", "K", "m", "mm", "%", "people", "people per km²", "kg/ha"]
                                 .iter()
@@ -1455,7 +1500,8 @@ pub fn change_popover(shell: &mut Shell, ui: &mut Ui) {
                 }
                 for c in alts {
                     let selected = c.id == a.chosen.id;
-                    if ui.selectable_label(selected, &c.label).clicked() {
+                    // The label is English (it is recorded in the document); shown translated.
+                    if ui.selectable_label(selected, tl!(&c.label)).clicked() {
                         if !selected {
                             let now = ui.input(|i| i.time);
                             if let Err(e) = shell.ws.change_assumption(id, kind, subject.clone(), c, None) {
@@ -1484,24 +1530,25 @@ pub fn review(shell: &mut Shell, ctx: &egui::Context) {
     };
     let mut open = true;
     let mut export = false;
-    egui::Window::new(format!("Excluded records — {}", l.display_name))
+    egui::Window::new(i18n::fmt("Excluded records — {layer}", &[("layer", &l.display_name)]))
+        .id(egui::Id::new(("lm-review-window", id.0)))
         .open(&mut open)
         .collapsible(false)
         .default_width(460.0)
         .default_height(360.0)
         .show(ctx, |ui| {
-            ui.label(format!(
-                "{} records were left out of the map. Your file has not been changed.",
-                group_thousands(l.profile.exclusions.len() as u64)
+            ui.label(i18n::fmt(
+                "{n} records were left out of the map. Your file has not been changed.",
+                &[("n", &count(l.profile.exclusions.len() as u64))],
             ));
-            if ui.button("Export problem list…").clicked() {
+            if ui.button(tl!("Export problem list…")).clicked() {
                 export = true;
             }
             ui.separator();
             egui::ScrollArea::vertical().show(ui, |ui| {
                 egui::Grid::new(("lm-review", id.0)).striped(true).num_columns(2).show(ui, |ui| {
-                    ui.label(RichText::new("Row").strong());
-                    ui.label(RichText::new("Reason").strong());
+                    ui.label(RichText::new(tl!("Row")).strong());
+                    ui.label(RichText::new(tl!("Reason")).strong());
                     ui.end_row();
                     for e in &l.profile.exclusions {
                         ui.label(group_thousands(e.row));
@@ -1531,7 +1578,7 @@ pub fn drop_overlay(shell: &Shell, ui: &Ui, full: Rect) {
     p.text(
         full.center(),
         Align2::CENTER_CENTER,
-        "Drop to add to the map",
+        tl!("Drop to add to the map"),
         egui::FontId::new(theme::TITLE, egui::FontFamily::Name("semibold".into())),
         t.text_primary,
     );

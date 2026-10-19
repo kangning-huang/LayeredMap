@@ -5,6 +5,7 @@
 
 use egui::{RichText, Ui, vec2};
 use lm_core::model::{LayerId, LayerKind};
+use lm_core::{i18n, tl};
 use lm_jobs::export::{DataFormat, sensitive_fields};
 use lm_jobs::import::LayerData;
 
@@ -91,8 +92,8 @@ impl DataDialog {
 
     /// The file's bytes and a suggested name.
     pub fn write(&self, shell: &Shell) -> Result<(Vec<u8>, String), String> {
-        let l = shell.ws.doc.layer(self.layer).ok_or("The layer is gone.")?;
-        let data = shell.ws.data(self.layer).ok_or("The layer's data is still loading.")?;
+        let l = shell.ws.doc.layer(self.layer).ok_or(tl!("The layer is gone."))?;
+        let data = shell.ws.data(self.layer).ok_or(tl!("The layer's data is still loading."))?;
         let fields: Vec<String> = self.fields.iter().filter(|f| f.on).map(|f| f.name.clone()).collect();
         let band = match &data.data {
             LayerData::Raster(r) => lm_jobs::inspect::style_band(r, &l.style),
@@ -100,13 +101,14 @@ impl DataDialog {
         };
         let rows = self.rows(shell);
         let bytes = lm_jobs::export::export(&data.data, rows.as_deref(), &fields, self.format, band)?;
-        let suffix = match self.scope {
-            Scope::All => "",
-            Scope::Filtered => " (filtered)",
-            Scope::Selected => " (selected)",
-        };
+        // The suggested file name is in the interface's language; the extension isn't.
         let name = l.display_name.replace(['/', ':', '\\'], "-");
-        Ok((bytes, format!("{name}{suffix}.{}", self.format.extension())))
+        let name = match self.scope {
+            Scope::All => name,
+            Scope::Filtered => i18n::fmt("{name} (filtered)", &[("name", &name)]),
+            Scope::Selected => i18n::fmt("{name} (selected)", &[("name", &name)]),
+        };
+        Ok((bytes, format!("{name}.{}", self.format.extension())))
     }
 }
 
@@ -118,7 +120,7 @@ pub fn dialog(shell: &mut Shell, ctx: &egui::Context) {
     let mut export = false;
     let modal = egui::Modal::new(egui::Id::new("lm-export-data")).show(ctx, |ui| {
         ui.set_width(440.0);
-        ui.label(RichText::new("Export data").font(theme::semibold(theme::TITLE)));
+        ui.label(RichText::new(tl!("Export data")).font(theme::semibold(theme::TITLE)));
         ui.add_space(12.0);
         form::with_visible_controls(ui, &t, |ui| body(shell, ui, &t, &mut d));
         ui.add_space(12.0);
@@ -127,11 +129,11 @@ pub fn dialog(shell: &mut Shell, ctx: &egui::Context) {
             ui.add_space(6.0);
         }
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            let ok = egui::Button::new(RichText::new("Export…").color(t.on_accent)).fill(t.accent).min_size(vec2(88.0, 30.0));
+            let ok = egui::Button::new(RichText::new(tl!("Export…")).color(t.on_accent)).fill(t.accent).min_size(vec2(88.0, 30.0));
             if ui.add(ok).clicked() {
                 export = true;
             }
-            if ui.add(egui::Button::new("Cancel").min_size(vec2(80.0, 30.0))).clicked() {
+            if ui.add(egui::Button::new(tl!("Cancel")).min_size(vec2(80.0, 30.0))).clicked() {
                 close = true;
             }
         });
@@ -142,7 +144,7 @@ pub fn dialog(shell: &mut Shell, ctx: &egui::Context) {
     if export {
         match d.write(shell) {
             Ok((bytes, name)) => {
-                shell.push_file_request(FileRequest::SaveBytes { title: "Export data".into(), suggested_name: name, bytes });
+                shell.push_file_request(FileRequest::SaveBytes { title: tl!("Export data").into(), suggested_name: name, bytes });
                 close = true;
             }
             Err(e) => d.error = Some(e),
@@ -158,7 +160,7 @@ fn body(shell: &Shell, ui: &mut Ui, t: &theme::Theme, d: &mut DataDialog) {
         shell.ws.doc.layers.iter().rev().map(|l| (l.id, l.display_name.clone(), l.profile.kind)).collect();
     let current = layers.iter().find(|l| l.0 == d.layer).map(|l| l.1.clone()).unwrap_or_default();
     let mut chosen = None;
-    form::row(ui, t, "Layer", |ui| {
+    form::row(ui, t, tl!("Layer"), |ui| {
         egui::ComboBox::from_id_salt("lm-export-layer").selected_text(current).width(ui.available_width()).show_ui(ui, |ui| {
             for (id, name, _) in &layers {
                 if ui.selectable_label(*id == d.layer, name).clicked() {
@@ -177,12 +179,12 @@ fn body(shell: &Shell, ui: &mut Ui, t: &theme::Theme, d: &mut DataDialog) {
         let filtered = shell.ws.doc.layer(d.layer).is_some_and(|l| l.filter.is_some());
         let shown = shell.ws.derived(d.layer).map_or(total as usize, |dv| dv.shown);
         let selected = shell.ws.selection.rows_in(d.layer).len();
-        let n = lm_core::model::group_thousands;
+        let n = i18n::count;
         // A count only where there is something to count.
         let labels = [
-            format!("All {}", n(total)),
-            if filtered { format!("Filtered {}", n(shown as u64)) } else { "Filtered".into() },
-            if selected > 0 { format!("Selected {}", n(selected as u64)) } else { "Selected".into() },
+            i18n::fmt("All {n}", &[("n", &n(total))]),
+            if filtered { i18n::fmt("Filtered {n}", &[("n", &n(shown as u64))]) } else { tl!("Filtered").into() },
+            if selected > 0 { i18n::fmt("Selected {n}", &[("n", &n(selected as u64))]) } else { tl!("Selected").into() },
         ];
         let refs: Vec<&str> = labels.iter().map(String::as_str).collect();
         let sel = match d.scope {
@@ -190,7 +192,7 @@ fn body(shell: &Shell, ui: &mut Ui, t: &theme::Theme, d: &mut DataDialog) {
             Scope::Filtered => 1,
             Scope::Selected => 2,
         };
-        form::row(ui, t, "Records", |ui| {
+        form::row(ui, t, tl!("Records"), |ui| {
             if let Some(k) = form::segmented(ui, t, sel, &refs, ui.available_width()) {
                 match k {
                     1 if filtered => d.scope = Scope::Filtered,
@@ -202,9 +204,9 @@ fn body(shell: &Shell, ui: &mut Ui, t: &theme::Theme, d: &mut DataDialog) {
         });
         if !filtered || selected == 0 {
             let why = match (filtered, selected > 0) {
-                (false, false) => "The layer has no filter and nothing is selected.",
-                (false, true) => "The layer has no filter.",
-                _ => "Nothing is selected in this layer.",
+                (false, false) => tl!("The layer has no filter and nothing is selected."),
+                (false, true) => tl!("The layer has no filter."),
+                _ => tl!("Nothing is selected in this layer."),
             };
             form::indented(ui, |ui| ui.label(RichText::new(why).size(CAPTION).color(t.text_secondary)));
         }
@@ -216,7 +218,7 @@ fn body(shell: &Shell, ui: &mut Ui, t: &theme::Theme, d: &mut DataDialog) {
             DataFormat::GeoJson => 0,
             _ => 1,
         };
-        form::row(ui, t, "Format", |ui| {
+        form::row(ui, t, tl!("Format"), |ui| {
             if let Some(k) = form::segmented(ui, t, sel, &["GeoJSON", "CSV"], ui.available_width()) {
                 d.format = if k == 0 {
                     DataFormat::GeoJson
@@ -229,26 +231,28 @@ fn body(shell: &Shell, ui: &mut Ui, t: &theme::Theme, d: &mut DataDialog) {
         });
         if matches!(d.format, DataFormat::CsvLonLat | DataFormat::CsvWkt) {
             let sel = usize::from(d.format == DataFormat::CsvWkt);
-            form::row(ui, t, "Location", |ui| {
-                if let Some(k) = form::segmented(ui, t, sel, &["Longitude, latitude", "WKT"], ui.available_width()) {
+            form::row(ui, t, tl!("Location"), |ui| {
+                if let Some(k) = form::segmented(ui, t, sel, &[tl!("Longitude, latitude"), "WKT"], ui.available_width()) {
                     d.format = if k == 0 && points { DataFormat::CsvLonLat } else { DataFormat::CsvWkt };
                 }
             });
             if !points {
                 form::indented(ui, |ui| {
-                    ui.label(RichText::new("Lines and areas are written as well-known text (WKT).").size(CAPTION).color(t.text_secondary))
+                    ui.label(
+                        RichText::new(tl!("Lines and areas are written as well-known text (WKT).")).size(CAPTION).color(t.text_secondary),
+                    )
                 });
             }
         }
         form::divider(ui, t);
         ui.horizontal(|ui| {
-            form::heading(ui, "Fields");
+            form::heading(ui, tl!("Fields"));
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                if ui.link("None").clicked() {
+                if ui.link(tl!("None")).clicked() {
                     d.fields.iter_mut().for_each(|f| f.on = false);
                 }
                 ui.label(RichText::new("·").color(t.text_secondary));
-                if ui.link("All").clicked() {
+                if ui.link(tl!("All")).clicked() {
                     d.fields.iter_mut().for_each(|f| f.on = true);
                 }
             });
@@ -258,19 +262,23 @@ fn body(shell: &Shell, ui: &mut Ui, t: &theme::Theme, d: &mut DataDialog) {
                 ui.horizontal(|ui| {
                     form::checkbox(ui, t, &mut f.on, &f.name);
                     if let Some(note) = f.note {
-                        ui.label(RichText::new(format!("{note}: left out unless you check it")).size(CAPTION).color(t.assumption));
+                        ui.label(
+                            RichText::new(i18n::fmt("{note}: left out unless you check it", &[("note", note)]))
+                                .size(CAPTION)
+                                .color(t.assumption),
+                        );
                     }
                 });
             }
         });
     } else {
-        form::row(ui, t, "Format", |ui| ui.label("GeoTIFF"));
+        form::row(ui, t, tl!("Format"), |ui| ui.label("GeoTIFF")); // i18n: format name
         form::indented(ui, |ui| {
             ui.add(
                 egui::Label::new(
-                    RichText::new(
-                        "The band shown, on the raster's own grid and coordinate system: resampling to WGS 84 would change its values.",
-                    )
+                    RichText::new(tl!(
+                        "The band shown, on the raster's own grid and coordinate system: resampling to WGS 84 would change its values."
+                    ))
                     .size(CAPTION)
                     .color(t.text_secondary),
                 )
@@ -280,12 +288,15 @@ fn body(shell: &Shell, ui: &mut Ui, t: &theme::Theme, d: &mut DataDialog) {
     }
     form::divider(ui, t);
     if !raster {
-        ui.label(RichText::new("Coordinates are written in WGS 84 (longitude, latitude).").color(t.text_secondary));
+        ui.label(RichText::new(tl!("Coordinates are written in WGS 84 (longitude, latitude).")).color(t.text_secondary));
     }
     ui.add(
         egui::Label::new(
-            RichText::new(format!("Styles and recipes stay in {}: these formats carry only locations and values.", lm_core::brand::NAME))
-                .color(t.text_secondary),
+            RichText::new(i18n::fmt(
+                "Styles and recipes stay in {app}: these formats carry only locations and values.",
+                &[("app", lm_core::brand::shown(false))],
+            ))
+            .color(t.text_secondary),
         )
         .wrap(),
     );

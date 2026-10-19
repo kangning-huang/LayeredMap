@@ -9,6 +9,7 @@ use std::sync::Arc;
 
 use lm_core::document::{Classes, ColorBy, DocLayer, Op, Style, Transaction};
 use lm_core::model::{FieldRole, JoinRecord, LayerId, LayerKind};
+use lm_core::{i18n, tl};
 use lm_jobs::import::Dataset;
 use lm_jobs::import::{ImportedLayer, LayerData};
 use lm_jobs::join::{self, JoinSpec, Plan};
@@ -181,7 +182,7 @@ impl Workspace {
                                 *id,
                                 Box::new((
                                     format!("{} ↔ {}", tds.fields[p.table_field].name, lds.fields[p.layer_field].name),
-                                    format!("{} of {} match", p.matched_keys, p.table_keys),
+                                    (p.matched_keys, p.table_keys),
                                     join::expect(&tds, lds, &spec),
                                     spec,
                                 )),
@@ -196,7 +197,7 @@ impl Workspace {
                                         let spec = join::spec_for(&tds, lds, p, &name);
                                         (
                                             format!("{} ↔ {}", tds.fields[p.table_field].name, lds.fields[p.layer_field].name),
-                                            format!("{} of {} match", p.matched_keys, p.table_keys),
+                                            (p.matched_keys, p.table_keys),
                                             join::expect(&tds, lds, &spec),
                                             spec,
                                         )
@@ -220,15 +221,21 @@ impl Workspace {
                                 let name = table_name(w, table);
                                 let offers = specs
                                     .into_iter()
-                                    .map(|(label, detail, expected, spec)| JoinOffer { label, detail, expected, target, spec })
+                                    .map(|(label, keys, expected, spec)| JoinOffer {
+                                        label,
+                                        detail: match_detail(keys),
+                                        expected,
+                                        target,
+                                        spec,
+                                    })
                                     .collect();
                                 w.joins.questions.insert(table, JoinQuestion { table_name: name, offers, confirm: false });
                                 w.select_layer(table);
                             }
                             Outcome::Confirm(target, offer) => {
-                                let (label, detail, expected, spec) = *offer;
+                                let (label, keys, expected, spec) = *offer;
                                 let name = table_name(w, table);
-                                let offers = vec![JoinOffer { label, detail, expected, target, spec }];
+                                let offers = vec![JoinOffer { label, detail: match_detail(keys), expected, target, spec }];
                                 w.joins.questions.insert(table, JoinQuestion { table_name: name, offers, confirm: true });
                                 w.select_layer(table);
                             }
@@ -581,12 +588,12 @@ impl Workspace {
     /// The spec and what it would give, for the picker's live preview; Err says why not.
     pub fn match_preview(&self, d: &MatchDraft) -> Result<(JoinSpec, join::Expected), String> {
         let (Some(tds), Some(lds)) = (vector(self, d.table), vector(self, d.target)) else {
-            return Err("The layer isn't loaded yet.".into());
+            return Err(tl!("The layer isn't loaded yet.").into());
         };
         let name = table_name(self, d.table);
-        let spec = join::spec_for_fields(&tds, &lds, &d.table_field, &d.layer_field, &name).ok_or("Pick a column on each side.")?;
+        let spec = join::spec_for_fields(&tds, &lds, &d.table_field, &d.layer_field, &name).ok_or(tl!("Pick a column on each side."))?;
         let spec = join::with_repeats(&tds, &spec, &d.repeats)?;
-        let e = join::expect(&tds, &lds, &spec).ok_or("Pick a column on each side.")?;
+        let e = join::expect(&tds, &lds, &spec).ok_or(tl!("Pick a column on each side."))?;
         Ok((spec, e))
     }
 
@@ -611,12 +618,18 @@ impl Workspace {
     }
 }
 
-/// What working out a table's join found, for the finish on the main thread.
+/// What working out a table's join found, for the finish on the main thread. An offer carries its
+/// matched and total keys; they are put in words there (the language is set per thread).
 enum Outcome {
     Join(Vec<(LayerId, JoinSpec)>),
-    Ask(LayerId, Vec<(String, String, Option<join::Expected>, JoinSpec)>),
-    Confirm(LayerId, Box<(String, String, Option<join::Expected>, JoinSpec)>),
+    Ask(LayerId, Vec<(String, (usize, usize), Option<join::Expected>, JoinSpec)>),
+    Confirm(LayerId, Box<(String, (usize, usize), Option<join::Expected>, JoinSpec)>),
     Nothing,
+}
+
+/// "15 of 17 match".
+fn match_detail((matched, keys): (usize, usize)) -> String {
+    i18n::fmt("{matched} of {keys} match", &[("matched", &matched.to_string()), ("keys", &keys.to_string())])
 }
 
 /// The table's field profiles for the fields a join added, under their joined names.
@@ -639,11 +652,15 @@ impl JoinReport {
     /// "Joined population.csv to districts: 16 of 17 districts matched."
     pub fn line(&self, layer_name: &str, nouns: (&str, &str)) -> String {
         let noun = if self.layer_rows == 1 { nouns.0 } else { nouns.1 };
-        format!(
-            "Joined {} to {layer_name}: {} of {} {noun} matched.",
-            self.table_name,
-            lm_core::model::group_thousands(self.matched as u64),
-            lm_core::model::group_thousands(self.layer_rows as u64)
+        i18n::fmt(
+            "Joined {table} to {layer}: {matched} of {total} {things} matched.",
+            &[
+                ("table", &self.table_name),
+                ("layer", layer_name),
+                ("matched", &i18n::count(self.matched as u64)),
+                ("total", &i18n::count(self.layer_rows as u64)),
+                ("things", noun),
+            ],
         )
     }
 
@@ -656,12 +673,15 @@ impl JoinReport {
     /// matched (5 rows)"); None when every row found a place.
     pub fn unmatched_label(&self) -> Option<String> {
         let (keys, rows) = (self.unmatched.len(), self.unmatched_rows);
-        let plural = |n: usize| if n == 1 { "row" } else { "rows" };
+        let (k, r) = (keys.to_string(), rows.to_string());
+        let args = [("k", k.as_str()), ("r", &r)];
         match (keys, rows) {
             (_, 0) => None,
-            (0, r) => Some(format!("Show the {r} {} not matched", plural(r))),
-            (k, r) if k == r => Some(format!("Show the {k} not matched")),
-            (k, r) => Some(format!("Show the {k} not matched ({r} {})", plural(r))),
+            (0, 1) => Some(i18n::fmt("Show the {r} row not matched", &args)),
+            (0, _) => Some(i18n::fmt("Show the {r} rows not matched", &args)),
+            (k, r) if k == r => Some(i18n::fmt("Show the {k} not matched", &args)),
+            (_, 1) => Some(i18n::fmt("Show the {k} not matched ({r} row)", &args)),
+            (_, _) => Some(i18n::fmt("Show the {k} not matched ({r} rows)", &args)),
         }
     }
 

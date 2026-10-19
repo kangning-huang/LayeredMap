@@ -1,0 +1,793 @@
+# NimbleMap interface catalog, nl: English<TAB>translation (format: crates/lm-core/src/i18n.rs).
+# Machine translation awaiting native review: docs/lm/localization.md.
+degrees Celsius	graden Celsius
+degrees Fahrenheit	graden Fahrenheit
+square kilometres	vierkante kilometer
+square metres	vierkante meter
+square miles	vierkante mijl
+degrees	graden
+minus	min
+map	kaart
+No data yet	Nog geen gegevens
+Every layer is hidden	Alle kaartlagen zijn verborgen
+Open a file or an example to add data. Search places with Command-F.	Open een bestand of een voorbeeld om gegevens toe te voegen. Zoek plaatsen met Command-F.
+Arrow keys pan, plus and minus zoom. The layer list and the data table (Command-T) list every record; Command-F finds one.	De pijltoetsen verschuiven de kaart, plus en min zoomen. De lagenlijst en de gegevenstabel (Command-T) tonen elk record; Command-F zoekt er een.
+The whole world	De hele wereld
+{lat} degrees north, {lon} degrees east	{lat} graden noord, {lon} graden oost
+{lat} degrees north, {lon} degrees west	{lat} graden noord, {lon} graden west
+{lat} degrees south, {lon} degrees east	{lat} graden zuid, {lon} graden oost
+{lat} degrees south, {lon} degrees west	{lat} graden zuid, {lon} graden west
+Selection cleared.	Selectie opgeheven.
+Cell selected.	Cel geselecteerd.
+No value	Geen waarde
+Showing {layers}	Getoond: {layers}
+Map. {layers}.	Kaart. {layers}.
+Map. {layers}. {place}.	Kaart. {layers}. {place}.
+{names} and {last}	{names} en {last}
+About {across} kilometres across, centred at {place}	Ongeveer {across} kilometer breed, met {place} in het midden
+{layer} layer selected. {subtitle}.	Kaartlaag {layer} geselecteerd. {subtitle}.
+{title} selected.	{title} geselecteerd.
+{title} selected. {field} {value}, {phrase}.	{title} geselecteerd. {field} {value}, {phrase}.
+{title} selected. {field} {value}.	{title} geselecteerd. {field} {value}.
+{n} {noun} selected.	{n} {noun} geselecteerd.
+{n} objects selected.	{n} objecten geselecteerd.
+{layer} cell at {place} selected. {value}.	Cel van {layer} bij {place} geselecteerd. {value}.
+Summarize in an area I draw	Samenvatten in een gebied dat ik teken
+The layer was removed.	De kaartlaag is verwijderd.
+A layer is still loading.	Er wordt nog een kaartlaag geladen.
+A condition names no raster.	Een voorwaarde noemt geen raster.
+Add a condition.	Voeg een voorwaarde toe.
+Add a layer of points to answer this.	Voeg een kaartlaag met punten toe om dit te beantwoorden.
+Add a layer of lines to answer this.	Voeg een kaartlaag met lijnen toe om dit te beantwoorden.
+Add a layer of areas to answer this.	Voeg een kaartlaag met vlakken toe om dit te beantwoorden.
+Add a layer of cells to answer this.	Voeg een kaartlaag met cellen toe om dit te beantwoorden.
+Add a layer of points or lines or areas to answer this.	Voeg een kaartlaag met punten, lijnen of vlakken toe om dit te beantwoorden.
+Analysis	Analyse
+Developer surface · assistant action	Ontwikkelaarsweergave · assistentactie
+Choose a layer	Kies een kaartlaag
+With	Met
+Distance	Afstand
+Merge overlaps	Overlappingen samenvoegen
+Choose a value	Kies een waarde
+By	Op
+Choose a raster	Kies een raster
+a number	een getal
+and	en
+Remove this condition	Deze voorwaarde verwijderen
++ Add condition	+ Voorwaarde toevoegen
+or a field	of een veld
+Statistic	Statistiek
+of	van
+Scope	Geldt voor
+Working…	Bezig…
+Cancel	Annuleren
+Kept	Behouden
+Done	Klaar
+Preview — not saved	Voorbeeld — niet opgeslagen
+Keep result	Resultaat behouden
+Discard	Verwerpen
+Preview out of date	Voorbeeld verouderd
+Preview	Voorbeeld
+No data	Geen gegevens
+Show fewer	Minder tonen
+How this was calculated	Hoe dit is berekend
+Copy	Kopiëren
+All {n} points	Alle {n} punten
+All {n} lines	Alle {n} lijnen
+All {n} areas	Alle {n} vlakken
+All {n} cells	Alle {n} cellen
+All {n} rows	Alle {n} rijen
+≥  at least	≥  minstens
+≤  at most	≤  hoogstens
+[ ]  between	[ ]  tussen
+“{action}” isn't connected yet.	“{action}” is nog niet gekoppeld.
+The question could not be answered. Nothing was added to your map. ({reason})	De vraag kon niet worden beantwoord. Er is niets aan uw kaart toegevoegd. ({reason})
+{n} selected	{n} geselecteerd
+{phase}: {done} of {total}	{phase}: {done} van {total}
+{phase}…	{phase}…
+Kept: {title}. {summary}	Behouden: {title}. {summary}
+Preview: {summary}	Voorbeeld: {summary}
+{rank}. {label}: {value} {unit}	{rank}. {label}: {value} {unit}
+Show all {n}	Alle {n} tonen
+Values: {unit}	Waarden: {unit}
+The assistant isn't set up in this build (it has no assistant key).	De assistent is in deze versie niet ingesteld (er is geen assistentsleutel).
+The plan couldn't be kept; nothing changed.	Het plan kon niet worden behouden; er is niets veranderd.
+Type your answer, or pick one above	Typ uw antwoord, of kies er hierboven een
+Ask about your layers	Vraag iets over uw lagen
+Listening… speak your request	Luisteren… spreek uw vraag in
+Stop listening	Stoppen met luisteren
+Speak your request	Spreek uw vraag in
+Ask (Return)	Vragen (Return)
+Ask	Vragen
+Planning…	Plan maken…
+Preview on the map — not saved	Voorbeeld op de kaart — niet opgeslagen
+OK	OK
+Keep	Behouden
+I can't answer that with these layers: {text}	Dat kan ik met deze kaartlagen niet beantwoorden: {text}
+Show only {layer} where {filter}: {shown} of {of}	Alleen {layer} tonen waar {filter}: {shown} van {of}
+New layer: {name}	Nieuwe kaartlaag: {name}
+Add {fields} to {layer}	{fields} toevoegen aan {layer}
+Planning “{request}”…	Plan maken voor “{request}”…
+Nothing to undo	Niets om ongedaan te maken
+Map image…	Kaartafbeelding…
+Data…	Gegevens…
+Open a file first	Open eerst een bestand
+Map package…	Kaartpakket…
+Search places or your data	Zoek plaatsen of uw gegevens
+Your data	Uw gegevens
+Loading places…	Plaatsen laden…
+No places match	Geen plaatsen gevonden
+Places	Plaatsen
+Zoom in	Inzoomen
+Zoom out	Uitzoomen
+Basemap	Achtergrondkaart
+Working offline: online backgrounds are off	Offline: online achtergronden staan uit
+Background strength	Sterkte achtergrond
+Credits	Bronvermelding
+Working offline: the detailed background is off	Offline: de gedetailleerde achtergrond staat uit
+Detailed background unavailable offline	Gedetailleerde achtergrond offline niet beschikbaar
+Detailed background unavailable offline. Your data and tools still work.	Gedetailleerde achtergrond offline niet beschikbaar. Uw gegevens en tools werken nog steeds.
+Open a file to see your data on the map.	Open een bestand om uw gegevens op de kaart te zien.
+Close	Sluiten
+Open file…	Bestand openen…
+Examples	Voorbeelden
+Browse data library	Gegevensbibliotheek bekijken
+Course datasets to add to the map	Datasets uit cursussen om aan de kaart toe te voegen
+Share	Delen
+Undo	Ongedaan maken
+Layers	Lagen
+Open	Openen
+Map data	Kaartgegevens
+© OpenStreetMap contributors (ODbL), through the Protomaps basemap	© OpenStreetMap-bijdragers (ODbL), via de achtergrondkaart van Protomaps
+Offline basemap	Offline achtergrondkaart
+Natural Earth (public domain)	Natural Earth (publiek domein)
+Place search	Plaatsen zoeken
+GeoNames (geonames.org), CC BY 4.0	GeoNames (geonames.org), CC BY 4.0
+Fonts	Lettertypen
+Inter and Noto Sans SC (SIL Open Font License 1.1)	Inter en Noto Sans SC (SIL Open Font License 1.1)
+Icons	Pictogrammen
+Phosphor Icons (MIT)	Phosphor Icons (MIT)
+Engine	Engine
+RustGIS (Apache-2.0)	RustGIS (Apache-2.0)
+{label} arrives in a later phase	{label} komt in een latere fase
+Undo {action}	{action} ongedaan maken
+Open files ({key})	Bestanden openen ({key})
+Show or hide the layer list ({key})	Lagenlijst tonen of verbergen ({key})
+Export a map image ({key}) or data	Een kaartafbeelding ({key}) of gegevens exporteren
+{title}, {detail}	{title}, {detail}
+{title}, {detail}, {i} of {n}	{title}, {detail}, {i} van {n}
+{n} km	{n} km
+{n} m	{n} m
+{n} mi	{n} mi
+{n} ft	{n} ft
+Credits: {text}	Bronvermelding: {text}
+Export Diagnostics	Diagnose exporteren
+This is everything the diagnostics file will contain. Nothing is sent: save it, read it, and send it yourself if you want help.	Dit is alles wat het diagnosebestand bevat. Er wordt niets verstuurd: bewaar het, lees het en stuur het zelf op als u hulp wilt.
+It holds no data values or file contents; file and folder names may appear in error messages.	Het bevat geen gegevenswaarden of bestandsinhoud; namen van bestanden en mappen kunnen in foutmeldingen voorkomen.
+Save…	Opslaan…
+Couldn't start listening.	Kan niet beginnen met luisteren.
+Speaking isn't available on Windows yet. Press Windows+H to type with your voice instead.	Inspreken is nog niet beschikbaar op Windows. Druk op Windows+H om met uw stem te typen.
+Speaking needs the {app} app (its speech helper isn't here).	Inspreken werkt alleen in de app {app} (de spraakhulp ontbreekt).
+Couldn't start listening: {error}	Kan niet beginnen met luisteren: {error}
+Drawing — click to add points, double-click to finish, Esc to cancel	Tekenen — klik om punten toe te voegen, dubbelklik om te stoppen, Esc om te annuleren
+Drawing — drag a rectangle, Esc to cancel	Tekenen — sleep een rechthoek, Esc om te annuleren
+World basics	Wereld: basis
+Cities, countries and elevation	Steden, landen en hoogte
+Heatwaves, summer 2023	Hittegolven, zomer 2023
+Daily heatwave intensity worldwide, June to August	Dagelijkse hittegolfintensiteit wereldwijd, juni tot en met augustus
+Typhoons and hurricanes	Tyfoons en orkanen
+4,999 storm tracks since 1980	4.999 stormbanen sinds 1980
+Walled cities of China, 1866	Ommuurde steden in China, 1866
+1,789 city walls of late imperial China	1.789 stadsmuren uit het laatkeizerlijke China
+Big earthquakes	Zware aardbevingen
+14,537 of magnitude 6 or more since 1900	14.537 met magnitude 6 of meer sinds 1900
+Volcanoes	Vulkanen
+1,609 volcanoes and their status	1.609 vulkanen en hun status
+Airports	Luchthavens
+5,280 large and medium airports, with elevation	5.280 grote en middelgrote luchthavens, met hoogte
+Power plants	Energiecentrales
+34,936 plants by fuel and capacity	34.936 centrales naar brandstof en vermogen
+Slide 16:9	Dia 16:9
+Report A4	Rapport A4
+Square	Vierkant
+2480 × 3508 px · A4 at 300 dpi	2480 × 3508 px · A4 op 300 dpi
+slide	dia
+square	vierkant
+Map	Kaart
+The preview isn't included. Keep it to put it in the image.	Het voorbeeld zit er niet in. Behoud het om het in de afbeelding op te nemen.
+Some of the background couldn't be loaded, so the image shows less detail.	Een deel van de achtergrond kon niet worden geladen, dus de afbeelding toont minder detail.
+Export map image	Kaartafbeelding exporteren
+Size	Formaat
+Title	Titel
+Add a title (optional)	Titel toevoegen (optioneel)
+Caption	Bijschrift
+Use the caption made from the layers	Bijschrift gebruiken dat uit de kaartlagen is gemaakt
+Made from the layers; edit it if you like.	Gemaakt uit de kaartlagen; pas het gerust aan.
+Legend	Legenda
+No layers are shown.	Er worden geen kaartlagen getoond.
+It places itself clear of the data; drag it to move it.	Hij zoekt zelf een plek naast de gegevens; sleep om hem te verplaatsen.
+Place the legend automatically	Legenda automatisch plaatsen
+Drawing the map at full size…	Kaart op volle grootte tekenen…
+Fit to data	Passend op gegevens
+Current view	Huidige weergave
+No layers are shown, so the map shows the current view.	Er worden geen kaartlagen getoond, dus de kaart toont de huidige weergave.
+Grid lines	Rasterlijnen
+Auto	Automatisch
+On	Aan
+Off	Uit
+Legend: drag to move it	Legenda: sleep om te verplaatsen
+Format	Bestandsformaat
+Show	Tonen
+North arrow	Noordpijl
+Scale bar	Schaalbalk
+Lat/lon labels	Lengte/breedte-labels
+{paper} · PDF, text and symbols as vectors	{paper} · PDF, tekst en symbolen als vectoren
+{layer} is colored by value but has no legend.	{layer} is gekleurd naar waarde maar heeft geen legenda.
+{layer} is filtered: the image shows {shown} of {total} {nouns}.	{layer} is gefilterd: de afbeelding toont {shown} van {total} {nouns}.
+The {basemap} basemap's terms don't allow exported images, so the offline basemap is used.	De voorwaarden van de achtergrondkaart {basemap} staan geëxporteerde afbeeldingen niet toe, dus de offline achtergrondkaart wordt gebruikt.
+about {km} km across: a north arrow and a scale bar.	ongeveer {km} km breed: een noordpijl en een schaalbalk.
+about {km} km across: latitude and longitude on the frame, and a scale bar.	ongeveer {km} km breed: breedte- en lengtegraad op de rand, en een schaalbalk.
+about {km} km across and {degrees}° tall: latitude and longitude on the frame. No scale bar, as distances stretch with latitude.	ongeveer {km} km breed en {degrees}° hoog: breedte- en lengtegraad op de rand. Geen schaalbalk, want afstanden rekken op met de breedtegraad.
+about {km} km across: latitude and longitude on the frame. Distances vary too much for one scale bar.	ongeveer {km} km breed: breedte- en lengtegraad op de rand. Afstanden verschillen te veel voor één schaalbalk.
+Made with {app}.	Gemaakt met {app}.
+Data: {sources}. Made with {app}.	Gegevens: {sources}. Gemaakt met {app}.
+No data ({n})	Geen gegevens ({n})
+Credits are always included: {credits}	De bronvermelding staat er altijd bij: {credits}
+The image couldn't be made: {error}	De afbeelding kon niet worden gemaakt: {error}
+Auto: {rules}	Automatisch: {rules}
+{size} · exactly as saved	{size} · precies zoals opgeslagen
+The layer is gone.	De kaartlaag is weg.
+The layer's data is still loading.	De gegevens van de kaartlaag worden nog geladen.
+Export data	Gegevens exporteren
+Export…	Exporteren…
+Layer	Kaartlaag
+Filtered	Gefilterd
+Selected	Geselecteerd
+Records	Records
+The layer has no filter and nothing is selected.	De kaartlaag heeft geen filter en er is niets geselecteerd.
+The layer has no filter.	De kaartlaag heeft geen filter.
+Nothing is selected in this layer.	Er is niets geselecteerd in deze kaartlaag.
+Location	Locatie
+Longitude, latitude	Lengtegraad, breedtegraad
+Lines and areas are written as well-known text (WKT).	Lijnen en vlakken worden als well-known text (WKT) geschreven.
+Fields	Velden
+None	Geen
+All	Alle
+The band shown, on the raster's own grid and coordinate system: resampling to WGS 84 would change its values.	De getoonde band, op het eigen rooster en coördinatenstelsel van het raster: omrekenen naar WGS 84 zou de waarden veranderen.
+Coordinates are written in WGS 84 (longitude, latitude).	Coördinaten worden in WGS 84 geschreven (lengtegraad, breedtegraad).
+{name} (filtered)	{name} (gefilterd)
+{name} (selected)	{name} (geselecteerd)
+All {n}	Alle {n}
+Filtered {n}	Gefilterd {n}
+Selected {n}	Geselecteerd {n}
+{note}: left out unless you check it	{note}: weggelaten tenzij u het aanvinkt
+Styles and recipes stay in {app}: these formats carry only locations and values.	Stijlen en recepten blijven in {app}: deze formaten bevatten alleen locaties en waarden.
+Clear	Wissen
+Clear the search	Zoekopdracht wissen
+Zoom to it	Ernaartoe zoomen
+Zoom to all	Naar alles zoomen
+No points contain “{q}”.	Geen punten bevatten “{q}”.
+No lines contain “{q}”.	Geen lijnen bevatten “{q}”.
+No areas contain “{q}”.	Geen vlakken bevatten “{q}”.
+No cells contain “{q}”.	Geen cellen bevatten “{q}”.
+No rows contain “{q}”.	Geen rijen bevatten “{q}”.
+Find in {layer}	Zoeken in {layer}
+{n} found	{n} gevonden
+‹ All {n} found	‹ Alle {n} gevonden
+{title}, {field}: {value}	{title}, {field}: {value}
+{n} more on the map · 	nog {n} op de kaart · 
+More actions…	Meer acties…
+Working out how this compares…	Uitzoeken hoe dit zich verhoudt…
+point	punt
+line	lijn
+area	vlak
+cell	cel
+row	rij
+The data is still loading.	De gegevens worden nog geladen.
+Show fewer fields	Minder velden tonen
+View in table	In tabel bekijken
+Zoom to	Zoomen naar
+◉ Range fitted to the view	◉ Waardebereik passend op de weergave
+Color	Kleur
+One color	Eén kleur
+Smooth	Vloeiend
+Groups	Groepen
+Palette	Palet
+Equal counts	Even veel
+Equal steps	Even breed
+Fit range to view	Waardebereik passend op weergave
+Larger areas tend to have higher counts.	Grotere vlakken hebben vaak hogere aantallen.
+Color by count per km² instead?	In plaats daarvan kleuren naar aantal per km²?
+Use totals	Totalen gebruiken
+Same size	Zelfde grootte
+Labels	Labels
+Opacity	Dekking
+Outline	Omtrek
+Width	Breedte
+Band	Band
+From	Van
+To	Tot
+Reset to the middle 96% of the time step	Terug naar de middelste 96% van de tijdstap
+Same for every time step: the middle 96% of the time step	Gelijk voor elke tijdstap: de middelste 96% van de tijdstap
+Covers the middle 96% of cells	Omvat de middelste 96% van de cellen
+Reset to the middle 96% of cells	Terug naar de middelste 96% van de cellen
+Only show values above	Alleen waarden tonen boven
+Range	Waardebereik
+Stop highlighting	Markering stoppen
+{n} point	{n} punt
+{n} points	{n} punten
+{n} line	{n} lijn
+{n} lines	{n} lijnen
+{n} area	{n} vlak
+{n} areas	{n} vlakken
+{n} cell	{n} cel
+{n} cells	{n} cellen
+{n} row	{n} rij
+{n} rows	{n} rijen
+Blue	Blauw
+Orange	Oranje
+Bluish green	Blauwgroen
+Vermilion	Vermiljoen
+Reddish purple	Roodpaars
+Sky blue	Hemelsblauw
+Yellow	Geel
+Black	Zwart
+Show all {n} fields	Alle {n} velden tonen
+Band {n} ({unit})	Band {n} ({unit})
+Band {n}	Band {n}
+Showing only values above {v}	Alleen waarden boven {v} getoond
+Highlighting {low} to {high}	{low} tot {high} gemarkeerd
+{field} per km² (geodesic area)	{field} per km² (geodetische oppervlakte)
+Band {n} ({name})	Band {n} ({name})
+Reset to the middle 96% of {n} time steps	Terug naar de middelste 96% van {n} tijdstappen
+Same for every time step: the middle 96% of {n} time steps	Gelijk voor elke tijdstap: de middelste 96% van {n} tijdstappen
+{low} to {high}	{low} tot {high}
+Use this match	Deze overeenkomst gebruiken
+Use these matches	Deze overeenkomsten gebruiken
+Hide the rows not matched	Rijen zonder overeenkomst verbergen
+Keep the original colors	Oorspronkelijke kleuren behouden
+Looking for the places this table describes…	Zoeken naar de plaatsen die deze tabel beschrijft…
+None of these: keep it as a table	Geen van deze: als tabel behouden
+Use this	Deze gebruiken
+Join	Koppelen
+Keep as a table	Als tabel behouden
+Choose other columns…	Andere kolommen kiezen…
+Open a point, line or area layer to match this table to.	Open een kaartlaag met punten, lijnen of vlakken om deze tabel aan te koppelen.
+Several rows for one place	Meerdere rijen voor één plaats
+{n} name looks like a typo: {examples}	{n} naam lijkt een tikfout: {examples}
+{n} names look like typos: {examples}	{n} namen lijken tikfouten: {examples}
+{n} row with no {field}	{n} rij zonder {field}
+{n} rows with no {field}	{n} rijen zonder {field}
+Automatic	Automatisch
+Latest year or date	Laatste jaar of datum
+Combine	Combineren
+{table} now appears under {layer} in Layers.	{table} staat nu onder {layer} in Lagen.
+and {n} more	en nog {n}
+Which places does {table} describe?	Welke plaatsen beschrijft {table}?
+Join {table} to {target}?	{table} koppelen aan {target}?
+Match {layer} to a layer	{layer} aan een kaartlaag koppelen
+Column in {layer}	Kolom in {layer}
+{matched} of {total} {nouns} match · {rows_matched} of {rows} rows find a place	{matched} van {total} {nouns} gevonden · {rows_matched} van {rows} rijen vinden een plaats
+Ctrl+{key}	Ctrl+{key}
+Ctrl+Shift+{key}	Ctrl+Shift+{key}
+Points	Punten
+Lines	Lijnen
+Areas	Vlakken
+Grid	Rooster
+Table	Tabel
+Data library	Gegevensbibliotheek
+Search datasets	Datasets zoeken
+Offline: showing the list from your last visit	Offline: de lijst van uw vorige bezoek
+Try again	Opnieuw proberen
+Loading the library…	Bibliotheek laden…
+The library is empty.	De bibliotheek is leeg.
+Add to map	Aan kaart toevoegen
+Downloaded: opens without the internet	Gedownload: opent zonder internet
+Downloaded	Gedownload
+{n} GB	{n} GB
+{n} MB	{n} MB
+{n} KB	{n} KB
+No datasets match “{q}”.	Geen datasets gevonden voor “{q}”.
+Downloading {done} of {total}	{done} van {total} downloaden
+A layer is still loading. Try again in a moment.	Er wordt nog een kaartlaag geladen. Probeer het zo meteen opnieuw.
+Packaging the map and its data…	Kaart en gegevens inpakken…
+packaging stopped unexpectedly	inpakken onverwacht gestopt
+Share as a map package	Delen als kaartpakket
+One file with the map and its data, so it opens on another computer.	Eén bestand met de kaart en de gegevens, zodat het op een andere computer opent.
+Save Package…	Pakket opslaan…
+Before compression; text files shrink a lot in the package.	Vóór compressie; tekstbestanden worden in het pakket veel kleiner.
+Data it includes	Gegevens erin
+No source files: the map's layers are all stored in it already.	Geen bronbestanden: alle kaartlagen van de kaart zitten er al in.
+can't be found, so it's left out	niet gevonden, dus weggelaten
+Folder paths	Mappaden
+The map names no folders on this computer.	De kaart noemt geen mappen op deze computer.
+Paths name your account and folders, so they are left out; files keep only their names.	Paden noemen uw account en mappen, dus die worden weggelaten; bestanden houden alleen hun naam.
+Fields that look personal	Velden die persoonlijk lijken
+None found: no names, emails, phone or ID numbers.	Niets gevonden: geen namen, e-mailadressen, telefoon- of identiteitsnummers.
+Checked fields are left out of the package. Your own map keeps them.	Aangevinkte velden worden uit het pakket weggelaten. Uw eigen kaart houdt ze.
+Unknown — check before sharing	Onbekend — controleer vóór het delen
+The map is colored by it	De kaart wordt erop gekleurd
+The map sizes points by it	De kaart bepaalt er de puntgrootte mee
+The map labels by it	De kaart labelt ermee
+The filter uses it	Het filter gebruikt het
+{layer} (without the fields left out)	{layer} (zonder de weggelaten velden)
+The package couldn't be made: {error}	Het pakket kon niet worden gemaakt: {error}
+Saved {name} ({size}), without {missing}: it couldn't be found.	{name} opgeslagen ({size}), zonder {missing}: dat is niet gevonden.
+Saved {name}, but {layer} couldn't be kept in it ({why}).	{name} opgeslagen, maar {layer} kon er niet in worden bewaard ({why}).
+Saved {name} ({size}): the map and its data, ready to share.	{name} opgeslagen ({size}): de kaart en de gegevens, klaar om te delen.
+The package couldn't be made. {error}	Het pakket kon niet worden gemaakt. {error}
+{name} (package)	{name} (pakket)
+About {size}	Ongeveer {size}
+Stored in the package itself: {layers}.	In het pakket zelf opgeslagen: {layers}.
+Layers: {layers}	Lagen: {layers}
+Licence: {licence}	Licentie: {licence}
+Leave out {field} ({layer})	{field} weglaten ({layer})
+{note}. {why}, so it stays.	{note}. {why}, dus het blijft.
+Remove all	Alles verwijderen
+Open file	Bestand openen
+Dismiss	Sluiten
+Hide the joined table	Gekoppelde tabel verbergen
+Show the joined table	Gekoppelde tabel tonen
+View data	Gegevens bekijken
+Match to a layer…	Aan een kaartlaag koppelen…
+Style…	Stijl…
+Zoom to layer	Zoomen naar laag
+Rename	Naam wijzigen
+Remove from map	Van kaart verwijderen
+Needs a decision: see the layer's panel	Beslissing nodig: zie het paneel van de kaartlaag
+Variable shown	Getoonde variabele
+Level shown	Getoond niveau
+joined	gekoppeld
+Show joined fields	Gekoppelde velden tonen
+Unjoin	Koppeling verwijderen
+The table wasn't opened in this session, so it can't be put back	De tabel is niet in deze sessie geopend, dus hij kan niet worden teruggezet
+Where should this data be?	Waar horen deze gegevens te liggen?
+This file doesn't say where on Earth its coordinates are. Name a place it covers.	Dit bestand zegt niet waar op aarde de coördinaten liggen. Noem een plaats in het gebied.
+A city or town, e.g. Shanghai	Een stad of dorp, bijv. Shanghai
+Use the middle of the map	Midden van de kaart gebruiken
+the middle of the map	het midden van de kaart
+Open as a table	Als tabel openen
+Not sure	Weet ik niet
+Compare on the map first	Eerst op de kaart vergelijken
+Close the panel	Paneel sluiten
+Back	Terug
+This cell has no data.	Deze cel heeft geen gegevens.
+This layer has no values to compare.	Deze kaartlaag heeft geen waarden om te vergelijken.
+Compare by	Vergelijken op
+Export problem list	Probleemlijst exporteren
+Opened as a table: there is nothing to place on the map yet.	Geopend als tabel: er is nog niets om op de kaart te zetten.
+Compare	Vergelijken
+Add unit	Eenheid toevoegen
+Change	Wijzigen
+as in the file	zoals in het bestand
+converted from Baidu (BD-09)	omgerekend van Baidu (BD-09)
+converted from Amap/Tencent (GCJ-02)	omgerekend van Amap/Tencent (GCJ-02)
+Keep the set that sits on the streets.	Behoud de versie die op de straten ligt.
+Keep converted	Omgerekend behouden
+Keep as in the file	Behouden zoals in het bestand
+Try Amap/Tencent instead	Probeer Amap/Tencent
+Try Baidu instead	Probeer Baidu
+Filtered:	Gefilterd:
+Values	Waarden
+Source	Bron
+Text encoding	Tekencodering
+Coordinate system	Coördinatenstelsel
+Extent	Bereik
+Complete	Volledig
+Needs a decision	Beslissing nodig
+Canceled	Geannuleerd
+Not loaded (the source is read again when the document opens)	Niet geladen (de bron wordt opnieuw gelezen als het document opent)
+Import	Importeren
+Remove from insight	Uit inzicht verwijderen
+Show in insight	In inzicht tonen
+Treat this field as	Dit veld behandelen als
+Back to the detected role	Terug naar de herkende rol
+Assumptions	Aannames
+Export problem list…	Probleemlijst exporteren…
+Row	Rij
+Reason	Reden
+Drop to add to the map	Loslaten om aan de kaart toe te voegen
+Overview	Overzicht
+Style	Stijl
+Details	Details
+{n} {things} opened; {left} has no usable location.	{n} {things} geopend; {left} heeft geen bruikbare locatie.
+{n} {things} opened; {left} have no usable location.	{n} {things} geopend; {left} hebben geen bruikbare locatie.
+{n} records opened; {left} has no usable location.	{n} records geopend; {left} heeft geen bruikbare locatie.
+{n} records opened; {left} have no usable location.	{n} records geopend; {left} hebben geen bruikbare locatie.
+{line} (applied quietly; chosen: {choice})	{line} (stil toegepast; gekozen: {choice})
+{line} (shown; chosen: {choice})	{line} (getoond; gekozen: {choice})
+{line} (answered; chosen: {choice})	{line} (beantwoord; gekozen: {choice})
+{line} (needs a decision; chosen: {choice})	{line} (beslissing nodig; gekozen: {choice})
+{line} (blocks actions; chosen: {choice})	{line} (blokkeert acties; gekozen: {choice})
+Count	Aantal
+Density	Dichtheid
+Value	Waarde
+ID	ID
+Name	Naam
+Category	Categorie
+Text	Tekst
+Date	Datum
+Coordinate	Coördinaat
+Unknown	Onbekend
+Remove every layer from the map ({key} brings them back)	Alle kaartlagen van de kaart verwijderen ({key} haalt ze terug)
+{error}\n\nDetails: {details}	{error}\n\nDetails: {details}
+Dismiss {name}	{name} sluiten
+Cancel {name}	{name} annuleren
+Show {layer}	{layer} tonen
+Joined tables of {layer}	Gekoppelde tabellen van {layer}
+Hide the {n} joined tables	De {n} gekoppelde tabellen verbergen
+Show the {n} joined tables	De {n} gekoppelde tabellen tonen
+joined · {matched} of {total} matched	gekoppeld · {matched} van {total} gevonden
+Joined table {table}, {caption}	Gekoppelde tabel {table}, {caption}
+Joined to {layer}: its fields are part of the layer	Gekoppeld aan {layer}: de velden horen bij de kaartlaag
+No coordinate system puts this data near {name}. Try another place, or open it as a table.	Geen enkel coördinatenstelsel legt deze gegevens bij {name}. Probeer een andere plaats, of open het als tabel.
+{crs} — lands {km} km from {name}	{crs} — komt {km} km van {name} uit
+{choice} (recommended)	{choice} (aanbevolen)
+{lat}°, {lon}°	{lat}°, {lon}°
+{layer} · cell	{layer} · cel
+{n} {things}, highest first	{n} {things}, hoogste eerst
+{n}{plus} objects here	{n}{plus} objecten hier
+Review {n}	{n} bekijken
+Compare {layer}	{layer} vergelijken
++{n} more	+{n} meer
+{variable}: {low} to {high}{unit} over {sampled} of {steps} time steps	{variable}: {low} tot {high}{unit} over {sampled} van {steps} tijdstappen
+{variable}: {low} to {high}{unit}	{variable}: {low} tot {high}{unit}
+Time: {range}	Tijd: {range}
+Band {n}: {low} to {high}{unit}	Band {n}: {low} tot {high}{unit}
+Band {n} ({name}): {low} to {high}{unit}	Band {n} ({name}): {low} tot {high}{unit}
+{west}° to {east}° E, {south}° to {north}° N	{west}° tot {east}° O, {south}° tot {north}° N
+Complete, with {n} records excluded	Volledig, met {n} records uitgesloten
+Failed: {reason}	Mislukt: {reason}
+From {table}	Uit {table}
+Show {field} in insight	{field} in inzicht tonen
+Excluded records — {layer}	Uitgesloten records — {layer}
+{n} records were left out of the map. Your file has not been changed.	{n} records zijn niet op de kaart gezet. Uw bestand is niet gewijzigd.
+Untitled	Naamloos
+Your own file has not been changed.	Uw eigen bestand is niet gewijzigd.
+Restore	Herstellen
+Your changes will be lost if you don't save them.	Uw wijzigingen gaan verloren als u ze niet opslaat.
+Don't Save	Niet opslaan
+Save	Opslaan
+Use It	Gebruiken
+Locate…	Bestand zoeken…
+Remove layer	Kaartlaag verwijderen
+its size changed	de grootte is veranderd
+its contents changed	de inhoud is veranderd
+its modification date changed	de wijzigingsdatum is veranderd
+Using {file}. 1 result made from the old file now say Source changed.	{file} wordt gebruikt. 1 resultaat dat uit het oude bestand is gemaakt, meldt nu Bron gewijzigd.
+Using {file}. {n} results made from the old file now say Source changed.	{file} wordt gebruikt. {n} resultaten die uit het oude bestand zijn gemaakt, melden nu Bron gewijzigd.
+This file looks different ({reason}). Use it anyway?	Dit bestand ziet er anders uit ({reason}). Toch gebruiken?
+Saved, but {name} couldn't be kept in the map file ({why}).	Opgeslagen, maar {name} kon niet in het kaartbestand worden bewaard ({why}).
+The autosaved map could not be restored. {error}	De automatisch bewaarde kaart kon niet worden hersteld. {error}
+Do you want to save the changes you made to '{name}'?	Wilt u de wijzigingen in '{name}' opslaan?
+a date	een datum
+some text	wat tekst
+Remove this filter	Dit filter verwijderen
+Filter	Filter
+Add a filter	Een filter toevoegen
+Close the table	Tabel sluiten
+Search	Zoeken
+Search the table	In de tabel zoeken
+no value	geen waarde
+where	waar
+choose…	kies…
+Finish the sentence to see how many match.	Maak de zin af om te zien hoeveel er overeenkomen.
+Apply	Toepassen
+is	is
+is not	is niet
+contains	bevat
+starts with	begint met
+ends with	eindigt op
+is empty	is leeg
+above	boven
+below	onder
+between	tussen
+before	vóór
+after	na
+is any of	is een van
+Sort by {name}, sorted ascending	Sorteren op {name}, oplopend gesorteerd
+Sort by {name}, sorted descending	Sorteren op {name}, aflopend gesorteerd
+Sort by {name}	Sorteren op {name}
+Showing {shown} of {total}	{shown} van {total} getoond
+Remove filter: {filter}	Filter verwijderen: {filter}
+{n} match	{n} gevonden
+Previous step (←)	Vorige stap (←)
+Pause	Pauzeren
+Play	Afspelen
+Next step (→)	Volgende stap (→)
+Time step	Tijdstap
+{layer} · {step} of {steps}	{layer} · {step} van {steps}
+A new version is available	Er is een nieuwe versie beschikbaar
+Close the update notice	Updatemelding sluiten
+{app} {version}: {notes}	{app} {version}: {notes}
+Download {version}	{version} downloaden
+That layer is gone.	Die kaartlaag is weg.
+This layer has no variables to choose from.	Deze kaartlaag heeft geen variabelen om uit te kiezen.
+This layer's data isn't loaded.	De gegevens van deze kaartlaag zijn niet geladen.
+{layer} has no variable {variable}.	{layer} heeft geen variabele {variable}.
+The layer isn't loaded yet.	De kaartlaag is nog niet geladen.
+Pick a column on each side.	Kies aan elke kant een kolom.
+{matched} of {keys} match	{matched} van {keys} gevonden
+Joined {table} to {layer}: {matched} of {total} {things} matched.	{table} gekoppeld aan {layer}: {matched} van {total} {things} gevonden.
+Show the {r} row not matched	De {r} rij zonder overeenkomst tonen
+Show the {r} rows not matched	De {r} rijen zonder overeenkomst tonen
+Show the {k} not matched	De {k} zonder overeenkomst tonen
+Show the {k} not matched ({r} row)	De {k} zonder overeenkomst tonen ({r} rij)
+Show the {k} not matched ({r} rows)	De {k} zonder overeenkomst tonen ({r} rijen)
+file	bestand
+Preparing a faster preview…	Sneller voorbeeld voorbereiden…
+Still reading a layer. Undo in a moment.	Er wordt nog een kaartlaag gelezen. Maak het zo meteen ongedaan.
+Still reading a layer. Redo in a moment.	Er wordt nog een kaartlaag gelezen. Voer het zo meteen opnieuw uit.
+That couldn't be done. Nothing was changed.	Dat lukte niet. Er is niets veranderd.
+The layer changed while it was being read again, so that change was not applied.	De kaartlaag veranderde terwijl hij opnieuw werd gelezen, dus die wijziging is niet toegepast.
+That assumption couldn't be changed.	Die aanname kon niet worden gewijzigd.
+Only points, lines and areas can be converted.	Alleen punten, lijnen en vlakken kunnen worden omgezet.
+The layer changed while it was being converted, so nothing was added.	De kaartlaag veranderde tijdens het omzetten, dus er is niets toegevoegd.
+The converted layer couldn't be added.	De omgezette kaartlaag kon niet worden toegevoegd.
+Only points, lines and areas can be compared.	Alleen punten, lijnen en vlakken kunnen worden vergeleken.
+This layer has nothing to compare.	Deze kaartlaag heeft niets om te vergelijken.
+{file} has changed since this document was saved; it was read as it is now.	{file} is gewijzigd sinds dit document is opgeslagen; het is gelezen zoals het nu is.
+{layer} is no longer in {file}.	{layer} staat niet meer in {file}.
+Can't find {file}. It was last seen in {folder}.	Kan {file} niet vinden. Het stond het laatst in {folder}.
+Can't find {file}. It was last seen in its folder.	Kan {file} niet vinden. Het stond het laatst in de eigen map.
+The layer couldn't be read again.	De kaartlaag kon niet opnieuw worden gelezen.
+Reading {done} of {total}	{done} van {total} lezen
+Still reading {layer}. Try again in a moment.	{layer} wordt nog gelezen. Probeer het zo meteen opnieuw.
+Save map package	Kaartpakket opslaan
+{app} map	{app}-kaart
+Locate {file}	{file} zoeken
+A map-first GIS. Built on RustGIS.	Een GIS waarin de kaart voorop staat. Gebouwd op RustGIS.
+File	Archief
+Open…	Openen…
+Open Example	Voorbeeld openen
+Browse data library…	Gegevensbibliotheek bekijken…
+Save As…	Opslaan als…
+Export Map Image…	Kaartafbeelding exporteren…
+Export Data…	Gegevens exporteren…
+Export Map Package…	Kaartpakket exporteren…
+Close Window	Venster sluiten
+Exit	Afsluiten
+Edit	Wijzig
+Find…	Zoeken…
+Remove All Layers	Alle kaartlagen verwijderen
+Use System Appearance	Systeemweergave gebruiken
+Light	Licht
+Dark	Donker
+Metric Units	Metrische eenheden
+Imperial Units	Imperiale eenheden
+System Language	Systeemtaal
+Language	Taal
+Show Frame Rate	Framesnelheid tonen
+Work Offline	Offline werken
+View	Weergave
+Zoom In	Inzoomen
+Zoom Out	Uitzoomen
+Zoom to All Data	Zoomen naar alle gegevens
+Full Screen	Schermvullende weergave
+Window	Venster
+Help	Help
+Export Diagnostics…	Diagnose exporteren…
+About {app}	Over {app}
+Quit {app}	Stop {app}
+Undo ({key})	Ongedaan maken ({key})
+Redo ({key})	Opnieuw ({key})
+{app} Help	{app} Help
+Satellite	Satelliet
+Offline	Offline
+Try an example	Probeer een voorbeeld
+Color by a value	Kleuren naar een waarde
+Color or size by a value	Kleur of grootte naar een waarde
+Filter [layer]	[layer] filteren
+Filter by [Type]	Filteren op [Type]
+Compare with other [layer]	Vergelijken met andere [layer]
+Change colors and range	Kleuren en waardebereik wijzigen
+Change colors	Kleuren wijzigen
+Show only values above…	Alleen waarden boven… tonen
+Show where values are like this	Tonen waar waarden hierop lijken
+Map using coordinate columns	In kaart brengen met coördinaatkolommen
+Match to [other]	Koppelen aan [other]
+Show an area within a distance	Gebied binnen een afstand tonen
+Show an area within a distance of each	Gebied binnen een afstand van elk tonen
+Measure from here	Meten vanaf hier
+Which [District] is it in?	In welke [District] ligt het?
+Count [Schools] in each [District]	[Schools] tellen per [District]
+Add [Heat] values to each [School]	[Heat]-waarden per [School] toevoegen
+Measure its area	Oppervlakte meten
+What's inside?	Wat ligt erbinnen?
+Summarize [Heat] here	[Heat] hier samenvatten
+Summarize [Heat] in each [District]	[Heat] samenvatten per [District]
+Rank [layer] by a value	[layer] rangschikken op een waarde
+Measure length	Lengte meten
+Summarize data here	Gegevens hier samenvatten
+Count [Schools] here	[Schools] hier tellen
+Add the distance to the nearest of [other] to [layer]	Afstand tot dichtstbijzijnde uit [other] toevoegen aan [layer]
+Add the distance to the nearest neighbour in [layer]	Afstand tot de dichtstbijzijnde buur in [layer] toevoegen
+Add [other] details to [layer]	Gegevens van [other] toevoegen aan [layer]
+Add area and coordinates to [layer]	Oppervlakte en coördinaten toevoegen aan [layer]
+Add a field calculated from two values	Een veld toevoegen, berekend uit twee waarden
+Split [layer] into separate parts	[layer] splitsen in losse delen
+Keep the part of [layer] inside [other]	Het deel van [layer] binnen [other] behouden
+Remove the part of [layer] inside [other]	Het deel van [layer] binnen [other] verwijderen
+Find areas where [Heat] meets conditions	Gebieden zoeken waar [Heat] aan voorwaarden voldoet
+Settings	Instellingen
+Account	Account
+Delete Account	Account verwijderen
+Sign Out	Uitloggen
+Delete Account…	Account verwijderen…
+Working offline: Delete Account needs the network. Sign Out works offline.	Offline: voor Account verwijderen is een netwerkverbinding nodig. Uitloggen werkt offline.
+Region	Regio
+Sign-in for mainland China (WeChat, Alipay, phone number) is coming in a later version.	Inloggen voor het Chinese vasteland (WeChat, Alipay, telefoonnummer) komt in een latere versie.
+Finish signing in in your browser…	Rond het inloggen af in uw browser…
+Signing out…	Uitloggen…
+Deleting your account…	Uw account verwijderen…
+Email address	E-mailadres
+Verify	Verifiëren
+The link has stopped working on this Mac; the code still works for an hour.	De link werkt niet meer op deze Mac; de code werkt nog een uur.
+The link has stopped working on this computer; the code still works for an hour.	De link werkt niet meer op deze computer; de code werkt nog een uur.
+Send a New Email	Nieuwe e-mail sturen
+Use a Different Email	Ander e-mailadres gebruiken
+Asking about your layers needs a free account. Your maps and files stay on this computer.	Voor vragen over uw lagen hebt u een gratis account nodig. Uw kaarten en bestanden blijven op deze computer.
+Sign In…	Inloggen…
+You're signed out.	U bent uitgelogd.
+Your account was deleted.	Uw account is verwijderd.
+Signed in with {provider} · {region}	Ingelogd met {provider} · {region}
+{pro} is on for this account.	{pro} staat aan voor dit account.
+Delete your {app} account? {pro} stops working on every computer you use. Your maps and files are not affected.	Uw {app}-account verwijderen? {pro} werkt dan niet meer op alle computers die u gebruikt. Uw kaarten en bestanden blijven ongemoeid.
+Sign in to use {pro}	Log in om {pro} te gebruiken
+{pro} is free while it's new. Your account only says who you are: your maps and files never leave this computer.	{pro} is gratis zolang het nieuw is. Uw account zegt alleen wie u bent: uw kaarten en bestanden verlaten deze computer nooit.
+Sending an email to {address}…	E-mail sturen naar {address}…
+We sent an email to {address}. Enter the {n}-digit code in it.	We hebben een e-mail gestuurd naar {address}. Voer de code van {n} cijfers in die erin staat.
+We sent an email to {address}. Click the link in it on this Mac, or enter the {n}-digit code.	We hebben een e-mail gestuurd naar {address}. Klik op deze Mac op de link erin, of voer de code van {n} cijfers in.
+We sent an email to {address}. Click the link in it on this computer, or enter the {n}-digit code.	We hebben een e-mail gestuurd naar {address}. Klik op deze computer op de link erin, of voer de code van {n} cijfers in.
+{n}-digit code	Code van {n} cijfers
+Sign in to use {pro} (Settings › Account).	Log in om {pro} te gebruiken (Instellingen › Account).
+Settings…	Instellingen…
+International	Internationaal
+Mainland China	Chinees vasteland
+Continue with Apple	Doorgaan met Apple
+Continue with Google	Doorgaan met Google
+Continue with X	Doorgaan met X
+Email me a sign-in code	Stuur mij een inlogcode per e-mail
+Continue with WeChat	Doorgaan met WeChat
+Continue with Alipay	Doorgaan met Alipay
+Text me a code	Stuur mij een code per sms
+Sign-in isn't available in this build yet.	Inloggen is in deze versie nog niet beschikbaar.
+{app} is working offline, so it can't reach the sign-in service. Turn off View › Work Offline to sign in.	{app} werkt offline en kan de inlogdienst dus niet bereiken. Zet Weergave › Offline werken uit om in te loggen.
+Sign-in was cancelled.	Inloggen is geannuleerd.
+Sign-in took too long. Try again.	Inloggen duurde te lang. Probeer het opnieuw.
+Sign-in didn't finish: {reason}	Inloggen is niet voltooid: {reason}
+You're signed out. Sign in again to use {pro}.	U bent uitgelogd. Log opnieuw in om {pro} te gebruiken.
+Couldn't reach the sign-in service: {error}	Kan de inlogdienst niet bereiken: {error}
+The sign-in service answered {status}: {reason}	De inlogdienst antwoordde {status}: {reason}
+Couldn't keep the sign-in on this computer: {error}	Kan de inlog niet op deze computer bewaren: {error}
+Couldn't start sign-in: {error}	Kan niet beginnen met inloggen: {error}
+The code is the {n} digits in the email.	De code bestaat uit de {n} cijfers in de e-mail.
+That code didn't work. Check it, or send a new email.	Die code werkte niet. Controleer hem, of stuur een nieuwe e-mail.
+Too many attempts. Wait a few minutes, then try again.	Te veel pogingen. Wacht een paar minuten en probeer het dan opnieuw.
+no reason given	geen reden opgegeven
+that doesn't look like an email address	dat lijkt geen e-mailadres
+too many emails were sent; wait a minute and try again	er zijn te veel e-mails verstuurd; wacht een minuut en probeer het opnieuw
+the sign-in service sent no code	de inlogdienst stuurde geen code
+Signed in with {provider}	Ingelogd met {provider}
+Apple	Apple
+Google	Google
+X	X
+email	e-mail
+a phone number	een telefoonnummer
+WeChat	WeChat
+Alipay	Alipay
+You're signed out. Sign in again in Settings › Account to use {pro}.	U bent uitgelogd. Log opnieuw in via Instellingen › Account om {pro} te gebruiken.
+{pro} isn't on for this account.	{pro} staat niet aan voor dit account.
+This account can't use {pro} yet. Try again in a minute.	Dit account kan {pro} nog niet gebruiken. Probeer het over een minuut opnieuw.
+You've used this month's assistant allowance. It renews tomorrow.	U hebt het assistenttegoed van deze maand opgebruikt. Het wordt morgen aangevuld.
+You've used this month's assistant allowance. It renews in {n} days.	U hebt het assistenttegoed van deze maand opgebruikt. Het wordt over {n} dagen aangevuld.
+You've used today's assistant allowance. It renews within the hour.	U hebt het assistenttegoed van vandaag opgebruikt. Het wordt binnen het uur aangevuld.
+You've used today's assistant allowance. It renews in about {n} hours.	U hebt het assistenttegoed van vandaag opgebruikt. Het wordt over ongeveer {n} uur aangevuld.
+The assistant service is out of credit. It has been told; try again later.	De assistentdienst heeft geen tegoed meer. Dit is gemeld; probeer het later opnieuw.
+The assistant service is busy. Try again in a minute.	De assistentdienst is bezet. Probeer het over een minuut opnieuw.
+The assistant service answered {status}: {reason}	De assistentdienst antwoordde {status}: {reason}
+The assistant service's address isn't https.	Het adres van de assistentdienst is geen https.
+Couldn't reach the assistant service: {error}	Kan de assistentdienst niet bereiken: {error}
+The assistant service's answer was cut off: {error}	Het antwoord van de assistentdienst is afgebroken: {error}
+The assistant service answered {status} with something unreadable.	De assistentdienst antwoordde {status} met iets onleesbaars.
+{app} is working offline, so the assistant can't be reached. Turn off View › Work Offline to ask.	{app} werkt offline en kan de assistent dus niet bereiken. Zet Weergave › Offline werken uit om een vraag te stellen.

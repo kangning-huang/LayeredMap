@@ -40,7 +40,31 @@ continuously about the pointer, and Shift + wheel pans sideways.
 
 ## Building
 
-On Windows, with Rust (MSVC toolchain) and Inno Setup 6 (`winget install JRSoftware.InnoSetup`):
+### Setting up a Windows PC
+
+1. **C++ build tools.** Install the Visual Studio 2022 Build Tools with the "Desktop development
+   with C++" workload (or Visual Studio with the same workload). From a terminal:
+   `winget install Microsoft.VisualStudio.2022.BuildTools --override "--wait --passive --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"`.
+   SQLite and Zstandard are compiled from bundled C sources with it; nothing else native is needed.
+2. **Rust.** `winget install Rustlang.Rustup`, then in a new terminal `rustup default stable-msvc`
+   (Rust 1.90 or newer; `rustup update` if older).
+3. **Git, set before cloning.** `winget install Git.Git`, then:
+
+   ```powershell
+   git config --global core.autocrlf false   # keep the repository's LF line endings
+   git config --global core.longpaths true   # allow paths over Windows' 260-character limit
+   git clone https://github.com/kangning-huang/LayeredMap.git
+   ```
+
+   These are the settings CI uses; a checkout made with Git for Windows' default
+   (`autocrlf true`) rewrites line endings and isn't what CI tests. If you cloned before
+   changing them, clone again.
+4. **Inno Setup 6**, only to build the installer: `winget install JRSoftware.InnoSetup`.
+
+The first build takes 10–20 minutes; later ones are incremental. Keep the clone on a local drive,
+not in OneDrive, which slows the build and can lock files.
+
+### Commands
 
 ```powershell
 cargo xtask ci                                         # the same suites as on macOS
@@ -48,6 +72,10 @@ cargo run -p layeredmap                                # the app
 pwsh packaging/lm/windows/build-installer.ps1          # dist\lm\NimbleMap-<v>-<build>-windows-x64-setup.exe
 $env:LM_TIER = "pro"; pwsh packaging/lm/windows/build-installer.ps1   # NimbleMap-Pro-…
 ```
+
+Pixel snapshots don't run on Windows (they are `#[ignore]` off macOS), so a change that alters
+what the interface looks like needs its snapshots re-approved on a Mac: say so in the pull
+request and a maintainer will do it (`CONTRIBUTING.md`).
 
 The installer (`packaging/lm/windows/layeredmap.iss`):
 

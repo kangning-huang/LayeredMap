@@ -1,5 +1,7 @@
 # NimbleMap icon concepts
 
+> **2026-10-19:** the Chinese name is now **凌波微图** (docs/lm/naming.md). The lockups, the comparison page and the font subset below still show 千层图 until they are regenerated; the app icon (Peek) has no text and is unaffected.
+
 These are nine app-icon directions for the rename from LayeredMap to **NimbleMap** / **千层图**. The Chinese name means "thousand-layer map", after 千层酥 (mille-feuille). The current Strata icon (stacked isometric sheets) was made to say "layered". These concepts aim to say *nimble, light, quick, deft, curious* and still read clearly as a map app, in a flat, elegant Apple style. Because the Chinese name is about layers, each concept also has a "千层图 fit" rating (see below), and concept 9 was added to bridge both ideas.
 
 Open `index.html` to compare them. Each concept is shown:

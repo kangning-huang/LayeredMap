@@ -123,9 +123,9 @@ fn n3_adversarial_shapes_match_exactextract_to_1_ppm() {
         let w = want.iter().find(|w| w.0 == *id).unwrap();
         let errs = [
             rel_err(s.mean.unwrap(), w.1),
-            // The reference's coverage is Σa/A_P; ours divides by max(A_P, Σ_all a) so it never
-            // exceeds 1 (H1's grid over-measures it by 1.7e-4).
-            rel_err(s.coverage, w.4 * w.6 / f64::max(w.6, s.covered_area_m2)),
+            // The reference's coverage is Σa/A_P; ours is Earth Engine's Σ_valid a / (Σ_all a + A_out)
+            // (docs/lm/decisions.md, 2026-10-19), so it is compared on the reference's valid area.
+            rel_err(s.coverage, w.5 / (s.covered_area_m2 + s.outside_raster_area_m2)),
             rel_err(s.covered_valid_area_m2, w.5),
             rel_err(s.polygon_area_m2, w.6),
         ];
@@ -364,6 +364,30 @@ fn a_polygon_larger_than_the_raster_costs_only_the_raster() {
     assert!(rel_err(s.covered_area_m2, lat_band_area_m2(0.0, 1.0, 1.0)) < 1e-12);
     assert!(s.coverage < 0.001);
     assert_eq!((s.min, s.max), (Some(0.0), Some(16.0)));
+}
+
+/// Earth Engine's rule (docs/lm/decisions.md, 2026-10-19): valid weight over all weight, the part
+/// beyond the raster counting as no data.
+#[test]
+fn coverage_follows_earth_engine_weighting() {
+    let ras = grid_raster(10, 10, (0.0, 60.0), (0.1, 0.1), None, |_, _| 1.0);
+    // Wholly inside, no NoData: exactly 1, even at 59° N where the cells' planar fractions and the
+    // ellipsoid disagree slightly (the old max(A_P, Σ a) rule could give slightly less than 1).
+    let tri = poly(vec![vec![(0.13, 59.17), (0.91, 59.33), (0.42, 59.88), (0.13, 59.17)]]);
+    let s = &run(&mut MemoryBand::new(&ras, 0).unwrap(), &[tri], ValueRole::Measured)[0];
+    assert_eq!((s.coverage, s.outside_raster_area_m2), (1.0, 0.0));
+    // Half beyond the raster's east edge (lon 1.0): the half outside counts as no data.
+    let half = poly(vec![vec![(0.5, 59.2), (1.5, 59.2), (1.5, 59.6), (0.5, 59.6), (0.5, 59.2)]]);
+    let s = &run(&mut MemoryBand::new(&ras, 0).unwrap(), &[half], ValueRole::Measured)[0];
+    let outside = lat_band_area_m2(59.2, 59.6, 0.5);
+    assert!(rel_err(s.outside_raster_area_m2, outside) < 1e-9, "{} vs {outside}", s.outside_raster_area_m2);
+    assert!(rel_err(s.coverage, s.covered_valid_area_m2 / (s.covered_valid_area_m2 + outside)) < 1e-12);
+    assert!((s.coverage - 0.5).abs() < 1e-9, "{}", s.coverage);
+    // NoData inside counts against coverage the same way.
+    let holed = grid_raster(10, 10, (0.0, 60.0), (0.1, 0.1), Some(-9.0), |c, _| if c < 5 { -9.0 } else { 1.0 });
+    let all = poly(vec![vec![(0.0, 59.0), (1.0, 59.0), (1.0, 60.0), (0.0, 60.0), (0.0, 59.0)]]);
+    let s = &run(&mut MemoryBand::new(&holed, 0).unwrap(), &[all], ValueRole::Measured)[0];
+    assert!((s.coverage - 0.5).abs() < 1e-12, "{}", s.coverage);
 }
 
 #[test]
@@ -719,9 +743,10 @@ fn n4_r7_matches_exactextract_to_1_ppm_and_the_geodesic_integration_to_1_ppt() {
     for ((id, _), s) in a.iter().zip(&got) {
         let (e, g) = (&ee[id], &gi[id]);
         let mean = s.mean.unwrap();
-        // exactextract (1 ppm). Its coverage is Σa/A_P; ours divides by max(A_P, Σ_all a)
-        // (docs/lm/decisions.md, 2026-10-17), so the reference is compared on that footing.
-        let ee_cov = num(e, "coverage") * num(e, "polygon_area_m2") / num(e, "polygon_area_m2").max(s.covered_area_m2);
+        // exactextract (1 ppm). Its coverage is Σa/A_P; ours is Earth Engine's
+        // Σ_valid a / (Σ_all a + A_out) (docs/lm/decisions.md, 2026-10-19), so the reference is
+        // compared on its valid area.
+        let ee_cov = num(e, "covered_valid_area_m2") / (s.covered_area_m2 + s.outside_raster_area_m2);
         let errs_ee = [
             rel_err(mean, num(e, "mean")),
             rel_err(s.coverage, ee_cov),
@@ -849,7 +874,7 @@ fn n7_r4_cog_stress() {
         let k: usize = w["index"].parse().unwrap();
         assert_eq!(a[k].0, w["area_id"]);
         let s = &out[k];
-        let cov = num(w, "coverage") * num(w, "polygon_area_m2") / num(w, "polygon_area_m2").max(s.covered_area_m2);
+        let cov = num(w, "covered_valid_area_m2") / (s.covered_area_m2 + s.outside_raster_area_m2);
         let errs = [
             rel_err(s.mean.unwrap(), num(w, "mean")),
             rel_err(s.coverage, cov),

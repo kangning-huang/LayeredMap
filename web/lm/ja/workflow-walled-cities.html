@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1866年の中国の城郭都市を地図で見る · NimbleMap</title>
+<meta name="description" content="NimbleMap のステップごとのワークフロー：清代後期の中国の城壁 1,789 か所を衛星画像に重ね、大きさで順位を付け、省都に絞り込んで地図を共有します。">
+<link rel="canonical" href="workflow-walled-cities.html">
+<link rel="alternate" hreflang="en" href="../workflow-walled-cities.html">
+<link rel="alternate" hreflang="zh-Hans" href="../zh/workflow-walled-cities.html">
+<link rel="alternate" hreflang="de" href="../de/workflow-walled-cities.html">
+<link rel="alternate" hreflang="es" href="../es/workflow-walled-cities.html">
+<link rel="alternate" hreflang="fr" href="../fr/workflow-walled-cities.html">
+<link rel="alternate" hreflang="it" href="../it/workflow-walled-cities.html">
+<link rel="alternate" hreflang="nl" href="../nl/workflow-walled-cities.html">
+<link rel="alternate" hreflang="pt-BR" href="../pt-br/workflow-walled-cities.html">
+<link rel="alternate" hreflang="ru" href="../ru/workflow-walled-cities.html">
+<link rel="alternate" hreflang="ja" href="workflow-walled-cities.html">
+<link rel="alternate" hreflang="ko" href="../ko/workflow-walled-cities.html">
+<link rel="alternate" hreflang="x-default" href="../workflow-walled-cities.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="NimbleMap">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:title" content="1866年の中国の城郭都市を地図で見る · NimbleMap">
+<meta property="og:description" content="NimbleMap のステップごとのワークフロー：清代後期の中国の城壁 1,789 か所を衛星画像に重ね、大きさで順位を付け、省都に絞り込んで地図を共有します。">
+<meta property="og:url" content="workflow-walled-cities.html">
+<meta property="og:image" content="../img/walls-satellite.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/site.css">
+<script src="../assets/site.js"></script>
+</head>
+<body>
+<header class="site-head">
+  <div class="wrap">
+    <a class="brand" href="index.html"><img src="../assets/logo.svg" alt="" width="30" height="30">NimbleMap</a>
+    <nav class="nav" aria-label="サイト">
+      <a href="index.html">ホーム</a>
+      <a href="help.html" aria-current="page">ヘルプ</a>
+      <a href="glossary.html">用語集</a>
+      <a href="download.html">ダウンロード</a>
+      <details class="lang-menu">
+        <summary aria-label="言語：日本語" title="言語"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.6 3.9 5.6 3.9 9s-1.3 6.4-3.9 9c-2.6-2.6-3.9-5.6-3.9-9S9.4 5.6 12 3z"/></svg><span>日本語</span></summary>
+        <ul>
+          <li><a href="../workflow-walled-cities.html" hreflang="en" lang="en">English</a></li>
+          <li><a href="../zh/workflow-walled-cities.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li>
+          <li><a href="../de/workflow-walled-cities.html" hreflang="de" lang="de">Deutsch</a></li>
+          <li><a href="../es/workflow-walled-cities.html" hreflang="es" lang="es">Español</a></li>
+          <li><a href="../fr/workflow-walled-cities.html" hreflang="fr" lang="fr">Français</a></li>
+          <li><a href="../it/workflow-walled-cities.html" hreflang="it" lang="it">Italiano</a></li>
+          <li><a href="../nl/workflow-walled-cities.html" hreflang="nl" lang="nl">Nederlands</a></li>
+          <li><a href="../pt-br/workflow-walled-cities.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li>
+          <li><a href="../ru/workflow-walled-cities.html" hreflang="ru" lang="ru">Русский</a></li>
+          <li><a href="workflow-walled-cities.html" hreflang="ja" lang="ja" aria-current="true">日本語</a></li>
+          <li><a href="../ko/workflow-walled-cities.html" hreflang="ko" lang="ko">한국어</a></li>
+        </ul>
+      </details>
+      <button class="theme-btn" type="button" aria-label="テーマを切り替え"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></svg></button>
+    </nav>
+  </div>
+</header>
+<main>
+<div class="page-head contours">
+  <div class="narrow">
+    <p class="eyebrow">ワークフロー 3 · 無料版</p>
+    <h1>1866年の中国の城郭都市</h1>
+    <p class="lede">1866年の中国では、都から県城、駐屯地に至るまで、ほぼすべての行政の中心地が城壁に囲まれていました。このサンプルはそのうち 1,789 か所を地図にしたものです。衛星画像の上に重ね、いちばん大きなものを探し、省都だけを残して、共有できる地図を作ります。</p>
+    <div class="toc">使う機能：<a class="term" href="glossary.html#basemap">衛星画像の背景地図</a>、<a class="term" href="glossary.html#feature">地物</a>、<a class="term" href="glossary.html#insight">比較</a>、<a class="term" href="glossary.html#filter">フィルター</a>、<a class="term" href="glossary.html#style">スタイル</a>、<a class="term" href="glossary.html#export">地図画像</a>。</div>
+  </div>
+</div>
+<div class="narrow">
+<ol class="steps">
+  <li id="open">
+    <h3>サンプルを開く</h3>
+    <p>ようこそカードの <span class="ui">Examples</span>（サンプル）をクリックし（または File › Open Example［ファイル › サンプルを開く］）、<span class="ui">Walled cities of China, 1866</span>（1866年の中国の城郭都市）を選びます。カードには <span class="ui">1,789 areas · walled cities 1866.geojson</span>（1,789 個の面 · walled cities 1866.geojson）と表示されます。1 つの面が、1 つの城壁の内側の土地です。</p>
+    <p>カードの 1 行目はアプリの<a class="term" href="glossary.html#assumption">仮定</a>です：<span class="ui">If these came from a Chinese map app (Amap, Tencent or Baidu), they may sit a few hundred meters off.</span>（中国の地図アプリ（Amap、Tencent、Baidu）から取得したデータなら、数百メートルずれている可能性があります。）この輪郭は GPS 座標で描かれているので、そのままにしておきます。中国の地図アプリから取ったご自分のデータなら、<span class="ui">Compare</span>（比較）をクリックして両方の位置を見比べてください。<a href="glossary.html#gcj02">GCJ-02</a> を参照してください。</p>
+  </li>
+  <li id="satellite">
+    <h3>背景地図を衛星画像に切り替える</h3>
+    <p>地図の右下にある背景地図ボタン（折りたたんだ地図のアイコン、<span class="ui">Basemap</span>（背景地図））をクリックし、<span class="ui">Satellite</span>（衛星画像）を選びます。華北の平野、山地、海岸が NASA の Blue Marble 画像で現れ、その上に地名が表示されます。</p>
+    <figure class="frame shot"><img src="../img/walls-region.jpg" alt="衛星画像で見た華北。フフホトから青島まで。城郭都市のレイヤーが開いていて、カードには reliability ごとの凡例が表示されています。" width="1600" height="996" loading="lazy"><figcaption>この距離では城壁は小さな点にしか見えません。県城の城壁は 1 平方キロメートルに満たないことがよくありました。</figcaption></figure>
+    <p class="note">衛星画像がくっきり見えるのは、だいたい都市全体が収まる縮尺までです。それ以上ズームインするとアプリが自動で道路地図に切り替え、ズームアウトすると衛星画像に戻ります。</p>
+  </li>
+  <li id="find">
+    <h3>北京を探して、その大きさを見る</h3>
+    <p>レイヤーのカードの <span class="ui">Find in walled cities 1866</span>（walled cities 1866 内を検索）、またはツールバーの検索ボックスに <strong>Beijing</strong> と入力して、ズームインします。城壁の内側をクリックすると、カードにその情報と比較が表示されます：<span class="ui">area_km2 35.32 km²</span>、<span class="ui">higher than 99% of 1,789 areas</span>（1,789 個の面の 99% より大きい）。</p>
+    <figure class="frame shot"><img src="../img/walls-satellite.jpg" alt="衛星画像の上に輪郭を描いた北京の城壁。カードには面積 35.32 km²、1,789 個の面の 99% より大きい、type Provincial Capital と表示されています。" width="1600" height="996" loading="lazy"></figure>
+  </li>
+  <li id="compare">
+    <h3>すべての城郭都市に順位を付ける</h3>
+    <p><span class="ui">Compare with other walled cities 1866</span>（他の walled cities 1866 と比較）をクリックします。カードが順位付きのリスト <span class="ui">1,789 areas, highest first</span>（1,789 個の面（大きい順））に変わり、選んだ城壁が強調表示されます。トップはかつての南の都、南京で 40.85 km² です。このデータセットには北京という名前の城壁が 2 つ記録されています。<span class="ui">Compare by</span>（比較の基準）でフィールドを切り替え、<span class="ui">Back</span>（戻る）でカードに戻ります。</p>
+    <figure class="frame shot"><img src="../img/walls-compare.jpg" alt="順位付きの棒グラフのリスト：南京 40.85 km²、北京 35.32、北京 25.38、天津 24.39、蘇州 13.62、盛京、開封、杭州、成都…" width="1600" height="996" loading="lazy"></figure>
+  </li>
+  <li id="filter">
+    <h3>省都だけを残す</h3>
+    <p><span class="ui">View in table</span>（テーブルで表示）をクリックし、続いて <span class="ui">+ Filter</span>（＋ フィルター）をクリックします。文を <span class="ui">Show areas where type is any of Provincial Capital</span>（type が Provincial Capital のいずれかである面を表示）と完成させると、<span class="ui">19 match</span>（19 件が一致）と表示されます。皇帝の都も含めたいときは同じリストに <span class="ui">Capital</span> を加え、<span class="ui">Apply</span>（適用）をクリックします。</p>
+    <figure class="frame shot"><img src="../img/walls-filter.jpg" alt="城郭都市のテーブルの上に、フィルターの文「Show areas where type is any of Provincial Capital」と、19 件が一致の表示。" width="1600" height="996" loading="lazy"></figure>
+    <p class="note"><span class="ui">type</span> フィールドは清朝の行政階層に従っています：Capital（京師）、Provincial Capital（省都）、Fu（府）、Zhou（州）、Ting（庁）、County（県）、そして軍事拠点（Wei［衛］、Suo［所］、満洲人の駐防地）。<span class="ui">reliability</span> はデータセット独自の信頼度の等級で、A から D まであります。D は城壁がなかった場所を示します。</p>
+  </li>
+  <li id="color">
+    <h3>城壁を種類ごとに色分けする</h3>
+    <p>フィルターを外して（チップの ×）すべての城壁をもう一度表示し、レイヤーの <span class="ui">Style</span>（スタイル）タブを開いて、<span class="ui">Color</span>（色）メニューで <span class="ui">type</span> を選びます。町の種類ごとに色が付き、<span class="ui">Legend</span>（凡例）にその一覧が出ます。小さな城壁が衛星画像の上でも見えるように、<span class="ui">Opacity</span>（不透明度）や <span class="ui">Outline</span>（輪郭線）の <span class="ui">Width</span>（太さ）を上げましょう。</p>
+  </li>
+  <li id="share">
+    <h3>共有する</h3>
+    <p>見せたい地域にズームします。南京や蘇州の周辺、長江下流域には城郭都市が密集しています。次に <span class="ui">Share</span>（共有）› <span class="ui">Map image…</span>（地図画像…）をクリックし、<span class="ui">Show</span>（表示）を <span class="ui">Current view</span>（現在の表示）にして（中国全体を表示すると城壁が小さすぎて見えません）、「長江下流域の城郭都市、1866年」のような <span class="ui">Title</span>（タイトル）を付け、<span class="ui">Save…</span>（保存…）をクリックします。<a href="workflow-heatwave.html#export">書き出しシート</a>はどの地図でも同じように使えます。</p>
+    <p><span class="ui">Share</span> › <span class="ui">Data…</span>（データ…）を使うと、絞り込んだ城壁を GeoJSON か CSV ファイルに書き出せます。スプレッドシートやほかの GIS で使えます。レイヤー、スタイル、フィルターを含めて地図全体を残したいときは、File › <span class="ui">Save</span>（保存、⌘S）を使います。</p>
+    <p class="note">このデータセットは CC BY 4.0 です。地図を共有するときは Xue et al. 2021 をクレジットしてください（アプリが書くキャプションにはファイル名が入るので、著者名を書き足してください）。</p>
+  </li>
+</ol>
+<div class="note" style="margin-bottom:24px"><strong>自分の情報を加えるには。</strong> 共通の列を使って、スプレッドシートを場所に結び付けることができます。これを<a href="glossary.html#join">結合</a>と呼びます。レイヤーを開いた状態でスプレッドシートを開くと、NimbleMap が対応付けます。結合には、レイヤーの中で値が重複しない列が必要です。このデータセットでは同じ名前の町がいくつもある（北京が 2 つ、台州はたくさん）ので、名前はキーにできません。国の一覧表なら、国名や国コードですぐに結合できます。</div>
+<div class="pro-note" style="margin-bottom:30px"><strong>NimbleMap Pro.</strong> たとえば “Which walled cities sat highest above sea level?”（いちばん標高の高い場所にあった城郭都市はどれ？）と質問してみましょう。Pro に内蔵された標高レイヤーと質問ボックスが、順位付きのリストと地図上のプレビューで答えます。使われるのは、レシピで確認できるのと同じ、検証済みの手順です。</div>
+<p class="coords" style="margin:10px 0 60px">データ：Xue, Q., Jin, X., Cheng, Y., Yang, X., Zhou, Y. (2021). The dataset of walled cities and urban extent in late imperial China in the 15th–19th centuries. Earth Syst. Sci. Data 13, 5071–5085, doi:10.5194/essd-13-5071-2021; CC BY 4.0。衛星画像：NASA Blue Marble（NASA Earth Observatory、GIBS）。ラベル © OpenStreetMap contributors、Natural Earth。</p>
+</div>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <div>
+      <p><strong>NimbleMap ヘルプ</strong> · これらのページはアプリに同梱されており（Help › NimbleMap Help［ヘルプ › NimbleMap ヘルプ］）、オフラインでも読めます。</p>
+      <p>スクリーンショットの地図データ：© OpenStreetMap contributors（ODbL）／Protomaps、Natural Earth（パブリックドメイン）、NASA Blue Marble 画像（NASA Earth Observatory、GIBS）。サンプルデータの出典は各ページに記載しています。</p>
+    </div>
+    <div><a href="help.html">ヘルプ</a> · <a href="glossary.html">用語集</a><p class="foot-langs"><a href="../workflow-walled-cities.html" hreflang="en" lang="en">English</a> · <a href="../zh/workflow-walled-cities.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="../de/workflow-walled-cities.html" hreflang="de" lang="de">Deutsch</a> · <a href="../es/workflow-walled-cities.html" hreflang="es" lang="es">Español</a> · <a href="../fr/workflow-walled-cities.html" hreflang="fr" lang="fr">Français</a> · <a href="../it/workflow-walled-cities.html" hreflang="it" lang="it">Italiano</a> · <a href="../nl/workflow-walled-cities.html" hreflang="nl" lang="nl">Nederlands</a> · <a href="../pt-br/workflow-walled-cities.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ru/workflow-walled-cities.html" hreflang="ru" lang="ru">Русский</a> · <a href="../ko/workflow-walled-cities.html" hreflang="ko" lang="ko">한국어</a></p></div>
+  </div>
+</footer>
+</body>
+</html>

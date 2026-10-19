@@ -5,6 +5,7 @@
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
 pub mod a11y;
+pub mod account_ui;
 pub mod analysis;
 pub mod ask;
 pub mod basemap;
@@ -59,6 +60,8 @@ pub enum Units {
 #[derive(Clone, Debug, PartialEq)]
 pub enum Command {
     SetTheme(ThemePref),
+    /// The interface language: a code, or "auto" to follow the system (WP5.5).
+    SetLanguage(String),
     SetUnits(Units),
     ToggleDebugOverlay,
     ZoomIn,
@@ -124,6 +127,8 @@ pub enum Command {
     ComposeAction(String, Vec<(String, String)>),
     /// Developer surface: keep the composer's preview.
     KeepResult,
+    /// Settings… (⌘,): Settings › Account (WP7.4), when the build has accounts.
+    ShowSettings,
     /// Pro's Ask box (scripts and tests): send a request, keep its plan.
     Ask(String),
     KeepAsk,
@@ -189,11 +194,22 @@ pub struct Prefs {
     pub view: Option<(f64, f64, f64)>,
     /// Strict offline mode (View › Work Offline): no network request of any kind.
     pub offline: bool,
+    /// The interface language (View › Language, WP5.5): a code such as "ja", or
+    /// [`lm_core::i18n::AUTO`] to follow the system.
+    pub language: String,
 }
 
 impl Default for Prefs {
     fn default() -> Self {
-        Prefs { theme: ThemePref::System, units: Units::Metric, basemap: "auto".into(), strength: 1.0, view: None, offline: false }
+        Prefs {
+            theme: ThemePref::System,
+            units: Units::Metric,
+            basemap: "auto".into(),
+            strength: 1.0,
+            view: None,
+            offline: false,
+            language: lm_core::i18n::AUTO.into(),
+        }
     }
 }
 
@@ -211,6 +227,10 @@ pub struct Shell {
     pub(crate) map: MapView,
     theme: Theme,
     theme_applied: Option<Theme>,
+    /// The interface language in use (WP5.5), and the system's preferred languages, most
+    /// preferred first, which the app passes in ([`Shell::set_system_languages`]).
+    lang_applied: lm_core::i18n::Lang,
+    system_languages: Vec<String>,
     pub(crate) search: search::Search,
     debug_overlay: bool,
     /// Screen readers and the keyboard (WP5.6, WP6.3).
@@ -277,6 +297,8 @@ pub struct Shell {
     pub(crate) after_drawing: Option<lm_core::model::LayerId>,
     /// The Ask box (Pro, early test build of WP7.1).
     pub(crate) ask: ask::AskState,
+    /// Pro's account and Settings › Account (WP7.4).
+    pub(crate) account: account_ui::AccountUi,
     /// The map's file, autosave and recovery (WP5.1, WP5.2).
     pub doc_file: saving::DocFile,
     /// The map image sheet and the data export dialog, while open (WP5.3).
@@ -297,7 +319,10 @@ pub struct Shell {
 
 impl Shell {
     pub fn new(ctx: &egui::Context, flags: Flags, prefs: Prefs, system: System) -> Shell {
-        ctx.set_fonts(theme::fonts());
+        // English until the app passes the system's languages (tests never do).
+        let lang = lm_core::i18n::resolve(&prefs.language, []);
+        lm_core::i18n::set_current(lang);
+        ctx.set_fonts(theme::fonts_for(lang.cjk()));
         // The renderer keeps only label text a font can draw: give it Chinese.
         if !lm_mapview::add_label_font(theme::NOTO_SC_REGULAR.to_vec()) {
             log::warn!("the bundled Chinese font could not be registered for map labels");
@@ -312,6 +337,8 @@ impl Shell {
             map: MapView::new(map, ctx),
             theme: Theme::of(dark),
             theme_applied: None,
+            lang_applied: lang,
+            system_languages: Vec::new(),
             search: search::Search::new(),
             debug_overlay: false,
             credits_open: false,
@@ -329,6 +356,7 @@ impl Shell {
             composer: None,
             after_drawing: None,
             ask: ask::AskState::default(),
+            account: account_ui::AccountUi::default(),
             doc_file: saving::DocFile::default(),
             export_sheet: None,
             data_export: None,
@@ -418,6 +446,7 @@ impl Shell {
         let t = ctx.input(|i| i.time);
         match cmd {
             Command::SetTheme(p) => self.prefs.theme = p,
+            Command::SetLanguage(code) => self.prefs.language = code,
             Command::SetUnits(u) => self.prefs.units = u,
             Command::ToggleDebugOverlay => self.debug_overlay = !self.debug_overlay,
             Command::ZoomIn => self.map.zoom_by(1.0, t, self.last_map_size),
@@ -489,6 +518,7 @@ impl Shell {
             Command::KeepResult => {
                 analysis::keep(self);
             }
+            Command::ShowSettings => account_ui::open(self),
             Command::Ask(text) => ask::submit(self, ctx, text),
             Command::KeepAsk => ask::keep_shown(self),
             Command::Dictate => ask::dictate(self, ctx),
@@ -501,7 +531,7 @@ impl Shell {
             Command::ExportPackage => {
                 if self.export_shown() {
                     if self.ws.doc.layers.is_empty() {
-                        self.notice = Some(("Open a file first: there is no map to package.".into(), t));
+                        self.notice = Some((lm_core::tl!("Open a file first: there is no map to package.").into(), t));
                     } else {
                         self.data_export = None;
                         self.package_dialog = Some(package::PackageDialog::new(self));
@@ -513,7 +543,7 @@ impl Shell {
                 if self.export_shown() {
                     match export_data::DataDialog::new(self, None) {
                         Some(d) => self.data_export = Some(d),
-                        None => self.notice = Some(("Open a file first: there is no data to export.".into(), t)),
+                        None => self.notice = Some((lm_core::tl!("Open a file first: there is no data to export.").into(), t)),
                     }
                 }
             }
@@ -526,9 +556,9 @@ impl Shell {
                     basemap::start_archive_lookup(ctx);
                 }
                 let msg = if on {
-                    format!("Working offline: {} won't use the network.", lm_core::brand::NAME)
+                    lm_core::i18n::fmt("Working offline: {app} won't use the network.", &[("app", lm_core::brand::shown(false))])
                 } else {
-                    "Back online.".to_string()
+                    lm_core::tl!("Back online.").to_string()
                 };
                 self.notice = Some((msg, t));
             }
@@ -604,12 +634,12 @@ impl Shell {
             Command::RequestOpenDocument => self.file_requests.push(FileRequest::OpenDocument),
             Command::Undo => {
                 if let Some(label) = self.ws.undo() {
-                    self.notice = Some((format!("Undid {}", lower_first(&label)), t));
+                    self.notice = Some((lm_core::i18n::fmt("Undid {action}", &[("action", &lower_first(&label))]), t));
                 }
             }
             Command::Redo => {
                 if let Some(label) = self.ws.redo() {
-                    self.notice = Some((format!("Redid {}", lower_first(&label)), t));
+                    self.notice = Some((lm_core::i18n::fmt("Redid {action}", &[("action", &lower_first(&label))]), t));
                 }
             }
             Command::ToggleLayers => self.shelf_open = !self.shelf_open,
@@ -620,8 +650,13 @@ impl Shell {
                     self.ws.clear_selection();
                     self.find.clear();
                     self.table_for = None;
-                    let what = if n == 1 { "1 layer".to_string() } else { format!("{n} layers") };
-                    self.notice = Some((format!("Removed {what}. Undo with {}.", keys::shortcut("Z")), t));
+                    let key = keys::shortcut("Z");
+                    let msg = if n == 1 {
+                        lm_core::i18n::fmt("Removed 1 layer. Undo with {key}.", &[("key", &key)])
+                    } else {
+                        lm_core::i18n::fmt("Removed {n} layers. Undo with {key}.", &[("n", &lm_core::i18n::count(n as u64)), ("key", &key)])
+                    };
+                    self.notice = Some((msg, t));
                 }
             }
             Command::SaveDocument(dir) => {
@@ -630,14 +665,14 @@ impl Shell {
                     Some((c.x, c.y, self.map.zoom()))
                 };
                 let msg = match lm_doc::save(&self.ws.doc, &dir) {
-                    Ok(()) => format!("Saved the document in {}", dir.display()),
+                    Ok(()) => lm_core::i18n::fmt("Saved the document in {folder}", &[("folder", &dir.display().to_string())]),
                     Err(e) => e.to_string(),
                 };
                 self.notice = Some((msg, t));
             }
             Command::OpenDocument(path) => saving::open(self, ctx, &path, t),
             Command::LoadFixture(path) => {
-                self.notice = Some((format!("Loading {}…", path.display()), t));
+                self.notice = Some((lm_core::i18n::fmt("Loading {file}…", &[("file", &path.display().to_string())]), t));
                 self.loading = Some(lm_jobs::load_fixture(path));
             }
         }
@@ -647,7 +682,11 @@ impl Shell {
     /// of its own (macOS shows it from [`Shell::edited`]).
     pub fn window_title(&self) -> String {
         let name = self.doc_file.name();
-        if self.doc_file.edited() && !cfg!(target_os = "macos") { format!("{name} — Edited") } else { name }
+        if self.doc_file.edited() && !cfg!(target_os = "macos") {
+            lm_core::i18n::fmt("{name} — Edited", &[("name", &name)])
+        } else {
+            name
+        }
     }
 
     /// Whether the map has changes its file doesn't have.
@@ -686,6 +725,18 @@ impl Shell {
         self.library.url = url;
     }
 
+    /// Reads the account config and the stored session (Pro, at launch): without a config the
+    /// Ask box works as before (docs/lm/accounts-design.md).
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn start_account(&mut self) {
+        account_ui::start(self);
+    }
+
+    /// Whether the build has accounts (the app shows Settings…).
+    pub fn account_available(&self) -> bool {
+        self.account.available()
+    }
+
     /// Whether the data library is offered (the app shows File › Browse data library).
     pub fn library_available(&self) -> bool {
         library::available(self)
@@ -709,7 +760,7 @@ impl Shell {
         let Some(data) = self.ws.data(id) else { return };
         let name = self.ws.doc.layer(id).map_or_else(|| "layer".to_string(), |l| l.display_name.clone());
         self.file_requests.push(FileRequest::SaveText {
-            title: "Export problem list".into(),
+            title: lm_core::tl!("Export problem list").into(),
             suggested_name: format!("{name} problems.csv"),
             contents: lm_jobs::import::problem_list_csv(data),
         });
@@ -817,6 +868,7 @@ impl Shell {
         let t = ctx.input(|i| i.time);
         analysis::poll(self);
         ask::poll(self);
+        account_ui::poll(self);
         library::poll(self, ctx);
         // Files dropped on the window (Open With and the Dock icon arrive through the app).
         let dropped: Vec<PathBuf> =
@@ -836,7 +888,10 @@ impl Shell {
             self.fly_to_extent(e);
         }
         if self.ws.new_data.is_some() && self.notice.as_ref().is_none_or(|(_, at)| t - at > 4.0) {
-            self.notice = Some((format!("New data added outside the view. Zoom to new data with {}.", keys::shortcut("0")), t));
+            self.notice = Some((
+                lm_core::i18n::fmt("New data added outside the view. Zoom to new data with {key}.", &[("key", &keys::shortcut("0"))]),
+                t,
+            ));
             self.ws.new_data = None;
         }
         if !self.ws.answers.is_empty() {
@@ -862,9 +917,29 @@ impl Shell {
         self.backdrop = basemap::backdrop(self.map.map());
     }
 
+    /// The system's preferred languages, most preferred first (BCP 47 tags such as "ja-JP"): the
+    /// interface follows the first one with a catalog while the preference is "auto".
+    pub fn set_system_languages(&mut self, tags: Vec<String>) {
+        self.system_languages = tags;
+    }
+
+    /// The interface language the preference and the system choose.
+    pub fn language(&self) -> lm_core::i18n::Lang {
+        lm_core::i18n::resolve(&self.prefs.language, self.system_languages.iter().map(String::as_str))
+    }
+
     /// One frame of the whole window.
     pub fn ui(&mut self, ui: &mut egui::Ui, system: System) {
         let ctx = ui.ctx().clone();
+        // Language: strings are looked up as they are drawn; Japanese and Korean also need a face.
+        let lang = self.language();
+        lm_core::i18n::set_current(lang);
+        if lang != self.lang_applied {
+            if lang.cjk() != self.lang_applied.cjk() {
+                ctx.set_fonts(theme::fonts_for(lang.cjk()));
+            }
+            self.lang_applied = lang;
+        }
         self.reduce_motion = system.reduce_motion;
         // Theme: follows the system unless overridden; switching also restyles the basemap.
         let dark = basemap::dark_for(self.prefs.theme, system.dark_mode);
@@ -931,8 +1006,10 @@ impl Shell {
                 self.backdrop = basemap::backdrop(self.map.map());
                 if want {
                     let t = ctx.input(|i| i.time);
-                    self.notice =
-                        Some(("Satellite imagery isn't detailed enough here, so the map is shown. Zoom out to see it again.".into(), t));
+                    self.notice = Some((
+                        lm_core::tl!("Satellite imagery isn't detailed enough here, so the map is shown. Zoom out to see it again.").into(),
+                        t,
+                    ));
                 }
             }
         }
@@ -1014,6 +1091,7 @@ impl Shell {
         export_data::dialog(self, &ctx);
         package::dialog(self, &ctx);
         diagnostics::window(self, &ctx);
+        account_ui::window(self, &ctx);
         library::panel(self, &ctx);
         panels::drop_overlay(self, ui, full);
         saving::recovery_prompt(self, ui, map_rect);
@@ -1126,7 +1204,7 @@ impl Shell {
                     // Points above areas (index 0 draws on top).
                     m.layers.sort_by_key(|l| u8::from(l.dataset.geometry_type != lm_jobs::GeometryType::Point));
                 });
-                self.notice = Some((format!("Loaded {} features", lm_core::model::group_thousands(n as u64)), t));
+                self.notice = Some((lm_core::i18n::fmt("Loaded {n} features", &[("n", &lm_core::i18n::count(n as u64))]), t));
                 self.loading = None;
             }
             Ok(Err(e)) => {

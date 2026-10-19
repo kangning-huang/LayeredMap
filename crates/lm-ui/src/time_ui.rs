@@ -11,6 +11,7 @@ use egui::{Align2, Color32, CornerRadius, Rect, Sense, Stroke, Ui, pos2, vec2};
 use egui_phosphor::regular as icon;
 
 use lm_core::model::LayerId;
+use lm_core::{i18n, tl};
 
 use crate::Shell;
 use crate::theme::{self, BODY, CAPTION, Theme};
@@ -140,11 +141,11 @@ pub fn controls(shell: &mut Shell, ui: &mut Ui, width: f32) {
         ui.set_width(width - 16.0);
         ui.horizontal(|ui| {
             ui.spacing_mut().item_spacing.x = 2.0;
-            if round_button(ui, &t, icon::CARET_LEFT, "Previous step (←)", false, time > 0).clicked() {
+            if round_button(ui, &t, icon::CARET_LEFT, tl!("Previous step (←)"), false, time > 0).clicked() {
                 shell.playing = None;
                 shell.ws.step_time(id, -1, false);
             }
-            let (glyph, tip) = if playing { (icon::PAUSE, "Pause") } else { (icon::PLAY, "Play") };
+            let (glyph, tip) = if playing { (icon::PAUSE, tl!("Pause")) } else { (icon::PLAY, tl!("Play")) };
             if round_button(ui, &t, glyph, tip, playing, true).clicked() {
                 let now = ui.input(|i| i.time);
                 shell.playing = if playing { None } else { Some(Playing { layer: id, next_at: now + 1.0 / PLAY_RATE }) };
@@ -152,7 +153,7 @@ pub fn controls(shell: &mut Shell, ui: &mut Ui, width: f32) {
                     shell.ws.end_gesture();
                 }
             }
-            if round_button(ui, &t, icon::CARET_RIGHT, "Next step (→)", false, time + 1 < steps).clicked() {
+            if round_button(ui, &t, icon::CARET_RIGHT, tl!("Next step (→)"), false, time + 1 < steps).clicked() {
                 shell.playing = None;
                 shell.ws.step_time(id, 1, false);
             }
@@ -169,11 +170,9 @@ pub fn controls(shell: &mut Shell, ui: &mut Ui, width: f32) {
             let date = g.date_label(time);
             let p = ui.painter();
             p.text(pos2(r.left(), r.top() + 1.0), Align2::LEFT_TOP, &date, theme::semibold(BODY), t.text_primary);
-            let caption = format!(
-                "{} · {} of {}",
-                short(&l.display_name, 14),
-                lm_core::model::group_thousands(time as u64 + 1),
-                lm_core::model::group_thousands(steps as u64)
+            let caption = i18n::fmt(
+                "{layer} · {step} of {steps}",
+                &[("layer", &short(&l.display_name, 14)), ("step", &i18n::count(time as u64 + 1)), ("steps", &i18n::count(steps as u64))],
             );
             p.text(pos2(r.left(), r.bottom() - 1.0), Align2::LEFT_BOTTOM, caption, theme::regular(CAPTION), t.text_secondary);
         });
@@ -210,7 +209,7 @@ fn track(ui: &mut Ui, t: &Theme, width: f32, time: usize, steps: usize) -> Optio
         p.circle_filled(pos2(at, y + 1.0), 8.5, Color32::from_black_alpha(30));
     }
     p.circle(pos2(at, y), 8.0, Color32::WHITE, Stroke::new(1.0, if hovered { t.accent } else { t.control_stroke }));
-    resp.widget_info(|| egui::WidgetInfo::slider(true, time as f64 + 1.0, "Time step"));
+    resp.widget_info(|| egui::WidgetInfo::slider(true, time as f64 + 1.0, tl!("Time step")));
     let pointer = resp.interact_pointer_pos().filter(|_| resp.clicked() || resp.dragged());
     let mut picked = pointer.map(|pos| (((pos.x - x0) / (x1 - x0)).clamp(0.0, 1.0) * n as f32).round() as usize);
     // With the keyboard on the track, ← → step through time as they do elsewhere on the map.

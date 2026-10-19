@@ -98,7 +98,10 @@ this section still applies to the RustGIS crates.
   `lm-mapview` may use egui; only the app uses eframe or rfd; `lm-ui` never calls `rustgis-data`
   or `rustgis-analysis` — all work goes through `lm-jobs`.
 - **The UI never computes numbers.** Counts and means come from data, never from drawn pixels.
-- **Every string is translatable.**
+- **Every string is translatable**, through `lm_core::i18n` (not upstream's `rustgis-ui-egui`
+  module): `tl!("…")`, `i18n::fmt("… {n} …", …)`, `tn!` for a label that is also an id, `{app}`
+  for the brand. Add each new string to every catalog in `crates/lm-core/src/i18n/*.tsv`; the
+  `catalogs` test in `lm-ui` lists what's missing (docs/lm/localization.md).
 - **Tests first in `lm-analysis`**: a written definition, a reference implementation in
   `reference/`, a tolerance.
 - **Every UI change includes a screenshot** from the headless `ui_shot` approach.

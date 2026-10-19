@@ -1,0 +1,179 @@
+English	Italiano	Nota
+Layer	layer	Termine QGIS (il layer, i layer); invariabile al plurale
+Layers (panel)	Layer	Pannello Layer, come in QGIS
+Basemap	Mappa di base	Termine QGIS
+Satellite	Satellite	
+Offline	Offline	Opzione della mappa di base: carta dei contorni senza internet
+Light	Chiaro	Stile della mappa di base
+Dark	Scuro	Stile della mappa di base
+Auto	Automatico	Mappa di base e opzioni di esportazione
+Background strength	Intensità dello sfondo	
+Attribute table	tabella degli attributi	Termine QGIS
+Table	Tabella	
+Field	campo	Termine QGIS
+Feature	elemento	Termine QGIS (elemento); nel testo anche "oggetto" come parola comune
+Record	record	Una riga della tabella; uso comune in italiano
+Point	punto	
+Line	linea	
+Area (polygon)	area (poligono)	L'app dice "area" (parola comune); QGIS dice poligono
+Raster	raster	Termine QGIS
+Grid	griglia	
+Cell	cella	QGIS usa anche "pixel"
+Vector data	dati vettoriali	Termine QGIS (vettore)
+Coordinate system (CRS)	Sistema di coordinate (SR)	QGIS: Sistema di Riferimento delle Coordinate (SR); preferita la forma breve
+Coordinate system	Sistema di coordinate	Etichetta nella scheda Dettagli
+Projection	proiezione	
+Legend	Legenda	
+Scale bar	Barra di scala	Termine QGIS
+Title	Titolo	
+Credits	Crediti	Fonti dei dati nella didascalia
+Filter	Filtro	
++ Filter	+ Filtro	
+Filtered:	Filtrato:	
+Style	Stile	Termine QGIS: simbologia; preferita la parola comune
+Style…	Stile…	
+Colour by value	Colora per valore	
+Color by a value	Colora per valore	Pulsante della scheda
+Color	Colore	Menu nella scheda Stile
+Palette	Tavolozza	QGIS: rampa di colori; "palette" è comune ma si sceglie la parola italiana
+Range	Intervallo	
+Label	Etichetta	
+Labels	Etichette	
+Join	Unione	QGIS usa "join" nelle proprietà del layer; preferita la parola comune
+Show joined fields	Mostra campi uniti	
+Unjoin	Annulla unione	
+joined · 172 of 177 matched	unito · 172 di 177 abbinati	
+Buffer	buffer	Termine GIS; l'app dice "Mostra un'area entro una distanza"
+Show an area within a distance of each	Mostra un'area entro una distanza da ciascuno	Il buffer dell'app (Pro)
+Clip	ritaglio	QGIS: Ritaglia (clip)
+Keep the part of [layer] inside [other]	Mantieni la parte di [layer] dentro [altro]	
+Overview	Panoramica	Scheda (tab) del riquadro del layer
+Details	Dettagli	
+Card	riquadro	Il pannello a destra; "scheda" è riservato alle schede (tab) come in QGIS
+Examples	Esempi	
+Open	Apri	
+Open file…	Apri file…	
+Share	Condividi	
+Map image…	Immagine della mappa…	
+Data…	Dati…	
+Export	Esporta	
+Map image (export)	Immagine della mappa (esportazione)	
+Undo	Annulla	
+Search places or your data	Cerca luoghi o nei tuoi dati	
+Your data	I tuoi dati	Sezione dei risultati di ricerca
+Zoom in	Ingrandisci	
+Zoom out	Riduci	
+Zoom to layer	Zoom sul layer	Termine QGIS
+Zoom to All Data	Zoom su tutti i dati	
+Rename	Rinomina	
+Remove from map	Rimuovi dalla mappa	
+Time slider	cursore temporale	QGIS: controller temporale; preferita la parola comune
+Time step	passo temporale	
+Play	Riproduci	
+Previous step (←)	Passo precedente (←)	
+Next step (→)	Passo successivo (→)	
+No data	Nessun dato	Termine GIS: NoData / valore nullo
+No value	Nessun valore	
+This cell has no data.	Questa cella non ha dati.	
+Median	mediana	
+Rank	posizione	In classifica
+Selected	Selezionato	
+Keep	Mantieni	
+Discard	Scarta	
+Ask	Chiedi	
+Ask about your layers	Chiedi sui tuoi layer	Casella Ask (Pro)
+Ask box	casella Chiedi	
+Pro	Pro	
+Free	Gratuito	
+Help	Aiuto	Come il menu Aiuto di macOS
+NimbleMap Help	Guida di NimbleMap	Voce del menu Aiuto e titolo delle pagine di aiuto
+Glossary	Glossario	
+Download	Scarica	
+Home	Home	
+Workflow	tutorial	Le pagine passo passo; "tutorial" è d'uso comune
+Insight line	riga di confronto	La frase che dice dove si colloca un elemento
+Recipe	ricetta	Il resoconto di come è stato ottenuto un risultato
+Assumption	ipotesi	
+Assumptions	Ipotesi	Sezione della scheda del layer
+Change	Modifica	Link accanto a un'ipotesi
+Change colors and range	Cambia colori e intervallo	
+Apply	Applica	
+Back	Indietro	
+Clear	Azzera	Link accanto a Filtrato:
+By basin	Per bacino	Riquadro nella scheda Stile
+Caption	Didascalia	
+Category	Categoria	Tipo di campo
+Value	Valore	Tipo di campo
+Values	Valori	Parte della Panoramica
+Name	Nome	Tipo di campo
+Date	Data	Tipo di campo
+Fields	Campi	
+Format	Formato	
+Extent	Estensione	Termine QGIS
+Compare	Confronta	
+Compare by	Confronta per	
+Compare on the map first	Prima confronta sulla mappa	
+Compare with other [layer]	Confronta con gli altri [layer]	
+Compare with other walled cities 1866	Confronta con gli altri walled cities 1866	Il nome del layer resta quello del file
+Current view	Vista attuale	
+Fit to data	Adatta ai dati	
+Show	Mostra	Opzione del foglio di esportazione
+Size	Dimensione	
+Slide 16:9	Diapositiva 16:9	
+Report A4	Documento A4	
+Square	Quadrato	
+North arrow	Freccia del nord	QGIS: Freccia nord
+Lat/lon labels	Etichette lat/lon	
+Grid lines	Linee della griglia	
+Save	Salva	
+Save…	Salva…	
+Opacity	Opacità	
+Outline	Contorno	
+Width	Spessore	Spessore del contorno; QGIS: larghezza tratto
+Groups	Classi	Modo a classi della scheda Stile; QGIS: classificazione
+Smooth	Continuo	Rampa continua
+Heat	Calore	Nome della tavolozza
+Measure length	Misura lunghezza	Pulsante Pro
+Metric Units	Unità metriche	
+Imperial Units	Unità imperiali	
+Work Offline	Lavora offline	Menu Vista
+Working offline: online backgrounds are off	Lavoro offline: gli sfondi online sono disattivati	
+Drop to add to the map	Rilascia per aggiungere alla mappa	
+Variable shown	Variabile mostrata	
+Level shown	Livello mostrato	
+Show only values above…	Mostra solo i valori sopra…	
+Show where values are like this	Mostra dove i valori sono simili	
+View data	Mostra dati	
+View in table	Mostra nella tabella	
+Find in storms	Cerca in storms	Nome del layer invariato
+Find in walled cities 1866	Cerca in walled cities 1866	Nome del layer invariato
+Typhoons and hurricanes	Tifoni e uragani	Esempio incluso
+Heatwaves, summer 2023	Ondate di calore, estate 2023	Esempio incluso
+Walled cities of China, 1866	Città murate della Cina, 1866	Esempio incluso
+World basics	Il mondo: dati di base	Esempio incluso
+Heat-wave intensity (°C)	Intensità dell'ondata di calore (°C)	Nome della variabile
+Heat-wave intensity (°C), 16 Jul 2023	Intensità dell'ondata di calore (°C), 16 lug 2023	
+Time: 1 Jun 2023 to 31 Aug 2023 (92 steps)	Tempo: dal 1 giu 2023 al 31 ago 2023 (92 passi)	
+16 Jul 2023	16 lug 2023	
+46 of 92	46 di 92	
+Treated as measured values (averaged, not summed)	Trattati come valori misurati (in media, non sommati)	
+4 objects here	4 oggetti qui	
+4,999 lines	4.999 linee	
+1,251 points	1.251 punti	
+4,999 lines · storm tracks.gpkg	4.999 linee · storm tracks.gpkg	
+1,789 areas · walled cities 1866.geojson	1.789 aree · walled cities 1866.geojson	
+1,789 areas, highest first	1.789 aree, dal valore più alto	
+higher than 99% of 4,547 storms with values	più alto del 99% di 4.547 tempeste con valore	
+higher than 99% of 1,789 areas	più alto del 99% di 1.789 aree	
+lower than 58% of this layer’s cells (estimated from a sample)	più basso del 58% delle celle di questo layer (stima da un campione)	
+tied 2nd highest of 228 filtered	2° più alto a pari merito su 228 filtrati	
+Showing 228 of 4,999	228 di 4.999 visualizzati	
+228 match	228 corrispondenze	
+19 match	19 corrispondenze	
+Show storms where strength is any of Category 5	Mostra le tempeste in cui strength è uno tra Category 5	Nomi di campo e valori restano in inglese
+Show areas where type is any of Provincial Capital	Mostra le aree in cui type è uno tra Provincial Capital	Nomi di campo e valori restano in inglese
+area · 23.4 km²	area · 23,4 km²	
+Located using longitude and latitude as GPS coordinates (WGS 84)	Posizionato con longitudine e latitudine come coordinate GPS (WGS 84)	
+Amap/Tencent coordinates (GCJ-02): convert	Coordinate Amap/Tencent (GCJ-02): converti	
+GPS coordinates (WGS 84): keep where they are	Coordinate GPS (WGS 84): lascia dove sono	
+If these came from a Chinese map app (Amap, Tencent or Baidu), they may sit a few hundred meters off.	Se provengono da un'app di mappe cinese (Amap, Tencent o Baidu), potrebbero essere spostati di qualche centinaio di metri.	

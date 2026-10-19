@@ -1,7 +1,9 @@
 # NimbleMap website and help (WP6.10)
 
-A landing page, a searchable glossary and three step-by-step workflows, in English and
-Simplified Chinese. Plain HTML, CSS and JavaScript: no build step, no libraries, no web fonts, no
+A landing page, a searchable glossary and three step-by-step workflows, in English, Simplified
+Chinese, German, Spanish, French, Italian, Dutch, Brazilian Portuguese, Russian, Japanese and
+Korean (`<folder>/` per language; the nine newest are machine translations awaiting native
+review, see `docs/lm/localization.md`). Plain HTML, CSS and JavaScript: no build step, no libraries, no web fonts, no
 analytics and no requests to any other host, so the pages work offline, from `file://`, and from
 any host reachable in mainland China.
 
@@ -33,7 +35,10 @@ touches no upstream file or workflow.
 `assets/site.css` (light and dark, follows the system, with a switch remembered in
 `localStorage`), `assets/site.js` (the switch), `assets/glossary-data.js` (every term, both
 languages, with where it appears in the app) and `assets/glossary.js` (drawing and search).
-Header and footer are repeated in each page; change them in all fourteen.
+Header and footer are repeated in each page; change them in all of them. The language parts
+(the `hreflang` alternates, `og:locale`, the header's language menu and the footer's language
+list) are written by `tools/lm/site/langs.py` from its `LANGS` table: add a language's folder, add
+its row, run the script. Each glossary page also loads `assets/glossary-<folder>.js`.
 
 ## Preview
 
@@ -45,8 +50,8 @@ python3 -m http.server --directory web/lm 8000   # then http://localhost:8000/
 
 ## Search and link previews
 
-Every page carries a canonical link, `hreflang` links (English, Chinese, and English as the
-default), Open Graph tags for link previews, and a title that says what the page shows in the words
+Every page carries a canonical link, `hreflang` links (every language that has the page, and
+English as the default), Open Graph tags for link previews, and a title that says what the page shows in the words
 people search with. The landing and download pages also carry `SoftwareApplication` structured
 data. In this folder those URLs are relative, so the pages still work offline and inside the app.
 Publishing goes through the stamp script, which makes them absolute and writes `sitemap.xml` and
@@ -54,6 +59,7 @@ Publishing goes through the stamp script, which makes them absolute and writes `
 
 ```sh
 python3 -I tools/lm/site/stamp.py https://<the site's domain> /path/to/new/folder
+python3 -I tools/lm/site/langs.py --check  # every page lists every language
 python3 -I -m pytest -q tools/lm/site    # checks every page's head tags and links
 ```
 
@@ -79,7 +85,8 @@ it, add a `docs/CNAME` file holding the domain, and set it under the repository'
 ## In the app
 
 Help › **NimbleMap Help** (`apps/layeredmap/src/help.rs`) opens `help.html`, or
-`zh/help.html` when the Mac's first language is Chinese, in the default browser. The pages ship
+the help page in the interface's language (`zh/help.html`, `ja/help.html`…), in the default
+browser. The pages ship
 inside the app: `packaging/lm/bundle-macos.sh` copies this folder (minus this README) to
 `NimbleMap.app/Contents/Resources/help/`; a development build opens the checkout's copy. Opening a
 local file makes no network request, so the network gate is not involved.

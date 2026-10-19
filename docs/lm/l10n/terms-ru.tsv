@@ -1,0 +1,186 @@
+English	Русский	Примечание
+Layer	Слой	как в QGIS
+Layers (panel)	Слои	панель «Слои»; QGIS: «Панель слоёв»
+Basemap	Подложка	QGIS/веб-карты: подложка; «базовая карта» — синоним для поиска
+Satellite	Спутник	вариант подложки (спутниковые снимки)
+Offline	Офлайн	вариант подложки: контурная карта без интернета
+Light	Светлая	подложка/тема
+Dark	Тёмная	подложка/тема
+Auto	Авто	
+Background strength	Яркость подложки	бытовое слово вместо «прозрачность»
+Attribute table	Таблица атрибутов	как в QGIS
+Table	Таблица	
+Field	Поле	как в QGIS (столбец таблицы)
+Feature	Объект	как в QGIS
+Record	Запись	
+Point	Точка	
+Line	Линия	
+Area (polygon)	Область	бытовое слово; QGIS: полигон
+Raster	Растр	
+Grid	Сетка	
+Cell	Ячейка	QGIS также: пиксель
+Vector data	Векторные данные	
+Coordinate system (CRS)	Система координат (СК)	QGIS: система координат; «система отсчёта координат» реже
+Projection	Проекция	
+Legend	Легенда	
+Scale bar	Масштабная линейка	
+Title	Заголовок	
+Credits	Источники данных	атрибуция/авторство
+Filter	Фильтр	
+Style	Стиль	QGIS: стиль/символика
+Colour by value	Цвет по значению	
+Color by a value	Раскрасить по значению	кнопка на карточке
+Palette	Палитра	
+Range	Диапазон	
+Label	Подпись	как в QGIS
+Labels	Подписи	
+Join	Соединение	QGIS: вкладка «Связи» (присоединение таблиц)
+Buffer	Буфер	QGIS: буферная зона; в приложении — «зона в пределах расстояния»
+Show an area within a distance of each	Показать зону в пределах расстояния от каждого	= буфер
+Overview	Обзор	вкладка карточки слоя
+Details	Подробности	вкладка карточки слоя
+Card	Карточка	
+Examples	Примеры	
+Open	Открыть	
+Open file…	Открыть файл…	
+Share	Поделиться	
+Map image…	Изображение карты…	
+Data…	Данные…	
+Export	Экспорт	
+Undo	Отменить	
+Search places or your data	Поиск мест и ваших данных	
+Zoom in	Приблизить	бытовое; QGIS: «Увеличить»
+Zoom out	Отдалить	бытовое; QGIS: «Уменьшить»
+Zoom to layer	Приблизить к слою	QGIS: «Приблизить к слою»
+Rename	Переименовать	
+Remove from map	Убрать с карты	слой убирается, файл не удаляется
+Time slider	Ползунок времени	
+Play	Воспроизвести	
+No data	Нет данных	QGIS: NoData
+No value	Нет значения	
+Median	Медиана	
+Rank	Место в ряду	бытовое вместо «ранг»
+Selected	Выбрано	
+Keep	Оставить	результат Pro: оставить / отбросить
+Discard	Отбросить	
+Ask	Спросить	Pro
+Ask about your layers	Спросите о своих слоях	поле Ask (Pro)
+Pro	Pro	не переводить
+Free	Бесплатно	
+Help	Справка	
+Glossary	Словарь	бытовое вместо «глоссарий»
+Download	Скачать	
+Home	Главная	
++ Filter	+ Фильтр	
+Apply	Применить	
+Assumptions	Допущения	
+Back	Назад	
+Category	Категория	тип поля
+Caption	Подпись к карте	в экспорте; отличать от «Подписи» (labels)
+Change	Изменить	
+Change colors and range	Изменить цвета и диапазон	
+Clear	Сбросить	
+Color	Цвет	
+Compare	Сравнить	
+Compare by	Сравнивать по	
+Compare on the map first	Сначала сравнить на карте	
+Compare with other [layer]	Сравнить с другими объектами слоя [слой]	
+Compare with other walled cities 1866	Сравнить с другими объектами слоя walled cities 1866	
+Coordinate system	Система координат	
+Current view	Текущий вид	
+Date	Дата	тип поля
+Drop to add to the map	Отпустите, чтобы добавить на карту	
+Extent	Охват	QGIS: «Охват»/«Экстент»
+Fields	Поля	
+Filtered:	Отфильтровано:	
+Find in storms	Найти в storms	название слоя не переводится
+Find in walled cities 1866	Найти в walled cities 1866	
+Fit to data	По данным	экспорт: показать все данные
+Format	Формат	
+Grid lines	Линии сетки	
+Groups	Группы	классы значений
+Smooth	Плавно	непрерывная шкала
+Heat	Жара	название палитры
+By basin	По бассейну	плитка стиля
+Imperial Units	Британские единицы	
+Metric Units	Метрические единицы	
+Lat/lon labels	Подписи широты и долготы	
+Level shown	Показанный уровень	
+Variable shown	Показанная переменная	
+Measure length	Измерить длину	Pro
+Name	Название	тип поля
+Next step (→)	Следующий шаг (→)	
+Previous step (←)	Предыдущий шаг (←)	
+North arrow	Стрелка севера	
+Opacity	Непрозрачность	как в QGIS
+Outline	Контур	
+Width	Толщина	толщина контура
+Report A4	Отчёт A4	
+Slide 16:9	Слайд 16:9	
+Square	Квадрат	
+Save	Сохранить	
+Save…	Сохранить…	
+Show	Показать	экспорт: что показать
+Show joined fields	Показать присоединённые поля	
+Unjoin	Отсоединить	
+Show only values above…	Показать только значения выше…	
+Show where values are like this	Показать, где значения похожи	
+Size	Размер	
+Style…	Стиль…	
+Value	Значение	тип поля
+Values	Значения	
+View data	Открыть данные	
+View in table	Показать в таблице	
+Work Offline	Работать офлайн	
+Working offline: online backgrounds are off	Работа офлайн: онлайн-подложки отключены	
+Zoom to All Data	Показать все данные	
+Your data	Ваши данные	
+World basics	Основы мира	пример; бытовой перевод
+Typhoons and hurricanes	Тайфуны и ураганы	пример
+Heatwaves, summer 2023	Волны жары, лето 2023	пример
+Walled cities of China, 1866	Города Китая за крепостными стенами, 1866	пример
+4 objects here	Здесь 4 объекта	
+1,251 points	1 251 точка	
+4,999 lines	4 999 линий	
+4,999 lines · storm tracks.gpkg	4 999 линий · storm tracks.gpkg	имя файла не переводится
+1,789 areas · walled cities 1866.geojson	1 789 областей · walled cities 1866.geojson	
+1,789 areas, highest first	1 789 областей, сначала наибольшие	
+19 match	Совпадений: 19	
+228 match	Совпадений: 228	
+46 of 92	46 из 92	
+Showing 228 of 4,999	Показано 228 из 4 999	
+higher than 99% of 1,789 areas	больше, чем у 99 % из 1 789 областей	
+higher than 99% of 4,547 storms with values	больше, чем у 99 % из 4 547 штормов со значением	
+lower than 58% of this layer’s cells (estimated from a sample)	ниже, чем у 58 % ячеек слоя (оценка по выборке)	
+tied 2nd highest of 228 filtered	делит 2-е место из 228 отфильтрованных	
+area · 23.4 km²	площадь · 23,4 км²	
+Amap/Tencent coordinates (GCJ-02): convert	Координаты Amap/Tencent (GCJ-02): преобразовать	
+GPS coordinates (WGS 84): keep where they are	Координаты GPS (WGS 84): оставить как есть	
+Located using longitude and latitude as GPS coordinates (WGS 84)	Расположено по долготе и широте как координатам GPS (WGS 84)	
+If these came from a Chinese map app (Amap, Tencent or Baidu), they may sit a few hundred meters off.	Если данные взяты из китайского картографического приложения (Amap, Tencent или Baidu), они могут быть смещены на несколько сотен метров.	
+Treated as measured values (averaged, not summed)	Считаются измеренными величинами (усредняются, а не суммируются)	
+Time: 1 Jun 2023 to 31 Aug 2023 (92 steps)	Время: с 1 июня 2023 по 31 августа 2023 (92 шага)	
+This cell has no data.	В этой ячейке нет данных.	
+Heat-wave intensity (°C)	Интенсивность волны жары (°C)	
+Show storms where strength is any of Category 5	Показать штормы, где strength — любое из: Category 5	значения данных не переводятся
+Show areas where type is any of Provincial Capital	Показать области, где type — любое из: Provincial Capital	
+Keep the part of [layer] inside [other]	Оставить часть [слой] внутри [другой слой]	Pro, рецепт
+joined · 172 of 177 matched	соединено · совпало 172 из 177	
+Insight line	Строка-сравнение	бытовое; объясняет место объекта среди остальных
+Recipe	Рецепт	запись о том, как получен результат (Pro)
+Assumption	Допущение	
+Time step	Временной шаг	
+Variable	Переменная	
+Resolution (cell size)	Разрешение (размер ячейки)	
+Geodesic	Геодезический	по поверхности Земли
+Clip	Обрезка	QGIS: «Обрезать»
+Latitude and longitude	Широта и долгота	
+Scale and zoom level	Масштаб и уровень приближения	QGIS: масштаб
+Attribute	Атрибут	
+Toolbar	Панель инструментов	
+File	Файл	меню
+Open Example	Открыть пример	меню File
+View	Вид	меню
+Help › NimbleMap Help	Справка › Справка NimbleMap	меню
+Cancel	Отмена	
+Export map image	Экспорт изображения карты	заголовок окна экспорта

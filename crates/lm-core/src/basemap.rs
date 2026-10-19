@@ -27,7 +27,8 @@ pub enum Look {
 #[derive(Clone, Debug, PartialEq)]
 pub struct Provider {
     pub id: &'static str,
-    /// The name shown in the basemap chooser.
+    /// The name shown in the basemap chooser (an English catalog key, translated where it is
+    /// drawn).
     pub name: &'static str,
     /// The tile address: a PMTiles archive for [`Source::VectorArchive`], empty when offline.
     pub url_template: &'static str,
@@ -63,7 +64,7 @@ pub fn providers() -> Vec<Provider> {
     vec![
         Provider {
             id: "auto",
-            name: "Auto",
+            name: crate::tn!("Auto"),
             url_template: PROTOMAPS_ARCHIVE,
             attribution: OSM_ATTRIBUTION,
             max_zoom: 15,
@@ -75,7 +76,7 @@ pub fn providers() -> Vec<Provider> {
         },
         Provider {
             id: "light",
-            name: "Light",
+            name: crate::tn!("Light"),
             url_template: PROTOMAPS_ARCHIVE,
             attribution: OSM_ATTRIBUTION,
             max_zoom: 15,
@@ -87,7 +88,7 @@ pub fn providers() -> Vec<Provider> {
         },
         Provider {
             id: "dark",
-            name: "Dark",
+            name: crate::tn!("Dark"),
             url_template: PROTOMAPS_ARCHIVE,
             attribution: OSM_ATTRIBUTION,
             max_zoom: 15,
@@ -99,7 +100,7 @@ pub fn providers() -> Vec<Provider> {
         },
         Provider {
             id: "satellite",
-            name: "Satellite",
+            name: crate::tn!("Satellite"),
             url_template: BLUE_MARBLE_TILES,
             attribution: BLUE_MARBLE_ATTRIBUTION,
             max_zoom: 8,
@@ -111,7 +112,7 @@ pub fn providers() -> Vec<Provider> {
         },
         Provider {
             id: "offline",
-            name: "Offline",
+            name: crate::tn!("Offline"),
             url_template: "",
             attribution: NE_ATTRIBUTION,
             max_zoom: 8,
@@ -132,7 +133,7 @@ pub fn provider(id: &str) -> Provider {
         Some(p) => p,
         None => all.into_iter().next().unwrap_or(Provider {
             id: "offline",
-            name: "Offline",
+            name: crate::tn!("Offline"),
             url_template: "",
             attribution: NE_ATTRIBUTION,
             max_zoom: 8,

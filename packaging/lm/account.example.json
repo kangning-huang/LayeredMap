@@ -1,0 +1,10 @@
+{
+  "_comment": "NimbleMap Pro's account config (docs/lm/accounts-design.md). Copy it outside the repository, fill in the international block from the Supabase project (Settings > API), and point LM_ACCOUNT_CONFIG at the copy. Placeholders leave a region switched off. The URL and anon key are public by design; still, keep the filled-in file out of git.",
+  "international": {
+    "auth_url": "https://YOUR-PROJECT-REF.supabase.co",
+    "anon_key": "YOUR-SUPABASE-ANON-KEY",
+    "proxy_url": "https://YOUR-PROJECT-REF.supabase.co/functions/v1",
+    "providers": ["apple", "google", "x", "email"]
+  },
+  "china": null
+}

@@ -24,6 +24,10 @@ ignore = [
   { id = "RUSTSEC-2026-0367", reason = "zip 8 via calamine only; extract() is never called on it" },
   { id = "RUSTSEC-2026-0368", reason = "zip 8 via calamine only; extract() is never called on it" },
   { id = "RUSTSEC-2026-0369", reason = "zip 8 via calamine only; extract() is never called on it" },
+  # ttf-parser (unmaintained, not a vulnerability): lm-mapview reads only the fonts bundled in the
+  # app with it, for PDF export, and egui's text rendering pulls it in through ab_glyph anyway.
+  # Move to skrifa when ab_glyph does (docs/lm/decisions.md, 2026-10-19).
+  { id = "RUSTSEC-2026-0192", reason = "ttf-parser parses only the app's bundled fonts; also in the build through ab_glyph" },
 ]
 
 [licenses]

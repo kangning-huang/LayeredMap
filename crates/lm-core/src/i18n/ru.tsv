@@ -1,0 +1,793 @@
+# NimbleMap interface catalog, ru: English<TAB>translation (format: crates/lm-core/src/i18n.rs).
+# Machine translation awaiting native review: docs/lm/localization.md.
+degrees Celsius	градусов Цельсия
+degrees Fahrenheit	градусов Фаренгейта
+square kilometres	квадратных километров
+square metres	квадратных метров
+square miles	квадратных миль
+degrees	градусов
+minus	минус
+map	карта
+No data yet	Данных пока нет
+Every layer is hidden	Все слои скрыты
+Open a file or an example to add data. Search places with Command-F.	Откройте файл или пример, чтобы добавить данные. Поиск мест — Command-F.
+Arrow keys pan, plus and minus zoom. The layer list and the data table (Command-T) list every record; Command-F finds one.	Стрелки сдвигают карту, плюс и минус меняют масштаб. Список слоёв и таблица данных (Command-T) перечисляют все записи; Command-F находит нужную.
+The whole world	Весь мир
+{lat} degrees north, {lon} degrees east	северная широта {lat}, восточная долгота {lon}
+{lat} degrees north, {lon} degrees west	северная широта {lat}, западная долгота {lon}
+{lat} degrees south, {lon} degrees east	южная широта {lat}, восточная долгота {lon}
+{lat} degrees south, {lon} degrees west	южная широта {lat}, западная долгота {lon}
+Selection cleared.	Выбор снят.
+Cell selected.	Ячейка выбрана.
+No value	Нет значения
+Showing {layers}	Показано: {layers}
+Map. {layers}.	Карта. {layers}.
+Map. {layers}. {place}.	Карта. {layers}. {place}.
+{names} and {last}	{names} и {last}
+About {across} kilometres across, centred at {place}	Примерно {across} километров в поперечнике, центр — {place}
+{layer} layer selected. {subtitle}.	Выбран слой {layer}. {subtitle}.
+{title} selected.	Выбрано: {title}.
+{title} selected. {field} {value}, {phrase}.	Выбрано: {title}. {field} {value}, {phrase}.
+{title} selected. {field} {value}.	Выбрано: {title}. {field} {value}.
+{n} {noun} selected.	Выбрано ({noun}): {n}.
+{n} objects selected.	Выбрано объектов: {n}.
+{layer} cell at {place} selected. {value}.	Выбрана ячейка слоя {layer} в точке {place}. {value}.
+Summarize in an area I draw	Сводка в области, которую я нарисую
+The layer was removed.	Слой удалён.
+A layer is still loading.	Слой ещё загружается.
+A condition names no raster.	В условии не указан растр.
+Add a condition.	Добавьте условие.
+Add a layer of points to answer this.	Чтобы ответить, добавьте слой с точками.
+Add a layer of lines to answer this.	Чтобы ответить, добавьте слой с линиями.
+Add a layer of areas to answer this.	Чтобы ответить, добавьте слой с областями.
+Add a layer of cells to answer this.	Чтобы ответить, добавьте слой с ячейками.
+Add a layer of points or lines or areas to answer this.	Чтобы ответить, добавьте слой с точками, линиями или областями.
+Analysis	Анализ
+Developer surface · assistant action	Для разработчиков · действие помощника
+Choose a layer	Выберите слой
+With	Вместе с
+Distance	Расстояние
+Merge overlaps	Объединить пересечения
+Choose a value	Выберите значение
+By	По
+Choose a raster	Выберите растр
+a number	число
+and	и
+Remove this condition	Удалить это условие
++ Add condition	+ Добавить условие
+or a field	или поле
+Statistic	Статистика
+of	по
+Scope	Охват
+Working…	Выполняется…
+Cancel	Отмена
+Kept	Оставлено
+Done	Готово
+Preview — not saved	Предпросмотр — не сохранено
+Keep result	Оставить результат
+Discard	Отбросить
+Preview out of date	Предпросмотр устарел
+Preview	Предпросмотр
+No data	Нет данных
+Show fewer	Показать меньше
+How this was calculated	Как это рассчитано
+Copy	Копировать
+All {n} points	Все точки ({n})
+All {n} lines	Все линии ({n})
+All {n} areas	Все области ({n})
+All {n} cells	Все ячейки ({n})
+All {n} rows	Все строки ({n})
+≥  at least	≥  не меньше
+≤  at most	≤  не больше
+[ ]  between	[ ]  между
+“{action}” isn't connected yet.	Действие «{action}» пока не подключено.
+The question could not be answered. Nothing was added to your map. ({reason})	Не удалось ответить на вопрос. На карту ничего не добавлено. ({reason})
+{n} selected	Выбрано: {n}
+{phase}: {done} of {total}	{phase}: {done} из {total}
+{phase}…	{phase}…
+Kept: {title}. {summary}	Оставлено: {title}. {summary}
+Preview: {summary}	Предпросмотр: {summary}
+{rank}. {label}: {value} {unit}	{rank}. {label}: {value} {unit}
+Show all {n}	Показать все ({n})
+Values: {unit}	Значения: {unit}
+The assistant isn't set up in this build (it has no assistant key).	В этой сборке помощник не настроен (нет ключа помощника).
+The plan couldn't be kept; nothing changed.	Не удалось оставить план; ничего не изменилось.
+Type your answer, or pick one above	Введите ответ или выберите вариант выше
+Ask about your layers	Спросите о своих слоях
+Listening… speak your request	Слушаю… произнесите запрос
+Stop listening	Перестать слушать
+Speak your request	Произнести запрос
+Ask (Return)	Спросить (Return)
+Ask	Спросить
+Planning…	Составляю план…
+Preview on the map — not saved	Предпросмотр на карте — не сохранено
+OK	OK
+Keep	Оставить
+I can't answer that with these layers: {text}	С этими слоями я не могу на это ответить: {text}
+Show only {layer} where {filter}: {shown} of {of}	Показать только {layer}, где {filter}: {shown} из {of}
+New layer: {name}	Новый слой: {name}
+Add {fields} to {layer}	Добавить {fields} в {layer}
+Planning “{request}”…	Составляю план для «{request}»…
+Nothing to undo	Нечего отменять
+Map image…	Изображение карты…
+Data…	Данные…
+Open a file first	Сначала откройте файл
+Map package…	Пакет карты…
+Search places or your data	Поиск мест и ваших данных
+Your data	Ваши данные
+Loading places…	Загрузка мест…
+No places match	Места не найдены
+Places	Места
+Zoom in	Приблизить
+Zoom out	Отдалить
+Basemap	Подложка
+Working offline: online backgrounds are off	Работа офлайн: онлайн-подложки отключены
+Background strength	Яркость подложки
+Credits	Источники данных
+Working offline: the detailed background is off	Работа офлайн: подробная подложка отключена
+Detailed background unavailable offline	Подробная подложка недоступна офлайн
+Detailed background unavailable offline. Your data and tools still work.	Подробная подложка недоступна офлайн. Ваши данные и инструменты по-прежнему работают.
+Open a file to see your data on the map.	Откройте файл, чтобы увидеть свои данные на карте.
+Close	Закрыть
+Open file…	Открыть файл…
+Examples	Примеры
+Browse data library	Обзор библиотеки данных
+Course datasets to add to the map	Учебные наборы данных для карты
+Share	Поделиться
+Undo	Отменить
+Layers	Слои
+Open	Открыть
+Map data	Картографические данные
+© OpenStreetMap contributors (ODbL), through the Protomaps basemap	© участники OpenStreetMap (ODbL), через подложку Protomaps
+Offline basemap	Офлайн-подложка
+Natural Earth (public domain)	Natural Earth (общественное достояние)
+Place search	Поиск мест
+GeoNames (geonames.org), CC BY 4.0	GeoNames (geonames.org), CC BY 4.0
+Fonts	Шрифты
+Inter and Noto Sans SC (SIL Open Font License 1.1)	Inter и Noto Sans SC (SIL Open Font License 1.1)
+Icons	Значки
+Phosphor Icons (MIT)	Phosphor Icons (MIT)
+Engine	Движок
+RustGIS (Apache-2.0)	RustGIS (Apache-2.0)
+{label} arrives in a later phase	«{label}» появится на одном из следующих этапов
+Undo {action}	Отменить: {action}
+Open files ({key})	Открыть файлы ({key})
+Show or hide the layer list ({key})	Показать или скрыть список слоёв ({key})
+Export a map image ({key}) or data	Экспорт изображения карты ({key}) или данных
+{title}, {detail}	{title}, {detail}
+{title}, {detail}, {i} of {n}	{title}, {detail}, {i} из {n}
+{n} km	{n} km
+{n} m	{n} m
+{n} mi	{n} mi
+{n} ft	{n} ft
+Credits: {text}	Источники данных: {text}
+Export Diagnostics	Экспорт диагностики
+This is everything the diagnostics file will contain. Nothing is sent: save it, read it, and send it yourself if you want help.	Вот всё, что будет в файле диагностики. Ничего не отправляется: сохраните файл, прочитайте его и, если нужна помощь, отправьте сами.
+It holds no data values or file contents; file and folder names may appear in error messages.	В нём нет значений данных и содержимого файлов; в сообщениях об ошибках могут встречаться имена файлов и папок.
+Save…	Сохранить…
+Couldn't start listening.	Не удалось начать прослушивание.
+Speaking isn't available on Windows yet. Press Windows+H to type with your voice instead.	Голосовой ввод в Windows пока недоступен. Нажмите Windows+H, чтобы диктовать текст.
+Speaking needs the {app} app (its speech helper isn't here).	Для голосового ввода нужно приложение {app} (его речевой помощник не найден).
+Couldn't start listening: {error}	Не удалось начать прослушивание: {error}
+Drawing — click to add points, double-click to finish, Esc to cancel	Рисование — щёлкайте, чтобы добавлять точки, двойной щелчок — завершить, Esc — отмена
+Drawing — drag a rectangle, Esc to cancel	Рисование — растяните прямоугольник, Esc — отмена
+World basics	Основы мира
+Cities, countries and elevation	Города, страны и рельеф
+Heatwaves, summer 2023	Волны жары, лето 2023
+Daily heatwave intensity worldwide, June to August	Ежедневная интенсивность волн жары по всему миру, июнь–август
+Typhoons and hurricanes	Тайфуны и ураганы
+4,999 storm tracks since 1980	4 999 треков штормов с 1980 года
+Walled cities of China, 1866	Города Китая за крепостными стенами, 1866
+1,789 city walls of late imperial China	1 789 городских стен позднеимперского Китая
+Big earthquakes	Сильные землетрясения
+14,537 of magnitude 6 or more since 1900	14 537 землетрясений магнитудой 6 и выше с 1900 года
+Volcanoes	Вулканы
+1,609 volcanoes and their status	1 609 вулканов и их состояние
+Airports	Аэропорты
+5,280 large and medium airports, with elevation	5 280 крупных и средних аэропортов с высотой
+Power plants	Электростанции
+34,936 plants by fuel and capacity	34 936 электростанций по топливу и мощности
+Slide 16:9	Слайд 16:9
+Report A4	Отчёт A4
+Square	Квадрат
+2480 × 3508 px · A4 at 300 dpi	2480 × 3508 px · A4, 300 dpi
+slide	слайд
+square	квадрат
+Map	Карта
+The preview isn't included. Keep it to put it in the image.	Предпросмотр не включён. Оставьте его, чтобы он попал на изображение.
+Some of the background couldn't be loaded, so the image shows less detail.	Часть подложки не загрузилась, поэтому на изображении меньше деталей.
+Export map image	Экспорт изображения карты
+Size	Размер
+Title	Заголовок
+Add a title (optional)	Добавьте заголовок (необязательно)
+Caption	Подпись к карте
+Use the caption made from the layers	Использовать подпись, составленную из слоёв
+Made from the layers; edit it if you like.	Составлена из слоёв; можно отредактировать.
+Legend	Легенда
+No layers are shown.	Нет показанных слоёв.
+It places itself clear of the data; drag it to move it.	Легенда сама встаёт так, чтобы не закрывать данные; перетащите, чтобы сдвинуть.
+Place the legend automatically	Размещать легенду автоматически
+Drawing the map at full size…	Карта рисуется в полном размере…
+Fit to data	По данным
+Current view	Текущий вид
+No layers are shown, so the map shows the current view.	Нет показанных слоёв, поэтому на карте текущий вид.
+Grid lines	Линии сетки
+Auto	Авто
+On	Вкл.
+Off	Выкл.
+Legend: drag to move it	Легенда: перетащите, чтобы сдвинуть
+Format	Формат
+Show	Показать
+North arrow	Стрелка севера
+Scale bar	Масштабная линейка
+Lat/lon labels	Подписи широты и долготы
+{paper} · PDF, text and symbols as vectors	{paper} · PDF, текст и знаки в векторе
+{layer} is colored by value but has no legend.	Слой {layer} раскрашен по значению, но у него нет легенды.
+{layer} is filtered: the image shows {shown} of {total} {nouns}.	Слой {layer} отфильтрован: на изображении {shown} из {total} ({nouns}).
+The {basemap} basemap's terms don't allow exported images, so the offline basemap is used.	Условия подложки {basemap} не разрешают экспорт изображений, поэтому используется офлайн-подложка.
+about {km} km across: a north arrow and a scale bar.	около {km} km в поперечнике: стрелка севера и масштабная линейка.
+about {km} km across: latitude and longitude on the frame, and a scale bar.	около {km} km в поперечнике: широта и долгота по рамке и масштабная линейка.
+about {km} km across and {degrees}° tall: latitude and longitude on the frame. No scale bar, as distances stretch with latitude.	около {km} km в поперечнике и {degrees}° по высоте: широта и долгота по рамке. Без масштабной линейки, так как расстояния растягиваются с широтой.
+about {km} km across: latitude and longitude on the frame. Distances vary too much for one scale bar.	около {km} km в поперечнике: широта и долгота по рамке. Расстояния слишком различаются для одной масштабной линейки.
+Made with {app}.	Сделано в {app}.
+Data: {sources}. Made with {app}.	Данные: {sources}. Сделано в {app}.
+No data ({n})	Нет данных ({n})
+Credits are always included: {credits}	Источники данных указываются всегда: {credits}
+The image couldn't be made: {error}	Не удалось создать изображение: {error}
+Auto: {rules}	Авто: {rules}
+{size} · exactly as saved	{size} · точно как при сохранении
+The layer is gone.	Слоя больше нет.
+The layer's data is still loading.	Данные слоя ещё загружаются.
+Export data	Экспорт данных
+Export…	Экспорт…
+Layer	Слой
+Filtered	Отфильтрованные
+Selected	Выбранные
+Records	Записи
+The layer has no filter and nothing is selected.	У слоя нет фильтра, и ничего не выбрано.
+The layer has no filter.	У слоя нет фильтра.
+Nothing is selected in this layer.	В этом слое ничего не выбрано.
+Location	Местоположение
+Longitude, latitude	Долгота, широта
+Lines and areas are written as well-known text (WKT).	Линии и области записываются в формате WKT (well-known text).
+Fields	Поля
+None	Нет
+All	Все
+The band shown, on the raster's own grid and coordinate system: resampling to WGS 84 would change its values.	Показанный канал, в собственной сетке и системе координат растра: пересчёт в WGS 84 изменил бы его значения.
+Coordinates are written in WGS 84 (longitude, latitude).	Координаты записываются в WGS 84 (долгота, широта).
+{name} (filtered)	{name} (отфильтровано)
+{name} (selected)	{name} (выбранное)
+All {n}	Все ({n})
+Filtered {n}	Отфильтрованные ({n})
+Selected {n}	Выбранные ({n})
+{note}: left out unless you check it	{note}: не включается, если не отметить
+Styles and recipes stay in {app}: these formats carry only locations and values.	Стили и рецепты остаются в {app}: эти форматы хранят только местоположения и значения.
+Clear	Сбросить
+Clear the search	Очистить поиск
+Zoom to it	Приблизить к объекту
+Zoom to all	Показать все
+No points contain “{q}”.	Нет точек, содержащих «{q}».
+No lines contain “{q}”.	Нет линий, содержащих «{q}».
+No areas contain “{q}”.	Нет областей, содержащих «{q}».
+No cells contain “{q}”.	Нет ячеек, содержащих «{q}».
+No rows contain “{q}”.	Нет строк, содержащих «{q}».
+Find in {layer}	Найти в {layer}
+{n} found	Найдено: {n}
+‹ All {n} found	‹ Все найденные ({n})
+{title}, {field}: {value}	{title}, {field}: {value}
+{n} more on the map · 	Ещё {n} на карте · 
+More actions…	Другие действия…
+Working out how this compares…	Выясняю, как это выглядит на фоне остальных…
+point	точка
+line	линия
+area	область
+cell	ячейка
+row	строка
+The data is still loading.	Данные ещё загружаются.
+Show fewer fields	Показать меньше полей
+View in table	Показать в таблице
+Zoom to	Приблизить к
+◉ Range fitted to the view	◉ Диапазон подогнан под вид
+Color	Цвет
+One color	Один цвет
+Smooth	Плавно
+Groups	Группы
+Palette	Палитра
+Equal counts	Поровну
+Equal steps	Равный шаг
+Fit range to view	Подогнать диапазон под вид
+Larger areas tend to have higher counts.	У больших областей обычно больше значения подсчёта.
+Color by count per km² instead?	Раскрасить по количеству на km²?
+Use totals	Использовать итоги
+Same size	Одинаковый размер
+Labels	Подписи
+Opacity	Непрозрачность
+Outline	Контур
+Width	Толщина
+Band	Канал
+From	От
+To	До
+Reset to the middle 96% of the time step	Сбросить на средние 96% временного шага
+Same for every time step: the middle 96% of the time step	Одинаково для всех шагов: средние 96% временного шага
+Covers the middle 96% of cells	Охватывает средние 96% ячеек
+Reset to the middle 96% of cells	Сбросить на средние 96% ячеек
+Only show values above	Показывать только значения выше
+Range	Диапазон
+Stop highlighting	Снять подсветку
+{n} point	{n} точка
+{n} points	Точек: {n}
+{n} line	{n} линия
+{n} lines	Линий: {n}
+{n} area	{n} область
+{n} areas	Областей: {n}
+{n} cell	{n} ячейка
+{n} cells	Ячеек: {n}
+{n} row	{n} строка
+{n} rows	Строк: {n}
+Blue	Синий
+Orange	Оранжевый
+Bluish green	Голубовато-зелёный
+Vermilion	Киноварный
+Reddish purple	Красно-пурпурный
+Sky blue	Голубой
+Yellow	Жёлтый
+Black	Чёрный
+Show all {n} fields	Показать все поля ({n})
+Band {n} ({unit})	Канал {n} ({unit})
+Band {n}	Канал {n}
+Showing only values above {v}	Показаны только значения выше {v}
+Highlighting {low} to {high}	Подсвечено: от {low} до {high}
+{field} per km² (geodesic area)	{field} на km² (геодезическая площадь)
+Band {n} ({name})	Канал {n} ({name})
+Reset to the middle 96% of {n} time steps	Сбросить на средние 96% из {n} временных шагов
+Same for every time step: the middle 96% of {n} time steps	Одинаково для всех шагов: средние 96% из {n} временных шагов
+{low} to {high}	от {low} до {high}
+Use this match	Использовать это совпадение
+Use these matches	Использовать эти совпадения
+Hide the rows not matched	Скрыть строки без совпадения
+Keep the original colors	Сохранить исходные цвета
+Looking for the places this table describes…	Ищу места, которые описывает эта таблица…
+None of these: keep it as a table	Ничего из этого: оставить таблицей
+Use this	Использовать
+Join	Соединить
+Keep as a table	Оставить таблицей
+Choose other columns…	Выбрать другие столбцы…
+Open a point, line or area layer to match this table to.	Откройте слой точек, линий или областей, с которым нужно сопоставить эту таблицу.
+Several rows for one place	Несколько строк на одно место
+{n} name looks like a typo: {examples}	{n} название похоже на опечатку: {examples}
+{n} names look like typos: {examples}	Названий, похожих на опечатки: {n}: {examples}
+{n} row with no {field}	{n} строка без {field}
+{n} rows with no {field}	Строк без {field}: {n}
+Automatic	Автоматически
+Latest year or date	Последний год или дата
+Combine	Объединить
+{table} now appears under {layer} in Layers.	Таблица {table} теперь показана под слоем {layer} на панели «Слои».
+and {n} more	и ещё {n}
+Which places does {table} describe?	Какие места описывает {table}?
+Join {table} to {target}?	Соединить {table} с {target}?
+Match {layer} to a layer	Сопоставить {layer} со слоем
+Column in {layer}	Столбец в {layer}
+{matched} of {total} {nouns} match · {rows_matched} of {rows} rows find a place	Совпало {matched} из {total} ({nouns}) · строк, нашедших место: {rows_matched} из {rows}
+Ctrl+{key}	Ctrl+{key}
+Ctrl+Shift+{key}	Ctrl+Shift+{key}
+Points	Точки
+Lines	Линии
+Areas	Области
+Grid	Сетка
+Table	Таблица
+Data library	Библиотека данных
+Search datasets	Поиск наборов данных
+Offline: showing the list from your last visit	Офлайн: показан список с последнего посещения
+Try again	Повторить
+Loading the library…	Загрузка библиотеки…
+The library is empty.	Библиотека пуста.
+Add to map	Добавить на карту
+Downloaded: opens without the internet	Скачано: открывается без интернета
+Downloaded	Скачано
+{n} GB	{n} ГБ
+{n} MB	{n} МБ
+{n} KB	{n} КБ
+No datasets match “{q}”.	Нет наборов данных, соответствующих «{q}».
+Downloading {done} of {total}	Скачивание: {done} из {total}
+A layer is still loading. Try again in a moment.	Слой ещё загружается. Попробуйте чуть позже.
+Packaging the map and its data…	Упаковка карты и данных…
+packaging stopped unexpectedly	упаковка неожиданно прервалась
+Share as a map package	Поделиться как пакетом карты
+One file with the map and its data, so it opens on another computer.	Один файл с картой и её данными, чтобы она открылась на другом компьютере.
+Save Package…	Сохранить пакет…
+Before compression; text files shrink a lot in the package.	До сжатия; текстовые файлы в пакете сильно уменьшаются.
+Data it includes	Входящие данные
+No source files: the map's layers are all stored in it already.	Исходных файлов нет: все слои карты уже хранятся в ней.
+can't be found, so it's left out	не найден, поэтому не включён
+Folder paths	Пути к папкам
+The map names no folders on this computer.	Карта не ссылается на папки на этом компьютере.
+Paths name your account and folders, so they are left out; files keep only their names.	Пути содержат имя вашей учётной записи и папок, поэтому не включаются; у файлов остаются только имена.
+Fields that look personal	Поля, похожие на личные данные
+None found: no names, emails, phone or ID numbers.	Не найдено: ни имён, ни адресов почты, ни телефонов, ни номеров документов.
+Checked fields are left out of the package. Your own map keeps them.	Отмеченные поля не включаются в пакет. В вашей собственной карте они остаются.
+Unknown — check before sharing	Неизвестно — проверьте перед отправкой
+The map is colored by it	По нему раскрашена карта
+The map sizes points by it	По нему задан размер точек
+The map labels by it	По нему подписана карта
+The filter uses it	Его использует фильтр
+{layer} (without the fields left out)	{layer} (без исключённых полей)
+The package couldn't be made: {error}	Не удалось создать пакет: {error}
+Saved {name} ({size}), without {missing}: it couldn't be found.	Сохранено: {name} ({size}), без {missing}: файл не найден.
+Saved {name}, but {layer} couldn't be kept in it ({why}).	{name} сохранён, но слой {layer} не удалось включить ({why}).
+Saved {name} ({size}): the map and its data, ready to share.	Сохранено: {name} ({size}) — карта и её данные, готово к отправке.
+The package couldn't be made. {error}	Не удалось создать пакет. {error}
+{name} (package)	{name} (пакет)
+About {size}	Около {size}
+Stored in the package itself: {layers}.	Хранится в самом пакете: {layers}.
+Layers: {layers}	Слои: {layers}
+Licence: {licence}	Лицензия: {licence}
+Leave out {field} ({layer})	Не включать {field} ({layer})
+{note}. {why}, so it stays.	{note}. {why}, поэтому остаётся.
+Remove all	Убрать все
+Open file	Открыть файл
+Dismiss	Скрыть
+Hide the joined table	Скрыть присоединённую таблицу
+Show the joined table	Показать присоединённую таблицу
+View data	Открыть данные
+Match to a layer…	Сопоставить со слоем…
+Style…	Стиль…
+Zoom to layer	Приблизить к слою
+Rename	Переименовать
+Remove from map	Убрать с карты
+Needs a decision: see the layer's panel	Нужно решение: см. панель слоя
+Variable shown	Показанная переменная
+Level shown	Показанный уровень
+joined	соединено
+Show joined fields	Показать присоединённые поля
+Unjoin	Отсоединить
+The table wasn't opened in this session, so it can't be put back	Таблица не открывалась в этом сеансе, поэтому вернуть её нельзя
+Where should this data be?	Где должны быть эти данные?
+This file doesn't say where on Earth its coordinates are. Name a place it covers.	В файле не сказано, к какому месту на Земле относятся его координаты. Назовите место, которое он охватывает.
+A city or town, e.g. Shanghai	Город или посёлок, например Шанхай
+Use the middle of the map	Использовать центр карты
+the middle of the map	центр карты
+Open as a table	Открыть как таблицу
+Not sure	Не уверен
+Compare on the map first	Сначала сравнить на карте
+Close the panel	Закрыть панель
+Back	Назад
+This cell has no data.	В этой ячейке нет данных.
+This layer has no values to compare.	В этом слое нет значений для сравнения.
+Compare by	Сравнивать по
+Export problem list	Экспорт списка проблем
+Opened as a table: there is nothing to place on the map yet.	Открыто как таблица: на карту пока нечего нанести.
+Compare	Сравнить
+Add unit	Добавить единицу
+Change	Изменить
+as in the file	как в файле
+converted from Baidu (BD-09)	преобразовано из Baidu (BD-09)
+converted from Amap/Tencent (GCJ-02)	преобразовано из Amap/Tencent (GCJ-02)
+Keep the set that sits on the streets.	Оставьте тот вариант, что лежит на улицах.
+Keep converted	Оставить преобразованное
+Keep as in the file	Оставить как в файле
+Try Amap/Tencent instead	Попробовать Amap/Tencent
+Try Baidu instead	Попробовать Baidu
+Filtered:	Отфильтровано:
+Values	Значения
+Source	Источник
+Text encoding	Кодировка текста
+Coordinate system	Система координат
+Extent	Охват
+Complete	Готово
+Needs a decision	Нужно решение
+Canceled	Отменено
+Not loaded (the source is read again when the document opens)	Не загружено (источник читается заново при открытии документа)
+Import	Импорт
+Remove from insight	Убрать из сравнения
+Show in insight	Показывать в сравнении
+Treat this field as	Считать это поле
+Back to the detected role	Вернуть определённую роль
+Assumptions	Допущения
+Export problem list…	Экспорт списка проблем…
+Row	Строка
+Reason	Причина
+Drop to add to the map	Отпустите, чтобы добавить на карту
+Overview	Обзор
+Style	Стиль
+Details	Подробности
+{n} {things} opened; {left} has no usable location.	Открыто ({things}): {n}; у {left} нет пригодного местоположения.
+{n} {things} opened; {left} have no usable location.	Открыто ({things}): {n}; у {left} нет пригодного местоположения.
+{n} records opened; {left} has no usable location.	Открыто записей: {n}; у {left} нет пригодного местоположения.
+{n} records opened; {left} have no usable location.	Открыто записей: {n}; у {left} нет пригодного местоположения.
+{line} (applied quietly; chosen: {choice})	{line} (применено незаметно; выбрано: {choice})
+{line} (shown; chosen: {choice})	{line} (показано; выбрано: {choice})
+{line} (answered; chosen: {choice})	{line} (отвечено; выбрано: {choice})
+{line} (needs a decision; chosen: {choice})	{line} (нужно решение; выбрано: {choice})
+{line} (blocks actions; chosen: {choice})	{line} (блокирует действия; выбрано: {choice})
+Count	Количество
+Density	Плотность
+Value	Значение
+ID	ID
+Name	Название
+Category	Категория
+Text	Текст
+Date	Дата
+Coordinate	Координата
+Unknown	Неизвестно
+Remove every layer from the map ({key} brings them back)	Убрать все слои с карты ({key} вернёт их)
+{error}\n\nDetails: {details}	{error}\n\nПодробности: {details}
+Dismiss {name}	Скрыть {name}
+Cancel {name}	Отменить {name}
+Show {layer}	Показать {layer}
+Joined tables of {layer}	Присоединённые таблицы слоя {layer}
+Hide the {n} joined tables	Скрыть присоединённые таблицы ({n})
+Show the {n} joined tables	Показать присоединённые таблицы ({n})
+joined · {matched} of {total} matched	соединено · совпало {matched} из {total}
+Joined table {table}, {caption}	Присоединённая таблица {table}, {caption}
+Joined to {layer}: its fields are part of the layer	Присоединена к {layer}: её поля — часть слоя
+No coordinate system puts this data near {name}. Try another place, or open it as a table.	Ни одна система координат не помещает эти данные рядом с {name}. Попробуйте другое место или откройте как таблицу.
+{crs} — lands {km} km from {name}	{crs} — в {km} km от {name}
+{choice} (recommended)	{choice} (рекомендуется)
+{lat}°, {lon}°	{lat}°, {lon}°
+{layer} · cell	{layer} · ячейка
+{n} {things}, highest first	{things}: {n}, сначала наибольшие
+{n}{plus} objects here	Здесь объектов: {n}{plus}
+Review {n}	Просмотреть ({n})
+Compare {layer}	Сравнить {layer}
++{n} more	+ещё {n}
+{variable}: {low} to {high}{unit} over {sampled} of {steps} time steps	{variable}: от {low} до {high}{unit} по {sampled} из {steps} временных шагов
+{variable}: {low} to {high}{unit}	{variable}: от {low} до {high}{unit}
+Time: {range}	Время: {range}
+Band {n}: {low} to {high}{unit}	Канал {n}: от {low} до {high}{unit}
+Band {n} ({name}): {low} to {high}{unit}	Канал {n} ({name}): от {low} до {high}{unit}
+{west}° to {east}° E, {south}° to {north}° N	{west}°–{east}° в. д., {south}°–{north}° с. ш.
+Complete, with {n} records excluded	Готово, исключено записей: {n}
+Failed: {reason}	Ошибка: {reason}
+From {table}	Из {table}
+Show {field} in insight	Показывать {field} в сравнении
+Excluded records — {layer}	Исключённые записи — {layer}
+{n} records were left out of the map. Your file has not been changed.	Записей, не попавших на карту: {n}. Ваш файл не изменён.
+Untitled	Без названия
+Your own file has not been changed.	Ваш собственный файл не изменён.
+Restore	Восстановить
+Your changes will be lost if you don't save them.	Если не сохранить изменения, они будут потеряны.
+Don't Save	Не сохранять
+Save	Сохранить
+Use It	Использовать
+Locate…	Найти…
+Remove layer	Удалить слой
+its size changed	изменился его размер
+its contents changed	изменилось его содержимое
+its modification date changed	изменилась дата его изменения
+Using {file}. 1 result made from the old file now say Source changed.	Используется {file}. У 1 результата, созданного из старого файла, теперь пометка «Источник изменён».
+Using {file}. {n} results made from the old file now say Source changed.	Используется {file}. Результатов, созданных из старого файла, с пометкой «Источник изменён»: {n}.
+This file looks different ({reason}). Use it anyway?	Этот файл выглядит иначе ({reason}). Всё равно использовать?
+Saved, but {name} couldn't be kept in the map file ({why}).	Сохранено, но {name} не удалось включить в файл карты ({why}).
+The autosaved map could not be restored. {error}	Не удалось восстановить автосохранённую карту. {error}
+Do you want to save the changes you made to '{name}'?	Сохранить изменения, внесённые в «{name}»?
+a date	дата
+some text	текст
+Remove this filter	Убрать этот фильтр
+Filter	Фильтр
+Add a filter	Добавить фильтр
+Close the table	Закрыть таблицу
+Search	Поиск
+Search the table	Поиск в таблице
+no value	нет значения
+where	где
+choose…	выберите…
+Finish the sentence to see how many match.	Закончите предложение, чтобы увидеть, сколько совпадений.
+Apply	Применить
+is	равно
+is not	не равно
+contains	содержит
+starts with	начинается с
+ends with	заканчивается на
+is empty	пусто
+above	больше
+below	меньше
+between	между
+before	до
+after	после
+is any of	любое из
+Sort by {name}, sorted ascending	Сортировать по {name}, по возрастанию
+Sort by {name}, sorted descending	Сортировать по {name}, по убыванию
+Sort by {name}	Сортировать по {name}
+Showing {shown} of {total}	Показано {shown} из {total}
+Remove filter: {filter}	Убрать фильтр: {filter}
+{n} match	Совпадений: {n}
+Previous step (←)	Предыдущий шаг (←)
+Pause	Пауза
+Play	Воспроизвести
+Next step (→)	Следующий шаг (→)
+Time step	Временной шаг
+{layer} · {step} of {steps}	{layer} · {step} из {steps}
+A new version is available	Доступна новая версия
+Close the update notice	Закрыть уведомление об обновлении
+{app} {version}: {notes}	{app} {version}: {notes}
+Download {version}	Скачать {version}
+That layer is gone.	Этого слоя больше нет.
+This layer has no variables to choose from.	В этом слое нет переменных для выбора.
+This layer's data isn't loaded.	Данные этого слоя не загружены.
+{layer} has no variable {variable}.	В слое {layer} нет переменной {variable}.
+The layer isn't loaded yet.	Слой ещё не загружен.
+Pick a column on each side.	Выберите столбец с каждой стороны.
+{matched} of {keys} match	Совпадений: {matched} из {keys}
+Joined {table} to {layer}: {matched} of {total} {things} matched.	Таблица {table} соединена с {layer}: совпало {matched} из {total} ({things}).
+Show the {r} row not matched	Показать {r} строку без совпадения
+Show the {r} rows not matched	Показать строки без совпадения ({r})
+Show the {k} not matched	Показать без совпадения ({k})
+Show the {k} not matched ({r} row)	Показать без совпадения ({k}; {r} строка)
+Show the {k} not matched ({r} rows)	Показать без совпадения ({k}; строк: {r})
+file	файл
+Preparing a faster preview…	Готовлю более быстрый предпросмотр…
+Still reading a layer. Undo in a moment.	Слой ещё читается. Отмените чуть позже.
+Still reading a layer. Redo in a moment.	Слой ещё читается. Повторите чуть позже.
+That couldn't be done. Nothing was changed.	Не получилось. Ничего не изменено.
+The layer changed while it was being read again, so that change was not applied.	Слой изменился, пока читался заново, поэтому изменение не применено.
+That assumption couldn't be changed.	Не удалось изменить это допущение.
+Only points, lines and areas can be converted.	Преобразовать можно только точки, линии и области.
+The layer changed while it was being converted, so nothing was added.	Слой изменился во время преобразования, поэтому ничего не добавлено.
+The converted layer couldn't be added.	Не удалось добавить преобразованный слой.
+Only points, lines and areas can be compared.	Сравнивать можно только точки, линии и области.
+This layer has nothing to compare.	В этом слое нечего сравнивать.
+{file} has changed since this document was saved; it was read as it is now.	Файл {file} изменился после сохранения документа; он прочитан в нынешнем виде.
+{layer} is no longer in {file}.	Слоя {layer} больше нет в {file}.
+Can't find {file}. It was last seen in {folder}.	Не удаётся найти {file}. Последний раз он был в папке {folder}.
+Can't find {file}. It was last seen in its folder.	Не удаётся найти {file}. Последний раз он был в своей папке.
+The layer couldn't be read again.	Не удалось прочитать слой заново.
+Reading {done} of {total}	Чтение: {done} из {total}
+Still reading {layer}. Try again in a moment.	Слой {layer} ещё читается. Попробуйте чуть позже.
+Save map package	Сохранить пакет карты
+{app} map	Карта {app}
+Locate {file}	Найти {file}
+A map-first GIS. Built on RustGIS.	ГИС, в которой главное — карта. Построена на RustGIS.
+File	Файл
+Open…	Открыть…
+Open Example	Открыть пример
+Browse data library…	Обзор библиотеки данных…
+Save As…	Сохранить как…
+Export Map Image…	Экспорт изображения карты…
+Export Data…	Экспорт данных…
+Export Map Package…	Экспорт пакета карты…
+Close Window	Закрыть окно
+Exit	Выход
+Edit	Правка
+Find…	Найти…
+Remove All Layers	Убрать все слои
+Use System Appearance	Как в системе
+Light	Светлая
+Dark	Тёмная
+Metric Units	Метрические единицы
+Imperial Units	Британские единицы
+System Language	Язык системы
+Language	Язык
+Show Frame Rate	Показывать частоту кадров
+Work Offline	Работать офлайн
+View	Вид
+Zoom In	Приблизить
+Zoom Out	Отдалить
+Zoom to All Data	Показать все данные
+Full Screen	Во весь экран
+Window	Окно
+Help	Справка
+Export Diagnostics…	Экспорт диагностики…
+About {app}	О программе {app}
+Quit {app}	Завершить {app}
+Undo ({key})	Отменить ({key})
+Redo ({key})	Повторить ({key})
+{app} Help	Справка {app}
+Satellite	Спутник
+Offline	Офлайн
+Try an example	Попробовать пример
+Color by a value	Раскрасить по значению
+Color or size by a value	Цвет или размер по значению
+Filter [layer]	Фильтровать [layer]
+Filter by [Type]	Фильтр по [Type]
+Compare with other [layer]	Сравнить с другими объектами слоя [layer]
+Change colors and range	Изменить цвета и диапазон
+Change colors	Изменить цвета
+Show only values above…	Показать только значения выше…
+Show where values are like this	Показать, где значения похожи
+Map using coordinate columns	Нанести по столбцам координат
+Match to [other]	Сопоставить с [other]
+Show an area within a distance	Показать зону в пределах расстояния
+Show an area within a distance of each	Показать зону в пределах расстояния от каждого
+Measure from here	Измерить отсюда
+Which [District] is it in?	В каком [District] находится?
+Count [Schools] in each [District]	Посчитать [Schools] в каждом [District]
+Add [Heat] values to each [School]	Добавить значения [Heat] к каждому [School]
+Measure its area	Измерить площадь
+What's inside?	Что внутри?
+Summarize [Heat] here	Сводка по [Heat] здесь
+Summarize [Heat] in each [District]	Сводка по [Heat] в каждом [District]
+Rank [layer] by a value	Упорядочить [layer] по значению
+Measure length	Измерить длину
+Summarize data here	Сводка данных здесь
+Count [Schools] here	Посчитать [Schools] здесь
+Add the distance to the nearest of [other] to [layer]	Добавить в [layer] расстояние до ближайшего из [other]
+Add the distance to the nearest neighbour in [layer]	Добавить расстояние до ближайшего соседа в [layer]
+Add [other] details to [layer]	Добавить в [layer] сведения из [other]
+Add area and coordinates to [layer]	Добавить площадь и координаты в [layer]
+Add a field calculated from two values	Добавить поле, вычисленное из двух значений
+Split [layer] into separate parts	Разделить [layer] на отдельные части
+Keep the part of [layer] inside [other]	Оставить часть [layer] внутри [other]
+Remove the part of [layer] inside [other]	Убрать часть [layer] внутри [other]
+Find areas where [Heat] meets conditions	Найти области, где [Heat] отвечает условиям
+Settings	Настройки
+Account	Учётная запись
+Delete Account	Удалить учётную запись
+Sign Out	Выйти
+Delete Account…	Удалить учётную запись…
+Working offline: Delete Account needs the network. Sign Out works offline.	Работа офлайн: для удаления учётной записи нужна сеть. Выйти можно и офлайн.
+Region	Регион
+Sign-in for mainland China (WeChat, Alipay, phone number) is coming in a later version.	Вход для материкового Китая (WeChat, Alipay, номер телефона) появится в одной из следующих версий.
+Finish signing in in your browser…	Завершите вход в браузере…
+Signing out…	Выход…
+Deleting your account…	Удаление учётной записи…
+Email address	Адрес электронной почты
+Verify	Подтвердить
+The link has stopped working on this Mac; the code still works for an hour.	Ссылка больше не работает на этом Mac; код действует ещё час.
+The link has stopped working on this computer; the code still works for an hour.	Ссылка больше не работает на этом компьютере; код действует ещё час.
+Send a New Email	Отправить новое письмо
+Use a Different Email	Другой адрес почты
+Asking about your layers needs a free account. Your maps and files stay on this computer.	Чтобы задавать вопросы о слоях, нужна бесплатная учётная запись. Ваши карты и файлы остаются на этом компьютере.
+Sign In…	Войти…
+You're signed out.	Вы вышли из учётной записи.
+Your account was deleted.	Ваша учётная запись удалена.
+Signed in with {provider} · {region}	Вход через {provider} · {region}
+{pro} is on for this account.	{pro} включён для этой учётной записи.
+Delete your {app} account? {pro} stops working on every computer you use. Your maps and files are not affected.	Удалить учётную запись {app}? {pro} перестанет работать на всех ваших компьютерах. Ваши карты и файлы это не затронет.
+Sign in to use {pro}	Войдите, чтобы пользоваться {pro}
+{pro} is free while it's new. Your account only says who you are: your maps and files never leave this computer.	Пока {pro} новый, он бесплатен. Учётная запись лишь подтверждает, кто вы: ваши карты и файлы никогда не покидают этот компьютер.
+Sending an email to {address}…	Отправка письма на {address}…
+We sent an email to {address}. Enter the {n}-digit code in it.	Мы отправили письмо на {address}. Введите код из {n} цифр, указанный в нём.
+We sent an email to {address}. Click the link in it on this Mac, or enter the {n}-digit code.	Мы отправили письмо на {address}. Нажмите ссылку в нём на этом Mac или введите код из {n} цифр.
+We sent an email to {address}. Click the link in it on this computer, or enter the {n}-digit code.	Мы отправили письмо на {address}. Нажмите ссылку в нём на этом компьютере или введите код из {n} цифр.
+{n}-digit code	Код из {n} цифр
+Sign in to use {pro} (Settings › Account).	Войдите, чтобы пользоваться {pro} (Настройки › Учётная запись).
+Settings…	Настройки…
+International	Международный
+Mainland China	Материковый Китай
+Continue with Apple	Продолжить с Apple
+Continue with Google	Продолжить с Google
+Continue with X	Продолжить с X
+Email me a sign-in code	Прислать код для входа на почту
+Continue with WeChat	Продолжить с WeChat
+Continue with Alipay	Продолжить с Alipay
+Text me a code	Прислать код в SMS
+Sign-in isn't available in this build yet.	Вход в этой сборке пока недоступен.
+{app} is working offline, so it can't reach the sign-in service. Turn off View › Work Offline to sign in.	{app} работает офлайн, поэтому не может связаться со службой входа. Чтобы войти, отключите Вид › Работать офлайн.
+Sign-in was cancelled.	Вход отменён.
+Sign-in took too long. Try again.	Вход занял слишком много времени. Попробуйте ещё раз.
+Sign-in didn't finish: {reason}	Вход не завершён: {reason}
+You're signed out. Sign in again to use {pro}.	Вы вышли из учётной записи. Войдите снова, чтобы пользоваться {pro}.
+Couldn't reach the sign-in service: {error}	Не удалось связаться со службой входа: {error}
+The sign-in service answered {status}: {reason}	Служба входа ответила {status}: {reason}
+Couldn't keep the sign-in on this computer: {error}	Не удалось сохранить вход на этом компьютере: {error}
+Couldn't start sign-in: {error}	Не удалось начать вход: {error}
+The code is the {n} digits in the email.	Код — это {n} цифр из письма.
+That code didn't work. Check it, or send a new email.	Код не подошёл. Проверьте его или отправьте новое письмо.
+Too many attempts. Wait a few minutes, then try again.	Слишком много попыток. Подождите несколько минут и попробуйте снова.
+no reason given	причина не указана
+that doesn't look like an email address	это не похоже на адрес электронной почты
+too many emails were sent; wait a minute and try again	отправлено слишком много писем; подождите минуту и попробуйте снова
+the sign-in service sent no code	служба входа не прислала код
+Signed in with {provider}	Вход через {provider}
+Apple	Apple
+Google	Google
+X	X
+email	электронную почту
+a phone number	номер телефона
+WeChat	WeChat
+Alipay	Alipay
+You're signed out. Sign in again in Settings › Account to use {pro}.	Вы вышли из учётной записи. Чтобы пользоваться {pro}, войдите снова в Настройки › Учётная запись.
+{pro} isn't on for this account.	{pro} не включён для этой учётной записи.
+This account can't use {pro} yet. Try again in a minute.	Эта учётная запись пока не может пользоваться {pro}. Попробуйте через минуту.
+You've used this month's assistant allowance. It renews tomorrow.	Вы израсходовали лимит помощника на этот месяц. Он обновится завтра.
+You've used this month's assistant allowance. It renews in {n} days.	Вы израсходовали лимит помощника на этот месяц. Он обновится через {n} дн.
+You've used today's assistant allowance. It renews within the hour.	Вы израсходовали лимит помощника на сегодня. Он обновится в течение часа.
+You've used today's assistant allowance. It renews in about {n} hours.	Вы израсходовали лимит помощника на сегодня. Он обновится примерно через {n} ч.
+The assistant service is out of credit. It has been told; try again later.	У службы помощника закончился баланс. Мы уже сообщили об этом; попробуйте позже.
+The assistant service is busy. Try again in a minute.	Служба помощника занята. Попробуйте через минуту.
+The assistant service answered {status}: {reason}	Служба помощника ответила {status}: {reason}
+The assistant service's address isn't https.	Адрес службы помощника не использует https.
+Couldn't reach the assistant service: {error}	Не удалось связаться со службой помощника: {error}
+The assistant service's answer was cut off: {error}	Ответ службы помощника оборвался: {error}
+The assistant service answered {status} with something unreadable.	Служба помощника ответила {status}, но ответ не удалось прочитать.
+{app} is working offline, so the assistant can't be reached. Turn off View › Work Offline to ask.	{app} работает офлайн, поэтому помощник недоступен. Чтобы задать вопрос, отключите Вид › Работать офлайн.

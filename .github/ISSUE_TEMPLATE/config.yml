@@ -1,11 +1,8 @@
 blank_issues_enabled: false
 contact_links:
-  - name: Question or usage help
-    url: https://github.com/opengeos/RustGIS/discussions/new?category=q-a
-    about: Have a "how do I do X?" question? Please ask in Discussions (Q&A) to keep the issue tracker focused on bugs and feature requests.
-  - name: Ideas and general discussion
-    url: https://github.com/opengeos/RustGIS/discussions
-    about: Share early-stage ideas, show your work, or chat with the community in Discussions.
-  - name: Documentation
-    url: https://rustgis.app
-    about: Browse the docs and guides before opening an issue.
+  - name: Feedback on the app (not the code)
+    url: https://github.com/kangning-huang/NimbleMap/issues
+    about: Ideas, questions and problems from using NimbleMap go to the public NimbleMap repository.
+  - name: How to build, test and contribute
+    url: https://github.com/kangning-huang/LayeredMap/blob/main/CONTRIBUTING.md
+    about: Read this before opening a pull request.
