@@ -486,3 +486,14 @@ code { font: .88em var(--mono); background: var(--paper-2); padding: 1px 5px; bo
 }
 .foot-langs { margin: 10px 0 0; line-height: 1.9; }
 .foot-langs a { white-space: nowrap; }
+
+/* Share buttons (X, Facebook, Reddit, LinkedIn): links filled in by site.js, so hidden without it. */
+.share { display: none; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 22px; }
+html.js .share { display: flex; }
+.share-label { font-size: 14px; color: var(--ink-3); margin-right: 4px; }
+.share-btn {
+  font-size: 14px; font-weight: 600; color: var(--ink-2); text-decoration: none;
+  padding: 6px 12px; border: 1px solid var(--rule); border-radius: 999px; background: var(--card);
+}
+.share-btn:hover, .share-btn:focus-visible { color: var(--accent-ink); border-color: var(--accent); }
+.dl-note { font-size: 14px; color: var(--ink-3); }
