@@ -7,12 +7,14 @@
 -->
 
 
-# LayeredMap Build Plan
+# NimbleMap Build Plan
 2026-10-15 · Kangning Huang
 
+Formerly LayeredMap; renamed 2026-10-19 (working name, trademark check pending) — see docs/lm/naming.md
+
 ## Summary
-**Who it's for.** LayeredMap's target users are global, with China as a specific focus (owner's direction, 2026-10-18). Everything must work for users in China: a basemap reachable from mainland China, a Chinese interface and Chinese place names, China's coordinate offsets (GCJ-02, BD-09), and country borders that follow the user's system region (China's point of view on a Mac set to mainland China, each country's own view elsewhere).
-LayeredMap is built in seven phases. Phases 0–5 (about 22 effort-weeks) end in a classroom pilot. Phase 6 (about 6 more) ends in a public beta.
+**Who it's for.** NimbleMap's target users are global, with China as a specific focus (owner's direction, 2026-10-18). Everything must work for users in China: a basemap reachable from mainland China, a Chinese interface and Chinese place names, China's coordinate offsets (GCJ-02, BD-09), and country borders that follow the user's system region (China's point of view on a Mac set to mainland China, each country's own view elsewhere).
+NimbleMap is built in seven phases. Phases 0–5 (about 22 effort-weeks) end in a classroom pilot. Phase 6 (about 6 more) ends in a public beta.
 Every phase ends at a gate. A gate has four parts: automated checks, a debug pass, a hands-on validation session with you, and stress tests. A gate passes only when all four pass. Otherwise the product rolls back to the last passing tag, and work resumes from there.
 1. **Phase 0 — Foundation and risk spikes.** Decide whether RustGIS's rendering and UI stack can feel like a consumer map. Settle this before writing product code. Also build the test fixtures and set up signed builds.
 2. **Phase 1 — Map feel.** An app with no data yet that pans, zooms and searches places like Apple Maps, online and offline.
@@ -41,7 +43,7 @@ The plan rests on eight assumptions you have not yet confirmed. Each row says wh
 | **First platform:** macOS on Apple silicon | Windows waits until Phase 6. Linux is best effort. | Many students on Windows: move Windows packaging into Phase 5 (+2 effort-weeks). |
 | **Stack:** RustGIS engine crates plus a new egui front end | Phase 0 tests this before any commitment. | The rendering spike fails: switch to a GPU map layer inside egui, or to a Tauri + MapLibre shell (the GeoLibre approach). The choice is made at Gate 0. |
 | **Upstream:** a GitHub fork; product code lives only in new crates | Upstream merges happen only at phase starts. Changes to upstream crates are small, labelled, and offered back as pull requests. | Maintainer welcomes a second front end upstream: develop there instead and drop the fork. |
-| **Distribution:** signed and notarized macOS app for the pilot | Enroll in the Apple Developer Program (USD 99 a year) in Phase 0, so every CI build is signed and notarized. | Enrollment blocked: postpone the pilot. macOS blocks unsigned apps, and RustGIS's web build is RustGIS's interface, not LayeredMap's. |
+| **Distribution:** signed and notarized macOS app for the pilot | Enroll in the Apple Developer Program (USD 99 a year) in Phase 0, so every CI build is signed and notarized. | Enrollment blocked: postpone the pilot. macOS blocks unsigned apps, and RustGIS's web build is RustGIS's interface, not NimbleMap's. |
 | **AI:** none in the core through Phase 5 | Suggestions are deterministic rules. | You want natural-language questions earlier: add it as a Phase 6 experiment over the same action contract. |
 | **Name:** LayeredMap is provisional | The code uses `layeredmap` and `lm-` prefixes. These are internal names that are cheap to change. | Choose the final name at Gate 5, before installers, domains and file associations exist. |
 
@@ -79,7 +81,7 @@ Twelve rules decide every design dispute in this plan. When two rules conflict, 
 **Question budget** *(new)*. In novice sessions (one sitting with one task script, from launch to quit), the median number of question cards is at most 1 per session and the 90th percentile at most 3. The app keeps a local count of question cards. That count is a pass/fail number at Gates 2, 4 and 5.
 
 ## Product tiers
-LayeredMap ships in two tiers (owner decision, 2026-10-16): Free, an open-source app for opening, overlaying and mapping data; and Pro, a closed subscription that adds an assistant you ask about your layers in plain words. The business case is in the LayeredMap Business Case document.
+NimbleMap ships in two tiers (owner decision, 2026-10-16): Free, an open-source app for opening, overlaying and mapping data; and Pro, a closed subscription that adds an assistant you ask about your layers in plain words. The business case is in the NimbleMap Business Case document.
 
 | | Free | Pro |
 |---|---|---|
@@ -87,17 +89,17 @@ LayeredMap ships in two tiers (owner decision, 2026-10-16): Free, an open-source
 | Code | This repository, Apache-2.0 | A closed module built into the official app; open-source builds have no assistant |
 | Phases | 0–3, 5, 6 | Phase 7, on top of the Phase 4 tool library |
 | Analysis | None exposed: no tool menus, composer or analysis buttons. Display-only suggestions (Color by a value, Filter, Compare, Change colors) stay on cards. Joining a table to places by a shared column is Free (WP3.11): it is the most common GIS task, and it creates no new geometry | Through the Ask box only; the model calls Phase 4's vetted actions |
-| Model | None | Hosted by LayeredMap behind its assistant service; no bring-your-own key for now |
+| Model | None | Hosted by NimbleMap behind its assistant service; no bring-your-own key for now |
 
 Rules that follow from the tiers:
 - **One door to analysis.** Phase 4's actions have no menus or buttons of their own; the Ask box is the only way to run them, so the interface stays simple.
-- **The model never computes numbers.** It chooses actions and fills their inputs; LayeredMap checks the plan, runs the actions locally and shows scope, assumptions, preview and recipe, as every result does.
+- **The model never computes numbers.** It chooses actions and fills their inputs; NimbleMap checks the plan, runs the actions locally and shows scope, assumptions, preview and recipe, as every result does.
 - **Only descriptions leave the Mac.** The assistant sends layer names, kinds, field names and types, extents and assumptions; never feature values or file contents.
 - **A new network service.** The assistant service joins the allowed list (basemap, search, library, update, assistant); it is used only in Pro.
 
 ## Priority model
 Every function carries one of four priorities. Priority decides what gets cut, never what gets tested less. P0 items pass the same correctness checks in every phase.
-- **P0 — Core.** Without it the product is not LayeredMap. It must be in the pilot and must pass every correctness test.
+- **P0 — Core.** Without it the product is not NimbleMap. It must be in the pilot and must pass every correctness test.
 - **P1 — Pilot.** It must be in the pilot, but may ship reduced: fewer formats, fewer presets, partial translation.
 - **P2 — Beta.** Required for the public beta, not for the pilot.
 - **P3 — Later.** Built only when pilot or beta users show that the value is worth the added complexity.
@@ -163,7 +165,7 @@ Every function carries one of four priorities. Priority decides what gets cut, n
 | Platform | Plugins, 3D, routing, live collaboration | P3 | After 6 |
 
 ## Architecture
-LayeredMap adds eight new crates and one app on top of seven RustGIS engine crates. The new interface reaches the engine only through the action and job layers, so the UI never does spatial math. RustGIS's ribbon front end is not used.
+NimbleMap adds eight new crates and one app on top of seven RustGIS engine crates. The new interface reaches the engine only through the action and job layers, so the UI never does spatial math. RustGIS's ribbon front end is not used.
 
 > *Diagram: module map · 3 groups, 12 modules — see the original document for the drawing.*
 
@@ -186,7 +188,7 @@ The only direct line from the interface to RustGIS is the map view's drawing pat
 **Rules enforced in CI.** Extend RustGIS's `cargo xtask layers` check to cover the new crates.
 - Below `lm-ui`, only `lm-mapview` may depend on egui, and nothing depends on eframe or rfd.
 - `lm-ui` never calls `rustgis-data` or `rustgis-analysis` directly. All work goes through `lm-jobs`.
-- Every network request asks `lm-net`'s gate first; a LayeredMap source file that uses `ureq` without it fails the check (added in Phase 5).
+- Every network request asks `lm-net`'s gate first; a NimbleMap source file that uses `ureq` without it fails the check (added in Phase 5).
 - Numbers never come from the renderer. Counts and means are computed from data, never from drawn pixels or visible symbols.
 - Every `lm-` crate except `lm-ui`, `lm-mapview` and the app builds for `wasm32-unknown-unknown`, matching upstream's rule. This keeps a future web version possible; it is not a tested fallback.
 - Upstream rules carry over: no `unwrap()`, `expect()`, `panic!` or `unsafe` outside tests, and every interface string is wrapped for translation. One exception: unsafe code is allowed in the app's macOS module for native macOS hooks (Open With, Dock drops, the Edited state), with a SAFETY comment on each block and a second review.
@@ -477,7 +479,7 @@ The layer inspector opens with one search field above its tabs. It looks and beh
 ### Joining a table
 The join should ask nothing when the answer is clear and one-to-one, and ask at most one question when it is not.
 1. **Open the table.** It can be dropped in, opened, or dragged onto a layer row. A table without coordinates is never put on the map as a guess.
-2. **LayeredMap finds the shared column.** It tries each table column against each layer field, with the normalization ladder from WP3.11, and keeps the pairing that matches most.
+2. **NimbleMap finds the shared column.** It tries each table column against each layer field, with the normalization ladder from WP3.11, and keeps the pairing that matches most.
 3. **Clear winner: it joins.** At least 80% of keys match, 20 points ahead of the next pairing, and no key repeats on either side (one-to-one). The card says what happened in one line ("Joined population.csv to districts by name: 16 of 17 matched"), and the layer is coloured by the first new measure. Undo is one click.
     - **Clear, but keys repeat: it asks first** (owner's choice, 2026-10-18). A one-to-many, many-to-one or many-to-many join shows "Join population_by_year.csv to districts?" with the expected row count ("One-to-many: a key repeats in the table (up to 5 rows). A plain merge would give 85 rows; the layer keeps its 17, one per district."), how the repeats are handled ("the one with the latest year is used", "counts are summed and other numbers averaged", "districts that share a key each take its row"), and Join / Keep as a table, plus "Choose other columns…".
 4. **No clear winner: one question.** "Which places does population.csv describe?" with up to three choices, each showing its pairing and match count ("district ↔ name · 15 of 17"), and "None of these", which keeps the table as a table.
@@ -506,7 +508,7 @@ The joined fields behave like the layer's own fields in cards, insight rows, the
 | Situation | Message | Actions |
 |---|---|---|
 | No coordinate system | "This file doesn't say where on Earth its coordinates are. Your file has not been changed." | Find location… · Open as table · Details |
-| Unsupported format | "LayeredMap can't open .dwg files yet." | Which files work · Details |
+| Unsupported format | "NimbleMap can't open .dwg files yet." | Which files work · Details |
 | Partial import | "248 records opened; 6 have no usable location." | Review 6 · Export problem list |
 | Job failed | "The summary could not finish. Nothing was added to your map." | Try again · Details |
 | Disk full | "There isn't enough free space to keep this result. Your files are unchanged." | Choose another location · Cancel |
@@ -1454,7 +1456,7 @@ Candidates, in likely order:
 - 3D
 - plugins
 
-## Phase 7 — LayeredMap Pro: ask your layers
+## Phase 7 — NimbleMap Pro: ask your layers
 **Goal:** a person with no GIS training asks a question about their layers in plain words and gets a correct new layer whose recipe they can read. **Effort:** about 6 effort-weeks, after the public beta. **Scope:** P0 the Ask box, the assistant service, tool calling over Phase 4's actions, plan checks, answers with result cards, accounts and subscription; P1 follow-up questions, usage allowance and model routing.
 
 ### Work packages
@@ -1560,7 +1562,7 @@ Every gate test names its fixtures by ID. Small fixtures live in the repository 
 The agent writes the code, and you own the behavior. Each work package becomes a set of task cards. Each card gets one branch and one pull request, with a demo you can watch. You judge what the app does against this plan, not the Rust.
 
 ### Repository conventions
-- **`AGENTS.md`** gains a LayeredMap section with:
+- **`AGENTS.md`** gains a NimbleMap section with:
     - the twelve product principles, in one line each
     - the layering rules
     - "the UI never computes numbers"
@@ -1612,7 +1614,7 @@ Upstream merges happen only at a phase start. Each one runs the full CI suite an
 ### Phase kickoff prompt
 
 ```markdown
-We are starting Phase N of the LayeredMap build plan (docs/lm/spec.md).
+We are starting Phase N of the NimbleMap build plan (docs/lm/spec.md).
 The last gate tag is gate-(N-1)-pass. Read the Phase N section, the sections it cites,
 and AGENTS.md. Then: (1) list every work package as task cards using the template,
 ordered by dependency; (2) list anything in the plan that is ambiguous or contradicts

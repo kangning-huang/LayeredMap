@@ -1,7 +1,7 @@
-# LayeredMap Pro puzzles
+# NimbleMap Pro puzzles
 
-Eight original "where is it?" puzzles for testing LayeredMap Pro end to end and for the release
-videos. Each is solved by a plan of LayeredMap actions; actions marked **new** are the proposals in
+Eight original "where is it?" puzzles for testing NimbleMap Pro end to end and for the release
+videos. Each is solved by a plan of NimbleMap actions; actions marked **new** are the proposals in
 [mechanics.md](mechanics.md). Every answer was checked by the reference solver
 `tools/lm/puzzles/solve.py` on the open datasets described in
 `/Volumes/LaCie/data/layeredmap-puzzles/README.md`, which also printed the candidate counts and robustness
@@ -471,4 +471,4 @@ Robustness (each threshold moved alone):
 - `rain` = 1,500 mm: same answer from 700 mm to 1,900 mm or beyond
 - `ratio_tol` = 0.5: same answer from 0.1 to 1.3 or beyond
 
-Rodrigues, Saint Helena, Ascension and Kosrae are also small, tropical and isolated; only Kosrae (about 5,300 mm) is as rainy, and its longitude is 31 times its latitude. Christmas Island is 348 km from Java. Island rain is the mean of the WorldClim cells the island touches; LayeredMap's summarize_each uses an area-weighted fractional mean, which cannot move 1,971 mm below the 1,500 mm threshold.
+Rodrigues, Saint Helena, Ascension and Kosrae are also small, tropical and isolated; only Kosrae (about 5,300 mm) is as rainy, and its longitude is 31 times its latitude. Christmas Island is 348 km from Java. Island rain is the mean of the WorldClim cells the island touches; NimbleMap's summarize_each uses an area-weighted fractional mean, which cannot move 1,971 mm below the 1,500 mm threshold.

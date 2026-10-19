@@ -26,8 +26,8 @@ Locally: `packaging/lm/bundle-macos.sh` (same environment variables).
 Students install from a .dmg: the app beside a link to Applications, so installing is one drag.
 
 ```sh
-packaging/lm/build-dmg.sh [out-dir]                 # LayeredMap-<version>-<build>-macos-arm64.dmg
-LM_TIER=pro packaging/lm/build-dmg.sh [out-dir]     # LayeredMap-Pro-…
+packaging/lm/build-dmg.sh [out-dir]                 # NimbleMap-<version>-<build>-macos-arm64.dmg
+LM_TIER=pro packaging/lm/build-dmg.sh [out-dir]     # NimbleMap-Pro-…
 ```
 
 The script runs `bundle-macos.sh` first (so the app inside is signed, notarized and stapled as
@@ -36,8 +36,8 @@ environment variables it then signs the .dmg, submits it to `notarytool`, staple
 and runs the two Gate 5 checks:
 
 ```sh
-xcrun stapler validate LayeredMap-….dmg
-spctl --assess --type open --context context:primary-signature --verbose=2 LayeredMap-….dmg
+xcrun stapler validate NimbleMap-….dmg
+spctl --assess --type open --context context:primary-signature --verbose=2 NimbleMap-….dmg
 ```
 
 Without the variables the .dmg is unsigned and the app inside ad-hoc signed: fine for testing on
@@ -72,7 +72,7 @@ certificate lasts at most 460 days, so each is renewed yearly.
 
 ### Options (prices October 2026; **check before buying**)
 
-| Option | What it costs | Fits LayeredMap? |
+| Option | What it costs | Fits NimbleMap? |
 |---|---|---|
 | **Azure Artifact Signing** (Microsoft's managed signing, formerly Trusted Signing) | Basic USD 9.99 a month for 5,000 signatures | **Recommended if eligible.** No token, signs in CI, keys held by Microsoft, certificates renewed for you. Public signing is open to organisations in the US, Canada, the EU and the UK and to **individual developers in the US and Canada**; identity is verified first (days). The publisher shown is the verified name. |
 | OV certificate on a cloud HSM (SSL.com eSigner, DigiCert KeyLocker, GlobalSign) | Roughly USD 130–700 a year, plus the cloud-signing plan | Works anywhere, including a company outside those countries; CI signs through the vendor's tool. |

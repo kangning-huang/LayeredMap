@@ -61,16 +61,16 @@ is a command, a thin egui front end, headless screenshots for UI work.
 
 ---
 
-# LayeredMap — instructions for agents
+# NimbleMap — instructions for agents
 
-This repository is **LayeredMap**, a map-first GIS for novices built on RustGIS's engine crates.
+This repository is **NimbleMap**, a map-first GIS for novices built on RustGIS's engine crates.
 The build plan is `docs/lm/spec.md` (exported from the owner's design document; re-exported at
 every phase start). The owner judges behavior against that plan, not the Rust. Everything above
 this section still applies to the RustGIS crates.
 
 ## Where things live
 - Product code lives **only** in `crates/lm-*` and `apps/layeredmap`. RustGIS's ribbon front end
-  (`rustgis-ui-egui`, `apps/rustgis`) is not used by LayeredMap.
+  (`rustgis-ui-egui`, `apps/rustgis`) is not used by NimbleMap.
 - Any change inside a RustGIS crate is its own commit, prefixed `upstream:`, so it can be offered
   back. Upstream is merged only at a phase start (recorded in `UPSTREAM.md`).
 - Phase 0 spikes live in `spikes/` and are thrown away.

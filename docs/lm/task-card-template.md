@@ -15,7 +15,7 @@ Done when: CI is green and the owner approves the snapshots.
 # Phase kickoff prompt
 
 ```markdown
-We are starting Phase N of the LayeredMap build plan (docs/lm/spec.md).
+We are starting Phase N of the NimbleMap build plan (docs/lm/spec.md).
 The last gate tag is gate-(N-1)-pass. Read the Phase N section, the sections it cites,
 and AGENTS.md. Then: (1) list every work package as task cards using the template,
 ordered by dependency; (2) list anything in the plan that is ambiguous or contradicts

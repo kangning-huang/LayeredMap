@@ -1,4 +1,4 @@
-# LayeredMap on Windows (WP6.2)
+# NimbleMap on Windows (WP6.2)
 
 Windows 10 (1809) and 11, x64. The app is the same code as on macOS; this page covers what is
 different, how to build and test it, and the checklist for the owner's Gate 6 session on a
@@ -8,9 +8,9 @@ Windows laptop. Decisions are in `decisions.md` (2026-10-18), certificates in `s
 
 | Area | macOS | Windows |
 |---|---|---|
-| Menu bar | The app's menu bar (LayeredMap, File, Edit, View, Window, Help) | A menu bar on the window: File (… Exit), Edit, View (… Full Screen F11), Help (… About). Ctrl in place of ⌘. The menu shows shortcuts; the keys themselves go through egui to the shell (`lm_ui::Shell::shortcuts`), so a text field still gets Ctrl+Z/C/V first. Ctrl+Y also redoes. |
+| Menu bar | The app's menu bar (NimbleMap, File, Edit, View, Window, Help) | A menu bar on the window: File (… Exit), Edit, View (… Full Screen F11), Help (… About). Ctrl in place of ⌘. The menu shows shortcuts; the keys themselves go through egui to the shell (`lm_ui::Shell::shortcuts`), so a text field still gets Ctrl+Z/C/V first. Ctrl+Y also redoes. |
 | Shortcut labels | ⌘Z, ⇧⌘Z | Ctrl+Z, Ctrl+Shift+Z (`lm_ui::keys`) |
-| Resources | `LayeredMap.app/Contents/Resources` | `Resources\` beside the exe (`lm_core::platform::resources_dir`) |
+| Resources | `NimbleMap.app/Contents/Resources` | `Resources\` beside the exe (`lm_core::platform::resources_dir`) |
 | Autosave | `~/Library/Application Support/LayeredMap/Autosave` | `%LOCALAPPDATA%\LayeredMap\Autosave` |
 | Question log | `~/Library/Application Support/LayeredMap` | `%APPDATA%\LayeredMap` (roaming) |
 | Logs, crash logs | `~/Library/Logs/LayeredMap` | `%LOCALAPPDATA%\LayeredMap\Logs` |
@@ -45,19 +45,19 @@ On Windows, with Rust (MSVC toolchain) and Inno Setup 6 (`winget install JRSoftw
 ```powershell
 cargo xtask ci                                         # the same suites as on macOS
 cargo run -p layeredmap                                # the app
-pwsh packaging/lm/windows/build-installer.ps1          # dist\lm\LayeredMap-<v>-<build>-windows-x64-setup.exe
-$env:LM_TIER = "pro"; pwsh packaging/lm/windows/build-installer.ps1   # LayeredMap-Pro-…
+pwsh packaging/lm/windows/build-installer.ps1          # dist\lm\NimbleMap-<v>-<build>-windows-x64-setup.exe
+$env:LM_TIER = "pro"; pwsh packaging/lm/windows/build-installer.ps1   # NimbleMap-Pro-…
 ```
 
 The installer (`packaging/lm/windows/layeredmap.iss`):
 
-- installs for the current user without administrator rights (`%LOCALAPPDATA%\Programs\LayeredMap`);
+- installs for the current user without administrator rights (`%LOCALAPPDATA%\Programs\NimbleMap`);
   "Install for all users" in the first page needs administrator rights;
 - installs Free and Pro side by side (own AppId, folder, Start menu entry, `layeredmap.exe` /
   `layeredmap-pro.exe`, and ProgIDs `LayeredMap.*` / `LayeredMapPro.*`);
 - adds a Start menu entry, and a desktop icon if ticked;
-- makes `.lmap` LayeredMap's own type (the tier installed last is its default) and offers
-  LayeredMap in Open With for `.geojson .shp .gpkg .kml .kmz .gpx .nc .nc4 .cdf .tif .tiff .csv
+- makes `.lmap` NimbleMap's own type (the tier installed last is its default) and offers
+  NimbleMap in Open With for `.geojson .shp .gpkg .kml .kmz .gpx .nc .nc4 .cdf .tif .tiff .csv
   .tsv .xlsx`, never as their default (as `LSHandlerRank Alternate` on macOS); `.json` and `.zip`
   are left out on Windows as too general;
 - carries the examples, the tier file, the licences and, for Pro, the reference layers
@@ -87,7 +87,7 @@ screen at 125 %) and the export sheet, in the window a 1920×1080 laptop gives a
   layer check). Pixel snapshots are `#[ignore]` off macOS (the approved images come from the Mac's
   GPU and text rasteriser); everything else runs, including the 125 %/150 % map-resolution test,
   the save kill test (with `TerminateProcess`) and the offline harness.
-- `windows-installer`: the Free installer, uploaded as `LayeredMap-windows-x64`. Signed with Azure
+- `windows-installer`: the Free installer, uploaded as `NimbleMap-windows-x64`. Signed with Azure
   Artifact Signing when the `LM_ARTIFACT_SIGNING_*` and `LM_AZURE_*` secrets exist, unsigned
   otherwise.
 
@@ -101,7 +101,7 @@ report. Work in a fresh Windows user account for the first part.
 1. Download the installer from the download host as a student would. Note whether Edge or
    SmartScreen warns ("Windows protected your PC"), and what it says. Unsigned or new-certificate
    builds will warn: record the exact screens, since they go into the quickstart.
-2. Install without administrator rights. The Start menu has LayeredMap; it opens with its icon in
+2. Install without administrator rights. The Start menu has NimbleMap; it opens with its icon in
    the taskbar and in Alt+Tab.
 3. Install Pro too: both are in the Start menu and run at the same time; Settings › Apps lists both.
 4. Uninstall Free: Pro still opens files; `.lmap` files still open (in Pro).
@@ -128,17 +128,17 @@ report. Work in a fresh Windows user account for the first part.
 12. Tap to click, two-finger tap for the context menu on a layer row, double-tap to zoom in.
 
 **File associations**
-13. Double-click a `.lmap`: it opens in LayeredMap. Right-click a `.geojson`, `.shp`, `.gpkg`,
-    `.kml`, `.kmz`, `.gpx`, `.nc`, `.csv` and `.xlsx` › Open with: LayeredMap is listed, but none of
+13. Double-click a `.lmap`: it opens in NimbleMap. Right-click a `.geojson`, `.shp`, `.gpkg`,
+    `.kml`, `.kmz`, `.gpx`, `.nc`, `.csv` and `.xlsx` › Open with: NimbleMap is listed, but none of
     them changed their default app.
-14. With LayeredMap already open, double-click another file: note what happens (a second window
+14. With NimbleMap already open, double-click another file: note what happens (a second window
     opens today; a single-instance hand-off is not built yet).
 15. Drag files from Explorer onto the map: they open. A file in a folder with Chinese characters
     and spaces, and one with a path over 260 characters, open too.
 
 **Chinese**
 16. Switch Windows to Chinese (Settings › Time & language › Language: 中文(简体) first, and Country
-    or region: China). Restart LayeredMap. Repeat assignment 1. Chinese text in the interface, the
+    or region: China). Restart NimbleMap. Repeat assignment 1. Chinese text in the interface, the
     layer names and attribute values is clear at 125 % and 150 %, with no boxes (□) and no mixed-up
     glyphs. Country borders follow China's point of view (Pro, reference layers).
 17. Type Chinese with the Microsoft Pinyin IME in the search box and the Ask box: the candidate
@@ -165,4 +165,4 @@ with View › Show Frame Rate.
 - Narrator is WP6.3.
 - ARM64 Windows (Snapdragon laptops) runs the x64 build under emulation. A native
   `aarch64-pc-windows-msvc` build isn't packaged and wasn't checked: from a Mac, `ring`'s C code
-  doesn't build for that target with cargo-xwin (a toolchain issue, not LayeredMap's code).
+  doesn't build for that target with cargo-xwin (a toolchain issue, not NimbleMap's code).

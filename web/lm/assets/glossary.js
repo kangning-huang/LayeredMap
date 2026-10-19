@@ -1,4 +1,4 @@
-// LayeredMap glossary (WP6.10): draws window.LM_GLOSSARY and searches it as you type, in the
+// NimbleMap glossary (WP6.10): draws window.LM_GLOSSARY and searches it as you type, in the
 // browser. Matches the term, its other names and its meaning, in both languages, so "buffer",
 // "缓冲区" or "火星坐标" all find their entry. ?q=… in the address fills the box.
 (function () {

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "about": "Original geographic puzzles for testing LayeredMap Pro end to end and for release videos. Stories, characters and clue combinations are original to LayeredMap. Verification blocks are written by tools/lm/puzzles/solve.py --update.",
+  "about": "Original geographic puzzles for testing NimbleMap Pro end to end and for release videos. Stories, characters and clue combinations are original to NimbleMap. Verification blocks are written by tools/lm/puzzles/solve.py --update.",
   "data_readme": "/Volumes/LaCie/data/layeredmap-puzzles/README.md",
   "datasets": {
     "ne_places": {
@@ -1225,7 +1225,7 @@
           }
         }
       },
-      "verification_note": "Rodrigues, Saint Helena, Ascension and Kosrae are also small, tropical and isolated; only Kosrae (about 5,300 mm) is as rainy, and its longitude is 31 times its latitude. Christmas Island is 348 km from Java. Island rain is the mean of the WorldClim cells the island touches; LayeredMap's summarize_each uses an area-weighted fractional mean, which cannot move 1,971 mm below the 1,500 mm threshold."
+      "verification_note": "Rodrigues, Saint Helena, Ascension and Kosrae are also small, tropical and isolated; only Kosrae (about 5,300 mm) is as rainy, and its longitude is 31 times its latitude. Christmas Island is 348 km from Java. Island rain is the mean of the WorldClim cells the island touches; NimbleMap's summarize_each uses an area-weighted fractional mean, which cannot move 1,971 mm below the 1,500 mm threshold."
     }
   ]
 }

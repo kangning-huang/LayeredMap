@@ -1,4 +1,4 @@
-# LayeredMap website and help (WP6.10)
+# NimbleMap website and help (WP6.10)
 
 A landing page, a searchable glossary and three step-by-step workflows, in English and
 Simplified Chinese. Plain HTML, CSS and JavaScript: no build step, no libraries, no web fonts, no
@@ -22,9 +22,9 @@ touches no upstream file or workflow.
 
 | English | 中文 | What |
 |---|---|---|
-| `index.html` | `zh/index.html` | Landing for the map-curious: what LayeredMap is, examples, Free vs Pro, a link to the download page |
-| `download.html` | `zh/download.html` | For people who already have a GIS file: what it opens, why layers line up, the download buttons (placeholders), LayeredMap or QGIS, and a FAQ in the words people search with |
-| `help.html` | `zh/help.html` | Help start page (what Help › LayeredMap Help opens): the workflows and the window in one minute |
+| `index.html` | `zh/index.html` | Landing for the map-curious: what NimbleMap is, examples, Free vs Pro, a link to the download page |
+| `download.html` | `zh/download.html` | For people who already have a GIS file: what it opens, why layers line up, the download buttons (placeholders), NimbleMap or QGIS, and a FAQ in the words people search with |
+| `help.html` | `zh/help.html` | Help start page (what Help › NimbleMap Help opens): the workflows and the window in one minute |
 | `glossary.html` | `zh/glossary.html` | 34 terms, searched in the browser in both languages (`?q=buffer`, `#gcj02` deep links, `/` focuses the box) |
 | `workflow-typhoons.html` | `zh/…` | Typhoon tracks: click, rank, colour, filter to Category 5; Pro for counting near cities |
 | `workflow-heatwave.html` | `zh/…` | Heatwave NetCDF: time slider, reading cells, no data, export a map image |
@@ -62,10 +62,10 @@ text; the tests check this.
 
 ## In the app
 
-Help › **LayeredMap Help** (`apps/layeredmap/src/help.rs`) opens `help.html`, or
+Help › **NimbleMap Help** (`apps/layeredmap/src/help.rs`) opens `help.html`, or
 `zh/help.html` when the Mac's first language is Chinese, in the default browser. The pages ship
 inside the app: `packaging/lm/bundle-macos.sh` copies this folder (minus this README) to
-`LayeredMap.app/Contents/Resources/help/`; a development build opens the checkout's copy. Opening a
+`NimbleMap.app/Contents/Resources/help/`; a development build opens the checkout's copy. Opening a
 local file makes no network request, so the network gate is not involved.
 
 ## TODO (owner)
@@ -93,7 +93,7 @@ local file makes no network request, so the network gate is not involved.
 
 ## Screenshots: sources and licences
 
-All screenshots are real captures of the LayeredMap window (dark appearance) from this branch,
+All screenshots are real captures of the NimbleMap window (dark appearance) from this branch,
 taken 2026-10-18 with the app's `--tour` script steps (`apps/layeredmap/src/main.rs`; `card`,
 `time` and `export` were added for these pages) and `screencapture -l` on the app's window only,
 then scaled to 1600 px and saved as JPEG. `pro-ask.jpg` is an earlier capture of the Pro test

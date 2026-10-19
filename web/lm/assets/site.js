@@ -1,4 +1,4 @@
-// LayeredMap website and help (WP6.10): the light/dark switch. No libraries, no network.
+// NimbleMap website and help (WP6.10): the light/dark switch. No libraries, no network.
 (function () {
   var root = document.documentElement;
   var KEY = "lm-site-theme";

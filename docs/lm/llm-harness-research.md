@@ -1,4 +1,4 @@
-# LayeredMap Pro: prior work on LLM harnesses for GIS tool calling
+# NimbleMap Pro: prior work on LLM harnesses for GIS tool calling
 
 *Web research as of 2026-10-17. Accuracy figures are self-reported by the authors unless noted. None of them are directly comparable to our 78-case strict metric.*
 
@@ -31,7 +31,7 @@
 - **Chinese tool calling**: ACEBench (2,000 Chinese and English entries) ([listing](https://benchmarklist.com/benchmarks/acebench/)) and T-Eval (Chinese data and leaderboard) ([repo](https://github.com/open-compass/t-eval)).
 - No public dataset maps bilingual natural-language GIS requests to tool calls. Ours may be novel and worth publishing.
 
-## 3. Ranked techniques for LayeredMap
+## 3. Ranked techniques for NimbleMap
 
 **1. Entity-resolution tool with a multilingual alias index.** Impact: high, because it targets the Chinese-name failures. Cost: low to medium.
 - Add `resolve_feature(layer, query)`. It searches stored names and aliases locally and returns the top-k canonical stored names with scores. The model still never sees bulk feature values.

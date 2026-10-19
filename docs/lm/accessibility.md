@@ -7,7 +7,7 @@ branch `wp6.3-screen-readers`. The code is `crates/lm-ui/src/a11y.rs`; the tests
 ## How it works
 
 egui exposes every widget to AccessKit, which VoiceOver (macOS) and Narrator (Windows) read.
-LayeredMap draws much of its chrome with the painter and uses Phosphor icon-font glyphs, so
+NimbleMap draws much of its chrome with the painter and uses Phosphor icon-font glyphs, so
 egui alone gave many controls no name, or a private-use character for a name, which a screen
 reader reads as nothing or as garbage. `a11y.rs` fills those gaps:
 

@@ -1,8 +1,8 @@
-# LLM evaluation for LayeredMap Pro
+# LLM evaluation for NimbleMap Pro
 
 **Question.** Which model on OpenRouter should turn an Ask-box request (English or Chinese) into calls to
-LayeredMap's certified actions at the best balance of accuracy, cost and latency? The model only
-translates. It picks actions and fills their inputs, and LayeredMap checks the plan and runs it
+NimbleMap's certified actions at the best balance of accuracy, cost and latency? The model only
+translates. It picks actions and fills their inputs, and NimbleMap checks the plan and runs it
 locally (spec › Product tiers, Phase 7).
 
 **Answer (2026-10-17).**
@@ -73,7 +73,7 @@ fixtures V1, T1 and V9. They cover:
 - Retries use backoff on 429 and 5xx errors. Concurrency is capped, and a hard budget cap is enforced.
 
 **Scoring.** Each case gets two scores; the exact rules are in the README.
-- **Strict:** could LayeredMap run the plan as is? That means the same calls in the same order with
+- **Strict:** could NimbleMap run the plan as is? That means the same calls in the same order with
   nothing extra, exact layer and field names, and an object named by a (field, value) pair that exists
   in the data. Distances must be readable by the runner's parser and within 0.5%, and filter
   operators must be exactly as defined.
@@ -453,7 +453,7 @@ inside the app.
 
 Two TypeSafe products on OpenRouter were tested on the v2 benchmark (97 cases) with the v2 harness; total spend US$0.17.
 
-- **Jev 1.13** (`typesafe/jev-1.13`) is a *decision model*, not a chat model. It serves only OpenRouter's Decisions API (`POST /api/alpha/decisions`), not chat completions, and has no tool calling. It answers typed questions: a choice among named options with probabilities, yes/no, a score, or an image box. It can't write a plan's values (distances, thresholds, field names), so it can't produce a LayeredMap plan by itself. It was scored on the two decisions a plan starts with: act, ask or refuse (`mode`), and which action the plan starts with (`first action`). `tools/lm/llm_eval/v2/jev_decisions.py` does this from the same map description and request the plan models see.
+- **Jev 1.13** (`typesafe/jev-1.13`) is a *decision model*, not a chat model. It serves only OpenRouter's Decisions API (`POST /api/alpha/decisions`), not chat completions, and has no tool calling. It answers typed questions: a choice among named options with probabilities, yes/no, a score, or an image box. It can't write a plan's values (distances, thresholds, field names), so it can't produce a NimbleMap plan by itself. It was scored on the two decisions a plan starts with: act, ask or refuse (`mode`), and which action the plan starts with (`first action`). `tools/lm/llm_eval/v2/jev_decisions.py` does this from the same map description and request the plan models see.
 - **Jev Router** (`typesafe/jev-router`) is a chat model that routes each request to a model it picks, with tool calling. It ran the full v2 benchmark like any other model. Every request went to **GLM 5.3 Flash** (the response's `model` field; provider Inceptron in the runs).
 
 | Model | v2 strict (full plans) | Answerable / honest refusal | Mode right | First action right | US$ / 1,000 requests | Median latency |
