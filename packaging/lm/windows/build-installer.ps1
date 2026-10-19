@@ -65,6 +65,11 @@ if ($tier -eq "pro") {
   } else {
     Write-Warning "build-installer: no reference data at '$ref' (built-in layers left out)"
   }
+  # Pro's account config (docs/lm/accounts-design.md), as in bundle-macos.sh.
+  if ($env:LM_ACCOUNT_CONFIG) {
+    Copy-Item $env:LM_ACCOUNT_CONFIG (Join-Path $res "account.json")
+    Write-Host "build-installer: account config from $($env:LM_ACCOUNT_CONFIG)"
+  }
   # Test builds only: the owner's key, scrambled the same way as on macOS (not a secret store).
   if ($env:LM_OPENROUTER_KEY -and -not $env:LM_NO_KEY -and -not $env:CI) {
     # The old name is part of the scrambling key (lm-ask/src/openrouter.rs PAD): not display text.

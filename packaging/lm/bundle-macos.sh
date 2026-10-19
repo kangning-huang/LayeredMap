@@ -73,6 +73,13 @@ DPLIST
   else
     echo "bundle-macos: no reference data at $ref (built-in layers left out)" >&2
   fi
+  # Pro's account config (docs/lm/accounts-design.md): the sign-in service's URL and public key,
+  # from the owner's copy outside the repo. With it the Ask box goes through the Ask proxy and
+  # needs a signed-in account; without it the build works as before.
+  if [[ -n "${LM_ACCOUNT_CONFIG:-}" ]]; then
+    cp "$LM_ACCOUNT_CONFIG" "$app/Contents/Resources/account.json"
+    echo "bundle-macos: account config from $LM_ACCOUNT_CONFIG"
+  fi
   # Test builds: the owner's OpenRouter key from this Mac's keychain, built into the bundle
   # (scrambled, not secret: anyone determined can recover it). Never in the repo. The release
   # talks to NimbleMap's assistant service instead (WP7.3). LM_NO_KEY=1 leaves it out.

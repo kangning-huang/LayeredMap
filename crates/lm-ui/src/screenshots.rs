@@ -1588,3 +1588,72 @@ mod scaling {
         }
     }
 }
+
+/// Settings › Account (WP7.4), as the four states look: signed out with the international ways to
+/// sign in, signed in, Delete Account's confirmation, and mainland China (not built yet).
+mod account {
+    use super::*;
+    use lm_account::Region;
+
+    fn settings(signed_in: bool, region: Region, setup: impl Fn(&mut Shell) + 'static) -> Harness<'static, Option<Shell>> {
+        let mut h = harness(false, WORLD, move |s| {
+            s.pro = true;
+            s.account = crate::account_ui::test_ui(signed_in, region);
+            s.account.open = true;
+            setup(s);
+        });
+        h.run_steps(5);
+        h
+    }
+
+    #[test]
+    #[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+    fn account_signed_out() {
+        let mut h = settings(false, Region::International, |_| {});
+        use egui_kittest::kittest::Queryable as _;
+        for b in ["Continue with Apple", "Continue with Google", "Continue with X", "Email me a sign-in link"] {
+            assert!(h.query_by_label(b).is_some(), "{b}");
+        }
+        h.snapshot("account_signed_out");
+    }
+
+    #[test]
+    #[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+    fn account_signed_in() {
+        let mut h = settings(true, Region::International, |_| {});
+        use egui_kittest::kittest::Queryable as _;
+        assert!(h.query_by_label("kim@example.com").is_some());
+        assert!(h.query_by_label("Sign Out").is_some() && h.query_by_label("Delete Account…").is_some());
+        h.snapshot("account_signed_in");
+    }
+
+    #[test]
+    #[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+    fn account_delete_confirmation() {
+        settings(true, Region::International, |s| s.account.confirm_delete = true).snapshot("account_delete_confirm");
+    }
+
+    #[test]
+    #[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+    fn account_mainland_china() {
+        settings(false, Region::China, |_| {}).snapshot("account_china");
+    }
+
+    /// The Ask box in Pro through the proxy, signed out: the sign-in prompt takes the field's place.
+    #[test]
+    #[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+    fn ask_sign_in_prompt() {
+        let mut h = phase3(&["V1/districts.geojson"], SHANGHAI, |s| {
+            s.pro = true;
+            s.account = crate::account_ui::test_ui(false, Region::International);
+        });
+        use egui_kittest::kittest::Queryable as _;
+        assert!(h.query_by_label("Sign In…").is_some());
+        assert!(h.query_by_label("Ask about your layers").is_none(), "no field while signed out");
+        h.snapshot("ask_sign_in_prompt");
+        // Sign In… opens Settings › Account.
+        h.get_by_label("Sign In…").click();
+        h.run_steps(5);
+        assert!(h.state().as_ref().is_some_and(|s| s.account.open));
+    }
+}

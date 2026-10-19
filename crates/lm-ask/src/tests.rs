@@ -328,3 +328,23 @@ fn tables_are_offered_for_match_table_only() {
     let s = t.to_string();
     assert!(s.contains("match_table") && s.contains("table_field"));
 }
+
+/// WP7.6 and Gate 7: through the Ask proxy the model gets exactly the request the direct route
+/// sends (the same body, byte for byte as JSON), so it carries no feature values either.
+#[test]
+fn the_proxy_route_sends_the_same_request_and_no_values() {
+    let _net = crate::NET_TESTS.lock().unwrap_or_else(|e| e.into_inner());
+    let reply = call("c1", "submit_plan", json!({"steps": [{"action": "cannot_do", "reason": "no rivers layer"}]}));
+    let req = request("schools near rivers", map(), vec![None, None]);
+    let direct = Script::new(vec![reply.clone()]);
+    let a = ask(&direct, &req, &Control::default());
+    let (url, seen) = crate::proxy::tests::service(vec![(200, reply.to_string())]);
+    let b = ask(&crate::proxy::Proxy::new(url, "anon".into(), "token".into()), &req, &Control::default());
+    assert!(matches!(a.answer, Ok(Answer::CannotDo(_))) && matches!(b.answer, Ok(Answer::CannotDo(_))));
+    let seen = seen.lock().unwrap();
+    assert_eq!(seen.len(), 1);
+    let sent: Json = serde_json::from_str(&seen[0].1).unwrap();
+    assert_eq!(sent, direct.seen.borrow()[0]);
+    let text = sent.to_string();
+    assert!(text.contains("Schools") && !text.contains("Shanghai No. 1"), "layer names, never values");
+}

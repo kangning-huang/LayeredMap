@@ -486,6 +486,10 @@ fn main() -> eframe::Result {
             let mut shell = Shell::new(&cc.egui_ctx, flags, prefs, system);
             shell.developer = developer;
             shell.pro = pro;
+            // Pro's account (WP7.4): only with an account config; otherwise the Ask box works as before.
+            if pro && !ephemeral {
+                shell.start_account();
+            }
             shell.set_library_catalog(lm_ui::library::catalog_url(std::env::var("LM_LIBRARY_URL").ok().as_deref(), developer));
             lm_ui::basemap::start_archive_lookup(&cc.egui_ctx);
             if !ephemeral {
@@ -516,7 +520,14 @@ fn main() -> eframe::Result {
             let hwnd = windows::hwnd(cc);
             #[cfg(not(windows))]
             let hwnd = None;
-            let menu = menu::MenuBar::install(developer, shell.export_shown(), shell.library_available(), &cc.egui_ctx, hwnd);
+            let menu = menu::MenuBar::install(
+                developer,
+                shell.export_shown(),
+                shell.library_available(),
+                shell.account_available(),
+                &cc.egui_ctx,
+                hwnd,
+            );
             Ok(Box::new(App {
                 shell,
                 menu,

@@ -109,6 +109,7 @@ mod tests {
     /// Offline, the request never leaves: the gate refuses it and the user is told why.
     #[test]
     fn offline_sends_nothing() {
+        let _net = crate::NET_TESTS.lock().unwrap_or_else(|e| e.into_inner());
         lm_net::set_offline(true);
         let before = lm_net::counts();
         let r = super::OpenRouter::new("sk-or-not-a-key".into()).complete(&serde_json::json!({}));
