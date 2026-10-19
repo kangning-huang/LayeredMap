@@ -27,7 +27,7 @@ None of it has a button in the free app; it is exercised through a developer sur
 | N3 summary against the hand calculation | mean 3.3e-12, coverage 2.4e-11 relative |
 | N8 category shares | 3.7e-10 absolute |
 | R3 × V1 weighted means against exactextract 0.3.0 | 2.3e-9 relative |
-| N4: R7 (generated, 10°S–70°N) × 8 areas against exactextract 0.3.0 | worst 1.2e-7 relative (limit 1e-6) over mean, coverage, covered area, polygon area, min, max; for TRI and DIAG against the exact shapely check, because exactextract drops two fully covered cells of each (see Open questions) |
+| N4: R7 (generated, 10°S–70°N) × 8 areas against exactextract 0.3.0 | worst 1.2e-7 relative (limit 1e-6) over mean, coverage, covered area, polygon area, min, max; for TRI and DIAG against the exact shapely check, because exactextract drops two fully covered cells of each (see Decisions) |
 | N4 against the high-resolution geodesic integration | worst 3.0e-5 relative (limit 1e-3; the tiny SMALL triangle's covered area), means within 4.8e-8 |
 | N6: totals from R2 counts (Σ n·f) and R2 density (Σ d·a), V1's 17 districts + 6 cut-cell areas, against exactextract | worst 2.0e-9 relative (limit 1e-6); S5 against the shapely check (exactextract adds a cell outside it); the two totals agree to 1.5e-8 |
 | GeoTIFF window reader (`zonal::TiffSource`) on 10 GDAL-written layouts (`fixtures/N7/layouts/`: strips and tiles; chunky and planar bands; uint8, int16, uint16, float32, float64; none, LZW, Deflate, PackBits, Zstandard; BigTIFF; a COG with overviews; EPSG:4326 and EPSG:32651; NaN NoData) | every cell of 64 windows per file and band exact, NoData recognised; only the tiles a window touches are decoded; truncated or corrupted files give errors, never a panic; a summary from the file equals one from memory |
@@ -56,16 +56,14 @@ N7 runs with `cargo xtask fixtures --only R4,N7` then
 | Cancel during that summary | 18 µs | 1 s |
 | Buffer 10,000 clustered points by 1 km, merged | 1.26 s (one polygon, 12 holes, 1,294.5 km²) | 30 s |
 
-## Open questions for you
+## Decisions (owner, 2026-10-19)
 
-- **Coverage formula** (docs/lm/decisions.md, 2026-10-17): coverage is capped at 1 because the
-  plan's formula and its own rule can't both hold. Sign off or choose otherwise.
-- **exactextract defects** (docs/lm/decisions.md, 2026-10-17): exactextract 0.3.0 leaves out
-  whole interior cells near some vertices (N4 TRI, DIAG) and counts a cell outside an area that
-  crosses the raster's edge (N6 S5). The N4, N6 and N7 references therefore check every area
-  against exact shapely fractions and use those where exactextract is off by more than 1e-7,
-  saying so in a `source` column (3 of 62 areas). LayeredMap and the geodesic integration agree
-  with the check. Sign off, or name another reference.
+- **Coverage formula:** Google Earth Engine's weighted-reducer rule,
+  c = Σ_valid a / (Σ_all a + A_out), with the part of the area beyond the raster counting as no
+  data (docs/lm/decisions.md, 2026-10-19; `coverage_follows_earth_engine_weighting`). Replaces the
+  max(A_P, Σ a) cap.
+- **exactextract defects:** signed off. The N4, N6 and N7 references use exact shapely fractions
+  where exactextract 0.3.0 is off by more than 1e-7, naming the source (3 of 62 areas).
 
 ## Known limits
 

@@ -90,19 +90,18 @@ are in; your validation is next.
 
 ## 3. Your validation — "Explain this map" (75 minutes)
 
-Teaching set K1 is yours to supply (district areas with a July mean temperature field, the
-surface-temperature raster with its unit set, school points). Until then V1 + T1 + the examples
-exercise the same paths.
+Uses the bundled World basics example (177 countries with population and GDP), in any 0.6.x
+build. (Teaching set K1 was dropped from this gate, owner 2026-10-19.)
 
-1. Open K1.
-2. Click five districts and write down their insight rows. Run
-   `python validation/gate-3/check_insight.py districts.geojson july_temp --id <district> --id-field <id field> --unit "°C" --noun districts`
-   for each and compare every rank and median difference.
-3. Details → mark population as ID; confirm it leaves the insight strip; Undo.
-4. Style districts with presets; colour by a count field and accept "per km²".
-5. ⌘T, + Filter → population above 500,000; select rows and watch the map.
+1. Choose Examples › **World basics**.
+2. Click five countries and write down their insight rows. For each, run
+   `python validation/gate-3/check_insight.py assets/examples/countries.geojson pop_est --id <country> --id-field name --noun countries`
+   and compare every rank and median difference.
+3. Details → mark `pop_est` as an identifier; confirm it leaves the insight strip; Undo.
+4. Style the countries with presets; colour them by `pop_est` and accept "per km²".
+5. ⌘T, + Filter → `pop_est` above 50,000,000; select rows and watch the map.
 6. Undo ten times and redo ten times; the map must end exactly as it started.
-7. Hallway test with two students: "Which district is hottest, and how do you know?"
+7. Hallway test with two students: "Which country is the most crowded, and how do you know?"
 
 ## 4. Stress tests
 
@@ -123,9 +122,9 @@ Release build, reference Mac (`cargo test --release -p lm-jobs gate3_stress -- -
 
 | Criterion | Met? | Evidence |
 |---|---|---|
-| Every number from your five districts matches the check script exactly | pending | § 3 |
+| Every number from your five countries matches the check script exactly | pending | § 3 |
 | A card within 100 ms of a click on F1, 200 ms on V7 | yes | § 4 |
-| Both students find the hottest district and explain why, without help | pending | § 3 |
+| Both students find the most crowded country and explain why, without help | pending | § 3 |
 | Undo and redo round trips are exact | yes so far | § 1 |
 
 ## Known limits (honest list)
