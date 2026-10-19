@@ -1476,7 +1476,16 @@ Candidates, in likely order:
 - The app talks only to this service, an addition to the allowed network services.
 
 **WP7.4 Accounts and subscription** (P0, closed)
-- Sign in, subscribe, see the month's allowance. App Store or direct billing is decided with the Apple enrollment before the pilot.
+- Pro needs an account (owner, 2026-10-19). At first Pro is free for anyone who registers; a subscription may follow. Design and owner prerequisites: `docs/lm/accounts.md`.
+- Sign-in happens in the system browser (OAuth with PKCE); the app keeps only a refresh token in the keychain. Settings › Account shows who is signed in, with Sign out and Delete account.
+- International: Sign in with Apple, Google, X and an email link, on a hosted sign-in service with a small database (Supabase proposed). Per user only: the provider's user ID, sign-in method, email when given, `pro`, sign-up date, later the plan.
+- Mainland China (千层图): WeChat, Alipay and phone-number codes, plus Sign in with Apple, on a China-hosted identity service. Needs a mainland company, WeChat and Alipay developer verification, an approved SMS signature, an ICP filing and a PIPL privacy policy.
+- Never in a git repository, encrypted or not.
+- Subscription later: Stripe or Paddle internationally, WeChat Pay and Alipay in China; a payment webhook sets the plan.
+
+**WP7.6 The Ask service holds the key** (P0, with WP7.3)
+- The assistant service checks the user's token and `pro`, applies per-user daily limits and calls the model. The OpenRouter key exists only there, and the test builds' bundled key and its scrambling pad are removed, so Pro builds can be shared.
+- China: generative AI offered to the public in mainland China must use a model that has completed filing (备案), and OpenRouter isn't reachable there; the China service uses a filed domestic model behind the same interface. Legal advice before a China launch.
 
 **WP7.5 Evaluation set** (P0)
 - At least 200 real questions over the K1 teaching set and the B fixtures, each with the expected tool calls and answer.
