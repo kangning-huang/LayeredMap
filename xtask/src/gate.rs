@@ -1,4 +1,4 @@
-//! LayeredMap's gate runs that need more than CI (Gate protocol › Automated checks: "large
+//! NimbleMap's gate runs that need more than CI (Gate protocol › Automated checks: "large
 //! fixtures and stress runs use cargo xtask stress on your Mac"; fuzzing from Phase 2 on).
 //!
 //! - `stress`: the ignored large-fixture tests of `lm-jobs` and `lm-analysis` (N7), in release mode, with the generated

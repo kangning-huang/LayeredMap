@@ -1,8 +1,8 @@
-# LLM evaluation for LayeredMap Pro
+# LLM evaluation for NimbleMap Pro
 
-Which OpenRouter model turns a user's request (English or Chinese) into calls to LayeredMap's
+Which OpenRouter model turns a user's request (English or Chinese) into calls to NimbleMap's
 certified actions most cost-efficiently? The model only translates: it picks actions and fills
-their inputs, and LayeredMap runs them locally (spec › Product tiers, Phase 7). The report is
+their inputs, and NimbleMap runs them locally (spec › Product tiers, Phase 7). The report is
 [`docs/lm/llm-eval.md`](../../../docs/lm/llm-eval.md).
 
 ## Files
@@ -128,7 +128,7 @@ equally right, e.g. filtering before or after adding raster values). Only the ar
 the expected call are checked, except that buffering one object when the whole layer was meant
 fails.
 
-**Strict** (could LayeredMap run it as is?): the same calls in the same order and nothing more;
+**Strict** (could NimbleMap run it as is?): the same calls in the same order and nothing more;
 layer and field names exactly as listed; a result layer as the right `#n` or its real name;
 objects named by a (field, value) pair that exists in the data (case-insensitive value, as the
 app's filter compares text); distances the runner's `parse_distance` reads, within 0.5 %; filter

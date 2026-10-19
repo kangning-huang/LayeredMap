@@ -33,10 +33,10 @@ def main():
     new = doc["new_actions"]
     out = []
     w = out.append
-    w("# LayeredMap Pro puzzles")
+    w("# NimbleMap Pro puzzles")
     w("")
-    w("Eight original \"where is it?\" puzzles for testing LayeredMap Pro end to end and for the release")
-    w("videos. Each is solved by a plan of LayeredMap actions; actions marked **new** are the proposals in")
+    w("Eight original \"where is it?\" puzzles for testing NimbleMap Pro end to end and for the release")
+    w("videos. Each is solved by a plan of NimbleMap actions; actions marked **new** are the proposals in")
     w("[mechanics.md](mechanics.md). Every answer was checked by the reference solver")
     w("`tools/lm/puzzles/solve.py` on the open datasets described in")
     w(f"`{doc['data_readme']}`, which also printed the candidate counts and robustness")

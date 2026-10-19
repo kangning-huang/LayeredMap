@@ -3,6 +3,7 @@
 //! "Excel workbook with several sheets", `lm_profile::excel_sheet`); the chosen sheet then goes
 //! the CSV way: cells kept as written, located by `lm_profile::csv_locate`, typed beside them.
 
+use lm_core::brand::NAME as APP;
 use std::io::Read;
 use std::path::Path;
 use std::sync::Arc;
@@ -37,7 +38,7 @@ impl FormatAdapter for Excel {
         let m = std::fs::metadata(path).map_err(|e| ImportError::read(&file_name(path), e))?;
         if m.len() > WORKBOOK_MAX_BYTES {
             return Err(ImportError::Refused(format!(
-                "{} is larger than 1 GB, the most LayeredMap reads as a workbook. Saving the sheet as CSV makes it open. Your file has not been changed.",
+                "{} is larger than 1 GB, the most {APP} reads as a workbook. Saving the sheet as CSV makes it open. Your file has not been changed.",
                 file_name(path)
             )));
         }

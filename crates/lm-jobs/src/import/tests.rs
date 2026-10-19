@@ -196,7 +196,7 @@ fn unsupported_and_missing_files_say_so_plainly() {
     std::fs::create_dir_all(&dir).unwrap();
     let dwg = dir.join("plan.dwg");
     std::fs::write(&dwg, b"AC1032 not really").unwrap();
-    assert_eq!(import_path(&dwg, &Ctx::detached(Ticket::default())).err().unwrap().to_string(), "LayeredMap can't open .dwg files yet.");
+    assert_eq!(import_path(&dwg, &Ctx::detached(Ticket::default())).err().unwrap().to_string(), "NimbleMap can't open .dwg files yet.");
     let gone = import_path(&dir.join("gone.csv"), &Ctx::detached(Ticket::default())).err().unwrap();
     assert!(gone.to_string().contains("no longer where it was"), "{gone}");
     let _ = std::fs::remove_dir_all(dir);
@@ -585,9 +585,9 @@ fn switched_off_p1_formats_are_refused_plainly() {
     let gpkg = fixtures().join("V9/city_layers.gpkg");
     let xlsx = fixtures().join("T5/survey.xlsx");
     let msg = |p: &std::path::Path, head: &[u8]| pick_adapter(p, head, false).err().map(|e| e.to_string());
-    assert_eq!(msg(&gpkg, b"SQLite format 3\0"), Some("LayeredMap can't open .gpkg files yet.".into()));
+    assert_eq!(msg(&gpkg, b"SQLite format 3\0"), Some("NimbleMap can't open .gpkg files yet.".into()));
     // An .xlsx starts like a ZIP: it must not reach the zipped-Shapefile reader.
-    assert_eq!(msg(&xlsx, b"PK\x03\x04"), Some("LayeredMap can't open .xlsx files yet.".into()));
+    assert_eq!(msg(&xlsx, b"PK\x03\x04"), Some("NimbleMap can't open .xlsx files yet.".into()));
     assert_eq!(pick_adapter(&gpkg, b"SQLite format 3\0", true).map(|a| a.name()).ok(), Some("GeoPackage"));
     assert_eq!(pick_adapter(&xlsx, b"PK\x03\x04", true).map(|a| a.name()).ok(), Some("Excel"));
     assert_eq!(
@@ -626,7 +626,7 @@ fn zip_based_documents_are_not_taken_for_zipped_shapefiles() {
     for f in ["report.docx", "slides.pptx", "sheet.ods"] {
         let ext = f.rsplit('.').next().unwrap();
         let e = pick_adapter(std::path::Path::new(f), b"PK\x03\x04", true).err().map(|e| e.to_string());
-        assert_eq!(e, Some(format!("LayeredMap can't open .{ext} files yet.")), "{f}");
+        assert_eq!(e, Some(format!("NimbleMap can't open .{ext} files yet.")), "{f}");
     }
     // A ZIP without a telling name is still tried as a zipped Shapefile.
     assert_eq!(pick_adapter(std::path::Path::new("download"), b"PK\x03\x04", true).map(|a| a.name()).ok(), Some("Zipped Shapefile"));

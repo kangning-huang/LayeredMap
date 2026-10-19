@@ -1,4 +1,4 @@
-# LayeredMap action rules (Insight cards and suggested actions › Selection → suggested actions).
+# NimbleMap action rules (Insight cards and suggested actions › Selection → suggested actions).
 #
 # The table in the spec is the specification; this file is that table as data. Changing an
 # order is a one-line edit here plus the matching snapshot in tests/rows.rs.

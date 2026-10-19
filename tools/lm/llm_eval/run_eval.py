@@ -138,7 +138,7 @@ class OpenRouterClient:
         headers = {
             "Authorization": "Bearer " + self._key,
             "Content-Type": "application/json",
-            "X-Title": "LayeredMap llm-eval",
+            "X-Title": "NimbleMap llm-eval",
         }
         r = self._s.post(API, json=body, headers=headers, timeout=self.timeout)
         try:

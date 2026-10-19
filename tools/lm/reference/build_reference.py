@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the hidden built-in reference data for LayeredMap Pro.
+"""Build the hidden built-in reference data for NimbleMap Pro.
 
 Downloads Natural Earth 1:10m layers (v5.1.x) plus NOAA ETOPO 2022 elevation (10') and writes
 trimmed, renamed ESRI shapefiles, point-of-view (POV) country diffs, manifest.json and README.md.
@@ -34,7 +34,7 @@ CULTURAL = ["ne_10m_admin_0_countries", "ne_10m_admin_1_states_provinces",
 PHYSICAL = ["ne_10m_rivers_lake_centerlines", "ne_10m_lakes", "ne_10m_coastline", "ne_10m_land",
             "ne_10m_minor_islands", "ne_10m_geography_regions_polys",
             "ne_10m_geography_marine_polys"]
-UA = {"User-Agent": "LayeredMap-reference-builder/1.0"}
+UA = {"User-Agent": "NimbleMap-reference-builder/1.0"}
 
 
 def sha256(path):
@@ -419,7 +419,7 @@ def main():
     print(f"  {len(povs)} POV variants exist: {' '.join(povs)}")
     missing_povs = [c for c in POV_CODES if c not in povs]
 
-    manifest = {"name": "LayeredMap Pro built-in reference data", "crs": "EPSG:4326",
+    manifest = {"name": "NimbleMap Pro built-in reference data", "crs": "EPSG:4326",
                 "built": datetime.date.today().isoformat(), "layers": {}, "pov": {}}
     sizes = {}
     print("== layers")
@@ -585,11 +585,11 @@ def write_readme(out, sources, manifest, sizes, povs, args):
     total = sum(fsize(p) for p in out.rglob("*") if p.is_file() and "raw" not in
                 p.relative_to(out).parts)
     elev = sources["etopo_2022_60s"]
-    text = f"""# LayeredMap Pro built-in reference data
+    text = f"""# NimbleMap Pro built-in reference data
 
-Hidden reference layers bundled with LayeredMap Pro, so the assistant can answer questions such as
+Hidden reference layers bundled with NimbleMap Pro, so the assistant can answer questions such as
 "which country has the most power plants" with only the user's own layer open. Built
-{manifest['built']} by `tools/lm/reference/build_reference.py` in the LayeredMap repo.
+{manifest['built']} by `tools/lm/reference/build_reference.py` in the NimbleMap repo.
 
 Location: `{out}` (raw downloads in `raw/`, not part of the bundle).
 Total size excluding `raw/`: **{mb(total)}**. All vector layers are ESRI shapefiles

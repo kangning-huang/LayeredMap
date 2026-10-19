@@ -1,7 +1,7 @@
-//! LayeredMap's additions to the xtask: the layering rules for the `lm-*` crates and the app
+//! NimbleMap's additions to the xtask: the layering rules for the `lm-*` crates and the app
 //! (build plan › Architecture › Rules enforced in CI).
 //!
-//! Each LayeredMap crate may depend only on the internal crates its row of the module table
+//! Each NimbleMap crate may depend only on the internal crates its row of the module table
 //! names. On top of that:
 //! - below `lm-ui`, only `lm-mapview` may depend on egui, and nothing but the app depends on
 //!   eframe or rfd;
@@ -60,7 +60,7 @@ pub fn dependencies(manifest: &str) -> Vec<String> {
 pub fn check(krate: &str, deps: &[String]) -> Vec<String> {
     let mut errs = Vec::new();
     let Some((_, allowed)) = ALLOWED.iter().find(|(k, _)| *k == krate) else {
-        return vec![format!("{krate}: not in the LayeredMap module table (xtask/src/lm.rs)")];
+        return vec![format!("{krate}: not in the lm-* module table (xtask/src/lm.rs)")];
     };
     for d in deps {
         let d = d.as_str();
@@ -81,7 +81,7 @@ pub fn check(krate: &str, deps: &[String]) -> Vec<String> {
     errs
 }
 
-/// Checks every LayeredMap crate in the workspace at `root`.
+/// Checks every NimbleMap crate in the workspace at `root`.
 pub fn layers(root: &std::path::Path) -> Result<(), String> {
     let mut manifests = BTreeMap::new();
     for (krate, _) in ALLOWED {
@@ -94,7 +94,7 @@ pub fn layers(root: &std::path::Path) -> Result<(), String> {
         for e in entries.flatten() {
             let name = e.file_name().to_string_lossy().into_owned();
             if name.starts_with("lm-") && !manifests.contains_key(name.as_str()) {
-                return Err(format!("crates/{name}: not in the LayeredMap module table (xtask/src/lm.rs)"));
+                return Err(format!("crates/{name}: not in the lm-* module table (xtask/src/lm.rs)"));
             }
         }
     }

@@ -1,14 +1,18 @@
 #!/usr/bin/env bash
-# Builds LayeredMap.app (and, with signing credentials, signs, notarizes and staples it).
+# Builds NimbleMap.app (and, with signing credentials, signs, notarizes and staples it).
 #
 #   packaging/lm/bundle-macos.sh [out-dir]
-#   LM_TIER=pro packaging/lm/bundle-macos.sh [out-dir]   # LayeredMap Pro.app
+#   LM_TIER=pro packaging/lm/bundle-macos.sh [out-dir]   # NimbleMap Pro.app
 #
 # Signing runs only when these are set (CI secrets; see docs/lm/signing.md):
 #   LM_SIGN_IDENTITY   "Developer ID Application: <name> (<team id>)" — in the keychain
 #   LM_NOTARY_APPLE_ID, LM_NOTARY_TEAM_ID, LM_NOTARY_PASSWORD (an app-specific password)
 # Without them the bundle is ad-hoc signed, which runs locally but warns on other Macs.
 set -euo pipefail
+
+# The display name (bundle, menus, Finder); keep in step with lm_core::brand (docs/lm/naming.md).
+# Bundle identifiers, the executable and the .lmap type keep their layeredmap names.
+brand="NimbleMap"
 
 root="$(cd "$(dirname "$0")/../.." && pwd)"
 out="${1:-$root/dist/lm}"
@@ -22,9 +26,9 @@ cargo build --release --locked -p layeredmap --manifest-path "$root/Cargo.toml"
 # can be installed side by side; the app reads Contents/Resources/tier.
 tier="${LM_TIER:-free}"
 if [[ "$tier" == "pro" ]]; then
-  name="LayeredMap Pro"; bundle_id="app.layeredmap.pro"
+  name="$brand Pro"; bundle_id="app.layeredmap.pro"
 else
-  name="LayeredMap"; bundle_id="app.layeredmap.desktop"
+  name="$brand"; bundle_id="app.layeredmap.desktop"
 fi
 app="$out/$name.app"
 rm -rf "$app"
@@ -33,7 +37,7 @@ cp "$target_dir/release/layeredmap" "$app/Contents/MacOS/layeredmap"
 # The Examples menu (WP2.9): the app looks in Contents/Resources/examples.
 mkdir -p "$app/Contents/Resources/examples"
 rsync -a --exclude '._*' "$root/assets/examples/" "$app/Contents/Resources/examples/"
-# Help › LayeredMap Help (WP6.10): the help pages, read from disk so they work offline.
+# Help › NimbleMap Help (WP6.10): the help pages, read from disk so they work offline.
 mkdir -p "$app/Contents/Resources/help"
 rsync -a --exclude '._*' --exclude 'README.md' "$root/web/lm/" "$app/Contents/Resources/help/"
 # The app icon (the Strata logo; tools/lm/make_app_icon.py builds it from design/logo).
@@ -52,8 +56,8 @@ if [[ "$tier" == "pro" ]]; then
 <plist version="1.0"><dict>
   <key>CFBundleIdentifier</key><string>${bundle_id}.dictate</string>
   <key>CFBundleName</key><string>${name}</string>
-  <key>NSMicrophoneUsageDescription</key><string>LayeredMap Pro listens when you click the microphone in the Ask box, to turn your request into text.</string>
-  <key>NSSpeechRecognitionUsageDescription</key><string>LayeredMap Pro turns what you say in the Ask box into text, on this Mac when it can.</string>
+  <key>NSMicrophoneUsageDescription</key><string>${name} listens when you click the microphone in the Ask box, to turn your request into text.</string>
+  <key>NSSpeechRecognitionUsageDescription</key><string>${name} turns what you say in the Ask box into text, on this Mac when it can.</string>
 </dict></plist>
 DPLIST
   swiftc -O -o "$app/Contents/MacOS/lm-dictate" "$root/packaging/lm/dictate.swift" \
@@ -70,7 +74,7 @@ DPLIST
   fi
   # Test builds: the owner's OpenRouter key from this Mac's keychain, built into the bundle
   # (scrambled, not secret: anyone determined can recover it). Never in the repo. The release
-  # talks to LayeredMap's assistant service instead (WP7.3). LM_NO_KEY=1 leaves it out.
+  # talks to NimbleMap's assistant service instead (WP7.3). LM_NO_KEY=1 leaves it out.
   if [[ -z "${LM_NO_KEY:-}" ]]; then
     python3 - "$app/Contents/Resources/assistant.dat" <<'PY'
 import subprocess, sys
@@ -100,16 +104,16 @@ cat > "$app/Contents/Info.plist" <<PLIST
   <key>CFBundleVersion</key><string>${build}</string>
   <key>LSMinimumSystemVersion</key><string>13.0</string>
   <key>NSHighResolutionCapable</key><true/>
-  <key>NSMicrophoneUsageDescription</key><string>LayeredMap Pro listens when you click the microphone in the Ask box, to turn your request into text.</string>
-  <key>NSSpeechRecognitionUsageDescription</key><string>LayeredMap Pro turns what you say in the Ask box into text, on this Mac when it can.</string>
+  <key>NSMicrophoneUsageDescription</key><string>${name} listens when you click the microphone in the Ask box, to turn your request into text.</string>
+  <key>NSSpeechRecognitionUsageDescription</key><string>${name} turns what you say in the Ask box into text, on this Mac when it can.</string>
   <key>LSApplicationCategoryType</key><string>public.app-category.education</string>
-  <!-- Open With (WP2.1): LayeredMap can open data files, but never claims to be their default
+  <!-- Open With (WP2.1): ${brand} can open data files, but never claims to be their default
        app (LSHandlerRank Alternate) and only views them (role Viewer). -->
   <key>CFBundleDocumentTypes</key>
   <array>
-    <!-- LayeredMap's own map files (WP5.1): its type, opened for editing. -->
+    <!-- ${brand}'s own map files (WP5.1): its type, opened for editing. -->
     <dict>
-      <key>CFBundleTypeName</key><string>LayeredMap map</string>
+      <key>CFBundleTypeName</key><string>${brand} map</string>
       <key>CFBundleTypeRole</key><string>Editor</string>
       <key>LSHandlerRank</key><string>Owner</string>
       <key>LSItemContentTypes</key><array><string>app.layeredmap.map</string></array>
@@ -180,18 +184,18 @@ cat > "$app/Contents/Info.plist" <<PLIST
       <key>CFBundleTypeExtensions</key><array><string>nc</string><string>nc4</string><string>cdf</string></array>
     </dict>
   </array>
-  <!-- The .lmap type, which LayeredMap owns and declares (docs/lm/format-v1.md). -->
+  <!-- The .lmap type, which ${brand} owns and declares (docs/lm/format-v1.md). -->
   <key>UTExportedTypeDeclarations</key>
   <array>
     <dict>
       <key>UTTypeIdentifier</key><string>app.layeredmap.map</string>
-      <key>UTTypeDescription</key><string>LayeredMap map</string>
+      <key>UTTypeDescription</key><string>${brand} map</string>
       <key>UTTypeConformsTo</key><array><string>public.data</string><string>public.content</string></array>
       <key>UTTypeIconFile</key><string>AppIcon</string>
       <key>UTTypeTagSpecification</key><dict><key>public.filename-extension</key><array><string>lmap</string></array><key>public.mime-type</key><string>application/vnd.layeredmap.map+zip</string></dict>
     </dict>
   </array>
-  <!-- Types macOS has no system UTI for. Imported, not exported: LayeredMap does not own them. -->
+  <!-- Types macOS has no system UTI for. Imported, not exported: ${brand} does not own them. -->
   <key>UTImportedTypeDeclarations</key>
   <array>
     <dict>
@@ -256,7 +260,7 @@ if [[ -n "${LM_SIGN_IDENTITY:-}" ]]; then
     exit 1
   fi
   if [[ -n "${LM_NOTARY_APPLE_ID:-}" ]]; then
-    zip="$out/LayeredMap-notarize.zip"
+    zip="$out/${brand}-notarize.zip"
     ditto -c -k --keepParent "$app" "$zip"
     xcrun notarytool submit "$zip" --apple-id "$LM_NOTARY_APPLE_ID" --team-id "$LM_NOTARY_TEAM_ID" \
       --password "$LM_NOTARY_PASSWORD" --wait

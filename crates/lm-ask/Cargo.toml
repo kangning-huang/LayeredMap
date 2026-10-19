@@ -4,7 +4,7 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 publish = false
-description = "LayeredMap Pro: the Ask box's assistant (plain-words requests to checked plans)"
+description = "NimbleMap Pro: the Ask box's assistant (plain-words requests to checked plans)"
 
 [lints]
 workspace = true

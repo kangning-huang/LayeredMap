@@ -2,7 +2,7 @@
 //! macOS keychain (service `openrouter`, account `layeredmap`; on Windows and elsewhere the
 //! `OPENROUTER_API_KEY` environment variable, as Credential Manager would need unsafe Win32 calls
 //! for a developer-only path). The key is read when a request is sent and never logged or written
-//! to a file. (The release talks to LayeredMap's own assistant
+//! to a file. (The release talks to NimbleMap's own assistant
 //! service instead, WP7.3.)
 
 use std::time::Duration;
@@ -15,8 +15,9 @@ const SERVICE: &str = "openrouter";
 #[cfg(target_os = "macos")]
 const ACCOUNT: &str = "layeredmap";
 
-/// What the assistant says while LayeredMap works offline.
-pub const OFFLINE: &str = "LayeredMap is working offline, so the assistant can't be reached. Turn off View › Work Offline to ask.";
+/// What the assistant says while the app works offline.
+// A const can't use format!, so the name is a literal: keep it in step with lm_core::brand::NAME.
+pub const OFFLINE: &str = "NimbleMap is working offline, so the assistant can't be reached. Turn off View › Work Offline to ask.";
 
 pub struct OpenRouter {
     key: String,
@@ -39,7 +40,7 @@ impl crate::session::Transport for OpenRouter {
             .header("Authorization", &format!("Bearer {}", self.key))
             .header("Content-Type", "application/json")
             .header("HTTP-Referer", "https://layeredmap.app")
-            .header("X-Title", "LayeredMap Pro")
+            .header("X-Title", lm_core::brand::PRO_NAME)
             .send(body.to_string())
             .map_err(|e| format!("Couldn't reach the assistant service: {e}"))?;
         let status = resp.status().as_u16();
@@ -65,12 +66,14 @@ pub fn read_key() -> Option<String> {
 }
 
 /// An internal test build: one with the owner's key built in (the release has none and talks to
-/// LayeredMap's assistant service). Such builds show each request's cost; the release never does.
+/// NimbleMap's assistant service). Such builds show each request's cost; the release never does.
 pub fn internal_build() -> bool {
     bundled_key().is_some()
 }
 
 /// Scrambled so it isn't plain text in the bundle; not a secret store (see the bundle script).
+// The old name is part of the scrambling key shared with the bundle scripts: not display text,
+// so the rename (docs/lm/naming.md) leaves it as it is.
 const PAD: &[u8] = b"LayeredMap Pro test build: not a secret store.";
 
 fn bundled_key() -> Option<String> {

@@ -786,7 +786,7 @@ fn phase4_summarize_in_a_drawn_area() {
     assert!(matches!(r.card.answer, lm_core::recipe::Answer::Number { value, .. } if value.is_finite()), "{:?}", r.card.answer);
 }
 
-/// LayeredMap Pro: the toolbar says Pro, and a layer's panel offers the analysis actions as
+/// NimbleMap Pro: the toolbar says Pro, and a layer's panel offers the analysis actions as
 /// buttons; the free app shows none of them.
 #[test]
 #[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
@@ -856,7 +856,7 @@ fn phase5_recovery_prompt() {
         });
     });
     settle(&mut h);
-    assert!(h.query_by_label_contains("LayeredMap quit unexpectedly. Restore 'Heat study' from 2 minutes ago?").is_some());
+    assert!(h.query_by_label_contains("NimbleMap quit unexpectedly. Restore 'Heat study' from 2 minutes ago?").is_some());
     h.snapshot("phase5_recovery_prompt");
     // Discard closes the prompt and keeps the map as it is.
     h.get_by_label("Discard").click();

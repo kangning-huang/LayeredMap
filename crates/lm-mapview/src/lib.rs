@@ -40,7 +40,7 @@ pub const FADE_S: f64 = 0.15;
 pub const REDUCED_FADE_S: f64 = 0.1;
 
 /// Registers a font the renderer may fall back on for label text its interface font can't draw
-/// (LayeredMap's bundled Noto Sans SC, so Chinese labels aren't dropped). Returns false for an
+/// (NimbleMap's bundled Noto Sans SC, so Chinese labels aren't dropped). Returns false for an
 /// unreadable font.
 pub fn add_label_font(bytes: Vec<u8>) -> bool {
     rustgis_render::fonts::add_fallback(bytes, 0)
@@ -79,7 +79,7 @@ pub struct MapOutput {
     pub id: Option<egui::Id>,
 }
 
-/// LayeredMap's selection highlight (Visual specification › Default symbols › Selected): the
+/// NimbleMap's selection highlight (Visual specification › Default symbols › Selected): the
 /// `accent` token's 3 px outline with a 2 px halo, white on light, black on dark.
 pub fn selection_style(dark: bool) -> SelectionStyle {
     if dark {
@@ -163,7 +163,7 @@ impl MapView {
         }
     }
 
-    /// How selected features (each layer's `selection` rows) are drawn; LayeredMap's light-theme
+    /// How selected features (each layer's `selection` rows) are drawn; NimbleMap's light-theme
     /// [`selection_style`] by default. Call with `selection_style(dark)` when the theme changes.
     pub fn set_selection_style(&mut self, style: SelectionStyle) {
         self.selection = style;

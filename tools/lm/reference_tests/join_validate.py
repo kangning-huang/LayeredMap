@@ -15,7 +15,7 @@ different names), keys compared exactly:
   * unmatched keys: table keys (as written) with no layer record, distinct, in table order;
     unmatched rows: every table row with no layer record, blank keys included (1-based);
   * values: each layer record's population. With one table row per record it is the merge's
-    value; with several, the row with the latest year (LayeredMap keeps one row per record).
+    value; with several, the row with the latest year (NimbleMap keeps one row per record).
 
 Usage:  python -I tools/lm/reference_tests/join_validate.py
 """

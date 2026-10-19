@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::{DocError, Result};
 
-/// The `format` value of every LayeredMap manifest.
+/// The `format` value of every NimbleMap manifest.
 pub const FORMAT_NAME: &str = "layeredmap";
 /// The manifest's file name inside a document folder.
 pub const MANIFEST_FILE: &str = "manifest.json";
@@ -165,7 +165,7 @@ mod tests {
         std::fs::write(&p, serde_json::to_vec(&v).unwrap()).unwrap();
         let e = load(&t.0).unwrap_err();
         assert!(matches!(e, DocError::TooNew { found: 99, supported: 0 }));
-        assert!(e.to_string().contains("newer version of LayeredMap"), "{e}");
+        assert!(e.to_string().contains(&format!("newer version of {}", lm_core::brand::NAME)), "{e}");
     }
 
     #[test]

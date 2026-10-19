@@ -1,4 +1,4 @@
-"""Tool definitions for the LayeredMap Pro assistant benchmark.
+"""Tool definitions for the NimbleMap Pro assistant benchmark.
 
 The analysis tools are generated from the app's own sources so they stay in sync:
 

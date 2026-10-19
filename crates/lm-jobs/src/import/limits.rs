@@ -2,6 +2,7 @@
 //! expanded; sizes are checked before anything is read.
 
 use super::ImportError;
+use lm_core::brand::NAME as APP;
 
 /// Most bytes an archive may expand to.
 pub const ZIP_MAX_EXPANDED: u64 = 2 << 30;
@@ -53,7 +54,7 @@ pub fn zip_entries(bytes: &[u8]) -> Result<Vec<ZipEntry>, ImportError> {
     let cd_size = u32_at(bytes, eocd + 12).ok_or_else(damaged)?;
     let cd_off = u32_at(bytes, eocd + 16).ok_or_else(damaged)?;
     if count == 0xFFFF || cd_off == 0xFFFF_FFFF || cd_size == 0xFFFF_FFFF {
-        return Err(ImportError::Refused("This archive uses the Zip64 format, which LayeredMap can't open yet.".into()));
+        return Err(ImportError::Refused(format!("This archive uses the Zip64 format, which {APP} can't open yet.")));
     }
     if count as usize > ZIP_MAX_ENTRIES {
         return Err(too_many(count as usize));
@@ -78,7 +79,7 @@ pub fn zip_entries(bytes: &[u8]) -> Result<Vec<ZipEntry>, ImportError> {
 
 fn too_many(n: usize) -> ImportError {
     ImportError::Refused(format!(
-        "This archive holds {} files, more than the {} LayeredMap opens. Your file has not been changed.",
+        "This archive holds {} files, more than the {} {APP} opens. Your file has not been changed.",
         lm_core::model::group_thousands(n as u64),
         lm_core::model::group_thousands(ZIP_MAX_ENTRIES as u64)
     ))
@@ -96,10 +97,9 @@ pub fn check_zip(entries: &[ZipEntry]) -> Result<(), ImportError> {
         [".zip", ".gz", ".tgz", ".7z", ".rar", ".bz2", ".xz", ".tar"].iter().any(|x| n.ends_with(x))
     });
     if nested.count() > 0 {
-        return Err(ImportError::Refused(
-            "This archive has other archives inside it. LayeredMap doesn't open archives inside archives, because they can expand without limit; unzip it first. Your file has not been changed."
-                .into(),
-        ));
+        return Err(ImportError::Refused(format!(
+            "This archive has other archives inside it. {APP} doesn't open archives inside archives, because they can expand without limit; unzip it first. Your file has not been changed."
+        )));
     }
     for e in entries {
         let n = e.name.replace('\\', "/");

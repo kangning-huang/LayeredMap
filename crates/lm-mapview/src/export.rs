@@ -1322,7 +1322,7 @@ mod tests {
             height,
             ppp,
             title: "Heat study".into(),
-            caption: "Data: Districts (districts.geojson). Made with LayeredMap.".into(),
+            caption: "Data: Districts (districts.geojson). Made with NimbleMap.".into(),
             attribution: "Natural Earth".into(),
             legend: vec![LegendBlock {
                 title: "Population".into(),
@@ -1425,12 +1425,12 @@ mod tests {
     fn long_captions_wrap_and_long_credits_get_their_own_line() {
         let face = Face::new(&FONTS);
         let long =
-            "Data: Districts (districts.geojson); Heat (summer surface temperature, 2024); Schools (schools.csv). Made with LayeredMap.";
+            "Data: Districts (districts.geojson); Heat (summer surface temperature, 2024); Schools (schools.csv). Made with NimbleMap.";
         let lines = face.wrap(long, TEXT, false, 300.0, 2);
         assert_eq!(lines.len(), 2);
         assert!(lines.iter().all(|l| face.width(l, TEXT, false) <= 300.0));
         assert!(lines[1].ends_with('…'));
-        let zh = face.wrap("数据：上海市各区人口与夏季地表温度，由某某大学提供。使用 LayeredMap 制作。", TEXT, false, 120.0, 3);
+        let zh = face.wrap("数据：上海市各区人口与夏季地表温度，由某某大学提供。使用 NimbleMap 制作。", TEXT, false, 120.0, 3);
         assert!(zh.len() >= 2);
         let s = Sheet { attribution: "NASA Blue Marble (NASA Earth Observatory, GIBS) · Natural Earth".into(), ..sheet(1080, 1080, 1.5) };
         let (_, _, row) = footer_lines(&face, &s, 400.0);
@@ -1756,7 +1756,7 @@ mod tests {
         let ((w, h), text, images) = read_pdf(&pdf);
         assert!((w - 540.0).abs() < 0.05 && (h - 540.0).abs() < 0.05, "7.5 in square: {w} × {h}");
         assert!(text.contains("Heat study") && text.contains("城市热岛"), "{text}");
-        assert!(text.contains("Natural Earth") && text.contains("Made with LayeredMap"), "{text}");
+        assert!(text.contains("Natural Earth") && text.contains("Made with NimbleMap"), "{text}");
         assert_eq!(images.len(), 1);
         let (iw, ih, rgb) = &images[0];
         assert_eq!((*iw, *ih), (i64::from(mw), i64::from(mh)));

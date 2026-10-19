@@ -30,7 +30,7 @@ use crate::error::{DocError, Result};
 use crate::manifest::{FORMAT_NAME, MANIFEST_FILE};
 use crate::source::{SourceState, check_source};
 
-/// The file extension of a LayeredMap document.
+/// The file extension of a NimbleMap document.
 pub const EXTENSION: &str = "lmap";
 /// The first entry of every `.lmap` file.
 pub const MIMETYPE: &str = "application/vnd.layeredmap.map+zip";
@@ -94,7 +94,7 @@ pub(crate) struct LmapManifest {
     /// Seconds since the Unix epoch.
     #[serde(default)]
     pub(crate) saved_at: i64,
-    /// "LayeredMap 0.5.0".
+    /// "NimbleMap 0.5.0".
     #[serde(default)]
     pub(crate) software: String,
     #[serde(default)]
@@ -131,7 +131,7 @@ pub struct Loaded {
     pub package: bool,
 }
 
-/// Whether a layer's source is a file (LayeredMap's own layers record no size and no time).
+/// Whether a layer's source is a file (NimbleMap's own layers record no size and no time).
 pub fn is_file_source(s: &SourceRef) -> bool {
     !(s.size == 0 && s.mtime == 0) && Path::new(&s.path).is_absolute()
 }
@@ -164,9 +164,9 @@ pub fn save_lmap(doc: &Document, owned: &[(LayerId, OwnedData)], path: &Path) ->
     Ok(report)
 }
 
-/// "LayeredMap 0.5.0".
+/// "NimbleMap 0.5.0".
 pub(crate) fn software() -> String {
-    format!("LayeredMap {}", env!("CARGO_PKG_VERSION"))
+    lm_core::brand::with_version(env!("CARGO_PKG_VERSION"))
 }
 
 /// The absolute folder that holds `path`.

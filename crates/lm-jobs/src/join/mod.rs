@@ -523,7 +523,7 @@ impl Cardinality {
 }
 
 /// What a join will do, worked out before it runs (the counts a plain merge would give, and
-/// what LayeredMap keeps).
+/// what NimbleMap keeps).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Expected {
     pub cardinality: Cardinality,

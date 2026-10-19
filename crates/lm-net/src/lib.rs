@@ -1,6 +1,6 @@
 //! The one network gate (WP6.6 Strict offline mode; Gate 5's network-blocking harness).
 //!
-//! Every network request LayeredMap makes asks [`allowed`] first, with what it is for: basemap
+//! Every network request NimbleMap makes asks [`allowed`] first, with what it is for: basemap
 //! tiles and the daily-build lookup, the data library, the update check and Pro's assistant.
 //! When the user turns on offline mode ([`set_offline`]) every one of them is refused here, so
 //! blocking is enforced in one place. The gate also counts what it allowed and refused, which is
@@ -8,7 +8,7 @@
 //!
 //! Requests made with [`get_text`] go through the gate on their own. Code with its own HTTP
 //! client (the tile fetcher in `rustgis-tiles`, the assistant's transport) calls [`allowed`] or
-//! [`check`] right before each request. `cargo xtask layers` fails when a LayeredMap source file
+//! [`check`] right before each request. `cargo xtask layers` fails when a NimbleMap source file
 //! uses `ureq` without asking the gate.
 //!
 //! Place search is not here: it reads the bundled GeoNames index and never goes online.
@@ -89,7 +89,9 @@ impl std::fmt::Display for Offline {
 impl std::error::Error for Offline {}
 
 /// What a refused request reports.
-pub const OFFLINE_MESSAGE: &str = "LayeredMap is working offline (View › Work Offline)";
+// No internal dependencies here (the network gate), and a const can't use format!: keep the
+// name in step with lm_core::brand::NAME.
+pub const OFFLINE_MESSAGE: &str = "NimbleMap is working offline (View › Work Offline)";
 
 /// [`allowed`] as a `Result`, for `?`.
 pub fn check(purpose: Purpose) -> Result<(), Offline> {
@@ -141,7 +143,8 @@ pub fn get_text(purpose: Purpose, url: &str, timeout: std::time::Duration, max_b
     check(purpose).map_err(|e| e.to_string())?;
     let agent: ureq::Agent = ureq::Agent::config_builder()
         .timeout_global(Some(timeout))
-        .user_agent(concat!("LayeredMap/", env!("CARGO_PKG_VERSION")))
+        // concat! needs a literal: keep in step with lm_core::brand::NAME.
+        .user_agent(concat!("NimbleMap/", env!("CARGO_PKG_VERSION")))
         .build()
         .into();
     let mut resp = agent.get(url).call().map_err(|e| e.to_string())?;

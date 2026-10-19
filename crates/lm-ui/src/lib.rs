@@ -204,7 +204,7 @@ pub struct System {
     pub reduce_motion: bool,
 }
 
-/// The LayeredMap shell.
+/// The NimbleMap shell.
 pub struct Shell {
     pub flags: Flags,
     pub prefs: Prefs,
@@ -268,7 +268,7 @@ pub struct Shell {
     /// The developer flag (`LM_DEV=1` or a debug build): shows assistant actions and the
     /// composer (Phase 4's developer surface).
     pub developer: bool,
-    /// LayeredMap Pro (the Pro app bundle, or `LM_TIER=pro`): the analysis actions are buttons
+    /// NimbleMap Pro (the Pro app bundle, or `LM_TIER=pro`): the analysis actions are buttons
     /// and open the composer. Until the assistant (Phase 7) exists this is how Pro asks.
     pub pro: bool,
     /// A question being composed (developer surface).
@@ -382,9 +382,9 @@ impl Shell {
         self.export_sheet.is_some()
     }
 
-    /// "LayeredMap" or "LayeredMap Pro".
+    /// "NimbleMap" or "NimbleMap Pro" (`lm_core::brand`).
     pub fn app_name(&self) -> &'static str {
-        if self.pro { "LayeredMap Pro" } else { "LayeredMap" }
+        lm_core::brand::name(self.pro)
     }
 
     pub fn theme(&self) -> &Theme {
@@ -525,8 +525,12 @@ impl Shell {
                 if !on && lm_mapview::archive::wanted() {
                     basemap::start_archive_lookup(ctx);
                 }
-                let msg = if on { "Working offline: LayeredMap won't use the network." } else { "Back online." };
-                self.notice = Some((msg.into(), t));
+                let msg = if on {
+                    format!("Working offline: {} won't use the network.", lm_core::brand::NAME)
+                } else {
+                    "Back online.".to_string()
+                };
+                self.notice = Some((msg, t));
             }
             Command::ReviewDiagnostics(report) => diagnostics::open(self, report),
             Command::OpenLibrary => library::open(self, ctx),

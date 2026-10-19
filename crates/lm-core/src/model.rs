@@ -70,7 +70,7 @@ impl<T> Known<T> {
     }
 }
 
-/// A coordinate system, as far as LayeredMap needs to name one.
+/// A coordinate system, as far as NimbleMap needs to name one.
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Crs {
     /// Longitude/latitude on WGS 84 ("GPS coordinates").

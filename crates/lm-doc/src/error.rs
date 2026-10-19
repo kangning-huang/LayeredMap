@@ -10,15 +10,16 @@ pub enum DocError {
     Read { path: String, source: std::io::Error },
     #[error("Could not save to {path}: {source}")]
     Write { path: String, source: std::io::Error },
-    #[error("{path} is not a LayeredMap document.")]
+    #[error("{path} is not a {} document.", lm_core::brand::NAME)]
     NotADocument { path: String },
     #[error(
-        "This map was saved by a newer version of LayeredMap (document format {found}). This version opens format {supported} and older. Update LayeredMap to open it."
+        "This map was saved by a newer version of {app} (document format {found}). This version opens format {supported} and older. Update {app} to open it.",
+        app = lm_core::brand::NAME
     )]
     TooNew { found: u64, supported: u32 },
     #[error("The map file {path} is damaged and could not be opened: {detail}")]
     Damaged { path: String, detail: String },
-    #[error("{path} is too large to be a LayeredMap document.")]
+    #[error("{path} is too large to be a {} document.", lm_core::brand::NAME)]
     TooLarge { path: String },
 }
 

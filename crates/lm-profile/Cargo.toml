@@ -4,7 +4,7 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 publish = false
-description = "LayeredMap: import-time profiling and assumption generation"
+description = "NimbleMap: import-time profiling and assumption generation"
 
 [lints]
 workspace = true

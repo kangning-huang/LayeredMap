@@ -95,7 +95,8 @@ fn windows_version(build: &str, ubr: Option<u32>, display: Option<&str>) -> Stri
 /// A crash log's text.
 pub fn crash_text(header: &str, thread: &str, message: &str, location: &str, backtrace: &str, at: u64) -> String {
     format!(
-        "LayeredMap crash log\n{header}time: {} UTC\nthread: {thread}\npanic: {message}\nat: {location}\n\nbacktrace:\n{backtrace}\n",
+        "{} crash log\n{header}time: {} UTC\nthread: {thread}\npanic: {message}\nat: {location}\n\nbacktrace:\n{backtrace}\n",
+        lm_core::brand::NAME,
         timestamp(at)
     )
 }
@@ -151,7 +152,7 @@ pub fn install_panic_hook(app: &'static str) {
     }));
 }
 
-/// Warnings and errors from everything, plus LayeredMap's own info lines, appended to a file.
+/// Warnings and errors from everything, plus the app's own info lines, appended to a file.
 struct FileLogger {
     path: PathBuf,
     file: Mutex<Option<std::fs::File>>,
@@ -221,7 +222,7 @@ pub struct Settings {
 /// The diagnostics report: the app and machine, settings, the network gate's counts, the log's
 /// last lines and the newest crash logs from `dir`.
 pub fn report(s: &Settings, dir: &Path) -> String {
-    let mut out = format!("LayeredMap diagnostics\n{}created: {} UTC\n\n", about(s.app), timestamp(now()));
+    let mut out = format!("{} diagnostics\n{}created: {} UTC\n\n", lm_core::brand::NAME, about(s.app), timestamp(now()));
     out.push_str("== Settings ==\n");
     out.push_str(&format!("basemap: {}\noffline mode: {}\nlayers open: {}\n\n", s.basemap, if s.offline { "on" } else { "off" }, s.layers));
     out.push_str("== Network requests since launch ==\n");
@@ -269,7 +270,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         for i in 0..5 {
-            let text = crash_text("LayeredMap 0.0.0\n", "main", &format!("boom {i}"), "src/x.rs:1", "0: frame", i);
+            let text = crash_text("NimbleMap 0.0.0\n", "main", &format!("boom {i}"), "src/x.rs:1", "0: frame", i);
             std::fs::write(dir.join(format!("crash-1970-01-01-00-00-0{i}.txt")), text).unwrap();
         }
         std::fs::write(dir.join("notes.txt"), "not a crash").unwrap();
@@ -278,7 +279,7 @@ mod tests {
         assert_eq!(left.len(), 4);
         assert!(left[0].ends_with("crash-1970-01-01-00-00-04.txt"));
         std::fs::write(dir.join("layeredmap.log"), (0..400).map(|i| format!("line {i}\n")).collect::<String>()).unwrap();
-        let s = Settings { app: "LayeredMap", basemap: "auto".into(), offline: true, layers: 2 };
+        let s = Settings { app: lm_core::brand::NAME, basemap: "auto".into(), offline: true, layers: 2 };
         let r = report(&s, &dir);
         assert!(r.contains("offline mode: on") && r.contains("layers open: 2"));
         assert!(r.contains("panic: boom 4") && r.contains("panic: boom 2") && !r.contains("panic: boom 1"));

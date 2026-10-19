@@ -10,6 +10,7 @@
 //! - Every network request goes through one function, [`open_url`], so the strict offline switch
 //!   can gate the whole library in one place.
 
+use lm_core::brand::NAME as APP;
 use std::collections::HashSet;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
@@ -186,7 +187,7 @@ pub enum LibraryError {
 impl std::fmt::Display for LibraryError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            LibraryError::Offline => write!(f, "LayeredMap is set to work offline, so the data library can't download anything."),
+            LibraryError::Offline => write!(f, "{APP} is set to work offline, so the data library can't download anything."),
             LibraryError::Network(_) => write!(f, "Couldn't reach the data library. Check your internet connection and try again."),
             LibraryError::NotFound(name) => write!(f, "The data library no longer has {name}. Try again later."),
             LibraryError::Checksum(name) => write!(
@@ -235,7 +236,7 @@ pub fn parse(json: &str, base: &str) -> Result<Catalog, LibraryError> {
         return Err(LibraryError::BadCatalog(format!("format is {:?}, not {FORMAT:?}", raw.format)));
     }
     if raw.version > VERSION {
-        return Err(LibraryError::BadCatalog(format!("version {} needs a newer LayeredMap", raw.version)));
+        return Err(LibraryError::BadCatalog(format!("version {} needs a newer {APP}", raw.version)));
     }
     let mut out = Catalog { updated: raw.updated, ..Catalog::default() };
     let mut ids = HashSet::new();
@@ -412,7 +413,8 @@ fn http_get(url: &str) -> Result<Body, LibraryError> {
     let agent: ureq::Agent = ureq::Agent::config_builder()
         .timeout_connect(Some(Duration::from_secs(10)))
         .timeout_recv_response(Some(Duration::from_secs(20)))
-        .user_agent(concat!("LayeredMap/", env!("CARGO_PKG_VERSION")))
+        // concat! needs a literal: keep in step with lm_core::brand::NAME.
+        .user_agent(concat!("NimbleMap/", env!("CARGO_PKG_VERSION")))
         .build()
         .into();
     match agent.get(url).call() {

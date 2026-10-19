@@ -10,6 +10,7 @@
 //! folder, SQLite settles the copy there (checkpoint or rollback), and the copy is read. The
 //! sidecars beside the source are only ever read.
 
+use lm_core::brand::NAME as APP;
 use std::io::Read;
 use std::ops::ControlFlow;
 use std::path::Path;
@@ -42,7 +43,7 @@ impl FormatAdapter for GeoPackage {
         let m = std::fs::metadata(path).map_err(|e| ImportError::read(&file_name(path), e))?;
         if m.len() > GEOPACKAGE_MAX_BYTES {
             return Err(ImportError::Refused(format!(
-                "{} is larger than 2 GB, the most LayeredMap reads as a GeoPackage for now. Your file has not been changed.",
+                "{} is larger than 2 GB, the most {APP} reads as a GeoPackage for now. Your file has not been changed.",
                 file_name(path)
             )));
         }
@@ -55,7 +56,7 @@ impl FormatAdapter for GeoPackage {
         let tables = gpkg_mem::layers(Shared(bytes.clone())).map_err(|e| ImportError::read(&name, e))?;
         if tables.is_empty() {
             return Err(ImportError::Unsupported(format!(
-                "{name} holds no layers with shapes (only tables or tiles), which LayeredMap doesn't open yet. Your file has not been changed."
+                "{name} holds no layers with shapes (only tables or tiles), which {APP} doesn't open yet. Your file has not been changed."
             )));
         }
         let catalog = Catalog::read(&bytes).map_err(|e| ImportError::read(&name, e))?;
@@ -276,7 +277,7 @@ enum Placement {
     Converted(String),
     /// The declared definition is converted here (an organization other than EPSG).
     FromDefinition(RCrs, String),
-    /// Kept as stored: the values decide (no system declared, or one LayeredMap doesn't know).
+    /// Kept as stored: the values decide (no system declared, or one NimbleMap doesn't know).
     Raw { unknown: bool },
 }
 
@@ -312,7 +313,7 @@ fn read_table(path: &Path, bytes: &Arc<Vec<u8>>, catalog: &Catalog, table: &str,
     ctx.ticket.check()?;
     if !batch.complete {
         return Err(ImportError::Refused(format!(
-            "The layer {table} in {name} has more than {} features, the most LayeredMap reads from one GeoPackage layer for now. Your file has not been changed.",
+            "The layer {table} in {name} has more than {} features, the most {APP} reads from one GeoPackage layer for now. Your file has not been changed.",
             lm_core::model::group_thousands(MAX_LIMIT as u64)
         )));
     }
@@ -354,8 +355,7 @@ fn read_table(path: &Path, bytes: &Arc<Vec<u8>>, catalog: &Catalog, table: &str,
     ctx.ticket.check()?;
     let mut notices = Vec::new();
     if let Placement::Raw { unknown: true } = place {
-        notices
-            .push("The GeoPackage names a coordinate system LayeredMap doesn't know, so the coordinates were read as stored.".to_string());
+        notices.push(format!("The GeoPackage names a coordinate system {APP} doesn't know, so the coordinates were read as stored."));
     }
     let declared_crs = match place {
         Placement::Converted(_) | Placement::FromDefinition(..) => Some(Crs::Wgs84),

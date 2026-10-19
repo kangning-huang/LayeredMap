@@ -1,4 +1,4 @@
-//! Help › LayeredMap Help (WP6.10): opens the help pages that ship inside the app in the default
+//! Help › NimbleMap Help (WP6.10): opens the help pages that ship inside the app in the default
 //! browser. The pages are plain local HTML (`web/lm` in the repository, copied to
 //! `Contents/Resources/help` by `packaging/lm/bundle-macos.sh`). They load nothing from the
 //! network, so help works offline and makes no request the network gate would have to allow.
@@ -8,8 +8,8 @@ use std::path::{Path, PathBuf};
 /// The pages in a development checkout.
 const DEV_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../web/lm");
 
-/// The help folder inside an app bundle, `<LayeredMap.app>/Contents/Resources/help`, for an
-/// executable at `<LayeredMap.app>/Contents/MacOS/layeredmap`.
+/// The help folder inside an app bundle, `<NimbleMap.app>/Contents/Resources/help`, for an
+/// executable at `<NimbleMap.app>/Contents/MacOS/layeredmap`.
 fn bundle_dir(exe: &Path) -> Option<PathBuf> {
     Some(exe.parent()?.parent()?.join("Resources").join("help"))
 }
@@ -43,8 +43,8 @@ mod tests {
 
     #[test]
     fn the_bundle_page_wins_when_present() {
-        let exe = Path::new("/Applications/LayeredMap.app/Contents/MacOS/layeredmap");
-        let want = PathBuf::from("/Applications/LayeredMap.app/Contents/Resources/help/zh/help.html");
+        let exe = Path::new("/Applications/NimbleMap.app/Contents/MacOS/layeredmap");
+        let want = PathBuf::from("/Applications/NimbleMap.app/Contents/Resources/help/zh/help.html");
         assert_eq!(page(Some(exe), true, |p| p == want), want);
         let dev = page(Some(exe), false, |_| false);
         assert!(dev.ends_with("web/lm/help.html"), "{}", dev.display());

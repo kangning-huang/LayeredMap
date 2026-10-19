@@ -1,4 +1,4 @@
-# LayeredMap fuzzing (WP6.8; Gate 6: "24 hours of fuzzing per adapter"): every import adapter's
+# NimbleMap fuzzing (WP6.8; Gate 6: "24 hours of fuzzing per adapter"): every import adapter's
 # target in 6-hour-class shards on Linux runners (a hosted job may run at most 6 hours, build
 # included). Five shards of 4 h 50 min give each target just over 24 hours. Each shard starts from
 # the seeds and its own random seed; crashes are uploaded as artifacts. See docs/lm/security.md.

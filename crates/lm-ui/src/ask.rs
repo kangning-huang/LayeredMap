@@ -1,4 +1,4 @@
-//! The Ask box (WP7.1, early test build for LayeredMap Pro): one field at the bottom of the map,
+//! The Ask box (WP7.1, early test build for NimbleMap Pro): one field at the bottom of the map,
 //! "Ask about your layers". A request goes to the assistant (`lm_ask`) on a background thread;
 //! the plan comes back checked and already run on a copy of the layers. Its new layer shows over
 //! the map and its filter as a highlight. The plan and its cards show above the box; **Keep**

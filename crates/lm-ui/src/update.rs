@@ -147,7 +147,7 @@ fn macos_version() -> Option<String> {
 
 /// Whether the system's first language is Chinese (for the feed's notes), on the checking
 /// thread. The interface's own language setting (WP5.5) replaces this when it exists. Help ›
-/// LayeredMap Help uses it too, to open the Chinese pages.
+/// NimbleMap Help uses it too, to open the Chinese pages.
 pub fn prefers_chinese() -> bool {
     #[cfg(target_os = "macos")]
     {
@@ -240,7 +240,7 @@ pub(crate) fn notice(shell: &Shell, ui: &egui::Ui, map: egui::Rect) {
             ui.horizontal(|ui| {
                 let label = ui.label(RichText::new("A new version is available").size(CAPTION).color(t.text_primary));
                 if let Some(n) = &u.notes {
-                    label.on_hover_text(format!("LayeredMap {}: {n}", u.version));
+                    label.on_hover_text(format!("{} {}: {n}", lm_core::brand::NAME, u.version));
                 }
                 ui.hyperlink_to(RichText::new(format!("Download {}", u.version)).size(CAPTION), &u.url);
                 let close = ui.add(egui::Button::new(RichText::new(icon::X).font(theme::icon_font(11.0))).frame(false));
@@ -281,8 +281,8 @@ mod tests {
         "released": "2026-11-02",
         "notes": { "en": "Saving and exporting.", "zh": "保存与导出。" },
         "download": {
-            "free": "https://download.example.cn/LayeredMap-0.3.0.dmg",
-            "pro": "https://download.example.cn/LayeredMap-Pro-0.3.0.dmg"
+            "free": "https://download.example.cn/NimbleMap-0.3.0.dmg",
+            "pro": "https://download.example.cn/NimbleMap-Pro-0.3.0.dmg"
         },
         "page": "https://download.example.cn/",
         "minimum_macos": "13.0"
@@ -292,10 +292,10 @@ mod tests {
     fn a_newer_version_gives_the_tiers_download() {
         let u = mac(FEED, "0.2.0", false, Some("15.1"), false).unwrap();
         assert_eq!(u.version, "0.3.0");
-        assert_eq!(u.url, "https://download.example.cn/LayeredMap-0.3.0.dmg");
+        assert_eq!(u.url, "https://download.example.cn/NimbleMap-0.3.0.dmg");
         assert_eq!(u.notes.as_deref(), Some("Saving and exporting."));
         let pro = mac(FEED, "0.2.0", true, None, true).unwrap();
-        assert_eq!(pro.url, "https://download.example.cn/LayeredMap-Pro-0.3.0.dmg");
+        assert_eq!(pro.url, "https://download.example.cn/NimbleMap-Pro-0.3.0.dmg");
         assert_eq!(pro.notes.as_deref(), Some("保存与导出。"));
     }
 
@@ -306,10 +306,10 @@ mod tests {
         assert_eq!(u.url, "https://download.example.cn/");
         let win = FEED.replace(
             "\"page\":",
-            r#""download_windows": { "free": "https://download.example.cn/LayeredMap-0.3.0-x64-setup.exe" }, "page":"#,
+            r#""download_windows": { "free": "https://download.example.cn/NimbleMap-0.3.0-x64-setup.exe" }, "page":"#,
         );
         let u = parse_for("download_windows", &win, "0.2.0", false, None, false).unwrap();
-        assert_eq!(u.url, "https://download.example.cn/LayeredMap-0.3.0-x64-setup.exe");
+        assert_eq!(u.url, "https://download.example.cn/NimbleMap-0.3.0-x64-setup.exe");
         assert_eq!(parse_for("download_windows", &win, "0.2.0", true, None, false).unwrap().url, "https://download.example.cn/");
         assert_eq!(DOWNLOAD_KEY, if cfg!(windows) { "download_windows" } else { "download" });
     }
@@ -323,7 +323,7 @@ mod tests {
         // A format this build doesn't know.
         assert_eq!(mac(&FEED.replace("\"format\": 1", "\"format\": 2"), "0.2.0", false, None, false), None);
         // Only https links; with no tier link, the page; with neither, nothing.
-        let http = FEED.replace("https://download.example.cn/LayeredMap-0.3.0.dmg", "http://download.example.cn/x.dmg");
+        let http = FEED.replace("https://download.example.cn/NimbleMap-0.3.0.dmg", "http://download.example.cn/x.dmg");
         assert_eq!(mac(&http, "0.2.0", false, None, false).unwrap().url, "https://download.example.cn/");
         let none = r#"{"format":1,"version":"9.0","download":{"free":"javascript:alert(1)"},"page":"file:///etc"}"#;
         assert_eq!(mac(none, "0.2.0", false, None, false), None);

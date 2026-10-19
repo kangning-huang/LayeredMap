@@ -1,4 +1,4 @@
-//! Where LayeredMap keeps things on each platform (WP6.2): the bundled resources next to the
+//! Where NimbleMap keeps things on each platform (WP6.2): the bundled resources next to the
 //! executable, and the per-user folders. Pure path rules: callers pass the executable's path and
 //! an environment lookup, so the macOS and Windows rules are both tested on either system.
 
@@ -58,6 +58,10 @@ pub enum Folder {
 /// `~/Library/Logs` and `~/Library/Caches`. Windows: the roaming `%APPDATA%` for Support and the
 /// local `%LOCALAPPDATA%` for the rest (each falling back to `%USERPROFILE%\AppData\…`).
 /// `None` when the environment names no home.
+///
+/// The folders keep the name `LayeredMap` after the rename to NimbleMap (`crate::brand`): they
+/// hold the user's autosaves, question log and caches, so moving them needs a migration of its
+/// own (docs/lm/naming.md).
 pub fn user_dir(folder: Folder, os: Os, env: impl Fn(&str) -> Option<OsString>) -> Option<PathBuf> {
     let var = |k: &str| env(k).filter(|v| !v.is_empty()).map(PathBuf::from).filter(|p| p.is_absolute());
     match os {
@@ -113,11 +117,11 @@ mod tests {
 
     #[test]
     fn resources_sit_in_the_bundle_on_macos_and_beside_the_exe_on_windows() {
-        let mac = Path::new("/Applications/LayeredMap.app/Contents/MacOS/layeredmap");
-        assert_eq!(resources_dir(mac, Os::MacOs), Some(PathBuf::from("/Applications/LayeredMap.app/Contents/Resources")));
+        let mac = Path::new("/Applications/NimbleMap.app/Contents/MacOS/layeredmap");
+        assert_eq!(resources_dir(mac, Os::MacOs), Some(PathBuf::from("/Applications/NimbleMap.app/Contents/Resources")));
         // Built with `/` so the test reads the same on both systems; the rule is "the exe's folder".
-        let win = Path::new("C:/Program Files/LayeredMap/layeredmap.exe");
-        assert_eq!(resources_dir(win, Os::Windows), Some(PathBuf::from("C:/Program Files/LayeredMap/Resources")));
+        let win = Path::new("C:/Program Files/NimbleMap/layeredmap.exe");
+        assert_eq!(resources_dir(win, Os::Windows), Some(PathBuf::from("C:/Program Files/NimbleMap/Resources")));
     }
 
     #[test]

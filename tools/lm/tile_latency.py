@@ -17,7 +17,7 @@ campus.
 import csv, random, ssl, statistics, sys, time, urllib.request, datetime, pathlib, struct
 
 def ranged(url, start, length, timeout=15):
-    req = urllib.request.Request(url, headers={"Range": f"bytes={start}-{start + length - 1}", "User-Agent": "LayeredMap-latency/1"})
+    req = urllib.request.Request(url, headers={"Range": f"bytes={start}-{start + length - 1}", "User-Agent": "NimbleMap-latency/1"})
     t = time.perf_counter()
     with urllib.request.urlopen(req, timeout=timeout, context=ssl.create_default_context()) as r:
         first = r.read(1)

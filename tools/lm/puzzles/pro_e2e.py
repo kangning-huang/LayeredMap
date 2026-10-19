@@ -1,4 +1,4 @@
-"""LayeredMap Pro end to end on the eight geographic puzzles (docs/lm/puzzles/).
+"""NimbleMap Pro end to end on the eight geographic puzzles (docs/lm/puzzles/).
 
     python -I tools/lm/puzzles/pro_e2e.py --gold                      # run the gold plans (no model)
     python -I tools/lm/puzzles/pro_e2e.py --show-context P6           # print what the model sees

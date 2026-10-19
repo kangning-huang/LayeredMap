@@ -2,6 +2,7 @@
 //! read, so a 500 MB file never sits in memory as one JSON tree. Mixed geometry is split into
 //! points, lines and areas (catalog: "Split into 3 layers").
 
+use lm_core::brand::NAME as APP;
 use std::collections::HashMap;
 use std::fmt;
 use std::path::Path;
@@ -38,7 +39,7 @@ impl FormatAdapter for GeoJson {
         let m = std::fs::metadata(path).map_err(|e| ImportError::read(&file_name(path), e))?;
         if m.len() > GEOJSON_MAX_BYTES {
             return Err(ImportError::Refused(format!(
-                "{} is larger than 2 GB, the most LayeredMap reads as GeoJSON. Converting it to GeoPackage or FlatGeobuf makes it open quickly. Your file has not been changed.",
+                "{} is larger than 2 GB, the most {APP} reads as GeoJSON. Converting it to GeoPackage or FlatGeobuf makes it open quickly. Your file has not been changed.",
                 file_name(path)
             )));
         }
@@ -167,7 +168,7 @@ impl Sink {
                     }
                 }
                 None => {
-                    self.exclusions.push(Exclusion { row, reason: "A geometry LayeredMap can't read".into() });
+                    self.exclusions.push(Exclusion { row, reason: format!("A geometry {APP} can't read") });
                     None
                 }
             }

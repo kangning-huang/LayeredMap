@@ -96,7 +96,7 @@ pub fn mismatch(old: &SourceRef, new: &SourceRef) -> Option<&'static str> {
     }
 }
 
-/// The layers whose data no source file can give back, with that data: LayeredMap's own layers
+/// The layers whose data no source file can give back, with that data: NimbleMap's own layers
 /// (results, drawn areas), layers with joined tables, and layers a kept result added fields to.
 pub fn owned(ws: &Workspace) -> Vec<(LayerId, lm_doc::OwnedData)> {
     ws.doc
@@ -508,7 +508,7 @@ fn prompt<R>(ui: &Ui, t: &Theme, id: &str, map: egui::Rect, add: impl FnOnce(&mu
         .inner
 }
 
-/// "LayeredMap quit unexpectedly. Restore 'Heat study' from 2 minutes ago?" Restore · Discard.
+/// "NimbleMap quit unexpectedly. Restore 'Heat study' from 2 minutes ago?" Restore · Discard.
 pub(crate) fn recovery_prompt(shell: &mut Shell, ui: &Ui, map: egui::Rect) {
     let Some(r) = shell.doc_file.recovery.clone() else { return };
     let t = *shell.theme();
@@ -704,7 +704,7 @@ mod tests {
             action: "filter".into(),
             params: Default::default(),
             computed_at: 0,
-            software: "LayeredMap".into(),
+            software: lm_core::brand::NAME.into(),
             inputs: vec![RecipeInput {
                 name: "schools".into(),
                 file: "schools.csv".into(),
@@ -821,7 +821,7 @@ mod tests {
                 action: "filter".into(),
                 params: Default::default(),
                 computed_at: 0,
-                software: "LayeredMap".into(),
+                software: lm_core::brand::NAME.into(),
                 inputs: vec![RecipeInput {
                     name: "schools".into(),
                     file: "schools.csv".into(),

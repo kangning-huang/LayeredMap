@@ -4,7 +4,7 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 publish = false
-description = "LayeredMap: the one network gate (strict offline mode, WP6.6) and the gated HTTP helper"
+description = "NimbleMap: the one network gate (strict offline mode, WP6.6) and the gated HTTP helper"
 
 [lints]
 workspace = true

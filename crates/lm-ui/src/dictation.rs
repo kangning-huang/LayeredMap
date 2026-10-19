@@ -42,7 +42,8 @@ impl Dictation {
         if cfg!(windows) && std::env::var_os("LM_DICTATE").is_none() {
             return Err(WINDOWS.into());
         }
-        let path = helper().ok_or("Speaking needs the LayeredMap Pro app (its speech helper isn't here).")?;
+        let path =
+            helper().ok_or_else(|| format!("Speaking needs the {} app (its speech helper isn't here).", lm_core::brand::PRO_NAME))?;
         let mut child = Command::new(path)
             // Offline, the helper refuses to fall back to Apple's server recognizer.
             .env("LM_OFFLINE", if lm_net::offline() { "1" } else { "0" })

@@ -23,6 +23,7 @@ mod shapefile;
 pub mod snapshot;
 mod xmlfile;
 
+use lm_core::brand::NAME as APP;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{Receiver, Sender, channel};
 use std::sync::{Arc, Condvar, Mutex};
@@ -40,7 +41,7 @@ pub enum ImportError {
     Canceled,
     /// Refused on purpose (a limit, an unsafe archive), with the user-facing message.
     Refused(String),
-    /// The format isn't supported ("LayeredMap can't open .dwg files yet.").
+    /// The format isn't supported ("NimbleMap can't open .dwg files yet.").
     Unsupported(String),
     /// Reading failed: the user-facing message, and the technical one for Details.
     Failed {
@@ -270,7 +271,7 @@ fn extension(path: &Path) -> String {
     path.extension().and_then(|e| e.to_str()).unwrap_or("").to_ascii_lowercase()
 }
 
-/// A file format LayeredMap opens (WP2.2).
+/// A file format NimbleMap opens (WP2.2).
 pub trait FormatAdapter: Sync {
     /// Format name for Details ("CSV").
     fn name(&self) -> &'static str;
@@ -306,7 +307,7 @@ pub struct Metadata {
 
 /// The P1 formats of WP2.2 (GeoPackage, Excel) are on. Cutting rule (plan, Phase 2 › Rollback):
 /// a P1 format that fails at the gate is switched off here and moved to Phase 6 (WP6.7); that
-/// does not fail the gate. Off, its files are refused as any unsupported format is ("LayeredMap
+/// does not fail the gate. Off, its files are refused as any unsupported format is ("NimbleMap
 /// can't open .gpkg files yet.").
 pub const P1_FORMATS: bool = true;
 
@@ -335,9 +336,9 @@ fn pick_adapter(path: &Path, head: &[u8], p1: bool) -> Result<&'static dyn Forma
     match adapters(p1).into_iter().find(|a| a.sniff(path, head)).filter(|_| !switched_off) {
         Some(a) => Ok(a),
         None if ext.is_empty() => {
-            Err(ImportError::Unsupported(format!("LayeredMap can't open {}: it isn't a format it reads yet.", file_name(path))))
+            Err(ImportError::Unsupported(format!("{APP} can't open {}: it isn't a format it reads yet.", file_name(path))))
         }
-        None => Err(ImportError::Unsupported(format!("LayeredMap can't open .{ext} files yet."))),
+        None => Err(ImportError::Unsupported(format!("{APP} can't open .{ext} files yet."))),
     }
 }
 
@@ -449,7 +450,7 @@ pub fn drawn_area(name: &str, ring: &[(f64, f64)]) -> Option<ImportedLayer> {
     Some(derived_layer(name, "Drawn area", ds))
 }
 
-/// A layer LayeredMap made itself (a drawn area, an action's result), in WGS 84 longitude and
+/// A layer NimbleMap made itself (a drawn area, an action's result), in WGS 84 longitude and
 /// latitude, with no file behind it.
 pub fn derived_layer(name: &str, format: &str, ds: Dataset) -> ImportedLayer {
     let path = Path::new(name);

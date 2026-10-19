@@ -1,4 +1,4 @@
-//! The native menu bar (WP1.1), via `muda`: LayeredMap, File, Edit, View, Window, Help on macOS;
+//! The native menu bar (WP1.1), via `muda`: NimbleMap (`lm_core::brand::NAME`), File, Edit, View, Window, Help on macOS;
 //! File, Edit, View, Help on the window on Windows (WP6.2), with Exit in File, About in Help and
 //! Ctrl in place of ⌘. Items for features not built yet are hidden, not grayed out. Cut/Copy/Paste
 //! are left to egui's own key handling: a menu accelerator for ⌘C would take the key before the
@@ -7,6 +7,7 @@
 use muda::accelerator::{Accelerator, Code, Modifiers};
 use muda::{AboutMetadata, CheckMenuItem, Menu, MenuEvent, MenuItem, PredefinedMenuItem, Submenu};
 
+use lm_core::brand::NAME;
 use lm_ui::{Command, Shell, ThemePref, Units};
 
 pub enum Action {
@@ -76,7 +77,7 @@ impl MenuBar {
     fn build(developer: bool, export: bool, library: bool, ctx: &egui::Context) -> muda::Result<MenuBar> {
         let menu = Menu::new();
         let about = AboutMetadata {
-            name: Some("LayeredMap".into()),
+            name: Some(NAME.into()),
             version: Some(env!("CARGO_PKG_VERSION").into()),
             comments: Some("A map-first GIS. Built on RustGIS.".into()),
             license: Some("Apache-2.0".into()),
@@ -84,17 +85,17 @@ impl MenuBar {
         };
         #[cfg(target_os = "macos")]
         let app = Submenu::with_items(
-            "LayeredMap",
+            NAME,
             true,
             &[
-                &PredefinedMenuItem::about(Some("About LayeredMap"), Some(about)),
+                &PredefinedMenuItem::about(Some(&*format!("About {NAME}")), Some(about)),
                 &PredefinedMenuItem::separator(),
                 &PredefinedMenuItem::hide(None),
                 &PredefinedMenuItem::hide_others(None),
                 &PredefinedMenuItem::show_all(None),
                 &PredefinedMenuItem::separator(),
                 // Our own Quit, so the window closes normally and its state is saved.
-                &MenuItem::with_id("quit", "Quit LayeredMap", true, cmd(Code::KeyQ)),
+                &MenuItem::with_id("quit", format!("Quit {NAME}"), true, cmd(Code::KeyQ)),
             ],
         )?;
         let file = Submenu::new("File", true);
@@ -196,14 +197,14 @@ impl MenuBar {
             true,
             &[
                 // The help pages ship inside the app (WP6.10), so this works offline.
-                &MenuItem::with_id("help", "LayeredMap Help", true, None),
+                &MenuItem::with_id("help", format!("{NAME} Help"), true, None),
                 &PredefinedMenuItem::separator(),
                 &MenuItem::with_id("credits", "Credits", true, None),
                 &MenuItem::with_id("diagnostics", "Export Diagnostics…", true, None),
             ],
         )?;
         #[cfg(windows)]
-        help.append_items(&[&PredefinedMenuItem::separator(), &PredefinedMenuItem::about(Some("About LayeredMap"), Some(about))])?;
+        help.append_items(&[&PredefinedMenuItem::separator(), &PredefinedMenuItem::about(Some(&*format!("About {NAME}")), Some(about))])?;
         #[cfg(target_os = "macos")]
         let menus = [&app, &file, &edit, &view, &window, &help];
         #[cfg(windows)]

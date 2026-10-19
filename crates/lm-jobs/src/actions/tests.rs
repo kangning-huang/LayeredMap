@@ -27,7 +27,7 @@ fn plan(action: &str, inputs: Vec<PlanInput>, params: &[(&str, &str)]) -> Plan {
         params: params.iter().map(|(k, v)| (k.to_string(), v.to_string())).collect(),
         method: "test method".into(),
         computed_at: 1_797_206_400,
-        software: "LayeredMap 0.4.0".into(),
+        software: "NimbleMap 0.4.0".into(),
     }
 }
 
