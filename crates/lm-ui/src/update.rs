@@ -243,7 +243,7 @@ pub(crate) fn notice(shell: &Shell, ui: &egui::Ui, map: egui::Rect) {
                 if let Some(n) = &u.notes {
                     label.on_hover_text(i18n::fmt(
                         "{app} {version}: {notes}",
-                        &[("app", lm_core::brand::NAME), ("version", &u.version), ("notes", n)],
+                        &[("app", lm_core::brand::shown(false)), ("version", &u.version), ("notes", n)],
                     ));
                 }
                 ui.hyperlink_to(RichText::new(i18n::fmt("Download {version}", &[("version", &u.version)])).size(CAPTION), &u.url);

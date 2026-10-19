@@ -14,6 +14,10 @@ set -euo pipefail
 # The display name (bundle, menus, Finder); keep in step with lm_core::brand (docs/lm/naming.md).
 # Bundle identifiers, the executable and the .lmap type keep their layeredmap names.
 brand="NimbleMap"
+# The Chinese name (lm_core::brand::NAME_ZH): Finder and the menu bar show it on a Mac whose
+# language is Chinese (zh-Hans.lproj below). They follow the system's language, not the app's
+# View › Language.
+brand_zh="凌波微图"
 
 root="$(cd "$(dirname "$0")/../.." && pwd)"
 out="${1:-$root/dist/lm}"
@@ -27,9 +31,9 @@ cargo build --release --locked -p layeredmap --manifest-path "$root/Cargo.toml"
 # can be installed side by side; the app reads Contents/Resources/tier.
 tier="${LM_TIER:-free}"
 if [[ "$tier" == "pro" ]]; then
-  name="$brand Pro"; bundle_id="app.layeredmap.pro"
+  name="$brand Pro"; name_zh="$brand_zh Pro"; bundle_id="app.layeredmap.pro"
 else
-  name="$brand"; bundle_id="app.layeredmap.desktop"
+  name="$brand"; name_zh="$brand_zh"; bundle_id="app.layeredmap.desktop"
 fi
 app="$out/$name.app"
 rm -rf "$app"
@@ -98,6 +102,11 @@ cat > "$app/Contents/Info.plist" <<PLIST
   <key>CFBundleName</key><string>${name}</string>
   <key>CFBundleDisplayName</key><string>${name}</string>
   <key>CFBundleIdentifier</key><string>${bundle_id}</string>
+  <!-- The interface's languages (lm_core::i18n), so the system's own panels match; the name is
+       localized in zh-Hans.lproj/InfoPlist.strings. -->
+  <key>CFBundleDevelopmentRegion</key><string>en</string>
+  <key>CFBundleLocalizations</key><array><string>en</string><string>zh-Hans</string><string>de</string><string>es</string><string>fr</string><string>it</string><string>nl</string><string>pt-BR</string><string>ru</string><string>ja</string><string>ko</string></array>
+  <key>LSHasLocalizedDisplayName</key><true/>
   <key>CFBundleExecutable</key><string>layeredmap</string>
   <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>CFBundlePackageType</key><string>APPL</string>
@@ -245,6 +254,13 @@ cat > "$app/Contents/Info.plist" <<PLIST
 </dict>
 </plist>
 PLIST
+# The Chinese name in Finder, the Dock and the menu bar on a Chinese Mac.
+mkdir -p "$app/Contents/Resources/zh-Hans.lproj"
+cat > "$app/Contents/Resources/zh-Hans.lproj/InfoPlist.strings" <<STRINGS
+CFBundleName = "${name_zh}";
+CFBundleDisplayName = "${name_zh}";
+STRINGS
+plutil -lint "$app/Contents/Resources/zh-Hans.lproj/InfoPlist.strings" >/dev/null
 
 if [[ -n "${LM_SIGN_IDENTITY:-}" ]]; then
   # Pro's microphone needs the audio-input entitlement under the hardened runtime.

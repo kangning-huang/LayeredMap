@@ -47,8 +47,13 @@ pub fn toolbar(shell: &mut Shell, ui: &mut Ui, rect: Rect, _system: System) {
         }
         None => rect.left() + 16.0,
     };
-    let name =
-        painter.text(pos2(name_x, rect.center().y), Align2::LEFT_CENTER, lm_core::brand::NAME, semibold(theme::HEADLINE), t.text_primary);
+    let name = painter.text(
+        pos2(name_x, rect.center().y),
+        Align2::LEFT_CENTER,
+        lm_core::brand::shown(false),
+        semibold(theme::HEADLINE),
+        t.text_primary,
+    );
     if shell.pro {
         // "Pro" as a small accent badge after the name.
         let g = painter.layout_no_wrap("PRO".into(), semibold(10.0), t.on_accent); // i18n: brand

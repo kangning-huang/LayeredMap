@@ -549,7 +549,7 @@ impl Shell {
                     basemap::start_archive_lookup(ctx);
                 }
                 let msg = if on {
-                    lm_core::i18n::fmt("Working offline: {app} won't use the network.", &[("app", lm_core::brand::NAME)])
+                    lm_core::i18n::fmt("Working offline: {app} won't use the network.", &[("app", lm_core::brand::shown(false))])
                 } else {
                     lm_core::tl!("Back online.").to_string()
                 };

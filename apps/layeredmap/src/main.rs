@@ -267,7 +267,7 @@ impl eframe::App for App {
                     if let Some(path) = rfd::FileDialog::new()
                         .set_title(tl!("Save"))
                         .set_file_name(suggested_name)
-                        .add_filter(i18n::fmt("{app} map", &[("app", lm_core::brand::NAME)]), &["lmap"])
+                        .add_filter(i18n::fmt("{app} map", &[("app", lm_core::brand::shown(false))]), &["lmap"])
                         .save_file()
                     {
                         self.shell.command(ctx, Command::SaveTo(path));
@@ -286,7 +286,7 @@ impl eframe::App for App {
                     if let Some(path) = rfd::FileDialog::new()
                         .set_title(tl!("Save map package"))
                         .set_file_name(suggested_name)
-                        .add_filter(i18n::fmt("{app} map", &[("app", lm_core::brand::NAME)]), &["lmap"])
+                        .add_filter(i18n::fmt("{app} map", &[("app", lm_core::brand::shown(false))]), &["lmap"])
                         .save_file()
                     {
                         self.shell.command(ctx, Command::SavePackageTo(path));

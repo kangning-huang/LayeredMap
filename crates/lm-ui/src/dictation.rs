@@ -45,7 +45,7 @@ impl Dictation {
             return Err(tl!(WINDOWS).into());
         }
         let path = helper().ok_or_else(|| {
-            i18n::fmt("Speaking needs the {app} app (its speech helper isn't here).", &[("app", lm_core::brand::PRO_NAME)])
+            i18n::fmt("Speaking needs the {app} app (its speech helper isn't here).", &[("app", lm_core::brand::shown(true))])
         })?;
         let mut child = Command::new(path)
             // Offline, the helper refuses to fall back to Apple's server recognizer.

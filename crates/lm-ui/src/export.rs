@@ -539,7 +539,7 @@ pub fn auto_caption(shell: &Shell) -> String {
         })
         .collect();
     // The caption is drawn into the image, in the interface's language.
-    let app = lm_core::brand::NAME;
+    let app = lm_core::brand::shown(false);
     if parts.is_empty() {
         i18n::fmt("Made with {app}.", &[("app", app)])
     } else {

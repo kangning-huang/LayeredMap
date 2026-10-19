@@ -294,7 +294,7 @@ fn body(shell: &Shell, ui: &mut Ui, t: &theme::Theme, d: &mut DataDialog) {
         egui::Label::new(
             RichText::new(i18n::fmt(
                 "Styles and recipes stay in {app}: these formats carry only locations and values.",
-                &[("app", lm_core::brand::NAME)],
+                &[("app", lm_core::brand::shown(false))],
             ))
             .color(t.text_secondary),
         )

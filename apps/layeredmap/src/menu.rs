@@ -10,7 +10,6 @@
 use muda::accelerator::{Accelerator, Code, Modifiers};
 use muda::{AboutMetadata, CheckMenuItem, Menu, MenuEvent, MenuItem, PredefinedMenuItem, Submenu};
 
-use lm_core::brand::NAME;
 use lm_core::i18n::{self, Lang};
 #[cfg(any(target_os = "macos", windows))]
 use lm_core::tl;
@@ -115,21 +114,24 @@ impl MenuBar {
     fn build(options: Options, lang: Lang, ctx: &egui::Context, hwnd: Option<isize>) -> muda::Result<MenuBar> {
         let Options { developer, export, library } = options;
         let menu = Menu::new();
-        let brand = [("app", NAME)];
+        // The name as this language shows it: 凌波微图 in Chinese.
+        let shown = lm_core::brand::shown_in(lang, false);
+        let brand = [("app", shown)];
         // macOS titles its standard items itself ("Hide NimbleMap", "Minimize"): those stay as
         // muda makes them in English, and get our translation otherwise.
         #[cfg(target_os = "macos")]
         let standard = |template: &str| (lang != Lang::EN).then(|| i18n::fmt(template, &brand));
         let about = AboutMetadata {
-            name: Some(NAME.into()),
+            name: Some(shown.into()),
             version: Some(env!("CARGO_PKG_VERSION").into()),
             comments: Some(tl!("A map-first GIS. Built on RustGIS.").into()),
             license: Some("Apache-2.0".into()),
             ..Default::default()
         };
         #[cfg(target_os = "macos")]
+        // macOS titles the application menu itself (from the bundle's name), so this one is moot.
         let app = Submenu::with_items(
-            NAME,
+            shown,
             true,
             &[
                 &PredefinedMenuItem::about(Some(&*i18n::fmt("About {app}", &brand)), Some(about)),

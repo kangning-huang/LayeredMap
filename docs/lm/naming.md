@@ -85,7 +85,7 @@ The suggested pairing is NimbleMap with 千层图, carrying "nimble" in a descri
 
 | Place | What to edit |
 |---|---|
-| Rust code | `crates/lm-core/src/brand.rs`: `NAME`, `PRO_NAME` (plus `name(pro)` and `with_version`), and `NAME_ZH` (千层图; not shown in the app until the Chinese interface, WP5.5) |
+| Rust code | `crates/lm-core/src/brand.rs`: `NAME`, `PRO_NAME` (plus `name(pro)` and `with_version`), and `NAME_ZH`/`PRO_NAME_ZH` (凌波微图; the Chinese interface shows them through `brand::shown(pro)`, every other language shows `NAME`). The macOS bundle's `zh-Hans.lproj/InfoPlist.strings` (written by `bundle-macos.sh` from `brand_zh`) gives Finder and the menu bar the Chinese name on a Chinese Mac |
 | Rust literals that can't read a `const` | Each has a comment that names `lm_core::brand`: `git grep -n "lm_core::brand"`. They are the `OFFLINE` messages in `lm-ask` and `lm-net`, the `User-Agent` strings (`concat!`) in `lm-net` and `lm-jobs`, the PDF creator and producer in `lm-mapview` (which doesn't depend on lm-core), and two `&'static str` KML exclusion reasons in `lm-jobs` |
 | macOS bundle, Info.plist | `brand=` at the top of `packaging/lm/bundle-macos.sh` |
 | Disk image | `brand=` at the top of `packaging/lm/build-dmg.sh` |
