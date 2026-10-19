@@ -16,7 +16,7 @@ This page is the plan. Nothing here is built yet.
 
 Mainland China needs its own sign-in methods and, in practice, its own servers. Google, X and Reddit sign-in are blocked there; WeChat, Alipay and phone-number codes are what people use.
 
-| | International | Mainland China (千层图) |
+| | International | Mainland China (凌波微图) |
 |---|---|---|
 | Sign-in | Sign in with Apple, Google, X, email link | WeChat (微信登录), Alipay (支付宝登录), phone-number code (手机号验证码), Sign in with Apple |
 | Service | Supabase (Auth + Postgres + Edge Functions), or Firebase | A China-hosted identity service with WeChat, Alipay and SMS built in, such as Authing, Tencent CloudBase or Alibaba Cloud's identity service; or our own small service on a China cloud |

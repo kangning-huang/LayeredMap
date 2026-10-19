@@ -1486,7 +1486,7 @@ Candidates, in likely order:
 - Pro needs an account (owner, 2026-10-19). At first Pro is free for anyone who registers; a subscription may follow. Design and owner prerequisites: `docs/lm/accounts.md`.
 - Sign-in happens in the system browser (OAuth with PKCE); the app keeps only a refresh token in the keychain. Settings › Account shows who is signed in, with Sign out and Delete account.
 - International: Sign in with Apple, Google, X and an email link, on a hosted sign-in service with a small database (Supabase proposed). Per user only: the provider's user ID, sign-in method, email when given, `pro`, sign-up date, later the plan.
-- Mainland China (千层图): WeChat, Alipay and phone-number codes, plus Sign in with Apple, on a China-hosted identity service. Needs a mainland company, WeChat and Alipay developer verification, an approved SMS signature, an ICP filing and a PIPL privacy policy.
+- Mainland China (凌波微图): WeChat, Alipay and phone-number codes, plus Sign in with Apple, on a China-hosted identity service. Needs a mainland company, WeChat and Alipay developer verification, an approved SMS signature, an ICP filing and a PIPL privacy policy.
 - Never in a git repository, encrypted or not.
 - Subscription later: Stripe or Paddle internationally, WeChat Pay and Alipay in China; a payment webhook sets the plan.
 

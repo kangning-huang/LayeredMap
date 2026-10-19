@@ -91,6 +91,9 @@ a:hover { text-decoration-thickness: 2px; }
 .site-head .wrap { display: flex; align-items: center; gap: 20px; min-height: 60px; flex-wrap: wrap; }
 .brand { display: flex; align-items: center; gap: 10px; color: var(--ink); text-decoration: none; font-weight: 650; letter-spacing: -.01em; }
 .brand img { width: 30px; height: 30px; }
+/* Chinese pages: 凌波微图 with NimbleMap beside it, so the bilingual pun shows. */
+.brand-en { font-weight: 500; color: var(--ink-2); margin-left: 2px; }
+@media (max-width: 420px) { .brand-en { display: none; } }
 .nav { display: flex; gap: 4px; margin-left: auto; align-items: center; flex-wrap: wrap; }
 .nav a, .nav button {
   color: var(--ink-2); text-decoration: none; font: inherit; font-size: 15px;

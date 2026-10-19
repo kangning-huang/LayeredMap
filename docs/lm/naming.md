@@ -18,7 +18,7 @@ filing in China (first to file) for both the English and the Chinese name.
 | Why | Says what the app is next to QGIS: light and quick, not a heavy GIS. That contrast is also the search angle (people looking to open a file "without QGIS"). Contains "map", as the owner wanted. |
 | Availability (2026-10-19) | nimblemap.com, .app and .io unregistered; GitHub `nimblemap` and crates.io `nimblemap` free. No "NimbleMap" product found. Nearest: Nimblehold, an unreleased tabletop-game map tool on Steam. |
 | Known risks | Medium overall (vetting below). **nimblemaps.com is a live "Nimble Maps" web map site** (registered 2026-01). "Nimble" is crowded in software (159 live USPTO NIMBLE marks, about 40 owners in classes 9 and 42), so each one is weak and the name's strength rests on the combination. "Nimble" isn't CET-4/6 vocabulary, so a strong Chinese name matters. |
-| Chinese name | **千层图** (owner's choice, 2026-10-19, after 轻图 turned out to be taken and 敏图 too risky). It means "thousand-layer map", after 千层酥 and 千层蛋糕. It doesn't translate "nimble"; unrelated pairs are common (AutoNavi and 高德, TikTok and 抖音). Needs a CNIPA search; it's also GIS slang for a stacked-layer figure, which makes the trademark weaker. |
+| Chinese name | **凌波微图** (owner's choice, 2026-10-19, replacing 千层图). A pun on 凌波微步, light-footed movement (Cao Zhi's 《洛神赋》, and Duan Yu's skill in Jin Yong's 《天龙八部》), so it carries "nimble" and "light" like the English name. The Chinese pages show both, **凌波微图 NimbleMap**, so the bilingual pun is visible: in the header, titles, link previews and footers, and as 凌波微图（NimbleMap） at first mention. Needs a CNIPA search for 凌波微图 and 凌波 (classes 9, 42); vetting below. 千层图 ("thousand-layer map") was the choice before it. |
 | What was renamed | Everything users see: app and bundle names, menus, the website and help, exports, diagnostics, installers. See "Where the display name is set" and "What keeps the old name, and why" below. |
 
 #### NimbleMap vetting (2026-10-19)
@@ -56,6 +56,20 @@ filing in China (first to file) for both the English and the Chinese name.
 - Companies: 上海敏图科技, 深圳市敏图科技, 唐山敏图科技 (holds a software copyright) and 昆明敏图科技 (software and IT services).
 - 闽图 is an exact homophone, used by Fujian Library's 掌上闽图 app.
 - mintu.com, .cn and .com.cn are taken. mintu.app, mintu.io and 敏图.com look free.
+
+**凌波微图 (owner's idea, 2026-10-19): adopted the same day.** A pun on 凌波微步, the light-footed
+movement from Cao Zhi's 《洛神赋》 ("凌波微步，罗袜生尘"), which most readers know as Duan Yu's skill in
+Jin Yong's 《天龙八部》. It carries "nimble" and "light" at once, so it matches NimbleMap better than
+千层图 does. Checks:
+- No exact-phrase use found on the web or on the China App Store (0 results). Searching 凌波 or
+  凌波微步 there brings up Tencent's 天龙八部手游 and unrelated apps; none use 凌波微图.
+- Its short form will be **微图**, which is weak: the China App Store's 微图 results are screenshot
+  and marketing tools, and 微 reads as "tiny" or WeChat-ish as much as "light".
+- The phrase itself comes from a public-domain poem, but the association is Jin Yong's. His
+  publisher has enforced rights over his works before; a one-character pun on a skill name is far
+  from those cases, but a lawyer should say so before launch.
+- Four characters: fine as an app name and in the App Store; long in conversation.
+- Needs a CNIPA search for 凌波微图 and 凌波 in classes 9 and 42.
 - No trademark register could be queried: CNIPA, tmkoo, 天眼查 and 企查查 all blocked automated access.
 
 **Runner-ups (quick checks):**

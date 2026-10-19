@@ -16,9 +16,10 @@ pub const NAME: &str = "NimbleMap";
 /// The Pro tier's name.
 pub const PRO_NAME: &str = "NimbleMap Pro";
 
-/// The Chinese brand name (owner's choice, 2026-10-19), used on the Chinese web pages. Not shown
-/// in the app yet: the interface is English-only until WP5.5.
-pub const NAME_ZH: &str = "千层图";
+/// The Chinese brand name (owner's choice, 2026-10-19): a pun on 凌波微步, light and nimble like the
+/// English name, which the Chinese web pages show beside it ("凌波微图 NimbleMap"). Not shown in the
+/// app yet: the interface is English-only until WP5.5.
+pub const NAME_ZH: &str = "凌波微图";
 
 /// [`NAME`] or [`PRO_NAME`].
 pub fn name(pro: bool) -> &'static str {
