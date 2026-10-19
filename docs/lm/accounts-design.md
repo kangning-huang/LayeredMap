@@ -32,7 +32,8 @@ design and ships in the app's config. Row-level security is what protects data.
 | What | Request | Notes |
 |---|---|---|
 | Sign in with a provider | browser → `GET {SUPABASE_URL}/auth/v1/authorize?provider=<apple\|google\|x>&redirect_to=<loopback>&code_challenge=<S256>&code_challenge_method=s256` | Supabase runs the provider's own OAuth and sends the browser to `redirect_to` with `?code=`. Provider ids come from the config (X is `x` for OAuth 2.0, `twitter` for the legacy OAuth 1.0a provider: use whichever the project enables) |
-| Email link | `POST {SUPABASE_URL}/auth/v1/otp?redirect_to=<loopback>` `{"email", "create_user": true, "code_challenge", "code_challenge_method": "s256"}` | The link in the email opens the browser, which lands on the loopback with `?code=` like a provider |
+| Email (link and code) | `POST {SUPABASE_URL}/auth/v1/otp?redirect_to=<loopback>` `{"email", "create_user": true, "code_challenge", "code_challenge_method": "s256"}` | One email with a link and a 6-digit code (see Email: the link or the code). The link opens the browser, which lands on the loopback with `?code=` like a provider |
+| Email code → tokens | `POST {SUPABASE_URL}/auth/v1/verify` `{"type": "email", "email", "token": "<6 digits>"}` | Same answer as the code exchange below. A wrong, expired or used code: 403 `otp_expired`; too many attempts: 429 |
 | Code → tokens | `POST {SUPABASE_URL}/auth/v1/token?grant_type=pkce` `{"auth_code", "code_verifier"}` | Answers `access_token`, `expires_in`, `expires_at`, `refresh_token`, `user` (`id`, `email`, `app_metadata.provider`) |
 | Refresh | `POST {SUPABASE_URL}/auth/v1/token?grant_type=refresh_token` `{"refresh_token"}` | Same answer; the refresh token is replaced (rotation) |
 | Sign out | `POST {SUPABASE_URL}/auth/v1/logout?scope=local` with `Authorization: Bearer <access>` | Revokes this device's refresh token |
@@ -46,6 +47,7 @@ design and ships in the app's config. Row-level security is what protects data.
 |---|---|---|
 | PKCE verifier and `state` | one sign-in (at most 10 minutes) | memory only |
 | Authorization code | single use, a few minutes (Supabase) | passes through the loopback request only |
+| Email code (6 digits) | single use, 1 hour (`otp_expiry`) | the email, then typed into the app; sent once to `/auth/v1/verify`, never stored |
 | Access token (JWT) | 1 hour (Supabase default; keep it) | memory only; never written, never logged |
 | Refresh token | until used (rotation: each refresh returns a new one; reuse after 10 s revokes the session) | macOS Keychain (generic password, service `app.layeredmap.pro.account`, account `session`) or Windows Credential Manager (Web Credentials, resource `app.layeredmap.pro.account`) |
 
@@ -91,10 +93,42 @@ error page and doesn't end the wait; `error=` from the provider ends it with the
 reason. The page the browser shows afterwards says to go back to the app; it loads nothing
 external.
 
-Limits: the email link must be opened on the same computer within those 10 minutes (opened on a
-phone, it can't reach the app's loopback; the message says so). If that proves annoying, the
-macOS fallback is a private-use scheme `app.layeredmap.pro:/callback` (reverse-DNS of the bundle
-id, RFC 8252 §7.1) only for the email link; not built.
+Limits: the email *link* must be opened on the same computer within those 10 minutes (opened on a
+phone, it can't reach the app's loopback). The email's 6-digit code has no such limit: it can be
+read anywhere (a phone included) and typed into the app for an hour.
+
+## Email: the link or the code
+
+Email sign-in is passwordless (no passwords anywhere). `Account::begin` asks Supabase for the
+email (`create_user: true`: the first sign-in registers the account) and binds the loopback; the
+email carries both the link and a 6-digit code. Settings › Account then says "We sent an email to
+{address}. Click the link in it on this Mac, or enter the 6-digit code." with a code field
+(digits only; a pasted "123 456" or "123-456" is taken as 123456), Verify (Return), Send a New
+Email and Use a Different Email.
+
+- **The link** works as before: same computer, within the 10-minute loopback wait.
+- **The code**: `Account::verify_code(region, email, code)` strips spaces and dashes, requires six
+  digits before sending, then `POST /auth/v1/verify` `{"type": "email", "email", "token"}`; the
+  answer is kept exactly like the link's (credential store, then the interface). A 400/403
+  ("Token has expired or is invalid") reads "That code didn't work. Check it, or send a new
+  email."; 429 reads "Too many attempts. Wait a few minutes, then try again." `type: "email"`
+  matches both emails Supabase may send: **Magic link** for a known address and **Confirm
+  signup** for a first sign-in ("Confirm email" is on), so both templates show the code.
+- **Whichever comes first wins.** The sign-in waiting for its link is registered in `Account`
+  (an id and a stop flag). A code that verifies sets the flag; the loopback wait sees it within
+  50 ms, closes the listener and answers `Cancelled`, so no listener thread outlives the sign-in.
+  Finishing (the link's code exchange, or the verify request) happens under one lock, so only one
+  of them can keep a session; a code typed after the link already signed in sends nothing. A
+  wrong code leaves the link waiting. Send a New Email starts a new sign-in, which stops the older
+  wait the same way.
+- After the link's 10 minutes the pane keeps the code field ("The link has stopped working on
+  this Mac; the code still works for an hour.").
+
+The project side is in `services/ask-proxy/supabase/config.toml` (`[auth.email]`: `otp_length = 6`,
+`otp_expiry = 3600`, Confirm email on, one email a minute per address) and the two templates in
+`services/ask-proxy/supabase/templates/` (subject "Your NimbleMap sign-in code"; the code large,
+the link, and a line that the email can be ignored by someone who didn't ask for it). The owner
+pushes them with `supabase config push` (`services/ask-proxy/README.md`, step 6).
 
 ## Regions
 

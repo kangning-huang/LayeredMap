@@ -6,10 +6,13 @@
 //! The flow, on a background thread: [`Account::begin`] (binds the loopback, makes the PKCE
 //! verifier and state, builds the authorize URL or sends the email link), the browser is opened
 //! on [`SignIn::url`], then [`Account::complete`] waits for the redirect and exchanges the code.
-//! [`Account::access_token`] refreshes when the token is about to expire.
+//! An email carries a link and a 6-digit code: [`Account::verify_code`] signs in with the code
+//! while `complete` may still be waiting for the link; whichever arrives first wins and the other
+//! stops. [`Account::access_token`] refreshes when the token is about to expire.
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
 pub mod browser;
+pub mod code;
 pub mod config;
 pub mod http;
 pub mod pkce;
@@ -19,6 +22,7 @@ pub mod session;
 pub mod store;
 pub mod url;
 
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
 pub use config::{Config, Provider, Region, RegionConfig};
@@ -46,6 +50,12 @@ pub enum AccountError {
     Server(u16, String),
     Storage(String),
     Listener(String),
+    /// The code typed isn't six digits.
+    CodeFormat,
+    /// The service refused the code: wrong, expired or already used.
+    WrongCode,
+    /// The service turned away too many code attempts (429).
+    TooManyAttempts,
 }
 
 impl std::fmt::Display for AccountError {
@@ -57,13 +67,16 @@ impl std::fmt::Display for AccountError {
                 write!(f, "{name} is working offline, so it can't reach the sign-in service. Turn off View › Work Offline to sign in.")
             }
             AccountError::Cancelled => write!(f, "Sign-in was cancelled."),
-            AccountError::TimedOut => write!(f, "Sign-in took too long. Try again; an email link must be opened on this computer."),
+            AccountError::TimedOut => write!(f, "Sign-in took too long. Try again."),
             AccountError::Denied(why) => write!(f, "Sign-in didn't finish: {why}"),
             AccountError::SignedOut => write!(f, "You're signed out. Sign in again to use {}.", lm_core::brand::PRO_NAME),
             AccountError::Network(e) => write!(f, "Couldn't reach the sign-in service: {e}"),
             AccountError::Server(status, msg) => write!(f, "The sign-in service answered {status}: {msg}"),
             AccountError::Storage(e) => write!(f, "Couldn't keep the sign-in on this computer: {e}"),
             AccountError::Listener(e) => write!(f, "Couldn't start sign-in: {e}"),
+            AccountError::CodeFormat => write!(f, "The code is the {} digits in the email.", code::LEN),
+            AccountError::WrongCode => write!(f, "That code didn't work. Check it, or send a new email."),
+            AccountError::TooManyAttempts => write!(f, "Too many attempts. Wait a few minutes, then try again."),
         }
     }
 }
@@ -92,7 +105,7 @@ fn now() -> i64 {
 pub enum Method {
     /// A provider's page in the browser.
     Provider(Provider),
-    /// A sign-in link sent to this address.
+    /// An email to this address with a sign-in link and a 6-digit code.
     Email(String),
 }
 
@@ -104,6 +117,9 @@ pub struct SignIn {
     state: String,
     pkce: pkce::Pkce,
     url: Option<String>,
+    /// Which sign-in this is, and its stop flag (see [`Pending`]).
+    id: u64,
+    stop: Arc<AtomicBool>,
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -112,6 +128,15 @@ impl SignIn {
     pub fn url(&self) -> Option<&str> {
         self.url.as_deref()
     }
+}
+
+/// The sign-in whose loopback is waiting. A code that signs in, or a newer sign-in, sets `stop`
+/// so that wait ends; finishing takes this entry under its lock, so the link and the code never
+/// both keep a session.
+#[cfg_attr(target_arch = "wasm32", allow(dead_code))]
+struct Pending {
+    id: u64,
+    stop: Arc<AtomicBool>,
 }
 
 /// The account: the config, how to reach the service, where the session is kept, and the session.
@@ -123,12 +148,26 @@ pub struct Account {
     session: Mutex<Option<Session>>,
     /// Who is signed in, for the interface: never held across a network request.
     shown: Mutex<Option<(User, Region)>>,
+    /// The sign-in waiting for its link. Held while a link's code or a typed code is exchanged.
+    /// Lock order: `pending`, then `session`/`shown`.
+    pending: Mutex<Option<Pending>>,
+    #[cfg_attr(target_arch = "wasm32", allow(dead_code))]
+    next_id: AtomicU64,
     clock: fn() -> i64,
 }
 
 impl Account {
     pub fn new(config: Config, http: Arc<dyn http::Http>, store: Arc<dyn store::SecretStore>) -> Account {
-        Account { config, http, store, session: Mutex::new(None), shown: Mutex::new(None), clock: now }
+        Account {
+            config,
+            http,
+            store,
+            session: Mutex::new(None),
+            shown: Mutex::new(None),
+            pending: Mutex::new(None),
+            next_id: AtomicU64::new(1),
+            clock: now,
+        }
     }
 
     /// The same with a clock (Unix seconds), for tests.
@@ -221,7 +260,26 @@ impl Account {
                 None
             }
         };
-        Ok(SignIn { region, loopback, state, pkce, url })
+        let id = self.next_id.fetch_add(1, Ordering::SeqCst);
+        let stop = Arc::new(AtomicBool::new(false));
+        // A newer sign-in replaces an older one still waiting: that one stops.
+        let old = self.pending()?.replace(Pending { id, stop: stop.clone() });
+        if let Some(old) = old {
+            old.stop.store(true, Ordering::SeqCst);
+        }
+        Ok(SignIn { region, loopback, state, pkce, url, id, stop })
+    }
+
+    fn pending(&self) -> Result<std::sync::MutexGuard<'_, Option<Pending>>, AccountError> {
+        self.pending.lock().map_err(|_| AccountError::Storage("sign-in lock poisoned".into()))
+    }
+
+    /// Keeps a new session: in the credential store, then for the interface.
+    fn keep(&self, s: Session) -> Result<User, AccountError> {
+        let user = s.user.clone();
+        self.store.save(&s.to_record()).map_err(AccountError::Storage)?;
+        self.set(Some(s));
+        Ok(user)
     }
 
     /// Waits for the browser to come back, exchanges the code and keeps the session.
@@ -233,8 +291,21 @@ impl Account {
         timeout: std::time::Duration,
     ) -> Result<User, AccountError> {
         let deadline = std::time::Instant::now() + timeout;
-        let code = sign_in.loopback.wait(&sign_in.state, deadline, cancel)?;
+        let stop = sign_in.stop.clone();
+        let waited = sign_in.loopback.wait_until(&sign_in.state, deadline, || cancel.load(Ordering::SeqCst) || stop.load(Ordering::SeqCst));
+        // The listener closes here, whatever the outcome.
         drop(sign_in.loopback);
+        let mut pending = self.pending()?;
+        let ours = pending.as_ref().is_some_and(|p| p.id == sign_in.id);
+        if ours {
+            *pending = None;
+        }
+        let code = waited?;
+        if !ours {
+            // A typed code (or a newer sign-in) finished first.
+            return Err(AccountError::Cancelled);
+        }
+        // `pending` stays locked through the exchange, so a typed code can't also sign in.
         let rc = self.region_config(sign_in.region)?;
         let body = serde_json::json!({"auth_code": code, "code_verifier": sign_in.pkce.verifier});
         let r = self.post(rc, &format!("{}/auth/v1/token?grant_type=pkce", rc.auth_url), &body)?;
@@ -245,9 +316,44 @@ impl Account {
             });
         }
         let s = Session::from_token_response(&r.body, sign_in.region, (self.clock)()).map_err(|e| AccountError::Server(200, e))?;
-        let user = s.user.clone();
-        self.store.save(&s.to_record()).map_err(AccountError::Storage)?;
-        self.set(Some(s));
+        let user = self.keep(s);
+        drop(pending);
+        user
+    }
+
+    /// Signs in with the 6-digit code from the email sent by [`Account::begin`] for `email`.
+    /// Spaces and dashes in `code` are ignored. On success a sign-in still waiting for the link
+    /// stops (its `complete` answers [`AccountError::Cancelled`]); a wrong code leaves it waiting.
+    /// If the link already signed in, that session is the answer and nothing is sent.
+    pub fn verify_code(&self, region: Region, email: &str, code: &str) -> Result<User, AccountError> {
+        let rc = self.region_config(region)?;
+        let email = email.trim();
+        if !plausible_email(email) {
+            return Err(AccountError::Denied("that doesn't look like an email address".into()));
+        }
+        let token = code::normalize(code).ok_or(AccountError::CodeFormat)?;
+        if lm_net::offline() {
+            return Err(AccountError::Offline);
+        }
+        // Held through the request: the link's exchange waits, and can't also sign in.
+        let mut pending = self.pending()?;
+        if let Some((user, _)) = self.user() {
+            return Ok(user);
+        }
+        let r = self.post(rc, &code::verify_url(&rc.auth_url), &code::verify_body(email, &token))?;
+        match r.status {
+            200 => {}
+            // Supabase answers 403 `otp_expired` ("Token has expired or is invalid") for a wrong,
+            // expired or used code, 400 for one it can't read.
+            400 | 401 | 403 | 404 | 422 => return Err(AccountError::WrongCode),
+            429 => return Err(AccountError::TooManyAttempts),
+            s => return Err(AccountError::Server(s, reason(&r.body))),
+        }
+        let s = Session::from_token_response(&r.body, region, (self.clock)()).map_err(|e| AccountError::Server(200, e))?;
+        let user = self.keep(s)?;
+        if let Some(p) = pending.take() {
+            p.stop.store(true, Ordering::SeqCst);
+        }
         Ok(user)
     }
 

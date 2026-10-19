@@ -1,6 +1,8 @@
 //! Settings › Account (WP7.4) and the sign-in prompt in the Ask box. Signed out, the pane offers
 //! the region's ways to sign in; signed in, it says who, with Sign Out and Delete Account. The
 //! work (`lm_account`) runs on a background thread; the pane shows it waiting for the browser.
+//! Once a sign-in email is sent, the pane asks for its 6-digit code while the link can still be
+//! clicked on this computer: whichever comes first signs in.
 //! Accounts are on only when the build has an account config (`lm_account::Config::load`); without
 //! one nothing here shows and the Ask box works as before (docs/lm/accounts-design.md).
 
@@ -32,6 +34,31 @@ pub struct AccountUi {
     pub(crate) confirm_delete: bool,
     /// A developer or test-build assistant key is present (read once: it spawns `security`).
     key_present: Option<bool>,
+    /// The email was sent: the code it carries can be typed (shown until signed in or dropped).
+    pub(crate) email_code: Option<EmailCode>,
+    /// A typed code being checked.
+    verifying: Option<Receiver<Result<User, AccountError>>>,
+}
+
+/// The code-entry state after "Email me a sign-in link".
+#[derive(Clone, Debug)]
+pub(crate) struct EmailCode {
+    pub(crate) address: String,
+    pub(crate) region: Region,
+    /// What is in the field: digits only, at most six.
+    pub(crate) code: String,
+    /// The last code's problem ("That code didn't work…").
+    pub(crate) error: Option<String>,
+    /// The link's wait on this computer ended (10 minutes); the code still works for an hour.
+    pub(crate) link_expired: bool,
+    /// Put the cursor in the field on the next frame.
+    focus: bool,
+}
+
+impl EmailCode {
+    pub(crate) fn new(address: String, region: Region) -> EmailCode {
+        EmailCode { address, region, code: String::new(), error: None, link_expired: false, focus: false }
+    }
 }
 
 impl Default for AccountUi {
@@ -45,6 +72,8 @@ impl Default for AccountUi {
             message: None,
             confirm_delete: false,
             key_present: None,
+            email_code: None,
+            verifying: None,
         }
     }
 }
@@ -60,8 +89,16 @@ pub(crate) enum Doing {
 
 struct Busy {
     doing: Doing,
-    rx: Receiver<Result<Option<User>, AccountError>>,
+    region: Region,
+    rx: Receiver<Event>,
     cancel: Arc<AtomicBool>,
+}
+
+/// What the background thread reports.
+enum Event {
+    /// The sign-in email went out: its code can be typed now.
+    Sent,
+    Done(Result<Option<User>, AccountError>),
 }
 
 impl AccountUi {
@@ -130,6 +167,14 @@ impl AccountUi {
     pub(crate) fn busy(&self) -> Option<&Doing> {
         self.busy.as_ref().map(|b| &b.doing)
     }
+
+    /// Stops the background sign-in now: its thread ends on its own (the loopback closes within
+    /// 50 ms) and whatever it would still say is dropped.
+    fn drop_sign_in(&mut self) {
+        if let Some(b) = self.busy.take_if(|b| matches!(b.doing, Doing::SignIn(_) | Doing::EmailLink(_))) {
+            b.cancel.store(true, Ordering::SeqCst);
+        }
+    }
 }
 
 /// Reads the account config, the stored session (no network) and the system region: the app
@@ -169,17 +214,66 @@ fn spawn(shell: &mut Shell, ctx: &egui::Context, doing: Doing) {
     let wake = ctx.clone();
     let job = doing.clone();
     std::thread::spawn(move || {
+        let sent = || {
+            let _ = tx.send(Event::Sent);
+            wake.request_repaint();
+        };
         let r = match job {
-            Doing::SignIn(p) => sign_in(&account, region, &Method::Provider(p), &c),
-            Doing::EmailLink(e) => sign_in(&account, region, &Method::Email(e), &c),
+            Doing::SignIn(p) => sign_in(&account, region, &Method::Provider(p), &c, sent),
+            Doing::EmailLink(e) => sign_in(&account, region, &Method::Email(e), &c, sent),
             Doing::SignOut => account.sign_out().map(|_| None),
             Doing::Delete => account.delete_account().map(|_| None),
         };
-        let _ = tx.send(r);
+        let _ = tx.send(Event::Done(r));
         wake.request_repaint();
     });
     shell.account.message = None;
-    shell.account.busy = Some(Busy { doing, rx, cancel });
+    shell.account.busy = Some(Busy { doing, region, rx, cancel });
+}
+
+/// Checks the typed code on a background thread.
+#[cfg(not(target_arch = "wasm32"))]
+fn spawn_verify(shell: &mut Shell, ctx: &egui::Context) {
+    let Some(account) = shell.account.account.clone() else { return };
+    let Some(ec) = shell.account.email_code.as_mut() else { return };
+    if shell.account.verifying.is_some() {
+        return;
+    }
+    if lm_account::code::normalize(&ec.code).is_none() {
+        ec.error = Some(AccountError::CodeFormat.to_string());
+        return;
+    }
+    ec.error = None;
+    let (tx, rx) = channel();
+    let (region, address, code) = (ec.region, ec.address.clone(), ec.code.clone());
+    let wake = ctx.clone();
+    std::thread::spawn(move || {
+        let _ = tx.send(account.verify_code(region, &address, &code));
+        wake.request_repaint();
+    });
+    shell.account.verifying = Some(rx);
+}
+
+#[cfg(target_arch = "wasm32")]
+fn spawn_verify(shell: &mut Shell, _ctx: &egui::Context) {
+    shell.account.message = Some((AccountError::NotConfigured.to_string(), true));
+}
+
+/// "Send a new email": the waiting sign-in stops and a new email goes to the same address.
+fn resend(shell: &mut Shell, ctx: &egui::Context) {
+    let Some(ec) = shell.account.email_code.take() else { return };
+    shell.account.drop_sign_in();
+    shell.account.region = ec.region;
+    spawn(shell, ctx, Doing::EmailLink(ec.address));
+}
+
+/// "Use a different email": back to the ways to sign in, the address ready to edit.
+fn different_email(shell: &mut Shell) {
+    if let Some(ec) = shell.account.email_code.take() {
+        shell.account.email = ec.address;
+    }
+    shell.account.drop_sign_in();
+    shell.account.message = None;
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -188,10 +282,17 @@ fn spawn(shell: &mut Shell, _ctx: &egui::Context, _doing: Doing) {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-fn sign_in(account: &Account, region: Region, method: &Method, cancel: &AtomicBool) -> Result<Option<User>, AccountError> {
+fn sign_in(
+    account: &Account,
+    region: Region,
+    method: &Method,
+    cancel: &AtomicBool,
+    sent: impl FnOnce(),
+) -> Result<Option<User>, AccountError> {
     let s = account.begin(region, method)?;
-    if let Some(url) = s.url() {
-        lm_account::browser::open(url).map_err(AccountError::Listener)?;
+    match s.url() {
+        Some(url) => lm_account::browser::open(url).map_err(AccountError::Listener)?,
+        None => sent(),
     }
     account.complete(s, cancel, lm_account::SIGN_IN_TIMEOUT).map(Some)
 }
@@ -199,14 +300,39 @@ fn sign_in(account: &Account, region: Region, method: &Method, cancel: &AtomicBo
 /// The background work's outcome, once it arrives (every frame, so a sign-in that finishes
 /// after Settings was closed still lands).
 pub(crate) fn poll(shell: &mut Shell) {
-    let Some(r) = shell.account.busy.as_ref().and_then(|b| b.rx.try_recv().ok()) else { return };
+    poll_code(shell);
+    let r = loop {
+        match shell.account.busy.as_ref().map(|b| b.rx.try_recv()) {
+            Some(Ok(Event::Sent)) => {
+                if let Some(b) = &shell.account.busy
+                    && let Doing::EmailLink(address) = &b.doing
+                    && !b.cancel.load(Ordering::SeqCst)
+                {
+                    let (address, region) = (address.clone(), b.region);
+                    shell.account.email_code = Some(EmailCode { focus: true, ..EmailCode::new(address, region) });
+                }
+            }
+            Some(Ok(Event::Done(r))) => break r,
+            _ => return,
+        }
+    };
     let Some(b) = shell.account.busy.take() else { return };
     shell.account.confirm_delete = false;
+    // The link's wait ended without signing in while the code can still be typed: say so there.
+    if let (Doing::EmailLink(_), Err(e), Some(ec)) = (&b.doing, &r, shell.account.email_code.as_mut()) {
+        match e {
+            AccountError::Cancelled => {}
+            AccountError::TimedOut => ec.link_expired = true,
+            e => ec.error = Some(e.to_string()),
+        }
+        return;
+    }
     shell.account.message = match (b.doing, r) {
         (_, Err(AccountError::Cancelled)) => None,
         (Doing::SignIn(_) | Doing::EmailLink(_), Ok(_)) => {
             // The Ask box's sign-in message has done its job.
             shell.ask.clear_message();
+            shell.account.email_code = None;
             None
         }
         (Doing::SignOut, Ok(_)) => Some(("You're signed out.".into(), false)),
@@ -215,11 +341,34 @@ pub(crate) fn poll(shell: &mut Shell) {
     };
 }
 
-/// Stops a sign-in waiting for the browser.
-fn cancel(shell: &mut Shell) {
-    if let Some(b) = &shell.account.busy {
-        b.cancel.store(true, Ordering::SeqCst);
+/// A typed code's answer, once it arrives.
+fn poll_code(shell: &mut Shell) {
+    let r = match shell.account.verifying.as_ref().map(|rx| rx.try_recv()) {
+        Some(Ok(r)) => r,
+        // The check ended without an answer: let the person try again.
+        Some(Err(std::sync::mpsc::TryRecvError::Disconnected)) => Err(AccountError::Cancelled),
+        _ => return,
+    };
+    shell.account.verifying = None;
+    match r {
+        Ok(_) => {
+            // Signed in; the link's wait stops by itself (lm_account ends it).
+            shell.account.email_code = None;
+            shell.account.message = None;
+            shell.ask.clear_message();
+        }
+        Err(AccountError::Cancelled) => {}
+        Err(e) => {
+            if let Some(ec) = shell.account.email_code.as_mut() {
+                ec.error = Some(e.to_string());
+            }
+        }
     }
+}
+
+/// Stops a sign-in waiting for the browser (or still sending its email).
+fn cancel(shell: &mut Shell) {
+    shell.account.drop_sign_in();
 }
 
 /// The Settings window, while open.
@@ -251,6 +400,9 @@ pub(crate) fn window(shell: &mut Shell, ctx: &egui::Context) {
     match doing {
         Some(Pane::Start(d)) => spawn(shell, ctx, d),
         Some(Pane::Cancel) => cancel(shell),
+        Some(Pane::Verify) => spawn_verify(shell, ctx),
+        Some(Pane::Resend) => resend(shell, ctx),
+        Some(Pane::DifferentEmail) => different_email(shell),
         None => {}
     }
     if close {
@@ -262,6 +414,10 @@ pub(crate) fn window(shell: &mut Shell, ctx: &egui::Context) {
 enum Pane {
     Start(Doing),
     Cancel,
+    /// Check the typed code.
+    Verify,
+    Resend,
+    DifferentEmail,
 }
 
 fn account_pane(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme) -> Option<Pane> {
@@ -314,6 +470,11 @@ fn account_pane(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme) -> Option<Pane
                         .color(t.text_secondary),
                 );
             }
+        }
+        None if shell.account.email_code.is_some() => {
+            ui.label(RichText::new(format!("Sign in to use {pro}")).font(theme::semibold(HEADLINE)));
+            ui.add_space(6.0);
+            out = code_entry(shell, ui, t, offline);
         }
         None => {
             ui.label(RichText::new(format!("Sign in to use {pro}")).font(theme::semibold(HEADLINE)));
@@ -369,7 +530,7 @@ fn sign_in_buttons(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, offline: bo
     if let Some(doing) = shell.account.busy().cloned() {
         let waiting = match &doing {
             Doing::SignIn(_) => "Finish signing in in your browser…".to_string(),
-            Doing::EmailLink(e) => format!("Check your email ({e}) and open the link on this computer…"),
+            Doing::EmailLink(e) => format!("Sending an email to {e}…"),
             Doing::SignOut => "Signing out…".into(),
             Doing::Delete => "Deleting your account…".into(),
         };
@@ -410,6 +571,78 @@ fn sign_in_buttons(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, offline: bo
             out = Some(Pane::Start(Doing::EmailLink(shell.account.email.trim().to_string())));
         }
     }
+    if offline {
+        ui.add_space(6.0);
+        ui.label(RichText::new(AccountError::Offline.to_string()).size(CAPTION).color(t.text_secondary));
+    }
+    out
+}
+
+/// "We sent an email…": the 6-digit code field with Verify, Send a New Email and Use a Different
+/// Email. The link in the email still works on this computer meanwhile.
+fn code_entry(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, offline: bool) -> Option<Pane> {
+    let checking = shell.account.verifying.is_some();
+    let ec = shell.account.email_code.as_mut()?;
+    let mut out = None;
+    let here = if cfg!(target_os = "macos") { "this Mac" } else { "this computer" };
+    let said = if ec.link_expired {
+        format!("We sent an email to {}. Enter the {}-digit code in it.", ec.address, lm_account::code::LEN)
+    } else {
+        format!("We sent an email to {}. Click the link in it on {here}, or enter the {}-digit code.", ec.address, lm_account::code::LEN)
+    };
+    ui.label(RichText::new(said).size(BODY));
+    ui.add_space(10.0);
+    let label = format!("{}-digit code", lm_account::code::LEN);
+    ui.horizontal(|ui| {
+        let hint = ui.visuals().weak_text_color();
+        let field = egui::TextEdit::singleline(&mut ec.code)
+            .font(egui::FontId::monospace(22.0))
+            .hint_text(RichText::new("000000").font(egui::FontId::monospace(22.0)).color(hint))
+            .horizontal_align(egui::Align::Center)
+            .desired_width(132.0)
+            .margin(vec2(8.0, 5.0))
+            .id(egui::Id::new("lm-account-code"));
+        let r = ui.add_enabled(!offline && !checking, field);
+        crate::a11y::label(&r, &label);
+        if r.changed() {
+            // Digits only, at most six: a pasted "123 456" or "123-456" becomes 123456.
+            ec.code = lm_account::code::field_text(&ec.code);
+            ec.error = None;
+        }
+        if std::mem::take(&mut ec.focus) {
+            r.request_focus();
+        }
+        let enter = r.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
+        let ready = ec.code.len() == lm_account::code::LEN && !offline && !checking;
+        let verify = egui::Button::new(RichText::new("Verify").size(BODY).color(t.on_accent)).fill(t.accent).min_size(vec2(80.0, 34.0));
+        if (ui.add_enabled(ready, verify).clicked() || (enter && ready)) && out.is_none() {
+            out = Some(Pane::Verify);
+        }
+        if checking {
+            ui.spinner();
+        }
+    });
+    if let Some(err) = &ec.error {
+        ui.add_space(4.0);
+        let r = ui.label(RichText::new(err).size(CAPTION).color(t.critical));
+        crate::a11y::live(ui.ctx(), r.id, err);
+    } else if ec.link_expired {
+        ui.add_space(4.0);
+        ui.label(
+            RichText::new(format!("The link has stopped working on {here}; the code still works for an hour."))
+                .size(CAPTION)
+                .color(t.text_secondary),
+        );
+    }
+    ui.add_space(10.0);
+    ui.horizontal(|ui| {
+        if ui.add_enabled(!offline && !checking, egui::Button::new("Send a New Email")).clicked() {
+            out = Some(Pane::Resend);
+        }
+        if ui.add_enabled(!checking, egui::Button::new("Use a Different Email")).clicked() {
+            out = Some(Pane::DifferentEmail);
+        }
+    });
     if offline {
         ui.add_space(6.0);
         ui.label(RichText::new(AccountError::Offline.to_string()).size(CAPTION).color(t.text_secondary));

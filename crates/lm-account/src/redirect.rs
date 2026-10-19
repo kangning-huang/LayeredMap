@@ -108,8 +108,13 @@ mod native {
 
         /// Waits for the browser's redirect with `state`, until `deadline` or `cancel`.
         pub fn wait(&self, state: &str, deadline: Instant, cancel: &AtomicBool) -> Result<String, AccountError> {
+            self.wait_until(state, deadline, || cancel.load(Ordering::SeqCst))
+        }
+
+        /// The same, stopping as soon as `stopped` says so (checked every 50 ms).
+        pub fn wait_until(&self, state: &str, deadline: Instant, stopped: impl Fn() -> bool) -> Result<String, AccountError> {
             loop {
-                if cancel.load(Ordering::SeqCst) {
+                if stopped() {
                     return Err(AccountError::Cancelled);
                 }
                 if Instant::now() >= deadline {

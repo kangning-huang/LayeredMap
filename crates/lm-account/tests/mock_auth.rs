@@ -1,7 +1,7 @@
 //! The whole flow against a tiny local mock of Supabase Auth and the account function: the
 //! authorize URL, the browser's redirect to the loopback, the code exchange with the PKCE
-//! verifier, refresh with rotation, a reused refresh token, sign-out, delete, the email link, and
-//! offline mode. The real HTTP client is used (through the network gate); storage is in memory.
+//! verifier, refresh with rotation, a reused refresh token, sign-out, delete, the email link, the
+//! email's 6-digit code (and how it ends the wait for the link), and offline mode. The real HTTP client is used (through the network gate); storage is in memory.
 
 use std::collections::HashMap;
 use std::io::{BufRead as _, BufReader, Read as _, Write as _};
@@ -26,6 +26,9 @@ struct Mock {
     access_valid: Vec<String>,
     expires_in: i64,
     deleted: bool,
+    /// The code the email carried, and whether verify answers 429 (too many attempts).
+    email_code: String,
+    verify_limited: bool,
     /// (method, path with query, headers, body) of every request.
     seen: Vec<(String, String, HashMap<String, String>, String)>,
 }
@@ -73,6 +76,20 @@ fn route(m: &mut Mock, method: &str, path: &str, headers: &HashMap<String, Strin
             (204, String::new())
         }
         ("POST", "/auth/v1/otp") => (200, "{}".into()),
+        ("POST", "/auth/v1/verify") => {
+            if m.verify_limited {
+                return (429, r#"{"code":429,"error_code":"over_request_rate_limit","msg":"Request rate limit reached"}"#.into());
+            }
+            if j["token"] == "000000" {
+                return (400, r#"{"code":400,"error_code":"validation_failed","msg":"Verify requires a verification type"}"#.into());
+            }
+            if j["type"] != "email" || j["email"] != "kim@example.com" || m.email_code.is_empty() || j["token"] != m.email_code.as_str() {
+                return (403, r#"{"code":403,"error_code":"otp_expired","msg":"Token has expired or is invalid"}"#.into());
+            }
+            // A code is used once.
+            m.email_code.clear();
+            (200, tokens(m))
+        }
         ("DELETE", "/functions/v1/account") => {
             if !m.access_valid.contains(&bearer) {
                 return (401, r#"{"error":{"code":"unauthorized","message":"Sign in again."}}"#.into());
@@ -347,4 +364,143 @@ fn offline_nothing_goes_out_and_sign_out_still_forgets() {
     // Signed out here even though the service wasn't told.
     assert!(account.user().is_none());
     assert_eq!(store.load().unwrap(), None);
+}
+
+/// An email sign-in: begin (the email is sent), then the link's wait on another thread, as the app
+/// runs it.
+fn email_sign_in(account: &Arc<Account>) -> std::thread::JoinHandle<Result<lm_account::User, AccountError>> {
+    let sign_in = account.begin(Region::International, &Method::Email("kim@example.com".into())).unwrap();
+    let a = account.clone();
+    std::thread::spawn(move || a.complete(sign_in, &AtomicBool::new(false), Duration::from_secs(20)))
+}
+
+fn redirect_of_last_email(mock: &Arc<Mutex<Mock>>) -> String {
+    let m = mock.lock().unwrap();
+    let otp = m.seen.iter().rev().find(|(_, p, ..)| p.starts_with("/auth/v1/otp")).unwrap();
+    query(&otp.1)["redirect_to"].clone()
+}
+
+#[test]
+fn the_emails_code_signs_in_and_ends_the_wait_for_the_link() {
+    let _serial = SERIAL.lock().unwrap_or_else(|e| e.into_inner());
+    lm_net::set_offline(false);
+    let mock = Arc::new(Mutex::new(Mock { expires_in: 3600, email_code: "123456".into(), ..Default::default() }));
+    let base = start(mock.clone());
+    let store = Arc::new(MemoryStore::default());
+    let account = Arc::new(Account::new(config(&base), Arc::new(lm_account::http::GatedHttp), store.clone()));
+    let waiting = email_sign_in(&account);
+    let redirect = redirect_of_last_email(&mock);
+
+    // Typed with a space, as the email shows it.
+    let user = account.verify_code(Region::International, " kim@example.com", "123 456").unwrap();
+    assert_eq!(user.email.as_deref(), Some("kim@example.com"));
+    let body = {
+        let m = mock.lock().unwrap();
+        let v = m.seen.iter().find(|(_, p, ..)| p == "/auth/v1/verify").unwrap();
+        assert_eq!(v.2.get("apikey").map(String::as_str), Some("anon-key"));
+        v.3.clone()
+    };
+    let j: serde_json::Value = serde_json::from_str(&body).unwrap();
+    assert_eq!(j, serde_json::json!({"type": "email", "email": "kim@example.com", "token": "123456"}));
+
+    // The link's wait stops on its own, promptly, and keeps nothing.
+    let started = std::time::Instant::now();
+    assert_eq!(waiting.join().unwrap(), Err(AccountError::Cancelled));
+    assert!(started.elapsed() < Duration::from_secs(5));
+    // Its listener is closed: the link opened now reaches nothing.
+    let port: u16 = redirect.strip_prefix("http://127.0.0.1:").and_then(|r| r.split('/').next()).unwrap().parse().unwrap();
+    assert!(TcpStream::connect(("127.0.0.1", port)).is_err(), "the loopback is closed");
+
+    // One session: the code's, stored once; no code exchange was made.
+    assert_eq!(Session::from_record(&store.load().unwrap().unwrap()).unwrap().refresh, "refresh-1");
+    assert_eq!(account.access_token().unwrap(), "access-1");
+    let m = mock.lock().unwrap();
+    assert_eq!(m.issued, 1);
+    assert!(!m.seen.iter().any(|(_, p, ..)| p.contains("grant_type=pkce")));
+}
+
+#[test]
+fn a_wrong_code_leaves_the_link_waiting_and_the_link_still_wins() {
+    let _serial = SERIAL.lock().unwrap_or_else(|e| e.into_inner());
+    lm_net::set_offline(false);
+    let mock = Arc::new(Mutex::new(Mock { expires_in: 3600, email_code: "123456".into(), ..Default::default() }));
+    let base = start(mock.clone());
+    let store = Arc::new(MemoryStore::default());
+    let account = Arc::new(Account::new(config(&base), Arc::new(lm_account::http::GatedHttp), store.clone()));
+
+    // Not six digits: refused here, nothing sent.
+    let before = requests(&mock);
+    for bad in ["12345", "1234567", "12a456", ""] {
+        assert_eq!(account.verify_code(Region::International, "kim@example.com", bad), Err(AccountError::CodeFormat), "{bad}");
+    }
+    assert_eq!(requests(&mock), before);
+
+    let challenge = |mock: &Arc<Mutex<Mock>>| {
+        let mut m = mock.lock().unwrap();
+        let otp = m.seen.iter().rev().find(|(_, p, ..)| p.starts_with("/auth/v1/otp")).unwrap();
+        let j: serde_json::Value = serde_json::from_str(&otp.3).unwrap();
+        m.challenge = j["code_challenge"].as_str().unwrap().to_string();
+    };
+    let waiting = email_sign_in(&account);
+    challenge(&mock);
+    // A wrong code (the service answers 403), then one it can't read (400): the same plain words.
+    let wrong = account.verify_code(Region::International, "kim@example.com", "654-321");
+    assert_eq!(wrong, Err(AccountError::WrongCode));
+    assert_eq!(wrong.unwrap_err().to_string(), "That code didn't work. Check it, or send a new email.");
+    assert_eq!(account.verify_code(Region::International, "kim@example.com", "000000"), Err(AccountError::WrongCode));
+    assert!(account.user().is_none());
+
+    // The link still works afterwards, and then a late code changes nothing.
+    let redirect = redirect_of_last_email(&mock);
+    assert_eq!(browse(&redirect, "&code=code-123"), "HTTP/1.1 200 OK");
+    let user = waiting.join().unwrap().unwrap();
+    assert_eq!(user.email.as_deref(), Some("kim@example.com"));
+    let issued = mock.lock().unwrap().issued;
+    let late = account.verify_code(Region::International, "kim@example.com", "123456").unwrap();
+    assert_eq!(late, user);
+    assert_eq!(mock.lock().unwrap().issued, issued, "no second session");
+    assert_eq!(Session::from_record(&store.load().unwrap().unwrap()).unwrap().refresh, "refresh-1");
+}
+
+#[test]
+fn a_rejected_code_reads_plainly_and_too_many_attempts_say_so() {
+    let _serial = SERIAL.lock().unwrap_or_else(|e| e.into_inner());
+    lm_net::set_offline(false);
+    let mock = Arc::new(Mutex::new(Mock { expires_in: 3600, email_code: "123456".into(), ..Default::default() }));
+    let base = start(mock.clone());
+    let account = Account::new(config(&base), Arc::new(lm_account::http::GatedHttp), Arc::new(MemoryStore::default()));
+    // A code that was already used is as wrong as a mistyped one.
+    account.verify_code(Region::International, "kim@example.com", "123456").unwrap();
+    account.sign_out().unwrap();
+    assert_eq!(account.verify_code(Region::International, "kim@example.com", "123456"), Err(AccountError::WrongCode));
+
+    mock.lock().unwrap().verify_limited = true;
+    let r = account.verify_code(Region::International, "kim@example.com", "123456");
+    assert_eq!(r, Err(AccountError::TooManyAttempts));
+    assert!(r.unwrap_err().to_string().starts_with("Too many attempts"));
+    assert!(account.user().is_none());
+
+    // Offline, nothing goes out.
+    let before = requests(&mock);
+    lm_net::set_offline(true);
+    let r = account.verify_code(Region::International, "kim@example.com", "123456");
+    lm_net::set_offline(false);
+    assert_eq!(r, Err(AccountError::Offline));
+    assert_eq!(requests(&mock), before);
+}
+
+/// "Send a new email": the newer sign-in replaces the older one, whose wait stops.
+#[test]
+fn a_new_email_stops_the_older_wait() {
+    let _serial = SERIAL.lock().unwrap_or_else(|e| e.into_inner());
+    lm_net::set_offline(false);
+    let mock = Arc::new(Mutex::new(Mock { expires_in: 3600, email_code: "123456".into(), ..Default::default() }));
+    let base = start(mock.clone());
+    let account = Arc::new(Account::new(config(&base), Arc::new(lm_account::http::GatedHttp), Arc::new(MemoryStore::default())));
+    let first = email_sign_in(&account);
+    let second = email_sign_in(&account);
+    assert_eq!(first.join().unwrap(), Err(AccountError::Cancelled));
+    account.verify_code(Region::International, "kim@example.com", "123456").unwrap();
+    assert_eq!(second.join().unwrap(), Err(AccountError::Cancelled));
+    assert!(account.user().is_some());
 }
