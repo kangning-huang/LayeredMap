@@ -54,7 +54,7 @@ Map image…	Kartenbild …
 Data…	Daten …	
 Export	Exportieren	
 Undo	Widerrufen	as in macOS de
-Search places or your data	Orte oder deine Daten suchen	informal "du", as macOS de
+Search places or your data	Orte oder Ihre Daten suchen	formal "Sie" throughout (owner decision)
 Zoom in	Vergrößern	as in macOS de
 Zoom out	Verkleinern	as in macOS de
 Zoom to layer	Auf Layer zoomen	QGIS term
@@ -72,7 +72,7 @@ Selected	Ausgewählt
 Keep	Behalten	
 Discard	Verwerfen	
 Ask	Fragen	Pro assistant
-Ask about your layers	Frag etwas zu deinen Layern	Pro Ask box placeholder
+Ask about your layers	Fragen zu Ihren Layern	Pro Ask box placeholder
 Pro	Pro	
 Free	Kostenlos	
 Help	Hilfe	
@@ -120,7 +120,7 @@ Smooth	Stufenlos	continuous ramp
 Heat	Hitze	palette name
 Drop to add to the map	Zum Hinzufügen auf der Karte ablegen	
 Find in [layer]	In [layer] suchen	e.g. Find in storms
-Your data	Deine Daten	search results section
+Your data	Ihre Daten	search results section
 Measure length	Länge messen	Pro
 Next step (→)	Nächster Schritt (→)	
 Previous step (←)	Vorheriger Schritt (←)	

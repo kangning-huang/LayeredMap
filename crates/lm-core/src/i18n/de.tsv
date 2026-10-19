@@ -10,7 +10,7 @@ minus	minus
 map	Karte
 No data yet	Noch keine Daten
 Every layer is hidden	Alle Layer sind ausgeblendet
-Open a file or an example to add data. Search places with Command-F.	Öffne eine Datei oder ein Beispiel, um Daten hinzuzufügen. Orte suchst du mit Befehl-F.
+Open a file or an example to add data. Search places with Command-F.	Öffnen Sie eine Datei oder ein Beispiel, um Daten hinzuzufügen. Orte suchen Sie mit Befehl-F.
 Arrow keys pan, plus and minus zoom. The layer list and the data table (Command-T) list every record; Command-F finds one.	Pfeiltasten verschieben die Karte, Plus und Minus zoomen. Die Layerliste und die Datentabelle (Befehl-T) führen jeden Datensatz auf; Befehl-F findet einen.
 The whole world	Die ganze Welt
 {lat} degrees north, {lon} degrees east	{lat} Grad Nord, {lon} Grad Ost
@@ -36,12 +36,12 @@ Summarize in an area I draw	In einer selbst gezeichneten Fläche zusammenfassen
 The layer was removed.	Der Layer wurde entfernt.
 A layer is still loading.	Ein Layer wird noch geladen.
 A condition names no raster.	Eine Bedingung nennt kein Raster.
-Add a condition.	Füge eine Bedingung hinzu.
-Add a layer of points to answer this.	Füge einen Layer mit Punkten hinzu, um das zu beantworten.
-Add a layer of lines to answer this.	Füge einen Layer mit Linien hinzu, um das zu beantworten.
-Add a layer of areas to answer this.	Füge einen Layer mit Flächen hinzu, um das zu beantworten.
-Add a layer of cells to answer this.	Füge einen Layer mit Zellen hinzu, um das zu beantworten.
-Add a layer of points or lines or areas to answer this.	Füge einen Layer mit Punkten, Linien oder Flächen hinzu, um das zu beantworten.
+Add a condition.	Fügen Sie eine Bedingung hinzu.
+Add a layer of points to answer this.	Fügen Sie einen Layer mit Punkten hinzu, um das zu beantworten.
+Add a layer of lines to answer this.	Fügen Sie einen Layer mit Linien hinzu, um das zu beantworten.
+Add a layer of areas to answer this.	Fügen Sie einen Layer mit Flächen hinzu, um das zu beantworten.
+Add a layer of cells to answer this.	Fügen Sie einen Layer mit Zellen hinzu, um das zu beantworten.
+Add a layer of points or lines or areas to answer this.	Fügen Sie einen Layer mit Punkten, Linien oder Flächen hinzu, um das zu beantworten.
 Analysis	Analyse
 Developer surface · assistant action	Entwickleransicht · Assistentenaktion
 Choose a layer	Layer wählen
@@ -81,7 +81,7 @@ All {n} rows	Alle {n} Zeilen
 ≤  at most	≤  höchstens
 [ ]  between	[ ]  zwischen
 “{action}” isn't connected yet.	„{action}“ ist noch nicht angebunden.
-The question could not be answered. Nothing was added to your map. ({reason})	Die Frage konnte nicht beantwortet werden. Deiner Karte wurde nichts hinzugefügt. ({reason})
+The question could not be answered. Nothing was added to your map. ({reason})	Die Frage konnte nicht beantwortet werden. Ihrer Karte wurde nichts hinzugefügt. ({reason})
 {n} selected	{n} ausgewählt
 {phase}: {done} of {total}	{phase}: {done} von {total}
 {phase}…	{phase} …
@@ -92,9 +92,9 @@ Show all {n}	Alle {n} anzeigen
 Values: {unit}	Werte: {unit}
 The assistant isn't set up in this build (it has no assistant key).	Der Assistent ist in diesem Build nicht eingerichtet (es fehlt der Assistenten-Schlüssel).
 The plan couldn't be kept; nothing changed.	Der Plan konnte nicht übernommen werden; nichts wurde geändert.
-Type your answer, or pick one above	Tippe deine Antwort oder wähle oben eine aus
-Ask about your layers	Frag etwas zu deinen Layern
-Listening… speak your request	Ich höre zu … sprich deine Frage
+Type your answer, or pick one above	Antwort eingeben oder oben eine auswählen
+Ask about your layers	Fragen zu Ihren Layern
+Listening… speak your request	Ich höre zu … Sprechen Sie Ihre Frage
 Stop listening	Zuhören beenden
 Speak your request	Frage sprechen
 Ask (Return)	Fragen (Return)
@@ -111,10 +111,10 @@ Planning “{request}”…	„{request}“ wird geplant …
 Nothing to undo	Nichts zu widerrufen
 Map image…	Kartenbild …
 Data…	Daten …
-Open a file first	Öffne zuerst eine Datei
+Open a file first	Öffnen Sie zuerst eine Datei
 Map package…	Kartenpaket …
-Search places or your data	Orte oder deine Daten suchen
-Your data	Deine Daten
+Search places or your data	Orte oder Ihre Daten suchen
+Your data	Ihre Daten
 Loading places…	Orte werden geladen …
 No places match	Keine passenden Orte
 Places	Orte
@@ -126,8 +126,8 @@ Background strength	Hintergrundstärke
 Credits	Quellenangaben
 Working offline: the detailed background is off	Offline: Die detaillierte Hintergrundkarte ist aus
 Detailed background unavailable offline	Detaillierte Hintergrundkarte offline nicht verfügbar
-Detailed background unavailable offline. Your data and tools still work.	Detaillierte Hintergrundkarte offline nicht verfügbar. Deine Daten und Werkzeuge funktionieren weiterhin.
-Open a file to see your data on the map.	Öffne eine Datei, um deine Daten auf der Karte zu sehen.
+Detailed background unavailable offline. Your data and tools still work.	Detaillierte Hintergrundkarte offline nicht verfügbar. Ihre Daten und Werkzeuge funktionieren weiterhin.
+Open a file to see your data on the map.	Öffnen Sie eine Datei, um Ihre Daten auf der Karte zu sehen.
 Close	Schließen
 Open file…	Datei öffnen …
 Examples	Beispiele
@@ -162,11 +162,11 @@ Export a map image ({key}) or data	Kartenbild ({key}) oder Daten exportieren
 {n} ft	{n} ft
 Credits: {text}	Quellen: {text}
 Export Diagnostics	Diagnosedaten exportieren
-This is everything the diagnostics file will contain. Nothing is sent: save it, read it, and send it yourself if you want help.	Das ist alles, was die Diagnosedatei enthalten wird. Es wird nichts gesendet: Sichere sie, lies sie und schick sie selbst, wenn du Hilfe möchtest.
+This is everything the diagnostics file will contain. Nothing is sent: save it, read it, and send it yourself if you want help.	Das ist alles, was die Diagnosedatei enthalten wird. Es wird nichts gesendet: Sichern Sie sie, lesen Sie sie und senden Sie sie selbst, wenn Sie Hilfe möchten.
 It holds no data values or file contents; file and folder names may appear in error messages.	Sie enthält keine Datenwerte und keine Dateiinhalte; Datei- und Ordnernamen können in Fehlermeldungen vorkommen.
 Save…	Sichern …
 Couldn't start listening.	Zuhören konnte nicht gestartet werden.
-Speaking isn't available on Windows yet. Press Windows+H to type with your voice instead.	Sprechen ist unter Windows noch nicht verfügbar. Drück stattdessen Windows+H, um per Stimme zu tippen.
+Speaking isn't available on Windows yet. Press Windows+H to type with your voice instead.	Sprechen ist unter Windows noch nicht verfügbar. Drücken Sie stattdessen Windows+H, um per Stimme zu tippen.
 Speaking needs the {app} app (its speech helper isn't here).	Sprechen braucht die App {app} (ihr Sprachhelfer fehlt).
 Couldn't start listening: {error}	Zuhören konnte nicht gestartet werden: {error}
 Drawing — click to add points, double-click to finish, Esc to cancel	Zeichnen – klicken fügt Punkte hinzu, Doppelklick beendet, Esc bricht ab
@@ -194,7 +194,7 @@ Square	Quadrat
 slide	Folie
 square	Quadrat
 Map	Karte
-The preview isn't included. Keep it to put it in the image.	Die Vorschau ist nicht enthalten. Behalte sie, um sie ins Bild zu übernehmen.
+The preview isn't included. Keep it to put it in the image.	Die Vorschau ist nicht enthalten. Behalten Sie sie, um sie ins Bild zu übernehmen.
 Some of the background couldn't be loaded, so the image shows less detail.	Ein Teil der Hintergrundkarte konnte nicht geladen werden, daher zeigt das Bild weniger Details.
 Export map image	Kartenbild exportieren
 Size	Größe
@@ -202,7 +202,7 @@ Title	Titel
 Add a title (optional)	Titel hinzufügen (optional)
 Caption	Bildunterschrift
 Use the caption made from the layers	Aus den Layern erstellte Bildunterschrift verwenden
-Made from the layers; edit it if you like.	Aus den Layern erstellt; bearbeite sie nach Belieben.
+Made from the layers; edit it if you like.	Aus den Layern erstellt; nach Belieben bearbeiten.
 Legend	Legende
 No layers are shown.	Es werden keine Layer angezeigt.
 It places itself clear of the data; drag it to move it.	Sie platziert sich abseits der Daten; zum Verschieben ziehen.
@@ -260,7 +260,7 @@ Coordinates are written in WGS 84 (longitude, latitude).	Koordinaten werden in W
 All {n}	Alle {n}
 Filtered {n}	Gefiltert {n}
 Selected {n}	Ausgewählt {n}
-{note}: left out unless you check it	{note}: ausgelassen, außer du hakst es an
+{note}: left out unless you check it	{note}: ausgelassen, außer Sie haken es an
 Styles and recipes stay in {app}: these formats carry only locations and values.	Stile und Rechenwege bleiben in {app}: Diese Formate enthalten nur Lagen und Werte.
 Clear	Aufheben
 Clear the search	Suche löschen
@@ -293,8 +293,8 @@ One color	Eine Farbe
 Smooth	Stufenlos
 Groups	Gruppen
 Palette	Farbpalette
-Equal counts	Gleich viele
-Equal steps	Gleich breit
+Equal counts	Gleiche Anzahl
+Equal steps	Gleiche Abstände
 Fit range to view	Wertebereich an Ansicht anpassen
 Larger areas tend to have higher counts.	Größere Flächen haben meist höhere Anzahlen.
 Color by count per km² instead?	Stattdessen nach Anzahl pro km² einfärben?
@@ -352,7 +352,7 @@ Use this	Verwenden
 Join	Verknüpfen
 Keep as a table	Als Tabelle behalten
 Choose other columns…	Andere Spalten wählen …
-Open a point, line or area layer to match this table to.	Öffne einen Punkt-, Linien- oder Flächen-Layer, dem diese Tabelle zugeordnet werden kann.
+Open a point, line or area layer to match this table to.	Öffnen Sie einen Punkt-, Linien- oder Flächen-Layer, dem diese Tabelle zugeordnet werden kann.
 Several rows for one place	Mehrere Zeilen für einen Ort
 {n} name looks like a typo: {examples}	{n} Name sieht nach einem Tippfehler aus: {examples}
 {n} names look like typos: {examples}	{n} Namen sehen nach Tippfehlern aus: {examples}
@@ -377,7 +377,7 @@ Grid	Raster
 Table	Tabelle
 Data library	Datenbibliothek
 Search datasets	Datensätze durchsuchen
-Offline: showing the list from your last visit	Offline: Liste von deinem letzten Besuch
+Offline: showing the list from your last visit	Offline: Liste von Ihrem letzten Besuch
 Try again	Erneut versuchen
 Loading the library…	Bibliothek wird geladen …
 The library is empty.	Die Bibliothek ist leer.
@@ -389,7 +389,7 @@ Downloaded	Geladen
 {n} KB	{n} KB
 No datasets match “{q}”.	Keine Datensätze passen zu „{q}“.
 Downloading {done} of {total}	Lade {done} von {total}
-A layer is still loading. Try again in a moment.	Ein Layer wird noch geladen. Versuch es gleich noch einmal.
+A layer is still loading. Try again in a moment.	Ein Layer wird noch geladen. Versuchen Sie es gleich noch einmal.
 Packaging the map and its data…	Karte und Daten werden verpackt …
 packaging stopped unexpectedly	Verpacken unerwartet abgebrochen
 Share as a map package	Als Kartenpaket teilen
@@ -401,10 +401,10 @@ No source files: the map's layers are all stored in it already.	Keine Quelldatei
 can't be found, so it's left out	nicht gefunden, daher ausgelassen
 Folder paths	Ordnerpfade
 The map names no folders on this computer.	Die Karte nennt keine Ordner auf diesem Computer.
-Paths name your account and folders, so they are left out; files keep only their names.	Pfade nennen deinen Benutzeraccount und deine Ordner, daher werden sie ausgelassen; Dateien behalten nur ihre Namen.
+Paths name your account and folders, so they are left out; files keep only their names.	Pfade nennen Ihr Benutzerkonto und Ihre Ordner, daher werden sie ausgelassen; Dateien behalten nur ihre Namen.
 Fields that look personal	Felder, die persönlich wirken
 None found: no names, emails, phone or ID numbers.	Keine gefunden: keine Namen, E-Mail-Adressen, Telefon- oder Ausweisnummern.
-Checked fields are left out of the package. Your own map keeps them.	Angehakte Felder werden im Paket ausgelassen. Deine eigene Karte behält sie.
+Checked fields are left out of the package. Your own map keeps them.	Angehakte Felder werden im Paket ausgelassen. Ihre eigene Karte behält sie.
 Unknown — check before sharing	Unbekannt – vor dem Teilen prüfen
 The map is colored by it	Die Karte ist danach eingefärbt
 The map sizes points by it	Die Karte skaliert Punkte danach
@@ -442,7 +442,7 @@ Show joined fields	Verknüpfte Felder anzeigen
 Unjoin	Verknüpfung aufheben
 The table wasn't opened in this session, so it can't be put back	Die Tabelle wurde in dieser Sitzung nicht geöffnet und kann daher nicht wiederhergestellt werden
 Where should this data be?	Wo sollen diese Daten liegen?
-This file doesn't say where on Earth its coordinates are. Name a place it covers.	Diese Datei sagt nicht, wo auf der Erde ihre Koordinaten liegen. Nenne einen Ort, den sie abdeckt.
+This file doesn't say where on Earth its coordinates are. Name a place it covers.	Diese Datei sagt nicht, wo auf der Erde ihre Koordinaten liegen. Nennen Sie einen Ort, den sie abdeckt.
 A city or town, e.g. Shanghai	Eine Stadt, z. B. Shanghai
 Use the middle of the map	Kartenmitte verwenden
 the middle of the map	die Kartenmitte
@@ -462,7 +462,7 @@ Change	Ändern
 as in the file	wie in der Datei
 converted from Baidu (BD-09)	umgerechnet aus Baidu (BD-09)
 converted from Amap/Tencent (GCJ-02)	umgerechnet aus Amap/Tencent (GCJ-02)
-Keep the set that sits on the streets.	Behalte die Variante, die auf den Straßen liegt.
+Keep the set that sits on the streets.	Behalten Sie die Variante, die auf den Straßen liegt.
 Keep converted	Umgerechnete behalten
 Keep as in the file	Wie in der Datei behalten
 Try Amap/Tencent instead	Stattdessen Amap/Tencent versuchen
@@ -520,7 +520,7 @@ Show the {n} joined tables	Die {n} verknüpften Tabellen einblenden
 joined · {matched} of {total} matched	verknüpft · {matched} von {total} zugeordnet
 Joined table {table}, {caption}	Verknüpfte Tabelle {table}, {caption}
 Joined to {layer}: its fields are part of the layer	Mit {layer} verknüpft: Ihre Felder gehören zum Layer
-No coordinate system puts this data near {name}. Try another place, or open it as a table.	Kein Koordinatensystem legt diese Daten in die Nähe von {name}. Versuch einen anderen Ort oder öffne sie als Tabelle.
+No coordinate system puts this data near {name}. Try another place, or open it as a table.	Kein Koordinatensystem legt diese Daten in die Nähe von {name}. Versuchen Sie einen anderen Ort oder öffnen Sie sie als Tabelle.
 {crs} — lands {km} km from {name}	{crs} – landet {km} km von {name} entfernt
 {choice} (recommended)	{choice} (empfohlen)
 {lat}°, {lon}°	{lat}°, {lon}°
@@ -541,11 +541,11 @@ Failed: {reason}	Fehlgeschlagen: {reason}
 From {table}	Aus {table}
 Show {field} in insight	{field} in der Einordnung zeigen
 Excluded records — {layer}	Ausgeschlossene Datensätze – {layer}
-{n} records were left out of the map. Your file has not been changed.	{n} Datensätze wurden nicht auf die Karte übernommen. Deine Datei wurde nicht verändert.
+{n} records were left out of the map. Your file has not been changed.	{n} Datensätze wurden nicht auf die Karte übernommen. Ihre Datei wurde nicht verändert.
 Untitled	Ohne Titel
-Your own file has not been changed.	Deine eigene Datei wurde nicht verändert.
+Your own file has not been changed.	Ihre eigene Datei wurde nicht verändert.
 Restore	Wiederherstellen
-Your changes will be lost if you don't save them.	Deine Änderungen gehen verloren, wenn du sie nicht sicherst.
+Your changes will be lost if you don't save them.	Ihre Änderungen gehen verloren, wenn Sie sie nicht sichern.
 Don't Save	Nicht sichern
 Save	Sichern
 Use It	Verwenden
@@ -559,7 +559,7 @@ Using {file}. {n} results made from the old file now say Source changed.	{file} 
 This file looks different ({reason}). Use it anyway?	Diese Datei sieht anders aus ({reason}). Trotzdem verwenden?
 Saved, but {name} couldn't be kept in the map file ({why}).	Gesichert, aber {name} konnte nicht in die Kartendatei aufgenommen werden ({why}).
 The autosaved map could not be restored. {error}	Die automatisch gesicherte Karte konnte nicht wiederhergestellt werden. {error}
-Do you want to save the changes you made to '{name}'?	Möchtest du die Änderungen an „{name}“ sichern?
+Do you want to save the changes you made to '{name}'?	Möchten Sie die Änderungen an „{name}“ sichern?
 a date	ein Datum
 some text	ein Text
 Remove this filter	Diesen Filter entfernen
@@ -571,7 +571,7 @@ Search the table	Tabelle durchsuchen
 no value	kein Wert
 where	wo
 choose…	wählen …
-Finish the sentence to see how many match.	Vervollständige den Satz, um zu sehen, wie viele passen.
+Finish the sentence to see how many match.	Vervollständigen Sie den Satz, um zu sehen, wie viele passen.
 Apply	Anwenden
 is	ist
 is not	ist nicht
@@ -606,7 +606,7 @@ This layer has no variables to choose from.	Dieser Layer hat keine Variablen zur
 This layer's data isn't loaded.	Die Daten dieses Layers sind nicht geladen.
 {layer} has no variable {variable}.	{layer} hat keine Variable {variable}.
 The layer isn't loaded yet.	Der Layer ist noch nicht geladen.
-Pick a column on each side.	Wähle auf jeder Seite eine Spalte.
+Pick a column on each side.	Wählen Sie auf jeder Seite eine Spalte.
 {matched} of {keys} match	{matched} von {keys} passen
 Joined {table} to {layer}: {matched} of {total} {things} matched.	{table} mit {layer} verknüpft: {matched} von {total} {things} zugeordnet.
 Show the {r} row not matched	Die {r} nicht zugeordnete Zeile anzeigen
@@ -616,8 +616,8 @@ Show the {k} not matched ({r} row)	Die {k} nicht zugeordneten anzeigen ({r} Zeil
 Show the {k} not matched ({r} rows)	Die {k} nicht zugeordneten anzeigen ({r} Zeilen)
 file	Datei
 Preparing a faster preview…	Schnellere Vorschau wird vorbereitet …
-Still reading a layer. Undo in a moment.	Ein Layer wird noch gelesen. Widerrufe gleich noch einmal.
-Still reading a layer. Redo in a moment.	Ein Layer wird noch gelesen. Wiederhole gleich noch einmal.
+Still reading a layer. Undo in a moment.	Ein Layer wird noch gelesen. Widerrufen Sie gleich noch einmal.
+Still reading a layer. Redo in a moment.	Ein Layer wird noch gelesen. Wiederholen Sie gleich noch einmal.
 That couldn't be done. Nothing was changed.	Das ging nicht. Es wurde nichts geändert.
 The layer changed while it was being read again, so that change was not applied.	Der Layer hat sich beim erneuten Lesen geändert, daher wurde die Änderung nicht angewendet.
 That assumption couldn't be changed.	Diese Annahme konnte nicht geändert werden.
@@ -632,7 +632,7 @@ Can't find {file}. It was last seen in {folder}.	{file} nicht gefunden. Zuletzt 
 Can't find {file}. It was last seen in its folder.	{file} nicht gefunden. Zuletzt war sie in ihrem Ordner.
 The layer couldn't be read again.	Der Layer konnte nicht erneut gelesen werden.
 Reading {done} of {total}	Lese {done} von {total}
-Still reading {layer}. Try again in a moment.	{layer} wird noch gelesen. Versuch es gleich noch einmal.
+Still reading {layer}. Try again in a moment.	{layer} wird noch gelesen. Versuchen Sie es gleich noch einmal.
 Save map package	Kartenpaket sichern
 {app} map	{app}-Karte
 Locate {file}	{file} suchen

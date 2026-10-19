@@ -46,8 +46,20 @@ share per country.
 ## 2. The brand in Japanese and Korean
 
 **Recommendation: "NimbleMap" in both, no kanji, hanja or hangul form.** Implemented on the
-Japanese and Korean pages; `lm_core::brand` gets no new constant (`NAME` stays "NimbleMap";
-`NAME_ZH` stays Chinese-only).
+Japanese and Korean pages and in the app; `lm_core::brand` gets no Japanese or Korean constant
+(`NAME` stays "NimbleMap").
+
+**Chinese (owner's decision, 2026-10-19):** the Chinese interface shows 凌波微图 (Pro: 凌波微图
+Pro) wherever the app writes its own name: the toolbar, menus (About, Quit, Help), messages, the
+export caption ("Made with …"), the update notice, the Save dialog's file type.
+`lm_core::brand::shown(pro)` picks it by the interface language; files, logs, diagnostics reports
+and the `software` field keep "NimbleMap". On macOS, Finder, the Dock and the menu bar's
+application menu take the name from the bundle: `bundle-macos.sh` writes
+`zh-Hans.lproj/InfoPlist.strings` (CFBundleName, CFBundleDisplayName = 凌波微图) and sets
+`LSHasLocalizedDisplayName`, so they show 凌波微图 when **the Mac's** language is Chinese; they
+can't follow the app's own View › Language. The window title is the map's name, and the
+`.app` folder stays "NimbleMap.app". Windows: the executable's file description and the Start
+menu entry stay "NimbleMap" (no per-language resources yet).
 
 Japanese, 凌波微図:
 - Jin Yong is published in Japan (Tokuma Shoten's 金庸武俠小説集, 1996–2004, with 天龍八部 in
@@ -130,7 +142,7 @@ translated where it is drawn.
   step `language ja`. Changing it relabels the menu bar at once. Help › NimbleMap Help opens the
   help page in the interface's language.
 - **Numbers** the interface formats itself follow the language (`i18n::count`, `i18n::number`:
-  1.248,5 in German, 1 248,5 in French with a narrow no-break space, 14.537 but 4999 in Spanish);
+  1.248,5 in German, 1 248,5 in French with a narrow no-break space, 14 537 but 4999 in Spanish with a no-break space and the decimal point, as on the Spanish site);
   English is unchanged. Dataset values, table cells, exports and saved files are never
   translated or reformatted.
 - **Never translated**: field and layer names, file contents, dataset values, command and menu
@@ -181,8 +193,6 @@ crates to hand over a template plus values instead of a finished sentence):
 - the Pro assistant's own messages (`lm-ask`), and model answers;
 - action requirement reasons in `rules.toml` (not shown in the interface today);
 - dates on the time slider (month names);
-- the Chinese app name: the app shows "NimbleMap" in every language. Whether the Chinese
-  interface should show 凌波微图 is the owner's call.
 
 Known rough edges for the reviewers: the filter bar is assembled from pieces in English word
 order ("Show [storms] where [strength] is any of …"), which reads stiffly in every other language;
@@ -228,15 +238,17 @@ words, with notes on where an everyday word was chosen over the QGIS term) are i
 | Ask | Fragen | Preguntar | Demander | Chiedi | Vragen | Perguntar | Спросить | 質問 | 질문하기 |
 
 Choices to confirm first, per language (from the translators' notes):
-- **de**: informal "du" throughout (as current macOS German); "Layer" (QGIS) rather than "Ebene";
+- **de**: formal "Sie" throughout, app and site (owner's choice, 2026-10-19); "Layer" (QGIS) rather than "Ebene";
   Card = "Infokarte" (plain "Karte" is the map); macOS menu names (Ablage, Darstellung).
-- **es**: "tú"; Feature = "elemento" (QGIS: entidad/objeto espacial); Card = "ficha"; decimals with
-  a point to match the screenshots (Spain usually writes a comma).
+- **es**: "tú"; Feature = "elemento" (QGIS: entidad/objeto espacial); Card = "ficha"; numbers as
+  the RAE's Ortografía recommends, on the site and in the app alike (owner's choice, 2026-10-19):
+  a no-break space between thousands from five digits on (4999, 14 537) and the decimal point
+  (35.3 km²); readers in Spain often expect a decimal comma.
 - **fr**: Card = « fiche »; Caption = « texte sous la carte » (Légende is the legend); Area =
   « surface » (QGIS: polygone).
 - **it**: Card = "riquadro" (scheda is a tab); Help = "Aiuto" but the page "Guida di NimbleMap";
   Light/Dark agree in the masculine.
-- **nl**: informal "je"; Card = "infokaart"; Range = "waardebereik" so that Extent can be "bereik";
+- **nl**: formal "u" throughout, app and site (owner's choice, 2026-10-19); Card = "infokaart"; Range = "waardebereik" so that Extent can be "bereik";
   two words for Size (formaat on the export sheet, grootte in the Style tab).
 - **pt-BR**: Feature = "feição" (QGIS); Join = "união"; Zoom in/out = "aproximar/afastar".
 - **ru**: Basemap = «подложка»; Area = «область» (QGIS: полигон); Zoom in/out =

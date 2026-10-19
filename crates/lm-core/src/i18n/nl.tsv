@@ -81,7 +81,7 @@ All {n} rows	Alle {n} rijen
 ≤  at most	≤  hoogstens
 [ ]  between	[ ]  tussen
 “{action}” isn't connected yet.	“{action}” is nog niet gekoppeld.
-The question could not be answered. Nothing was added to your map. ({reason})	De vraag kon niet worden beantwoord. Er is niets aan je kaart toegevoegd. ({reason})
+The question could not be answered. Nothing was added to your map. ({reason})	De vraag kon niet worden beantwoord. Er is niets aan uw kaart toegevoegd. ({reason})
 {n} selected	{n} geselecteerd
 {phase}: {done} of {total}	{phase}: {done} van {total}
 {phase}…	{phase}…
@@ -92,11 +92,11 @@ Show all {n}	Alle {n} tonen
 Values: {unit}	Waarden: {unit}
 The assistant isn't set up in this build (it has no assistant key).	De assistent is in deze versie niet ingesteld (er is geen assistentsleutel).
 The plan couldn't be kept; nothing changed.	Het plan kon niet worden behouden; er is niets veranderd.
-Type your answer, or pick one above	Typ je antwoord, of kies er hierboven een
-Ask about your layers	Vraag iets over je lagen
-Listening… speak your request	Luisteren… spreek je vraag in
+Type your answer, or pick one above	Typ uw antwoord, of kies er hierboven een
+Ask about your layers	Vraag iets over uw lagen
+Listening… speak your request	Luisteren… spreek uw vraag in
 Stop listening	Stoppen met luisteren
-Speak your request	Spreek je vraag in
+Speak your request	Spreek uw vraag in
 Ask (Return)	Vragen (Return)
 Ask	Vragen
 Planning…	Plan maken…
@@ -113,8 +113,8 @@ Map image…	Kaartafbeelding…
 Data…	Gegevens…
 Open a file first	Open eerst een bestand
 Map package…	Kaartpakket…
-Search places or your data	Zoek plaatsen of je gegevens
-Your data	Jouw gegevens
+Search places or your data	Zoek plaatsen of uw gegevens
+Your data	Uw gegevens
 Loading places…	Plaatsen laden…
 No places match	Geen plaatsen gevonden
 Places	Plaatsen
@@ -126,8 +126,8 @@ Background strength	Sterkte achtergrond
 Credits	Bronvermelding
 Working offline: the detailed background is off	Offline: de gedetailleerde achtergrond staat uit
 Detailed background unavailable offline	Gedetailleerde achtergrond offline niet beschikbaar
-Detailed background unavailable offline. Your data and tools still work.	Gedetailleerde achtergrond offline niet beschikbaar. Je gegevens en tools werken nog steeds.
-Open a file to see your data on the map.	Open een bestand om je gegevens op de kaart te zien.
+Detailed background unavailable offline. Your data and tools still work.	Gedetailleerde achtergrond offline niet beschikbaar. Uw gegevens en tools werken nog steeds.
+Open a file to see your data on the map.	Open een bestand om uw gegevens op de kaart te zien.
 Close	Sluiten
 Open file…	Bestand openen…
 Examples	Voorbeelden
@@ -162,11 +162,11 @@ Export a map image ({key}) or data	Een kaartafbeelding ({key}) of gegevens expor
 {n} ft	{n} ft
 Credits: {text}	Bronvermelding: {text}
 Export Diagnostics	Diagnose exporteren
-This is everything the diagnostics file will contain. Nothing is sent: save it, read it, and send it yourself if you want help.	Dit is alles wat het diagnosebestand bevat. Er wordt niets verstuurd: bewaar het, lees het en stuur het zelf op als je hulp wilt.
+This is everything the diagnostics file will contain. Nothing is sent: save it, read it, and send it yourself if you want help.	Dit is alles wat het diagnosebestand bevat. Er wordt niets verstuurd: bewaar het, lees het en stuur het zelf op als u hulp wilt.
 It holds no data values or file contents; file and folder names may appear in error messages.	Het bevat geen gegevenswaarden of bestandsinhoud; namen van bestanden en mappen kunnen in foutmeldingen voorkomen.
 Save…	Opslaan…
 Couldn't start listening.	Kan niet beginnen met luisteren.
-Speaking isn't available on Windows yet. Press Windows+H to type with your voice instead.	Inspreken is nog niet beschikbaar op Windows. Druk op Windows+H om met je stem te typen.
+Speaking isn't available on Windows yet. Press Windows+H to type with your voice instead.	Inspreken is nog niet beschikbaar op Windows. Druk op Windows+H om met uw stem te typen.
 Speaking needs the {app} app (its speech helper isn't here).	Inspreken werkt alleen in de app {app} (de spraakhulp ontbreekt).
 Couldn't start listening: {error}	Kan niet beginnen met luisteren: {error}
 Drawing — click to add points, double-click to finish, Esc to cancel	Tekenen — klik om punten toe te voegen, dubbelklik om te stoppen, Esc om te annuleren
@@ -260,7 +260,7 @@ Coordinates are written in WGS 84 (longitude, latitude).	Coördinaten worden in 
 All {n}	Alle {n}
 Filtered {n}	Gefilterd {n}
 Selected {n}	Geselecteerd {n}
-{note}: left out unless you check it	{note}: weggelaten tenzij je het aanvinkt
+{note}: left out unless you check it	{note}: weggelaten tenzij u het aanvinkt
 Styles and recipes stay in {app}: these formats carry only locations and values.	Stijlen en recepten blijven in {app}: deze formaten bevatten alleen locaties en waarden.
 Clear	Wissen
 Clear the search	Zoekopdracht wissen
@@ -377,7 +377,7 @@ Grid	Rooster
 Table	Tabel
 Data library	Gegevensbibliotheek
 Search datasets	Datasets zoeken
-Offline: showing the list from your last visit	Offline: de lijst van je vorige bezoek
+Offline: showing the list from your last visit	Offline: de lijst van uw vorige bezoek
 Try again	Opnieuw proberen
 Loading the library…	Bibliotheek laden…
 The library is empty.	De bibliotheek is leeg.
@@ -401,10 +401,10 @@ No source files: the map's layers are all stored in it already.	Geen bronbestand
 can't be found, so it's left out	niet gevonden, dus weggelaten
 Folder paths	Mappaden
 The map names no folders on this computer.	De kaart noemt geen mappen op deze computer.
-Paths name your account and folders, so they are left out; files keep only their names.	Paden noemen je account en mappen, dus die worden weggelaten; bestanden houden alleen hun naam.
+Paths name your account and folders, so they are left out; files keep only their names.	Paden noemen uw account en mappen, dus die worden weggelaten; bestanden houden alleen hun naam.
 Fields that look personal	Velden die persoonlijk lijken
 None found: no names, emails, phone or ID numbers.	Niets gevonden: geen namen, e-mailadressen, telefoon- of identiteitsnummers.
-Checked fields are left out of the package. Your own map keeps them.	Aangevinkte velden worden uit het pakket weggelaten. Je eigen kaart houdt ze.
+Checked fields are left out of the package. Your own map keeps them.	Aangevinkte velden worden uit het pakket weggelaten. Uw eigen kaart houdt ze.
 Unknown — check before sharing	Onbekend — controleer vóór het delen
 The map is colored by it	De kaart wordt erop gekleurd
 The map sizes points by it	De kaart bepaalt er de puntgrootte mee
@@ -541,11 +541,11 @@ Failed: {reason}	Mislukt: {reason}
 From {table}	Uit {table}
 Show {field} in insight	{field} in inzicht tonen
 Excluded records — {layer}	Uitgesloten records — {layer}
-{n} records were left out of the map. Your file has not been changed.	{n} records zijn niet op de kaart gezet. Je bestand is niet gewijzigd.
+{n} records were left out of the map. Your file has not been changed.	{n} records zijn niet op de kaart gezet. Uw bestand is niet gewijzigd.
 Untitled	Naamloos
-Your own file has not been changed.	Je eigen bestand is niet gewijzigd.
+Your own file has not been changed.	Uw eigen bestand is niet gewijzigd.
 Restore	Herstellen
-Your changes will be lost if you don't save them.	Je wijzigingen gaan verloren als je ze niet opslaat.
+Your changes will be lost if you don't save them.	Uw wijzigingen gaan verloren als u ze niet opslaat.
 Don't Save	Niet opslaan
 Save	Opslaan
 Use It	Gebruiken
@@ -559,7 +559,7 @@ Using {file}. {n} results made from the old file now say Source changed.	{file} 
 This file looks different ({reason}). Use it anyway?	Dit bestand ziet er anders uit ({reason}). Toch gebruiken?
 Saved, but {name} couldn't be kept in the map file ({why}).	Opgeslagen, maar {name} kon niet in het kaartbestand worden bewaard ({why}).
 The autosaved map could not be restored. {error}	De automatisch bewaarde kaart kon niet worden hersteld. {error}
-Do you want to save the changes you made to '{name}'?	Wil je de wijzigingen in '{name}' opslaan?
+Do you want to save the changes you made to '{name}'?	Wilt u de wijzigingen in '{name}' opslaan?
 a date	een datum
 some text	wat tekst
 Remove this filter	Dit filter verwijderen

@@ -47,7 +47,7 @@ pub struct Numbers {
     pub group: &'static str,
     pub decimal: &'static str,
     /// Group only numbers with at least this many digits before the decimal mark (CLDR's
-    /// minimum grouping digits: Spanish writes 1000 but 10.000).
+    /// minimum grouping digits: Spanish writes 1000 but 10 000).
     pub min_group_digits: usize,
 }
 
@@ -87,7 +87,9 @@ pub static LANGUAGES: [LangInfo; 11] = [
     LangInfo { code: "en", name: "English", english: "English", cjk: None, numbers: COMMA_DOT, source: "", catalog: OnceLock::new() },
     lang!("zh", "简体中文", "Chinese (Simplified)", Some(Cjk::SimplifiedChinese), COMMA_DOT, "i18n/zh.tsv"),
     lang!("de", "Deutsch", "German", None, DOT_COMMA, "i18n/de.tsv"),
-    lang!("es", "Español", "Spanish", None, Numbers { group: ".", decimal: ",", min_group_digits: 5 }, "i18n/es.tsv"),
+    // Spanish as the RAE's Ortografía recommends, and as the Spanish website writes: a space
+    // between groups of three from five digits on (1000, 14 537) and the decimal point.
+    lang!("es", "Español", "Spanish", None, Numbers { group: "\u{A0}", decimal: ".", min_group_digits: 5 }, "i18n/es.tsv"),
     lang!("fr", "Français", "French", None, Numbers { group: "\u{202F}", decimal: ",", min_group_digits: 4 }, "i18n/fr.tsv"),
     lang!("it", "Italiano", "Italian", None, DOT_COMMA, "i18n/it.tsv"),
     lang!("nl", "Nederlands", "Dutch", None, DOT_COMMA, "i18n/nl.tsv"),

@@ -73,7 +73,8 @@ fn numbers_follow_the_language() {
     assert_eq!(localize_number(de, "−0.4 °C"), "−0,4 °C");
     assert_eq!(localize_number(fr, "14,537"), "14\u{202F}537");
     assert_eq!(localize_number(es, "4,999"), "4999");
-    assert_eq!(localize_number(es, "14,537"), "14.537");
+    assert_eq!(localize_number(es, "14,537"), "14\u{A0}537");
+    assert_eq!(localize_number(es, "1,248.5"), "1248.5");
     assert_eq!(localize_number(de, "12%"), "12%");
     // Not a number in English form: left alone.
     assert_eq!(localize_number(de, "1,2,3"), "1,2,3");
