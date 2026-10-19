@@ -459,6 +459,7 @@ impl Ctx<'_> {
         }
         // Drop vertices closer than ~0.35 px to the previous one: big speed-up when zoomed out.
         let mut last: Option<(f32, f32)> = None;
+        let half_world_px = WORLD_WIDTH / 2.0 / self.view.camera.res * self.view.pixels_per_point;
         let n = ring.len();
         for (i, c) in ring.iter().enumerate() {
             let (x, y) = self.px(*c);
@@ -476,7 +477,9 @@ impl Ctx<'_> {
                     if (x - lx).abs() + (y - ly).abs() < 0.35 && i + 1 != n {
                         continue;
                     }
-                    pb.line_to(x, y)
+                    // A line whose longitudes jump across the antimeridian (179° to −179°) is
+                    // broken there rather than drawn as a streak across the world.
+                    if !close && f64::from((x - lx).abs()) > half_world_px { pb.move_to(x, y) } else { pb.line_to(x, y) }
                 }
             }
             last = Some((x, y));
@@ -488,9 +491,19 @@ impl Ctx<'_> {
 
     fn polygon(&self, pm: &mut Pixmap, polys: &[Vec<Vec<Coord>>], fill: Option<Paint>, stroke: Option<(Paint, f32)>) {
         let mut pb = PathBuilder::new();
+        // An outer ring under a pixel across would collapse to a zero-length path (its vertices
+        // all closer than the 0.35 px the path keeps) and draw nothing: it is drawn instead as a
+        // dot 1.5 outline widths across (at least 1.5 px) before the outline is stroked round it,
+        // so small areas stay visible zoomed out, as small points do. Holes that small are left
+        // out.
+        let dot = stroke.as_ref().map_or(1.0, |(_, w)| w * self.ppp).max(1.0);
         for rings in polys {
-            for r in rings {
-                self.ring_path(&mut pb, r, true);
+            for (k, r) in rings.iter().enumerate() {
+                match self.globe.is_none().then(|| self.tiny_ring(r)).flatten() {
+                    Some(Some((x, y))) if k == 0 => pb.push_circle(x, y, dot * 0.75),
+                    Some(_) => {}
+                    None => self.ring_path(&mut pb, r, true),
+                }
             }
         }
         let Some(path) = pb.finish() else { return };
@@ -503,6 +516,22 @@ impl Ctx<'_> {
             let st = Stroke { width: w * self.ppp, line_join: LineJoin::Round, ..Stroke::default() };
             pm.stroke_path(&path, &s, &st, Transform::identity(), None);
         }
+    }
+
+    /// For a ring under a pixel across on screen: `Some(Some(centre))` in pixels (`Some(None)`
+    /// when no vertex can be shown); `None` for a ring big enough to draw as it is.
+    fn tiny_ring(&self, ring: &[Coord]) -> Option<Option<(f32, f32)>> {
+        let (mut x0, mut y0, mut x1, mut y1) = (f32::INFINITY, f32::INFINITY, f32::NEG_INFINITY, f32::NEG_INFINITY);
+        for c in ring {
+            let (x, y) = self.px(*c);
+            if x.is_finite() && y.is_finite() {
+                (x0, y0, x1, y1) = (x0.min(x), y0.min(y), x1.max(x), y1.max(y));
+                if x1 - x0 >= 1.0 || y1 - y0 >= 1.0 {
+                    return None;
+                }
+            }
+        }
+        Some(x0.is_finite().then(|| ((x0 + x1) / 2.0, (y0 + y1) / 2.0)))
     }
 
     fn line(&self, pm: &mut Pixmap, parts: &[Vec<Coord>], p: &Paint, w: f32) {
@@ -631,6 +660,34 @@ impl Ctx<'_> {
     }
 }
 
+/// The width of the Web Mercator world, metres.
+const WORLD_WIDTH: f64 = 2.0 * std::f64::consts::PI * rustgis_geom::MERCATOR_R;
+
+/// The views that draw the neighbouring copies of the world (`k` = ±1, ±2 worlds east or west)
+/// that `view` shows any of: the camera's centre moved `k` worlds the other way, so a feature at
+/// `x` lands where `x + k·world` would. Empty when `on` is false or the view stays within the
+/// world.
+fn world_copy_views(view: &View, on: bool) -> Vec<View> {
+    if !on {
+        return Vec::new();
+    }
+    let e = view.camera.extent(view.width, view.height).padded(0.05, 0.0);
+    // Data lies within about one world of the centre line (longitudes up to ±360°).
+    let data = Extent::new(-WORLD_WIDTH, f64::NEG_INFINITY, WORLD_WIDTH, f64::INFINITY);
+    [-2i32, -1, 1, 2]
+        .into_iter()
+        .filter_map(|k| {
+            let dx = f64::from(k) * WORLD_WIDTH;
+            let shifted = Extent::new(e.min_x - dx, e.min_y, e.max_x - dx, e.max_y);
+            (shifted.max_x >= data.min_x && shifted.min_x <= data.max_x).then(|| {
+                let mut v = *view;
+                v.camera.center.x -= dx;
+                v
+            })
+        })
+        .collect()
+}
+
 /// The longitude/latitude extent a view shows (the whole world on the globe, or when the
 /// projection can't say).
 pub fn view_lonlat(map: &Map, view: &View) -> Extent {
@@ -698,6 +755,22 @@ fn render_with(map: &mut Map, view: &View, full_res_rasters: bool, selection: Se
         Some(g) => g.may_see(e),
         None => e.intersects(&ctx.cull),
     };
+    // World copies (`ViewSettings::world_copies`): on a flat Web Mercator map wider than the
+    // world, features are drawn again one or two worlds east and west. Each copy is the view with
+    // its centre moved a world the other way, so drawing code is unchanged.
+    let copy_views: Vec<View> =
+        world_copy_views(view, map.view.world_copies && globe.is_none() && matches!(flat, rustgis_map::projection::Flat::Mercator));
+    let copies: Vec<Ctx> = copy_views
+        .iter()
+        .map(|v| Ctx {
+            view: v,
+            ppp: ctx.ppp,
+            wireframe: ctx.wireframe,
+            cull: v.camera.extent(v.width, v.height).padded(0.05, 0.0),
+            globe: None,
+            selection,
+        })
+        .collect();
 
     // Basemap.
     let (water, land, outline, grat) = map.basemap.palette();
@@ -715,10 +788,14 @@ fn render_with(map: &mut Map, view: &View, full_res_rasters: bool, selection: Se
             (None, None) => world(),
         };
         for g in outlines {
-            if let Geometry::Polygon(polys) = g
-                && visible(&g.extent())
-            {
-                ctx.polygon(&mut pm, polys, Some(fill.clone()), stroke.clone());
+            if let Geometry::Polygon(polys) = g {
+                let e = g.extent();
+                if visible(&e) {
+                    ctx.polygon(&mut pm, polys, Some(fill.clone()), stroke.clone());
+                }
+                for c in copies.iter().filter(|c| e.intersects(&c.cull)) {
+                    c.polygon(&mut pm, polys, Some(fill.clone()), stroke.clone());
+                }
             }
         }
     }
@@ -867,7 +944,16 @@ fn render_with(map: &mut Map, view: &View, full_res_rasters: bool, selection: Se
             } else {
                 for (row, g) in geoms.iter().enumerate() {
                     let Some(g) = g else { continue };
-                    if rows.get(row) != Some(&true) || !visible(&g.extent()) {
+                    if rows.get(row) != Some(&true) {
+                        continue;
+                    }
+                    let e = g.extent();
+                    if !layer.graphics {
+                        for c in copies.iter().filter(|c| e.intersects(&c.cull)) {
+                            c.feature(dest, g, &layer.symbol(row));
+                        }
+                    }
+                    if !visible(&e) {
                         continue;
                     }
                     // A picture draws in its row's turn, so graphics keep their order. (On the globe
@@ -894,6 +980,10 @@ fn render_with(map: &mut Map, view: &View, full_res_rasters: bool, selection: Se
                 && rows.get(*row) == Some(&true)
             {
                 ctx.highlight(&mut pm, g, &layer.symbol(*row));
+                let e = g.extent();
+                for c in copies.iter().filter(|c| e.intersects(&c.cull)) {
+                    c.highlight(&mut pm, g, &layer.symbol(*row));
+                }
             }
         }
         if layer.graphics {
@@ -1414,6 +1504,94 @@ mod tests {
         assert!(names(&def).iter().any(|n| n == "Taiwan"));
         assert!(!names(&chn).iter().any(|n| n == "Taiwan"));
         assert!(names(&chn).iter().any(|n| n == "China"));
+    }
+
+    /// Red pixels in a render (the test layers' colour).
+    fn red_pixels(r: &Rendered) -> usize {
+        r.pixmap.pixels().iter().filter(|p| i32::from(p.red()) - i32::from(p.green()) > 60 && p.red() > p.blue()).count()
+    }
+
+    fn red_layer(m: &mut Map, kind: GeometryType, geoms: Vec<Geometry>) {
+        let mut d = Dataset::new("t", kind, vec![]);
+        for g in geoms {
+            d.push(Some(g), vec![]);
+        }
+        let id = m.add_dataset(d);
+        if let Some(l) = m.layer_mut(id) {
+            let red = Rgba::rgb(230, 20, 20);
+            l.renderer = rustgis_map::Renderer::Single(rustgis_map::Symbol {
+                fill: red.with_alpha(60),
+                stroke: red,
+                stroke_width: 1.0,
+                size: 0.0,
+                marker: Default::default(),
+            });
+        }
+    }
+
+    /// A polygon far smaller than a pixel (a walled city in a map of all China) still draws, as a
+    /// dot about its outline's width, instead of collapsing to nothing.
+    #[test]
+    fn polygons_smaller_than_a_pixel_still_draw() {
+        let mut m = Map::new("Map");
+        m.graticule = false;
+        // Ten squares 1 km across, 50 km apart, over the open Pacific.
+        let sq = |x: f64| {
+            let (lon, h) = (-150.0 + x * 0.5, 0.0045);
+            vec![vec![
+                Coord::new(lon - h, -h),
+                Coord::new(lon + h, -h),
+                Coord::new(lon + h, h),
+                Coord::new(lon - h, h),
+                Coord::new(lon - h, -h),
+            ]]
+        };
+        red_layer(&mut m, GeometryType::Polygon, (0..10).map(|i| Geometry::Polygon(vec![sq(f64::from(i))])).collect());
+        // About 4 km per pixel: each square is a quarter of a pixel wide.
+        let camera = Camera { center: lonlat_to_merc(Coord::new(-147.75, 0.0)), res: 4000.0 };
+        for ppp in [1.0, 2.0] {
+            let view = View { width: 400.0, height: 300.0, pixels_per_point: ppp, camera, dark: false };
+            let r = render(&mut m, &view).unwrap();
+            // Each dot covers a few pixels, strongly red (antialiased between pixel centres).
+            assert!(red_pixels(&r) >= 20, "ppp {ppp}: {} red pixels", red_pixels(&r));
+        }
+    }
+
+    /// With world copies on, a line in the eastern Pacific shows in the copy of the world east of
+    /// 180° when the view is centred on the antimeridian; without them it doesn't. A line whose
+    /// longitudes jump from 179° to −179° is not drawn as a streak across the world.
+    #[test]
+    fn world_copies_draw_data_across_the_antimeridian() {
+        let mut m = Map::new("Map");
+        m.graticule = false;
+        red_layer(&mut m, GeometryType::Polyline, vec![Geometry::Line(vec![vec![Coord::new(-170.0, 10.0), Coord::new(-160.0, 20.0)]])]);
+        // Zoom ~2.6, 800 px wide: the view spans about 170°E to 190°E… and more.
+        let camera = Camera { center: lonlat_to_merc(Coord::new(180.0, 15.0)), res: 25_000.0 };
+        let view = View { width: 800.0, height: 400.0, pixels_per_point: 1.0, camera, dark: false };
+        assert_eq!(red_pixels(&render(&mut m, &view).unwrap()), 0, "drawn once, at 170°W of the world west of the view");
+        m.view.world_copies = true;
+        assert!(red_pixels(&render(&mut m, &view).unwrap()) > 30, "drawn again one world east");
+
+        let mut m = Map::new("Map");
+        m.graticule = false;
+        m.view.world_copies = true;
+        red_layer(
+            &mut m,
+            GeometryType::Polyline,
+            vec![Geometry::Line(vec![vec![
+                Coord::new(170.0, 10.0),
+                Coord::new(179.0, 10.0),
+                Coord::new(-179.0, 10.0),
+                Coord::new(-170.0, 10.0),
+            ]])],
+        );
+        let camera = Camera { center: lonlat_to_merc(Coord::new(0.0, 10.0)), res: 60_000.0 };
+        let view = View { width: 800.0, height: 400.0, pixels_per_point: 1.0, camera, dark: false };
+        let r = render(&mut m, &view).unwrap();
+        // Nothing near the prime meridian (the streak would cross it).
+        let y = (200.0 - (lonlat_to_merc(Coord::new(0.0, 10.0)).y - camera.center.y) / 60_000.0).round() as u32;
+        let mid = (380..420).filter(|x| r.pixmap.pixel(*x, y).is_some_and(|p| p.red() > 150 && p.green() < 80)).count();
+        assert_eq!(mid, 0, "no streak across the world");
     }
 
     #[test]

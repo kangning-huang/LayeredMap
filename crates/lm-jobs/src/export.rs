@@ -175,6 +175,9 @@ pub enum Sensitive {
     Phone,
     Email,
     IdNumber,
+    /// People's names, by the field's name ("full_name", "surname", "姓名"; WP6.5). A plain
+    /// "name" field is a place's or a feature's name and isn't flagged.
+    PersonName,
 }
 
 impl Sensitive {
@@ -184,6 +187,7 @@ impl Sensitive {
             Sensitive::Phone => "Looks like phone numbers",
             Sensitive::Email => "Looks like email addresses",
             Sensitive::IdNumber => "Looks like ID numbers",
+            Sensitive::PersonName => "Looks like people's names",
         }
     }
 }
@@ -238,6 +242,25 @@ fn by_name(name: &str) -> Option<Sensitive> {
     {
         return Some(Sensitive::IdNumber);
     }
+    let person = [
+        "firstname",
+        "lastname",
+        "surname",
+        "fullname",
+        "givenname",
+        "familyname",
+        "forename",
+        "middlename",
+        "personname",
+        "contactname",
+        "studentname",
+        "patientname",
+        "ownername",
+        "respondent",
+    ];
+    if person.iter().any(|s| has(s) || pairs.iter().any(|p| p == s) || joined == *s) || zh(&["姓名", "联系人", "户主", "名字"]) {
+        return Some(Sensitive::PersonName);
+    }
     None
 }
 
@@ -284,9 +307,17 @@ fn is_id_number(s: &str) -> bool {
 /// What personal information a field seems to hold, from its name or, failing that, from most of
 /// its values (up to 200 of them looked at).
 pub fn sensitive<'a>(name: &str, values: impl Iterator<Item = &'a Value>) -> Option<Sensitive> {
-    if let Some(s) = by_name(name) {
+    let named = by_name(name);
+    if let Some(s) = named.filter(|s| *s != Sensitive::PersonName) {
         return Some(s);
     }
+    // A name field whose values are phone numbers or emails says so.
+    let by_values = by_values(values);
+    by_values.or(named)
+}
+
+/// What most of a field's values (up to 200 of them) look like.
+fn by_values<'a>(values: impl Iterator<Item = &'a Value>) -> Option<Sensitive> {
     let mut n = 0usize;
     let mut counts = [0usize; 3];
     for v in values {
@@ -453,8 +484,12 @@ mod tests {
         assert_eq!(sensitive("E-mail", std::iter::empty()), Some(Sensitive::Email));
         assert_eq!(sensitive("id_number", std::iter::empty()), Some(Sensitive::IdNumber));
         assert_eq!(sensitive("身份证号", std::iter::empty()), Some(Sensitive::IdNumber));
+        assert_eq!(sensitive("full_name", std::iter::empty()), Some(Sensitive::PersonName));
+        assert_eq!(sensitive("lastName", std::iter::empty()), Some(Sensitive::PersonName));
+        assert_eq!(sensitive("学生姓名", std::iter::empty()), Some(Sensitive::PersonName));
+        assert_eq!(sensitive("contact_name", [t("li.wei@example.edu")].iter()), Some(Sensitive::Email));
         // A record id, a hotel name and a district code are not personal.
-        for name in ["id", "district_id", "hotel", "name", "code"] {
+        for name in ["id", "district_id", "hotel", "name", "name_zh", "code", "place_name"] {
             assert_eq!(sensitive(name, [t("A1"), t("B2")].iter()), None, "{name}");
         }
         let phones = [t("138 0013 8000"), t("+86 21 6888 1234"), t("021-6888-1234"), t("")];

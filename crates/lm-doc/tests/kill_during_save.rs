@@ -1,5 +1,6 @@
 //! Gate 5's save kill test: a child process saves a document over and over, alternating two
-//! versions, and is killed with SIGKILL (`kill -9`) at a random moment, 200 times. After every
+//! versions, and is killed with SIGKILL (`kill -9`; `TerminateProcess` on Windows, which is just
+//! as abrupt) at a random moment, 200 times. After every
 //! kill the file must open, as the old version or the new one, never damaged.
 //!
 //! The child is this test binary run again with `LM_KILL_CHILD` set; `LM_KILL_RUNS` changes the
@@ -73,7 +74,6 @@ fn temps(dir: &Path) -> Vec<PathBuf> {
 }
 
 #[test]
-#[cfg(unix)]
 fn a_save_killed_at_any_moment_leaves_the_old_or_the_new_file() {
     if std::env::var_os("LM_KILL_CHILD").is_some() {
         return;
@@ -106,7 +106,7 @@ fn a_save_killed_at_any_moment_leaves_the_old_or_the_new_file() {
         seed = seed.wrapping_mul(6_364_136_223_846_793_005).wrapping_add(1_442_695_040_888_963_407);
         let wait_ms = (seed >> 33) % 60;
         std::thread::sleep(Duration::from_millis(wait_ms));
-        child.kill().unwrap(); // SIGKILL
+        child.kill().unwrap(); // SIGKILL, or TerminateProcess
         child.wait().unwrap();
         let left = temps(&dir);
         if !left.is_empty() {

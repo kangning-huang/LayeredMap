@@ -21,10 +21,10 @@ const REPORT_LOG_LINES: usize = 300;
 /// Crash logs a report includes, newest first.
 const REPORT_CRASHES: usize = 3;
 
-/// `~/Library/Logs/LayeredMap` (macOS); elsewhere a `LayeredMap/logs` folder in the home folder.
+/// `~/Library/Logs/LayeredMap` (macOS); `%LOCALAPPDATA%\LayeredMap\Logs` (Windows); elsewhere a
+/// `LayeredMap/logs` folder in the home folder (`lm_core::platform`).
 pub fn logs_dir() -> PathBuf {
-    let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_default();
-    if cfg!(target_os = "macos") { home.join("Library/Logs/LayeredMap") } else { home.join("LayeredMap/logs") }
+    lm_core::platform::current_user_dir(lm_core::platform::Folder::Logs).unwrap_or_else(|| std::env::temp_dir().join("LayeredMap-logs"))
 }
 
 /// Seconds since 1970 as `YYYY-MM-DD HH:MM:SS` (UTC).
@@ -56,20 +56,40 @@ pub fn about(app: &str) -> String {
         if cfg!(debug_assertions) { "debug" } else { "release" },
         std::env::consts::OS,
         std::env::consts::ARCH,
-        os_version().map_or_else(|| "system version unknown".to_string(), |v| format!("macOS {v}")),
+        os_version().unwrap_or_else(|| "system version unknown".to_string()),
     )
 }
 
+/// "macOS 15.1", "Windows 11 24H2 (build 26100.2314)".
 fn os_version() -> Option<String> {
     #[cfg(target_os = "macos")]
     {
         let out = std::process::Command::new("/usr/bin/sw_vers").arg("-productVersion").output().ok()?;
-        out.status.success().then(|| String::from_utf8_lossy(&out.stdout).trim().to_string())
+        out.status.success().then(|| format!("macOS {}", String::from_utf8_lossy(&out.stdout).trim()))
     }
-    #[cfg(not(target_os = "macos"))]
+    #[cfg(windows)]
+    {
+        let k =
+            winreg::RegKey::predef(winreg::enums::HKEY_LOCAL_MACHINE).open_subkey(r"SOFTWARE\Microsoft\Windows NT\CurrentVersion").ok()?;
+        let build: String = k.get_value("CurrentBuild").ok()?;
+        let ubr: Option<u32> = k.get_value("UBR").ok();
+        let display: Option<String> = k.get_value("DisplayVersion").ok();
+        Some(windows_version(&build, ubr, display.as_deref()))
+    }
+    #[cfg(not(any(target_os = "macos", windows)))]
     {
         None
     }
+}
+
+/// Windows 11 still says "Windows 10" in the registry's product name; the build number tells
+/// them apart (22000 and later is Windows 11).
+#[cfg_attr(not(windows), allow(dead_code))]
+fn windows_version(build: &str, ubr: Option<u32>, display: Option<&str>) -> String {
+    let major = if build.trim().parse::<u32>().is_ok_and(|b| b >= 22_000) { 11 } else { 10 };
+    let display = display.map(|d| format!(" {d}")).unwrap_or_default();
+    let ubr = ubr.map(|u| format!(".{u}")).unwrap_or_default();
+    format!("Windows {major}{display} (build {}{ubr})", build.trim())
 }
 
 /// A crash log's text.
@@ -229,6 +249,13 @@ pub fn report(s: &Settings, dir: &Path) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn windows_11_is_told_by_its_build() {
+        assert_eq!(windows_version("26100", Some(2314), Some("24H2")), "Windows 11 24H2 (build 26100.2314)");
+        assert_eq!(windows_version("19045", None, Some("22H2")), "Windows 10 22H2 (build 19045)");
+        assert_eq!(windows_version("x", None, None), "Windows 10 (build x)");
+    }
 
     #[test]
     fn times_read_as_utc() {

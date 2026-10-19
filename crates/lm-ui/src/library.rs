@@ -62,7 +62,7 @@ pub struct LibraryState {
 }
 
 impl LibraryState {
-    fn cache(&self) -> PathBuf {
+    pub(crate) fn cache(&self) -> PathBuf {
         self.cache.clone().unwrap_or_else(library::cache_dir)
     }
 

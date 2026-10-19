@@ -51,6 +51,10 @@ no arguments for its fixture jobs or with explicit paths (see each `--help`).
 | `measure_features.py` | `N13/expected_measure.csv` | pyproj `Geod.geometry_area_perimeter` (polygons oriented CCW) plus each hole's ring perimeter; `Geod.geometry_length`; point coordinates as given |
 | `make_kml_gpx_fixtures.py` | data + `README.md` + `expected.json` for V11 (KML, KMZ) and V12 (GPX) | GDAL (pyogrio; LIBKML and GPX drivers, ground overlays off): features with a geometry, vertices and bounds per GDAL layer; KMZ timestamps fixed |
 | `make_netcdf_fixtures.py` | data + `README.md` + `expected_dates.csv`, `expected_values.csv`, `expected_slices.csv` for R8 | netCDF4-python writes closed-form grids; xarray's CF decoding (mask and scale, cftime dates) gives every cell, slice statistics and date |
+| `../tools/lm/reference_tests/make_p2_fixtures.py` | data + `README.md` + `expected.json` for J6, N14, N15 (WP6.4) | hand-written coordinates; N14's sources seeded, kept only with a clear nearest target |
+| `../tools/lm/reference_tests/join_validate.py` | `J6/expected_join.csv`, `J6/expected_join_values.csv` | pandas `merge(validate=…)`, layer on the left, `left_on`/`right_on` (one pairing with different column names); blank keys dropped; latest year when several rows |
+| `../tools/lm/reference_tests/nearest_sjoin.py` | `N14/expected_nearest_*.csv` | GeoPandas `sjoin_nearest` in UTM 51N; pyproj `Geod.inv` between the nearest points, asserted within 0.1% of the projected distance |
+| `../tools/lm/reference_tests/clip_gpd.py` | `N15/expected_clip.csv` | GeoPandas `clip(keep_geom_type=True)`; pyproj Geod areas and lengths; lines merged |
 | `run_all.py` | — | runs all of the above in order |
 
 Numbers are written with up to 12 significant digits.

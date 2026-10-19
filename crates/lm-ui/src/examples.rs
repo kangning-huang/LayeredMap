@@ -84,6 +84,31 @@ pub const EXAMPLES: &[Example] = &[
     },
 ];
 
+/// Each example file's licence, as `assets/examples/README.md` records it (shown in the map
+/// package dialog, WP6.5).
+pub const LICENSES: &[(&str, &str)] = &[
+    ("cities.geojson", "Public domain (Natural Earth)"),
+    ("countries.geojson", "Public domain (Natural Earth)"),
+    ("elevation.tif", "Public domain, CC0 (NOAA ETOPO 2022)"),
+    ("heatwaves summer 2023.nc", "CC BY 4.0, © European Union (Copernicus GDO)"),
+    ("storm tracks.gpkg", "NOAA/WMO open access (IBTrACS); cite Knapp et al. 2010"),
+    ("walled cities 1866.geojson", "CC BY 4.0 (Xue et al. 2021, ESSD)"),
+    ("earthquakes.csv", "Public domain (U.S. Geological Survey)"),
+    ("volcanoes.csv", "US Government work (NOAA NCEI)"),
+    ("airports.csv", "Public domain (OurAirports)"),
+    ("power plants.csv", "CC BY 4.0 (WRI Global Power Plant Database)"),
+];
+
+/// The licence of `path` when it is one of the example files (in an `examples` folder: the app
+/// bundle's or the checkout's).
+pub fn license_of(path: &Path) -> Option<&'static str> {
+    let name = path.file_name()?.to_str()?;
+    if path.parent()?.file_name()?.to_str()? != "examples" {
+        return None;
+    }
+    LICENSES.iter().find(|(f, _)| *f == name).map(|(_, l)| *l)
+}
+
 /// Every example file (the bundle must hold them all to be used).
 fn all_files() -> impl Iterator<Item = &'static str> {
     EXAMPLES.iter().flat_map(|e| e.files.iter().copied())
@@ -93,9 +118,10 @@ fn all_files() -> impl Iterator<Item = &'static str> {
 const DEV_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../assets/examples");
 
 /// The examples folder inside an app bundle, `<LayeredMap.app>/Contents/Resources/examples`, for
-/// an executable at `<LayeredMap.app>/Contents/MacOS/layeredmap`.
+/// an executable at `<LayeredMap.app>/Contents/MacOS/layeredmap` (on Windows `Resources\examples`
+/// beside `layeredmap.exe`).
 fn bundle_dir(exe: &Path) -> Option<PathBuf> {
-    Some(exe.parent()?.parent()?.join("Resources").join("examples"))
+    Some(lm_core::platform::resources_dir(exe, lm_core::platform::Os::CURRENT)?.join("examples"))
 }
 
 /// The examples folder: the bundle's when it holds the files, otherwise the checkout's.
@@ -122,8 +148,14 @@ mod tests {
 
     #[test]
     fn bundle_folder_is_next_to_the_executable() {
-        let exe = Path::new("/Applications/LayeredMap.app/Contents/MacOS/layeredmap");
-        let want = PathBuf::from("/Applications/LayeredMap.app/Contents/Resources/examples");
+        let (exe, want) = if cfg!(windows) {
+            (Path::new(r"C:\Program Files\LayeredMap\layeredmap.exe"), PathBuf::from(r"C:\Program Files\LayeredMap\Resources\examples"))
+        } else {
+            (
+                Path::new("/Applications/LayeredMap.app/Contents/MacOS/layeredmap"),
+                PathBuf::from("/Applications/LayeredMap.app/Contents/Resources/examples"),
+            )
+        };
         assert_eq!(bundle_dir(exe), Some(want.clone()));
         assert_eq!(resolve(Some(exe), |p| p.starts_with(&want)), want);
     }
@@ -136,6 +168,14 @@ mod tests {
         // A bundle missing one file is not used.
         let app = Path::new("/A.app/Contents/MacOS/layeredmap");
         assert_eq!(resolve(Some(app), |p| !p.ends_with("elevation.tif")), PathBuf::from(DEV_DIR));
+    }
+
+    #[test]
+    fn every_example_file_has_a_licence() {
+        for f in all_files() {
+            assert!(license_of(&PathBuf::from(DEV_DIR).join(f)).is_some(), "{f}");
+        }
+        assert_eq!(license_of(Path::new("/Users/ana/Downloads/airports.csv")), None, "a user's file of the same name");
     }
 
     #[test]

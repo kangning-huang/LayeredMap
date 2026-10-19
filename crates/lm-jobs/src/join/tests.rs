@@ -2,6 +2,7 @@ use super::*;
 use rustgis_engine::data::GeometryType;
 use rustgis_engine::data::geometry::Geometry;
 use rustgis_engine::geom::Coord;
+use std::collections::HashMap;
 
 fn table(fields: &[(&str, FieldType)], rows: Vec<Vec<Value>>) -> Dataset {
     let mut d = Dataset::new("t", GeometryType::None, fields.iter().map(|(n, t)| Field::new(*n, *t)).collect());
@@ -316,4 +317,118 @@ fn separating_gives_the_layer_back() {
     let Decision::Join(p) = decide(&score(&t, &l)) else { panic!() };
     let j = apply(&t, &l, &spec_for(&t, &l, &p, "gdp_growth_iso3.csv")).unwrap();
     assert_eq!(separate(&j.data, &j.new_fields), l);
+}
+
+fn j6_csv(name: &str) -> Vec<HashMap<String, String>> {
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/J6").join(name);
+    let text = std::fs::read_to_string(path).unwrap();
+    let mut lines = text.lines();
+    let head: Vec<String> = lines.next().unwrap().split(',').map(str::to_string).collect();
+    lines.map(|l| head.iter().cloned().zip(l.split(',').map(str::to_string)).collect()).collect()
+}
+
+fn ward_spec(table: &str) -> JoinSpec {
+    keyed_spec(table, "ward_code", "ward_code")
+}
+
+fn keyed_spec(table: &str, layer_key: &str, table_key: &str) -> JoinSpec {
+    JoinSpec {
+        table_name: format!("{table}.csv"),
+        table_field: table_key.into(),
+        layer_field: layer_key.into(),
+        level: Level::Exact,
+        rows: Rows::One,
+        aliases: Vec::new(),
+    }
+}
+
+/// WP6.4 (docs/lm/actions-p2.md › Match a table to a layer): J6's five pairings against pandas
+/// `merge(validate=…)` (`tools/lm/reference_tests/join_validate.py`), one with key columns of
+/// different names: the cardinality, the row counts worked out before joining, the unmatched
+/// keys and rows, and every record's value. Everything exact.
+#[test]
+fn j6_matches_pandas_merge_validate() {
+    let values = j6_csv("expected_join_values.csv");
+    let mut compared = 0;
+    for w in j6_csv("expected_join.csv") {
+        let (l, t) = (open(&format!("fixtures/J6/{}.geojson", w["layer"])), open(&format!("fixtures/J6/{}.csv", w["table"])));
+        let spec = keyed_spec(&w["table"], &w["layer_key"], &w["table_key"]);
+        let e = expect(&t, &l, &spec).unwrap();
+        let job = format!("{} × {}", w["layer"], w["table"]);
+        let n = |k: &str| w[k].parse::<usize>().unwrap();
+        assert_eq!(e.cardinality.pandas(), w["cardinality"], "{job}");
+        assert_eq!(e.asks_first(), w["cardinality"] != "one_to_one", "{job}");
+        assert_eq!(
+            (e.layer_rows, e.table_rows, e.pairs, e.merge_rows, e.layer_matched, e.table_matched),
+            (n("layer_rows"), n("table_rows"), n("pairs"), n("merge_rows"), n("layer_matched"), n("table_matched")),
+            "{job}"
+        );
+        // Named columns find the same spec (exact keys here).
+        assert_eq!(spec_for_fields(&t, &l, &w["table_key"], &w["layer_key"], &spec.table_name), Some(spec.clone()), "{job}");
+        let j = apply(&t, &l, &spec).unwrap();
+        assert_eq!(j.expected, e, "{job}: the same counts before and after");
+        assert_eq!(j.data.features.len(), e.rows(), "{job}: one row per record");
+        assert_eq!(j.unmatched.join("|"), w["unmatched_keys"], "{job}");
+        let rows: Vec<String> = j.unmatched_rows.iter().map(|r| (r + 1).to_string()).collect();
+        assert_eq!(rows.join("|"), w["unmatched_rows"], "{job}");
+        assert_eq!(j.blank_keys, n("blank_keys"), "{job}");
+        for v in values.iter().filter(|v| v["layer"] == w["layer"] && v["table"] == w["table"]) {
+            let k = j.data.fields.iter().position(|f| f.name == v["field"]).unwrap();
+            let r = v["row"].parse::<usize>().unwrap() - 1;
+            let want = if v["value"].is_empty() { Value::Null } else { Value::Int(v["value"].parse().unwrap()) };
+            assert_eq!(j.data.value(r, k), &want, "{job}: row {}", r + 1);
+            compared += 1;
+        }
+    }
+    assert_eq!(compared, 64);
+}
+
+/// The card's words for each cardinality.
+#[test]
+fn expected_rows_read_as_words() {
+    let l = open("fixtures/J6/wards.geojson");
+    let split = open("fixtures/J6/wards_split.geojson");
+    let one = open("fixtures/J6/ward_population.csv");
+    let years = open("fixtures/J6/ward_population_by_year.csv");
+    let nouns = ("ward", "wards");
+    let line = |t: &Dataset, l: &Dataset, name: &str| expect(t, l, &ward_spec(name)).unwrap().line(nouns);
+    assert_eq!(line(&one, &l, "ward_population"), "One-to-one: no key repeats. The layer keeps its 12 rows.");
+    assert_eq!(
+        line(&years, &l, "ward_population_by_year"),
+        "One-to-many: a key repeats in the table (up to 3 rows). A plain merge would give 24 rows; the layer keeps its 12, one per ward."
+    );
+    assert_eq!(
+        line(&one, &split, "ward_population"),
+        "Many-to-one: a key repeats in the layer (up to 2 wards), and each gets the row. The layer keeps its 14 rows."
+    );
+    assert_eq!(
+        line(&years, &split, "ward_population_by_year"),
+        "Many-to-many: keys repeat in the table (up to 3 rows) and in the layer (up to 2 wards). A plain merge would give 28 rows; \
+         the layer keeps its 14, one per ward."
+    );
+}
+
+/// Repeats are handled as the card says, and only joins whose keys repeat ask first: J3's
+/// table (one row per district per year) is clear but asks; J1's codes join on their own.
+#[test]
+fn joins_whose_keys_repeat_ask_first() {
+    let (t, l) = (open("fixtures/J3/population_by_year.csv"), open("fixtures/V1/districts.geojson"));
+    let Plan::Confirm(0, p) = plan(&t, &[&l]) else { panic!("J3 should ask first") };
+    let e = expect(&t, &l, &spec_for(&t, &l, &p, "population_by_year.csv")).unwrap();
+    assert_eq!(e.cardinality, Cardinality::OneToMany);
+    assert_eq!(
+        e.handling(("district", "districts")).as_deref(),
+        Some("Several rows for one district: the one with the latest year is used.")
+    );
+    let (t, l) = (open("fixtures/J1/gdp_growth_iso3.csv"), open("assets/examples/countries.geojson"));
+    assert!(matches!(plan(&t, &[&l]), Plan::Join(ref v) if v.len() == 1));
+    let years = open("fixtures/J6/ward_population_by_year.csv");
+    let split = open("fixtures/J6/wards_split.geojson");
+    let e = expect(&years, &split, &ward_spec("ward_population_by_year")).unwrap();
+    assert_eq!(
+        e.handling(("ward", "wards")).as_deref(),
+        Some("Several rows for one ward: the one with the latest year is used. Wards that share a key each take its row.")
+    );
+    let one = open("fixtures/J6/ward_population.csv");
+    assert_eq!(expect(&one, &open("fixtures/J6/wards.geojson"), &ward_spec("ward_population")).unwrap().handling(("ward", "wards")), None);
 }

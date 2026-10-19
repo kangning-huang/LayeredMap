@@ -448,19 +448,11 @@ fn read_all(url: &str, max: u64) -> Result<Vec<u8>, LibraryError> {
 // ---------------------------------------------------------------------------------------------
 // The cache
 
-/// The library's cache: `~/Library/Caches/LayeredMap/library` on macOS, the XDG cache elsewhere.
+/// The library's cache: `~/Library/Caches/LayeredMap/library` on macOS,
+/// `%LOCALAPPDATA%\LayeredMap\Cache\library` on Windows, the XDG cache elsewhere.
 pub fn cache_dir() -> PathBuf {
-    let home = std::env::var_os("HOME").map(PathBuf::from);
-    if cfg!(target_os = "macos")
-        && let Some(h) = &home
-    {
-        return h.join("Library/Caches/LayeredMap/library");
-    }
-    if let Some(x) = std::env::var_os("XDG_CACHE_HOME").map(PathBuf::from).filter(|p| p.is_absolute()) {
-        return x.join("layeredmap/library");
-    }
-    match home {
-        Some(h) => h.join(".cache/layeredmap/library"),
+    match lm_core::platform::current_user_dir(lm_core::platform::Folder::Caches) {
+        Some(d) => d.join("library"),
         None => std::env::temp_dir().join("layeredmap-library"),
     }
 }

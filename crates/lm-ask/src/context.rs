@@ -11,14 +11,14 @@ use lm_jobs::plan_exec::PlanLayer;
 /// Most fields listed per layer; the rest are counted.
 const MAX_FIELDS: usize = 80;
 
-/// The kind word the tools use ("points", "lines", "areas", "raster"); tables have none.
+/// The kind word the tools use ("points", "lines", "areas", "raster", "table").
 pub fn kind_word(l: &PlanLayer) -> Option<&'static str> {
     match l.layer.profile.kind {
         LayerKind::Points => Some("points"),
         LayerKind::Lines => Some("lines"),
         LayerKind::Areas => Some("areas"),
         LayerKind::Raster => Some("raster"),
-        LayerKind::Table => None,
+        LayerKind::Table => Some("table"),
     }
 }
 
@@ -134,7 +134,8 @@ pub fn layer_line(i: usize, l: &PlanLayer, filter: Option<&Filter>) -> Option<St
                 fields.push(format!("and {} more", ds.fields.len() - MAX_FIELDS));
             }
             let made = if l.alias.is_some() { " (made by an earlier request)" } else { "" };
-            let mut s = format!("{i}. {}: {kind}, {}{made}. Fields: {}", l.name, thousands(n), fields.join("; "));
+            let size = if kind == "table" { format!("{} rows", thousands(n)) } else { thousands(n) };
+            let mut s = format!("{i}. {}: {kind}, {size}{made}. Fields: {}", l.name, fields.join("; "));
             if let Some(f) = filter.filter(|f| !f.conditions.is_empty()) {
                 s.push_str(&format!(". Filter now: {} ({} of {} shown)", filter_text(f), thousands(shown), thousands(n)));
             }

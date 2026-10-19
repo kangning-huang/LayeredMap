@@ -56,15 +56,14 @@ pub struct Reference {
     loaded: Mutex<HashMap<String, PlanLayer>>,
 }
 
-/// Where the data is: `LM_REFERENCE_DIR`, the bundle's `Contents/Resources/reference`, or the
-/// builder's copy on the LaCie drive (development).
+/// Where the data is: `LM_REFERENCE_DIR`, the bundle's `Contents/Resources/reference` (on Windows
+/// `Resources\reference` beside the exe), or the builder's copy on the LaCie drive (development).
 pub fn default_dir() -> Option<PathBuf> {
     let ok = |p: PathBuf| p.join("manifest.json").is_file().then_some(p);
     if let Some(p) = std::env::var_os("LM_REFERENCE_DIR").map(PathBuf::from).and_then(ok) {
         return Some(p);
     }
-    let exe = std::env::current_exe().ok()?;
-    if let Some(p) = exe.parent().and_then(Path::parent).map(|c| c.join("Resources").join("reference")).and_then(ok) {
+    if let Some(p) = lm_core::platform::current_resources_dir().map(|r| r.join("reference")).and_then(ok) {
         return Some(p);
     }
     ok(PathBuf::from("/Volumes/LaCie/data/layeredmap-reference"))
@@ -83,9 +82,26 @@ pub fn system_region() -> Option<String> {
     region_of_locale(String::from_utf8(out.stdout).ok()?.trim())
 }
 
-#[cfg(not(target_os = "macos"))]
+/// This PC's region: Settings › Time & language › Language & region › Country or region (the
+/// registry's `Geo\Name`, an ISO code since Windows 10), else the regional format's locale
+/// ("zh-CN"). The country, not the format, is what decides the borders.
+#[cfg(windows)]
+pub fn system_region() -> Option<String> {
+    let intl = winreg::RegKey::predef(winreg::enums::HKEY_CURRENT_USER).open_subkey(r"Control Panel\International").ok()?;
+    let geo: Option<String> = intl.open_subkey("Geo").ok().and_then(|g| g.get_value("Name").ok());
+    region_of_windows(geo.as_deref(), intl.get_value::<String, _>("LocaleName").ok().as_deref())
+}
+
+#[cfg(not(any(target_os = "macos", windows)))]
 pub fn system_region() -> Option<String> {
     std::env::var("LANG").ok().and_then(|l| region_of_locale(&l))
+}
+
+/// The Windows region from the registry's `Geo\Name` (a two-letter country, or a three-digit UN
+/// M.49 area such as "001" for World, which has no point of view) and `LocaleName`.
+pub fn region_of_windows(geo_name: Option<&str>, locale_name: Option<&str>) -> Option<String> {
+    let geo = geo_name.map(str::trim).filter(|g| g.len() == 2 && g.chars().all(|c| c.is_ascii_alphabetic()));
+    geo.map(str::to_ascii_uppercase).or_else(|| locale_name.and_then(region_of_locale))
 }
 
 impl Reference {

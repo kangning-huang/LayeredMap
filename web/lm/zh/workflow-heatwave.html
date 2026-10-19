@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2023 年夏季热浪地图：逐日变化 · LayeredMap</title>
+<meta name="description" content="LayeredMap 分步教程：用时间滑块播放 2023 年夏天的逐日热浪数据，查看单个格子的数值，并导出一张完整的地图图片。">
+<link rel="canonical" href="workflow-heatwave.html">
+<link rel="alternate" hreflang="en" href="../workflow-heatwave.html">
+<link rel="alternate" hreflang="zh-Hans" href="workflow-heatwave.html">
+<link rel="alternate" hreflang="x-default" href="../workflow-heatwave.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="LayeredMap">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:title" content="2023 年夏季热浪地图：逐日变化 · LayeredMap">
+<meta property="og:description" content="LayeredMap 分步教程：用时间滑块播放 2023 年夏天的逐日热浪数据，查看单个格子的数值，并导出一张完整的地图图片。">
+<meta property="og:url" content="workflow-heatwave.html">
+<meta property="og:image" content="../img/heatwave-slider.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/site.css">
+<script src="../assets/site.js"></script>
+</head>
+<body>
+<header class="site-head">
+  <div class="wrap">
+    <a class="brand" href="index.html"><img src="../assets/logo.svg" alt="" width="30" height="30">LayeredMap</a>
+    <nav class="nav" aria-label="网站导航">
+      <a href="index.html">首页</a>
+      <a href="help.html" aria-current="page">帮助</a>
+      <a href="glossary.html">术语表</a>
+      <a href="download.html">下载</a>
+      <a class="lang" href="../workflow-heatwave.html" hreflang="en" lang="en">English</a>
+      <button class="theme-btn" type="button" aria-label="切换深浅色"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></svg></button>
+    </nav>
+  </div>
+</header>
+<main>
+<div class="page-head contours">
+  <div class="narrow">
+    <p class="eyebrow">教程二 · 免费版</p>
+    <h1>2023 年热浪：随时间变化</h1>
+    <p class="lede">2023 年夏天，好几个大洲都刷新了高温纪录。这个示例收录了 6 月 1 日到 8 月 31 日共 92 天的全球热浪强度。你会像看电影一样把它播放出来，停在某一天，查看具体地点的数值，最后把地图导出成图片。</p>
+    <div class="toc">本课会用到：<a class="term" href="glossary.html#netcdf">NetCDF</a>、<a class="term" href="glossary.html#raster">栅格</a>、<a class="term" href="glossary.html#timestep">时间步</a>、<a class="term" href="glossary.html#nodata">无数据</a>和<a class="term" href="glossary.html#export">导出地图图片</a>。</div>
+  </div>
+</div>
+<div class="narrow">
+<ol class="steps">
+  <li id="open">
+    <h3>打开示例</h3>
+    <p>在欢迎卡片上点 <span class="ui">Examples</span>（示例），或从菜单 File › Open Example 进入，选 <span class="ui">Heatwaves, summer 2023</span>（2023 年夏季热浪）。</p>
+    <p>图层 <span class="ui">heatwaves summer 2023</span> 出现在面板里，名字下方标着它的<a class="term" href="glossary.html#variable">变量</a>：<span class="ui">Heat-wave intensity (°C)</span>（热浪强度，单位 °C）。卡片用大白话介绍了这个文件：一个 NetCDF-4 文件，一个变量，720 × 360 的经纬度格网，<span class="ui">Time: 1 Jun 2023 to 31 Aug 2023 (92 steps)</span>（时间从 2023 年 6 月 1 日到 8 月 31 日，共 92 步）。第一行 <span class="ui">Treated as measured values (averaged, not summed)</span>（按测量值处理：取平均而不是求和）是应用做的一个<a class="term" href="glossary.html#assumption">假设</a>，可以点 <span class="ui">Change</span> 修改。</p>
+  </li>
+  <li id="slider">
+    <h3>播放整个夏天</h3>
+    <p>因为这个图层带有日期，地图底部会出现时间滑块。点 <span class="ui">Play</span>（播放），或拖动滑块，或用 <span class="ui">Previous step (←)</span> / <span class="ui">Next step (→)</span>（上一步/下一步）；键盘上的左右方向键也行。右边显示当前日期（如 <span class="ui">16 Jul 2023</span>，即 2023 年 7 月 16 日）和第几步（<span class="ui">46 of 92</span>）。</p>
+    <figure class="frame shot"><img src="../img/heatwave-slider.jpg" alt="2023 年 7 月 16 日的世界地图：地中海、美国南部和南美洲出现热浪，时间滑块停在 92 步中的第 46 步。" width="1600" height="996" loading="lazy"><figcaption>2023 年 7 月 16 日：地中海沿岸、美国南部、墨西哥和中国都在高温中，西非和南美洲外海还有强烈的海洋热浪。</figcaption></figure>
+    <p class="note">每一天用的都是同一套颜色范围，所以颜色越红就意味着热浪越强，而不是换了一种标尺。图例里也写明了日期：<span class="ui">Heat-wave intensity (°C), 16 Jul 2023</span>。</p>
+  </li>
+  <li id="click">
+    <h3>查看某个地点</h3>
+    <p>放大到某个区域（滚动鼠标、双指缩放，或在搜索框里输入地名），点击一个有颜色的格子。卡片会显示这个格子当天的数值，以及它所处的水平：<span class="ui">1.70 °C</span>，<span class="ui">lower than 58% of this layer’s cells (estimated from a sample)</span>（低于该图层 58% 的格子，按抽样估算）。</p>
+    <figure class="frame shot"><img src="../img/heatwave-click.jpg" alt="2023 年 7 月 16 日的欧洲和北非；选中了阿尔及利亚北部的一个格子，卡片显示 1.70 °C，低于该图层 58% 的格子。" width="1600" height="996" loading="lazy"></figure>
+    <p>没有上色的格子是<a class="term" href="glossary.html#nodata">无数据</a>：当天那里没有出现热浪。点上去会显示 <span class="ui">No value</span> / <span class="ui">This cell has no data.</span>（没有数值，该格子无数据）。这和 “0” 不是一回事。</p>
+    <p class="note">每个格子宽 0.5°，在赤道附近约 55 公里，所以一个数值代表的是一大块方格，而不是某一座城镇。详见<a href="glossary.html#resolution">分辨率</a>。</p>
+  </li>
+  <li id="colors">
+    <h3>让最热的地方更醒目</h3>
+    <p>点图层卡片上的 <span class="ui">Show only values above…</span>（只显示高于……的值），低于你设定阈值的部分就会变灰；点 <span class="ui">Change colors and range</span>（更改颜色和范围），可以在 <span class="ui">Style</span> 标签页里换 <span class="ui">Palette</span>（配色）或调 <span class="ui">Range</span>（范围）。选中一个格子后，<span class="ui">Show where values are like this</span>（显示数值相近的地方）会把所有数值相近的格子都标出来。</p>
+  </li>
+  <li id="export">
+    <h3>把地图导出成图片</h3>
+    <p>停在你想要的那一天，点 <span class="ui">Share</span>（分享）› <span class="ui">Map image…</span>（地图图片，⌘E）。弹出的面板里看到的，就是保存后图片的样子。</p>
+    <figure class="frame shot"><img src="../img/heatwave-export.jpg" alt="Export map image 面板：一张 2023 年 7 月 16 日的世界地图，图框上标有经纬度，带图例；右侧是尺寸、指北针、比例尺、经纬度标注、标题、说明和图例等选项。" width="1600" height="996" loading="lazy"></figure>
+    <ul>
+      <li><span class="ui">Size</span>（尺寸）：<span class="ui">Slide 16:9</span>（幻灯片，1920 × 1080）、<span class="ui">Report A4</span>（A4 报告）或 <span class="ui">Square</span>（方形）。</li>
+      <li><span class="ui">Show</span>（范围）：<span class="ui">Fit to data</span>（适应数据）或 <span class="ui">Current view</span>（当前视图，也就是窗口里看到的范围）。</li>
+      <li><span class="ui">North arrow</span>（指北针）、<span class="ui">Scale bar</span>（比例尺）、<span class="ui">Lat/lon labels</span>（经纬度标注）：选 <span class="ui">Auto</span>（自动）会挑选合适的组合。世界地图会在图框上标经纬度而不放比例尺，因为整张图上各处的距离比例相差太大。</li>
+      <li><span class="ui">Title</span>（标题）：例如 “2023 年 7 月 16 日的热浪”。<span class="ui">Caption</span>（说明）会根据图层和数据来源自动生成，你也可以修改。</li>
+    </ul>
+    <p>点 <span class="ui">Save…</span>（保存）即可得到一张 PNG 图片。图例里带着日期，分享出去别人也能看懂。</p>
+    <p class="note">想做一组连续画面？切到下一天再导出一次。每张图的颜色范围都一样，前后对比才公平。</p>
+  </li>
+</ol>
+<div class="pro-note" style="margin-bottom:30px"><strong>LayeredMap Pro。</strong>可以用大白话询问这场热浪，例如借助 Pro 内置的世界国家图层问 “这一天哪些国家的热浪最强？”。答案基于当前显示的变量和日期，步骤说明里会写明这两者。</div>
+<p class="coords" style="margin:10px 0 60px">数据：哥白尼全球干旱观测站（欧盟委员会联合研究中心 JRC），GDO 暖期强度（ERA5），2023 年；© European Union, 1995–2026，CC BY 4.0。为 LayeredMap 截取了 6–8 月，平均到 0.5°，没有暖期的日子设为无数据。底图 © OpenStreetMap 贡献者、Protomaps、Natural Earth。</p>
+</div>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <div>
+      <p><strong>LayeredMap 帮助</strong> · 这些页面随应用一起安装（菜单 Help › LayeredMap Help），不联网也能看。</p>
+      <p>截图中的地图数据：© OpenStreetMap 贡献者（ODbL），经 Protomaps 提供；Natural Earth（公有领域）；NASA “蓝色弹珠” 卫星影像（NASA Earth Observatory，GIBS）。各页示例数据的来源分别列在页面末尾。</p>
+    </div>
+    <div><a href="help.html">帮助</a> · <a href="glossary.html">术语表</a> · <a href="../workflow-heatwave.html" lang="en">English</a></div>
+  </div>
+</footer>
+</body>
+</html>

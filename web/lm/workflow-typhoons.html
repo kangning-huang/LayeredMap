@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Typhoon tracks map: the strongest storms since 1980 · LayeredMap</title>
+<meta name="description" content="A step-by-step LayeredMap workflow: open 4,999 typhoon and hurricane tracks, find Haiyan, see how it ranks and keep only the Category 5 storms.">
+<link rel="canonical" href="workflow-typhoons.html">
+<link rel="alternate" hreflang="en" href="workflow-typhoons.html">
+<link rel="alternate" hreflang="zh-Hans" href="zh/workflow-typhoons.html">
+<link rel="alternate" hreflang="x-default" href="workflow-typhoons.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="LayeredMap">
+<meta property="og:title" content="Typhoon tracks map: the strongest storms since 1980 · LayeredMap">
+<meta property="og:description" content="A step-by-step LayeredMap workflow: open 4,999 typhoon and hurricane tracks, find Haiyan, see how it ranks and keep only the Category 5 storms.">
+<meta property="og:url" content="workflow-typhoons.html">
+<meta property="og:image" content="img/typhoons-hero.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/site.js"></script>
+</head>
+<body>
+<header class="site-head">
+  <div class="wrap">
+    <a class="brand" href="index.html"><img src="assets/logo.svg" alt="" width="30" height="30">LayeredMap</a>
+    <nav class="nav" aria-label="Site">
+      <a href="index.html">Home</a>
+      <a href="help.html" aria-current="page">Help</a>
+      <a href="glossary.html">Glossary</a>
+      <a href="download.html">Download</a>
+      <a class="lang" href="zh/workflow-typhoons.html" hreflang="zh-Hans" lang="zh-Hans">中文</a>
+      <button class="theme-btn" type="button" aria-label="Switch theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></svg></button>
+    </nav>
+  </div>
+</header>
+<main>
+<div class="page-head contours">
+  <div class="narrow">
+    <p class="eyebrow">Workflow 1 · Free</p>
+    <h1>Typhoons: the strongest storms</h1>
+    <p class="lede">Since 1980, which storms were the fiercest, and where did they go? You will open every tropical cyclone track on record since 1980, colour them by ocean, look up Typhoon Haiyan, and keep only the Category 5 storms.</p>
+    <div class="toc">You will use: <a class="term" href="glossary.html#layer">layers</a>, <a class="term" href="glossary.html#feature">features</a>, <a class="term" href="glossary.html#insight">insight lines</a>, <a class="term" href="glossary.html#style">style</a>, <a class="term" href="glossary.html#filter">filters</a> and the <a class="term" href="glossary.html#table">attribute table</a>.</div>
+  </div>
+</div>
+<div class="narrow">
+<ol class="steps">
+  <li id="open">
+    <h3>Open the example</h3>
+    <p>On the card at the bottom of a new window, click <span class="ui">Examples</span> and choose <span class="ui">Typhoons and hurricanes</span>. (Any time later: File › Open Example › Typhoons and hurricanes.)</p>
+    <p>A layer called <span class="ui">storms</span> appears in the <span class="ui">Layers</span> panel, and its card on the right reads <span class="ui">4,999 lines · storm tracks.gpkg</span>: one line per storm.</p>
+  </li>
+  <li id="basin">
+    <h3>Colour the tracks by ocean</h3>
+    <p>On the layer’s card, open the <span class="ui">Style</span> tab and click the <span class="ui">By basin</span> tile. The <span class="ui">Legend</span> now lists the basins: West Pacific, East Pacific, North Atlantic and so on.</p>
+    <figure class="frame shot"><img src="img/typhoons-hero.jpg" alt="Storm tracks coloured by basin: the West Pacific in dark blue covers the sea from the Philippines to Japan." width="1600" height="1215" loading="lazy"><figcaption>The West Pacific (dark blue) is the busiest basin on Earth. The typhoons that reach Hong Kong, Shanghai, Taiwan and Japan all start here.</figcaption></figure>
+  </li>
+  <li id="click">
+    <h3>Click a storm and see where it stands</h3>
+    <p>Click any track. Where several tracks overlap, a small list such as <span class="ui">4 objects here</span> lets you pick one; choose <span class="ui">Haiyan · storms</span>.</p>
+    <figure class="frame shot"><img src="img/typhoons-pick.jpg" alt="A list titled “4 objects here” offering Gene, Haiyan, Dot and Owen." width="1600" height="996" loading="lazy"></figure>
+    <p>The card now describes Typhoon Haiyan (2013), and before offering any tool it tells you how Haiyan compares: its <span class="ui">max_wind_kt</span> of 170 knots is <span class="ui">higher than 99% of 4,547 storms with values</span>. The little strip beside each line shows where it sits among all the others.</p>
+    <figure class="frame shot"><img src="img/typhoons-card.jpg" alt="Haiyan’s track highlighted across the Philippines to Vietnam, and its card: basin West Pacific, max_wind_kt 170, higher than 99% of 4,547 storms with values, strength Category 5." width="1600" height="996" loading="lazy"><figcaption>Haiyan crossed the central Philippines in November 2013 as one of the strongest storms ever to make landfall.</figcaption></figure>
+    <p class="note">Looking for a storm by name? Type it in <span class="ui">Find in storms</span> at the top of the layer’s card, or in the toolbar’s search box, which lists matches under <span class="ui">Your data</span>.</p>
+  </li>
+  <li id="color">
+    <h3>Colour by a value</h3>
+    <p>Click <span class="ui">Color by a value</span> on the card. The <span class="ui">Style</span> tab opens with the tracks coloured by a number from the data. To colour by wind instead, open the <span class="ui">Color</span> menu and pick <span class="ui">max_wind_kt</span>; try the <span class="ui">Heat</span> palette. <span class="ui">Groups</span> splits the values into a few classes; <span class="ui">Smooth</span> uses a continuous ramp.</p>
+    <figure class="frame shot"><img src="img/typhoons-color.jpg" alt="The Style tab with Color set to season, Palette Viridis and 5 groups of equal counts." width="1600" height="996" loading="lazy"><figcaption>Here the colour follows <span class="ui">season</span> (the year). The <span class="ui">Color</span> menu switches it to any other field.</figcaption></figure>
+  </li>
+  <li id="table">
+    <h3>Open the table</h3>
+    <p>Click <span class="ui">View in table</span> at the bottom of the card. The table slides up from the bottom of the map: one row per storm, one column per <a class="term" href="glossary.html#attribute">attribute</a>. Selecting a row selects the storm on the map.</p>
+  </li>
+  <li id="filter">
+    <h3>Keep only the Category 5 storms</h3>
+    <p>In the table, click <span class="ui">+ Filter</span>. A sentence appears for you to finish. Set it to <span class="ui">Show storms where strength is any of Category 5</span>. Before you commit, it says how many match: <span class="ui">228 match</span>. Click <span class="ui">Apply</span>.</p>
+    <figure class="frame shot"><img src="img/typhoons-filter.jpg" alt="The filter sentence “Show storms where strength is any of Category 5”, 228 match, with Cancel and Apply, above the table." width="1600" height="996" loading="lazy"></figure>
+    <p>The other 4,771 tracks are hidden, not deleted. The table says <span class="ui">Showing 228 of 4,999</span>, the filter appears as a chip you can remove with ×, and the layer row shows a funnel. The card now compares Haiyan with the filtered storms only: <span class="ui">tied 2nd highest of 228 filtered</span>.</p>
+    <figure class="frame shot"><img src="img/typhoons-filtered.jpg" alt="Only Category 5 tracks remain on the map, crowded east of the Philippines; the table shows 228 of 4,999." width="1600" height="996" loading="lazy"><figcaption>Category 5 storms cluster east of the Philippines and curve towards Taiwan, southern China and Japan.</figcaption></figure>
+    <p class="note">To compare, add a second condition (for example <span class="ui">basin</span> is any of <span class="ui">West Pacific</span>) or remove the chip and try <span class="ui">North Atlantic</span>. Every change is one step of <span class="ui">Undo</span>.</p>
+  </li>
+  <li id="pro">
+    <h3>Which cities are hit most often?</h3>
+    <p>With the filter on, zoom to the coast you care about (type a city such as Hong Kong or Manila in the search box) and you can see which places sit under the densest tangle of tracks. Counting the storms that passed near each city is an <em>analysis</em>: it creates new data. In LayeredMap that is what Pro is for.</p>
+    <div class="pro-note"><strong>LayeredMap Pro.</strong> Cards gain analysis buttons such as <span class="ui">Measure length</span> and <span class="ui">Show an area within a distance of each</span>, and the <span class="ui">Ask about your layers</span> box takes a question in plain words, for example “Show the area within 100 km of Hong Kong”, followed by “Keep the part of the storm tracks inside it”. Each answer is previewed on the map with its <a class="term" href="glossary.html#recipe">recipe</a>, and nothing is saved until you click <span class="ui">Keep</span>.</div>
+    <figure class="frame shot"><img src="img/typhoons-pro.jpg" alt="The same Haiyan card in LayeredMap Pro, with Measure length and Show an area within a distance buttons, and the Ask about your layers box at the bottom of the map." width="1600" height="1040" loading="lazy"><figcaption>LayeredMap Pro: analysis buttons on the card and the Ask box at the bottom.</figcaption></figure>
+  </li>
+</ol>
+<p class="coords" style="margin:10px 0 60px">Data: NOAA NCEI IBTrACS v04r01 (Knapp et al. 2010, doi:10.1175/2009BAMS2755.1; Gahtan et al. 2024, doi:10.25921/82ty-9e16). Basemap © OpenStreetMap contributors, Protomaps, Natural Earth.</p>
+</div>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <div>
+      <p><strong>LayeredMap Help</strong> · These pages ship inside the app (Help › LayeredMap Help) and work offline.</p>
+      <p>Screenshots show map data © OpenStreetMap contributors (ODbL) via Protomaps, Natural Earth (public domain), and NASA Blue Marble imagery (NASA Earth Observatory, GIBS). Example data credits are listed on each page.</p>
+    </div>
+    <div><a href="help.html">Help</a> · <a href="glossary.html">Glossary</a> · <a href="zh/workflow-typhoons.html" lang="zh-Hans">中文</a></div>
+  </div>
+</footer>
+</body>
+</html>

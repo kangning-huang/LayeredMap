@@ -475,12 +475,14 @@ The layer inspector opens with one search field above its tabs. It looks and beh
 - No results: "No [districts] contain “xyz”." The field stays and nothing else on the panel moves.
 
 ### Joining a table
-The join should ask nothing when the answer is clear, and ask at most one question when it is not.
+The join should ask nothing when the answer is clear and one-to-one, and ask at most one question when it is not.
 1. **Open the table.** It can be dropped in, opened, or dragged onto a layer row. A table without coordinates is never put on the map as a guess.
 2. **LayeredMap finds the shared column.** It tries each table column against each layer field, with the normalization ladder from WP3.11, and keeps the pairing that matches most.
-3. **Clear winner: it joins.** At least 80% of keys match, 20 points ahead of the next pairing. The card says what happened in one line ("Joined population.csv to districts by name: 16 of 17 matched"), and the layer is coloured by the first new measure. Undo is one click.
+3. **Clear winner: it joins.** At least 80% of keys match, 20 points ahead of the next pairing, and no key repeats on either side (one-to-one). The card says what happened in one line ("Joined population.csv to districts by name: 16 of 17 matched"), and the layer is coloured by the first new measure. Undo is one click.
+    - **Clear, but keys repeat: it asks first** (owner's choice, 2026-10-18). A one-to-many, many-to-one or many-to-many join shows "Join population_by_year.csv to districts?" with the expected row count ("One-to-many: a key repeats in the table (up to 5 rows). A plain merge would give 85 rows; the layer keeps its 17, one per district."), how the repeats are handled ("the one with the latest year is used", "counts are summed and other numbers averaged", "districts that share a key each take its row"), and Join / Keep as a table, plus "Choose other columns…".
 4. **No clear winner: one question.** "Which places does population.csv describe?" with up to three choices, each showing its pairing and match count ("district ↔ name · 15 of 17"), and "None of these", which keeps the table as a table.
 5. **Leftovers are shown, never hidden.** Unmatched rows are listed with near-miss suggestions to accept in one click. Places without data show as No data.
+6. **Choosing the columns by hand.** "Match to [layer]" on a table's card, and "Match to a layer…" in a table's right-click menu, open a picker in the table's panel: the layer, its key column and the table's key column (the names may differ), the automatic pairing preselected, what to do with several rows per place, and a live preview of how many match and the cardinality. Join is one undo step. The assistant calls the same join as the action `match_table` (WP6.4).
 
 The joined fields behave like the layer's own fields in cards, insight rows, the Style tab, filters, the table and search. In Details they are grouped under the table's name. The table stays on the shelf as a row under the layer, with Unjoin to undo the join at any time.
 
@@ -1050,7 +1052,7 @@ There is nothing to roll back yet. If no strategy passes, change stack and repea
 - Opening a table that has no coordinates (CSV, Excel, a DBF on its own) while area or point layers are open tries a join automatically. A table opened first waits on the shelf as "Not on the map yet" and joins when a matching layer arrives. Dragging the table onto a layer row joins it to that layer. See *Joining a table*.
 - Key detection in `lm-jobs::join` is pure and deterministic: every pairing of a table column with a layer field (ID, Name, Category or code-like text) is scored by the share of the table's distinct keys found in the layer and the share of the layer's records that get data.
 - A normalization ladder, recorded with the join: exact match; then trimmed, case-folded and space-collapsed; then accents and punctuation removed ("Côte d'Ivoire" = "Cote dIvoire"); then codes without leading zeros or ".0" ("06037" = "6037"); then bundled crosswalks (country names, ISO 3166 alpha-2, alpha-3 and numeric codes, US state names, abbreviations and FIPS codes, Chinese provinces in English and Chinese).
-- The join is automatic, with no question, when the best pairing matches at least 80% of the table's keys, beats the next by at least 20 points, and needs nothing looser than a crosswalk. Otherwise one question card offers the top three pairings with their match counts, plus "None of these". Near-misses (edit distance 2 or less) are never matched automatically; they are offered afterwards in one click: "3 names look like typos: Shangai → Shanghai… Use these?"
+- The join is automatic, with no question, when the best pairing matches at least 80% of the table's keys, beats the next by at least 20 points, needs nothing looser than a crosswalk, and is one-to-one; when keys repeat on either side it asks first, with Join / Keep as a table (owner's choice, 2026-10-18; WP6.4). Otherwise one question card offers the top three pairings with their match counts, plus "None of these". Near-misses (edit distance 2 or less) are never matched automatically; they are offered afterwards in one click: "3 names look like typos: Shangai → Shanghai… Use these?"
 - Several rows per key: when a date or year column varies within a key, the latest is used and a chip says "Showing 2023 · Change". Otherwise counts are summed and other values averaged per key, and a chip says so ("Summed per district, 3 rows each · Change"). Nothing is aggregated silently.
 - Several layers: when the table clearly matches more than one open layer (each passes the rule above on its own), it joins every one of them in one undo step and shows under each on the shelf. Only the best match (then the higher on the shelf) is recoloured; the others gain the fields and keep their look. The question is asked only when no layer is clear, about the layer that matches best. A layer whose key field repeats is never a target, so a table of country codes joins countries and not cities with a country field.
 - The result: the layer gains the table's fields, grouped in Details under "From population.csv". No file is written and the sources are untouched. The join is one undo step ("Join population.csv"), is saved in the document and is applied again on open. A single-colour layer is coloured by the first joined measure, with "Keep the original colors" on the card.
@@ -1398,7 +1400,7 @@ Record wrong interpretations as well as completions. Ask each student to explain
 - **WP6.6 Strict offline mode** (P2). One switch blocks every network request: basemaps, search, library, update check. The Phase 5 network-blocking harness verifies that zero requests are made.
 - **WP6.7 Deferred formats.** KML/KMZ (with styles) and GPX, plus any P1 format cut earlier.
 - **WP6.8 Security hardening.** 24 hours of fuzzing per adapter, in 6-hour shards on Linux runners, `cargo audit` in CI, and a software bill of materials.
-- **WP6.9 Upstream contributions.** Offer `lm-mapview`, the GCJ-02 conversion and the fractional-coverage zonal summary to RustGIS as pull requests.
+- **WP6.9 Upstream contributions.** *Dropped (owner, 2026-10-18): no code is offered back to RustGIS.* Was: offer `lm-mapview`, the GCJ-02 conversion and the fractional-coverage zonal summary to RustGIS as pull requests.
 - **WP6.10 Website and help.** A landing page, a searchable glossary, and three complete workflows.
 - **WP6.11 Optional experiment** (P3, off by default). An "Ask about this layer" box that maps a typed question onto an existing action. It shows exactly what would be sent to the model, and still runs through the composer and preview. It is judged on 50 real student questions collected during the pilot.
 - **WP6.12 NetCDF with a time slider and variables** (P2; owner's request, 2026-10-18). Climate and ocean grids (ERA5, CMIP6, sea-surface temperature) open like any raster, with their time and variables.
@@ -1635,7 +1637,7 @@ The two biggest risks are builder time and map feel. Phase 0 settles the second;
 | 11 | Library datasets have unclear licenses | Medium | Medium | Any entry without a written license | Open-licensed datasets only, with citations recorded |
 | 12 | Pilot logs count as research data | Medium | Medium | Plans to publish on the pilot | Seek IRB approval or exemption before the first hallway test |
 | 13 | Apple signing or notarization delays | Low | Medium | Enrollment not done in week 1 of Phase 0 | Internal gates use locally built, unsigned apps; the pilot waits for signing |
-| 14 | Name conflict | Low | Low | Trademark search results | Choose the name at Gate 5, before installers and domains exist |
+| 14 | Name conflict | Medium | Medium | Seen 2026-10-19: layeredmaps.app and layeredmaps.com exist; "layered map" is also a generic GIS term, which weakens a trademark and search | Rebrand research under way; choose the name before the website, domain and installers go public |
 
 ### Open decisions
 
@@ -1650,4 +1652,6 @@ The two biggest risks are builder time and map feel. Phase 0 settles the second;
 | Final name | LayeredMap · another name | Gate 5 | Trademark search |
 | Windows timing | Phase 5 · Phase 6 | Once the course roster is known | Student survey |
 | Natural-language experiment | Run WP6.11 · skip | Gate 5 | Pilot question log |
+| Finder Quick Look preview | A Quick Look extension that previews .shp, .geojson, .gpx, .kml and .tif in Finder (space bar) · not now | A phase start after Phase 6 | Reddit pains survey (2026-10-19): people want to peek at a GIS file without launching a full app |
+| Editing | Table edits only (cells, rename/delete/add columns, with undo) · also geometry (move points, vertices) · neither | A phase start after Phase 6 | Table edits are cheap and match the audience; vertex editing is a large surface (snapping, topology, undo, saving back to each format) and is QGIS's job. Proposed: table edits only |
 

@@ -177,6 +177,10 @@ pub struct TableView {
     scrolled_for: Vec<usize>,
     /// Rows being worked out for a key.
     computing: Option<(String, std::sync::mpsc::Receiver<Vec<usize>>)>,
+    /// The keyboard goes to the rows once they are drawn (⌘T).
+    pub(crate) focus: bool,
+    /// A row had the keyboard last frame.
+    pub(crate) has_keyboard: bool,
 }
 
 impl TableView {
@@ -264,6 +268,8 @@ pub fn drawer(shell: &mut Shell, ui: &mut Ui, map: egui::Rect, left: f32, right:
     let mut sort_click: Option<usize> = None;
     let mut remove_condition: Option<usize> = None;
     let mut open_builder = false;
+    let mut focus_at: Option<usize> = None;
+    let mut drawn = 0..0;
     egui::Area::new(egui::Id::new("lm-table")).order(egui::Order::Middle).fixed_pos(rect.min).show(ui.ctx(), |ui| {
         egui::Frame::new()
             .fill(t.surface)
@@ -290,23 +296,26 @@ pub fn drawer(shell: &mut Shell, ui: &mut Ui, map: egui::Rect, left: f32, right:
                             let chip = egui::Button::new(RichText::new(format!("{}  ×", c.chip())).size(CAPTION))
                                 .fill(t.accent_weak)
                                 .corner_radius(egui::CornerRadius::same(10));
-                            if ui.add(chip).on_hover_text("Remove this filter").clicked() {
+                            let chip = ui.add(chip);
+                            crate::a11y::button(&chip, format!("Remove filter: {}", c.chip()));
+                            if chip.on_hover_text("Remove this filter").clicked() {
                                 remove_condition = Some(k);
                             }
                         }
                     }
-                    if ui.button(format!("{} Filter", icon::PLUS)).clicked() {
+                    let add = ui.button(format!("{} Filter", icon::PLUS));
+                    crate::a11y::button(&add, "Add a filter");
+                    if add.clicked() {
                         open_builder = true;
                     }
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        if ui
-                            .add(egui::Button::new(RichText::new(icon::X).font(theme::icon_font(14.0))).frame(false))
-                            .on_hover_text("Close")
-                            .clicked()
-                        {
+                        let x = ui.add(egui::Button::new(RichText::new(icon::X).font(theme::icon_font(14.0))).frame(false));
+                        crate::a11y::button(&x, "Close the table");
+                        if x.on_hover_text("Close").clicked() {
                             close = true;
                         }
-                        ui.add(egui::TextEdit::singleline(&mut shell.table.search).hint_text("Search").desired_width(160.0));
+                        let search = ui.add(egui::TextEdit::singleline(&mut shell.table.search).hint_text("Search").desired_width(160.0));
+                        crate::a11y::label(&search, "Search the table");
                     });
                 });
                 ui.separator();
@@ -324,6 +333,12 @@ pub fn drawer(shell: &mut Shell, ui: &mut Ui, map: egui::Rect, left: f32, right:
                                 _ => "",
                             };
                             let (r, resp) = ui.allocate_exact_size(vec2(COL_W, ROW_H), Sense::click());
+                            let order = match shell.table.sort {
+                                Some((f, true)) if f == c => ", sorted ascending",
+                                Some((f, false)) if f == c => ", sorted descending",
+                                _ => "",
+                            };
+                            crate::a11y::button(&resp, format!("Sort by {name}{order}"));
                             ui.painter().text(
                                 r.left_center() + vec2(6.0, 0.0),
                                 Align2::LEFT_CENTER,
@@ -348,10 +363,25 @@ pub fn drawer(shell: &mut Shell, ui: &mut Ui, map: egui::Rect, left: f32, right:
                         scroll
                     };
                     scroll.show_rows(ui, ROW_H, rows.len(), |ui, range| {
+                        let first = range.start;
+                        drawn = range.clone();
                         for i in range {
                             let Some(&r) = rows.get(i) else { continue };
                             let on = selected.contains(&r);
-                            let (rr, resp) = ui.allocate_exact_size(vec2(width, ROW_H), Sense::click());
+                            // Rows keep their id as they scroll, so the keyboard can follow them.
+                            let (rr, _) = ui.allocate_exact_size(vec2(width, ROW_H), Sense::hover());
+                            let resp = ui.interact(rr, row_id(id, r), Sense::click());
+                            resp.widget_info(|| {
+                                egui::WidgetInfo::selected(egui::WidgetType::SelectableLabel, true, on, row_name(&l, &ds, &cols, r))
+                            });
+                            if resp.has_focus() {
+                                focus_at = Some(i);
+                            }
+                            let take_focus = shell.table.focus && (selected.first() == Some(&r) || (selected.is_empty() && i == first));
+                            if take_focus {
+                                resp.request_focus();
+                                shell.table.focus = false;
+                            }
                             let p = ui.painter();
                             if on {
                                 p.rect_filled(rr, 4.0, t.accent_weak);
@@ -424,6 +454,43 @@ pub fn drawer(shell: &mut Shell, ui: &mut Ui, map: egui::Rect, left: f32, right:
     {
         shell.zoom_to = Some(e);
     }
+    // ↑ ↓ (and Home, End) move through the rows while one has the keyboard, selecting as they go
+    // like a list, and the row scrolls into view.
+    shell.table.has_keyboard = focus_at.is_some();
+    if let Some(i) = focus_at {
+        let fid = rows.get(i).map(|r| row_id(id, *r));
+        if let Some(fid) = fid {
+            ui.memory_mut(|m| m.set_focus_lock_filter(fid, egui::EventFilter { vertical_arrows: true, ..Default::default() }));
+        }
+        let (up, down, home, end) = ui.input(|k| {
+            (
+                k.key_pressed(egui::Key::ArrowUp),
+                k.key_pressed(egui::Key::ArrowDown),
+                k.key_pressed(egui::Key::Home),
+                k.key_pressed(egui::Key::End),
+            )
+        });
+        let to = if down {
+            Some((i + 1).min(rows.len().saturating_sub(1)))
+        } else if up {
+            Some(i.saturating_sub(1))
+        } else if home {
+            Some(0)
+        } else if end {
+            Some(rows.len().saturating_sub(1))
+        } else {
+            None
+        };
+        if let Some((to, r)) = to.filter(|to| *to != i).and_then(|to| rows.get(to).map(|r| (to, *r))) {
+            shell.ws.selection = lm_core::selection::SelectionContext::object(FeatureRef { layer: id, row: r });
+            // A row already in full view doesn't scroll the table.
+            if to > drawn.start && to + 1 < drawn.end {
+                shell.table.scrolled_for = vec![r];
+            }
+            ui.memory_mut(|m| m.request_focus(row_id(id, r)));
+            ui.ctx().request_repaint();
+        }
+    }
     if let Some((r, shift)) = select {
         let f = FeatureRef { layer: id, row: r };
         if shift {
@@ -447,6 +514,22 @@ pub fn drawer(shell: &mut Shell, ui: &mut Ui, map: egui::Rect, left: f32, right:
         shell.filter_draft = Some(FilterDraft::preset(shell, &l, None, None));
     }
     builder(shell, ui, rect);
+}
+
+/// A row's widget id, the same wherever it scrolls.
+fn row_id(layer: LayerId, row: usize) -> egui::Id {
+    egui::Id::new(("lm-table-row", layer.0, row))
+}
+
+/// A row as a screen reader reads it: the record's name, then up to six "field: value" pairs.
+fn row_name(l: &DocLayer, ds: &lm_jobs::import::Dataset, cols: &[usize], r: usize) -> String {
+    let mut s = data::object_title(l, ds, r);
+    for &c in cols.iter().take(6) {
+        let name = ds.fields.get(c).map(|f| f.name.as_str()).unwrap_or_default();
+        let v = data::cell_text(ds, r, c).unwrap_or_else(|| "no value".into());
+        s.push_str(&format!(", {name}: {v}"));
+    }
+    s
 }
 
 fn truncate(s: &str, max: usize) -> String {

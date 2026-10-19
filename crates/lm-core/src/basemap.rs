@@ -148,9 +148,49 @@ pub fn provider(id: &str) -> Provider {
 /// Above this zoom the offline basemap has nothing more to show (Natural Earth 1:50m).
 pub const OFFLINE_MAX_ZOOM: f64 = 8.0;
 
+/// The OpenStreetMap credit the vector archive's own layers carry (also in the satellite
+/// basemap's labels and its close-up map).
+pub const OSM_CREDIT: &str = OSM_ATTRIBUTION;
+
+/// What a credit names, for telling repeats apart: "© OpenStreetMap", "&copy; OpenStreetMap
+/// contributors" and "OpenStreetMap contributors" all name OpenStreetMap.
+fn credit_key(c: &str) -> String {
+    let mut k = c.to_lowercase().replace("&copy;", "").replace('©', "").replace("(c)", "");
+    for tail in ["contributors", "contributor"] {
+        if let Some(stripped) = k.trim_end().strip_suffix(tail) {
+            k = stripped.to_string();
+        }
+    }
+    k.split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
+/// The credits `parts` as one list: each split at " · ", repeats dropped (by [`credit_key`]),
+/// keeping the fuller wording of a repeat ("© OpenStreetMap contributors" over "© OpenStreetMap")
+/// in the place it first appeared.
+pub fn merge_credits<'a>(parts: impl IntoIterator<Item = &'a str>) -> Vec<String> {
+    let mut out: Vec<(String, String)> = Vec::new();
+    for c in parts.into_iter().flat_map(|p| p.split(" · ")).map(str::trim).filter(|c| !c.is_empty()) {
+        let key = credit_key(c);
+        match out.iter_mut().find(|(k, _)| *k == key) {
+            Some((_, kept)) if c.len() > kept.len() => *kept = c.to_string(),
+            Some(_) => {}
+            None => out.push((key, c.to_string())),
+        }
+    }
+    out.into_iter().map(|(_, c)| c).collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn credits_that_say_the_same_thing_are_listed_once() {
+        let m = merge_credits(["NASA Blue Marble (NASA Earth Observatory, GIBS)", "© OpenStreetMap", OSM_CREDIT, "Natural Earth"]);
+        assert_eq!(m, ["NASA Blue Marble (NASA Earth Observatory, GIBS)", "© OpenStreetMap contributors", "Protomaps", "Natural Earth"]);
+        assert_eq!(merge_credits(["&copy; OpenStreetMap contributors", "© OpenStreetMap"]), ["&copy; OpenStreetMap contributors"]);
+        assert!(merge_credits(["", " · "]).is_empty());
+    }
 
     #[test]
     fn auto_is_the_default_and_ids_are_unique() {

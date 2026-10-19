@@ -15,6 +15,8 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use rustgis_engine::data::{Dataset, Field, FieldType, Value};
 use serde::{Deserialize, Serialize};
 
+use lm_core::model::group_thousands;
+
 use crate::find::fold;
 
 pub use crosswalk::Family;
@@ -335,24 +337,37 @@ pub fn decide(pairings: &[Pairing]) -> Decision {
 #[derive(Clone, Debug, PartialEq)]
 pub enum Plan {
     /// Join to each of these layers (by index), the best match first: each one's decision is a
-    /// clear join on its own.
+    /// clear one-to-one join on its own.
     Join(Vec<(usize, Pairing)>),
+    /// The pairing is clear but keys repeat (one-to-many, many-to-one, many-to-many): ask
+    /// before joining, showing the row counts and how the repeats are handled.
+    Confirm(usize, Pairing),
     /// No layer is clear: ask once about the best layer's pairings.
     Ask(usize, Vec<Pairing>),
     Nothing,
 }
 
 /// The rule over several layers (shelf order, top first): the table joins every layer whose
-/// decision is a clear join, with no question; only when none is clear does it ask, about the
-/// layer that matches best. Ties go to the layer higher on the shelf. The rule for each layer
+/// decision is a clear join and whose keys don't repeat (one-to-one), with no question. A clear
+/// join whose keys repeat asks first (owner's choice, 2026-10-18), about the best such layer,
+/// when no layer joins on its own. Only when no layer is clear does it ask which pairing, about
+/// the layer that matches best. Ties go to the layer higher on the shelf. The rule for each layer
 /// is `decide`'s, unchanged: a layer whose key field repeats (cities with a country field) is
 /// never a target, so a table of country codes joins countries and leaves cities alone.
 pub fn plan(table: &Dataset, layers: &[&Dataset]) -> Plan {
     let mut joins: Vec<(usize, Pairing)> = Vec::new();
+    let mut confirm: Option<(usize, Pairing)> = None;
     let mut ask: Option<(usize, Vec<Pairing>)> = None;
     for (i, l) in layers.iter().enumerate() {
         match decide(&score(table, l)) {
-            Decision::Join(p) => joins.push((i, p)),
+            Decision::Join(p) => {
+                let repeats = expect(table, l, &spec_for(table, l, &p, "")).is_some_and(|e| e.asks_first());
+                if !repeats {
+                    joins.push((i, p));
+                } else if confirm.as_ref().is_none_or(|(_, best)| p.rate() > best.rate()) {
+                    confirm = Some((i, p));
+                }
+            }
             Decision::Ask(ps) => {
                 if ask.as_ref().is_none_or(|(_, best)| ps[0].rate() > best[0].rate()) {
                     ask = Some((i, ps));
@@ -366,10 +381,62 @@ pub fn plan(table: &Dataset, layers: &[&Dataset]) -> Plan {
         joins.sort_by(|a, b| b.1.rate().total_cmp(&a.1.rate()));
         return Plan::Join(joins);
     }
+    if let Some((i, p)) = confirm {
+        return Plan::Confirm(i, p);
+    }
     match ask {
         Some((i, ps)) => Plan::Ask(i, ps),
         None => Plan::Nothing,
     }
+}
+
+/// The pairing to start from when the user picks the columns: the best one for `layer`, among
+/// those using the given fields (by name; None: any). None when no column pair shares a key.
+pub fn best_pairing(table: &Dataset, layer: &Dataset, table_field: Option<&str>, layer_field: Option<&str>) -> Option<Pairing> {
+    score(table, layer).into_iter().find(|p| {
+        table_field.is_none_or(|f| table.fields[p.table_field].name == f)
+            && layer_field.is_none_or(|f| layer.fields[p.layer_field].name == f)
+    })
+}
+
+/// The spec for two named columns: the tightest level of the ladder that matches most of the
+/// table's keys (exact when nothing matches at all).
+pub fn spec_for_fields(table: &Dataset, layer: &Dataset, table_field: &str, layer_field: &str, table_name: &str) -> Option<JoinSpec> {
+    if !table.fields.iter().any(|f| f.name == table_field) || !layer.fields.iter().any(|f| f.name == layer_field) {
+        return None;
+    }
+    let at = |level: Level| JoinSpec {
+        table_name: table_name.to_string(),
+        table_field: table_field.to_string(),
+        layer_field: layer_field.to_string(),
+        level,
+        rows: Rows::One,
+        aliases: Vec::new(),
+    };
+    let mut best: Option<(usize, Level)> = None;
+    for level in Level::ALL {
+        let m = matching(table, layer, &at(level))?.expected.table_matched;
+        if best.is_none_or(|(n, _)| m > n) {
+            best = Some((m, level));
+        }
+    }
+    best.map(|(_, level)| at(level))
+}
+
+/// `spec` with the rule for several rows per record named as the action's `repeats` parameter
+/// says: "auto" (or empty) leaves it to the join (latest by a year or date column, otherwise
+/// combined), "latest" needs such a column, "combine" sums counts and averages other numbers.
+pub fn with_repeats(table: &Dataset, spec: &JoinSpec, repeats: &str) -> Result<JoinSpec, String> {
+    let rows = match repeats.trim() {
+        "" | "auto" => Rows::One,
+        "combine" => Rows::Combine,
+        "latest" => match time_field(table, table.fields.iter().position(|f| f.name == spec.table_field).unwrap_or(usize::MAX)) {
+            Some(t) => Rows::Latest { field: table.fields[t].name.clone() },
+            None => return Err(format!("{} has no year or date column to take the latest from.", spec.table_name)),
+        },
+        other => return Err(format!("“{other}” isn't a way to handle repeats; use auto, latest or combine.")),
+    };
+    Ok(JoinSpec { rows, ..spec.clone() })
 }
 
 /// The layer's data without fields a join added (separating a joined table).
@@ -384,7 +451,7 @@ pub fn separate(layer: &Dataset, fields: &[String]) -> Dataset {
 }
 
 /// What to do when the table has several rows for one place.
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Rows {
     /// One row per place.
     One,
@@ -419,6 +486,121 @@ impl JoinSpec {
     }
 }
 
+/// How table rows and layer records pair up: pandas `merge(validate=…)`'s four cases with the
+/// layer on the left. "One" on a side means no key repeats on that side (among the rows with a
+/// key: blank keys never match and don't count); "many" means some key does, matched or not.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Cardinality {
+    /// No key repeats.
+    OneToOne,
+    /// A key repeats in the table (several rows for one place: years, categories).
+    OneToMany,
+    /// A key repeats in the layer (one place stored as several records).
+    ManyToOne,
+    /// Keys repeat on both sides.
+    ManyToMany,
+}
+
+impl Cardinality {
+    /// pandas' name for it (`validate=`).
+    pub fn pandas(self) -> &'static str {
+        match self {
+            Cardinality::OneToOne => "one_to_one",
+            Cardinality::OneToMany => "one_to_many",
+            Cardinality::ManyToOne => "many_to_one",
+            Cardinality::ManyToMany => "many_to_many",
+        }
+    }
+
+    pub fn words(self) -> &'static str {
+        match self {
+            Cardinality::OneToOne => "One-to-one",
+            Cardinality::OneToMany => "One-to-many",
+            Cardinality::ManyToOne => "Many-to-one",
+            Cardinality::ManyToMany => "Many-to-many",
+        }
+    }
+}
+
+/// What a join will do, worked out before it runs (the counts a plain merge would give, and
+/// what LayeredMap keeps).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Expected {
+    pub cardinality: Cardinality,
+    pub layer_rows: usize,
+    /// Layer records that get at least one table row.
+    pub layer_matched: usize,
+    pub table_rows: usize,
+    /// Table rows that find at least one record.
+    pub table_matched: usize,
+    /// Matching (record, table row) pairs: the rows of an inner merge.
+    pub pairs: usize,
+    /// The rows of a plain left merge: each record once per table row it matches, at least once.
+    pub merge_rows: usize,
+    /// The most table rows that share one key, and the most records that share one key.
+    pub table_most: usize,
+    pub layer_most: usize,
+    /// What happens to several table rows for one record (`Rows::One` when none has several).
+    pub rows_rule: Rows,
+}
+
+impl Expected {
+    /// The joined layer's rows: one per record, whatever the cardinality.
+    pub fn rows(&self) -> usize {
+        self.layer_rows
+    }
+
+    /// "One-to-many: a key repeats in the table (up to 5 rows). A plain merge would give 85
+    /// rows; the layer keeps its 17, one per district."
+    pub fn line(&self, nouns: (&str, &str)) -> String {
+        let n = group_thousands(self.layer_rows as u64);
+        let keeps = if self.merge_rows == self.layer_rows {
+            format!("The layer keeps its {n} rows.")
+        } else {
+            format!(
+                "A plain merge would give {} rows; the layer keeps its {n}, one per {}.",
+                group_thousands(self.merge_rows as u64),
+                nouns.0
+            )
+        };
+        let why = match self.cardinality {
+            Cardinality::OneToOne => "no key repeats".to_string(),
+            Cardinality::OneToMany => format!("a key repeats in the table (up to {} rows)", self.table_most),
+            Cardinality::ManyToOne => format!("a key repeats in the layer (up to {} {}), and each gets the row", self.layer_most, nouns.1),
+            Cardinality::ManyToMany => {
+                format!(
+                    "keys repeat in the table (up to {} rows) and in the layer (up to {} {})",
+                    self.table_most, self.layer_most, nouns.1
+                )
+            }
+        };
+        format!("{}: {why}. {keeps}", self.cardinality.words())
+    }
+
+    /// How repeated keys are handled, in words; None for a one-to-one join. "Several rows for
+    /// one district: the one with the latest year is used."
+    pub fn handling(&self, nouns: (&str, &str)) -> Option<String> {
+        let mut parts = Vec::new();
+        match &self.rows_rule {
+            Rows::One => {}
+            Rows::Latest { field } => parts.push(format!("Several rows for one {}: the one with the latest {field} is used.", nouns.0)),
+            Rows::Combine => parts.push(format!("Several rows for one {}: counts are summed and other numbers averaged.", nouns.0)),
+        }
+        if self.layer_most > 1 {
+            let mut n = nouns.1.chars();
+            let cap = n.next().map(|c| c.to_uppercase().collect::<String>() + n.as_str()).unwrap_or_default();
+            parts.push(format!("{cap} that share a key each take its row."));
+        }
+        (!parts.is_empty()).then(|| parts.join(" "))
+    }
+
+    /// Whether this join asks before it is made (owner's choice, 2026-10-18): every join whose
+    /// keys repeat on either side does, because how the repeats are handled is a choice.
+    pub fn asks_first(&self) -> bool {
+        self.cardinality != Cardinality::OneToOne
+    }
+}
+
 /// The outcome of a join.
 #[derive(Clone, Debug)]
 pub struct Joined {
@@ -428,14 +610,20 @@ pub struct Joined {
     pub new_fields: Vec<String>,
     /// Layer records that got data, of all.
     pub layer_matched: usize,
-    /// Table keys (as written) that found no place.
+    /// Table keys (as written) that found no place, in table order.
     pub unmatched: Vec<String>,
+    /// Every table row that found no place (blank keys included), ascending.
+    pub unmatched_rows: Vec<usize>,
+    /// Table rows with a blank key (never matched).
+    pub blank_keys: usize,
     /// Near-misses for unmatched keys: (table key, the layer key it looks like).
     pub near_misses: Vec<(String, String)>,
     /// What the chip says about several rows per place, if anything.
     pub rows_note: Option<String>,
     /// Records per place in the table, at most.
     pub most_rows: usize,
+    /// The counts worked out before joining.
+    pub expected: Expected,
 }
 
 /// A field whose values are years or dates: by name, or whole numbers from 1800 to 2200.
@@ -467,21 +655,113 @@ fn is_count_name(name: &str) -> bool {
     ["count", "pop", "total", "number", "num_", "n_", "sum", "cases", "households", "people", "visits"].iter().any(|w| n.contains(w))
 }
 
-/// The table's rows each layer record takes, after the rule for several rows per place.
-fn rows_per_record(table: &Dataset, assignment: &[Option<usize>], tf: usize) -> (Rows, BTreeMap<usize, Vec<usize>>) {
+/// The rule for several rows per place, from the table rows each layer record takes.
+fn rows_rule(table: &Dataset, groups: &BTreeMap<usize, Vec<usize>>, tf: usize) -> Rows {
+    if groups.values().all(|g| g.len() == 1) {
+        return Rows::One;
+    }
+    if let Some(t) = time_field(table, tf) {
+        return Rows::Latest { field: table.fields[t].name.clone() };
+    }
+    Rows::Combine
+}
+
+/// Which records each table row lands on, as a spec says.
+struct Matching {
+    tf: usize,
+    lf: usize,
+    /// Table rows per layer record that got any.
+    groups: BTreeMap<usize, Vec<usize>>,
+    unmatched: Vec<String>,
+    unmatched_rows: Vec<usize>,
+    blank_keys: usize,
+    expected: Expected,
+}
+
+/// Matches the table's rows to the layer's records by the spec's key fields and level. Every
+/// record with a key takes part, also when its key repeats (a place stored as two records gets
+/// the row twice); blank keys never match.
+fn matching(table: &Dataset, layer: &Dataset, spec: &JoinSpec) -> Option<Matching> {
+    let tf = table.fields.iter().position(|f| f.name == spec.table_field)?;
+    let lf = layer.fields.iter().position(|f| f.name == spec.layer_field)?;
+    let mut keys: HashMap<String, Vec<usize>> = HashMap::new();
+    for r in 0..layer.features.len() {
+        if let Some(k) = key_text(layer, r, lf).and_then(|t| normalize(&t, spec.level)) {
+            keys.entry(k).or_default().push(r);
+        }
+    }
+    // Accepted near-misses point a table key at a layer key.
+    let alias: HashMap<String, String> = spec
+        .aliases
+        .iter()
+        .filter_map(|(t, l)| Some((normalize(t, spec.level).or_else(|| Some(folded(t)))?, normalize(l, spec.level)?)))
+        .filter(|(_, l)| keys.contains_key(l))
+        .collect();
+    let mut places = Vec::with_capacity(table.features.len());
+    let mut unmatched: Vec<String> = Vec::new();
+    let mut seen_unmatched = HashSet::new();
+    let mut unmatched_rows = Vec::new();
+    let mut blank_keys = 0usize;
+    let mut table_keys: HashMap<String, usize> = HashMap::new();
+    for r in 0..table.features.len() {
+        let raw = key_text(table, r, tf);
+        let k = raw.as_ref().and_then(|t| normalize(t, spec.level).or_else(|| Some(folded(t))));
+        let k = k.map(|k| alias.get(&k).cloned().unwrap_or(k));
+        let rows = k.as_ref().and_then(|k| keys.get(k)).cloned().unwrap_or_default();
+        if let Some(k) = k {
+            *table_keys.entry(k).or_default() += 1;
+        }
+        if rows.is_empty() {
+            unmatched_rows.push(r);
+            match raw {
+                Some(raw) => {
+                    if seen_unmatched.insert(raw.clone()) {
+                        unmatched.push(raw);
+                    }
+                }
+                None => blank_keys += 1,
+            }
+        }
+        places.push(rows);
+    }
     let mut groups: BTreeMap<usize, Vec<usize>> = BTreeMap::new();
-    for (tr, lr) in assignment.iter().enumerate() {
-        if let Some(lr) = lr {
+    for (tr, lrs) in places.iter().enumerate() {
+        for lr in lrs {
             groups.entry(*lr).or_default().push(tr);
         }
     }
-    if groups.values().all(|g| g.len() == 1) {
-        return (Rows::One, groups);
-    }
-    if let Some(t) = time_field(table, tf) {
-        return (Rows::Latest { field: table.fields[t].name.clone() }, groups);
-    }
-    (Rows::Combine, groups)
+    let table_most = table_keys.values().copied().max().unwrap_or(0);
+    let layer_most = keys.values().map(Vec::len).max().unwrap_or(0);
+    let cardinality = match (layer_most > 1, table_most > 1) {
+        (false, false) => Cardinality::OneToOne,
+        (false, true) => Cardinality::OneToMany,
+        (true, false) => Cardinality::ManyToOne,
+        (true, true) => Cardinality::ManyToMany,
+    };
+    let pairs: usize = groups.values().map(Vec::len).sum();
+    let layer_rows = layer.features.len();
+    let expected = Expected {
+        cardinality,
+        layer_rows,
+        layer_matched: groups.len(),
+        table_rows: table.features.len(),
+        table_matched: places.iter().filter(|p| !p.is_empty()).count(),
+        pairs,
+        merge_rows: layer_rows - groups.len() + pairs,
+        table_most,
+        layer_most,
+        rows_rule: match &spec.rows {
+            Rows::One => rows_rule(table, &groups, tf),
+            r => r.clone(),
+        },
+    };
+    Some(Matching { tf, lf, groups, unmatched, unmatched_rows, blank_keys, expected })
+}
+
+/// What joining `table` to `layer` as `spec` says would do, without joining: the cardinality and
+/// the row counts, for the question and the card.
+pub fn expect(table: &Dataset, layer: &Dataset, spec: &JoinSpec) -> Option<Expected> {
+    matching(table, layer, spec).map(|m| m.expected)
 }
 
 fn edit_distance(a: &str, b: &str) -> usize {
@@ -500,42 +780,8 @@ fn edit_distance(a: &str, b: &str) -> usize {
 
 /// Joins `table` to `layer` as `spec` says.
 pub fn apply(table: &Dataset, layer: &Dataset, spec: &JoinSpec) -> Option<Joined> {
-    let tf = table.fields.iter().position(|f| f.name == spec.table_field)?;
-    let lf = layer.fields.iter().position(|f| f.name == spec.layer_field)?;
-    let mut keys = layer_keys(layer, lf, spec.level).unwrap_or_default();
-    // Accepted near-misses point a table key at a layer key.
-    let alias: HashMap<String, String> = spec
-        .aliases
-        .iter()
-        .filter_map(|(t, l)| Some((normalize(t, spec.level).or_else(|| Some(folded(t)))?, normalize(l, spec.level)?)))
-        .collect();
-    for (t, l) in &alias {
-        if let Some(&r) = keys.get(l) {
-            keys.insert(t.clone(), r);
-        }
-    }
-    let mut assignment = Vec::with_capacity(table.features.len());
-    let mut unmatched: Vec<String> = Vec::new();
-    let mut seen_unmatched = HashSet::new();
-    for r in 0..table.features.len() {
-        let raw = key_text(table, r, tf);
-        let k = raw.as_ref().and_then(|t| normalize(t, spec.level).or_else(|| Some(folded(t))));
-        let row = k.as_ref().and_then(|k| keys.get(k).copied());
-        if row.is_none()
-            && let Some(raw) = raw
-            && seen_unmatched.insert(raw.clone())
-        {
-            unmatched.push(raw);
-        }
-        assignment.push(row);
-    }
-    let (rule, groups) = match &spec.rows {
-        Rows::One => rows_per_record(table, &assignment, tf),
-        _ => {
-            let (_, g) = rows_per_record(table, &assignment, tf);
-            (spec.rows.clone(), g)
-        }
-    };
+    let Matching { tf, lf, groups, unmatched, unmatched_rows, blank_keys, expected } = matching(table, layer, spec)?;
+    let rule = expected.rows_rule.clone();
     let most_rows = groups.values().map(Vec::len).max().unwrap_or(0);
     // New fields: every table field but the key, renamed if the layer has the name already.
     let added: Vec<usize> = (0..table.fields.len()).filter(|&f| f != tf).collect();
@@ -611,7 +857,18 @@ pub fn apply(table: &Dataset, layer: &Dataset, spec: &JoinSpec) -> Option<Joined
             near_misses.push((u.clone(), t.clone()));
         }
     }
-    Some(Joined { data, new_fields, layer_matched: groups.len(), unmatched, near_misses, rows_note, most_rows })
+    Some(Joined {
+        data,
+        new_fields,
+        layer_matched: groups.len(),
+        unmatched,
+        unmatched_rows,
+        blank_keys,
+        near_misses,
+        rows_note,
+        most_rows,
+        expected,
+    })
 }
 
 /// Several table rows for one place, as one value: counts summed, other numbers averaged, text

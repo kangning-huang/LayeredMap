@@ -220,6 +220,20 @@ pub struct FieldProfile {
     pub stats: Option<FieldStats>,
 }
 
+impl FieldProfile {
+    /// The profile's "is a year" hint: a whole-number field whose name says year
+    /// ([`crate::format::is_year_name`]) and whose values, when profiled, all lie in
+    /// [`crate::format::YEAR_RANGE`]. Its values print as "2013", not "2,013", everywhere.
+    pub fn is_year(&self) -> bool {
+        let numeric = matches!(self.dtype, DataType::Integer | DataType::Float);
+        let in_range = self
+            .stats
+            .as_ref()
+            .is_none_or(|s| [s.min, s.max].iter().all(|v| v.is_none_or(|v| v.fract() == 0.0 && crate::format::YEAR_RANGE.contains(&v))));
+        numeric && in_range && crate::format::is_year_name(&self.name)
+    }
+}
+
 /// What a raster cell's value means (Assumption catalog › Raster cell meaning).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CellMeaning {
@@ -427,6 +441,23 @@ pub fn group_thousands(n: u64) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn year_fields_are_hinted_by_name_and_values() {
+        let f = |name: &str, dtype: DataType, min: f64, max: f64| FieldProfile {
+            name: name.into(),
+            dtype,
+            role: Known::likely(FieldRole::Unknown, ""),
+            unit: Known::likely(None, ""),
+            stats: Some(FieldStats { min: Some(min), max: Some(max), ..FieldStats::default() }),
+        };
+        assert!(f("season", DataType::Integer, 1980.0, 2026.0).is_year());
+        assert!(f("commissioning_year", DataType::Float, 1896.0, 2020.0).is_year());
+        assert!(!f("season", DataType::Integer, 1.0, 4.0).is_year());
+        assert!(!f("population", DataType::Integer, 1980.0, 2026.0).is_year());
+        assert!(!f("year", DataType::Text, 1980.0, 2026.0).is_year());
+        assert!(!f("year", DataType::Float, 1980.5, 2026.0).is_year());
+    }
 
     #[test]
     fn thousands_are_grouped() {

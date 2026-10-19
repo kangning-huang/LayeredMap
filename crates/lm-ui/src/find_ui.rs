@@ -122,6 +122,7 @@ pub fn bar(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
     if has_text {
         let x_rect = Rect::from_center_size(pos2(rect.right() - 16.0, rect.center().y), vec2(20.0, 20.0));
         let x = ui.interact(x_rect, field_id.with("clear"), Sense::click()).on_hover_text("Clear");
+        crate::a11y::button(&x, "Clear the search");
         let p = ui.painter();
         p.circle_filled(x_rect.center(), 8.0, if x.hovered() { t.text_secondary } else { t.control_stroke });
         p.text(x_rect.center(), Align2::CENTER_CENTER, icon::X, theme::icon_font(10.0), t.surface);
@@ -198,6 +199,7 @@ pub fn results(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
         let field = ds.fields.get(h.field).map(|f| f.name.clone()).unwrap_or_default();
         let value = data::cell_text(&ds, h.row, h.field).unwrap_or_default();
         let (r, resp) = ui.allocate_exact_size(vec2(ui.available_width(), 44.0), Sense::click());
+        crate::a11y::button(&resp, format!("{title}, {field}: {value}"));
         let resp = resp.on_hover_cursor(egui::CursorIcon::PointingHand);
         if resp.hovered() {
             ui.painter().rect_filled(r, CornerRadius::same(RADIUS_CONTROL), t.accent_weak);

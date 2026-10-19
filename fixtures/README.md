@@ -63,6 +63,9 @@ without them they print "skipped".
 | N12 | `N12/` | keep_inside / remove_inside: overlapping mask with a hole and parts; areas with holes and parts, a sliver; lines; points on edges | present |
 | N9 | `N9/` | nearest distance and island isolation: same-layer multipart exclusion, touching, holes, antimeridian, high latitude | present |
 | N10 | `N10/` | join by location: first area in row order, boundaries, holes, antimeridian, lines and areas by label point | present |
+| J6 | `J6/` | match a table to a layer (WP6.4): one-to-one, one-to-many, many-to-one, many-to-many, key columns with different names; expected row counts; unmatched and blank keys; against pandas `merge(validate=…)` | present |
+| N14 | `N14/` | nearest feature (WP6.4): points to points, lines and areas, areas to points; against GeoPandas `sjoin_nearest` in UTM 51N and pyproj Geod | present |
+| N15 | `N15/` | keep data inside an area (WP6.4): points on edges and corners, lines along an edge, areas that only touch, multipart, empty results; against GeoPandas `clip` | present |
 | N13 | `N13/` | per-feature measurements (area, perimeter with holes, length, coordinates) and label points | present |
 | K1 | — | — | owner-supplied |
 | D1–D3 | `D/D1`–`D/D3` | v0 document folders as Gates 2, 3 and 4 saved them (synthetic: layers with answers; then styles, filters, roles, a join; then a drawn area and a kept result); format migration and save/reopen equality (`lm-doc` `container::tests`) | present; rewrite with `LM_WRITE_DOC_FIXTURES=1 cargo test -p lm-doc --lib write_gate_fixture` |

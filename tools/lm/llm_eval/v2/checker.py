@@ -70,11 +70,11 @@ RASTER_STAT_TITLE = {"median": "Median", "min": "Minimum", "max": "Maximum", "su
 ACTIONS = {a["id"]: a for a in toolmod.action_table()}
 STATS = tools_v2.stat_actions()
 DISPLAY_REQUIRED = {"filter": ["layer", "conditions"], "color_by": ["layer", "field"], "view_data": ["layer"], "zoom_to": ["layer"]}
-SLOT_NEEDS = {"points": "points", "areas": "areas", "raster": "raster", "point": "points", "line": "lines", "area": "areas"}
+SLOT_NEEDS = {"points": "points", "areas": "areas", "raster": "raster", "point": "points", "line": "lines", "area": "areas", "table": "table"}
 
 
 # Steps that change their layer in place (no new layer): the argument naming that layer.
-IN_PLACE = {"filter": "layer", "add_raster_values": "points", "join_by_location": "layer", "nearest_distance": "layer",
+IN_PLACE = {"filter": "layer", "add_raster_values": "points", "join_by_location": "layer", "nearest_distance": "layer", "match_table": "layer",
             "nearest_other": "layer", "add_measurements": "layer", "calculate_field": "layer"}
 FIELD_OP_SIGN = {"subtract": "−", "add": "+", "multiply": "×", "divide": "÷"}
 WHERE_OPS = {"at_least": "at_least", "above": "at_least", "at_most": "at_most", "below": "at_most", "between": "between"}
@@ -238,7 +238,7 @@ class Checker:
     @staticmethod
     def _fits(kind: str | None, need: str) -> bool:
         if need == "vector":
-            return kind not in (None, "raster")
+            return kind not in (None, "raster", "table")
         if need == "areas":
             return kind in ("areas", "drawn area")
         return kind == need
@@ -611,6 +611,17 @@ class Checker:
                 out["fields"] = ",".join(got)
         if name == "find_where":
             self._check_where(out, args, v)
+        if name == "match_table":
+            for role, key in (("layer_field", out.get("layer")), ("table_field", out.get("table"))):
+                if key and args.get(role) not in (None, ""):
+                    f = self.field(key, args[role], name, v, role=role)
+                    if f:
+                        out[role] = f
+            rep = str(args.get("repeats") or "auto").strip().lower()
+            if rep not in ("auto", "latest", "combine"):
+                v.errors.append(f"match_table: repeats is auto, latest or combine, not {args.get('repeats')!r}.")
+            elif rep != "auto":
+                out["repeats"] = rep
         v.call = {"name": name, "args": out}
 
     def _check_calculate(self, out: dict, args: dict, v: Verdict) -> None:
@@ -786,6 +797,10 @@ class Checker:
             for w, name in zip([w for w in wanted if w in af], got):
                 if not src.startswith("#"):
                     self.origin[(a["layer"], name)] = (src, w)
+        elif n == "match_table" and isinstance(a.get("layer"), str) and isinstance(a.get("table"), str):
+            tf = self.fields_of(a["table"])
+            key = a.get("table_field")
+            self._add_fields(a["layer"], [(f, t) for f, t in tf.items() if f != key])
         elif n == "add_measurements" and isinstance(a.get("layer"), str):
             kind = self.kind_of(a["layer"])
             new = [("area_km2", "number"), ("perimeter_km", "number")] if kind in ("areas", "drawn area") else [("length_km", "number")] if kind == "lines" else []

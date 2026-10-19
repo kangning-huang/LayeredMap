@@ -124,7 +124,7 @@ mod analysis;
 mod grid;
 mod join;
 pub use analysis::RunOutcome;
-pub use join::{JoinOffer, JoinQuestion, JoinReport, Sublayer};
+pub use join::{JoinOffer, JoinQuestion, JoinReport, MatchDraft, Sublayer};
 
 #[derive(Default)]
 pub struct Workspace {

@@ -85,12 +85,14 @@ pub fn apply(map: &mut Map, prefs: &Prefs, dark_ui: bool) {
         labels.max_zoom = 15;
         labels.variant = "labels".into();
         labels.label_language = LABEL_LANGUAGE.into();
+        // Its own credit, not the archive's shorter "© OpenStreetMap", so credits merge cleanly.
+        labels.attribution = lm_core::basemap::OSM_CREDIT.into();
         map.tiles.insert(0, labels);
         // The vector map for zooms past the imagery's detail (hidden until then; see
         // `set_imagery_fallback`), in the appearance's look.
         let mut fallback = TileLayer::new("Map (close up)", TileKind::PmTiles, url);
         fallback.id = format!("lm-basemap-{}-map", p.id);
-        fallback.attribution = provider("light").attribution.into();
+        fallback.attribution = lm_core::basemap::OSM_CREDIT.into();
         fallback.max_zoom = 15;
         fallback.variant = if dark_ui { "dark".into() } else { "light".into() };
         fallback.label_language = LABEL_LANGUAGE.into();
@@ -112,6 +114,43 @@ pub fn set_imagery_fallback(map: &mut Map, on: bool, dark_ui: bool) {
         t.visible = if t.id.ends_with("-map") { on } else { !on };
     }
     map.basemap = quiet(if on { dark_ui } else { true });
+}
+
+/// Whether the Satellite basemap shows its close-up vector map at `zoom` (past
+/// [`IMAGERY_MAX_ZOOM`]).
+pub fn fallback_at(zoom: f64) -> bool {
+    zoom > IMAGERY_MAX_ZOOM
+}
+
+/// Sets the Satellite basemap's imagery or close-up map for `zoom` (an export drawn at another
+/// zoom than the screen); other basemaps are left alone.
+pub fn imagery_fallback_for_zoom(map: &mut Map, zoom: f64, dark_ui: bool) {
+    if imagery_fallback_on(map).is_some() {
+        set_imagery_fallback(map, fallback_at(zoom), dark_ui);
+    }
+}
+
+/// The credits of the tile layers drawn at `zoom`, in drawing order: the visible ones, with the
+/// Satellite basemap's imagery and labels, or its close-up map, as `zoom` decides. A hidden layer
+/// (the close-up map at world zoom) is not credited.
+pub fn tile_credits(map: &Map, zoom: f64) -> Vec<String> {
+    let satellite = imagery_fallback_on(map).is_some();
+    map.tiles
+        .iter()
+        .rev()
+        .filter(|t| t.opacity > 0.0)
+        .filter(|t| if satellite && t.id.starts_with("lm-basemap-") { t.id.ends_with("-map") == fallback_at(zoom) } else { t.visible })
+        .map(|t| t.attribution.trim().to_string())
+        .filter(|a| !a.is_empty())
+        .collect()
+}
+
+/// The credits line for a map drawn at `zoom`: the tile layers' credits ([`tile_credits`]), those
+/// the renderer reported for the frame (`drawn`, such as an archive's own), and Natural Earth
+/// (always drawn beneath), each once ([`lm_core::basemap::merge_credits`]).
+pub fn credits_line(map: &Map, zoom: f64, drawn: &[String]) -> String {
+    let tiles = tile_credits(map, zoom);
+    lm_core::basemap::merge_credits(tiles.iter().chain(drawn).map(String::as_str).chain(["Natural Earth"])).join(" · ")
 }
 
 /// Starts looking for the newest daily build of the online basemap (the app calls this once; tests
@@ -249,6 +288,38 @@ mod tests {
     fn labels_are_english_first() {
         let map = initial_map(&Prefs::default(), false);
         assert_eq!(layer(&map).map(|l| l.1).as_deref(), Some("en"));
+    }
+
+    /// Credits list only the layers drawn at the zoom, each once: Blue Marble and OpenStreetMap
+    /// (the labels) at world zoom; only OpenStreetMap past zoom 9.5, where the close-up map
+    /// replaces the imagery and its labels.
+    #[test]
+    fn satellite_credits_follow_the_layers_drawn() {
+        let prefs = Prefs { basemap: "satellite".into(), ..Prefs::default() };
+        let map = initial_map(&prefs, true);
+        let far = credits_line(&map, 3.0, &[]);
+        assert_eq!(far, "NASA Blue Marble (NASA Earth Observatory, GIBS) · © OpenStreetMap contributors · Protomaps · Natural Earth");
+        assert_eq!(far.matches("OpenStreetMap").count(), 1, "{far}");
+        // The renderer's report of the frame repeats the credits (the archive says "© OpenStreetMap").
+        let drawn = ["NASA Blue Marble (NASA Earth Observatory, GIBS)".to_string(), "© OpenStreetMap".to_string()];
+        assert_eq!(credits_line(&map, 3.0, &drawn), far);
+        let near = credits_line(&map, 12.0, &[]);
+        assert_eq!(near, "© OpenStreetMap contributors · Protomaps · Natural Earth");
+        // Whatever the map's own switch says: an export decides by its zoom.
+        let mut m = map.clone();
+        set_imagery_fallback(&mut m, true, true);
+        assert_eq!(credits_line(&m, 3.0, &[]), far);
+        imagery_fallback_for_zoom(&mut m, 3.0, true);
+        assert_eq!(imagery_fallback_on(&m), Some(false));
+        imagery_fallback_for_zoom(&mut m, 12.0, true);
+        assert_eq!(imagery_fallback_on(&m), Some(true));
+        // Other basemaps.
+        assert_eq!(
+            credits_line(&initial_map(&Prefs::default(), false), 3.0, &[]),
+            "© OpenStreetMap contributors · Protomaps · Natural Earth"
+        );
+        let offline = Prefs { basemap: "offline".into(), ..Prefs::default() };
+        assert_eq!(credits_line(&initial_map(&offline, false), 3.0, &[]), "Natural Earth");
     }
 
     #[test]

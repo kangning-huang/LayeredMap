@@ -131,6 +131,12 @@ pub struct ViewSettings {
     /// project starts with ordinary navigation, so the keys aren't captured unexpectedly.
     #[serde(skip)]
     pub first_person: bool,
+    /// On a flat Web Mercator map wider than the world, vector layers (and the built-in world
+    /// outline) are drawn again in the neighbouring copies of the world, east and west, so data
+    /// crossing the antimeridian reads continuously. Session-only; front ends that repeat their
+    /// tile basemap east–west turn it on (LayeredMap).
+    #[serde(skip)]
+    pub world_copies: bool,
 }
 
 /// An animation keyframe: a view, and the seconds taken to reach it from the previous one.

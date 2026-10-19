@@ -87,7 +87,10 @@ pub fn shelf(shell: &mut Shell, ui: &mut Ui, map: Rect) {
                 if shell.ws.doc.layers.len() > 1 {
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                         let link = ui.link(RichText::new("Remove all").size(CAPTION).color(t.text_secondary));
-                        if link.on_hover_text("Remove every layer from the map (⌘Z brings them back)").clicked() {
+                        if link
+                            .on_hover_text(format!("Remove every layer from the map ({} brings them back)", crate::keys::shortcut("Z")))
+                            .clicked()
+                        {
                             shell.command(ui.ctx(), crate::Command::RemoveAllLayers);
                         }
                     });
@@ -102,6 +105,7 @@ pub fn shelf(shell: &mut Shell, ui: &mut Ui, map: Rect) {
                     import_rows(shell, ui, &t);
                     layer_rows(shell, ui, &t);
                     let r = ui.allocate_exact_size(vec2(ui.available_width(), ROW_HEIGHT), Sense::click());
+                    crate::a11y::button(&r.1, "Open file");
                     let col = if r.1.hovered() { t.accent } else { t.text_secondary };
                     ui.painter().text(
                         r.0.left_center() + vec2(4.0, 0.0),
@@ -125,7 +129,9 @@ fn menu_item(ui: &mut Ui, t: &Theme, glyph: &str, label: &str) -> egui::Response
     let format = |font| egui::TextFormat { font_id: font, color: t.text_primary, valign: egui::Align::Center, ..Default::default() };
     job.append(glyph, 0.0, format(theme::icon_font(15.0)));
     job.append(label, 8.0, format(egui::FontId::proportional(BODY)));
-    ui.add(egui::Button::new(job))
+    let resp = ui.add(egui::Button::new(job));
+    crate::a11y::button(&resp, label);
+    resp
 }
 
 fn import_rows(shell: &mut Shell, ui: &mut Ui, t: &Theme) {
@@ -159,6 +165,7 @@ fn import_rows(shell: &mut Shell, ui: &mut Ui, t: &Theme) {
         if resp.hovered() || row.error.is_some() {
             let x = Rect::from_center_size(pos2(r.right() - 12.0, r.top() + 16.0), vec2(22.0, 22.0));
             let xr = ui.interact(x, egui::Id::new(("lm-cancel", row.key)), Sense::click());
+            crate::a11y::button(&xr, format!("{} {}", if row.error.is_some() { "Dismiss" } else { "Cancel" }, row.name()));
             ui.painter().text(
                 x.center(),
                 Align2::CENTER_CENTER,
@@ -187,6 +194,8 @@ fn layer_rows(shell: &mut Shell, ui: &mut Ui, t: &Theme) {
         let child_focused = shell.join_focus.as_ref().is_some_and(|(p, _)| p == id);
         let selected = shell.ws.selected() == Some(*id) && !child_focused;
         let (r, resp) = ui.allocate_exact_size(vec2(ui.available_width(), ROW_HEIGHT), Sense::click_and_drag());
+        resp.widget_info(|| egui::WidgetInfo::selected(egui::WidgetType::SelectableLabel, true, selected, &l.display_name));
+        crate::a11y::describe(&resp, &crate::a11y::spoken(&l.profile.subtitle()));
         let p = ui.painter();
         if selected {
             p.rect_filled(r, CornerRadius::same(theme::RADIUS_CONTROL), t.accent_weak);
@@ -196,6 +205,7 @@ fn layer_rows(shell: &mut Shell, ui: &mut Ui, t: &Theme) {
         // Eye: visibility only.
         let eye = Rect::from_center_size(r.left_center() + vec2(12.0, 0.0), vec2(24.0, 24.0));
         let eye_r = ui.interact(eye, egui::Id::new(("lm-eye", id.0)), Sense::click());
+        crate::a11y::toggle(&eye_r, format!("Show {}", l.display_name), l.visible);
         ui.painter().text(
             eye.center(),
             Align2::CENTER_CENTER,
@@ -309,6 +319,7 @@ fn layer_rows(shell: &mut Shell, ui: &mut Ui, t: &Theme) {
             };
             let c = Rect::from_center_size(pos2(x, r.center().y), vec2(20.0, 24.0));
             let cr = ui.interact(c, egui::Id::new(("lm-sublayers", id.0)), Sense::click());
+            crate::a11y::toggle(&cr, format!("Joined tables of {}", l.display_name), open);
             ui.painter().text(
                 c.center(),
                 Align2::CENTER_CENTER,
@@ -352,6 +363,10 @@ fn layer_rows(shell: &mut Shell, ui: &mut Ui, t: &Theme) {
         resp.context_menu(|ui| {
             if l.profile.kind != LayerKind::Raster && menu_item(ui, t, icon::TABLE, "View data").clicked() {
                 shell.table_for = Some(*id);
+                ui.close();
+            }
+            if l.profile.kind == LayerKind::Table && menu_item(ui, t, icon::LINK, "Match to a layer…").clicked() {
+                crate::join_ui::open_picker(shell, *id);
                 ui.close();
             }
             if menu_item(ui, t, icon::PAINT_BRUSH, "Style…").clicked() {
@@ -545,7 +560,15 @@ fn sublayer_row(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &lm_core::document
         Some((m, n)) => format!("joined · {} of {} matched", group_thousands(m as u64), group_thousands(n as u64)),
         None => "joined".into(),
     };
-    p.text(pos2(x + 50.0, r.top() + 22.0), Align2::LEFT_TOP, caption, egui::FontId::proportional(CAPTION), t.text_secondary);
+    p.text(pos2(x + 50.0, r.top() + 22.0), Align2::LEFT_TOP, &caption, egui::FontId::proportional(CAPTION), t.text_secondary);
+    resp.widget_info(|| {
+        egui::WidgetInfo::selected(
+            egui::WidgetType::SelectableLabel,
+            true,
+            focused,
+            format!("Joined table {}, {}", s.table, crate::a11y::spoken(&caption)),
+        )
+    });
     let show = |shell: &mut Shell, details: bool| {
         shell.ws.select_layer(parent);
         shell.join_focus = Some((parent, s.table.clone()));
@@ -728,11 +751,9 @@ pub fn inspector(shell: &mut Shell, ui: &mut Ui, map: Rect) {
                     ui.label(RichText::new(&subtitle).size(CAPTION).color(t.text_secondary));
                 });
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
-                    if ui
-                        .add(egui::Button::new(RichText::new(icon::X).font(theme::icon_font(14.0))).frame(false))
-                        .on_hover_text("Close")
-                        .clicked()
-                    {
+                    let x = ui.add(egui::Button::new(RichText::new(icon::X).font(theme::icon_font(14.0))).frame(false));
+                    crate::a11y::button(&x, "Close the panel");
+                    if x.on_hover_text("Close").clicked() {
                         close = true;
                     }
                 });
@@ -776,6 +797,8 @@ pub fn inspector(shell: &mut Shell, ui: &mut Ui, map: Rect) {
                         crate::analysis::composer(shell, ui, &t, &l);
                     } else if finding {
                         crate::find_ui::results(shell, ui, &t, &l);
+                    } else if shell.match_draft.as_ref().is_some_and(|d| d.table == id) {
+                        crate::join_ui::picker(shell, ui, &t, &l);
                     } else if let Some((cid, field)) = shell.compare_peers.clone().filter(|(c, _)| *c == id) {
                         ranking(shell, ui, &t, &l, field.as_deref(), rows.first().copied());
                         if ui.link("Back").clicked() {
@@ -811,6 +834,8 @@ pub fn inspector(shell: &mut Shell, ui: &mut Ui, map: Rect) {
             }
         } else if shell.compare_peers.is_some() {
             shell.compare_peers = None;
+        } else if shell.match_draft.is_some() {
+            shell.match_draft = None;
         } else {
             shell.ws.selection.step_back();
         }
@@ -882,6 +907,14 @@ fn ranking(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &lm_core::document::Doc
             let Some((r, name, value, v)) = ranked.get(i) else { continue };
             let me = Some(*r) == row;
             let (rr, resp) = ui.allocate_exact_size(vec2(w, 22.0), Sense::click());
+            resp.widget_info(|| {
+                egui::WidgetInfo::selected(
+                    egui::WidgetType::SelectableLabel,
+                    true,
+                    me,
+                    crate::a11y::spoken(&format!("{}. {name}: {value}", i + 1)),
+                )
+            });
             let p = ui.painter();
             let frac = if max > 0.0 { (v.abs() / max) as f32 } else { 0.0 };
             let bar = egui::Rect::from_min_size(rr.min + vec2(0.0, 3.0), vec2((w * 0.45) * frac, 16.0));
@@ -1284,15 +1317,13 @@ fn details(shell: &mut Shell, ui: &mut Ui, t: &Theme, id: LayerId, l: &lm_core::
                 ui.add_space(4.0);
                 ui.horizontal(|ui| {
                     if is_measure {
-                        if ui
-                            .add_sized(
-                                vec2(18.0, 18.0),
-                                egui::Button::new(RichText::new(star_icon).color(if starred { t.accent } else { t.text_secondary }))
-                                    .frame(false),
-                            )
-                            .on_hover_text(if starred { "Remove from insight" } else { "Show in insight" })
-                            .clicked()
-                        {
+                        let star_r = ui.add_sized(
+                            vec2(18.0, 18.0),
+                            egui::Button::new(RichText::new(star_icon).color(if starred { t.accent } else { t.text_secondary }))
+                                .frame(false),
+                        );
+                        crate::a11y::toggle(&star_r, format!("Show {} in insight", f.name), starred);
+                        if star_r.on_hover_text(if starred { "Remove from insight" } else { "Show in insight" }).clicked() {
                             star = Some((f.name.clone(), !starred));
                         }
                     } else {

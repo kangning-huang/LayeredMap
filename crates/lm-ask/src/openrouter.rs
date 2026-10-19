@@ -1,6 +1,8 @@
 //! The assistant service for the test build: OpenRouter's chat completions, with the key from the
-//! macOS keychain (service `openrouter`, account `layeredmap`). The key is read when a request is
-//! sent and never logged or written to a file. (The release talks to LayeredMap's own assistant
+//! macOS keychain (service `openrouter`, account `layeredmap`; on Windows and elsewhere the
+//! `OPENROUTER_API_KEY` environment variable, as Credential Manager would need unsafe Win32 calls
+//! for a developer-only path). The key is read when a request is sent and never logged or written
+//! to a file. (The release talks to LayeredMap's own assistant
 //! service instead, WP7.3.)
 
 use std::time::Duration;
@@ -8,7 +10,9 @@ use std::time::Duration;
 use serde_json::Value as Json;
 
 const URL: &str = "https://openrouter.ai/api/v1/chat/completions";
+#[cfg(target_os = "macos")]
 const SERVICE: &str = "openrouter";
+#[cfg(target_os = "macos")]
 const ACCOUNT: &str = "layeredmap";
 
 /// What the assistant says while LayeredMap works offline.
@@ -54,7 +58,8 @@ impl crate::session::Transport for OpenRouter {
 }
 
 /// The key: the one built into a Pro test bundle (`Contents/Resources/assistant.dat`, written by
-/// `packaging/lm/bundle-macos.sh` from the builder's keychain), else this Mac's keychain.
+/// `packaging/lm/bundle-macos.sh` from the builder's keychain; `Resources\assistant.dat` beside
+/// the exe on Windows), else this Mac's keychain (`OPENROUTER_API_KEY` on Windows).
 pub fn read_key() -> Option<String> {
     bundled_key().or_else(keychain_key)
 }
@@ -69,8 +74,7 @@ pub fn internal_build() -> bool {
 const PAD: &[u8] = b"LayeredMap Pro test build: not a secret store.";
 
 fn bundled_key() -> Option<String> {
-    let exe = std::env::current_exe().ok()?;
-    decode(&std::fs::read_to_string(exe.parent()?.parent()?.join("Resources").join("assistant.dat")).ok()?)
+    decode(&std::fs::read_to_string(lm_core::platform::current_resources_dir()?.join("assistant.dat")).ok()?)
 }
 
 fn decode(hex: &str) -> Option<String> {

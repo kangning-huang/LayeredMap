@@ -4,6 +4,7 @@
 //! `rustgis-data` or `rustgis-analysis`: all work goes through `lm-jobs`.
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
+pub mod a11y;
 pub mod analysis;
 pub mod ask;
 pub mod basemap;
@@ -21,9 +22,11 @@ pub mod illustrations;
 pub mod insight;
 pub mod inspect;
 pub mod join_ui;
+pub mod keys;
 pub mod library;
 #[cfg(test)]
 mod offline_harness;
+pub mod package;
 pub mod panels;
 pub mod saving;
 #[cfg(test)]
@@ -106,6 +109,12 @@ pub enum Command {
     Escape,
     /// Find in the selected layer (WP3.10; scripts and tests).
     Find(String),
+    /// Scripts: run a card's display action (`filter`, `style_by_value`, `view_data`, …) on the
+    /// selected layer and object, starting with this field when given; `apply_filter` presses the
+    /// filter builder's Apply (help screenshots, WP6.10).
+    CardAction(String, Option<String>),
+    /// Scripts: show the n-th time step of the time slider's layer (help screenshots, WP6.10).
+    SetTime(usize),
     /// Start drawing an area (WP4.4): from the assistant or the developer surface.
     StartDrawing(draw::Mode),
     /// Make an area layer from an outline in longitude/latitude (scripts and tests).
@@ -133,6 +142,10 @@ pub enum Command {
     ExportMapImage,
     /// Share › Data… (File › Export Data…): the data export dialog (WP5.3).
     ExportData,
+    /// Share › Map package… (File › Export Map Package…): the package dialog (WP6.5).
+    ExportPackage,
+    /// Write the map package here (the save dialog's result).
+    SavePackageTo(PathBuf),
     /// View › Work Offline: strict offline mode (WP6.6) on or off.
     SetOffline(bool),
     /// Help › Export Diagnostics…: show the app's report for review before it is saved.
@@ -160,6 +173,8 @@ pub enum FileRequest {
     SaveAs { suggested_name: String },
     /// Pick the file a missing layer's source moved to.
     Locate { layer: lm_core::model::LayerId, file_name: String },
+    /// Pick where to save a map package (a `.lmap` file; WP6.5).
+    SavePackage { suggested_name: String },
 }
 
 /// What the shell remembers between launches (the app stores it).
@@ -198,6 +213,8 @@ pub struct Shell {
     theme_applied: Option<Theme>,
     pub(crate) search: search::Search,
     debug_overlay: bool,
+    /// Screen readers and the keyboard (WP5.6, WP6.3).
+    pub(crate) a11y: a11y::A11y,
     credits_open: bool,
     basemap_open: bool,
     focus_search: bool,
@@ -234,6 +251,8 @@ pub struct Shell {
     pub(crate) filter_draft: Option<table::FilterDraft>,
     /// "Compare with other [Districts]": the ranking chart open for a layer and field.
     pub(crate) compare_peers: Option<(lm_core::model::LayerId, Option<String>)>,
+    /// "Match to a layer" (WP6.4): the column picker shown in the table's panel.
+    pub match_draft: Option<workspace::MatchDraft>,
     /// Find in a layer (WP3.10).
     pub(crate) find: find_ui::FindState,
     /// An area being drawn (WP4.4).
@@ -263,6 +282,11 @@ pub struct Shell {
     /// The map image sheet and the data export dialog, while open (WP5.3).
     pub(crate) export_sheet: Option<export::ImageSheet>,
     pub(crate) data_export: Option<export_data::DataDialog>,
+    /// The map package dialog (WP6.5), what a package will be written from once the user picks
+    /// where, and a package being written.
+    pub(crate) package_dialog: Option<package::PackageDialog>,
+    pub(crate) package_inputs: Option<package::PackageInputs>,
+    pub(crate) package_job: Option<package::PackageJob>,
     /// A diagnostics report open for review (Help › Export Diagnostics…).
     pub(crate) diagnostics: Option<String>,
     /// The data library (WP5.4).
@@ -297,6 +321,7 @@ impl Shell {
             loading: None,
             reduce_motion: system.reduce_motion,
             notice: None,
+            a11y: a11y::A11y::default(),
             last_map_size: egui::vec2(1280.0, 748.0),
             archive_url: None,
             developer: false,
@@ -307,6 +332,9 @@ impl Shell {
             doc_file: saving::DocFile::default(),
             export_sheet: None,
             data_export: None,
+            package_dialog: None,
+            package_inputs: None,
+            package_job: None,
             diagnostics: None,
             library: Default::default(),
             playing: None,
@@ -331,6 +359,7 @@ impl Shell {
             table: Default::default(),
             filter_draft: None,
             compare_peers: None,
+            match_draft: None,
             chooser: None,
             chooser_hover: None,
             data_search: Default::default(),
@@ -414,6 +443,35 @@ impl Shell {
                 }
             }
             Command::InspectorTab(tab) => self.inspector_tab = tab,
+            Command::CardAction(action_id, _) if action_id == "apply_filter" => {
+                // The filter builder's Apply.
+                if let Some(d) = self.filter_draft.take()
+                    && let Some(c) = d.condition()
+                {
+                    let mut f = self.ws.doc.layer(d.layer).and_then(|l| l.filter.clone()).unwrap_or_default();
+                    f.conditions.push(c);
+                    let tx = self.ws.doc.set_filter_tx(d.layer, Some(f));
+                    self.ws.commit(tx);
+                }
+            }
+            Command::CardAction(action_id, field) => {
+                if let Some(id) = self.ws.selected() {
+                    let row = self.ws.selection.features.iter().find(|f| f.layer == id).map(|f| f.row);
+                    let a = lm_actions::Suggested {
+                        action_id,
+                        label: String::new(),
+                        group: lm_actions::Group::ChangeLook,
+                        companion: None,
+                        field,
+                    };
+                    insight::perform(self, id, row, &a);
+                }
+            }
+            Command::SetTime(n) => {
+                if let Some(id) = time_ui::time_layer(self) {
+                    self.ws.set_time(id, n);
+                }
+            }
             Command::StartDrawing(mode) => {
                 self.find.clear();
                 self.drawing = Some(draw::Drawing::new(mode));
@@ -440,6 +498,17 @@ impl Shell {
                     self.export_sheet = Some(export::ImageSheet::new(self));
                 }
             }
+            Command::ExportPackage => {
+                if self.export_shown() {
+                    if self.ws.doc.layers.is_empty() {
+                        self.notice = Some(("Open a file first: there is no map to package.".into(), t));
+                    } else {
+                        self.data_export = None;
+                        self.package_dialog = Some(package::PackageDialog::new(self));
+                    }
+                }
+            }
+            Command::SavePackageTo(path) => package::write_to(self, path, t),
             Command::ExportData => {
                 if self.export_shown() {
                     match export_data::DataDialog::new(self, None) {
@@ -469,8 +538,13 @@ impl Shell {
                 }
             }
             Command::ToggleTable => {
+                // Open but without the keyboard (say, still in a find field): ⌘T moves the keyboard
+                // to the rows rather than closing the table.
+                let close = self.table_for.is_some() && self.table.has_keyboard;
+                self.table.focus = !close;
                 self.table_for = match self.table_for {
-                    Some(_) => None,
+                    Some(_) if close => None,
+                    Some(open) => Some(self.ws.selected().unwrap_or(open)),
                     None => self.ws.selected().or_else(|| {
                         self.ws.doc.layers.iter().rev().find(|l| l.profile.kind != lm_core::model::LayerKind::Raster).map(|l| l.id)
                     }),
@@ -489,7 +563,7 @@ impl Shell {
                 } else if let Some(id) = self.find.layer.filter(|id| self.find.active_for(*id)) {
                     self.find.clear();
                     self.ws.selection = lm_core::selection::SelectionContext::layer(id);
-                } else if self.chooser.take().is_none() && self.compare_peers.take().is_none() {
+                } else if self.chooser.take().is_none() && self.compare_peers.take().is_none() && self.match_draft.take().is_none() {
                     self.ws.selection.step_back();
                 }
             }
@@ -543,7 +617,7 @@ impl Shell {
                     self.find.clear();
                     self.table_for = None;
                     let what = if n == 1 { "1 layer".to_string() } else { format!("{n} layers") };
-                    self.notice = Some((format!("Removed {what}. Undo with ⌘Z."), t));
+                    self.notice = Some((format!("Removed {what}. Undo with {}.", keys::shortcut("Z")), t));
                 }
             }
             Command::SaveDocument(dir) => {
@@ -758,7 +832,7 @@ impl Shell {
             self.fly_to_extent(e);
         }
         if self.ws.new_data.is_some() && self.notice.as_ref().is_none_or(|(_, at)| t - at > 4.0) {
-            self.notice = Some(("New data added outside the view. Zoom to new data with ⌘0.".into(), t));
+            self.notice = Some((format!("New data added outside the view. Zoom to new data with {}.", keys::shortcut("0")), t));
             self.ws.new_data = None;
         }
         if !self.ws.answers.is_empty() {
@@ -820,6 +894,7 @@ impl Shell {
             self.archive_url = Some(u);
             self.basemap_changed();
         }
+        a11y::begin(self, &ctx);
         // The map image sheet takes the whole window (and the keyboard) while it is open.
         if self.export_sheet.is_none() {
             self.shortcuts(&ctx);
@@ -828,8 +903,10 @@ impl Shell {
         self.update_workspace(&ctx);
         saving::frame(self, &ctx);
         saving::close_if_saved(self, &ctx);
+        package::poll(self, ctx.input(|i| i.time));
         if self.export_sheet.is_some() {
             export::sheet(self, ui, ctx.content_rect());
+            a11y::end(self, &ctx);
             return;
         }
 
@@ -856,11 +933,25 @@ impl Shell {
             }
         }
 
-        // The map first, so the chrome draws over it.
-        let keyboard = ctx.memory(|m| m.focused().is_none());
+        // Tab order follows the regions (Keyboard › Moving between regions): toolbar, shelf, map,
+        // inspector, drawer. The toolbar, the welcome card and the shelf are areas above the map,
+        // so drawing them first changes the order, not the picture.
+        egui::Area::new(egui::Id::new("lm-toolbar"))
+            .order(egui::Order::Middle)
+            .fixed_pos(toolbar.min)
+            .constrain(false)
+            .show(&ctx, |ui| chrome::toolbar(self, ui, toolbar, system));
+        chrome::welcome_card(self, ui, map_rect);
+        panels::shelf(self, ui, map_rect);
+        // The map under the chrome.
+        let map_focused = self.a11y.map_id.is_some_and(|id| ctx.memory(|m| m.has_focus(id)));
+        let keyboard = map_focused || ctx.memory(|m| m.focused().is_none());
         let drawing = self.drawing.is_some();
         let out =
             self.map.show(ui, map_rect, ViewOptions { backdrop: self.backdrop, reduce_motion: system.reduce_motion, keyboard, drawing });
+        if let Some(id) = out.id {
+            a11y::map_canvas(self, &ctx, id);
+        }
         if drawing {
             draw::frame(self, ui, map_rect, &out);
         } else if let Some(lonlat) = out.clicked.filter(|_| self.flags.shows(3)) {
@@ -897,7 +988,6 @@ impl Shell {
             overlay_rect
         };
         chrome::notices_in(self, ui, notice_rect);
-        panels::shelf(self, ui, map_rect);
         panels::inspector(self, ui, map_rect);
         {
             let (left, right) = self.panel_insets();
@@ -914,16 +1004,17 @@ impl Shell {
             time_ui::bar(self, ui, map_rect);
         }
         update::notice(self, ui, overlay_rect);
-        chrome::toolbar(self, ui, toolbar, system);
         if self.credits_open {
             chrome::credits(self, &ctx);
         }
         export_data::dialog(self, &ctx);
+        package::dialog(self, &ctx);
         diagnostics::window(self, &ctx);
         library::panel(self, &ctx);
         panels::drop_overlay(self, ui, full);
         saving::recovery_prompt(self, ui, map_rect);
         saving::close_prompt(self, ui, map_rect);
+        a11y::end(self, &ctx);
     }
 
     fn shortcuts(&mut self, ctx: &egui::Context) {
@@ -976,19 +1067,44 @@ impl Shell {
         if zero {
             self.command(ctx, Command::ZoomToAll);
         }
-        // ⌘S and ⇧⌘S come from the menu bar on macOS; elsewhere the shell takes them.
+        // ⌘S, ⇧⌘S, ⌘W, ⌘= and ⌘− come from the menu bar on macOS. Elsewhere the shell takes them:
+        // the Windows menu shows its shortcuts but leaves the keys to egui (apps/layeredmap
+        // windows.rs), so F11 and Windows' Ctrl+Y for Redo are here too.
         #[cfg(not(target_os = "macos"))]
         {
-            let (save_as, save) = ctx.input_mut(|i| {
+            let unfocused = ctx.memory(|m| m.focused().is_none());
+            let (save_as, save, close, zoom_in, zoom_out, full, redo) = ctx.input_mut(|i| {
                 (
                     i.consume_key(egui::Modifiers::COMMAND | egui::Modifiers::SHIFT, egui::Key::S),
                     i.consume_key(egui::Modifiers::COMMAND, egui::Key::S),
+                    i.consume_key(egui::Modifiers::COMMAND, egui::Key::W),
+                    i.consume_key(egui::Modifiers::COMMAND, egui::Key::Equals) || i.consume_key(egui::Modifiers::COMMAND, egui::Key::Plus),
+                    i.consume_key(egui::Modifiers::COMMAND, egui::Key::Minus),
+                    i.consume_key(egui::Modifiers::NONE, egui::Key::F11),
+                    unfocused && i.consume_key(egui::Modifiers::COMMAND, egui::Key::Y),
                 )
             });
             if save_as {
                 self.command(ctx, Command::SaveAs);
             } else if save {
                 self.command(ctx, Command::Save);
+            }
+            if close {
+                // Through the close request, so unsaved changes are asked about first.
+                ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+            }
+            if zoom_in {
+                self.command(ctx, Command::ZoomIn);
+            }
+            if zoom_out {
+                self.command(ctx, Command::ZoomOut);
+            }
+            if full {
+                let on = ctx.input(|i| i.viewport().fullscreen.unwrap_or(false));
+                ctx.send_viewport_cmd(egui::ViewportCommand::Fullscreen(!on));
+            }
+            if redo {
+                self.command(ctx, Command::Redo);
             }
         }
     }

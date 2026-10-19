@@ -113,7 +113,8 @@ pub fn regular(size: f32) -> FontId {
 pub const NOTO_SC_REGULAR: &[u8] = include_bytes!("../../../assets/fonts/NotoSansSC-Regular.otf");
 
 /// Bundled fonts (WP0.4): Inter with tabular figures frozen in, Noto Sans SC for Chinese, and
-/// the Phosphor icon font. System fonts are not used.
+/// the Phosphor icon font. On Windows, Segoe UI and Microsoft YaHei follow them (WP6.2), read
+/// from the system's Fonts folder at launch and never bundled.
 pub fn fonts() -> egui::FontDefinitions {
     let mut defs = egui::FontDefinitions::default();
     let mut add = |name: &str, bytes: &'static [u8]| {
@@ -142,7 +143,82 @@ pub fn fonts() -> egui::FontDefinitions {
     if let Some(list) = defs.families.get_mut(&FontFamily::Name("semibold".into())) {
         list.push("phosphor".into());
     }
+    #[cfg(windows)]
+    add_system_fallbacks(&mut defs, &windows_fonts_dir());
     defs
+}
+
+/// `%WINDIR%\Fonts`.
+#[cfg(windows)]
+fn windows_fonts_dir() -> std::path::PathBuf {
+    let root = std::env::var_os("WINDIR").or_else(|| std::env::var_os("SystemRoot")).unwrap_or_else(|| "C:\\Windows".into());
+    std::path::PathBuf::from(root).join("Fonts")
+}
+
+/// Windows' interface faces (file, face index in a collection, weight): Segoe UI for Latin,
+/// Microsoft YaHei UI for Chinese, Segoe UI Symbol for arrows, maths and other symbols in data.
+pub const WINDOWS_FALLBACKS: &[(&str, u32, Weight)] = &[
+    ("segoeui.ttf", 0, Weight::Regular),
+    ("seguisb.ttf", 0, Weight::Semibold),
+    // msyh.ttc holds "Microsoft YaHei" (0) and "Microsoft YaHei UI" (1), the interface cut.
+    ("msyh.ttc", 1, Weight::Both),
+    ("seguisym.ttf", 0, Weight::Both),
+];
+
+/// Which family a fallback face joins.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Weight {
+    Regular,
+    Semibold,
+    Both,
+}
+
+/// Appends the system faces in `dir` that exist and look like fonts after the bundled ones, so
+/// they only draw characters Inter and Noto Sans SC lack (and the layout, figures and snapshots
+/// stay the same on both systems). The bundled faces stay first because Inter's frozen tabular
+/// figures keep number columns aligned, which Segoe UI can't do in egui. Returns the faces added.
+pub fn add_system_fallbacks(defs: &mut egui::FontDefinitions, dir: &std::path::Path) -> Vec<String> {
+    let mut added = Vec::new();
+    for (file, index, weight) in WINDOWS_FALLBACKS {
+        let Ok(bytes) = std::fs::read(dir.join(file)) else { continue };
+        if !is_font(&bytes, *index) {
+            log::warn!("fonts: {file} isn't a font this build reads; skipped");
+            continue;
+        }
+        let name = format!("system:{file}");
+        defs.font_data.insert(name.clone(), std::sync::Arc::new(egui::FontData { index: *index, ..egui::FontData::from_owned(bytes) }));
+        let families: &[&str] = match weight {
+            Weight::Regular => &["proportional"],
+            Weight::Semibold => &["semibold"],
+            Weight::Both => &["proportional", "semibold"],
+        };
+        for f in families {
+            let family = if *f == "proportional" { FontFamily::Proportional } else { FontFamily::Name("semibold".into()) };
+            if let Some(list) = defs.families.get_mut(&family) {
+                // After the bundled faces and Phosphor (whose private-use icons must win), before
+                // egui's own defaults (its emoji and symbol faces).
+                let ours =
+                    |n: &String| n.starts_with("Inter") || n.starts_with("Noto Sans SC") || n.starts_with("system:") || n == "phosphor";
+                let at = list.iter().rposition(ours).map_or(0, |i| i + 1);
+                list.insert(at, name.clone());
+            }
+        }
+        added.push(name);
+    }
+    added
+}
+
+/// A TrueType or OpenType file (or a collection with face `index`): checked before egui reads
+/// it, since egui stops the app on a font it can't parse.
+fn is_font(bytes: &[u8], index: u32) -> bool {
+    let u32_at = |i: usize| bytes.get(i..i + 4).map(|b| u32::from_be_bytes([b[0], b[1], b[2], b[3]]));
+    match bytes.get(0..4) {
+        Some([0, 1, 0, 0]) | Some(b"OTTO") | Some(b"true") => index == 0,
+        Some(b"ttcf") => {
+            u32_at(8).is_some_and(|n| index < n) && u32_at(12 + 4 * index as usize).is_some_and(|o| (o as usize) < bytes.len())
+        }
+        _ => false,
+    }
 }
 
 /// Applies the theme to egui's style: surfaces, text, accent, radii, spacing, sizes.
@@ -194,6 +270,9 @@ pub fn apply(ctx: &egui::Context, t: &Theme) {
         v.widgets.inactive.bg_stroke = Stroke::NONE;
         // The focus ring is the accent.
         v.widgets.active.bg_stroke = Stroke::new(2.0, t.accent);
+        // Text isn't selectable: a selectable label takes focus, so Tab would stop on every line
+        // of text (WP5.6). Values to copy have their own Copy buttons.
+        s.interaction.selectable_labels = false;
         s.spacing.item_spacing = egui::vec2(SPACE[1], SPACE[1]);
         s.spacing.button_padding = egui::vec2(SPACE[2], SPACE[0] + 2.0);
         s.spacing.interact_size.y = ROW_HEIGHT;
@@ -235,6 +314,46 @@ mod tests {
             assert!(contrast(t.on_accent, t.accent) >= 4.5, "text on accent (dark {})", t.dark);
             assert!(contrast(t.text_primary, t.accent_weak) >= 4.5, "text on accent-weak (dark {})", t.dark);
         }
+    }
+
+    /// WP6.2: system faces join after the bundled ones; a missing or broken file is skipped
+    /// instead of stopping the app. (A stand-in folder: Inter's file as segoeui.ttf.)
+    #[test]
+    fn windows_fonts_follow_the_bundled_ones() {
+        let dir = std::env::temp_dir().join(format!("lm-fonts-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("segoeui.ttf"), include_bytes!("../../../assets/fonts/Inter-Regular.ttf")).unwrap();
+        std::fs::write(dir.join("seguisym.ttf"), b"not a font").unwrap();
+        let mut defs = fonts();
+        let added = add_system_fallbacks(&mut defs, &dir);
+        let _ = std::fs::remove_dir_all(&dir);
+        assert_eq!(added, ["system:segoeui.ttf"]);
+        let prop = &defs.families[&FontFamily::Proportional];
+        let at = |n: &str| prop.iter().position(|f| f == n).unwrap();
+        assert!(at("system:segoeui.ttf") > at("Inter") && at("system:segoeui.ttf") > at("Noto Sans SC"), "{prop:?}");
+        assert!(at("system:segoeui.ttf") > at("phosphor"), "{prop:?}");
+        assert!(!defs.families[&FontFamily::Name("semibold".into())].contains(&"system:segoeui.ttf".to_string()));
+        // egui reads the result without complaint.
+        let ctx = egui::Context::default();
+        ctx.set_fonts(defs);
+        let mut out = ctx.run_ui(egui::RawInput::default(), |ui| {
+            ui.label("Segoe UI 微软雅黑 → ≥");
+        });
+        out.textures_delta.clear();
+    }
+
+    #[test]
+    fn only_real_font_headers_pass() {
+        assert!(is_font(include_bytes!("../../../assets/fonts/Inter-Regular.ttf"), 0));
+        assert!(is_font(NOTO_SC_REGULAR, 0));
+        assert!(!is_font(NOTO_SC_REGULAR, 1));
+        // A collection of two faces: index 1 is there, 2 isn't.
+        let mut ttc = b"ttcf".to_vec();
+        ttc.extend([0, 1, 0, 0, 0, 0, 0, 2, 0, 0, 0, 20, 0, 0, 0, 20, 0, 0, 0, 0]);
+        assert!(is_font(&ttc, 1));
+        assert!(!is_font(&ttc, 2));
+        assert!(!is_font(b"", 0));
+        assert!(!is_font(b"<html>", 0));
     }
 
     #[test]

@@ -84,6 +84,7 @@ ROLE_OF_PHRASE = {
     "the rasters (parameter `conditions`)": ("raster", "layer"),
     "the areas": ("areas", "layer"),
     "the other layer": ("other", "layer"),
+    "the table (parameters `layer_field`, `table_field`, `repeats`)": ("table", "layer"),
 }
 
 
@@ -117,6 +118,7 @@ PARAMS_OF_ACTION = {
     "rank_by_value": ["field", "order"],
     "calculate_field": ["a", "op", "b", "name"],
     "find_where": ["conditions"],
+    "match_table": ["layer_field", "table_field", "repeats"],
 }
 
 # What each action makes, so a later call can use it. Not in rules.toml (the runner builds
@@ -180,6 +182,9 @@ PARAM_SCHEMA = {
     "op": {"type": "string", "enum": ["add", "subtract", "multiply", "divide"]},
     "b": {"type": "string", "description": "a number field, or a number"},
     "name": {"type": "string", "description": "the new field's name"},
+    "layer_field": {"type": "string", "description": "match_table: the layer's key column (found automatically when left out)"},
+    "table_field": {"type": "string", "description": "match_table: the table's key column; it may have another name than the layer's"},
+    "repeats": {"type": "string", "enum": ["auto", "latest", "combine"], "description": "match_table: several table rows for one object: latest (by a year or date column) or combine (counts summed, other numbers averaged); auto picks"},
     "conditions": {"type": "string", "description": "conditions joined by ';', each 'raster name|at_least|value', 'raster name|at_most|value' or 'raster name|between|low|high', e.g. 'Elevation|at_least|3000;Rainfall|between|500|1000'"},
 }
 

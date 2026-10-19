@@ -95,3 +95,19 @@ fn at_least_and_at_most_include_the_bound() {
     assert_eq!(at_least + below, of);
     assert_eq!(at_most + above, of);
 }
+
+/// The assistant's `match_table` step (WP6.4): a table's columns join a layer by two named
+/// columns of different names, in place; a later filter can use the new field.
+#[test]
+fn an_assistant_plan_matches_a_table_by_named_columns() {
+    let mut layers = vec![layer("fixtures/J6/wards.geojson", "Wards", 1), layer("fixtures/J6/ward_people.csv", "Ward people", 2)];
+    let plan = steps(json!([
+        {"name": "match_table", "args": {"layer": "Wards", "table": "Ward people", "layer_field": "ward_code", "table_field": "ward"}},
+        {"name": "filter", "args": {"layer": "Wards", "conditions": [{"field": "people", "op": "at_least", "value": "3000"}]}}
+    ]));
+    let out = execute(&mut layers, &plan, 0, &Control::none()).unwrap();
+    let StepOutcome::NewFields { layer, fields, card, .. } = &out[0] else { panic!("{:?}", out[0]) };
+    assert_eq!((layer.as_str(), fields.as_slice()), ("Wards", ["people".to_string()].as_slice()));
+    assert!(card.title.contains("ward ↔ ward_code"), "{}", card.title);
+    assert!(matches!(&out[1], StepOutcome::Filtered { shown: 7, .. }), "{:?}", out[1]);
+}

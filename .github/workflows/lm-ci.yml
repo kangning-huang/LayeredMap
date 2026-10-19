@@ -2,6 +2,9 @@
 # for every push to a phase or task branch, and for pull requests. Signing and notarization run
 # when the Apple Developer secrets are present (docs/lm/signing.md); otherwise the app is ad-hoc
 # signed. `security` runs cargo audit and cargo deny and writes the SBOM (WP6.8, docs/lm/security.md).
+# `windows` runs the same `cargo xtask ci` on Windows x64 (WP6.2, Gate 6: every suite on both
+# systems), and `windows-installer` builds the Free installer, signed when a Windows signing
+# account is configured (docs/lm/signing.md), unsigned otherwise (docs/lm/windows.md).
 name: LayeredMap CI
 
 on:
@@ -29,6 +32,78 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: cargo xtask ci (fmt, clippy, tests, layering incl. lm-*)
         run: cargo xtask ci
+
+  windows:
+    name: xtask ci (Windows x64)
+    runs-on: windows-latest
+    steps:
+      # Byte-for-byte checkouts: fixtures and approved files are compared by content, and some
+      # fixture paths are long.
+      - name: Git settings
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.longpaths true
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      # The same suites as macOS. Pixel snapshots are skipped here (#[ignore] off macOS: the
+      # approved images come from the Mac's GPU and rasteriser); every other test runs, the
+      # 125 % / 150 % layout checks included.
+      - name: cargo xtask ci (fmt, clippy, tests, layering incl. lm-*)
+        run: cargo xtask ci
+
+  windows-installer:
+    name: LayeredMap installer (Windows x64)
+    runs-on: windows-latest
+    needs: windows
+    env:
+      HAS_WINDOWS_SIGNING: ${{ secrets.LM_ARTIFACT_SIGNING_ENDPOINT != '' }}
+    steps:
+      - name: Git settings
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.longpaths true
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Inno Setup 6
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) { choco install innosetup -y --no-progress }
+      # Azure Artifact Signing (formerly Trusted Signing), when the owner has an account: signtool
+      # signs through Microsoft's dlib, which signs in Azure with the app registration below. The
+      # client package's name and the timestamp address are to be checked when the account exists
+      # (docs/lm/signing.md › Windows).
+      - name: Set up Azure Artifact Signing
+        if: env.HAS_WINDOWS_SIGNING == 'true'
+        shell: pwsh
+        env:
+          ENDPOINT: ${{ secrets.LM_ARTIFACT_SIGNING_ENDPOINT }}
+          ACCOUNT: ${{ secrets.LM_ARTIFACT_SIGNING_ACCOUNT }}
+          PROFILE: ${{ secrets.LM_ARTIFACT_SIGNING_PROFILE }}
+        run: |
+          $dir = Join-Path $env:RUNNER_TEMP "signing"
+          nuget install Microsoft.Trusted.Signing.Client -ExcludeVersion -OutputDirectory $dir
+          $dlib = (Get-ChildItem -Recurse -Path $dir -Filter Azure.CodeSigning.Dlib.dll | Where-Object { $_.FullName -match "x64" } | Select-Object -First 1).FullName
+          $meta = Join-Path $dir "metadata.json"
+          @{ Endpoint = $env:ENDPOINT; CodeSigningAccountName = $env:ACCOUNT; CertificateProfileName = $env:PROFILE } | ConvertTo-Json | Set-Content $meta
+          "LM_SIGNTOOL_ARGS=/fd SHA256 /tr http://timestamp.acs.microsoft.com /td SHA256 /dlib $dlib /dmdf $meta" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
+      - name: Installer (signed when configured)
+        shell: pwsh
+        env:
+          LM_BUILD_NUMBER: ${{ github.run_number }}
+          LM_UPDATE_FEED_URL: ${{ vars.LM_UPDATE_FEED_URL }}
+          AZURE_TENANT_ID: ${{ secrets.LM_AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.LM_AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.LM_AZURE_CLIENT_SECRET }}
+        run: packaging/lm/windows/build-installer.ps1 -OutDir dist/lm
+      - uses: actions/upload-artifact@v7
+        with:
+          name: LayeredMap-windows-x64
+          path: dist/lm/*-windows-x64-setup.exe
+          if-no-files-found: error
 
   wasm:
     name: lm crates build for wasm32

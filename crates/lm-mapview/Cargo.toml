@@ -25,7 +25,19 @@ serde_json = { workspace = true }
 # app's own fonts. Both already in the build through rustgis-render.
 tiny-skia = { workspace = true }
 ab_glyph = { workspace = true }
+# PDF export of the sheet (`export::pdf`, WP6.5): the PDF objects (pdf-writer), the fonts embedded
+# as subsets (subsetter; no default features, so no variable-font dependencies), their names and
+# metrics (ttf-parser, already in the build through ab_glyph) and Deflate (miniz_oxide, already
+# in the build through rustgis-render). All MIT OR Apache-2.0, pure Rust.
+pdf-writer = "0.15"
+subsetter = { version = "0.2.6", default-features = false }
+ttf-parser = { version = "0.25", default-features = false, features = ["std"] }
+miniz_oxide = { workspace = true }
 
 # Finding the newest daily basemap build (`archive`). Already in the build through rustgis-tiles.
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 ureq = { version = "3", default-features = false, features = ["rustls", "gzip"] }
+
+[dev-dependencies]
+# Reading the exported PDF back in tests (an independent parser). Test-only.
+lopdf = { version = "0.45", default-features = false }

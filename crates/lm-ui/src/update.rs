@@ -61,10 +61,19 @@ pub fn compare(a: &str, b: &str) -> Option<std::cmp::Ordering> {
     }))
 }
 
+/// The feed's downloads for this platform: `download` holds the macOS disk images and
+/// `download_windows` the Windows installers (WP6.2; older builds ignore the field).
+pub const DOWNLOAD_KEY: &str = if cfg!(windows) { "download_windows" } else { "download" };
+
 /// Reads a feed: the newer version it names for this build (`current`, Free or `pro`), or `None`
 /// when it names nothing newer, can't be read, is of a format this build doesn't know, offers no
 /// https link, or needs a newer macOS than `macos` (when known).
 pub fn parse(feed: &str, current: &str, pro: bool, macos: Option<&str>, chinese: bool) -> Option<Update> {
+    parse_for(DOWNLOAD_KEY, feed, current, pro, macos, chinese)
+}
+
+/// [`parse`] with the downloads under `download_key` (a Windows build never links a .dmg).
+fn parse_for(download_key: &str, feed: &str, current: &str, pro: bool, macos: Option<&str>, chinese: bool) -> Option<Update> {
     let j: serde_json::Value = serde_json::from_str(feed).ok()?;
     if j.get("format")?.as_u64()? != FORMAT {
         return None;
@@ -80,7 +89,7 @@ pub fn parse(feed: &str, current: &str, pro: bool, macos: Option<&str>, chinese:
     }
     let https = |v: Option<&serde_json::Value>| v.and_then(|v| v.as_str()).map(str::trim).filter(|u| is_https(u)).map(str::to_string);
     let tier = if pro { "pro" } else { "free" };
-    let url = https(j.get("download").and_then(|d| d.get(tier))).or_else(|| https(j.get("page")))?;
+    let url = https(j.get(download_key).and_then(|d| d.get(tier))).or_else(|| https(j.get("page")))?;
     let notes = j.get("notes").and_then(|n| {
         let pick = |k: &str| n.get(k).and_then(|v| v.as_str()).map(str::trim).filter(|s| !s.is_empty()).map(str::to_string);
         if chinese { pick("zh").or_else(|| pick("en")) } else { pick("en") }
@@ -137,8 +146,9 @@ fn macos_version() -> Option<String> {
 }
 
 /// Whether the system's first language is Chinese (for the feed's notes), on the checking
-/// thread. The interface's own language setting (WP5.5) replaces this when it exists.
-fn prefers_chinese() -> bool {
+/// thread. The interface's own language setting (WP5.5) replaces this when it exists. Help ›
+/// LayeredMap Help uses it too, to open the Chinese pages.
+pub fn prefers_chinese() -> bool {
     #[cfg(target_os = "macos")]
     {
         std::process::Command::new("/usr/bin/defaults")
@@ -149,7 +159,16 @@ fn prefers_chinese() -> bool {
             .and_then(|s| s.split(['"', ',', '(', ')']).map(str::trim).find(|l| !l.is_empty()).map(|l| l.starts_with("zh")))
             .unwrap_or(false)
     }
-    #[cfg(not(target_os = "macos"))]
+    // Windows: the first of Settings › Time & language › Language & region › Preferred languages.
+    #[cfg(windows)]
+    {
+        let profile =
+            winreg::RegKey::predef(winreg::enums::HKEY_CURRENT_USER).open_subkey(r"Control Panel\International\User Profile").ok();
+        let first: Option<String> =
+            profile.and_then(|k| k.get_value::<Vec<String>, _>("Languages").ok()).and_then(|l| l.into_iter().next());
+        first.is_some_and(|l| l.starts_with("zh"))
+    }
+    #[cfg(not(any(target_os = "macos", windows)))]
     {
         false
     }
@@ -224,8 +243,9 @@ pub(crate) fn notice(shell: &Shell, ui: &egui::Ui, map: egui::Rect) {
                     label.on_hover_text(format!("LayeredMap {}: {n}", u.version));
                 }
                 ui.hyperlink_to(RichText::new(format!("Download {}", u.version)).size(CAPTION), &u.url);
-                let close = egui::Button::new(RichText::new(icon::X).font(theme::icon_font(11.0))).frame(false);
-                if ui.add(close).on_hover_text("Close").clicked() {
+                let close = ui.add(egui::Button::new(RichText::new(icon::X).font(theme::icon_font(11.0))).frame(false));
+                crate::a11y::button(&close, "Close the update notice");
+                if close.on_hover_text("Close").clicked() {
                     ui.ctx().data_mut(|d| d.insert_temp(closed_id, u.version.clone()));
                 }
             });
@@ -250,6 +270,11 @@ mod tests {
         assert_eq!(compare("", "1.0"), None);
     }
 
+    /// The macOS reading of a feed, on any system.
+    fn mac(feed: &str, current: &str, pro: bool, macos: Option<&str>, chinese: bool) -> Option<Update> {
+        parse_for("download", feed, current, pro, macos, chinese)
+    }
+
     const FEED: &str = r#"{
         "format": 1,
         "version": "0.3.0",
@@ -265,33 +290,48 @@ mod tests {
 
     #[test]
     fn a_newer_version_gives_the_tiers_download() {
-        let u = parse(FEED, "0.2.0", false, Some("15.1"), false).unwrap();
+        let u = mac(FEED, "0.2.0", false, Some("15.1"), false).unwrap();
         assert_eq!(u.version, "0.3.0");
         assert_eq!(u.url, "https://download.example.cn/LayeredMap-0.3.0.dmg");
         assert_eq!(u.notes.as_deref(), Some("Saving and exporting."));
-        let pro = parse(FEED, "0.2.0", true, None, true).unwrap();
+        let pro = mac(FEED, "0.2.0", true, None, true).unwrap();
         assert_eq!(pro.url, "https://download.example.cn/LayeredMap-Pro-0.3.0.dmg");
         assert_eq!(pro.notes.as_deref(), Some("保存与导出。"));
     }
 
+    /// Windows reads its own installers, and the page when the feed has none: never a .dmg.
+    #[test]
+    fn windows_links_its_installer_or_the_page() {
+        let u = parse_for("download_windows", FEED, "0.2.0", false, None, false).unwrap();
+        assert_eq!(u.url, "https://download.example.cn/");
+        let win = FEED.replace(
+            "\"page\":",
+            r#""download_windows": { "free": "https://download.example.cn/LayeredMap-0.3.0-x64-setup.exe" }, "page":"#,
+        );
+        let u = parse_for("download_windows", &win, "0.2.0", false, None, false).unwrap();
+        assert_eq!(u.url, "https://download.example.cn/LayeredMap-0.3.0-x64-setup.exe");
+        assert_eq!(parse_for("download_windows", &win, "0.2.0", true, None, false).unwrap().url, "https://download.example.cn/");
+        assert_eq!(DOWNLOAD_KEY, if cfg!(windows) { "download_windows" } else { "download" });
+    }
+
     #[test]
     fn nothing_newer_or_nothing_usable_shows_nothing() {
-        assert_eq!(parse(FEED, "0.3.0", false, None, false), None);
-        assert_eq!(parse(FEED, "0.4.0", false, None, false), None);
+        assert_eq!(mac(FEED, "0.3.0", false, None, false), None);
+        assert_eq!(mac(FEED, "0.4.0", false, None, false), None);
         // Too old a macOS for the new version.
-        assert_eq!(parse(FEED, "0.2.0", false, Some("12.7"), false), None);
+        assert_eq!(mac(FEED, "0.2.0", false, Some("12.7"), false), None);
         // A format this build doesn't know.
-        assert_eq!(parse(&FEED.replace("\"format\": 1", "\"format\": 2"), "0.2.0", false, None, false), None);
+        assert_eq!(mac(&FEED.replace("\"format\": 1", "\"format\": 2"), "0.2.0", false, None, false), None);
         // Only https links; with no tier link, the page; with neither, nothing.
         let http = FEED.replace("https://download.example.cn/LayeredMap-0.3.0.dmg", "http://download.example.cn/x.dmg");
-        assert_eq!(parse(&http, "0.2.0", false, None, false).unwrap().url, "https://download.example.cn/");
+        assert_eq!(mac(&http, "0.2.0", false, None, false).unwrap().url, "https://download.example.cn/");
         let none = r#"{"format":1,"version":"9.0","download":{"free":"javascript:alert(1)"},"page":"file:///etc"}"#;
-        assert_eq!(parse(none, "0.2.0", false, None, false), None);
-        assert_eq!(parse("not json", "0.2.0", false, None, false), None);
-        assert_eq!(parse(r#"{"format":1}"#, "0.2.0", false, None, false), None);
+        assert_eq!(mac(none, "0.2.0", false, None, false), None);
+        assert_eq!(mac("not json", "0.2.0", false, None, false), None);
+        assert_eq!(mac(r#"{"format":1}"#, "0.2.0", false, None, false), None);
         // Bare minimum: a version and a page.
         let min = r#"{"format":1,"version":"0.2.1","page":"https://example.org/get"}"#;
-        assert_eq!(parse(min, "0.2.0", false, None, false).unwrap().notes, None);
+        assert_eq!(mac(min, "0.2.0", false, None, false).unwrap().notes, None);
         assert!(!is_https("https://"));
         assert!(!is_https("https://host/ with space"));
     }

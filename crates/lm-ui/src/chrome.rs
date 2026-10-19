@@ -59,9 +59,11 @@ pub fn toolbar(shell: &mut Shell, ui: &mut Ui, rect: Rect, _system: System) {
     let search_rect = Rect::from_center_size(pos2(rect.center().x - width * 0.15, rect.center().y), vec2(width, 32.0));
     search_field(shell, ui, search_rect);
 
-    // Buttons at the right, disabled until their phase.
+    // Buttons at the right, disabled until their phase. They are laid out from the right but
+    // made from the left, so Tab meets them in reading order.
     let mut x = rect.right() - 12.0;
     let flags = shell.flags;
+    let mut buttons = Vec::new();
     for (glyph, label, phase) in [
         (icon::EXPORT, "Share", SHARE_PHASE),
         (icon::ARROW_COUNTER_CLOCKWISE, "Undo", UNDO_PHASE),
@@ -76,7 +78,11 @@ pub fn toolbar(shell: &mut Shell, ui: &mut Ui, rect: Rect, _system: System) {
         let w = 18.0 + 6.0 + text.size().x + 20.0;
         let r = Rect::from_min_size(pos2(x - w, rect.center().y - 16.0), vec2(w, 32.0));
         x -= w + 4.0;
+        buttons.push((glyph, label, built, enabled, color, text, r));
+    }
+    for (glyph, label, built, enabled, color, text, r) in buttons.into_iter().rev() {
         let resp = ui.allocate_rect(r, if enabled { Sense::click() } else { Sense::hover() });
+        crate::a11y::button(&resp, label);
         if enabled && resp.hovered() {
             painter.rect_filled(r, CornerRadius::same(RADIUS_CONTROL), t.surface_raised);
         }
@@ -88,9 +94,9 @@ pub fn toolbar(shell: &mut Shell, ui: &mut Ui, rect: Rect, _system: System) {
         }
         let tip = match label {
             "Undo" => shell.ws.undo.undo_label().map_or_else(|| "Nothing to undo".to_string(), |l| format!("Undo {}", lower_first(l))),
-            "Open" => "Open files (⌘O)".to_string(),
-            "Layers" => "Show or hide the layer list (⌘L)".to_string(),
-            "Share" => "Export a map image (⌘E) or data".to_string(),
+            "Open" => format!("Open files ({})", crate::keys::shortcut("O")),
+            "Layers" => format!("Show or hide the layer list ({})", crate::keys::shortcut("L")),
+            "Share" => format!("Export a map image ({}) or data", crate::keys::shortcut("E")),
             other => other.to_string(),
         };
         let clicked = resp.clicked();
@@ -110,7 +116,8 @@ pub fn toolbar(shell: &mut Shell, ui: &mut Ui, rect: Rect, _system: System) {
     }
 }
 
-/// Share's menu: Map image… and Data… (Interaction specification › Screen states › Export).
+/// Share's menu: Map image…, Data… and Map package… (Interaction specification › Screen states ›
+/// Export; WP6.5).
 fn share_menu(shell: &mut Shell, resp: &egui::Response) {
     let ctx = resp.ctx.clone();
     let has_data = !shell.ws.doc.layers.is_empty();
@@ -121,6 +128,9 @@ fn share_menu(shell: &mut Shell, resp: &egui::Response) {
         }
         if ui.add_enabled(has_data, egui::Button::new("Data…")).on_disabled_hover_text("Open a file first").clicked() {
             shell.command(&ctx, crate::Command::ExportData);
+        }
+        if ui.add_enabled(has_data, egui::Button::new("Map package…")).on_disabled_hover_text("Open a file first").clicked() {
+            shell.command(&ctx, crate::Command::ExportPackage);
         }
     });
 }
@@ -156,6 +166,7 @@ fn search_field(shell: &mut Shell, ui: &mut Ui, rect: Rect) {
         .desired_width(rect.width() - 40.0)
         .margin(egui::Margin { left: 32, right: 10, top: 7, bottom: 7 });
     let resp = ui.put(rect, edit);
+    crate::a11y::label(&resp, "Search places or your data");
     ui.painter().text(
         pos2(rect.left() + 12.0, rect.center().y),
         Align2::LEFT_CENTER,
@@ -220,6 +231,12 @@ fn search_field(shell: &mut Shell, ui: &mut Ui, rect: Rect) {
                 ui.set_width(rect.width() - 16.0);
                 let result_row = |ui: &mut Ui, i: usize, title: &str, detail: &str| -> bool {
                     let (r, resp) = ui.allocate_exact_size(vec2(ui.available_width(), 40.0), Sense::click());
+                    crate::a11y::button(&resp, format!("{title}, {detail}"));
+                    if i == selected {
+                        // The highlighted result is read as the arrows move it (the field keeps focus).
+                        let spoken = crate::a11y::spoken(&format!("{title}, {detail}, {} of {n}", i + 1));
+                        crate::a11y::live(ui.ctx(), egui::Id::new("lm-search-highlight"), &spoken);
+                    }
                     if i == selected || resp.hovered() {
                         ui.painter().rect_filled(r, CornerRadius::same(RADIUS_CONTROL), t.accent_weak);
                     }
@@ -335,6 +352,12 @@ pub fn map_overlays(shell: &mut Shell, ui: &mut Ui, map: Rect, system: System) {
     if shell.debug_overlay() {
         debug_overlay(shell, ui, map);
     }
+    let _ = (system, t);
+}
+
+/// The first-launch card, while the map is empty (drawn before the map, for the Tab order).
+pub(crate) fn welcome_card(shell: &mut Shell, ui: &mut Ui, map: Rect) {
+    let t = *shell.theme();
     let empty = shell.ws.doc.layers.is_empty() && shell.ws.imports.is_empty();
     if shell.flags.shows(WELCOME_PHASE)
         && WELCOME_PHASE <= lm_core::phase::BUILD_PHASE
@@ -350,11 +373,11 @@ pub fn map_overlays(shell: &mut Shell, ui: &mut Ui, map: Rect, system: System) {
             None => {}
         }
     }
-    let _ = system;
 }
 
 fn icon_button(ui: &mut Ui, r: Rect, glyph: &str, tip: &str, t: &theme::Theme, active: bool) -> egui::Response {
     let resp = ui.allocate_rect(r, Sense::click()).on_hover_text(tip);
+    crate::a11y::button(&resp, tip);
     let p = ui.painter();
     let fill = if active {
         t.accent_weak
@@ -410,6 +433,7 @@ fn basemap_chooser(shell: &mut Shell, ui: &mut Ui, anchor: Rect) {
                             let (r, resp) = ui.allocate_exact_size(vec2(96.0, 64.0), Sense::click());
                             crate::basemap::paint_thumbnail(ui.painter(), r, &p, t.dark);
                             let selected = shell.prefs.basemap == p.id;
+                            crate::a11y::choice(&resp, p.name, selected);
                             let stroke = if selected { Stroke::new(2.0, t.accent) } else { Stroke::new(1.0, t.border) };
                             ui.painter().rect_stroke(r, CornerRadius::same(RADIUS_CONTROL), stroke, egui::StrokeKind::Outside);
                             ui.label(egui::RichText::new(p.name).size(CAPTION));
@@ -428,6 +452,7 @@ fn basemap_chooser(shell: &mut Shell, ui: &mut Ui, anchor: Rect) {
                 let mut pct = (shell.prefs.strength * 100.0).round();
                 let online = lm_core::basemap::provider(&shell.prefs.basemap).source != Source::Offline && !lm_net::offline();
                 let resp = ui.add_enabled(online, egui::Slider::new(&mut pct, 40.0..=100.0).suffix("%").step_by(5.0).fixed_decimals(0));
+                crate::a11y::label(&resp, "Background strength");
                 if resp.changed() {
                     shell.prefs.strength = pct / 100.0;
                     shell.basemap_changed();
@@ -508,19 +533,15 @@ fn scale_bar(shell: &Shell, ui: &Ui, map: Rect) {
 
 fn attribution(shell: &mut Shell, ui: &mut Ui, map: Rect) {
     let t = *shell.theme();
-    let mut credits: Vec<String> = shell.map_view().attribution().iter().filter(|s| !s.trim().is_empty()).cloned().collect();
-    let p = lm_core::basemap::provider(&shell.prefs.basemap);
-    if credits.is_empty() {
-        credits.push(p.attribution.into());
-    }
-    if !credits.iter().any(|c| c.contains("Natural Earth")) {
-        credits.push("Natural Earth".into());
-    }
-    let text = credits.join(" · ");
-    let galley = ui.painter().layout_no_wrap(text, regular(CAPTION), t.text_secondary);
+    // Only the layers drawn at this zoom, each credit once (the satellite basemap's close-up map
+    // is hidden at world zoom; its labels and close-up map both credit OpenStreetMap).
+    let view = shell.map_view();
+    let text = crate::basemap::credits_line(view.map(), view.zoom(), view.attribution());
+    let galley = ui.painter().layout_no_wrap(text.clone(), regular(CAPTION), t.text_secondary);
     let r = Rect::from_min_size(map.right_bottom() - galley.size() - vec2(PANEL_MARGIN + 6.0, PANEL_MARGIN - 2.0), galley.size())
         .expand2(vec2(6.0, 3.0));
     let resp = ui.allocate_rect(r, Sense::click()).on_hover_text("Credits");
+    crate::a11y::button(&resp, format!("Credits: {text}"));
     ui.painter().rect_filled(r, CornerRadius::same(4), t.surface.gamma_multiply(0.85));
     ui.painter().galley(r.min + vec2(6.0, 3.0), galley, t.text_secondary);
     if resp.clicked() {
@@ -568,6 +589,8 @@ fn notices(shell: &mut Shell, ui: &Ui, map: Rect) {
     };
     let transient = shell.notice.as_ref().filter(|(_, at)| now - at < 4.0).map(|(s, _)| s.clone());
     let Some(text) = offline_text.or(transient) else { return };
+    // Read once when it appears (a polite live region).
+    crate::a11y::live(ui.ctx(), egui::Id::new("lm-notice-live"), &crate::a11y::spoken(&text));
     // Wrapped to the free part of the map and drawn above the panels, so neither ever cuts it off.
     let max_w = (map.width() - 2.0 * PANEL_MARGIN - 28.0).max(120.0);
     let painter = ui.ctx().layer_painter(egui::LayerId::new(egui::Order::Foreground, egui::Id::new("lm-notice")));
@@ -621,11 +644,9 @@ fn welcome(t: &theme::Theme, ui: &mut Ui, map: Rect, library: bool) -> Option<We
         panel_frame(t).show(ui, |ui| {
             ui.horizontal(|ui| {
                 ui.label(egui::RichText::new("Open a file to see your data on the map.").size(theme::BODY));
-                if ui
-                    .add(egui::Button::new(egui::RichText::new(icon::X).font(theme::icon_font(12.0))).frame(false))
-                    .on_hover_text("Close")
-                    .clicked()
-                {
+                let close = ui.add(egui::Button::new(egui::RichText::new(icon::X).font(theme::icon_font(12.0))).frame(false));
+                crate::a11y::button(&close, "Close");
+                if close.on_hover_text("Close").clicked() {
                     out = Some(Welcome::Close);
                 }
             });
@@ -646,7 +667,7 @@ fn welcome(t: &theme::Theme, ui: &mut Ui, map: Rect, library: bool) -> Option<We
                     0.0,
                     egui::TextFormat { font_id: theme::icon_font(12.0), color: t.text_secondary, ..Default::default() },
                 );
-                ui.menu_button(label, |ui| {
+                let menu = ui.menu_button(label, |ui| {
                     for e in crate::examples::EXAMPLES {
                         if example_row(ui, t, e).clicked() {
                             out = Some(Welcome::Example(e.id));
@@ -654,6 +675,7 @@ fn welcome(t: &theme::Theme, ui: &mut Ui, map: Rect, library: bool) -> Option<We
                         }
                     }
                 });
+                crate::a11y::button(&menu.response, "Examples");
                 if library && ui.button("Browse data library").on_hover_text("Course datasets to add to the map").clicked() {
                     out = Some(Welcome::Library);
                 }
@@ -669,6 +691,7 @@ fn example_row(ui: &mut Ui, t: &theme::Theme, e: &crate::examples::Example) -> e
     let (rect, r) = ui.allocate_exact_size(vec2(344.0, 46.0), Sense::click());
     let r = r.on_hover_cursor(egui::CursorIcon::PointingHand);
     r.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, e.title));
+    crate::a11y::describe(&r, e.blurb);
     let p = ui.painter();
     if r.hovered() {
         p.rect_filled(rect, CornerRadius::same(theme::RADIUS_CONTROL), t.accent.gamma_multiply(0.10));

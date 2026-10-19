@@ -1,0 +1,11 @@
+{"type": "FeatureCollection", "name": "points", "features": [
+{"type": "Feature", "properties": {"id": "P1", "note": "inside"}, "geometry": {"type": "Point", "coordinates": [116.03125, 39.78125]}},
+{"type": "Feature", "properties": {"id": "P2", "note": "on Z1's west edge"}, "geometry": {"type": "Point", "coordinates": [116.0, 39.8125]}},
+{"type": "Feature", "properties": {"id": "P3", "note": "on Z1's corner"}, "geometry": {"type": "Point", "coordinates": [116.125, 39.875]}},
+{"type": "Feature", "properties": {"id": "P4", "note": "in the hole"}, "geometry": {"type": "Point", "coordinates": [116.0625, 39.8125]}},
+{"type": "Feature", "properties": {"id": "P5", "note": "on the hole's edge"}, "geometry": {"type": "Point", "coordinates": [116.046875, 39.8125]}},
+{"type": "Feature", "properties": {"id": "P6", "note": "outside"}, "geometry": {"type": "Point", "coordinates": [115.984375, 39.734375]}},
+{"type": "Feature", "properties": {"id": "P7", "note": "two points, one inside"}, "geometry": {"type": "MultiPoint", "coordinates": [[116.015625, 39.765625], [116.46875, 40.21875]]}},
+{"type": "Feature", "properties": {"id": "P8", "note": "on Z2's slanted edge, outside Z1"}, "geometry": {"type": "Point", "coordinates": [116.1640625, 39.8203125]}},
+{"type": "Feature", "properties": {"id": "P9", "note": "on Z3's corner"}, "geometry": {"type": "Point", "coordinates": [116.28125, 39.8125]}}
+]}
