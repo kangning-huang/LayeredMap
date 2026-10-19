@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>NimbleMap: free Mac map app for Shapefile, GeoJSON, CSV, GeoTIFF</title>
-<meta name="description" content="NimbleMap is a free Mac map app for people who love maps but have never used GIS. Double-click a Shapefile, GeoJSON, CSV or GeoTIFF to see it on a map, click anything to see where it stands, and export a finished map.">
+<title>NimbleMap — Explore real data about the planet</title>
+<meta name="description" content="A free Mac app with eight built-in maps — typhoons, earthquakes, heatwaves and more. Click anything to see how it compares. Then bring your own data.">
 <link rel="canonical" href="index.html">
 <link rel="alternate" hreflang="en" href="index.html">
 <link rel="alternate" hreflang="zh-Hans" href="zh/index.html">
@@ -21,8 +21,8 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="NimbleMap">
 <meta property="og:locale" content="en_US">
-<meta property="og:title" content="NimbleMap: free Mac map app for Shapefile, GeoJSON, CSV, GeoTIFF">
-<meta property="og:description" content="NimbleMap is a free Mac map app for people who love maps but have never used GIS. Double-click a Shapefile, GeoJSON, CSV or GeoTIFF to see it on a map, click anything to see where it stands, and export a finished map.">
+<meta property="og:title" content="NimbleMap — Explore real data about the planet">
+<meta property="og:description" content="A free Mac app with eight built-in maps — typhoons, earthquakes, heatwaves and more. Click anything to see how it compares. Then bring your own data.">
 <meta property="og:url" content="index.html">
 <meta property="og:image" content="img/typhoons-card.jpg">
 <meta name="twitter:card" content="summary_large_image">
@@ -37,7 +37,7 @@
   "inLanguage": "en",
   "operatingSystem": "macOS 13 or later (Apple silicon)",
   "applicationCategory": "UtilitiesApplication",
-  "description": "NimbleMap is a free Mac map app for people who love maps but have never used GIS. Double-click a Shapefile, GeoJSON, CSV or GeoTIFF to see it on a map, click anything to see where it stands, and export a finished map.",
+  "description": "A free Mac app with eight built-in maps — typhoons, earthquakes, heatwaves and more. Click anything to see how it compares. Then bring your own data.",
   "isAccessibleForFree": true,
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
 }
@@ -49,8 +49,8 @@
     <a class="brand" href="index.html"><img src="assets/logo.svg" alt="" width="30" height="30">NimbleMap</a>
     <nav class="nav" aria-label="Site">
       <a href="index.html" aria-current="page">Home</a>
+      <a href="index.html#examples">Examples</a>
       <a href="help.html">Help</a>
-      <a href="glossary.html">Glossary</a>
       <a href="download.html">Download</a>
       <details class="lang-menu">
         <summary aria-label="Language: English" title="Language"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.6 3.9 5.6 3.9 9s-1.3 6.4-3.9 9c-2.6-2.6-3.9-5.6-3.9-9S9.4 5.6 12 3z"/></svg><span>EN</span></summary>
@@ -77,14 +77,16 @@
 <section class="hero contours">
   <div class="wrap hero-grid">
     <div>
-      <p class="eyebrow">A map app for the curious</p>
-      <h1>Open a map file. See what it says.</h1>
-      <p class="lede">NimbleMap is for people who love maps but have never used GIS. Double-click a file of places, tracks or climate data, and it appears on the map. Click a place or a feature to see what makes it interesting: the strongest storm, the largest walled city, the hottest week.</p>
+      <p class="eyebrow">Free for Mac</p>
+      <h1>Explore real data about the planet.</h1>
+      <p class="lede">Eight maps built in — typhoons, earthquakes, heatwaves and more. Then bring your own.</p>
       <div class="actions">
-        <a class="btn btn-primary" href="download.html">Download for Mac</a>
-        <a class="btn btn-quiet" href="help.html">Try a workflow</a>
+        <a class="btn btn-primary btn-get" href="https://github.com/kangning-huang/NimbleMap/releases/latest/download/NimbleMap-macos-arm64.dmg" download>Download free for Mac</a>
+        <a class="btn btn-quiet" href="#examples">See the built-in maps</a>
       </div>
-      <p class="coords" style="margin-top:28px">Free · macOS · English, with Chinese place names</p>
+      <p class="mac-only" hidden>NimbleMap needs a Mac with Apple silicon. A Windows version is on the way.</p>
+      <p class="dl-fine">Free · about 74 MB · macOS 13 or later · Apple silicon · works offline</p>
+      <p class="dl-fine"><a href="download.html#get">First time: macOS asks you to allow it — how to open it</a></p>
     </div>
     <div class="hero-shot showcase" data-rotate="3000">
       <figure class="frame stage">
@@ -105,39 +107,51 @@
   </div>
 </section>
 
-<section id="why">
+<section id="examples">
   <div class="wrap">
-    <div class="why-grid">
     <div class="section-head">
-      <p class="eyebrow">Why it's different</p>
-      <h2>What if GIS were as easy to use as an Apple app?</h2>
-      <p class="lede">QGIS and ArcGIS are powerful tools for working with spatial data. But for someone opening them for the first time, even making a simple map can be difficult. Hundreds of tools and settings stand between the user and the map. What would GIS look like if it were designed by the people who made the iPhone? Which tools would they keep, which would they hide, and which would they remove altogether? NimbleMap explores this idea. It brings the useful parts of GIS into a map app that anyone curious about places can use.</p>
+      <p class="eyebrow">Built in</p>
+      <h2>Start with something amazing</h2>
     </div>
-    <figure class="sketch" aria-label="Sketch: a typical GIS window full of toolbars and a dialog, beside NimbleMap showing a map and a card">
-  <svg viewBox="0 0 600 272" role="img" aria-labelledby="sk-cap">
-    <g><rect x="6" y="6" width="282" height="232" rx="10" class="sk-win"/><path d="M6 16a10 10 0 0 1 10-10h262a10 10 0 0 1 10 10v12H6z" class="sk-bar"/><circle cx="19" cy="17" r="3.2" class="sk-dot"/><circle cx="29" cy="17" r="3.2" class="sk-dot"/><circle cx="39" cy="17" r="3.2" class="sk-dot"/><rect x="118" y="14.5" width="58" height="5" rx="2.5" class="sk-line"/><rect x="16" y="34" width="16" height="4" rx="2" class="sk-line"/><rect x="38" y="34" width="14" height="4" rx="2" class="sk-line"/><rect x="58" y="34" width="18" height="4" rx="2" class="sk-line"/><rect x="82" y="34" width="22" height="4" rx="2" class="sk-line"/><rect x="110" y="34" width="16" height="4" rx="2" class="sk-line"/><rect x="132" y="34" width="20" height="4" rx="2" class="sk-line"/><rect x="158" y="34" width="24" height="4" rx="2" class="sk-line"/><rect x="188" y="34" width="14" height="4" rx="2" class="sk-line"/><rect x="208" y="34" width="18" height="4" rx="2" class="sk-line"/><circle cx="19.5" cy="48.5" r="3.8" class="sk-tool"/><rect x="28" y="44" width="9" height="9" rx="2" class="sk-tool"/><rect x="41" y="44" width="9" height="9" rx="2" class="sk-tool"/><rect x="54" y="44" width="9" height="9" rx="2" class="sk-tool"/><circle cx="71.5" cy="48.5" r="3.8" class="sk-tool"/><path d="M81 44v9" class="sk-sep"/><rect x="85" y="44" width="9" height="9" rx="2" class="sk-tool"/><rect x="98" y="44" width="9" height="9" rx="2" class="sk-tool"/><circle cx="115.5" cy="48.5" r="3.8" class="sk-tool"/><rect x="124" y="44" width="9" height="9" rx="2" class="sk-tool"/><rect x="137" y="44" width="9" height="9" rx="2" class="sk-tool"/><path d="M151 44v9" class="sk-sep"/><circle cx="159.5" cy="48.5" r="3.8" class="sk-tool"/><rect x="168" y="44" width="9" height="9" rx="2" class="sk-tool"/><rect x="181" y="44" width="9" height="9" rx="2" class="sk-tool"/><rect x="194" y="44" width="9" height="9" rx="2" class="sk-tool"/><circle cx="211.5" cy="48.5" r="3.8" class="sk-tool"/><rect x="15" y="57" width="9" height="9" rx="2" class="sk-tool"/><rect x="28" y="57" width="9" height="9" rx="2" class="sk-tool"/><rect x="41" y="57" width="9" height="9" rx="2" class="sk-tool"/><circle cx="58.5" cy="61.5" r="3.8" class="sk-tool"/><rect x="67" y="57" width="9" height="9" rx="2" class="sk-tool"/><path d="M81 57v9" class="sk-sep"/><rect x="85" y="57" width="9" height="9" rx="2" class="sk-tool"/><circle cx="102.5" cy="61.5" r="3.8" class="sk-tool"/><rect x="111" y="57" width="9" height="9" rx="2" class="sk-tool"/><rect x="124" y="57" width="9" height="9" rx="2" class="sk-tool"/><rect x="137" y="57" width="9" height="9" rx="2" class="sk-tool"/><path d="M151 57v9" class="sk-sep"/><rect x="155" y="57" width="9" height="9" rx="2" class="sk-tool"/><rect x="168" y="57" width="9" height="9" rx="2" class="sk-tool"/><rect x="181" y="57" width="9" height="9" rx="2" class="sk-tool"/><circle cx="198.5" cy="61.5" r="3.8" class="sk-tool"/><rect x="207" y="57" width="9" height="9" rx="2" class="sk-tool"/><rect x="15" y="70" width="9" height="9" rx="2" class="sk-tool"/><rect x="28" y="70" width="9" height="9" rx="2" class="sk-tool"/><circle cx="45.5" cy="74.5" r="3.8" class="sk-tool"/><rect x="54" y="70" width="9" height="9" rx="2" class="sk-tool"/><rect x="67" y="70" width="9" height="9" rx="2" class="sk-tool"/><path d="M81 70v9" class="sk-sep"/><circle cx="89.5" cy="74.5" r="3.8" class="sk-tool"/><rect x="98" y="70" width="9" height="9" rx="2" class="sk-tool"/><rect x="111" y="70" width="9" height="9" rx="2" class="sk-tool"/><rect x="124" y="70" width="9" height="9" rx="2" class="sk-tool"/><circle cx="141.5" cy="74.5" r="3.8" class="sk-tool"/><path d="M151 70v9" class="sk-sep"/><rect x="155" y="70" width="9" height="9" rx="2" class="sk-tool"/><rect x="168" y="70" width="9" height="9" rx="2" class="sk-tool"/><circle cx="185.5" cy="74.5" r="3.8" class="sk-tool"/><rect x="194" y="70" width="9" height="9" rx="2" class="sk-tool"/><rect x="207" y="70" width="9" height="9" rx="2" class="sk-tool"/><rect x="14" y="86" width="64" height="128" rx="4" class="sk-panel"/><rect x="20" y="92" width="34" height="4.5" rx="2.2" class="sk-line-strong"/><rect x="20" y="104" width="6" height="6" rx="1.2" class="sk-check"/><rect x="30" y="105" width="38" height="4" rx="2" class="sk-line"/><rect x="25" y="117" width="6" height="6" rx="1.2" class="sk-check"/><rect x="35" y="118" width="25" height="4" rx="2" class="sk-line"/><rect x="30" y="130" width="6" height="6" rx="1.2" class="sk-check"/><rect x="40" y="131" width="28" height="4" rx="2" class="sk-line"/><rect x="20" y="143" width="6" height="6" rx="1.2" class="sk-check"/><rect x="30" y="144" width="30" height="4" rx="2" class="sk-line"/><rect x="25" y="156" width="6" height="6" rx="1.2" class="sk-check"/><rect x="35" y="157" width="33" height="4" rx="2" class="sk-line"/><rect x="30" y="169" width="6" height="6" rx="1.2" class="sk-check"/><rect x="40" y="170" width="20" height="4" rx="2" class="sk-line"/><rect x="20" y="182" width="6" height="6" rx="1.2" class="sk-check"/><rect x="30" y="183" width="38" height="4" rx="2" class="sk-line"/><rect x="25" y="195" width="6" height="6" rx="1.2" class="sk-check"/><rect x="35" y="196" width="25" height="4" rx="2" class="sk-line"/><rect x="84" y="86" width="196" height="128" rx="4" class="sk-empty"/><path d="M182 146v8M178 150h8" class="sk-sep"/><g class="sk-dialog-g"><rect x="114" y="104" width="136" height="94" rx="6" class="sk-dialog"/><path d="M114 110a6 6 0 0 1 6-6h124a6 6 0 0 1 6 6v6H114z" class="sk-bar"/><rect x="122" y="108" width="54" height="4" rx="2" class="sk-line-strong"/><path d="M240 107.5l4 4m0-4l-4 4" class="sk-x"/><rect x="122" y="122" width="120" height="10" rx="2.5" class="sk-field"/><path d="M234 125.5l3 3 3-3" class="sk-x"/><rect x="122" y="137" width="120" height="7" rx="1.5" class="sk-row"/><rect x="126" y="139.5" width="70" height="2.5" rx="1.2" class="sk-line"/><rect x="122" y="146" width="120" height="7" rx="1.5" class="sk-row-sel"/><rect x="126" y="148.5" width="61" height="2.5" rx="1.2" class="sk-line"/><rect x="122" y="155" width="120" height="7" rx="1.5" class="sk-row"/><rect x="126" y="157.5" width="52" height="2.5" rx="1.2" class="sk-line"/><rect x="122" y="164" width="120" height="7" rx="1.5" class="sk-row"/><rect x="126" y="166.5" width="43" height="2.5" rx="1.2" class="sk-line"/><rect x="180" y="181" width="28" height="10" rx="3" class="sk-tool"/><rect x="213" y="181" width="29" height="10" rx="3" class="sk-btn"/></g><rect x="6" y="218" width="282" height="20" class="sk-status"/><path d="M6 218h282" class="sk-sep"/><rect x="14" y="225.5" width="66" height="4" rx="2" class="sk-line"/><rect x="200" y="225.5" width="34" height="4" rx="2" class="sk-line"/><rect x="240" y="224" width="40" height="7" rx="2" class="sk-tool"/></g><g transform="translate(312 0)"><defs><linearGradient id="sk-ramp"><stop offset="0" class="sk-r0"/><stop offset="1" class="sk-r1"/></linearGradient><clipPath id="sk-map"><rect x="6" y="50" width="282" height="188" rx="0"/></clipPath></defs><rect x="6" y="6" width="282" height="232" rx="10" class="sk-win"/><circle cx="19" cy="17" r="3.2" class="sk-dot"/><circle cx="29" cy="17" r="3.2" class="sk-dot"/><circle cx="39" cy="17" r="3.2" class="sk-dot"/><circle cx="18" cy="38" r="5" class="sk-logo"/><rect x="27" y="35.5" width="34" height="5" rx="2.5" class="sk-line-strong"/><rect x="92" y="32" width="96" height="12" rx="6" class="sk-search"/><circle cx="100" cy="38" r="2.4" class="sk-x"/><rect x="198" y="35" width="5" height="6" rx="1.2" class="sk-ic"/><rect x="205" y="36.5" width="10" height="3" rx="1.5" class="sk-line"/><rect x="220" y="35" width="5" height="6" rx="1.2" class="sk-ic"/><rect x="227" y="36.5" width="10" height="3" rx="1.5" class="sk-line"/><rect x="242" y="35" width="5" height="6" rx="1.2" class="sk-ic"/><rect x="249" y="36.5" width="10" height="3" rx="1.5" class="sk-line"/><rect x="264" y="35" width="5" height="6" rx="1.2" class="sk-ic"/><rect x="271" y="36.5" width="10" height="3" rx="1.5" class="sk-line"/><g clip-path="url(#sk-map)"><rect x="6" y="50" width="282" height="188" class="sk-water"/><path d="M70 50v188" class="sk-grid"/><path d="M140 50v188" class="sk-grid"/><path d="M210 50v188" class="sk-grid"/><path d="M6 100h282" class="sk-grid"/><path d="M6 160h282" class="sk-grid"/><path d="M6 220h282" class="sk-grid"/><path d="M6 92c18-6 34 4 52-2s26-24 50-22 34 18 56 16 30-14 52-12 34 8 72 6v160H6z" class="sk-land"/><path d="M60 82c6 26-8 50 6 78s4 52 10 78M118 70c-4 30 14 52 4 80s10 50 2 88M160 86c8 30-6 60 10 86" class="sk-border"/><path d="M6 92c18-6 34 4 52-2s26-24 50-22 34 18 56 16 30-14 52-12 34 8 72 6" class="sk-coast"/><circle cx="30" cy="118" r="2.6" class="sk-v sk-v1"/><circle cx="44" cy="134" r="3.4" class="sk-v sk-v2"/><circle cx="56" cy="112" r="2.4" class="sk-v sk-v1"/><circle cx="74" cy="116" r="5" class="sk-v sk-v3"/><circle cx="92" cy="148" r="3" class="sk-v sk-v2"/><circle cx="108" cy="128" r="2.6" class="sk-v sk-v1"/><circle cx="122" cy="170" r="3.6" class="sk-v sk-v2"/><circle cx="88" cy="188" r="2.4" class="sk-v sk-v1"/><circle cx="52" cy="200" r="3" class="sk-v sk-v2"/><circle cx="136" cy="140" r="2.4" class="sk-v sk-v1"/><circle cx="150" cy="196" r="4.2" class="sk-v sk-v3"/><circle cx="34" cy="170" r="2.4" class="sk-v sk-v1"/><circle cx="70" cy="214" r="2.8" class="sk-v sk-v1"/><circle cx="112" cy="212" r="3.2" class="sk-v sk-v2"/><circle cx="160" cy="160" r="2.4" class="sk-v sk-v1"/><circle cx="74" cy="116" r="9.5" class="sk-halo"/><circle cx="74" cy="116" r="14" class="sk-halo2"/></g><rect x="14" y="206" width="62" height="24" rx="4" class="sk-chip"/><rect x="19" y="211" width="38" height="3" rx="1.5" class="sk-line"/><rect x="19" y="219" width="52" height="5" rx="2" class="sk-ramp"/><path d="M84 226h30M84 223v3M114 223v3" class="sk-scale"/><rect x="160" y="200" width="12" height="12" rx="3" class="sk-chip"/><rect x="160" y="214" width="12" height="12" rx="3" class="sk-chip"/><path d="M163 206h6M166 203v6M163 220h6" class="sk-x"/><rect x="180" y="58" width="102" height="148" rx="7" class="sk-card"/><rect x="189" y="68" width="66" height="5.5" rx="2.7" class="sk-line-strong"/><rect x="189" y="77" width="42" height="5.5" rx="2.7" class="sk-line-strong"/><path d="M271 67l5 5m0-5l-5 5" class="sk-x"/><rect x="189" y="88" width="36" height="3" rx="1.5" class="sk-line"/><path d="M189 96h84" class="sk-sep"/><rect x="189" y="103" width="30" height="3.5" rx="1.7" class="sk-line"/><rect x="224" y="102.5" width="16" height="4.5" rx="2" class="sk-line-strong"/><rect x="189" y="111" width="44" height="3" rx="1.5" class="sk-line"/><path d="M238 110v5" class="sk-tick"/><path d="M240.4 110v3" class="sk-tick"/><path d="M242.8 110v3" class="sk-tick"/><path d="M245.2 110v5" class="sk-tick"/><path d="M247.6 110v3" class="sk-tick"/><path d="M250 110v3" class="sk-tick"/><path d="M252.4 110v5" class="sk-tick"/><path d="M254.8 110v3" class="sk-tick"/><path d="M257.2 110v3" class="sk-tick"/><path d="M259.6 110v5" class="sk-tick"/><path d="M262 110v3" class="sk-tick"/><path d="M264.4 110v3" class="sk-tick"/><path d="M266.8 110v5" class="sk-tick"/><path d="M269.2 110v3" class="sk-tick"/><path d="M271.6 110v3" class="sk-tick"/><circle cx="269.96" cy="112" r="2.6" class="sk-mark"/><rect x="189" y="118" width="32" height="2.5" rx="1.2" class="sk-line"/><rect x="189" y="131" width="34" height="3.5" rx="1.7" class="sk-line"/><rect x="228" y="130.5" width="16" height="4.5" rx="2" class="sk-line-strong"/><rect x="189" y="139" width="44" height="3" rx="1.5" class="sk-line"/><path d="M238 138v5" class="sk-tick"/><path d="M240.4 138v3" class="sk-tick"/><path d="M242.8 138v3" class="sk-tick"/><path d="M245.2 138v5" class="sk-tick"/><path d="M247.6 138v3" class="sk-tick"/><path d="M250 138v3" class="sk-tick"/><path d="M252.4 138v5" class="sk-tick"/><path d="M254.8 138v3" class="sk-tick"/><path d="M257.2 138v3" class="sk-tick"/><path d="M259.6 138v5" class="sk-tick"/><path d="M262 138v3" class="sk-tick"/><path d="M264.4 138v3" class="sk-tick"/><path d="M266.8 138v5" class="sk-tick"/><path d="M269.2 138v3" class="sk-tick"/><path d="M271.6 138v3" class="sk-tick"/><circle cx="255.68" cy="140" r="2.6" class="sk-mark"/><rect x="189" y="146" width="32" height="2.5" rx="1.2" class="sk-line"/><rect x="188" y="156" width="86" height="15" rx="4" class="sk-act"/><circle cx="197" cy="163.5" r="3.6" class="sk-acti"/><rect x="205" y="162" width="50" height="3" rx="1.5" class="sk-line"/><rect x="188" y="175" width="86" height="15" rx="4" class="sk-act"/><path d="M194 186l6-5" class="sk-acti-l"/><rect x="205" y="181" width="40" height="3" rx="1.5" class="sk-line"/><rect x="189" y="196" width="28" height="3" rx="1.5" class="sk-link"/><rect x="222" y="196" width="22" height="3" rx="1.5" class="sk-link"/></g>
-    <text x="147" y="262" class="sk-label">A typical GIS, first launch</text>
-    <text x="459" y="262" class="sk-label">NimbleMap, first click</text>
-  </svg>
-  <figcaption id="sk-cap">Sketches, not screenshots.</figcaption>
-</figure>
+    <div class="features">
+      <article class="example feature">
+        <figure class="frame"><img src="img/typhoons-card.jpg" alt="NimbleMap with 4,999 typhoon tracks over Asia and the Pacific; Typhoon Haiyan is selected and its card says its top wind of 170 knots is higher than 99% of 4,547 storms." loading="lazy" width="1600" height="996"></figure>
+        <div class="feature-body">
+          <h3>Typhoons and hurricanes</h3>
+          <p>4,999 storm tracks since 1980. Haiyan’s 170-knot winds beat 99% of 4,547 storms.</p>
+          <span class="coords">IBTrACS v04r01</span>
+        </div>
+      </article>
+      <article class="example feature">
+        <figure class="frame"><img src="img/walls-satellite.jpg" alt="The walls of Beijing in 1866 over satellite imagery, with a card saying the city covered 35.3 km², more than 99% of the 1,789 walled cities." loading="lazy" width="1600" height="996"></figure>
+        <div class="feature-body">
+          <h3>Walled cities of China, 1866</h3>
+          <p>1,789 city walls. Beijing’s enclosed 35.3&nbsp;km², larger than 99% of them.</p>
+          <span class="coords">Xue et al. 2021 · CC BY 4.0</span>
+        </div>
+      </article>
+      <article class="example feature">
+        <figure class="frame"><img src="img/heatwave-click.jpg" alt="Heatwave intensity over Europe and North Africa on 16 July 2023, with one cell selected and the time slider below." loading="lazy" width="1600" height="996"></figure>
+        <div class="feature-body">
+          <h3>Heatwaves, summer 2023</h3>
+          <p>Press Play and watch the heat move across the world.</p>
+          <span class="coords">Copernicus GDO / JRC · CC BY 4.0</span>
+        </div>
+      </article>
     </div>
-    <div class="principles">
-      <div><svg class="p-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v9a1.5 1.5 0 0 1-1.5 1.5H10l-4.2 3.6V16H5.5A1.5 1.5 0 0 1 4 14.5z"/><path d="M10.2 8.4a1.9 1.9 0 1 1 2.6 1.8c-.5.2-.8.6-.8 1.1v.4"/><circle cx="12" cy="13.6" r=".6" class="dot"/></svg><h3>Answers before tools</h3><p>Most GIS software starts with tools. NimbleMap starts with questions. Click something on the map, and it tells you what it is and how it compares with the rest of its layer.</p></div>
-      <div><svg class="p-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 20h17"/><path d="M6.5 20v-6M11 20V8M15.5 20v-9M20 20V5"/><path d="M5 9.5l3.5-3 3 2L17 4"/></svg><h3>Honest numbers</h3><p>Every number comes from your data, not just what happens to be visible on the screen. If some records cannot be placed on the map, NimbleMap tells you how many and why. Your original files remain unchanged.</p></div>
-      <div><svg class="p-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg><h3>Try anything</h3><p>You can undo every step. Every result also comes with an explanation, in plain words, of how it was produced.</p></div>
-    </div>
-    <p class="aside-note">NimbleMap is an independent project, not affiliated with Apple, Esri or the QGIS project.</p>
+    <p class="also">Also built in: earthquakes since 1900, volcanoes, airports, power plants, world cities, countries and elevation.</p>
   </div>
 </section>
 
-<section id="what">
+<section id="yours">
   <div class="wrap">
     <div class="why-grid layers-grid">
     <div class="section-head">
-      <p class="eyebrow">How it works</p>
-      <h2>Layers, like tracing paper</h2>
-      <p class="lede">A map in NimbleMap consists of layers stacked over a background map, much like sheets of tracing paper. Open a file, and it becomes a new layer. There is no setup wizard, no project to create and no empty toolbox to navigate.</p>
+      <p class="eyebrow">Your data</p>
+      <h2>Then bring your own</h2>
+      <p class="lede">Drop in a spreadsheet of places, a GPX track from your run, or a satellite image. It lands in the right place — no setup.</p>
+      <ul class="chips" aria-label="Files it opens"><li>CSV/Excel</li><li>GeoJSON</li><li>Shapefile</li><li>GeoPackage</li><li>KML</li><li>GPX</li><li>GeoTIFF</li><li>NetCDF</li></ul>
+      <p class="find-data"><a href="data.html">Where can I find map data? →</a></p>
     </div>
     <figure class="layer-art">
   <svg viewBox="0 0 470 312" role="img" aria-label="Four sheets stacked like tracing paper: a background map, then areas, lines and points, with one place lined up through all four">
@@ -145,98 +159,66 @@
   </svg>
 </figure>
     </div>
-    <div class="strata">
-      <div><img class="step-shot" src="img/step-open.jpg" alt="NimbleMap's welcome card on the map: Open file, Examples, Browse data library." width="800" height="500" loading="lazy"><h3>Open</h3><p>Drag in a CSV with coordinates, a GeoJSON, a Shapefile, a GeoPackage, a GeoTIFF or a NetCDF climate file. If NimbleMap needs to make an assumption, such as which columns contain coordinates, it tells you what it assumed and lets you change it.</p></div>
-      <div><img class="step-shot" src="img/step-click.jpg" alt="An object card: the 2011 Tohoku earthquake's magnitude of 9.1 is higher than 99% of 14,537 earthquakes." width="800" height="500" loading="lazy"><h3>Click</h3><p>Click a city, a storm or a single cell in a climate grid. NimbleMap first shows you what it is and how it compares with the rest of its layer: “highest of 4,999” or “lower than 80% of the others”. Relevant tools appear when you need them.</p></div>
-      <div><img class="step-shot" src="img/step-share.jpg" alt="An exported map of the 2023 heatwaves, with legend, latitude and longitude labels and credits." width="800" height="500" loading="lazy"><h3>Share</h3><p>Colour your map by a value, filter the data and export the result as an image. Add a title, legend, scale bar and credits. Choose a size that fits a presentation slide, an A4 page or a square post.</p></div>
-    </div>
   </div>
 </section>
 
-<section id="examples">
+<section id="principles">
   <div class="wrap">
     <div class="section-head">
-      <p class="eyebrow">Built-in examples</p>
-      <h2>Things an everyday map app can't show you</h2>
-      <p class="lede">NimbleMap comes with eight example sets, available with one click under <span class="ui">Examples</span>. Here are a few:</p>
+      <p class="eyebrow">How it works</p>
+      <h2>Made for the curious</h2>
     </div>
-    <div class="examples">
-      <article class="example">
-        <figure class="frame"><img src="img/typhoons-color.jpg" alt="Storm tracks over Asia and the Pacific, coloured by season in the Style tab." loading="lazy" width="1600" height="996"></figure>
-        <h3>Typhoons and hurricanes</h3>
-        <p>4,999 storm tracks since 1980, covering every ocean, from NOAA’s IBTrACS archive. Find Haiyan, colour the tracks by wind speed and see where the strongest storms occur.</p>
-        <span class="coords">IBTrACS v04r01 · 1980–2026</span>
-      </article>
-      <article class="example">
-        <figure class="frame"><img src="img/walls-satellite.jpg" alt="The walls of Beijing in 1866 over satellite imagery, with a card saying the city covered 35.3 km², more than 99% of the 1,789 walled cities." loading="lazy" width="1600" height="996"></figure>
-        <h3>Walled cities of China, 1866</h3>
-        <p>1,789 city walls from late imperial China, including the capital, county towns and Manchu garrisons. See where these cities stood, drawn over satellite imagery.</p>
-        <span class="coords">Xue et al. 2021 · CC BY 4.0</span>
-      </article>
-      <article class="example">
-        <figure class="frame"><img src="img/heatwave-click.jpg" alt="Heatwave intensity over Europe and North Africa on 16 July 2023, with one cell selected and the time slider below." loading="lazy" width="1600" height="996"></figure>
-        <h3>Heatwaves, summer 2023</h3>
-        <p>Daily heatwave intensity across the world from June to August 2023, stored in a NetCDF climate file. Move the time slider, or press Play to see how heatwaves developed and moved through the summer.</p>
-        <span class="coords">Copernicus GDO (JRC) · CC BY 4.0</span>
-      </article>
-    </div>
-    <p style="margin-top:30px;color:var(--ink-2)">Also included: big earthquakes since 1900, volcanoes, airports, power plants, and world cities, countries and elevation.</p>
-  </div>
-</section>
-
-<section id="pro">
-  <div class="wrap">
-    <div class="section-head">
-      <p class="eyebrow">Free and Pro</p>
-      <h2>Free to look. Pro to ask.</h2>
-      <p class="lede">The free version lets you open, overlay, style and share spatial data. NimbleMap Pro adds an assistant that lets you ask questions about your map layers in plain words.</p>
-    </div>
-    <div class="tiers">
-      <div class="tier">
-        <h3>Free</h3>
-        <p class="sub">Free download</p>
-        <ul>
-          <li>Opens CSV, Excel, GeoJSON, Shapefile, GeoPackage, KML, GPX, GeoTIFF and NetCDF</li>
-          <li>Click anything to see its information and how it compares with other features</li>
-          <li>Colour by a value, filter, compare and label</li>
-          <li>Join a spreadsheet to places using a shared column</li>
-          <li>Time slider for climate grids</li>
-          <li>Light, dark and satellite basemaps; works offline</li>
-          <li>Supports China's map coordinates (GCJ-02, BD-09)</li>
-          <li>Exports map images and data</li>
-        </ul>
+    <div class="principle-shots">
+      <div class="principle">
+        <figure class="frame"><img src="img/step-click.jpg" alt="An object card: the 2011 Tohoku earthquake’s magnitude of 9.1 is higher than 99% of 14,537 earthquakes." loading="lazy" width="800" height="500"></figure>
+        <svg class="p-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v9a1.5 1.5 0 0 1-1.5 1.5H10l-4.2 3.6V16H5.5A1.5 1.5 0 0 1 4 14.5z"/><path d="M10.2 8.4a1.9 1.9 0 1 1 2.6 1.8c-.5.2-.8.6-.8 1.1v.4"/><circle cx="12" cy="13.6" r=".6" class="dot"/></svg><h3>Answers before tools</h3>
+        <p>Click anything. See what it is and how it compares.</p>
       </div>
-      <div class="tier">
-        <h3>Pro <span class="tag">PRO</span></h3>
-        <p class="sub">Everything in Free, plus:</p>
-        <ul>
-          <li>The Ask box: ask questions about your layers in English or Chinese, by typing or speaking</li>
-          <li>See answers as previews on the map, with a step-by-step record you can check. No guessing.</li>
-          <li>Built-in world layers: countries, provinces, cities, rivers, lakes and elevation. Ask questions such as “Which country has the most power plants?”</li>
-          <li>Analysis buttons appear on cards when relevant, such as “Show an area within a distance”</li>
-          <li>Your data stays on your Mac. Only layer names, fields and extents are sent, never the values.</li>
-        </ul>
-        <div class="ask-sample">Which capital city sits highest above sea level?</div>
+      <div class="principle">
+        <figure class="frame"><img src="img/step-honest.jpg" alt="Beijing’s card ranks its walled area against all 1,789 walled cities of 1866, highest first, while the map shows only the Beijing area." loading="lazy" width="800" height="500"></figure>
+        <svg class="p-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 20h17"/><path d="M6.5 20v-6M11 20V8M15.5 20v-9M20 20V5"/><path d="M5 9.5l3.5-3 3 2L17 4"/></svg><h3>Honest numbers</h3>
+        <p>Every number comes from all your data, not just what’s on screen.</p>
+      </div>
+      <div class="principle">
+        <figure class="frame"><img src="img/step-try.jpg" alt="A filter written as a sentence, “Show storms where strength is any of Category 5”, says 228 match before you apply it, with Cancel beside Apply." loading="lazy" width="800" height="500"></figure>
+        <svg class="p-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg><h3>Try anything</h3>
+        <p>Every step can be undone, and every result explains itself.</p>
       </div>
     </div>
-    <figure class="frame shot" style="margin-top:34px"><img src="img/pro-ask.jpg" alt="NimbleMap Pro answering “Which country has the most cities?” with a ranked list and a preview on the map." loading="lazy" width="1600" height="1040"><figcaption>NimbleMap Pro answers “Which country has the most cities?” using the built-in world countries. The result is not saved until you press Keep.</figcaption></figure>
   </div>
 </section>
 
-<section id="download">
-  <div class="wrap">
+<section id="share">
+  <div class="wrap share-grid">
     <div class="section-head">
-      <p class="eyebrow">Download</p>
-      <h2>Get NimbleMap</h2>
-      <p class="lede">NimbleMap is free for Macs with Apple silicon running macOS 13 or later. Double-click a Shapefile, GeoJSON, CSV, GeoTIFF or other supported file to open it on the map. Your files stay on your Mac. A Windows version is on the way.</p>
+      <p class="eyebrow">Share</p>
+      <h2>Share what you find</h2>
+      <p class="lede">Add a title, legend and credits. Export for a slide, a report or a post.</p>
     </div>
+    <figure class="frame"><img src="img/heatwave-export.jpg" alt="The Export map image sheet: the 2023 heatwave map with a legend, latitude and longitude labels and credits, and size choices for a slide, an A4 report or a square post." loading="lazy" width="1600" height="996"></figure>
+  </div>
+</section>
+
+<section class="pro-band">
+  <div class="wrap">
+    <span class="tag">PRO</span>
+    <p><strong>NimbleMap Pro:</strong> ask your map questions in plain words. Free with an account — coming in the next version.</p>
+    <a class="pro-more" href="pro.html">What Pro adds →</a>
+  </div>
+</section>
+
+<section id="download" class="final-cta contours">
+  <div class="wrap">
+    <img class="cta-icon" src="img/icon-256.png" alt="" width="96" height="96">
+    <h2>Explore real data about the planet.</h2>
     <div class="cta-actions">
-      <a class="btn btn-primary" href="download.html#get">Download for Mac</a>
-      <a class="btn btn-quiet" href="download.html#formats">What it opens</a>
-      <a class="btn btn-quiet" href="download.html#qgis">NimbleMap or QGIS?</a>
+      <a class="btn btn-primary btn-get" href="https://github.com/kangning-huang/NimbleMap/releases/latest/download/NimbleMap-macos-arm64.dmg" download>Download free for Mac</a>
     </div>
+    <p class="mac-only" hidden>NimbleMap needs a Mac with Apple silicon. A Windows version is on the way.</p>
+    <p class="dl-fine">Free · about 74 MB · macOS 13 or later · Apple silicon · works offline</p>
+    <p class="dl-fine"><a href="download.html#get">First time: macOS asks you to allow it — how to open it</a></p>
     <div class="share" role="group" aria-label="Share"><span class="share-label">Share</span><a class="share-btn" data-net="x" href="#" target="_blank" rel="noopener" aria-label="Share: X">X</a><a class="share-btn" data-net="facebook" href="#" target="_blank" rel="noopener" aria-label="Share: Facebook">Facebook</a><a class="share-btn" data-net="reddit" href="#" target="_blank" rel="noopener" aria-label="Share: Reddit">Reddit</a><a class="share-btn" data-net="linkedin" href="#" target="_blank" rel="noopener" aria-label="Share: LinkedIn">LinkedIn</a></div>
-    <p style="margin-top:24px;color:var(--ink-3);font-size:15px">NimbleMap is built on <a href="https://github.com/opengeos/RustGIS">RustGIS</a>.</p>
+    <p class="built-on">NimbleMap is built on <a href="https://github.com/opengeos/RustGIS">RustGIS</a>.</p>
   </div>
 </section>
 </main>
@@ -247,7 +229,7 @@
       <p><strong>NimbleMap</strong> · a map-first app built on RustGIS.</p>
       <p>Screenshots show map data © OpenStreetMap contributors (ODbL) via Protomaps, Natural Earth (public domain), and NASA Blue Marble imagery (NASA Earth Observatory, GIBS). Example data: NOAA IBTrACS, Xue et al. 2021 (CC BY 4.0), Copernicus Global Drought Observatory / JRC (CC BY 4.0).</p>
     </div>
-    <div><a href="help.html">Help</a> · <a href="glossary.html">Glossary</a><p class="foot-langs"><a href="zh/index.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="de/index.html" hreflang="de" lang="de">Deutsch</a> · <a href="es/index.html" hreflang="es" lang="es">Español</a> · <a href="fr/index.html" hreflang="fr" lang="fr">Français</a> · <a href="it/index.html" hreflang="it" lang="it">Italiano</a> · <a href="nl/index.html" hreflang="nl" lang="nl">Nederlands</a> · <a href="pt-br/index.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="ru/index.html" hreflang="ru" lang="ru">Русский</a> · <a href="ja/index.html" hreflang="ja" lang="ja">日本語</a> · <a href="ko/index.html" hreflang="ko" lang="ko">한국어</a></p></div>
+    <div class="foot-nav"><p class="foot-links"><a href="help.html">Help</a> · <a href="glossary.html">Glossary</a> · <a href="data.html">Data</a> · <a href="pro.html">Pro</a> · <a href="https://github.com/kangning-huang/NimbleMap/blob/main/CHANGELOG.md">Changelog</a></p><p class="foot-note">NimbleMap is an independent project, not affiliated with Apple, Esri or the QGIS project.</p><p class="foot-langs"><a href="zh/index.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="de/index.html" hreflang="de" lang="de">Deutsch</a> · <a href="es/index.html" hreflang="es" lang="es">Español</a> · <a href="fr/index.html" hreflang="fr" lang="fr">Français</a> · <a href="it/index.html" hreflang="it" lang="it">Italiano</a> · <a href="nl/index.html" hreflang="nl" lang="nl">Nederlands</a> · <a href="pt-br/index.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="ru/index.html" hreflang="ru" lang="ru">Русский</a> · <a href="ja/index.html" hreflang="ja" lang="ja">日本語</a> · <a href="ko/index.html" hreflang="ko" lang="ko">한국어</a></p></div>
   </div>
 </footer>
 </body>
