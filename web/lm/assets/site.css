@@ -191,6 +191,62 @@ section + section { border-top: 1px solid var(--rule); }
 .strata h3 { margin: 10px 0 6px; font-size: 1.2rem; }
 .strata p { margin: 0; color: var(--ink-2); font-size: 15.5px; }
 @media (max-width: 760px) { .strata { grid-template-columns: 1fr; } }
+/* Step cards: a screenshot across the top, the step number as a badge on it. */
+.strata > div:has(.step-shot) { overflow: hidden; }
+.strata > div:has(.step-shot)::before {
+  position: absolute; top: 12px; left: 12px; z-index: 1;
+  background: var(--card); border: 1px solid var(--rule); border-radius: 6px; padding: 5px 7px;
+}
+.step-shot {
+  display: block; width: calc(100% + 44px); max-width: none; margin: -22px -22px 16px;
+  aspect-ratio: 16 / 10; object-fit: cover; object-position: center;
+  border-bottom: 1px solid var(--rule); background: var(--paper-2);
+}
+.strata .step-shot + h3 { margin-top: 0; }
+
+/* Text beside an illustration (#why, #what). */
+.why-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 40px; align-items: center; margin-bottom: 34px; }
+.why-grid .section-head { margin-bottom: 0; }
+@media (max-width: 900px) { .why-grid { grid-template-columns: 1fr; gap: 24px; } }
+.sketch, .layer-art { margin: 0; }
+.sketch svg, .layer-art svg { display: block; width: 100%; height: auto; }
+.sketch figcaption { font-size: 13px; color: var(--ink-3); text-align: center; margin-top: 6px; }
+.layer-art { width: 100%; max-width: 480px; justify-self: center; }
+
+/* The sketch's shapes: theme colours only, so dark mode follows. */
+.sk-win { fill: var(--card); stroke: var(--rule); stroke-width: 1.2; }
+.sk-dot { fill: var(--rule); }
+.sk-tool { fill: var(--paper-2); stroke: var(--rule); stroke-width: .8; }
+.sk-panel { fill: var(--paper); stroke: var(--rule); stroke-width: .8; }
+.sk-empty { fill: var(--paper); stroke: var(--rule); stroke-width: .8; stroke-dasharray: 3 3; }
+.sk-dialog { fill: var(--card); stroke: var(--ink-3); stroke-width: 1; filter: drop-shadow(0 3px 6px rgba(0,0,0,.12)); }
+.sk-line { fill: var(--rule); }
+.sk-line-strong { fill: var(--ink-3); }
+.sk-btn, .sk-bar { fill: var(--accent); }
+.sk-track { fill: var(--paper-2); }
+.sk-water { fill: color-mix(in srgb, var(--accent) 9%, var(--card)); }
+.sk-land { fill: var(--paper-2); }
+.sk-coast { fill: none; stroke: var(--rule); stroke-width: 1; stroke-dasharray: 2 2; }
+.sk-data circle { fill: var(--seal); opacity: .85; }
+.sk-sel { fill: none; stroke: var(--accent); stroke-width: 2; }
+.sk-card { fill: var(--card); stroke: var(--rule); stroke-width: 1; filter: drop-shadow(0 3px 8px rgba(0,0,0,.12)); }
+.sk-label { font: 600 12px var(--sans); fill: var(--ink-2); text-anchor: middle; }
+
+/* The tracing-paper layers. */
+.ly-sheet { fill: var(--card); fill-opacity: .82; stroke: var(--ink-3); stroke-width: .8; }
+.ly-land { fill: var(--paper-2); }
+.ly-a1 { fill: color-mix(in srgb, var(--accent) 22%, transparent); stroke: var(--accent); stroke-width: .8; }
+.ly-a2 { fill: color-mix(in srgb, var(--accent) 40%, transparent); stroke: var(--accent); stroke-width: .8; }
+.ly-a3 { fill: color-mix(in srgb, var(--accent) 12%, transparent); stroke: var(--accent); stroke-width: .8; }
+.ly-l1, .ly-l2 { fill: none; stroke: var(--seal); stroke-width: 1.6; stroke-linecap: round; }
+.ly-l2 { opacity: .6; }
+.ly-pt { fill: var(--ink); }
+.ly-lead { stroke: var(--ink-3); stroke-width: 1; }
+.ly-label { font: 600 13px var(--sans); fill: var(--ink-2); }
+
+/* Principle icons. */
+.p-icon { width: 30px; height: 30px; margin: 0 0 10px; fill: none; stroke: var(--seal); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; display: block; }
+.p-icon .dot { fill: var(--seal); stroke: none; }
 
 /* Principles: the design philosophy, as plain cards (not numbered: they aren't steps). */
 .principles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
