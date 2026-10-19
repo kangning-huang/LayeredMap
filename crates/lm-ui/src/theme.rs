@@ -148,6 +148,95 @@ pub fn fonts() -> egui::FontDefinitions {
     defs
 }
 
+/// The bundled fonts with the system's Japanese or Korean face put before Noto Sans SC when the
+/// interface is in that language (WP5.5), so kana and hangul have glyphs and kanji/hanja take the
+/// language's own shapes. Inter stays first (Latin and tabular figures). The faces are read from
+/// the system, never bundled: Hiragino Sans or Apple SD Gothic Neo on a Mac, Yu Gothic UI or
+/// Malgun Gothic on Windows (docs/lm/localization.md). Without them the bundled fonts carry on:
+/// kanji from Noto Sans SC, hangul missing.
+pub fn fonts_for(cjk: Option<lm_core::i18n::Cjk>) -> egui::FontDefinitions {
+    let mut defs = fonts();
+    if let Some(faces) = cjk.and_then(system_cjk_faces) {
+        add_cjk_faces(&mut defs, &faces);
+    }
+    defs
+}
+
+/// The system faces for a language: (path, face index in a collection, weight), in order of
+/// preference.
+fn system_cjk_faces(cjk: lm_core::i18n::Cjk) -> Option<Vec<(std::path::PathBuf, u32, Weight)>> {
+    use lm_core::i18n::Cjk;
+    #[cfg(target_os = "macos")]
+    let (dir, faces): (std::path::PathBuf, &[(&str, u32, Weight)]) = (
+        "/System/Library/Fonts".into(),
+        match cjk {
+            Cjk::Japanese => &[("ヒラギノ角ゴシック W3.ttc", 0, Weight::Regular), ("ヒラギノ角ゴシック W6.ttc", 0, Weight::Semibold)],
+            // One collection: Regular is face 0, SemiBold face 4.
+            Cjk::Korean => &[("AppleSDGothicNeo.ttc", 0, Weight::Regular), ("AppleSDGothicNeo.ttc", 4, Weight::Semibold)],
+            Cjk::SimplifiedChinese => return None,
+        },
+    );
+    #[cfg(windows)]
+    let (dir, faces): (std::path::PathBuf, &[(&str, u32, Weight)]) = (
+        windows_fonts_dir(),
+        match cjk {
+            // Face 1 of the Yu Gothic collections is the interface cut, Yu Gothic UI.
+            Cjk::Japanese => &[("YuGothR.ttc", 1, Weight::Regular), ("YuGothB.ttc", 1, Weight::Semibold), ("meiryo.ttc", 0, Weight::Both)],
+            Cjk::Korean => &[("malgun.ttf", 0, Weight::Regular), ("malgunbd.ttf", 0, Weight::Semibold)],
+            Cjk::SimplifiedChinese => return None,
+        },
+    );
+    #[cfg(not(any(target_os = "macos", windows)))]
+    let (dir, faces): (std::path::PathBuf, &[(&str, u32, Weight)]) = {
+        let _ = cjk;
+        return None;
+    };
+    Some(faces.iter().map(|(f, i, w)| (dir.join(f), *i, *w)).collect())
+}
+
+/// Font files read so far, kept for the life of the process: switching languages back and forth
+/// reads each file once, and two faces of one collection share its bytes.
+fn font_file(path: &std::path::Path) -> Option<&'static [u8]> {
+    static FILES: std::sync::Mutex<Vec<(std::path::PathBuf, &'static [u8])>> = std::sync::Mutex::new(Vec::new());
+    let mut files = FILES.lock().ok()?;
+    if let Some((_, b)) = files.iter().find(|(p, _)| p == path) {
+        return Some(b);
+    }
+    let bytes: &'static [u8] = Box::leak(std::fs::read(path).ok()?.into_boxed_slice());
+    files.push((path.to_path_buf(), bytes));
+    Some(bytes)
+}
+
+/// Puts the faces that exist and look like fonts right after Inter (before Noto Sans SC) in the
+/// families their weight joins. Returns the faces added.
+pub fn add_cjk_faces(defs: &mut egui::FontDefinitions, faces: &[(std::path::PathBuf, u32, Weight)]) -> Vec<String> {
+    let mut added = Vec::new();
+    for (path, index, weight) in faces {
+        let Some(bytes) = font_file(path) else { continue };
+        if !is_font(bytes, *index) {
+            log::warn!("fonts: {} isn't a font this build reads; skipped", path.display());
+            continue;
+        }
+        let file = path.file_name().map(|f| f.to_string_lossy().into_owned()).unwrap_or_default();
+        let name = format!("cjk:{file}#{index}");
+        defs.font_data.insert(name.clone(), std::sync::Arc::new(egui::FontData { index: *index, ..egui::FontData::from_static(bytes) }));
+        let families: &[&str] = match weight {
+            Weight::Regular => &["proportional"],
+            Weight::Semibold => &["semibold"],
+            Weight::Both => &["proportional", "semibold"],
+        };
+        for f in families {
+            let family = if *f == "proportional" { FontFamily::Proportional } else { FontFamily::Name("semibold".into()) };
+            if let Some(list) = defs.families.get_mut(&family) {
+                let at = list.iter().position(|n| n.starts_with("Noto Sans SC")).unwrap_or(list.len());
+                list.insert(at, name.clone());
+            }
+        }
+        added.push(name);
+    }
+    added
+}
+
 /// `%WINDIR%\Fonts`.
 #[cfg(windows)]
 fn windows_fonts_dir() -> std::path::PathBuf {
@@ -340,6 +429,44 @@ mod tests {
             ui.label("Segoe UI 微软雅黑 → ≥");
         });
         out.textures_delta.clear();
+    }
+
+    /// WP5.5: a Japanese or Korean face goes after Inter and before Noto Sans SC, in the family
+    /// its weight joins; a missing file is skipped. (A stand-in: Noto Sans SC's own file.)
+    #[test]
+    fn cjk_faces_go_before_the_chinese_one() {
+        let dir = std::env::temp_dir().join(format!("lm-cjk-fonts-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("ja.otf"), NOTO_SC_REGULAR).unwrap();
+        let mut defs = fonts();
+        let faces = [(dir.join("ja.otf"), 0, Weight::Regular), (dir.join("missing.ttc"), 0, Weight::Semibold)];
+        let added = add_cjk_faces(&mut defs, &faces);
+        let _ = std::fs::remove_dir_all(&dir);
+        assert_eq!(added, ["cjk:ja.otf#0"]);
+        let prop = &defs.families[&FontFamily::Proportional];
+        let at = |n: &str| prop.iter().position(|f| f == n).unwrap();
+        assert!(at("Inter") < at("cjk:ja.otf#0") && at("cjk:ja.otf#0") < at("Noto Sans SC"), "{prop:?}");
+        assert!(!defs.families[&FontFamily::Name("semibold".into())].contains(&"cjk:ja.otf#0".to_string()));
+        // English and Chinese use the bundled fonts alone.
+        assert_eq!(fonts_for(None).families, fonts().families);
+        assert_eq!(fonts_for(Some(lm_core::i18n::Cjk::SimplifiedChinese)).families, fonts().families);
+    }
+
+    /// On a Mac the system's Japanese and Korean faces load, and egui draws kana and hangul.
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn mac_japanese_and_korean_faces_load() {
+        for cjk in [lm_core::i18n::Cjk::Japanese, lm_core::i18n::Cjk::Korean] {
+            let defs = fonts_for(Some(cjk));
+            let n = defs.font_data.keys().filter(|k| k.starts_with("cjk:")).count();
+            assert_eq!(n, 2, "{cjk:?}");
+            let ctx = egui::Context::default();
+            ctx.set_fonts(defs);
+            let mut out = ctx.run_ui(egui::RawInput::default(), |ui| {
+                ui.label("レイヤー 레이어 图层");
+            });
+            out.textures_delta.clear();
+        }
     }
 
     #[test]

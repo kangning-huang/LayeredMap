@@ -83,6 +83,14 @@ fn reduce_motion() -> bool {
 
 const BASEMAP_KEY: &str = "lm.basemap.v2";
 
+/// The system's preferred languages, most preferred first, for the interface (WP5.5).
+/// `LM_LANGUAGE` (a code such as `ja`) goes first, for one run.
+fn system_languages() -> Vec<String> {
+    let mut tags: Vec<String> = std::env::var("LM_LANGUAGE").ok().into_iter().collect();
+    tags.extend(sys_locale::get_locales().take(16));
+    tags
+}
+
 fn load_prefs(storage: Option<&dyn eframe::Storage>) -> Prefs {
     let mut p = Prefs::default();
     let Some(s) = storage else { return p };
@@ -101,6 +109,9 @@ fn load_prefs(storage: Option<&dyn eframe::Storage>) -> Prefs {
         p.strength = v.clamp(0.4, 1.0);
     }
     p.offline = s.get_string("lm.offline").as_deref() == Some("on");
+    if let Some(l) = s.get_string("lm.language").filter(|l| lm_core::i18n::Lang::from_code(l).is_some()) {
+        p.language = l;
+    }
     p.view = s.get_string("lm.view").and_then(|v| {
         let n: Vec<f64> = v.split(',').filter_map(|x| x.trim().parse().ok()).collect();
         match n.as_slice() {
@@ -307,6 +318,7 @@ impl eframe::App for App {
         storage.set_string(BASEMAP_KEY, p.basemap);
         storage.set_string("lm.strength", p.strength.to_string());
         storage.set_string("lm.offline", if p.offline { "on" } else { "off" }.into());
+        storage.set_string("lm.language", p.language);
         if let Some((lon, lat, z)) = p.view {
             storage.set_string("lm.view", format!("{lon},{lat},{z}"));
         }
@@ -326,7 +338,8 @@ impl eframe::App for App {
 /// `card ID [FIELD]` runs a card's display action (`filter strength`, `style_by_value`, …) on the
 /// selected layer (`card apply_filter` presses the filter's Apply); `time N` shows the n-th time step;
 /// `export` or `export-image` opens the map image sheet; `package` opens the map package dialog;
-/// `theme light|dark|system` sets the appearance (for screenshots; tour runs never save prefs).
+/// `theme light|dark|system` sets the appearance and `language CODE|auto` the interface language
+/// (for screenshots; tour runs never save prefs).
 #[derive(Clone, Debug, PartialEq)]
 enum Step {
     Fly(f64, f64, f64),
@@ -385,6 +398,9 @@ impl Step {
             "export-image" => Step::Other(Command::ExportMapImage),
             "package" => Step::Other(Command::ExportPackage),
             "redo" => Step::Other(Command::Redo),
+            "language" if rest.trim() == lm_core::i18n::AUTO || lm_core::i18n::Lang::from_code(rest).is_some() => {
+                Step::Other(Command::SetLanguage(rest.trim().to_string()))
+            }
             "theme" => Step::Other(Command::SetTheme(match rest.trim() {
                 "light" => ThemePref::Light,
                 "dark" => ThemePref::Dark,
@@ -484,6 +500,7 @@ fn main() -> eframe::Result {
             }
             let system = System { dark_mode: cc.egui_ctx.system_theme() == Some(egui::Theme::Dark), reduce_motion: reduce_motion() };
             let mut shell = Shell::new(&cc.egui_ctx, flags, prefs, system);
+            shell.set_system_languages(system_languages());
             shell.developer = developer;
             shell.pro = pro;
             shell.set_library_catalog(lm_ui::library::catalog_url(std::env::var("LM_LIBRARY_URL").ok().as_deref(), developer));

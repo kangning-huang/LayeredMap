@@ -59,6 +59,8 @@ pub enum Units {
 #[derive(Clone, Debug, PartialEq)]
 pub enum Command {
     SetTheme(ThemePref),
+    /// The interface language: a code, or "auto" to follow the system (WP5.5).
+    SetLanguage(String),
     SetUnits(Units),
     ToggleDebugOverlay,
     ZoomIn,
@@ -189,11 +191,22 @@ pub struct Prefs {
     pub view: Option<(f64, f64, f64)>,
     /// Strict offline mode (View › Work Offline): no network request of any kind.
     pub offline: bool,
+    /// The interface language (View › Language, WP5.5): a code such as "ja", or
+    /// [`lm_core::i18n::AUTO`] to follow the system.
+    pub language: String,
 }
 
 impl Default for Prefs {
     fn default() -> Self {
-        Prefs { theme: ThemePref::System, units: Units::Metric, basemap: "auto".into(), strength: 1.0, view: None, offline: false }
+        Prefs {
+            theme: ThemePref::System,
+            units: Units::Metric,
+            basemap: "auto".into(),
+            strength: 1.0,
+            view: None,
+            offline: false,
+            language: lm_core::i18n::AUTO.into(),
+        }
     }
 }
 
@@ -211,6 +224,10 @@ pub struct Shell {
     pub(crate) map: MapView,
     theme: Theme,
     theme_applied: Option<Theme>,
+    /// The interface language in use (WP5.5), and the system's preferred languages, most
+    /// preferred first, which the app passes in ([`Shell::set_system_languages`]).
+    lang_applied: lm_core::i18n::Lang,
+    system_languages: Vec<String>,
     pub(crate) search: search::Search,
     debug_overlay: bool,
     /// Screen readers and the keyboard (WP5.6, WP6.3).
@@ -297,7 +314,10 @@ pub struct Shell {
 
 impl Shell {
     pub fn new(ctx: &egui::Context, flags: Flags, prefs: Prefs, system: System) -> Shell {
-        ctx.set_fonts(theme::fonts());
+        // English until the app passes the system's languages (tests never do).
+        let lang = lm_core::i18n::resolve(&prefs.language, []);
+        lm_core::i18n::set_current(lang);
+        ctx.set_fonts(theme::fonts_for(lang.cjk()));
         // The renderer keeps only label text a font can draw: give it Chinese.
         if !lm_mapview::add_label_font(theme::NOTO_SC_REGULAR.to_vec()) {
             log::warn!("the bundled Chinese font could not be registered for map labels");
@@ -312,6 +332,8 @@ impl Shell {
             map: MapView::new(map, ctx),
             theme: Theme::of(dark),
             theme_applied: None,
+            lang_applied: lang,
+            system_languages: Vec::new(),
             search: search::Search::new(),
             debug_overlay: false,
             credits_open: false,
@@ -418,6 +440,7 @@ impl Shell {
         let t = ctx.input(|i| i.time);
         match cmd {
             Command::SetTheme(p) => self.prefs.theme = p,
+            Command::SetLanguage(code) => self.prefs.language = code,
             Command::SetUnits(u) => self.prefs.units = u,
             Command::ToggleDebugOverlay => self.debug_overlay = !self.debug_overlay,
             Command::ZoomIn => self.map.zoom_by(1.0, t, self.last_map_size),
@@ -862,9 +885,29 @@ impl Shell {
         self.backdrop = basemap::backdrop(self.map.map());
     }
 
+    /// The system's preferred languages, most preferred first (BCP 47 tags such as "ja-JP"): the
+    /// interface follows the first one with a catalog while the preference is "auto".
+    pub fn set_system_languages(&mut self, tags: Vec<String>) {
+        self.system_languages = tags;
+    }
+
+    /// The interface language the preference and the system choose.
+    pub fn language(&self) -> lm_core::i18n::Lang {
+        lm_core::i18n::resolve(&self.prefs.language, self.system_languages.iter().map(String::as_str))
+    }
+
     /// One frame of the whole window.
     pub fn ui(&mut self, ui: &mut egui::Ui, system: System) {
         let ctx = ui.ctx().clone();
+        // Language: strings are looked up as they are drawn; Japanese and Korean also need a face.
+        let lang = self.language();
+        lm_core::i18n::set_current(lang);
+        if lang != self.lang_applied {
+            if lang.cjk() != self.lang_applied.cjk() {
+                ctx.set_fonts(theme::fonts_for(lang.cjk()));
+            }
+            self.lang_applied = lang;
+        }
         self.reduce_motion = system.reduce_motion;
         // Theme: follows the system unless overridden; switching also restyles the basemap.
         let dark = basemap::dark_for(self.prefs.theme, system.dark_mode);

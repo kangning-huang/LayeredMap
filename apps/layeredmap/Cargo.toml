@@ -25,6 +25,8 @@ lm-net = { path = "../../crates/lm-net" }
 eframe = { workspace = true, features = ["default_fonts", "wgpu", "accesskit", "persistence"] }
 rfd = { workspace = true }
 muda = { version = "0.21", default-features = false }
+# The system's preferred languages, for the interface language (WP5.5); upstream's UI uses it too.
+sys-locale = "0.3"
 egui = { workspace = true }
 # `std`: the diagnostics module installs a boxed logger.
 log = { workspace = true, features = ["std"] }
