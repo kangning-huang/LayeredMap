@@ -187,6 +187,14 @@ section + section { border-top: 1px solid var(--rule); }
 .strata p { margin: 0; color: var(--ink-2); font-size: 15.5px; }
 @media (max-width: 760px) { .strata { grid-template-columns: 1fr; } }
 
+/* Principles: the design philosophy, as plain cards (not numbered: they aren't steps). */
+.principles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.principles > div { padding: 18px 0 0; border-top: 2px solid var(--ink); }
+.principles h3 { margin: 0 0 6px; font-size: 1.2rem; }
+.principles p { margin: 0; color: var(--ink-2); font-size: 15.5px; }
+.aside-note { margin: 26px 0 0; color: var(--ink-3); font-size: 13.5px; }
+@media (max-width: 760px) { .principles { grid-template-columns: 1fr; } }
+
 /* Free vs Pro: a map legend rather than a pricing grid. */
 .tiers { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1px solid var(--rule); border-radius: var(--radius); overflow: hidden; background: var(--card); }
 .tier { padding: 30px 30px 26px; }

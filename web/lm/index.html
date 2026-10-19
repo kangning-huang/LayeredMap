@@ -53,7 +53,7 @@
     <div>
       <p class="eyebrow">A map app for the curious</p>
       <h1>Open a map file. See what it says.</h1>
-      <p class="lede">NimbleMap is for people who love maps but have never used GIS. Double-click a file of places, tracks or climate data and it is on the map. Click anything and it tells you where it stands: the strongest storm, the largest walled city, the hottest week.</p>
+      <p class="lede">NimbleMap is for people who love maps but have never used GIS. Double-click a file of places, tracks or climate data, and it appears on the map. Click a place or a feature to see what makes it interesting: the strongest storm, the largest walled city, the hottest week.</p>
       <div class="actions">
         <a class="btn btn-primary" href="download.html">Download for Mac</a>
         <a class="btn btn-quiet" href="help.html">Try a workflow</a>
@@ -79,17 +79,33 @@
   </div>
 </section>
 
+<section id="why">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Why it's different</p>
+      <h2>What if GIS were as easy to use as an Apple app?</h2>
+      <p class="lede">QGIS and ArcGIS are powerful tools for working with spatial data. But for someone opening them for the first time, even making a simple map can be difficult. Hundreds of tools and settings stand between the user and the map. What would GIS look like if it were designed by the people who made the iPhone? Which tools would they keep, which would they hide, and which would they remove altogether? NimbleMap explores this idea. It brings the useful parts of GIS into a map app that anyone curious about places can use.</p>
+    </div>
+    <div class="principles">
+      <div><h3>Answers before tools</h3><p>Most GIS software starts with tools. NimbleMap starts with questions. Click something on the map, and it tells you what it is and how it compares with the rest of its layer.</p></div>
+      <div><h3>Honest numbers</h3><p>Every number comes from your data, not just what happens to be visible on the screen. If some records cannot be placed on the map, NimbleMap tells you how many and why. Your original files remain unchanged.</p></div>
+      <div><h3>Try anything</h3><p>You can undo every step. Every result also comes with an explanation, in plain words, of how it was produced.</p></div>
+    </div>
+    <p class="aside-note">NimbleMap is an independent project, not affiliated with Apple, Esri or the QGIS project.</p>
+  </div>
+</section>
+
 <section id="what">
   <div class="wrap">
     <div class="section-head">
       <p class="eyebrow">How it works</p>
       <h2>Layers, like tracing paper</h2>
-      <p class="lede">A map in NimbleMap is a stack of layers on a background map. You don't set anything up first: there is no wizard, no project and no empty toolbox.</p>
+      <p class="lede">A map in NimbleMap consists of layers stacked over a background map, much like sheets of tracing paper. Open a file, and it becomes a new layer. There is no setup wizard, no project to create and no empty toolbox to navigate.</p>
     </div>
     <div class="strata">
-      <div><h3>Open</h3><p>Drag in a CSV with coordinates, a GeoJSON, a Shapefile, a GeoPackage, a GeoTIFF or a NetCDF climate file. If the app has to guess something, such as which columns hold the coordinates, it says so in one line and lets you change it.</p></div>
-      <div><h3>Click</h3><p>Select a city, a storm or a single cell of a climate grid. Before offering any tool, the card tells you where it stands: “highest of 4,999”, “lower than 80% of the others”.</p></div>
-      <div><h3>Share</h3><p>Colour by a value, filter to what matters, then export a finished image with a title, legend, scale bar and credits, sized for a slide, an A4 page or a square post.</p></div>
+      <div><h3>Open</h3><p>Drag in a CSV with coordinates, a GeoJSON, a Shapefile, a GeoPackage, a GeoTIFF or a NetCDF climate file. If NimbleMap needs to make an assumption, such as which columns contain coordinates, it tells you what it assumed and lets you change it.</p></div>
+      <div><h3>Click</h3><p>Click a city, a storm or a single cell in a climate grid. NimbleMap first shows you what it is and how it compares with the rest of its layer: “highest of 4,999” or “lower than 80% of the others”. Relevant tools appear when you need them.</p></div>
+      <div><h3>Share</h3><p>Colour your map by a value, filter the data and export the result as an image. Add a title, legend, scale bar and credits. Choose a size that fits a presentation slide, an A4 page or a square post.</p></div>
     </div>
   </div>
 </section>
@@ -99,25 +115,25 @@
     <div class="section-head">
       <p class="eyebrow">Built-in examples</p>
       <h2>Things an everyday map app can't show you</h2>
-      <p class="lede">Eight example sets come with the app, one click away under <span class="ui">Examples</span>. A few favourites:</p>
+      <p class="lede">NimbleMap comes with eight example sets, available with one click under <span class="ui">Examples</span>. Here are a few:</p>
     </div>
     <div class="examples">
       <article class="example">
         <figure class="frame"><img src="img/typhoons-color.jpg" alt="Storm tracks over Asia and the Pacific, coloured by season in the Style tab." loading="lazy" width="1600" height="996"></figure>
         <h3>Typhoons and hurricanes</h3>
-        <p>4,999 storm tracks since 1980 in every ocean, from NOAA’s IBTrACS archive. Find Haiyan, colour them by wind and watch the typhoon belt light up.</p>
+        <p>4,999 storm tracks since 1980, covering every ocean, from NOAA’s IBTrACS archive. Find Haiyan, colour the tracks by wind speed and see where the strongest storms occur.</p>
         <span class="coords">IBTrACS v04r01 · 1980–2026</span>
       </article>
       <article class="example">
         <figure class="frame"><img src="img/walls-satellite.jpg" alt="The walls of Beijing in 1866 over satellite imagery, with a card saying the city covered 35.3 km², more than 99% of the 1,789 walled cities." loading="lazy" width="1600" height="996"></figure>
         <h3>Walled cities of China, 1866</h3>
-        <p>1,789 city walls of late imperial China, from the capital to county towns and Manchu garrisons, drawn over satellite imagery.</p>
+        <p>1,789 city walls from late imperial China, including the capital, county towns and Manchu garrisons. See where these cities stood, drawn over satellite imagery.</p>
         <span class="coords">Xue et al. 2021 · CC BY 4.0</span>
       </article>
       <article class="example">
         <figure class="frame"><img src="img/heatwave-click.jpg" alt="Heatwave intensity over Europe and North Africa on 16 July 2023, with one cell selected and the time slider below." loading="lazy" width="1600" height="996"></figure>
         <h3>Heatwaves, summer 2023</h3>
-        <p>Daily heatwave intensity worldwide from June to August 2023, a NetCDF climate file with a time slider. Press Play and watch the heat move.</p>
+        <p>Daily heatwave intensity across the world from June to August 2023, stored in a NetCDF climate file. Move the time slider, or press Play to see how heatwaves developed and moved through the summer.</p>
         <span class="coords">Copernicus GDO (JRC) · CC BY 4.0</span>
       </article>
     </div>
@@ -130,7 +146,7 @@
     <div class="section-head">
       <p class="eyebrow">Free and Pro</p>
       <h2>Free to look. Pro to ask.</h2>
-      <p class="lede">The free app opens, overlays, styles and shares map data. NimbleMap Pro adds an assistant you ask about your layers in plain words.</p>
+      <p class="lede">The free version lets you open, overlay, style and share spatial data. NimbleMap Pro adds an assistant that lets you ask questions about your map layers in plain words.</p>
     </div>
     <div class="tiers">
       <div class="tier">
@@ -138,12 +154,12 @@
         <p class="sub">Free download</p>
         <ul>
           <li>Opens CSV, Excel, GeoJSON, Shapefile, GeoPackage, KML, GPX, GeoTIFF and NetCDF</li>
-          <li>Click anything for its facts and where it stands</li>
-          <li>Colour by a value, filter, compare, label</li>
-          <li>Joins a spreadsheet to places by a shared column</li>
+          <li>Click anything to see its information and how it compares with other features</li>
+          <li>Colour by a value, filter, compare and label</li>
+          <li>Join a spreadsheet to places using a shared column</li>
           <li>Time slider for climate grids</li>
           <li>Light, dark and satellite basemaps; works offline</li>
-          <li>Handles China's map coordinates (GCJ-02, BD-09)</li>
+          <li>Supports China's map coordinates (GCJ-02, BD-09)</li>
           <li>Exports map images and data</li>
         </ul>
       </div>
@@ -151,16 +167,16 @@
         <h3>Pro <span class="tag">PRO</span></h3>
         <p class="sub">Everything in Free, plus:</p>
         <ul>
-          <li>The Ask box: ask about your layers in plain English or Chinese, typed or spoken</li>
-          <li>Answers come as a preview on the map and a step-by-step recipe you can check, never a guess</li>
-          <li>Built-in world layers: countries, provinces, cities, rivers, lakes and elevation, ready for questions like “Which country has the most power plants?”</li>
-          <li>Analysis buttons on cards, such as “Show an area within a distance”</li>
-          <li>Your data stays on your Mac: only layer names, fields and extents are sent, never the values</li>
+          <li>The Ask box: ask questions about your layers in English or Chinese, by typing or speaking</li>
+          <li>See answers as previews on the map, with a step-by-step record you can check. No guessing.</li>
+          <li>Built-in world layers: countries, provinces, cities, rivers, lakes and elevation. Ask questions such as “Which country has the most power plants?”</li>
+          <li>Analysis buttons appear on cards when relevant, such as “Show an area within a distance”</li>
+          <li>Your data stays on your Mac. Only layer names, fields and extents are sent, never the values.</li>
         </ul>
         <div class="ask-sample">Which capital city sits highest above sea level?</div>
       </div>
     </div>
-    <figure class="frame shot" style="margin-top:34px"><img src="img/pro-ask.jpg" alt="NimbleMap Pro answering “Which country has the most cities?” with a ranked list and a preview on the map." loading="lazy" width="1600" height="1040"><figcaption>NimbleMap Pro answering “Which country has the most cities?” using the built-in world countries. Nothing is saved until you press Keep.</figcaption></figure>
+    <figure class="frame shot" style="margin-top:34px"><img src="img/pro-ask.jpg" alt="NimbleMap Pro answering “Which country has the most cities?” with a ranked list and a preview on the map." loading="lazy" width="1600" height="1040"><figcaption>NimbleMap Pro answers “Which country has the most cities?” using the built-in world countries. The result is not saved until you press Keep.</figcaption></figure>
   </div>
 </section>
 
@@ -169,7 +185,7 @@
     <div class="section-head">
       <p class="eyebrow">Download</p>
       <h2>Get NimbleMap</h2>
-      <p class="lede">Free for Macs with Apple silicon, macOS 13 or later. It opens Shapefile, GeoJSON, CSV, GeoTIFF and more with a double-click, and your files never leave your Mac. A Windows version is on the way.</p>
+      <p class="lede">NimbleMap is free for Macs with Apple silicon running macOS 13 or later. Double-click a Shapefile, GeoJSON, CSV, GeoTIFF or other supported file to open it on the map. Your files stay on your Mac. A Windows version is on the way.</p>
     </div>
     <div class="cta-actions">
       <a class="btn btn-primary" href="download.html#get">Download for Mac</a>

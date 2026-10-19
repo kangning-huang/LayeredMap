@@ -1,6 +1,6 @@
 # Gate 4 report — Contextual actions, previews, result cards
 
-Build: 0.4.0-dev · branch `phase-4` (from `phase-3`; Gate 3 still awaits your validation) · draft
+Build: 0.4.0-dev · branch `phase-4` (from `phase-3`; Gate 3 still awaits your validation) · frozen 2026-10-19
 Reference machine: Mac mini (Mac16,10), Apple M4, 16 GB, macOS 26.6.2
 
 **Scope after the tier decision (2026-10-16):** Phase 4 builds the engine behind Pro's assistant
@@ -82,3 +82,12 @@ N7 runs with `cargo xtask fixtures --only R4,N7` then
 - Overlay is planar in lon/lat like GeoPandas: polygons crossing the antimeridian aren't handled.
 - The cost model's constants for features, indexing and union are estimates until measured on
   the real actions.
+
+## Decision
+
+**Passed** — 2026-10-19. The owner reviewed this report and closed the gate ("gate 4 looks good.
+close it."), with two decisions: summary coverage follows Google Earth Engine's weighted-reducer
+rule, and the exactextract cross-check is signed off (see Decisions above). The engine has shipped
+in the Pro test builds since 0.4.0 (the composers, previews, result cards and recipes behind the
+Ask box). The known limits above carry forward. Gate 3 is still open: Phase 4 was built on Phase
+3, and Gate 3's own validation session is next.

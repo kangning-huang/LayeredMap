@@ -81,7 +81,7 @@ is **Done** when that testing has signed it off.
 | 1 | A fast, fluid map with place search | Done |
 | 2 | Open your files with one action; visible assumptions | Done |
 | 3 | Click anything to see what it is and where it stands; filters, joins, the table | Built, in testing |
-| 4 | The analysis engine: previews, result cards, recipes (it powers Pro's assistant) | Built, in testing |
+| 4 | The analysis engine: previews, result cards, recipes (it powers Pro's assistant) | Done |
 | 5 | Save, export a finished map or a map package, work offline | Built, in testing |
 | 6 | Polish: keyboard and VoiceOver, help pages, Windows | Built, in testing |
 | 7 | NimbleMap Pro: ask questions of your layers in plain words | In test builds; accounts next |
