@@ -2,6 +2,11 @@
 
 *Proposed 2026-10-19; not started. Waits on the Apple Developer membership being active.*
 
+**Owner decision, 2026-10-19: Pro stays free with an account for now.** The first goal is to make
+NimbleMap good and popular; monetizing comes later, if the user base grows. This page is the plan
+for that later step, so it's ready when needed. Until then the direct download with Supabase
+sign-in is the only channel, and Pro costs nothing.
+
 The owner asked whether NimbleMap can be sold through the Mac App Store, with Pro as an in-app
 purchase, so that people in mainland China can buy Pro without WeChat, Alipay or phone sign-in.
 This page is the plan. It changes `accounts.md`: App Store buyers need no account at all.
@@ -29,6 +34,37 @@ This page is the plan. It changes `accounts.md`: App Store buyers need no accoun
 | Ask box server check | Supabase access token | Apple's signed transaction |
 | Payment | Later: Stripe or a merchant of record | In-app purchase; Apple keeps 15 % (Small Business Program, under USD 1 million a year) or 30 % |
 | China storefront | Not applicable (download from the website) | Needs an ICP filing number; Pro needs the AI licence |
+
+## Pricing, when the time comes
+
+Owner's choice (2026-10-19): a subscription with a free trial, kept very cheap.
+
+| | |
+|---|---|
+| Monthly | US$0.99 (Apple sets the local prices, e.g. ¥6 in China, €0.99 in the eurozone; each can be adjusted) |
+| Free trial | 1 month, as an introductory offer (Apple allows 3 days to 1 year; once per Apple ID) |
+| Yearly | US$9.99, offered beside the monthly price: far less churn, and the money up front |
+| Allowance | 300 questions a month, plus a short-burst limit; the Ask box says plainly when it's used up and when it resets |
+
+**What a subscriber brings in.** US$0.99, less Apple's 15 % (Small Business Program; also 15 % for
+any subscriber in their second year), less sales tax or VAT where the price includes it (EU, UK,
+China): about US$0.70–0.84 a month. **What a subscriber costs.** The default model costs
+US$0.0008 per question, or US$0.0016 with a 2× margin for bigger maps and retries
+(`llm-eval.md` › Cost per active user): US$0.03 at 20 questions a month, US$0.16 at 100, US$0.48
+at the 300 allowance. A subscriber stays profitable up to about 400 questions a month.
+
+**Fixed costs.** Supabase Pro (US$25 a month, needed once real users rely on it: the free plan
+pauses an idle project), the Apple membership (US$99 a year), a domain and a mail sender: about
+US$35 a month, so roughly 45–50 subscribers to break even.
+
+**Not monthly on the direct download.** Card fees take about 30 % of a US$1 charge (Stripe's
+2.9 % + US$0.30), and merchants of record take more on small amounts. On the direct channel,
+offer the yearly price only, or keep Pro free with an account.
+
+**Until then (free Pro).** The server's allowance is 60 questions a day per account
+(`ASK_DAILY_REQUESTS`), which a heavy user could turn into about 1,800 questions (about US$2.90) a
+month. With Pro free for everyone, a monthly cap of about 300 questions keeps a popular launch
+affordable; it's a server setting and a small change to the allowance function.
 
 ## Pro as an in-app purchase
 
