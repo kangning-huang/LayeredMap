@@ -111,9 +111,8 @@ local file makes no network request, so the network gate is not involved.
 - **Chinese interface.** The app is English-only for now, so the Chinese pages quote the English
   button labels with a Chinese gloss. When the Chinese interface (WP5.5) lands, swap in its labels
   and retake the screenshots in Chinese.
-- **Share in Free builds.** Share › Map image… and Data… appear in a Free release build once the
-  build reaches Phase 5 (`EXPORT_PHASE`; today they show in Pro and developer builds). The export
-  screenshots were taken from a developer build; the sheet is the same in every tier.
+- **Share in every build.** From 0.7.1 Share › Map image…, Data… and Map package… are in every
+  release build, signed in or not (`lm_ui::export::shown`; docs/lm/decisions.md, 2026-10-20).
 - **Pro examples.** The Ask questions quoted on the pages are examples of the kind of request the
   assistant takes; only “Which country has the most cities?” (the screenshot) and the questions in
   `docs/lm/demo-picks.md` were run. Run the others through the evaluation set before launch.
@@ -133,15 +132,20 @@ script lists every screenshot's tour script, capture delay and crop, so adding o
 names to retake a subset (`retake_screenshots.sh typhoons-card walls-satellite`; a crop is re-cut
 when its source is retaken). It never sends keys or clicks. Window chrome is forced light with the
 per-process Cocoa default `-NSRequiresAquaSystemAppearance YES`, so captures match in Dark mode.
-`pro-ask` spends one Ask request and runs only with `PAID=1`; `typhoons-pro` runs as Pro
-(`LM_TIER=pro`, unbundled, so the key comes from the keychain and no cost line shows) without an
-Ask call.
+Every shot runs the plain release build signed out (tours start the account but never sign in), so
+free shots show the Ask box's sign-in prompt at the bottom, as a person sees the app before signing
+in. `pro-ask` spends one Ask request and runs only with `PAID=1`; `typhoons-pro` runs with Pro
+unlocked by the developer override (`LM_DEV_PRO=1`) without an Ask call. Both use
+`LM_ASK_ROUTE=direct`, so the key comes from the keychain; no build carries one, and the release
+build shows no cost line. The home page's `open-*` shots are in the script's table too and run with
+`OPEN_FILES=<folder>` (see below).
 
 - **Home page, 2026-10-20 (`open-*.jpg`):** captured the same way (release build, `--tour`, light
   theme, window only, `retake_screenshots.py shot`/`cut`) but from the real downloaded-style files
   that `design/launch-video-v3/data/make_files.sh "<folder>"` writes (IBTrACS storms `.shp`, USGS
   earthquakes `.gpkg`, GDO heatwave `.nc`, ETOPO `.tif`, NCEI volcano `.csv`), passed as file
-  arguments. They are not in `retake_screenshots.sh` because those files live outside the repo.
+  arguments. Since 0.7.1 they are rows of `retake_screenshots.sh` that run with `OPEN_FILES` set to
+  that folder (the zoom, search and click shots are kept with the raw captures and cut from there).
   Tours (steps are 2.5 s apart, 6 s after a fly): storms
   `theme light;basemap light;tab 0;tab 0;card style_by_value max_wind_k;tab 0;150,22,3.2;tab 0;150,22,3.2…`
   (capture at 30 s); search: the same with `find Haiyan` after the style step (29 s); zoom:
@@ -168,9 +172,9 @@ Ask call.
   and `step-try.jpg` from `typhoons-filter.jpg` (x 340–1140, y 496–996, not scaled).
   `img/icon-256.png` is a copy of `assets/icon/icon-256.png` (the app icon) for the final call to
   action.
-  `heatwave-export.jpg` runs with `LM_DEV=1` (a developer build), since Share › Map image… only
-  appears in a Free release build from Phase 5; the sheet is the same in every tier.
-- **Pro shots, retaken 2026-10-19 in light** as NimbleMap Pro (`LM_TIER=pro`, the unbundled release
+  `heatwave-export.jpg` ran with `LM_DEV=1` then, since Share was off in the public build; from
+  0.7.1 it comes from the release build.
+- **Pro shots, retaken 2026-10-19 in light** as NimbleMap Pro (then `LM_TIER=pro`, now `LM_DEV_PRO=1`; the release
   binary, so the Ask key comes from the keychain and no cost line shows): `typhoons-pro.jpg` (Haiyan
   selected with the Ask box showing; no Ask call) and `pro-ask.jpg` (“Which country has the most
   cities?” over `cities.geojson` with the built-in world layers; one Ask request, `PAID=1`).

@@ -26,14 +26,18 @@ use lm_mapview::map::{Camera, Map};
 use crate::theme::{self, BODY, CAPTION, Theme};
 use crate::{FileRequest, Shell, form};
 
-/// Export is Phase 5 work (the toolbar's Share button, File › Export Map Image… and Export
-/// Data…).
+/// Export is Phase 5 work (the toolbar's Share button, File › Export Map Image…, Export Data…
+/// and Export Map Package…).
 pub const EXPORT_PHASE: u8 = 5;
 
-/// Whether export is offered: once the build reaches Phase 5 (unless `LM_PHASE` rolls it back),
-/// and ahead of that in developer and Pro builds, so it can be tried while Phase 5 is built.
+/// The phase export is released with: built and tested, it ships ahead of Phase 5 in every build
+/// from 0.7.1 (owner's decision, 2026-10-20), signed in or not.
+pub const EXPORT_RELEASED_PHASE: u8 = 3;
+
+/// Whether export is offered: in every build, unless `LM_PHASE` rolls it back below
+/// [`EXPORT_RELEASED_PHASE`]; developer and Pro builds keep it even then.
 pub fn shown(flags: lm_core::phase::Flags, developer: bool, pro: bool) -> bool {
-    (flags.shows(EXPORT_PHASE) && EXPORT_PHASE <= lm_core::phase::BUILD_PHASE) || developer || pro
+    flags.shows(EXPORT_RELEASED_PHASE) || developer || pro
 }
 
 /// The image sizes offered.
@@ -935,9 +939,13 @@ mod tests {
     }
 
     #[test]
-    fn export_shows_in_developer_and_pro_builds_before_its_phase() {
+    fn export_is_released_in_every_build() {
         let f = lm_core::phase::Flags::default();
-        assert_eq!(shown(f, false, false), EXPORT_PHASE <= lm_core::phase::BUILD_PHASE);
+        assert!(shown(f, false, false), "the free, signed-out build offers export");
         assert!(shown(f, true, false) && shown(f, false, true));
+        // LM_PHASE still rolls it back, except in developer and Pro builds.
+        let early = lm_core::phase::Flags::up_to(EXPORT_RELEASED_PHASE - 1);
+        assert!(!shown(early, false, false));
+        assert!(shown(early, true, false) && shown(early, false, true));
     }
 }

@@ -47,6 +47,9 @@ fn harness_sized(
                 s
             });
             shell.ui(ui, system);
+            // A steady text cursor: the harness waits in real time, so a blinking one was caught
+            // on or off at random (feedback_sheet_error failed about half the time).
+            ui.ctx().all_styles_mut(|s| s.visuals.text_cursor.blink = false);
         },
         None,
     );

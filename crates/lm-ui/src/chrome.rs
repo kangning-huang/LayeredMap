@@ -77,7 +77,7 @@ pub fn toolbar(shell: &mut Shell, ui: &mut Ui, rect: Rect, _system: System) {
         (icon::STACK, tn!("Layers"), LAYERS_PHASE),
         (icon::FOLDER_OPEN, tn!("Open"), OPEN_PHASE),
     ] {
-        // Share comes with export, shown ahead of its phase in developer and Pro builds.
+        // Share comes with export, released ahead of its phase (`export::shown`).
         let built = if phase == SHARE_PHASE { shell.export_shown() } else { flags.shows(phase) && phase <= lm_core::phase::BUILD_PHASE };
         let enabled = built && (label != "Undo" || shell.ws.undo.can_undo());
         let color = if enabled { t.text_primary } else { t.text_secondary.gamma_multiply(0.7) };
