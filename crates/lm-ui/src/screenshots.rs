@@ -24,6 +24,24 @@ pub(crate) fn harness_phase(
     harness_sized(SIZE, 1.0, phase, dark, view, setup)
 }
 
+
+/// wgpu setup for tests: same as egui_kittest defaults, plus the noop backend so Ubuntu CI
+/// (no GPU / no lavapipe) still gets an adapter. Real adapters remain preferred.
+fn headless_wgpu_setup() -> egui_wgpu::WgpuSetup {
+    match egui_kittest::wgpu::default_wgpu_setup() {
+        egui_wgpu::WgpuSetup::CreateNew(mut create) => {
+            create.instance_descriptor.backends |= wgpu::Backends::NOOP;
+            create.instance_descriptor.backend_options.noop = wgpu::NoopBackendOptions {
+                enable: true,
+                device_type: Some(wgpu::DeviceType::Cpu),
+                ..Default::default()
+            };
+            egui_wgpu::WgpuSetup::CreateNew(create)
+        }
+        other => other,
+    }
+}
+
 fn harness_sized(
     size: egui::Vec2,
     ppp: f32,
@@ -39,7 +57,7 @@ fn harness_sized(
         ..Prefs::default()
     };
     let system = System { dark_mode: dark, reduce_motion: true };
-    let mut h = Harness::builder().with_size(size).with_pixels_per_point(ppp).wgpu().build_ui_state(
+    let mut h = Harness::builder().with_size(size).with_pixels_per_point(ppp).wgpu_setup(headless_wgpu_setup()).build_ui_state(
         move |ui, state: &mut Option<Shell>| {
             let shell = state.get_or_insert_with(|| {
                 let mut s = Shell::new(ui.ctx(), Flags::up_to(phase), prefs.clone(), system);
