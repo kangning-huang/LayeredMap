@@ -227,10 +227,7 @@ pub fn ungated(files: &[(String, String)]) -> Vec<String> {
 
 /// Repo-relative path with forward slashes (Windows `display()` uses `\`).
 fn repo_rel(path: &Path, root: &Path) -> String {
-    path.strip_prefix(root)
-        .unwrap_or(path)
-        .to_string_lossy()
-        .replace('\\', "/")
+    path.strip_prefix(root).unwrap_or(path).to_string_lossy().replace('\\', "/")
 }
 
 /// True when `path` is inside the lm-net crate (the gate itself may use ureq).
