@@ -27,8 +27,13 @@ Students install from a .dmg: the app beside a link to Applications, so installi
 
 ```sh
 packaging/lm/build-dmg.sh [out-dir]                 # NimbleMap-<version>-<build>-macos-arm64.dmg
-LM_TIER=pro packaging/lm/build-dmg.sh [out-dir]     # NimbleMap-Pro-…
 ```
+
+There is one app and one .dmg: Pro unlocks when someone signs in (`accounts-design.md` ›
+Entitlement). The bundle carries the account config (`LM_ACCOUNT_CONFIG`, `LM_ACCOUNT_CONFIG_JSON`
+or the owner's copy in Application Support), the built-in reference layers (`LM_REFERENCE_DATA`)
+and the `lm-dictate` voice helper; the helper and the app are signed with
+`packaging/lm/app.entitlements` (audio input).
 
 The script runs `bundle-macos.sh` first (so the app inside is signed, notarized and stapled as
 above), then builds the image with `hdiutil` (HFS+, compressed, verified). With the same
@@ -41,14 +46,14 @@ spctl --assess --type open --context context:primary-signature --verbose=2 Nimbl
 ```
 
 Without the variables the .dmg is unsigned and the app inside ad-hoc signed: fine for testing on
-the building Mac, but another Mac shows a security warning. The CI `app` job builds the Free
-.dmg on every run and uploads it with the .zip.
+the building Mac, but another Mac shows a security warning. The CI `app` job builds the
+.dmg on every run and uploads it with the .zip; it signs in only when the repository variable
+`LM_ACCOUNT_CONFIG_JSON` holds the account config.
 
 Signing checks added in Phase 5: `bundle-macos.sh` fails when a signed app lacks the hardened
 runtime flag, and the bundle carries `LICENSE`, `ATTRIBUTION.md` and `ATTRIBUTION-crates.md` in
-`Contents/Resources`. Pro test builds still embed the owner's OpenRouter key from the building
-Mac's keychain, as before (`LM_NO_KEY=1` leaves it out); the .dmg step changes nothing about that,
-so never upload a Pro test .dmg to a public host.
+`Contents/Resources`. No build carries an OpenRouter key (the Pro test builds' bundled key was
+removed on 2026-10-19), so every .dmg can be shared.
 
 **Download host (owner decision).** The spec ships the .dmg from a China-reachable host, not from
 GitHub releases. The host is not chosen yet, so its address is configuration, not code:
@@ -106,5 +111,4 @@ the job instead and set `LM_SIGNTOOL_ARGS` to, e.g., `/fd SHA256 /tr <vendor tim
 SHA256 /sha1 <certificate thumbprint>`.
 
 Without any of these the installer is unsigned: fine for testing, but SmartScreen warns on every
-other PC. Pro test installers built locally with `LM_OPENROUTER_KEY` carry the owner's key, like
-the macOS Pro test builds: never upload one. CI never builds them with a key.
+other PC. No installer carries an OpenRouter key.

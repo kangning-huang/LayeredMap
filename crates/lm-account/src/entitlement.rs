@@ -84,7 +84,7 @@ pub enum Access {
     /// Signed in; the account doesn't have Pro (or it has ended).
     NotPro,
     /// This build can't sign in (no account config) and has no override: Pro features stay
-    /// hidden, since nothing here could unlock them (open-source and test builds).
+    /// hidden, since nothing here could unlock them (open-source builds).
     Unavailable,
 }
 

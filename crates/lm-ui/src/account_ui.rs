@@ -36,7 +36,7 @@ pub struct AccountUi {
     /// The last outcome to show: text and whether it is a problem.
     pub(crate) message: Option<(String, bool)>,
     pub(crate) confirm_delete: bool,
-    /// A developer or test-build assistant key is present (read once: it spawns `security`).
+    /// A developer's assistant key is present (read once: it spawns `security`).
     key_present: Option<bool>,
     /// The email was sent: the code it carries can be typed (shown until signed in or dropped).
     pub(crate) email_code: Option<EmailCode>,

@@ -823,6 +823,8 @@ fn phase4_summarize_in_a_drawn_area() {
 #[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
 fn pro_offers_analysis_actions() {
     use egui_kittest::kittest::Queryable as _;
+    // One harness per case, so their snapshot results are merged into one (egui_kittest).
+    let mut results = egui_kittest::SnapshotResults::new();
     // (account: None = no account config, Some(signed in)) → what the panel shows
     for account in [None, Some(false), Some(true)] {
         let mut h = phase3(&["../assets/examples/countries.geojson", "../assets/examples/cities.geojson"], WORLD, move |s| {
@@ -855,6 +857,7 @@ fn pro_offers_analysis_actions() {
                 h.snapshot("pro_layer_panel");
             }
         }
+        results.extend_harness(&mut h);
     }
 }
 
@@ -1794,6 +1797,9 @@ mod account {
             assert_eq!(s.ask.message(), Some("NimbleMap Pro isn't on for this account."));
             assert!(!s.ask.busy(), "nothing was sent");
         }
+        // The refusal shows in the Ask box above the prompt, which moves Settings… (the box
+        // settles in its new place on its own, ask::ask_box): let it, before clicking.
+        h.run();
         h.get_by_label("Settings…").click();
         h.run_steps(5);
         assert!(h.state().as_ref().is_some_and(|s| s.account.open));

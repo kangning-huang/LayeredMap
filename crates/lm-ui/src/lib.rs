@@ -404,7 +404,7 @@ impl Shell {
 
     /// Whether Pro is unlocked now, and if not why (docs/lm/accounts-design.md › Entitlement):
     /// the signed-in account's entitlement, or the developer override. Without an account config
-    /// (open-source and test builds) Pro's features stay hidden ([`lm_account::Access::Unavailable`]).
+    /// (open-source builds) Pro's features stay hidden ([`lm_account::Access::Unavailable`]).
     pub fn pro_access(&self) -> lm_account::Access {
         self.account.access(self.dev_pro)
     }

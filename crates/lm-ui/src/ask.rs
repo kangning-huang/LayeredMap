@@ -113,7 +113,7 @@ pub fn submit(shell: &mut Shell, ctx: &egui::Context, text: String) {
         shell.ask.shown = Some(Shown::Message { text: crate::account_ui::shown(lm_ask::openrouter::OFFLINE), warning: true });
         return;
     }
-    // Which way the request goes (docs/lm/accounts-design.md): a developer's or test build's key
+    // Which way the request goes (docs/lm/accounts-design.md): a developer's key
     // straight to OpenRouter, or the Ask proxy with the signed-in account's token.
     let via = match shell.account.route() {
         lm_account::AskRoute::Direct => direct_key().map(Via::Direct),
@@ -393,7 +393,8 @@ pub fn ask_box(shell: &mut Shell, ui: &mut Ui, map: egui::Rect) {
     let x1 = map.right() - right - theme::PANEL_MARGIN;
     let width = (x1 - x0).min(MAX_WIDTH);
     let bottom = egui::pos2((x0 + x1) / 2.0, map.bottom() - 34.0);
-    egui::Area::new(egui::Id::new("lm-ask")).order(egui::Order::Foreground).pivot(Align2::CENTER_BOTTOM).fixed_pos(bottom).show(
+    let area_id = egui::Id::new("lm-ask");
+    let shown = egui::Area::new(area_id).order(egui::Order::Foreground).pivot(Align2::CENTER_BOTTOM).fixed_pos(bottom).show(
         ui.ctx(),
         |ui| {
             ui.set_width(width);
@@ -416,6 +417,19 @@ pub fn ask_box(shell: &mut Shell, ui: &mut Ui, map: egui::Rect) {
             });
         },
     );
+    // The box grows upwards from its bottom edge, placed with last frame's size: when the size
+    // changes (a message or an answer appears), draw once more so it lands in place rather than
+    // hanging below the window until the next input.
+    let size = shown.response.rect.size();
+    let key = area_id.with("size");
+    let before = ui.ctx().data_mut(|d| {
+        let before = d.get_temp::<egui::Vec2>(key);
+        d.insert_temp(key, size);
+        before
+    });
+    if before.is_some_and(|b| b != size) {
+        ui.ctx().request_repaint();
+    }
 }
 
 fn field(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, width: f32) {

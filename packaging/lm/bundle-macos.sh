@@ -2,7 +2,8 @@
 # Builds NimbleMap.app (and, with signing credentials, signs, notarizes and staples it).
 #
 #   packaging/lm/bundle-macos.sh [out-dir]
-#   LM_TIER=pro packaging/lm/bundle-macos.sh [out-dir]   # NimbleMap Pro.app
+#
+# One app: Pro's features unlock when someone signs in (docs/lm/accounts-design.md › Entitlement).
 #
 # Signing runs only when these are set (CI secrets; see docs/lm/signing.md):
 #   LM_SIGN_IDENTITY   "Developer ID Application: <name> (<team id>)" — in the keychain
@@ -27,14 +28,9 @@ build="${LM_BUILD_NUMBER:-0}"
 
 cargo build --release --locked -p layeredmap --manifest-path "$root/Cargo.toml"
 
-# The tier is the app (until accounts, Phase 7): Pro is its own bundle with its own id, so both
-# can be installed side by side; the app reads Contents/Resources/tier.
-tier="${LM_TIER:-free}"
-if [[ "$tier" == "pro" ]]; then
-  name="$brand Pro"; name_zh="$brand_zh Pro"; bundle_id="app.layeredmap.pro"
-else
-  name="$brand"; name_zh="$brand_zh"; bundle_id="app.layeredmap.desktop"
-fi
+# One app (owner's decision, 2026-10-19; docs/lm/decisions.md): Pro unlocks when someone signs
+# in, so there is one bundle, one id and one set of resources.
+name="$brand"; name_zh="$brand_zh"; bundle_id="app.layeredmap.desktop"
 app="$out/$name.app"
 rm -rf "$app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
@@ -47,15 +43,13 @@ mkdir -p "$app/Contents/Resources/help"
 rsync -a --exclude '._*' --exclude 'README.md' "$root/web/lm/" "$app/Contents/Resources/help/"
 # The app icon (the Strata logo; tools/lm/make_app_icon.py builds it from design/logo).
 cp "$root/packaging/lm/AppIcon.icns" "$app/Contents/Resources/AppIcon.icns"
-echo "$tier" > "$app/Contents/Resources/tier"
 # Licences (Gate 5 licence audit): the assets' sources and every Rust crate's licence text.
 cp "$root/LICENSE" "$root/ATTRIBUTION.md" "$app/Contents/Resources/"
 [[ -f "$root/ATTRIBUTION-crates.md" ]] && cp "$root/ATTRIBUTION-crates.md" "$app/Contents/Resources/"
-if [[ "$tier" == "pro" ]]; then
-  # The Ask box's microphone (WP7.1): Apple's speech recognizer, in a small Swift helper.
-  # It carries its own Info.plist (usage texts), as macOS asks of any process that listens.
-  dictate_plist="$(mktemp -t lm-dictate-plist)"
-  cat > "$dictate_plist" <<DPLIST
+# The Ask box's microphone (WP7.1, a Pro feature): Apple's speech recognizer, in a small Swift
+# helper. It carries its own Info.plist (usage texts), as macOS asks of any process that listens.
+dictate_plist="$(mktemp -t lm-dictate-plist)"
+cat > "$dictate_plist" <<DPLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
@@ -65,41 +59,32 @@ if [[ "$tier" == "pro" ]]; then
   <key>NSSpeechRecognitionUsageDescription</key><string>${name} turns what you say in the Ask box into text, on this Mac when it can.</string>
 </dict></plist>
 DPLIST
-  swiftc -O -o "$app/Contents/MacOS/lm-dictate" "$root/packaging/lm/dictate.swift" \
-    -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __info_plist -Xlinker "$dictate_plist"
-  rm -f "$dictate_plist"
-  # Built-in reference layers (Natural Earth 1:10m, WorldClim elevation; hidden, used by the
-  # assistant): tools/lm/reference/build_reference.py writes them to LM_REFERENCE_DATA.
-  ref="${LM_REFERENCE_DATA:-/Volumes/LaCie/data/layeredmap-reference}"
-  if [[ -f "$ref/manifest.json" ]]; then
-    mkdir -p "$app/Contents/Resources/reference"
-    rsync -a --exclude raw --exclude '._*' "$ref/" "$app/Contents/Resources/reference/"
-  else
-    echo "bundle-macos: no reference data at $ref (built-in layers left out)" >&2
-  fi
-  # Pro's account config (docs/lm/accounts-design.md): the sign-in service's URL and public key,
-  # from the owner's copy outside the repo. With it the Ask box goes through the Ask proxy and
-  # needs a signed-in account; without it the build works as before.
-  if [[ -n "${LM_ACCOUNT_CONFIG:-}" ]]; then
-    cp "$LM_ACCOUNT_CONFIG" "$app/Contents/Resources/account.json"
-    echo "bundle-macos: account config from $LM_ACCOUNT_CONFIG"
-  fi
-  # Test builds: the owner's OpenRouter key from this Mac's keychain, built into the bundle
-  # (scrambled, not secret: anyone determined can recover it). Never in the repo. The release
-  # talks to NimbleMap's assistant service instead (WP7.3). LM_NO_KEY=1 leaves it out.
-  if [[ -z "${LM_NO_KEY:-}" ]]; then
-    python3 - "$app/Contents/Resources/assistant.dat" <<'PY'
-import subprocess, sys
-key = subprocess.run(["/usr/bin/security", "find-generic-password", "-s", "openrouter", "-a", "layeredmap", "-w"],
-                     capture_output=True, text=True).stdout.strip()
-if not key:
-    sys.exit("bundle-macos: no OpenRouter key in the keychain (service openrouter, account layeredmap); LM_NO_KEY=1 to build without")
-pad = b"LayeredMap Pro test build: not a secret store."
-data = bytes(b ^ pad[i % len(pad)] for i, b in enumerate(key.encode()))
-open(sys.argv[1], "w").write(data.hex())
-print("bundle-macos: assistant key built in")
-PY
-  fi
+swiftc -O -o "$app/Contents/MacOS/lm-dictate" "$root/packaging/lm/dictate.swift" \
+  -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __info_plist -Xlinker "$dictate_plist"
+rm -f "$dictate_plist"
+# Built-in reference layers (Natural Earth 1:10m, WorldClim elevation; hidden, used by the
+# assistant once Pro is unlocked): tools/lm/reference/build_reference.py writes them to
+# LM_REFERENCE_DATA.
+ref="${LM_REFERENCE_DATA:-/Volumes/LaCie/data/layeredmap-reference}"
+if [[ -f "$ref/manifest.json" ]]; then
+  mkdir -p "$app/Contents/Resources/reference"
+  rsync -a --exclude raw --exclude '._*' "$ref/" "$app/Contents/Resources/reference/"
+else
+  echo "bundle-macos: warning: no reference data at $ref (built-in layers left out)" >&2
+fi
+# The account config (docs/lm/accounts-design.md): the sign-in service's URL and public key, from
+# the owner's copy outside the repo (LM_ACCOUNT_CONFIG, a path; or LM_ACCOUNT_CONFIG_JSON, its
+# text, as CI passes it; or the copy in this Mac's Application Support). Without it nobody can sign
+# in, so Pro can't be unlocked: the Free features work and the Pro ones stay hidden.
+account_config="${LM_ACCOUNT_CONFIG:-$HOME/Library/Application Support/LayeredMap/account.json}"
+if [[ -n "${LM_ACCOUNT_CONFIG_JSON:-}" ]]; then
+  printf '%s\n' "$LM_ACCOUNT_CONFIG_JSON" > "$app/Contents/Resources/account.json"
+  echo "bundle-macos: account config from LM_ACCOUNT_CONFIG_JSON"
+elif [[ -f "$account_config" ]]; then
+  cp "$account_config" "$app/Contents/Resources/account.json"
+  echo "bundle-macos: account config from $account_config"
+else
+  echo "bundle-macos: warning: no account config (LM_ACCOUNT_CONFIG); this build can't sign in, so Pro stays locked" >&2
 fi
 cat > "$app/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -270,13 +255,10 @@ STRINGS
 plutil -lint "$app/Contents/Resources/zh-Hans.lproj/InfoPlist.strings" >/dev/null
 
 if [[ -n "${LM_SIGN_IDENTITY:-}" ]]; then
-  # Pro's microphone needs the audio-input entitlement under the hardened runtime.
-  ent=()
-  if [[ "$tier" == "pro" ]]; then
-    ent=(--entitlements "$root/packaging/lm/pro.entitlements")
-    codesign --force --options runtime --timestamp ${ent[@]+"${ent[@]}"} --sign "$LM_SIGN_IDENTITY" "$app/Contents/MacOS/lm-dictate"
-  fi
-  codesign --force --options runtime --timestamp ${ent[@]+"${ent[@]}"} --sign "$LM_SIGN_IDENTITY" "$app"
+  # The microphone needs the audio-input entitlement under the hardened runtime.
+  ent=(--entitlements "$root/packaging/lm/app.entitlements")
+  codesign --force --options runtime --timestamp "${ent[@]}" --sign "$LM_SIGN_IDENTITY" "$app/Contents/MacOS/lm-dictate"
+  codesign --force --options runtime --timestamp "${ent[@]}" --sign "$LM_SIGN_IDENTITY" "$app"
   codesign --verify --strict --verbose=2 "$app"
   # The hardened runtime (WP5.7), which notarization requires: the signature must carry it.
   if ! codesign --display --verbose=2 "$app" 2>&1 | grep -q 'flags=.*runtime'; then
@@ -301,7 +283,7 @@ if [[ -n "${LM_SIGN_IDENTITY:-}" ]]; then
   fi
 else
   echo "bundle-macos: no LM_SIGN_IDENTITY; ad-hoc signing (will warn on other Macs)" >&2
-  [[ -f "$app/Contents/MacOS/lm-dictate" ]] && codesign --force --sign - "$app/Contents/MacOS/lm-dictate"
+  codesign --force --sign - "$app/Contents/MacOS/lm-dictate"
   codesign --force --sign - "$app"
 fi
 ditto -c -k --keepParent "$app" "$out/${name// /-}-${version}-${build}-macos-arm64.zip"

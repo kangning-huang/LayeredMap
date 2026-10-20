@@ -14,7 +14,7 @@ filing in China (first to file) for both the English and the Chinese name.
 
 | | |
 |---|---|
-| English name | **NimbleMap** (Pro: NimbleMap Pro) |
+| English name | **NimbleMap** (Pro: NimbleMap Pro, what signing in unlocks in the one app; not a separate app since 2026-10-19) |
 | Why | Says what the app is next to QGIS: light and quick, not a heavy GIS. That contrast is also the search angle (people looking to open a file "without QGIS"). Contains "map", as the owner wanted. |
 | Availability (2026-10-19) | nimblemap.com, .app and .io unregistered; GitHub `nimblemap` and crates.io `nimblemap` free. No "NimbleMap" product found. Nearest: Nimblehold, an unreleased tabletop-game map tool on Steam. |
 | Known risks | Medium overall (vetting below). **nimblemaps.com is a live "Nimble Maps" web map site** (registered 2026-01). "Nimble" is crowded in software (159 live USPTO NIMBLE marks, about 40 owners in classes 9 and 42), so each one is weak and the name's strength rests on the combination. "Nimble" isn't CET-4/6 vocabulary, so a strong Chinese name matters. |
@@ -85,7 +85,7 @@ The suggested pairing is NimbleMap with 千层图, carrying "nimble" in a descri
 
 | Place | What to edit |
 |---|---|
-| Rust code | `crates/lm-core/src/brand.rs`: `NAME`, `PRO_NAME` (plus `name(pro)` and `with_version`), and `NAME_ZH`/`PRO_NAME_ZH` (凌波微图; the Chinese interface shows them through `brand::shown(pro)`, every other language shows `NAME`). The macOS bundle's `zh-Hans.lproj/InfoPlist.strings` (written by `bundle-macos.sh` from `brand_zh`) gives Finder and the menu bar the Chinese name on a Chinese Mac |
+| Rust code | `crates/lm-core/src/brand.rs`: `NAME` (the app's title, always), `PRO_NAME` (what signing in unlocks; plus `with_version`), and `NAME_ZH`/`PRO_NAME_ZH` (凌波微图; the Chinese interface shows them through `brand::shown(pro)`, every other language shows `NAME`). The macOS bundle's `zh-Hans.lproj/InfoPlist.strings` (written by `bundle-macos.sh` from `brand_zh`) gives Finder and the menu bar the Chinese name on a Chinese Mac |
 | Rust literals that can't read a `const` | Each has a comment that names `lm_core::brand`: `git grep -n "lm_core::brand"`. They are the `OFFLINE` messages in `lm-ask` and `lm-net`, the `User-Agent` strings (`concat!`) in `lm-net`, `lm-jobs` and `lm-account`, the PDF creator and producer in `lm-mapview` (which doesn't depend on lm-core), and two `&'static str` KML exclusion reasons in `lm-jobs` |
 | macOS bundle, Info.plist | `brand=` at the top of `packaging/lm/bundle-macos.sh` |
 | Disk image | `brand=` at the top of `packaging/lm/build-dmg.sh` |
@@ -110,14 +110,16 @@ These are identifiers, not display text. Changing them would break saved data, i
 keys, permissions or upstream merges.
 
 - **Crates, packages and the binary:** `lm-*`, the directory `apps/layeredmap`, the executable
-  `layeredmap` (`layeredmap.exe`, `layeredmap-pro.exe`), the repository name.
-- **Bundle identifiers and types:** `app.layeredmap.desktop`, `app.layeredmap.pro` and the
+  `layeredmap` (`layeredmap.exe`), the repository name.
+- **Bundle identifiers and types:** `app.layeredmap.desktop` (the one app; the old Pro test app's
+  `app.layeredmap.pro` is retired, but the keychain item `app.layeredmap.pro.account` keeps its
+  name so testers stay signed in) and the
   UTType `app.layeredmap.map`, the MIME type `application/vnd.layeredmap.map+zip`. Changing a
   bundle id makes macOS treat the app as a new one (lost permissions, window state and file
   associations).
 - **The `.lmap` extension and its format docs** (`docs/lm/format-v1.md`).
-- **Windows identifiers:** the installers' AppIds, the ProgIDs `LayeredMap.*` and
-  `LayeredMapPro.*`, the manifest's `assemblyIdentity`. The install folder does follow the name
+- **Windows identifiers:** the installer's AppId, the ProgIDs `LayeredMap.*`, the manifest's
+  `assemblyIdentity`. The install folder does follow the name
   (`…\Programs\NimbleMap`); an upgrade over an existing install keeps its folder, as Inno Setup
   reuses the previous folder for the same AppId.
 - **User folders** (`lm_core::platform`): `~/Library/Application Support/LayeredMap`,
@@ -126,10 +128,9 @@ keys, permissions or upstream merges.
   `LayeredMap`, `LayeredMap-logs` and `LayeredMap packages`. **Moving these is a separate
   task:** it needs a one-time migration of autosaves, the recovery journal, the question log and
   the caches.
-- **Keychain and environment:** the keychain item (service `openrouter`, account `layeredmap`),
-  the scrambling pad for the test builds' built-in key (`LayeredMap Pro test build: …` in
-  `lm-ask/src/openrouter.rs`, `bundle-macos.sh` and `build-installer.ps1`, which must agree), and
-  every `LM_*` environment variable.
+- **Keychain and environment:** the developer's key item (service `openrouter`, account
+  `layeredmap`), the account item `app.layeredmap.pro.account`, and every `LM_*` environment
+  variable.
 - **Other identifiers:** the PDF's fallback font name `LayeredMapFont`, the `layeredmap.app`
   domain in the assistant's `HTTP-Referer`, the CI workflow and job names (they are the status
   checks branch rules name), and a hash test vector in `lm-jobs/src/fingerprint.rs`.

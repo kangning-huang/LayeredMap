@@ -123,9 +123,10 @@ pub fn actions(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer, row: Opt
     }
 }
 
-/// An analysis action (one of Phase 4's certified algorithms): a Pro feature.
+/// An analysis action (one of Phase 4's certified algorithms): a Pro feature. Matching a table
+/// to places (`match_table`, WP3.11) has an algorithm too but is Free, so it never locks.
 fn is_analysis(action_id: &str) -> bool {
-    lm_actions::registry().action(action_id).is_some_and(|s| s.algorithm.is_some())
+    action_id != "match_table" && lm_actions::registry().action(action_id).is_some_and(|s| s.algorithm.is_some())
 }
 
 /// A locked action's spoken name: "Count cities in each country (locked)".

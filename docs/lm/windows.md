@@ -17,13 +17,13 @@ Windows laptop. Decisions are in `decisions.md` (2026-10-18), certificates in `s
 | Library cache | `~/Library/Caches/LayeredMap/library` | `%LOCALAPPDATA%\LayeredMap\Cache\library` |
 | Region (country borders) | System Settings › Language & Region (`AppleLocale`) | Settings › Time & language › Language & region › **Country or region** (registry `HKCU\Control Panel\International\Geo\Name`), else the regional format |
 | Update notes in Chinese | First preferred language | First preferred language (registry `User Profile\Languages`) |
-| Update feed links | `download.free/pro` (.dmg) | `download_windows.free/pro` (installer), else `page` (`update-feed.md`) |
+| Update feed links | `download.free` (.dmg) | `download_windows.free` (installer), else `page` (`update-feed.md`) |
 | Fonts | Bundled Inter, Noto Sans SC, Phosphor | The same, then Segoe UI, Segoe UI Semibold, Microsoft YaHei UI and Segoe UI Symbol from `%WINDIR%\Fonts` as fallbacks (never bundled) |
 | Open With | Finder's Open With, Dock drops (`macos.rs`) | Explorer starts `layeredmap.exe "<file>"`; drops on the window come through winit |
 | Speaking (Pro) | The `lm-dictate` helper | "Speaking isn't available on Windows yet. Press Windows+H to type with your voice instead." |
 | Edited state | The window's dot and proxy icon | "— Edited" after the title |
 | Reduce Motion | Read from Accessibility settings | Not read yet (animations stay on) |
-| Assistant key (test builds) | Keychain, or `Resources/assistant.dat` | `OPENROUTER_API_KEY`, or `Resources\assistant.dat` |
+| Developer assistant key (`LM_ASK_ROUTE=direct`) | Keychain | `OPENROUTER_API_KEY` |
 | Minimum window | 1024×640 points | 960×540 points (a 1366×768 laptop at 125 %) |
 | Saving | Atomic rename | Atomic rename, retried for half a second if a scanner or sync client holds the old file |
 
@@ -70,8 +70,9 @@ not in OneDrive, which slows the build and can lock files.
 cargo xtask ci                                         # the same suites as on macOS
 cargo run -p layeredmap                                # the app
 pwsh packaging/lm/windows/build-installer.ps1          # dist\lm\NimbleMap-<v>-<build>-windows-x64-setup.exe
-$env:LM_TIER = "pro"; pwsh packaging/lm/windows/build-installer.ps1   # NimbleMap-Pro-…
 ```
+
+One app, one installer: Pro unlocks when someone signs in (`accounts-design.md` › Entitlement).
 
 Pixel snapshots don't run on Windows (they are `#[ignore]` off macOS), so a change that alters
 what the interface looks like needs its snapshots re-approved on a Mac: say so in the pull
@@ -81,15 +82,16 @@ The installer (`packaging/lm/windows/layeredmap.iss`):
 
 - installs for the current user without administrator rights (`%LOCALAPPDATA%\Programs\NimbleMap`);
   "Install for all users" in the first page needs administrator rights;
-- installs Free and Pro side by side (own AppId, folder, Start menu entry, `layeredmap.exe` /
-  `layeredmap-pro.exe`, and ProgIDs `LayeredMap.*` / `LayeredMapPro.*`);
+- installs the one app (`layeredmap.exe`, ProgIDs `LayeredMap.*`); the separate Pro test installer
+  (`layeredmap-pro.exe`, `LayeredMapPro.*`) is gone since Free and Pro merged, and testers
+  uninstall it;
 - adds a Start menu entry, and a desktop icon if ticked;
-- makes `.lmap` NimbleMap's own type (the tier installed last is its default) and offers
+- makes `.lmap` NimbleMap's own type and offers
   NimbleMap in Open With for `.geojson .shp .gpkg .kml .kmz .gpx .nc .nc4 .cdf .tif .tiff .csv
   .tsv .xlsx`, never as their default (as `LSHandlerRank Alternate` on macOS); `.json` and `.zip`
   are left out on Windows as too general;
-- carries the examples, the tier file, the licences and, for Pro, the reference layers
-  (`LM_REFERENCE_DATA`), like `bundle-macos.sh`;
+- carries the examples, the licences, the account config (`LM_ACCOUNT_CONFIG` or
+  `LM_ACCOUNT_CONFIG_JSON`) and the reference layers (`LM_REFERENCE_DATA`), like `bundle-macos.sh`;
 - is in English, and in Chinese when Inno Setup has its Chinese Simplified messages (6.5 and later);
 - is signed when `LM_SIGNTOOL_ARGS` is set (`signing.md`); otherwise unsigned.
 
@@ -131,8 +133,9 @@ report. Work in a fresh Windows user account for the first part.
    builds will warn: record the exact screens, since they go into the quickstart.
 2. Install without administrator rights. The Start menu has NimbleMap; it opens with its icon in
    the taskbar and in Alt+Tab.
-3. Install Pro too: both are in the Start menu and run at the same time; Settings › Apps lists both.
-4. Uninstall Free: Pro still opens files; `.lmap` files still open (in Pro).
+3. Signed out, the Ask box shows "Sign in to use NimbleMap Pro"; sign in (Settings › Account) and
+   it unlocks.
+4. Uninstall: `.lmap` files no longer open in NimbleMap, and Settings › Apps no longer lists it.
 
 **Scaling (Settings › System › Display › Scale)**
 5. At 100 %, 125 % and 150 %, and at the screen's recommended setting: text is sharp (not blurry),

@@ -1,19 +1,18 @@
-; NimbleMap for Windows (WP6.2): the Inno Setup 6 script for the Free and Pro installers.
+; NimbleMap for Windows (WP6.2): the Inno Setup 6 script for the installer.
 ; Built by packaging/lm/windows/build-installer.ps1, which stages the files and passes:
-;   /DTier=free|pro  /DAppVersion=0.2.0  /DBuildNumber=0  /DStage=<staged folder>  /DOutDir=<dir>
+;   /DAppVersion=0.2.0  /DBuildNumber=0  /DStage=<staged folder>  /DOutDir=<dir>
 ;   /DSign=1 and /Slmsign=<signtool command> when a signing certificate is configured
-; Free and Pro install side by side: each has its own AppId, folder, Start menu entry, executable
-; name and file-type ProgIDs. Installs for the current user without administrator rights (school
-; laptops); someone with rights can choose "all users" in the first page.
+; One app: Pro's features unlock when someone signs in (docs/lm/accounts-design.md › Entitlement),
+; so there is one AppId, folder, executable and set of file-type ProgIDs. (The separate Pro test
+; installer, AppId {3E0B7A52-6C1D-4E8A-9F3B-2D7C5A9E1B44}, is gone; testers uninstall it.)
+; Installs for the current user without administrator rights (school laptops); someone with
+; rights can choose "all users" in the first page.
 
 ; The display name (installer, Start menu, Apps list, install folder); keep in step with
 ; lm_core::brand (docs/lm/naming.md). AppIds, ProgIDs and executable names are identifiers and
 ; keep their LayeredMap/layeredmap names.
 #define Brand "NimbleMap"
 
-#ifndef Tier
-  #define Tier "free"
-#endif
 #ifndef AppVersion
   #define AppVersion "0.0.0"
 #endif
@@ -27,20 +26,12 @@
   #define OutDir "."
 #endif
 
-#if Tier == "pro"
-  #define AppName Brand + " Pro"
-  #define AppExe "layeredmap-pro.exe"
-  ; Never change an AppId: Windows tells installs apart by it.
-  #define AppGuid "{{3E0B7A52-6C1D-4E8A-9F3B-2D7C5A9E1B44}"
-  #define ProgPrefix "LayeredMapPro"
-  #define OutName Brand + "-Pro-" + AppVersion + "-" + BuildNumber + "-windows-x64-setup"
-#else
-  #define AppName Brand
-  #define AppExe "layeredmap.exe"
-  #define AppGuid "{{8C4F2E91-1B7A-4D3C-A6E5-0F9D8B2C7A13}"
-  #define ProgPrefix "LayeredMap"
-  #define OutName Brand + "-" + AppVersion + "-" + BuildNumber + "-windows-x64-setup"
-#endif
+#define AppName Brand
+#define AppExe "layeredmap.exe"
+; Never change an AppId: Windows tells installs apart by it.
+#define AppGuid "{{8C4F2E91-1B7A-4D3C-A6E5-0F9D8B2C7A13}"
+#define ProgPrefix "LayeredMap"
+#define OutName Brand + "-" + AppVersion + "-" + BuildNumber + "-windows-x64-setup"
 
 [Setup]
 AppId={#AppGuid}
@@ -90,7 +81,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 ; The executable (already signed by build-installer.ps1 when signing is configured), then the
-; resources the app finds beside it: examples, the tier, licences, and for Pro the built-in
+; resources the app finds beside it: examples, licences, the account config and the built-in
 ; reference layers.
 Source: "{#Stage}\{#AppExe}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#Stage}\Resources\*"; DestDir: "{app}\Resources"; Flags: ignoreversion recursesubdirs createallsubdirs
@@ -101,8 +92,7 @@ Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExe}"; Tasks: desktopico
 
 [Registry]
 ; HKA is HKCU for a per-user install and HKLM for an all-users one.
-; .lmap is the app's own type: opened for editing, with the app's icon. With both tiers
-; installed, the one installed last is the default; the other stays in Open With.
+; .lmap is the app's own type: opened for editing, with the app's icon.
 Root: HKA; Subkey: "Software\Classes\.lmap"; ValueType: string; ValueName: ""; ValueData: "{#ProgPrefix}.Map"; Flags: uninsdeletevalue
 Root: HKA; Subkey: "Software\Classes\.lmap"; ValueType: string; ValueName: "Content Type"; ValueData: "application/vnd.layeredmap.map+zip"; Flags: uninsdeletevalue
 Root: HKA; Subkey: "Software\Classes\.lmap\OpenWithProgids"; ValueType: string; ValueName: "{#ProgPrefix}.Map"; ValueData: ""; Flags: uninsdeletevalue
