@@ -2935,6 +2935,7 @@ version = "0.7.0"
 dependencies = [
  "egui",
  "egui-phosphor",
+ "egui-wgpu",
  "egui_kittest",
  "image",
  "lm-account",
