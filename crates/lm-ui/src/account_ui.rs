@@ -3,8 +3,11 @@
 //! work (`lm_account`) runs on a background thread; the pane shows it waiting for the browser.
 //! Once a sign-in email is sent, the pane asks for its 6-digit code while the link can still be
 //! clicked on this computer: whichever comes first signs in.
+//! What unlocks Pro is the signed-in account's entitlement (`lm_account::entitlement`): checked
+//! after signing in, at launch and every few hours, and kept with the session. Locked Pro
+//! features say how to unlock them ([`ask_prompt`], [`locked_line`]) and open Settings › Account.
 //! Accounts are on only when the build has an account config (`lm_account::Config::load`); without
-//! one nothing here shows and the Ask box works as before (docs/lm/accounts-design.md).
+//! one nothing here shows and Pro's features stay hidden (docs/lm/accounts-design.md).
 
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -12,7 +15,7 @@ use std::sync::mpsc::{Receiver, channel};
 
 use egui::{RichText, Ui, vec2};
 
-use lm_account::{Account, AccountError, AskRoute, Method, Provider, Region, User};
+use lm_account::{Access, Account, AccountError, AskRoute, Method, Provider, Region, User};
 use lm_core::{i18n, tl, tn};
 
 use crate::Shell;
@@ -39,6 +42,9 @@ pub struct AccountUi {
     pub(crate) email_code: Option<EmailCode>,
     /// A typed code being checked.
     verifying: Option<Receiver<Result<User, AccountError>>>,
+    /// The entitlement check in flight (`GET …/account`), and when the last one started.
+    checking: Option<Receiver<Result<lm_account::Entitlement, AccountError>>>,
+    last_check: Option<std::time::Instant>,
 }
 
 /// The code-entry state after "Email me a sign-in code".
@@ -75,6 +81,8 @@ impl Default for AccountUi {
             key_present: None,
             email_code: None,
             verifying: None,
+            checking: None,
+            last_check: None,
         }
     }
 }
@@ -111,6 +119,15 @@ impl AccountUi {
     /// Whether this build has accounts at all (Settings… in the menu).
     pub fn available(&self) -> bool {
         self.account.as_ref().is_some_and(|a| a.config().any())
+    }
+
+    /// Whether Pro is unlocked, and if not why (`lm_account::entitlement::access`); `developer` is
+    /// the override. Without an account config: unlocked only by the override.
+    pub fn access(&self, developer: bool) -> Access {
+        match &self.account {
+            Some(a) => a.access(developer),
+            None => lm_account::entitlement::access(developer, false, false, None, 0),
+        }
     }
 
     /// Who is signed in, and where.
@@ -178,8 +195,8 @@ impl AccountUi {
     }
 }
 
-/// Reads the account config, the stored session (no network) and the system region: the app
-/// calls this once at launch in Pro. Without a config nothing changes.
+/// Reads the account config, the stored session with its last known entitlement (no network) and
+/// the system region: the app calls this once at launch. Without a config nothing changes.
 #[cfg(not(target_arch = "wasm32"))]
 pub fn start(shell: &mut Shell) {
     let Some(config) = lm_account::Config::load() else { return };
@@ -220,8 +237,8 @@ fn spawn(shell: &mut Shell, ctx: &egui::Context, doing: Doing) {
             wake.request_repaint();
         };
         let r = match job {
-            Doing::SignIn(p) => sign_in(&account, region, &Method::Provider(p), &c, sent),
-            Doing::EmailLink(e) => sign_in(&account, region, &Method::Email(e), &c, sent),
+            Doing::SignIn(p) => sign_in(&account, region, &Method::Provider(p), &c, sent).inspect(|_| check_now(&account)),
+            Doing::EmailLink(e) => sign_in(&account, region, &Method::Email(e), &c, sent).inspect(|_| check_now(&account)),
             Doing::SignOut => account.sign_out().map(|_| None),
             Doing::Delete => account.delete_account().map(|_| None),
         };
@@ -249,11 +266,63 @@ fn spawn_verify(shell: &mut Shell, ctx: &egui::Context) {
     let (region, address, code) = (ec.region, ec.address.clone(), ec.code.clone());
     let wake = ctx.clone();
     std::thread::spawn(move || {
-        let _ = tx.send(account.verify_code(region, &address, &code));
+        let r = account.verify_code(region, &address, &code).inspect(|_| check_now(&account));
+        let _ = tx.send(r);
         wake.request_repaint();
     });
     shell.account.verifying = Some(rx);
 }
+
+/// Right after signing in: whether the account has Pro (a failure is tried again from [`poll`]).
+#[cfg(not(target_arch = "wasm32"))]
+fn check_now(account: &Account) {
+    if let Err(e) = account.refresh_entitlement() {
+        log::info!("account: Pro not checked after signing in: {e}");
+    }
+}
+
+/// Asks the server whether the signed-in account has Pro: once at launch, then when the last
+/// answer is old ([`lm_account::entitlement::REFRESH_EVERY`]) or, without an answer, a minute
+/// after the last try. One check at a time, on a background thread; the answer lands in the
+/// account, which every frame reads.
+#[cfg(not(target_arch = "wasm32"))]
+fn check_entitlement(shell: &mut Shell, ctx: &egui::Context) {
+    if let Some(rx) = &shell.account.checking {
+        match rx.try_recv() {
+            Ok(r) => {
+                shell.account.checking = None;
+                if let Err(e) = r {
+                    log::info!("account: Pro not checked: {e}");
+                }
+            }
+            Err(std::sync::mpsc::TryRecvError::Disconnected) => shell.account.checking = None,
+            Err(std::sync::mpsc::TryRecvError::Empty) => return,
+        }
+    }
+    let Some(account) = shell.account.account.clone() else { return };
+    if account.user().is_none() || shell.account.busy.is_some() || shell.account.verifying.is_some() {
+        return;
+    }
+    let retry = std::time::Duration::from_secs(lm_account::entitlement::RETRY_AFTER as u64);
+    let due = match shell.account.last_check {
+        None => true,
+        Some(t) => t.elapsed() >= retry && account.entitlement_due(),
+    };
+    if !due {
+        return;
+    }
+    shell.account.last_check = Some(std::time::Instant::now());
+    let (tx, rx) = channel();
+    let wake = ctx.clone();
+    std::thread::spawn(move || {
+        let _ = tx.send(account.refresh_entitlement());
+        wake.request_repaint();
+    });
+    shell.account.checking = Some(rx);
+}
+
+#[cfg(target_arch = "wasm32")]
+fn check_entitlement(_shell: &mut Shell, _ctx: &egui::Context) {}
 
 #[cfg(target_arch = "wasm32")]
 fn spawn_verify(shell: &mut Shell, _ctx: &egui::Context) {
@@ -299,9 +368,10 @@ fn sign_in(
 }
 
 /// The background work's outcome, once it arrives (every frame, so a sign-in that finishes
-/// after Settings was closed still lands).
-pub(crate) fn poll(shell: &mut Shell) {
+/// after Settings was closed still lands), and the entitlement check when it is due.
+pub(crate) fn poll(shell: &mut Shell, ctx: &egui::Context) {
     poll_code(shell);
+    check_entitlement(shell, ctx);
     let r = loop {
         match shell.account.busy.as_ref().map(|b| b.rx.try_recv()) {
             Some(Ok(Event::Sent)) => {
@@ -331,9 +401,10 @@ pub(crate) fn poll(shell: &mut Shell) {
     shell.account.message = match (b.doing, r) {
         (_, Err(AccountError::Cancelled)) => None,
         (Doing::SignIn(_) | Doing::EmailLink(_), Ok(_)) => {
-            // The Ask box's sign-in message has done its job.
+            // The Ask box's sign-in message has done its job; the entitlement was just checked.
             shell.ask.clear_message();
             shell.account.email_code = None;
+            shell.account.last_check = Some(std::time::Instant::now());
             None
         }
         (Doing::SignOut, Ok(_)) => Some((tn!("You're signed out.").into(), false)),
@@ -353,9 +424,11 @@ fn poll_code(shell: &mut Shell) {
     shell.account.verifying = None;
     match r {
         Ok(_) => {
-            // Signed in; the link's wait stops by itself (lm_account ends it).
+            // Signed in; the link's wait stops by itself (lm_account ends it). The entitlement
+            // was checked on the same thread.
             shell.account.email_code = None;
             shell.account.message = None;
+            shell.account.last_check = Some(std::time::Instant::now());
             shell.ask.clear_message();
         }
         Err(AccountError::Cancelled) => {}
@@ -440,7 +513,20 @@ fn account_pane(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme) -> Option<Pane
             };
             ui.label(RichText::new(how).size(CAPTION).color(t.text_secondary));
             ui.add_space(8.0);
-            ui.label(RichText::new(i18n::fmt("{pro} is on for this account.", &brand)).size(BODY));
+            match shell.account.access(false) {
+                Access::NotPro => {
+                    ui.label(RichText::new(i18n::fmt("{pro} isn't on for this account.", &brand)).size(BODY));
+                }
+                Access::Checking => {
+                    ui.horizontal(|ui| {
+                        ui.spinner();
+                        ui.label(RichText::new(tl!("Checking your account…")).size(BODY));
+                    });
+                }
+                _ => {
+                    ui.label(RichText::new(i18n::fmt("{pro} is on for this account.", &brand)).size(BODY));
+                }
+            }
             ui.add_space(12.0);
             if shell.account.confirm_delete {
                 ui.label(
@@ -492,6 +578,14 @@ fn account_pane(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme) -> Option<Pane
                 RichText::new(i18n::fmt(
                     "{pro} is free while it's new. Your account only says who you are: your maps and files never leave this computer.",
                     &brand,
+                ))
+                .size(CAPTION)
+                .color(t.text_secondary),
+            );
+            ui.add_space(2.0);
+            ui.label(
+                RichText::new(tl!(
+                    "Signing in unlocks the Ask box, analysis tools, the built-in world layers and voice input."
                 ))
                 .size(CAPTION)
                 .color(t.text_secondary),
@@ -667,8 +761,24 @@ fn code_entry(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, offline: bool) -
     out
 }
 
-/// The Ask box's prompt in place of its field while signing in is needed.
+/// The Ask box's prompt in place of its field while Pro is locked (or, with the developer
+/// override and the Ask proxy, while nobody is signed in): what to do, and a button that opens
+/// Settings › Account.
 pub(crate) fn ask_prompt(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, width: f32) {
+    let pro = [("pro", lm_core::brand::shown(true))];
+    let (title, line, button) = match shell.pro_access() {
+        Access::NotPro => (
+            i18n::fmt("{pro} isn't on for this account.", &pro),
+            tl!("Settings › Account shows who is signed in and what the account includes.").to_string(),
+            Some(tl!("Settings…")),
+        ),
+        Access::Checking => (tl!("Checking your account…").to_string(), String::new(), None),
+        _ => (
+            i18n::fmt("Sign in to use {pro}", &pro),
+            tl!("Asking about your layers needs a free account. Your maps and files stay on this computer.").to_string(),
+            Some(tl!("Sign In…")),
+        ),
+    };
     crate::chrome::panel_frame(t).show(ui, |ui| {
         ui.set_width(width - 2.0 * theme::PANEL_PADDING);
         let inner = width - 2.0 * theme::PANEL_PADDING;
@@ -678,23 +788,67 @@ pub(crate) fn ask_prompt(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, width
             let words = (inner - 24.0 - 96.0 - 2.0 * ui.spacing().item_spacing.x).max(120.0);
             ui.vertical(|ui| {
                 ui.set_width(words);
-                ui.label(
-                    RichText::new(i18n::fmt("Sign in to use {pro}", &[("pro", lm_core::brand::shown(true))])).font(theme::semibold(BODY)),
-                );
-                ui.label(
-                    RichText::new(tl!("Asking about your layers needs a free account. Your maps and files stay on this computer."))
-                        .size(CAPTION)
-                        .color(t.text_secondary),
-                );
-            });
-            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                let b = egui::Button::new(RichText::new(tl!("Sign In…")).color(t.on_accent)).fill(t.accent).min_size(vec2(80.0, 28.0));
-                if ui.add(b).clicked() {
-                    open(shell);
+                if button.is_none() {
+                    // Checking: a spinner before the words.
+                    ui.horizontal(|ui| {
+                        ui.spinner();
+                        ui.label(RichText::new(&title).font(theme::semibold(BODY)));
+                    });
+                } else {
+                    ui.label(RichText::new(&title).font(theme::semibold(BODY)));
+                }
+                if !line.is_empty() {
+                    ui.label(RichText::new(&line).size(CAPTION).color(t.text_secondary));
                 }
             });
+            if let Some(button) = button {
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    let b = egui::Button::new(RichText::new(button).color(t.on_accent)).fill(t.accent).min_size(vec2(80.0, 28.0));
+                    if ui.add(b).clicked() {
+                        open(shell);
+                    }
+                });
+            }
         });
     });
+}
+
+/// What a locked Pro feature says, in one line: "Sign in to use analysis tools", "NimbleMap Pro
+/// isn't on for this account.", or "Checking your account…".
+pub(crate) fn locked_words(access: Access) -> String {
+    match access {
+        Access::NotPro => i18n::fmt("{pro} isn't on for this account.", &[("pro", lm_core::brand::shown(true))]),
+        Access::Checking => tl!("Checking your account…").to_string(),
+        _ => tl!("Sign in to use analysis tools").to_string(),
+    }
+}
+
+/// Under a card's locked analysis actions: the line saying how to unlock them, and Sign In… (or
+/// Settings…) opening Settings › Account.
+pub(crate) fn locked_line(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme) {
+    let access = shell.pro_access();
+    ui.add_space(4.0);
+    ui.horizontal_wrapped(|ui| {
+        ui.label(RichText::new(egui_phosphor::regular::LOCK_SIMPLE).font(theme::icon_font(13.0)).color(t.text_secondary));
+        ui.label(RichText::new(locked_words(access)).size(CAPTION).color(t.text_secondary));
+        let label = match access {
+            Access::SignedOut => Some(tl!("Sign In…")),
+            Access::NotPro => Some(tl!("Settings…")),
+            _ => None,
+        };
+        if let Some(label) = label
+            && ui.link(RichText::new(label).size(CAPTION)).clicked()
+        {
+            open(shell);
+        }
+    });
+}
+
+/// A locked Pro feature was asked for (a locked button, or a script): Settings › Account opens,
+/// and the notice says why.
+pub(crate) fn locked(shell: &mut Shell) {
+    shell.notice = Some((locked_words(shell.pro_access()), 0.0));
+    open(shell);
 }
 
 /// An account error in the interface's language.
@@ -781,6 +935,7 @@ pub(crate) fn test_ui(signed_in: bool, region: Region) -> AccountUi {
             region: Region::International,
             access: None,
             refresh: "r".into(),
+            entitlement: Some(lm_account::Entitlement { pro: true, plan: None, expires_at: None, checked_at: lm_account::now() }),
         });
     }
     let mut ui = AccountUi::new(acc, region);
@@ -859,6 +1014,7 @@ pub(crate) mod tests {
             region: Region::International,
             access: None,
             refresh: "r".into(),
+            entitlement: None,
         });
         assert!(!a.needs_sign_in());
         // China has no service in this config: no prompt, the old route.

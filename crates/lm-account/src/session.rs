@@ -5,6 +5,7 @@
 use serde_json::{Value as Json, json};
 
 use crate::config::Region;
+use crate::entitlement::Entitlement;
 
 /// Refresh when the access token has less than this left (seconds).
 pub const REFRESH_MARGIN: i64 = 300;
@@ -57,12 +58,19 @@ pub struct Session {
     /// first refresh.
     pub access: Option<(String, i64)>,
     pub refresh: String,
+    /// What the server last said about Pro for this account (kept with the session, so an offline
+    /// launch knows); `None` until the first answer.
+    pub entitlement: Option<Entitlement>,
 }
 
 // Tokens never reach a log.
 impl std::fmt::Debug for Session {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Session").field("user", &self.user).field("region", &self.region).finish_non_exhaustive()
+        f.debug_struct("Session")
+            .field("user", &self.user)
+            .field("region", &self.region)
+            .field("entitlement", &self.entitlement)
+            .finish_non_exhaustive()
     }
 }
 
@@ -89,12 +97,19 @@ impl Session {
         let id = u.get("id").and_then(Json::as_str).filter(|s| !s.is_empty()).ok_or("the answer names no user")?;
         let provider = u["app_metadata"].get("provider").and_then(Json::as_str).unwrap_or("email");
         let email = u.get("email").and_then(Json::as_str).filter(|s| !s.is_empty()).map(str::to_string);
-        Ok(Session { user: User { id: id.into(), provider: provider.into(), email }, region, access: Some((access, expires)), refresh })
+        Ok(Session {
+            user: User { id: id.into(), provider: provider.into(), email },
+            region,
+            access: Some((access, expires)),
+            refresh,
+            entitlement: None,
+        })
     }
 
-    /// The record kept in the credential store: region, refresh token, user. Hex of JSON.
+    /// The record kept in the credential store: region, refresh token, user, and the last known
+    /// entitlement. Hex of JSON.
     pub fn to_record(&self) -> String {
-        let j = json!({
+        let mut j = json!({
             "v": 1,
             "region": self.region.id(),
             "refresh_token": self.refresh,
@@ -102,6 +117,9 @@ impl Session {
             "provider": self.user.provider,
             "email": self.user.email,
         });
+        if let Some(e) = &self.entitlement {
+            j["entitlement"] = e.to_json();
+        }
         j.to_string().bytes().map(|b| format!("{b:02x}")).collect()
     }
 
@@ -122,6 +140,7 @@ impl Session {
             region: Region::from_id(&s("region")?)?,
             access: None,
             refresh: s("refresh_token")?,
+            entitlement: j.get("entitlement").and_then(Entitlement::from_json),
         })
     }
 }
@@ -193,6 +212,11 @@ mod tests {
         assert_eq!(back.user, s.user);
         assert_eq!(back.refresh, "r3fr3sh");
         assert_eq!(back.access, None);
+        // The entitlement is kept with it; a record written before entitlements has none.
+        let mut with = back.clone();
+        with.entitlement = Some(Entitlement { pro: true, plan: Some("monthly".into()), expires_at: None, checked_at: NOW });
+        assert_eq!(Session::from_record(&with.to_record()).and_then(|s| s.entitlement), with.entitlement);
+        assert_eq!(back.entitlement, None);
         assert!(Session::from_record("zz").is_none());
         assert!(Session::from_record("abc").is_none());
         let old: String = r#"{"v":2}"#.bytes().map(|b| format!("{b:02x}")).collect();

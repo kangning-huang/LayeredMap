@@ -31,7 +31,7 @@ const MAX_BYTES: u64 = 64 * 1024;
 #[derive(Clone, Debug, PartialEq)]
 pub struct Update {
     pub version: String,
-    /// Where to download it (https only): the tier's own installer, else the download page.
+    /// Where to download it (https only): the app's installer, else the download page.
     pub url: String,
     /// What is new, in the interface's language when the feed has it.
     pub notes: Option<String>,
@@ -66,15 +66,18 @@ pub fn compare(a: &str, b: &str) -> Option<std::cmp::Ordering> {
 /// `download_windows` the Windows installers (WP6.2; older builds ignore the field).
 pub const DOWNLOAD_KEY: &str = if cfg!(windows) { "download_windows" } else { "download" };
 
-/// Reads a feed: the newer version it names for this build (`current`, Free or `pro`), or `None`
-/// when it names nothing newer, can't be read, is of a format this build doesn't know, offers no
+/// The feed's key for the app's download. There is one app; the key keeps the name it had when
+/// there were two, so feeds stay readable by builds already out there (docs/lm/update-feed.md).
+const APP_KEY: &str = "free";
+
+/// Reads a feed: the newer version it names than `current`, or `None` when it names nothing newer, can't be read, is of a format this build doesn't know, offers no
 /// https link, or needs a newer macOS than `macos` (when known).
-pub fn parse(feed: &str, current: &str, pro: bool, macos: Option<&str>, chinese: bool) -> Option<Update> {
-    parse_for(DOWNLOAD_KEY, feed, current, pro, macos, chinese)
+pub fn parse(feed: &str, current: &str, macos: Option<&str>, chinese: bool) -> Option<Update> {
+    parse_for(DOWNLOAD_KEY, feed, current, macos, chinese)
 }
 
 /// [`parse`] with the downloads under `download_key` (a Windows build never links a .dmg).
-fn parse_for(download_key: &str, feed: &str, current: &str, pro: bool, macos: Option<&str>, chinese: bool) -> Option<Update> {
+fn parse_for(download_key: &str, feed: &str, current: &str, macos: Option<&str>, chinese: bool) -> Option<Update> {
     let j: serde_json::Value = serde_json::from_str(feed).ok()?;
     if j.get("format")?.as_u64()? != FORMAT {
         return None;
@@ -89,8 +92,7 @@ fn parse_for(download_key: &str, feed: &str, current: &str, pro: bool, macos: Op
         return None;
     }
     let https = |v: Option<&serde_json::Value>| v.and_then(|v| v.as_str()).map(str::trim).filter(|u| is_https(u)).map(str::to_string);
-    let tier = if pro { "pro" } else { "free" };
-    let url = https(j.get(download_key).and_then(|d| d.get(tier))).or_else(|| https(j.get("page")))?;
+    let url = https(j.get(download_key).and_then(|d| d.get(APP_KEY))).or_else(|| https(j.get("page")))?;
     let notes = j.get("notes").and_then(|n| {
         let pick = |k: &str| n.get(k).and_then(|v| v.as_str()).map(str::trim).filter(|s| !s.is_empty()).map(str::to_string);
         if chinese { pick("zh").or_else(|| pick("en")) } else { pick("en") }
@@ -177,13 +179,13 @@ pub fn prefers_chinese() -> bool {
 
 /// Starts the launch check against the compiled-in feed, once per run (the app calls this; tests
 /// don't). Off when [`FEED_URL`] is empty.
-pub fn start(ctx: &egui::Context, pro: bool) {
-    start_with(FEED_URL, ctx, pro);
+pub fn start(ctx: &egui::Context) {
+    start_with(FEED_URL, ctx);
 }
 
 /// [`start`] against a given feed address (the offline harness uses one that must never be
 /// contacted).
-pub fn start_with(feed_url: &str, ctx: &egui::Context, pro: bool) {
+pub fn start_with(feed_url: &str, ctx: &egui::Context) {
     if feed_url.trim().is_empty() {
         return;
     }
@@ -202,7 +204,7 @@ pub fn start_with(feed_url: &str, ctx: &egui::Context, pro: bool) {
             let chinese = prefers_chinese();
             let r = lm_net::get_text(lm_net::Purpose::UpdateCheck, &url, std::time::Duration::from_secs(10), MAX_BYTES);
             let found = match r {
-                Ok(text) => parse(&text, env!("CARGO_PKG_VERSION"), pro, macos_version().as_deref(), chinese),
+                Ok(text) => parse(&text, env!("CARGO_PKG_VERSION"), macos_version().as_deref(), chinese),
                 Err(e) => {
                     // No network, offline mode, or a host that's down: skipped without a word.
                     log::info!("update check skipped: {e}");
@@ -222,7 +224,7 @@ pub fn start_with(feed_url: &str, ctx: &egui::Context, pro: bool) {
     }
     #[cfg(target_arch = "wasm32")]
     {
-        let _ = (ctx, pro);
+        let _ = ctx;
         set(State::Done);
     }
 }
@@ -275,8 +277,8 @@ mod tests {
     }
 
     /// The macOS reading of a feed, on any system.
-    fn mac(feed: &str, current: &str, pro: bool, macos: Option<&str>, chinese: bool) -> Option<Update> {
-        parse_for("download", feed, current, pro, macos, chinese)
+    fn mac(feed: &str, current: &str, macos: Option<&str>, chinese: bool) -> Option<Update> {
+        parse_for("download", feed, current, macos, chinese)
     }
 
     const FEED: &str = r#"{
@@ -293,49 +295,49 @@ mod tests {
     }"#;
 
     #[test]
-    fn a_newer_version_gives_the_tiers_download() {
-        let u = mac(FEED, "0.2.0", false, Some("15.1"), false).unwrap();
+    fn a_newer_version_gives_the_apps_download() {
+        let u = mac(FEED, "0.2.0", Some("15.1"), false).unwrap();
         assert_eq!(u.version, "0.3.0");
         assert_eq!(u.url, "https://download.example.cn/NimbleMap-0.3.0.dmg");
         assert_eq!(u.notes.as_deref(), Some("Saving and exporting."));
-        let pro = mac(FEED, "0.2.0", true, None, true).unwrap();
-        assert_eq!(pro.url, "https://download.example.cn/NimbleMap-Pro-0.3.0.dmg");
-        assert_eq!(pro.notes.as_deref(), Some("保存与导出。"));
+        // One app: the old Pro entry is never read.
+        let zh = mac(FEED, "0.2.0", None, true).unwrap();
+        assert_eq!(zh.url, "https://download.example.cn/NimbleMap-0.3.0.dmg");
+        assert_eq!(zh.notes.as_deref(), Some("保存与导出。"));
     }
 
     /// Windows reads its own installers, and the page when the feed has none: never a .dmg.
     #[test]
     fn windows_links_its_installer_or_the_page() {
-        let u = parse_for("download_windows", FEED, "0.2.0", false, None, false).unwrap();
+        let u = parse_for("download_windows", FEED, "0.2.0", None, false).unwrap();
         assert_eq!(u.url, "https://download.example.cn/");
         let win = FEED.replace(
             "\"page\":",
             r#""download_windows": { "free": "https://download.example.cn/NimbleMap-0.3.0-x64-setup.exe" }, "page":"#,
         );
-        let u = parse_for("download_windows", &win, "0.2.0", false, None, false).unwrap();
+        let u = parse_for("download_windows", &win, "0.2.0", None, false).unwrap();
         assert_eq!(u.url, "https://download.example.cn/NimbleMap-0.3.0-x64-setup.exe");
-        assert_eq!(parse_for("download_windows", &win, "0.2.0", true, None, false).unwrap().url, "https://download.example.cn/");
         assert_eq!(DOWNLOAD_KEY, if cfg!(windows) { "download_windows" } else { "download" });
     }
 
     #[test]
     fn nothing_newer_or_nothing_usable_shows_nothing() {
-        assert_eq!(mac(FEED, "0.3.0", false, None, false), None);
-        assert_eq!(mac(FEED, "0.4.0", false, None, false), None);
+        assert_eq!(mac(FEED, "0.3.0", None, false), None);
+        assert_eq!(mac(FEED, "0.4.0", None, false), None);
         // Too old a macOS for the new version.
-        assert_eq!(mac(FEED, "0.2.0", false, Some("12.7"), false), None);
+        assert_eq!(mac(FEED, "0.2.0", Some("12.7"), false), None);
         // A format this build doesn't know.
-        assert_eq!(mac(&FEED.replace("\"format\": 1", "\"format\": 2"), "0.2.0", false, None, false), None);
+        assert_eq!(mac(&FEED.replace("\"format\": 1", "\"format\": 2"), "0.2.0", None, false), None);
         // Only https links; with no tier link, the page; with neither, nothing.
         let http = FEED.replace("https://download.example.cn/NimbleMap-0.3.0.dmg", "http://download.example.cn/x.dmg");
-        assert_eq!(mac(&http, "0.2.0", false, None, false).unwrap().url, "https://download.example.cn/");
+        assert_eq!(mac(&http, "0.2.0", None, false).unwrap().url, "https://download.example.cn/");
         let none = r#"{"format":1,"version":"9.0","download":{"free":"javascript:alert(1)"},"page":"file:///etc"}"#;
-        assert_eq!(mac(none, "0.2.0", false, None, false), None);
-        assert_eq!(mac("not json", "0.2.0", false, None, false), None);
-        assert_eq!(mac(r#"{"format":1}"#, "0.2.0", false, None, false), None);
+        assert_eq!(mac(none, "0.2.0", None, false), None);
+        assert_eq!(mac("not json", "0.2.0", None, false), None);
+        assert_eq!(mac(r#"{"format":1}"#, "0.2.0", None, false), None);
         // Bare minimum: a version and a page.
         let min = r#"{"format":1,"version":"0.2.1","page":"https://example.org/get"}"#;
-        assert_eq!(mac(min, "0.2.0", false, None, false).unwrap().notes, None);
+        assert_eq!(mac(min, "0.2.0", None, false).unwrap().notes, None);
         assert!(!is_https("https://"));
         assert!(!is_https("https://host/ with space"));
     }
@@ -344,7 +346,7 @@ mod tests {
     fn the_check_is_off_without_a_feed_address() {
         // This build has no feed compiled in unless LM_UPDATE_FEED_URL was set.
         if FEED_URL.is_empty() {
-            start(&egui::Context::default(), false);
+            start(&egui::Context::default());
             assert_eq!(*STATE.lock().unwrap_or_else(|e| e.into_inner()), State::Idle);
         }
     }

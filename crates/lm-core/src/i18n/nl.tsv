@@ -791,3 +791,8 @@ Couldn't reach the assistant service: {error}	Kan de assistentdienst niet bereik
 The assistant service's answer was cut off: {error}	Het antwoord van de assistentdienst is afgebroken: {error}
 The assistant service answered {status} with something unreadable.	De assistentdienst antwoordde {status} met iets onleesbaars.
 {app} is working offline, so the assistant can't be reached. Turn off View › Work Offline to ask.	{app} werkt offline en kan de assistent dus niet bereiken. Zet Weergave › Offline werken uit om een vraag te stellen.
+Signing in unlocks the Ask box, analysis tools, the built-in world layers and voice input.	Inloggen ontgrendelt het vraagvak, de analysehulpmiddelen, de ingebouwde wereldlagen en spraakinvoer.
+Checking your account…	Uw account wordt gecontroleerd…
+Sign in to use analysis tools	Log in om de analysehulpmiddelen te gebruiken
+{action} (locked)	{action} (vergrendeld)
+Settings › Account shows who is signed in and what the account includes.	In Instellingen › Account ziet u wie er is ingelogd en wat het account omvat.

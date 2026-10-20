@@ -1,10 +1,11 @@
-//! The Ask box (WP7.1, early test build for NimbleMap Pro): one field at the bottom of the map,
+//! The Ask box (WP7.1, a Pro feature): one field at the bottom of the map,
 //! "Ask about your layers". A request goes to the assistant (`lm_ask`) on a background thread;
 //! the plan comes back checked and already run on a copy of the layers. Its new layer shows over
 //! the map and its filter as a highlight. The plan and its cards show above the box; **Keep**
 //! adds everything as one undo step, **Discard** drops it. A question from the assistant shows
 //! with its choices; the reply continues the exchange. The microphone listens with Apple's
-//! speech recognizer (`crate::dictation`).
+//! speech recognizer (`crate::dictation`). While Pro is locked the box shows how to unlock it
+//! instead of the field (`account_ui::ask_prompt`), so neither asking nor the microphone works.
 
 use std::sync::mpsc::{Receiver, channel};
 use std::time::Instant;
@@ -95,6 +96,17 @@ pub fn submit(shell: &mut Shell, ctx: &egui::Context, text: String) {
     if text.is_empty() || shell.ask.pending.is_some() {
         return;
     }
+    // Pro locked (a script asking; the field isn't shown): say how to unlock it.
+    if !shell.pro() {
+        let words = match shell.pro_access() {
+            lm_account::Access::SignedOut | lm_account::Access::Unavailable => {
+                i18n::fmt("Sign in to use {pro} (Settings › Account).", &[("pro", lm_core::brand::shown(true))])
+            }
+            access => crate::account_ui::locked_words(access),
+        };
+        shell.ask.shown = Some(Shown::Message { text: words, warning: true });
+        return;
+    }
     // Strict offline mode: say so instead of trying (the transport refuses too).
     #[cfg(not(target_arch = "wasm32"))]
     if lm_net::offline() {
@@ -134,6 +146,8 @@ pub fn submit(shell: &mut Shell, ctx: &egui::Context, text: String) {
         history: shell.ask.history.clone(),
         previous,
         model: lm_ask::MODEL.into(),
+        // The built-in world layers are a Pro feature: offered to the assistant only when Pro is
+        // unlocked (checked above).
         reference: reference(),
     };
     discard(shell);
@@ -147,7 +161,17 @@ pub fn submit(shell: &mut Shell, ctx: &egui::Context, text: String) {
             Via::Direct(key) => lm_ask::ask(&lm_ask::openrouter::OpenRouter::new(key) as &dyn Transport, &req, &c),
             // A fresh token first (refreshed when it is about to expire; the network gate decides).
             Via::Proxy { account, url, anon_key } => match account.access_token() {
-                Ok(token) => lm_ask::ask(&lm_ask::proxy::Proxy::new(url, anon_key, token) as &dyn Transport, &req, &c),
+                Ok(token) => {
+                    let turn = lm_ask::ask(&lm_ask::proxy::Proxy::new(url, anon_key, token) as &dyn Transport, &req, &c);
+                    // The service checks Pro on every question: its answer updates the entitlement
+                    // at once (a `not_pro` refusal locks Pro without waiting for the next check).
+                    match &turn.answer {
+                        Ok(_) => account.note_ask_answer(true),
+                        Err(e) if lm_ask::proxy::is_not_pro(e) => account.note_ask_answer(false),
+                        Err(_) => {}
+                    }
+                    turn
+                }
                 Err(lm_account::AccountError::Offline) => {
                     Turn { answer: Err(lm_ask::openrouter::OFFLINE.into()), messages: Vec::new(), usage: Usage::default() }
                 }
@@ -179,7 +203,8 @@ fn direct_key() -> Option<String> {
     None
 }
 
-/// Pro's built-in reference layers, opened once, with the borders of this Mac's region.
+/// Pro's built-in world layers (reference layers), opened once, with the borders of this Mac's
+/// region.
 fn reference() -> Option<std::sync::Arc<lm_ask::reference::Reference>> {
     static REF: std::sync::OnceLock<Option<std::sync::Arc<lm_ask::reference::Reference>>> = std::sync::OnceLock::new();
     REF.get_or_init(|| {
@@ -248,6 +273,10 @@ fn discard(shell: &mut Shell) {
 
 /// The microphone (the button, and scripts): starts listening, or stops it.
 pub fn dictate(shell: &mut Shell, ctx: &egui::Context) {
+    // Voice input is a Pro feature.
+    if !shell.pro() {
+        return;
+    }
     #[cfg(not(target_arch = "wasm32"))]
     {
         if let Some((d, _)) = &mut shell.ask.listening {
@@ -313,16 +342,6 @@ fn keep(shell: &mut Shell) {
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
-fn internal_build() -> bool {
-    lm_ask::openrouter::internal_build()
-}
-
-#[cfg(target_arch = "wasm32")]
-fn internal_build() -> bool {
-    false
-}
-
 fn short(s: &str, n: usize) -> String {
     if s.chars().count() <= n { s.to_string() } else { format!("{}…", s.chars().take(n - 1).collect::<String>()) }
 }
@@ -349,10 +368,11 @@ fn step_words(o: &StepOutcome) -> Option<String> {
     }
 }
 
-/// Whether the Ask box shows: in Pro, once a layer is open, when the map leaves room for it.
+/// Whether the Ask box shows: once a layer is open, when the map leaves room for it, and when Pro
+/// is unlocked or can be (locked, it shows how to unlock it).
 pub fn shows(shell: &Shell, map: egui::Rect) -> bool {
     // Nothing to ask about until a layer is open; the welcome card has that space.
-    if !shell.pro || shell.ws.doc.layers.is_empty() {
+    if !shell.pro_access().visible() || shell.ws.doc.layers.is_empty() {
         return false;
     }
     let (left, right) = shell.panel_insets();
@@ -386,8 +406,9 @@ pub fn ask_box(shell: &mut Shell, ui: &mut Ui, map: egui::Rect) {
                     crate::time_ui::controls(shell, ui, width);
                     ui.add_space(8.0);
                 }
-                // Pro through the Ask proxy needs an account: the prompt takes the field's place.
-                if shell.account.needs_sign_in() {
+                // Locked, the prompt takes the field's place (and with it the microphone); so it
+                // does with the developer override when the Ask proxy needs someone signed in.
+                if !shell.pro() || shell.account.needs_sign_in() {
                     crate::account_ui::ask_prompt(shell, ui, &t, width);
                 } else {
                     field(shell, ui, &t, width);
@@ -568,8 +589,9 @@ fn answer_panel(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, width: f32, ma
                 if ui.button(tl!("Discard")).clicked() {
                     action = Some(false);
                 }
-                // The cost shows only in internal builds (owner's decision, 2026-10-18).
-                if shell.developer || internal_build() {
+                // The cost shows only to developers (owner's decision, 2026-10-18; no build carries
+                // a key any more).
+                if shell.developer {
                     // i18n: developer only
                     let caption = format!(
                         "{} model call{} · US${:.4} · {seconds:.1} s",
