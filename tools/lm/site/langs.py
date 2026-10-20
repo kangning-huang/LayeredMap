@@ -6,7 +6,8 @@ Every page carries the same language plumbing, and it must list every language t
   English), and `og:locale`;
 - the language menu in the header (a `<details>` list, so it works without JavaScript);
 - the list of languages in the footer;
-- the site navigation in the header (Home, Examples, Help, Download) and the footer's links
+- the app's download links (the DMG: GitHub Releases, or the GitCode mirror on Chinese pages);
+- the site navigation in the header (Home, Examples, Data, Help, Download) and the footer's links
   (Help, Glossary, Pro, Changelog) with the line saying NimbleMap is an independent project.
 
 Translated pages are written by hand; this script rewrites only those parts, from LANGS and
@@ -94,6 +95,16 @@ WORDS = {
 
 CHANGELOG = "https://github.com/kangning-huang/NimbleMap/blob/main/CHANGELOG.md"
 
+# Where the app's download buttons point, per language folder (every `href` ending in the DMG's
+# file name is rewritten to this, and one ending in its .sha256 checksum file to this + ".sha256"). GitHub's /releases/latest/ alias follows each release by itself.
+# Chinese pages use the GitCode mirror for mainland China, which has no "latest" alias: its URL
+# names the version, so BUMP THE TAG HERE WITH EVERY RELEASE.
+DMG_NAME = "NimbleMap-macos-arm64.dmg"
+DMG_GITHUB = f"https://github.com/kangning-huang/NimbleMap/releases/latest/download/{DMG_NAME}"
+GITCODE = "https://gitcode.com/KN-Huang/NimbleMap"
+DMG_GITCODE = f"{GITCODE}/releases/download/v0.7.0/{DMG_NAME}"
+DMG = {"zh": DMG_GITCODE}  # every other language: DMG_GITHUB
+
 GLOBE = (
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">'
     '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.6 3.9 5.6 3.9 9s-1.3 6.4-3.9 9'
@@ -113,6 +124,7 @@ FOOT_END = re.compile(r"(</div>\n  </div>\n</footer>)")
 # The header's page links, between the <nav> and the language menu.
 NAV = re.compile(r'(<nav class="nav" aria-label="[^"]*">\n)(?:[ \t]*<a [^>]*>[^<]*</a>\n)*([ \t]*<details class="lang-menu">)')
 # The footer's right-hand column: the old "Help · Glossary" links, or the column written here.
+DMG_LINK = re.compile(r'href="https://[^"]*/' + re.escape(DMG_NAME) + r'(\.sha256)?"')
 FOOT_COL = re.compile(r'<div(?: class="foot-nav")?>(?:<a href="help\.html">|<p class="foot-links">).*?<p class="foot-langs">.*?</p></div>', re.S)
 
 
@@ -185,6 +197,11 @@ def foot(lang: Lang, name: str, site: Path) -> str:
     return f'<p class="foot-langs">{" · ".join(links)}</p>'
 
 
+def dmg(lang: Lang) -> str:
+    """The app download URL for pages in this language."""
+    return DMG.get(lang.folder, DMG_GITHUB)
+
+
 def words(lang: Lang) -> Words:
     if lang.folder not in WORDS:
         raise ValueError(f"{lang.hreflang}: no row in WORDS")
@@ -194,10 +211,12 @@ def words(lang: Lang) -> Words:
 def nav(lang: Lang, name: str) -> str:
     """The header's page links; the current section is marked (the workflows belong to Help)."""
     w = words(lang)
-    here = {"index.html": "index.html", "help.html": "help.html", "download.html": "download.html"}.get(name)
+    here = {"index.html": "index.html", "data.html": "data.html", "help.html": "help.html",
+            "download.html": "download.html"}.get(name)
     if name.startswith("workflow-"):
         here = "help.html"
-    rows = [("index.html", w.home), ("index.html#examples", w.examples), ("help.html", w.help), ("download.html", w.download)]
+    rows = [("index.html", w.home), ("index.html#examples", w.examples), ("data.html", w.data), ("help.html", w.help),
+            ("download.html", w.download)]
     out = []
     for target, label in rows:
         current = ' aria-current="page"' if target == here else ""
@@ -264,6 +283,7 @@ def rewrite(text: str, rel: str, site: Path = SITE) -> str:
     text, n = FOOT_COL.subn(lambda _: foot_col(lang, name, site), text, count=1)
     if n != 1:
         raise ValueError(f"{rel}: no footer links column")
+    text = DMG_LINK.sub(lambda m: f'href="{dmg(lang)}{m.group(1) or ""}"', text)
     return text
 
 

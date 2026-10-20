@@ -70,19 +70,21 @@ text; the tests check this, and the stamp script drops them from the published c
 
 ### Where it is published
 
-Until the domain is bought, the stamped site is served by GitHub Pages from the public
-[NimbleMap](https://github.com/kangning-huang/NimbleMap) repository (`main` › `/docs`) at
-https://kangning-huang.github.io/NimbleMap/. That repository holds only the website, the changelog
-and user feedback: never source code, packaging scripts or keys. To update it, stamp into a new
-folder, replace that repository's `docs/` with it (keep `docs/.nojekyll`) and push:
+The stamped site is served by GitHub Pages from the public
+[NimbleMap](https://github.com/kangning-huang/NimbleMap) repository (`main` › `/docs`) at its
+custom domain, https://nimblemap.com/ (nimblemap.app redirects there at Cloudflare; don't point the
+Pages CNAME at it). That repository holds only the website, the changelog and user feedback: never
+source code, packaging scripts or keys. To update it, stamp into a new folder and copy it over that
+repository's `docs/`, keeping `docs/.nojekyll` (and the `backups/` folder at the repository root):
 
 ```sh
-python3 -I tools/lm/site/stamp.py https://kangning-huang.github.io/NimbleMap /path/to/new/folder
+python3 -I tools/lm/site/stamp.py /path/to/new/folder        # ORIGIN defaults to https://nimblemap.com/
+rsync -a --delete --exclude .nojekyll /path/to/new/folder/ /path/to/NimbleMap/docs/
 ```
 
-A project site lives below the host root, where crawlers don't read `robots.txt`, so the script
-writes none; submit `sitemap.xml` in Search Console instead. When the domain is bought, stamp with
-it, add a `docs/CNAME` file holding the domain, and set it under the repository's Pages settings.
+Stamping for a host root also writes `robots.txt` and `CNAME` (holding `nimblemap.com`), so the
+copy keeps the custom domain. Always stamp with the live origin: stamping with another one rewrites
+every canonical and hreflang URL to it.
 
 ## In the app
 

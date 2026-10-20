@@ -38,6 +38,7 @@
     <nav class="nav" aria-label="サイト">
       <a href="index.html">ホーム</a>
       <a href="index.html#examples">サンプル</a>
+      <a href="data.html" aria-current="page">データ</a>
       <a href="help.html">ヘルプ</a>
       <a href="download.html">ダウンロード</a>
       <details class="lang-menu">
@@ -67,7 +68,7 @@
     <p class="eyebrow">探してみたいデータ</p>
     <h1>地図データはどこで手に入る？</h1>
     <p class="lede">まずは手元にある地図データから始めて、次に無料で公開されている選りすぐりのデータセットを試してみましょう。どれも NimbleMap で開けて、それぞれに見どころを一言添えています。</p>
-    <p class="ds-host">これらのファイルは NimbleMap がホストしているものではありません。リンクはどれも元の提供元につながっているので、いつでも最新版を、提供元自身の利用条件のもとで入手できます。リンクは 2026年10月19日に確認しました。</p>
+    <p class="ds-host">これらのファイルは NimbleMap がホストしているものではありません。リンクはどれも元の提供元につながっているので、いつでも最新版を、提供元自身の利用条件のもとで入手できます。リンクは 2026年10月20日に確認しました。</p>
   </div>
 </div>
 
@@ -83,7 +84,7 @@
       <div><h3>Google マップの保存した場所</h3><p><a href="https://takeout.google.com/" rel="noopener" target="_blank">Google Takeout</a> › <span class="ui">Maps (your places)</span>（マップ（マイプレイス））で <code>Saved Places.json</code> ファイルが手に入ります。これは GeoJSON なので、点として開けます。タイムライン（ロケーション履歴）は現在スマートフォン内に保存されていて、その書き出しはただの JSON ファイルです。NimbleMap がまだ開けない形式です。</p></div>
       <div><h3>場所の一覧のスプレッドシート</h3><p>緯度と経度の列がある CSV、TSV、Excel ファイルなら、どれも点として開けます。NimbleMap は <code>lat</code>/<code>latitude</code> や <code>lon</code>/<code>lng</code>/<code>longitude</code> のような名前の列を見つけ、どれを使ったかを伝えます。列名が違う場合は自分で選んでください。国名、アメリカの州、中国の省など、地名しかない表は、代わりに境界データに結合できます。</p></div>
     </div>
-    <div class="note ds-tip"><strong>ダウンロードしたファイルの開き方</strong> ファイルをダウンロードしたら、ダブルクリックするか、NimbleMap のウインドウにドラッグします。.zip で届いた場合は、先に Finder でダブルクリックして解凍してください（zip に入った Shapefile はそのままでも開けます）。<code>.gz</code> ファイルも同じ方法で展開できます。</div>
+    <div class="note ds-tip"><strong>ダウンロードしたファイルの開き方</strong> ファイルをダウンロードしたら、NimbleMap にドラッグします。Shapefile、GeoPackage、NetCDF はダブルクリックでも開けます。ほかのファイルは右クリック › このアプリケーションで開く › NimbleMap で開きます。.zip で届いた場合は、先に Finder でダブルクリックして解凍してください（zip に入った Shapefile はそのままでも開けます）。<code>.gz</code> ファイルも同じ方法で展開できます。 ファイルがダウンロードされずにブラウザで文字として表示されたら、⌘S で保存してください。</div>
     <nav class="ds-jump" aria-label="ジャンプ">
       <a href="#hazards">地球と災害 <span>3</span></a>
       <a href="#climate">気候と海 <span>3</span></a>
@@ -106,25 +107,28 @@
     </div>
     <div class="ds-grid">
       <article class="ds">
+        <img class="ds-art" src="../img/data/earthquakes.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
         <h3>リアルタイムの地震</h3>
         <p class="ds-src">USGS Earthquake Hazards Program（米国地質調査所）</p>
         <ul class="ds-chips"><li>CSV</li><li>30 日分で約 10,000 行</li><li>パブリックドメイン</li></ul>
         <p class="ds-why">過去 1 時間、1 日、1 週間、1 か月に記録されたすべての地震で、毎分更新されます。<code>mag</code>（マグニチュード）で色分けすると、ニュースにならない小さな地震がどれほど多いかがわかります。</p>
-        <a class="ds-get" href="https://earthquake.usgs.gov/earthquakes/feed/v1.0/csv.php" rel="noopener" target="_blank">データを入手<span aria-hidden="true"> ↗</span></a>
+        <div class="ds-actions"><a class="ds-get" href="https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.csv" download>CSV をダウンロード · 2 MB</a><a class="ds-more" href="https://earthquake.usgs.gov/earthquakes/feed/v1.0/csv.php" rel="noopener" target="_blank">提供元のページ<span aria-hidden="true"> ↗</span></a></div>
       </article>
       <article class="ds">
+        <img class="ds-art" src="../img/data/fires.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
         <h3>いま燃えている火災</h3>
         <p class="ds-src">NASA FIRMS</p>
         <ul class="ds-chips"><li>CSV · Shapefile · KML</li><li>1 日あたり約 11,000 行（MODIS）</li><li>NASA オープンデータ</li></ul>
         <p class="ds-why">過去 24 時間、48 時間、7 日間に衛星が検出したすべての火災ホットスポット。<code>frp</code>（火災の放射強度）で色分けして最も激しい火災を探したり、<code>daynight</code> で絞り込んで昼と夜を比べたりできます。</p>
-        <a class="ds-get" href="https://firms.modaps.eosdis.nasa.gov/active_fire/" rel="noopener" target="_blank">データを入手<span aria-hidden="true"> ↗</span></a>
+        <div class="ds-actions"><a class="ds-get" href="https://firms.modaps.eosdis.nasa.gov/data/active_fire/modis-c6.1/csv/MODIS_C6_1_Global_24h.csv" download>CSV をダウンロード · 0.8 MB</a><a class="ds-more" href="https://firms.modaps.eosdis.nasa.gov/active_fire/" rel="noopener" target="_blank">提供元のページ<span aria-hidden="true"> ↗</span></a></div>
       </article>
       <article class="ds">
+        <img class="ds-art" src="../img/data/tornadoes.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
         <h3>1950年以降のアメリカのすべての竜巻</h3>
         <p class="ds-src">NOAA Storm Prediction Center（米国海洋大気庁 暴風予測センター）</p>
         <ul class="ds-chips"><li>Shapefile（zip）</li><li>73,458 本の経路 · 5 MB</li><li>パブリックドメイン</li></ul>
         <p class="ds-why">1950年から2025年までの 73,458 本の竜巻の経路。それぞれに強さ、負傷者数、死者数、長さ、幅が付いています。<code>mag</code> で色分けすると、「竜巻街道」が浮かび上がります。同じページに雹と強風の記録もあります。</p>
-        <a class="ds-get" href="https://www.spc.noaa.gov/gis/svrgis/" rel="noopener" target="_blank">データを入手<span aria-hidden="true"> ↗</span></a>
+        <div class="ds-actions"><a class="ds-get" href="https://www.spc.noaa.gov/gis/svrgis/zipped/1950-2025-torn-aspath.zip" download>Shapefile（zip） をダウンロード · 5 MB</a><a class="ds-more" href="https://www.spc.noaa.gov/gis/svrgis/" rel="noopener" target="_blank">提供元のページ<span aria-hidden="true"> ↗</span></a></div>
       </article>
     </div>
   </div>
@@ -138,25 +142,28 @@
     </div>
     <div class="ds-grid">
       <article class="ds">
+        <img class="ds-art" src="../img/data/temperature.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
         <h3>世界の気温偏差</h3>
         <p class="ds-src">NASA GISS（GISTEMP v4）</p>
-        <ul class="ds-chips"><li>NetCDF（.nc.gz、11 MB）</li><li>2° グリッド · 月ごと</li><li>NASA オープンデータ（クレジット：NASA GISS）</li></ul>
+        <ul class="ds-chips"><li>NetCDF（.nc.gz、26 MB）</li><li>2° グリッド · 月ごと</li><li>NASA オープンデータ（クレジット：NASA GISS）</li></ul>
         <p class="ds-why">地球の 2° 四方ごとに、各月の気温が 1951〜1980年の平均よりどれだけ高かったか、低かったか。.gz をダブルクリックして展開し、タイムスライダーを再生すると、色が変わっていく様子が見られます。</p>
-        <a class="ds-get" href="https://data.giss.nasa.gov/gistemp/" rel="noopener" target="_blank">データを入手<span aria-hidden="true"> ↗</span></a>
+        <div class="ds-actions"><a class="ds-get" href="https://data.giss.nasa.gov/pub/gistemp/gistemp1200_GHCNv4_ERSSTv5.nc.gz" download>NetCDF（.gz） をダウンロード · 26 MB</a><a class="ds-more" href="https://data.giss.nasa.gov/gistemp/" rel="noopener" target="_blank">提供元のページ<span aria-hidden="true"> ↗</span></a></div>
       </article>
       <article class="ds">
+        <img class="ds-art" src="../img/data/sea-temperature.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
         <h3>1854年以降の海面水温</h3>
         <p class="ds-src">NOAA ERSST v5（NOAA PSL 経由）</p>
-        <ul class="ds-chips"><li>NetCDF（sst.mnmean.nc）</li><li>160 MB · 2° グリッド · 月ごと</li><li>NOAA オープンデータ</li><li class="ds-flag">大容量</li></ul>
+        <ul class="ds-chips"><li>NetCDF（sst.mnmean.nc）</li><li>161 MB · 2° グリッド · 月ごと</li><li>NOAA オープンデータ</li><li class="ds-flag">大容量</li></ul>
         <p class="ds-why">1854年1月までさかのぼる月ごとの海面水温。船、ブイ、Argo フロートの観測から復元したものです。年を追って、エルニーニョが東太平洋を暖める様子を探してみましょう。</p>
-        <a class="ds-get" href="https://psl.noaa.gov/data/gridded/data.noaa.ersst.v5.html" rel="noopener" target="_blank">データを入手<span aria-hidden="true"> ↗</span></a>
+        <div class="ds-actions"><a class="ds-get" href="https://downloads.psl.noaa.gov/Datasets/noaa.ersst.v5/sst.mnmean.nc" download>NetCDF をダウンロード · 161 MB</a><a class="ds-more" href="https://psl.noaa.gov/data/gridded/data.noaa.ersst.v5.html" rel="noopener" target="_blank">提供元のページ<span aria-hidden="true"> ↗</span></a></div>
       </article>
       <article class="ds">
+        <img class="ds-art" src="../img/data/precipitation.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
         <h3>1979年以降の世界の雨と雪</h3>
         <p class="ds-src">GPCP v2.3（NOAA PSL 経由）</p>
         <ul class="ds-chips"><li>NetCDF（precip.mon.mean.nc）</li><li>20 MB · 2.5° グリッド · 月ごと</li><li>NOAA オープンデータ</li></ul>
         <p class="ds-why">1979年1月以降の全世界の月ごとの降水量（1 日あたり mm）。衛星と雨量計のデータによります。1 年分を追うと、モンスーンの雨がアジアの上を移動していく様子がわかります。</p>
-        <a class="ds-get" href="https://psl.noaa.gov/data/gridded/data.gpcp.html" rel="noopener" target="_blank">データを入手<span aria-hidden="true"> ↗</span></a>
+        <div class="ds-actions"><a class="ds-get" href="https://downloads.psl.noaa.gov/Datasets/gpcp/precip.mon.mean.nc" download>NetCDF をダウンロード · 20 MB</a><a class="ds-more" href="https://psl.noaa.gov/data/gridded/data.gpcp.html" rel="noopener" target="_blank">提供元のページ<span aria-hidden="true"> ↗</span></a></div>
       </article>
     </div>
   </div>
@@ -170,32 +177,37 @@
     </div>
     <div class="ds-grid">
       <article class="ds">
+        <img class="ds-art" src="../img/data/wind-turbines.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
         <h3>アメリカのすべての風力タービン</h3>
         <p class="ds-src">US Wind Turbine Database v9.1（USGS、LBNL、ACP）</p>
         <ul class="ds-chips"><li>GeoJSON · CSV · Shapefile（zip）</li><li>77,839 基のタービン · 2 MB</li><li>パブリックドメイン（USGS）</li></ul>
         <p class="ds-why">77,839 基のタービンそれぞれに、建設年（1982〜2026年）、高さ、出力が付いています。建設年（<code>p_year</code>）で色分けすると、風力発電がグレートプレーンズに広がっていく様子が見られます。</p>
-        <a class="ds-get" href="https://energy.usgs.gov/uswtdb/data/" rel="noopener" target="_blank">データを入手<span aria-hidden="true"> ↗</span></a>
+        <div class="ds-actions"><a class="ds-get" href="https://energy.usgs.gov/uswtdb/assets/data/uswtdbGeoJSON.zip" download>GeoJSON（zip） をダウンロード · 1.4 MB</a><a class="ds-more" href="https://energy.usgs.gov/uswtdb/data/" rel="noopener" target="_blank">提供元のページ<span aria-hidden="true"> ↗</span></a></div>
       </article>
       <article class="ds">
+        <img class="ds-art" src="../img/data/nuclear.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
         <h3>世界の原子力発電所の原子炉</h3>
         <p class="ds-src">GeoNuclearData（GitHub）</p>
         <ul class="ds-chips"><li>CSV · JSON</li><li>804 基の原子炉</li><li>ODbL</li><li class="ds-flag">中国本土以外のネットワークが必要な場合あり</li></ul>
         <p class="ds-why">運転中、建設中、計画中、閉鎖済みの 804 基の原子炉と、その炉型と出力。<code>Status</code> で絞り込むと、新しい原子炉がどこで建設されているかがわかります。</p>
-        <a class="ds-get" href="https://github.com/cristianst85/GeoNuclearData" rel="noopener" target="_blank">データを入手<span aria-hidden="true"> ↗</span></a>
+        <div class="ds-actions"><a class="ds-get" href="https://raw.githubusercontent.com/cristianst85/GeoNuclearData/master/data/csv/denormalized/nuclear_power_plants.csv" download>CSV をダウンロード · 110 KB</a><a class="ds-more" href="https://github.com/cristianst85/GeoNuclearData" rel="noopener" target="_blank">提供元のページ<span aria-hidden="true"> ↗</span></a></div>
       </article>
       <article class="ds">
+        <img class="ds-art" src="../img/data/solar.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
         <h3>宇宙から見た太陽光発電所</h3>
         <p class="ds-src">Kruitwagen et al. 2021, Nature（Zenodo）</p>
         <ul class="ds-chips"><li>GeoJSON</li><li>68,661 個のポリゴン · 275 MB</li><li>CC BY 4.0</li><li class="ds-flag">大容量</li></ul>
-        <p class="ds-why">2018年末時点の 68,661 か所の太陽光発電施設を、衛星画像から機械学習で輪郭抽出したもの。<code>predicted_set.geojson</code> を開いてズームインすると、パネルが並ぶ敷地の実際の形が見えます。</p>
-        <a class="ds-get" href="https://zenodo.org/records/5005868" rel="noopener" target="_blank">データを入手<span aria-hidden="true"> ↗</span></a>
+        <p class="ds-why">2018年末時点の 68,661 か所の太陽光発電施設を、衛星画像から機械学習で輪郭抽出したもの。<code>trn_polygons.geojson</code> を開いてズームインすると、パネルが並ぶ敷地の実際の形が見えます。</p>
+        <p class="ds-how">このボタンでは trn_polygons.geojson（同じ研究の 36,882 か所）をダウンロードします。完全版の predicted_set.geojson（275 MB）には NaN 値がいくつか含まれていて、NimbleMap はまだ読み込めません。</p>
+        <div class="ds-actions"><a class="ds-get" href="https://zenodo.org/records/5005868/files/trn_polygons.geojson?download=1" download>GeoJSON をダウンロード · 17 MB</a><a class="ds-more" href="https://zenodo.org/records/5005868" rel="noopener" target="_blank">提供元のページ<span aria-hidden="true"> ↗</span></a></div>
       </article>
       <article class="ds">
+        <img class="ds-art" src="../img/data/mines.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
         <h3>世界の鉱山の輪郭</h3>
         <p class="ds-src">Maus et al. 2022（PANGAEA）</p>
-        <ul class="ds-chips"><li>GeoPackage</li><li>44,929 個のポリゴン · 24 MB</li><li>CC BY-SA 4.0</li></ul>
+        <ul class="ds-chips"><li>GeoPackage</li><li>44,929 個のポリゴン · 25 MB</li><li>CC BY-SA 4.0</li></ul>
         <p class="ds-why">露天掘り、鉱滓ダム、廃石の集積場を含む 44,929 か所、計 101,583 km² の採掘地を、衛星画像から手作業でトレースしたもの。<code>AREA</code> で色分けすると巨大な鉱山が見つかります。.gpkg ファイル単体をダウンロードしてください。全ファイルの zip はアカウントが必要です。</p>
-        <a class="ds-get" href="https://doi.org/10.1594/PANGAEA.942325" rel="noopener" target="_blank">データを入手<span aria-hidden="true"> ↗</span></a>
+        <div class="ds-actions"><a class="ds-get" href="https://download.pangaea.de/dataset/942325/files/global_mining_polygons_v2.gpkg" download>GeoPackage をダウンロード · 25 MB</a><a class="ds-more" href="https://doi.org/10.1594/PANGAEA.942325" rel="noopener" target="_blank">提供元のページ<span aria-hidden="true"> ↗</span></a></div>
       </article>
     </div>
   </div>
@@ -209,25 +221,29 @@
     </div>
     <div class="ds-grid">
       <article class="ds">
+        <img class="ds-art" src="../img/data/cities.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
         <h3>人口付きの世界の都市</h3>
         <p class="ds-src">simplemaps World Cities Basic</p>
         <ul class="ds-chips"><li>CSV · Excel</li><li>約 50,200 都市</li><li>CC BY 4.0（クレジット：simplemaps）</li></ul>
         <p class="ds-why">NimbleMap に付属する都市より充実した一覧：人口と国コード付きの約 50,000 の都市と町。<code>population</code> で色分けするか、<code>capital</code> で絞り込んで首都だけを表示できます。</p>
-        <a class="ds-get" href="https://simplemaps.com/data/world-cities" rel="noopener" target="_blank">データを入手<span aria-hidden="true"> ↗</span></a>
+        <p class="ds-how">直接リンクはありません。サイトが最初にブラウザを確認し、ファイル名もバージョンごとに変わるためです。ページの Basic（無料）の下にある Download をクリックしてください。</p>
+        <div class="ds-actions"><a class="ds-get" href="https://simplemaps.com/data/world-cities" rel="noopener" target="_blank">ダウンロードページを開く<span aria-hidden="true"> ↗</span></a></div>
       </article>
       <article class="ds">
+        <img class="ds-art" src="../img/data/life-expectancy.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
         <h3>すべての国の平均寿命</h3>
         <p class="ds-src">Our World in Data</p>
-        <ul class="ds-chips"><li>CSV（グラフの Download から）</li><li>約 21,500 行 · 1543〜2023年</li><li>CC BY 4.0</li></ul>
+        <ul class="ds-chips"><li>CSV</li><li>約 21,500 行 · 1543〜2023年</li><li>CC BY 4.0</li></ul>
         <p class="ds-why">この表には座標がなく、国コードの <code>Code</code> 列だけがあるので、NimbleMap の国のレイヤーに結合し、<code>Year</code> で絞り込みます。世界の平均寿命は 1900年の 32 歳から 2023年には 73 歳になりました。</p>
-        <a class="ds-get" href="https://ourworldindata.org/grapher/life-expectancy" rel="noopener" target="_blank">データを入手<span aria-hidden="true"> ↗</span></a>
+        <div class="ds-actions"><a class="ds-get" href="https://ourworldindata.org/grapher/life-expectancy.csv" download>CSV をダウンロード · 0.6 MB</a><a class="ds-more" href="https://ourworldindata.org/grapher/life-expectancy" rel="noopener" target="_blank">提供元のページ<span aria-hidden="true"> ↗</span></a></div>
       </article>
       <article class="ds">
+        <img class="ds-art" src="../img/data/population.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
         <h3>人が住む場所、1 km グリッド</h3>
         <p class="ds-src">WorldPop（サウサンプトン大学）</p>
-        <ul class="ds-chips"><li>GeoTIFF</li><li>中国 2020年：52 MB</li><li>CC BY 4.0</li></ul>
+        <ul class="ds-chips"><li>GeoTIFF</li><li>中国 2020年：49 MB</li><li>CC BY 4.0</li></ul>
         <p class="ds-why">2000年から2020年までの任意の年について、任意の国の 1 km セルごとの推定人口。中国を選び、胡煥庸線（Hu Line）の両側のセルをクリックして比べてみましょう。</p>
-        <a class="ds-get" href="https://hub.worldpop.org/geodata/listing?id=75" rel="noopener" target="_blank">データを入手<span aria-hidden="true"> ↗</span></a>
+        <div class="ds-actions"><a class="ds-get" href="https://data.worldpop.org/GIS/Population/Global_2000_2020_1km_UNadj/2020/CHN/chn_ppp_2020_1km_Aggregated_UNadj.tif" download>GeoTIFF をダウンロード · 49 MB（中国、2020年）</a><a class="ds-more" href="https://hub.worldpop.org/geodata/listing?id=75" rel="noopener" target="_blank">ほかの国と年<span aria-hidden="true"> ↗</span></a></div>
       </article>
     </div>
   </div>
@@ -241,25 +257,28 @@
     </div>
     <div class="ds-grid">
       <article class="ds">
+        <img class="ds-art" src="../img/data/airports.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
         <h3>すべての空港、滑走路、ヘリポート</h3>
         <p class="ds-src">OurAirports</p>
         <ul class="ds-chips"><li>CSV</li><li>86,258 か所 · 13 MB</li><li>パブリックドメイン</li><li class="ds-flag">中国本土以外のネットワークが必要な場合あり</li></ul>
         <p class="ds-why">付属の空港レイヤーの完全版で、毎日更新されます：42,820 の小さな滑走路、23,248 のヘリポート、1,273 の水上機基地、さらに 63 の気球ポートまで。<code>type</code> で絞り込むと、閉鎖された 13,574 か所が見つかります。</p>
-        <a class="ds-get" href="https://github.com/davidmegginson/ourairports-data" rel="noopener" target="_blank">データを入手<span aria-hidden="true"> ↗</span></a>
+        <div class="ds-actions"><a class="ds-get" href="https://davidmegginson.github.io/ourairports-data/airports.csv" download>CSV をダウンロード · 13 MB</a><a class="ds-more" href="https://github.com/davidmegginson/ourairports-data" rel="noopener" target="_blank">提供元のページ<span aria-hidden="true"> ↗</span></a></div>
       </article>
       <article class="ds">
+        <img class="ds-art" src="../img/data/ports.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
         <h3>World Port Index（世界港湾一覧）</h3>
         <p class="ds-src">米国国家地球空間情報局（Pub 150）</p>
         <ul class="ds-chips"><li>CSV（UpdatedPub150.csv）</li><li>3,807 の港</li><li>パブリックドメイン</li></ul>
         <p class="ds-why">3,807 の港湾それぞれに、港の規模、航路の水深、受け入れ可能な最大船長など 100 を超える情報が付いています。<code>Channel Depth (m)</code> で色分けすると、最大の船を受け入れられる港がわかります。</p>
-        <a class="ds-get" href="https://msi.nga.mil/Publications/WPI" rel="noopener" target="_blank">データを入手<span aria-hidden="true"> ↗</span></a>
+        <div class="ds-actions"><a class="ds-get" href="https://msi.nga.mil/api/publications/download?key=16920959/SFH00000/UpdatedPub150.csv&amp;type=download" download>CSV をダウンロード · 3.5 MB</a><a class="ds-more" href="https://msi.nga.mil/Publications/WPI" rel="noopener" target="_blank">提供元のページ<span aria-hidden="true"> ↗</span></a></div>
       </article>
       <article class="ds">
+        <img class="ds-art" src="../img/data/railways.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
         <h3>日本の鉄道と駅</h3>
         <p class="ds-src">国土数値情報 N02（国土交通省）</p>
-        <ul class="ds-chips"><li>GeoJSON · Shapefile（zip）</li><li>12 MB · 駅のレコード 10,235 件</li><li>CC BY 4.0</li></ul>
+        <ul class="ds-chips"><li>GeoJSON · Shapefile（zip）</li><li>13 MB · 駅のレコード 10,235 件</li><li>CC BY 4.0</li></ul>
         <p class="ds-why">日本のすべての旅客鉄道と路面電車の路線（事業者名と路線名付き）と、すべての駅。<code>UTF-8</code> フォルダの GeoJSON ファイルを開き、事業者（<code>N02_004</code>）で路線を色分けしてみましょう。名前は日本語です。</p>
-        <a class="ds-get" href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N02-2024.html" rel="noopener" target="_blank">データを入手<span aria-hidden="true"> ↗</span></a>
+        <div class="ds-actions"><a class="ds-get" href="https://nlftp.mlit.go.jp/ksj/gml/data/N02/N02-24/N02-24_GML.zip" download>zip をダウンロード · 13 MB</a><a class="ds-more" href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N02-2024.html" rel="noopener" target="_blank">提供元のページ<span aria-hidden="true"> ↗</span></a></div>
       </article>
     </div>
   </div>
@@ -273,46 +292,54 @@
     </div>
     <div class="ds-grid">
       <article class="ds">
+        <img class="ds-art" src="../img/data/heritage.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
         <h3>ユネスコ世界遺産</h3>
         <p class="ds-src">UNESCO World Heritage Centre（ユネスコ世界遺産センター）</p>
         <ul class="ds-chips"><li>Excel（XLSX/XLS）</li><li>1,273 行 · 3 MB</li><li>© UNESCO、個人利用</li></ul>
         <p class="ds-why">すべての世界遺産と、その区分（文化遺産 991、自然遺産 240、複合遺産 42）、登録年、危機遺産かどうか。区分で色分けするか、年で絞り込んでみましょう。</p>
-        <a class="ds-get" href="https://whc.unesco.org/en/syndication" rel="noopener" target="_blank">データを入手<span aria-hidden="true"> ↗</span></a>
+        <p class="ds-how">直接リンクはありません。ユネスコのサイトはファイルを渡す前にブラウザを確認するためです。ページで世界遺産リストの Excel（XLSX または XLS）リンクをクリックしてください。</p>
+        <div class="ds-actions"><a class="ds-get" href="https://whc.unesco.org/en/syndication" rel="noopener" target="_blank">ダウンロードページを開く<span aria-hidden="true"> ↗</span></a></div>
       </article>
       <article class="ds">
+        <img class="ds-art" src="../img/data/ancient-places.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
         <h3>Pleiades：古代世界の地名</h3>
         <p class="ds-src">Pleiades 古代地名辞典</p>
         <ul class="ds-chips"><li>CSV（zip 内、36 MB）</li><li>42,404 か所 · うち座標あり 34,823</li><li>CC BY 3.0</li></ul>
         <p class="ds-why">42,404 の古代の地名を収めた地名辞典で、週に数回更新されます。GIS 用の zip をダウンロードして <code>places.csv</code> を開き、<code>representative_latitude</code> と <code>representative_longitude</code> を座標として使います。</p>
-        <a class="ds-get" href="https://pleiades.stoa.org/downloads" rel="noopener" target="_blank">データを入手<span aria-hidden="true"> ↗</span></a>
+        <div class="ds-actions"><a class="ds-get" href="https://atlantides.org/downloads/pleiades/gis/pleiades_gis_data.zip" download>zip をダウンロード · 36 MB</a><a class="ds-more" href="https://pleiades.stoa.org/downloads" rel="noopener" target="_blank">提供元のページ<span aria-hidden="true"> ↗</span></a></div>
       </article>
       <article class="ds">
+        <img class="ds-art" src="../img/data/roman-roads.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
         <h3>ローマ帝国の道路網</h3>
         <p class="ds-src">Itiner-e, de Soto et al. 2025（Zenodo）</p>
         <ul class="ds-chips"><li>GeoPackage（34 MB）· GeoJSON（78 MB）</li><li>道路 299,171 km</li><li>CC BY 4.0</li></ul>
         <p class="ds-why">紀元前 300年ごろから紀元 300年ごろまでのローマ帝国の道路、計 299,171 km。これまでの地図のほぼ 2 倍です。現在の高速道路と重ねて、いまも同じ線をたどる道がどれだけあるか見てみましょう。</p>
-        <a class="ds-get" href="https://zenodo.org/records/17122148" rel="noopener" target="_blank">データを入手<span aria-hidden="true"> ↗</span></a>
+        <div class="ds-actions"><a class="ds-get" href="https://zenodo.org/records/17122148/files/itinere_roads.gpkg?download=1" download>GeoPackage をダウンロード · 34 MB</a><a class="ds-more" href="https://zenodo.org/records/17122148" rel="noopener" target="_blank">提供元のページ<span aria-hidden="true"> ↗</span></a></div>
       </article>
       <article class="ds">
+        <img class="ds-art" src="../img/data/county-seats.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
         <h3>中国の県治所、紀元前 221年〜1911年</h3>
         <p class="ds-src">CHGIS V6（ハーバード大学、復旦大学）</p>
         <ul class="ds-chips"><li>Shapefile（zip）</li><li>10,522 件 · 0.5 MB</li><li>非営利の研究目的なら無料</li></ul>
         <p class="ds-why">中国歴代の県治所すべてと、設置年（<code>BEG_YR</code>）と廃止年（<code>END_YR</code>）。名前は漢字とピンインで記されています。年で絞り込むと、王朝ごとに地図が描き変わっていく様子が見られます。</p>
-        <a class="ds-get" href="https://doi.org/10.7910/DVN/Q9VOF5" rel="noopener" target="_blank">データを入手<span aria-hidden="true"> ↗</span></a>
+        <div class="ds-actions"><a class="ds-get" href="https://dataverse.harvard.edu/api/access/datafile/3048165" download>Shapefile（zip） をダウンロード · 545 KB</a><a class="ds-more" href="https://doi.org/10.7910/DVN/Q9VOF5" rel="noopener" target="_blank">提供元のページ<span aria-hidden="true"> ↗</span></a></div>
       </article>
       <article class="ds">
+        <img class="ds-art" src="../img/data/temples.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
         <h3>中国の仏教寺院</h3>
         <p class="ds-src">BGIS（アリゾナ大学）、Harvard Dataverse 経由</p>
         <ul class="ds-chips"><li>Shapefile（zip）· Excel</li><li>18,938 か所 · 1.5 MB</li><li>CC0</li></ul>
         <p class="ds-why">2006年の全国名簿に載った 18,938 の仏教寺院と関連施設。漢字名、ピンイン名、種類、省が付いています。省（<code>PROV_HZ</code>）で色分けすると、寺院が集まる地域がわかります。</p>
-        <a class="ds-get" href="https://doi.org/10.7910/DVN/VAYEUZ" rel="noopener" target="_blank">データを入手<span aria-hidden="true"> ↗</span></a>
+        <div class="ds-actions"><a class="ds-get" href="https://dataverse.harvard.edu/api/access/datafile/3994640" download>Shapefile（zip） をダウンロード · 1.5 MB</a><a class="ds-more" href="https://doi.org/10.7910/DVN/VAYEUZ" rel="noopener" target="_blank">提供元のページ<span aria-hidden="true"> ↗</span></a></div>
       </article>
       <article class="ds">
+        <img class="ds-art" src="../img/data/castles.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
         <h3>城（Wikidata から）</h3>
         <p class="ds-src">Wikidata Query Service</p>
         <ul class="ds-chips"><li>CSV（Download › CSV file）</li><li>約 23,000 の城</li><li>CC0</li><li class="ds-flag">中国本土以外のネットワークが必要な場合あり</li></ul>
         <p class="ds-why">Run を押し（30 秒ほどかかります）、Download › CSV file を選びます。NimbleMap が点として読み込む <code>geometry</code> 列付きで、約 23,000 の城が手に入ります。クエリ内の <code>Q23413</code> を変えれば、灯台や修道院など何でも地図にできます。</p>
-        <a class="ds-get" href="https://query.wikidata.org/#SELECT%20%3Fcastle%20%3Fname%20%3Fgeometry%20WHERE%20%7B%0A%20%20%3Fcastle%20wdt%3AP31%20wd%3AQ23413%3B%20wdt%3AP625%20%3Fgeometry.%0A%20%20OPTIONAL%20%7B%20%3Fcastle%20rdfs%3Alabel%20%3Fname.%20FILTER%28LANG%28%3Fname%29%20%3D%20%22en%22%29%20%7D%0A%7D" rel="noopener" target="_blank">データを入手<span aria-hidden="true"> ↗</span></a>
+        <p class="ds-how">できあがったファイルはありません。リストは Run を押したときにクエリで作られます。そのあと Download › CSV file を選びます。</p>
+        <div class="ds-actions"><a class="ds-get" href="https://query.wikidata.org/#SELECT%20%3Fcastle%20%3Fname%20%3Fgeometry%20WHERE%20%7B%0A%20%20%3Fcastle%20wdt%3AP31%20wd%3AQ23413%3B%20wdt%3AP625%20%3Fgeometry.%0A%20%20OPTIONAL%20%7B%20%3Fcastle%20rdfs%3Alabel%20%3Fname.%20FILTER%28LANG%28%3Fname%29%20%3D%20%22en%22%29%20%7D%0A%7D" rel="noopener" target="_blank">ダウンロードページを開く<span aria-hidden="true"> ↗</span></a></div>
       </article>
     </div>
   </div>
@@ -326,32 +353,39 @@
     </div>
     <div class="ds-grid">
       <article class="ds">
+        <img class="ds-art" src="../img/data/species.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
         <h3>あらゆる生き物の目撃記録</h3>
         <p class="ds-src">GBIF（地球規模生物多様性情報機構）</p>
         <ul class="ds-chips"><li>CSV、タブ区切り（Simple）</li><li>約 40 億件 · 種を 1 つ選ぶ</li><li>データセットごとのライセンス（CC0、CC BY、CC BY-NC）</li><li class="ds-flag">無料アカウント</li></ul>
         <p class="ds-why">生き物が観察・採集された場所の記録が約 40 億件。ジャイアントパンダや好きな鳥を検索し、シンプルな CSV をダウンロードすれば、すべての目撃記録を地図にできます（座標は <code>decimalLatitude</code> と <code>decimalLongitude</code>）。</p>
-        <a class="ds-get" href="https://www.gbif.org/occurrence/search" rel="noopener" target="_blank">データを入手<span aria-hidden="true"> ↗</span></a>
+        <p class="ds-how">直接リンクはありません。ダウンロードには無料の GBIF アカウントが必要です。生物種を検索し、Download › Simple を選びます。</p>
+        <div class="ds-actions"><a class="ds-get" href="https://www.gbif.org/occurrence/search" rel="noopener" target="_blank">ダウンロードページを開く<span aria-hidden="true"> ↗</span></a></div>
       </article>
       <article class="ds">
+        <img class="ds-art" src="../img/data/storks.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
         <h3>コウノトリ（シュバシコウ）の渡り、1991〜2017年</h3>
         <p class="ds-src">マックス・プランク研究所、Movebank Data Repository</p>
-        <ul class="ds-chips"><li>CSV</li><li>51 MB · 200 羽以上</li><li>CC0</li></ul>
+        <ul class="ds-chips"><li>CSV</li><li>54 MB · 200 羽以上</li><li>CC0</li></ul>
         <p class="ds-why">9 か国で標識を付けた 200 羽以上のシュバシコウの衛星追跡記録。そのうちの 1 羽、Prinzesschen は 10 年以上追跡されました。個体（<code>individual-local-identifier</code>）で絞り込み、ヨーロッパとアフリカを結ぶ渡りのルートをたどってみましょう。</p>
-        <a class="ds-get" href="https://doi.org/10.5441/001/1.k29d81dh" rel="noopener" target="_blank">データを入手<span aria-hidden="true"> ↗</span></a>
+        <p class="ds-how">NimbleMap に位置を表す列を聞かれたら、location-long / location-lat を選んでください。</p>
+        <div class="ds-actions"><a class="ds-get" href="https://datarepository.movebank.org/server/api/core/bitstreams/f0147626-8366-4b23-9a55-b2a76e75acbc/content" download>CSV をダウンロード · 54 MB</a><a class="ds-more" href="https://doi.org/10.5441/001/1.k29d81dh" rel="noopener" target="_blank">提供元のページ<span aria-hidden="true"> ↗</span></a></div>
       </article>
       <article class="ds">
+        <img class="ds-art" src="../img/data/street-trees.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
         <h3>ニューヨーク市の街路樹</h3>
         <p class="ds-src">NYC Parks 2015 Street Tree Census、NYC Open Data</p>
-        <ul class="ds-chips"><li>CSV（Export）</li><li>683,788 本の木 · 85 MB</li><li>NYC Open Data、自由に利用可</li><li class="ds-flag">大容量</li></ul>
+        <ul class="ds-chips"><li>CSV（Export）</li><li>683,788 本の木 · 220 MB</li><li>NYC Open Data、自由に利用可</li><li class="ds-flag">大容量</li></ul>
         <p class="ds-why">683,788 本の街路樹それぞれに、樹種、幹の直径、健康状態が付いています。<code>health</code> で色分けするか、<code>spc_common</code> で絞り込んで市内のイチョウをすべて探してみましょう。</p>
-        <a class="ds-get" href="https://data.cityofnewyork.us/Environment/2015-Street-Tree-Census-Tree-Data/uvpi-gqnh" rel="noopener" target="_blank">データを入手<span aria-hidden="true"> ↗</span></a>
+        <div class="ds-actions"><a class="ds-get" href="https://data.cityofnewyork.us/api/views/uvpi-gqnh/rows.csv?accessType=DOWNLOAD" download>CSV をダウンロード · 220 MB</a><a class="ds-more" href="https://data.cityofnewyork.us/Environment/2015-Street-Tree-Census-Tree-Data/uvpi-gqnh" rel="noopener" target="_blank">提供元のページ<span aria-hidden="true"> ↗</span></a></div>
       </article>
       <article class="ds">
+        <img class="ds-art" src="../img/data/forest-loss.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
         <h3>世界の森林消失、2001〜2025年</h3>
         <p class="ds-src">Hansen / UMD / Google / USGS / NASA</p>
         <ul class="ds-chips"><li>GeoTIFF タイル、10° × 10°</li><li>1 タイル約 100 MB · 30 m ピクセル</li><li>CC BY 4.0</li><li class="ds-flag">大容量</li><li class="ds-flag">中国本土以外のネットワークが必要な場合あり</li></ul>
         <p class="ds-why">森林が伐採された場所を示す 30 m 解像度の地図で、各ピクセルに消失した年（2001〜2025年）が記録されています。自分の地域の <code>lossyear</code> タイルをダウンロードし、ピクセルをクリックして年を読み取ってみましょう。</p>
-        <a class="ds-get" href="https://storage.googleapis.com/earthenginepartners-hansen/GFC-2025-v1.13/download.html" rel="noopener" target="_blank">データを入手<span aria-hidden="true"> ↗</span></a>
+        <p class="ds-how">10° のタイル1枚分：北緯20–30°、東経110–120°（中国南部）。ほかの地域は提供元ページのタイル地図から選べます。</p>
+        <div class="ds-actions"><a class="ds-get" href="https://storage.googleapis.com/earthenginepartners-hansen/GFC-2025-v1.13/Hansen_GFC-2025-v1.13_lossyear_30N_110E.tif" download>GeoTIFF をダウンロード · 100 MB</a><a class="ds-more" href="https://storage.googleapis.com/earthenginepartners-hansen/GFC-2025-v1.13/download.html" rel="noopener" target="_blank">ほかのタイル<span aria-hidden="true"> ↗</span></a></div>
       </article>
     </div>
   </div>
@@ -365,25 +399,28 @@
     </div>
     <div class="ds-grid">
       <article class="ds">
+        <img class="ds-art" src="../img/data/meteorites.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
         <h3>既知のすべての隕石</h3>
         <p class="ds-src">The Meteoritical Society（国際隕石学会）、data.nasa.gov 経由</p>
         <ul class="ds-chips"><li>CSV</li><li>45,716 個の隕石 · 4 MB</li><li>NASA オープンデータ</li></ul>
         <p class="ds-why">45,716 個の隕石と、その質量、分類、年、落下が目撃されたかどうか。<code>reclat</code> と <code>reclong</code> を座標として使い、<code>mass (g)</code> で色分けして巨大な隕石を探してみましょう。</p>
-        <a class="ds-get" href="https://data.nasa.gov/dataset/meteorite-landings" rel="noopener" target="_blank">データを入手<span aria-hidden="true"> ↗</span></a>
+        <div class="ds-actions"><a class="ds-get" href="https://data.nasa.gov/docs/legacy/meteorite_landings/Meteorite_Landings.csv" download>CSV をダウンロード · 4 MB</a><a class="ds-more" href="https://data.nasa.gov/dataset/meteorite-landings" rel="noopener" target="_blank">提供元のページ<span aria-hidden="true"> ↗</span></a></div>
       </article>
       <article class="ds">
+        <img class="ds-art" src="../img/data/eclipse.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
         <h3>2023年と2024年の日食の経路</h3>
         <p class="ds-src">NASA Scientific Visualization Studio</p>
-        <ul class="ds-chips"><li>Shapefile（zip、38 MB）· KML</li><li>経路、継続時間、部分日食の帯</li><li>NASA（クレジット：NASA Goddard）</li></ul>
+        <ul class="ds-chips"><li>Shapefile（zip、79 MB）· KML</li><li>経路、継続時間、部分日食の帯</li><li>NASA（クレジット：NASA Goddard）</li></ul>
         <p class="ds-why">2024年4月8日の日食の皆既帯の正確な経路と、30 秒ごとの継続時間の等値線、太陽がどれだけ隠れたかを示す帯。2023年10月の金環日食もあります。</p>
-        <a class="ds-get" href="https://svs.gsfc.nasa.gov/5073" rel="noopener" target="_blank">データを入手<span aria-hidden="true"> ↗</span></a>
+        <div class="ds-actions"><a class="ds-get" href="https://svs.gsfc.nasa.gov/vis/a000000/a005000/a005073/2024eclipse_shapefiles.zip" download>Shapefile（zip） をダウンロード · 79 MB</a><a class="ds-more" href="https://svs.gsfc.nasa.gov/5073" rel="noopener" target="_blank">提供元のページ<span aria-hidden="true"> ↗</span></a></div>
       </article>
       <article class="ds">
+        <img class="ds-art" src="../img/data/night-lights.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
         <h3>夜の地球</h3>
         <p class="ds-src">NASA Earth Observatory、Black Marble</p>
         <ul class="ds-chips"><li>GeoTIFF</li><li>全球 3 km：64 MB（500 m タイルはさらに大容量）</li><li>NASA の画像（クレジット：NASA）</li></ul>
         <p class="ds-why">2012年と2016年の地球の都市の明かりを、0.1°、3 km、500 m の GeoTIFF で。付属の都市レイヤーを重ねて、どこが最も明るく輝いているか見てみましょう。</p>
-        <a class="ds-get" href="https://science.nasa.gov/earth/earth-observatory/earth-at-night/maps/" rel="noopener" target="_blank">データを入手<span aria-hidden="true"> ↗</span></a>
+        <div class="ds-actions"><a class="ds-get" href="https://assets.science.nasa.gov/content/dam/science/esd/eo/images/imagerecords/144000/144898/BlackMarble_2016_3km_geo.tif" download>GeoTIFF をダウンロード · 64 MB</a><a class="ds-more" href="https://assets.science.nasa.gov/content/dam/science/esd/eo/images/imagerecords/144000/144898/BlackMarble_2016_01deg_geo.tif" download>軽いファイル：0.1° グリッド · 4.6 MB</a><a class="ds-more" href="https://science.nasa.gov/earth/earth-observatory/earth-at-night/maps/" rel="noopener" target="_blank">提供元のページ<span aria-hidden="true"> ↗</span></a></div>
       </article>
     </div>
   </div>
@@ -397,39 +434,47 @@
     </div>
     <div class="ds-grid">
       <article class="ds">
+        <img class="ds-art" src="../img/data/chain-stores.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
         <h3>チェーン店をブランドごとに</h3>
         <p class="ds-src">All the Places</p>
         <ul class="ds-chips"><li>GeoJSON、ブランドごとに 1 ファイル</li><li>約 4,100 万か所 · 5,641 のソース</li><li>CC0</li></ul>
         <p class="ds-why">ブランドの Web サイトから毎週集めた店舗・支店の所在地：スターバックス、マクドナルド、IKEA など数千のブランド。ブランドを検索して Feature GeoJSON をクリックし、都市ごとにチェーンを比べてみましょう。</p>
-        <a class="ds-get" href="https://alltheplaces.xyz/spiders.html" rel="noopener" target="_blank">データを入手<span aria-hidden="true"> ↗</span></a>
+        <div class="ds-actions"><a class="ds-get" href="https://data.alltheplaces.xyz/runs/latest/output/starbucks_us.geojson" download>GeoJSON をダウンロード · 13 MB（米国のスターバックス）</a><a class="ds-more" href="https://alltheplaces.xyz/spiders.html" rel="noopener" target="_blank">ほかのブランド<span aria-hidden="true"> ↗</span></a></div>
       </article>
       <article class="ds">
+        <img class="ds-art" src="../img/data/openstreetmap.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
         <h3>OpenStreetMap のあらゆるもの：overpass turbo</h3>
         <p class="ds-src">overpass turbo</p>
         <ul class="ds-chips"><li>GeoJSON · KML（Export）</li><li>欲しいだけ</li><li>ODbL（© OpenStreetMap contributors）</li></ul>
         <p class="ds-why">Wizard を開き、<code>shop=mall in Shanghai</code> や <code>amenity=drinking_water in Paris</code> のように入力して Run を押し、Export › GeoJSON を選びます。</p>
-        <a class="ds-get" href="https://overpass-turbo.eu/" rel="noopener" target="_blank">データを入手<span aria-hidden="true"> ↗</span></a>
+        <p class="ds-how">できあがったファイルはありません。ほしいものを書くと overpass turbo が取ってきます。クエリを実行し、Export › GeoJSON を選びます。</p>
+        <div class="ds-actions"><a class="ds-get" href="https://overpass-turbo.eu/" rel="noopener" target="_blank">ダウンロードページを開く<span aria-hidden="true"> ↗</span></a></div>
       </article>
       <article class="ds">
+        <img class="ds-art" src="../img/data/city-extract.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
         <h3>OpenStreetMap から自分の街を：BBBike extracts</h3>
         <p class="ds-src">BBBike</p>
         <ul class="ds-chips"><li>Shapefile · GeoJSON ほか</li><li>範囲は自分で選ぶ</li><li>ODbL（© OpenStreetMap contributors）</li></ul>
         <p class="ds-why">好きな都市を四角で囲み、Shapefile か GeoJSON を選ぶと、道路、建物、お店のデータの切り出しが完成したときにメールが届き、ダウンロードできます。</p>
-        <a class="ds-get" href="https://extract.bbbike.org/" rel="noopener" target="_blank">データを入手<span aria-hidden="true"> ↗</span></a>
+        <p class="ds-how">直接リンクはありません。抽出データは注文ごとに作られます。範囲を描いてメールアドレスを入れると、できあがったときにダウンロードリンクが届きます。</p>
+        <div class="ds-actions"><a class="ds-get" href="https://extract.bbbike.org/" rel="noopener" target="_blank">ダウンロードページを開く<span aria-hidden="true"> ↗</span></a></div>
       </article>
       <article class="ds">
+        <img class="ds-art" src="../img/data/country-extract.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
         <h3>OpenStreetMap から国まるごと：Geofabrik</h3>
         <p class="ds-src">Geofabrik</p>
         <ul class="ds-chips"><li>Shapefile（.shp.zip）</li><li>台湾 263 MB、大きな国は数 GB</li><li>ODbL（© OpenStreetMap contributors）</li><li class="ds-flag">大容量</li></ul>
         <p class="ds-why">すべての国と多くの地域について、すぐに使える OpenStreetMap のダウンロードを用意しています。無料の .shp.zip では、道路、鉄道、建物、礼拝所、スポット（POI）が別々のレイヤーに分かれています。</p>
-        <a class="ds-get" href="https://download.geofabrik.de/" rel="noopener" target="_blank">データを入手<span aria-hidden="true"> ↗</span></a>
+        <div class="ds-actions"><a class="ds-get" href="https://download.geofabrik.de/asia/taiwan-latest-free.shp.zip" download>Shapefile（zip） をダウンロード · 263 MB（台湾）</a><a class="ds-more" href="https://download.geofabrik.de/" rel="noopener" target="_blank">ほかの国・地域<span aria-hidden="true"> ↗</span></a></div>
       </article>
       <article class="ds">
+        <img class="ds-art" src="../img/data/hawker.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
         <h3>シンガポールのホーカーセンター</h3>
         <p class="ds-src">National Environment Agency（シンガポール国家環境庁）、data.gov.sg</p>
         <ul class="ds-chips"><li>GeoJSON</li><li>129 か所 · 137 KB</li><li>Singapore Open Data Licence</li></ul>
         <p class="ds-why">シンガポールのホーカーセンター 129 か所すべて（既存と建設中）と、住所と写真のリンク。<code>STATUS</code> で色分けすれば、小さくて美味しい最初の地図の出来上がりです。</p>
-        <a class="ds-get" href="https://data.gov.sg/datasets/d_4a086da0a5553be1d89383cd90d07ecd/view" rel="noopener" target="_blank">データを入手<span aria-hidden="true"> ↗</span></a>
+        <p class="ds-how">直接リンクはありません。data.gov.sg は毎回新しいダウンロードリンクを作り、1時間で無効になります。ページの Download をクリックしてください。</p>
+        <div class="ds-actions"><a class="ds-get" href="https://data.gov.sg/datasets/d_4a086da0a5553be1d89383cd90d07ecd/view" rel="noopener" target="_blank">ダウンロードページを開く<span aria-hidden="true"> ↗</span></a></div>
       </article>
     </div>
   </div>

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180"><style>
+.b{fill:#efe9dd}.g{stroke:#1d232b;stroke-opacity:.07;stroke-width:1;fill:none}.sh{fill:#1d232b;fill-opacity:.09}
+.k{fill:#2b323b}.k2{fill:#4a525c}.k3{fill:#8a9098}.r{fill:#d6cdbb}.r2{fill:#c4b9a3}.w{fill:#fffdf8}
+.a{fill:#2563eb}.a2{fill:#6f95ee}.a3{fill:#c7d5f6}.s{fill:#b83a26}.s2{fill:#d9704f}.s3{fill:#f1c4b2}
+.o{fill:#e0a33a}.o2{fill:#f4d58b}.v{fill:#5f8a6a}.v2{fill:#9fbf9c}
+.ln{fill:none;stroke-linecap:round;stroke-linejoin:round}
+.lk{stroke:#2b323b}.lk2{stroke:#4a525c}.lk3{stroke:#8a9098}.la{stroke:#2563eb}.la2{stroke:#6f95ee}.la3{stroke:#c7d5f6}
+.ls{stroke:#b83a26}.ls2{stroke:#d9704f}.lo{stroke:#e0a33a}.lo2{stroke:#f4d58b}.lw{stroke:#fffdf8}.lr{stroke:#d6cdbb}.lb{stroke:#efe9dd}.lv{stroke:#5f8a6a}
+@media (prefers-color-scheme:dark){
+.b{fill:#1d2633}.g{stroke:#e8e4da;stroke-opacity:.07}.sh{fill:#000;fill-opacity:.25}
+.k{fill:#10151c}.k2{fill:#5a6472}.k3{fill:#6c7480}.r{fill:#4a4f57}.r2{fill:#5c626b}.w{fill:#e9e5dc}
+.a{fill:#4f82ee}.a2{fill:#7fa3f0}.a3{fill:#3b5482}.s{fill:#c9533c}.s2{fill:#dd7a5c}.s3{fill:#7a4a3e}
+.o{fill:#e2a940}.o2{fill:#e9cd86}.v{fill:#6f9a78}.v2{fill:#56785c}
+.lk{stroke:#e8e4da}.lk2{stroke:#a9b0ba}.lk3{stroke:#6c7480}.la{stroke:#6f9cf2}.la2{stroke:#7fa3f0}.la3{stroke:#3b5482}
+.ls{stroke:#e0745f}.ls2{stroke:#dd7a5c}.lo{stroke:#e2a940}.lo2{stroke:#e9cd86}.lw{stroke:#e9e5dc}.lr{stroke:#4a4f57}.lb{stroke:#1d2633}.lv{stroke:#6f9a78}}
+</style><rect class="b" width="320" height="180"/><path class="g" d="M40 0v180M100 0v180M160 0v180M220 0v180M280 0v180M0 30h320M0 90h320M0 150h320"/><ellipse class="sh" cx="160" cy="156" rx="84" ry="6"/>
+<rect class="w" x="54" y="34" width="150" height="112" rx="6"/>
+<path class="v2" d="M54 104c30-6 48 8 70 2s34-20 80-12v46c0 3-3 6-6 6H60c-3 0-6-3-6-6z"/>
+<g class="ln la2" stroke-width="3"><path d="M54 70h150M120 34v112"/></g><path class="ln lr" stroke-width="2" d="M54 96c40-10 70 20 150-14"/>
+<g class="s"><circle cx="92" cy="58" r="5"/><circle cx="168" cy="54" r="5"/><circle cx="146" cy="120" r="5"/></g>
+<circle class="a3" cx="196" cy="94" r="34" opacity=".75"/><circle class="ln lk2" stroke-width="9" cx="196" cy="94" r="34"/>
+<path class="ln lk2" stroke-width="13" d="M222 120l30 30"/><circle class="s" cx="188" cy="90" r="7"/>
+</svg>

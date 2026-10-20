@@ -1,4 +1,4 @@
-/* "Data to explore" page (data.html, zh/data.html): dataset cards, the jump list and the source
+/* "Data to explore" page (data.html in every language): dataset cards, the jump list and the source
    notes. Loaded after site.css and built only from its colour tokens, so light and dark mode follow. */
 
 .ds-host { margin: 18px 0 0; font-size: 15px; color: var(--ink-3); max-width: 40em; }
@@ -39,13 +39,27 @@ section.ds-section { padding: 52px 0; }
 .ds-chips li.ds-flag { color: var(--seal); background: transparent; border: 1px dashed var(--seal); }
 .ds-why { margin: 0 0 16px; color: var(--ink-2); font-size: 15.5px; flex: 1; overflow-wrap: break-word; }
 .ds-why code, .claims code { overflow-wrap: anywhere; }
+/* The card's illustration: full-bleed across the top, like the home page's step pictures. Each SVG
+   carries its own light and dark palette. */
+.ds-art {
+  display: block; width: calc(100% + 40px); max-width: none; height: auto; aspect-ratio: 16 / 9;
+  margin: -20px -20px 16px; border-bottom: 1px solid var(--rule);
+  border-radius: calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0 0; background: var(--paper-2);
+}
+/* Why a card has no one-click file, and what to click on the source's page. */
+.ds-how { margin: -6px 0 14px; font-size: 13.5px; line-height: 1.5; color: var(--ink-3); overflow-wrap: break-word; }
+.ds-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
 .ds-get {
-  align-self: flex-start; font-weight: 600; font-size: 15px; text-decoration: none;
+  font-weight: 600; font-size: 15px; text-decoration: none;
   padding: 7px 12px; border-radius: 9px; border: 1px solid var(--rule); background: var(--paper);
 }
-.ds-get:hover { border-color: var(--accent); }
+.ds-get[download] { color: var(--card); background: var(--accent-ink); border-color: var(--accent-ink); }
+.ds-get[download]:hover { background: var(--accent); border-color: var(--accent); }
+.ds-get:not([download]):hover { border-color: var(--accent); }
+.ds-more { font-size: 14px; color: var(--ink-2); }
 
 @media (max-width: 640px) {
   section.ds-section { padding: 40px 0; }
   .ds { padding: 18px 16px 16px; }
+  .ds-art { width: calc(100% + 32px); margin: -18px -16px 14px; }
 }

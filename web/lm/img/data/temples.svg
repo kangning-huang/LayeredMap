@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180"><style>
+.b{fill:#efe9dd}.g{stroke:#1d232b;stroke-opacity:.07;stroke-width:1;fill:none}.sh{fill:#1d232b;fill-opacity:.09}
+.k{fill:#2b323b}.k2{fill:#4a525c}.k3{fill:#8a9098}.r{fill:#d6cdbb}.r2{fill:#c4b9a3}.w{fill:#fffdf8}
+.a{fill:#2563eb}.a2{fill:#6f95ee}.a3{fill:#c7d5f6}.s{fill:#b83a26}.s2{fill:#d9704f}.s3{fill:#f1c4b2}
+.o{fill:#e0a33a}.o2{fill:#f4d58b}.v{fill:#5f8a6a}.v2{fill:#9fbf9c}
+.ln{fill:none;stroke-linecap:round;stroke-linejoin:round}
+.lk{stroke:#2b323b}.lk2{stroke:#4a525c}.lk3{stroke:#8a9098}.la{stroke:#2563eb}.la2{stroke:#6f95ee}.la3{stroke:#c7d5f6}
+.ls{stroke:#b83a26}.ls2{stroke:#d9704f}.lo{stroke:#e0a33a}.lo2{stroke:#f4d58b}.lw{stroke:#fffdf8}.lr{stroke:#d6cdbb}.lb{stroke:#efe9dd}.lv{stroke:#5f8a6a}
+@media (prefers-color-scheme:dark){
+.b{fill:#1d2633}.g{stroke:#e8e4da;stroke-opacity:.07}.sh{fill:#000;fill-opacity:.25}
+.k{fill:#10151c}.k2{fill:#5a6472}.k3{fill:#6c7480}.r{fill:#4a4f57}.r2{fill:#5c626b}.w{fill:#e9e5dc}
+.a{fill:#4f82ee}.a2{fill:#7fa3f0}.a3{fill:#3b5482}.s{fill:#c9533c}.s2{fill:#dd7a5c}.s3{fill:#7a4a3e}
+.o{fill:#e2a940}.o2{fill:#e9cd86}.v{fill:#6f9a78}.v2{fill:#56785c}
+.lk{stroke:#e8e4da}.lk2{stroke:#a9b0ba}.lk3{stroke:#6c7480}.la{stroke:#6f9cf2}.la2{stroke:#7fa3f0}.la3{stroke:#3b5482}
+.ls{stroke:#e0745f}.ls2{stroke:#dd7a5c}.lo{stroke:#e2a940}.lo2{stroke:#e9cd86}.lw{stroke:#e9e5dc}.lr{stroke:#4a4f57}.lb{stroke:#1d2633}.lv{stroke:#6f9a78}}
+</style><rect class="b" width="320" height="180"/><path class="g" d="M40 0v180M100 0v180M160 0v180M220 0v180M280 0v180M0 30h320M0 90h320M0 150h320"/><ellipse class="sh" cx="160" cy="157" rx="56" ry="6"/>
+<path class="s" d="M146 50h28v100h-28z"/>
+<g class="k2"><path d="M118 140c14 0 24-4 30-10h24c6 6 16 10 30 10z"/><path d="M122 118c12 0 22-4 28-10h20c6 6 16 10 28 10z"/><path d="M126 96c12 0 20-4 26-10h16c6 6 14 10 26 10z"/><path d="M130 74c10 0 18-4 24-10h12c6 6 14 10 24 10z"/><path d="M134 54c10 0 16-4 22-10h8c6 6 12 10 22 10z"/></g>
+<path class="o" d="M159 18h2v26h-2z"/><circle class="o" cx="160" cy="24" r="3"/><circle class="o" cx="160" cy="32" r="3"/>
+<path class="o2" d="M156 120h8v10h-8zM156 98h8v8h-8zM156 76h8v8h-8z"/><rect class="r2" x="128" y="148" width="64" height="8" rx="2"/>
+</svg>

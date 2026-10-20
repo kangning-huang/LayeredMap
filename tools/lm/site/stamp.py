@@ -5,15 +5,19 @@ app (Contents/Resources/help). Search engines and link previews need absolute UR
 goes through this script, which copies the site (minus its README) to an output folder and:
 
 - makes the canonical, hreflang, og:url and og:image URLs absolute against ORIGIN;
-- writes sitemap.xml (every page, with its language alternates) and robots.txt;
+- writes sitemap.xml (every page, with its language alternates);
+- at a host root, also writes robots.txt (pointing at the sitemap) and the GitHub Pages `CNAME`
+  file holding the host, so publishing the folder keeps the custom domain;
 - drops the `<!-- TODO(owner): ... -->` notes, which are for us, not for visitors.
 
-    python3 -I tools/lm/site/stamp.py https://example.org /tmp/site-out
-    python3 -I tools/lm/site/stamp.py https://kangning-huang.github.io/NimbleMap /tmp/site-out
+    python3 -I tools/lm/site/stamp.py /tmp/site-out                         # https://nimblemap.com/
+    python3 -I tools/lm/site/stamp.py https://nimblemap.com/ /tmp/site-out  # the same, spelled out
+    python3 -I tools/lm/site/stamp.py https://example.org/maps/ /tmp/site-out
 
-Standard library only. ORIGIN is the URL the site's index.html is served at: a host root, or a
-folder on it such as a GitHub Pages project site. Crawlers only read robots.txt at a host root,
-so it is written only when ORIGIN is one; submit the sitemap by hand otherwise.
+Standard library only. ORIGIN (default DEFAULT_ORIGIN, the live site) is the URL the site's
+index.html is served at: a host root, or a folder on it such as a GitHub Pages project site.
+Crawlers only read robots.txt at a host root and a CNAME names a whole host, so both are written
+only when ORIGIN is one; submit the sitemap by hand otherwise.
 """
 
 from __future__ import annotations
@@ -27,6 +31,8 @@ from urllib.parse import urljoin, urlsplit
 from xml.sax.saxutils import escape
 
 SITE = Path(__file__).resolve().parents[3] / "web" / "lm"
+# The live site (GitHub Pages from the public NimbleMap repo's docs/, with a custom domain).
+DEFAULT_ORIGIN = "https://nimblemap.com/"
 
 # The tags whose URL must be absolute: (regex with one group for the URL).
 ABSOLUTE = [
@@ -87,20 +93,27 @@ def stamp(origin: str, out: Path, site: Path = SITE) -> list[str]:
     (out / "sitemap.xml").write_text("\n".join(lines) + "\n", encoding="utf-8")
     if parts.path in ("", "/"):
         (out / "robots.txt").write_text(f"User-agent: *\nAllow: /\n\nSitemap: {origin}/sitemap.xml\n", encoding="utf-8")
+        (out / "CNAME").write_text(parts.netloc + "\n", encoding="utf-8")
     return [loc for loc, _ in entries]
 
 
 def main(argv: list[str]) -> int:
-    if len(argv) != 3:
-        print(__doc__.strip().splitlines()[0] + "\nusage: stamp.py ORIGIN OUT_DIR", file=sys.stderr)
+    if len(argv) not in (2, 3):
+        print(__doc__.strip().splitlines()[0] + "\nusage: stamp.py [ORIGIN] OUT_DIR   (ORIGIN defaults to " + DEFAULT_ORIGIN + ")",
+              file=sys.stderr)
+        return 2
+    origin, out = (argv[1], argv[2]) if len(argv) == 3 else (DEFAULT_ORIGIN, argv[1])
+    if "://" in out:
+        print(f"stamp.py: OUT_DIR must be a folder, not {out!r}", file=sys.stderr)
         return 2
     try:
-        pages = stamp(argv[1], Path(argv[2]))
+        pages = stamp(origin, Path(out))
     except ValueError as e:
         print(f"stamp.py: {e}", file=sys.stderr)
         return 2
-    extra = "sitemap.xml and robots.txt" if (Path(argv[2]) / "robots.txt").exists() else "sitemap.xml (no robots.txt below a host root)"
-    print(f"{len(pages)} pages stamped into {argv[2]}, with {extra}")
+    extra = ("sitemap.xml, robots.txt and CNAME" if (Path(out) / "robots.txt").exists()
+             else "sitemap.xml (no robots.txt or CNAME below a host root)")
+    print(f"{len(pages)} pages stamped into {out} for {origin}, with {extra}")
     return 0
 
 

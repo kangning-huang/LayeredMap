@@ -1,6 +1,6 @@
 # "Data to explore" page: research record
 
-Pages: `web/lm/data.html`, `web/lm/zh/data.html` (styles in `web/lm/assets/data.css`).
+Pages: `web/lm/data.html` and its ten translations (`web/lm/<lang>/data.html`; styles in `web/lm/assets/data.css`).
 Every link below was fetched on **2026-10-19**. Where I could, I also downloaded the file or
 read its header to confirm it has coordinates or geometry and to count rows. The facts in each
 one-liner come from the source page or from the data file itself; where they come from
@@ -13,6 +13,74 @@ A note on coordinates: NimbleMap finds coordinate columns by name (`lat`/`latitu
 `lon`/`lng`/`long`/`longitude`, also inside names like `location-lat`; see `crates/data/src/io.rs`
 and `crates/lm-profile/src/csv.rs`). When a dataset uses names it won't guess (`reclat`, `xlong`,
 `representative_latitude`), the page names the columns to choose.
+
+## One-click downloads (checked 2026-10-20)
+
+Each card's button downloads the file itself when the source has a stable direct URL; otherwise it
+opens the source's download page and a short note says why and what to click. Every direct URL was
+checked on **2026-10-20** with `curl -sIL` (status 200 after redirects, content type, length), with a
+ranged GET where HEAD gave no length or was refused (Dataverse's signed S3 redirects and Zenodo
+answer HEAD differently; Zenodo also returns 403 to some scripted user agents but serves browsers).
+Copies were downloaded to `/Volumes/LaCie/lm-data-previews/` (README there), and the ones marked
+"yes" were opened in the 0.7.0 release build with `--tour` to confirm they load. No source link was
+dead; simplemaps, GBIF and UNESCO answer scripts with a Cloudflare 403 but load in a browser.
+
+Sizes on the buttons are decimal MB, rounded. Every direct card also links its source page.
+
+| # | Dataset | Button | Direct URL | Content-Type | Bytes | Opened in app |
+|---|---|---|---|---|---|---|
+| 1 | Earthquakes, live | CSV · 2 MB | https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.csv | text/csv | 2,005,531 (GET; HEAD gives no length) | yes |
+| 2 | Fires (FIRMS) | CSV · 0.8 MB | https://firms.modaps.eosdis.nasa.gov/data/active_fire/modis-c6.1/csv/MODIS_C6_1_Global_24h.csv | application/octet-stream | 810,361 | yes |
+| 3 | US tornadoes | Shapefile zip · 5 MB | https://www.spc.noaa.gov/gis/svrgis/zipped/1950-2025-torn-aspath.zip | application/zip | 4,968,330 | yes |
+| 4 | GISTEMP | NetCDF .gz · 26 MB | https://data.giss.nasa.gov/pub/gistemp/gistemp1200_GHCNv4_ERSSTv5.nc.gz | application/x-gzip | 25,866,289 | yes |
+| 5 | ERSST v5 | NetCDF · 161 MB | https://downloads.psl.noaa.gov/Datasets/noaa.ersst.v5/sst.mnmean.nc | application/x-netcdf | 160,754,608 | yes |
+| 6 | GPCP | NetCDF · 20 MB | https://downloads.psl.noaa.gov/Datasets/gpcp/precip.mon.mean.nc | application/x-netcdf | 20,187,988 | yes |
+| 7 | US wind turbines | GeoJSON zip · 1.4 MB | https://energy.usgs.gov/uswtdb/assets/data/uswtdbGeoJSON.zip | application/x-zip-compressed | 1,447,465 | yes |
+| 8 | GeoNuclearData | CSV · 110 KB | https://raw.githubusercontent.com/cristianst85/GeoNuclearData/master/data/csv/denormalized/nuclear_power_plants.csv | text/plain | 108,458 | yes |
+| 9 | Solar PV inventory | GeoJSON · 17 MB | https://zenodo.org/records/5005868/files/trn_polygons.geojson?download=1 | application/octet-stream | 17,227,983 | yes |
+| 10 | Mining polygons | GeoPackage · 25 MB | https://download.pangaea.de/dataset/942325/files/global_mining_polygons_v2.gpkg | application/octet-stream | 24,657,920 | yes |
+| 11 | simplemaps cities | page link | — (Cloudflare browser check; the zip's name carries the version number (no stable URL)) | | | |
+| 12 | OWID life expectancy | CSV · 0.6 MB | https://ourworldindata.org/grapher/life-expectancy.csv | text/csv | 605,250 | not tried |
+| 13 | WorldPop | GeoTIFF · 49 MB | https://data.worldpop.org/GIS/Population/Global_2000_2020_1km_UNadj/2020/CHN/chn_ppp_2020_1km_Aggregated_UNadj.tif | image/tiff | 49,445,858 | yes |
+| 14 | OurAirports | CSV · 13 MB | https://davidmegginson.github.io/ourairports-data/airports.csv | text/csv | 12,748,669 | yes |
+| 15 | World Port Index | CSV · 3.5 MB | https://msi.nga.mil/api/publications/download?key=16920959/SFH00000/UpdatedPub150.csv&type=download | application/octet-stream | 3,508,891 | yes |
+| 16 | Japan railways N02 | zip · 13 MB | https://nlftp.mlit.go.jp/ksj/gml/data/N02/N02-24/N02-24_GML.zip | application/zip | 12,718,026 | yes |
+| 17 | UNESCO World Heritage | page link | — (Cloudflare browser check (403 to scripts); © UNESCO terms) | | | |
+| 18 | Pleiades | zip · 36 MB | https://atlantides.org/downloads/pleiades/gis/pleiades_gis_data.zip | application/zip | 35,671,726 | not tried |
+| 19 | Itiner-e roads | GeoPackage · 34 MB | https://zenodo.org/records/17122148/files/itinere_roads.gpkg?download=1 | application/octet-stream | 33,619,968 | yes |
+| 20 | CHGIS county seats | Shapefile zip · 545 KB | https://dataverse.harvard.edu/api/access/datafile/3048165 | application/zipped-shapefile | 544,703 (ranged GET) | yes |
+| 21 | BGIS temples | Shapefile zip · 1.5 MB | https://dataverse.harvard.edu/api/access/datafile/3994640 | application/zipped-shapefile | 1,547,207 (ranged GET) | yes |
+| 22 | Castles (Wikidata) | page link | — (Query builder: the file is made when you press Run) | | | |
+| 23 | GBIF | page link | — (Free account needed (download API returns 403 without login)) | | | |
+| 24 | White storks | CSV · 54 MB | https://datarepository.movebank.org/server/api/core/bitstreams/f0147626-8366-4b23-9a55-b2a76e75acbc/content | application/octet-stream | 53,576,363 (ranged GET) | yes |
+| 25 | NYC street trees | CSV · 220 MB | https://data.cityofnewyork.us/api/views/uvpi-gqnh/rows.csv?accessType=DOWNLOAD | text/csv | 220,354,362 (full GET; streamed, no length) | yes |
+| 26 | Hansen forest loss | GeoTIFF · 100 MB | https://storage.googleapis.com/earthenginepartners-hansen/GFC-2025-v1.13/Hansen_GFC-2025-v1.13_lossyear_30N_110E.tif | image/tiff | 100,173,392 | yes |
+| 27 | Meteorites | CSV · 4 MB | https://data.nasa.gov/docs/legacy/meteorite_landings/Meteorite_Landings.csv | text/csv | 3,952,161 (ranged GET) | yes |
+| 28 | 2024 eclipse | Shapefile zip · 79 MB | https://svs.gsfc.nasa.gov/vis/a000000/a005000/a005073/2024eclipse_shapefiles.zip | application/zip | 79,468,554 | yes |
+| 29 | Black Marble | GeoTIFF · 64 MB | https://assets.science.nasa.gov/content/dam/science/esd/eo/images/imagerecords/144000/144898/BlackMarble_2016_3km_geo.tif | image/tiff | 64,383,740 | yes |
+| 30 | All the Places | GeoJSON · 13 MB | https://data.alltheplaces.xyz/runs/latest/output/starbucks_us.geojson | application/geo+json | 13,124,933 | yes |
+| 31 | overpass turbo | page link | — (Query builder) | | | |
+| 32 | BBBike | page link | — (Made to order, link sent by email) | | | |
+| 33 | Geofabrik | Shapefile zip · 263 MB | https://download.geofabrik.de/asia/taiwan-latest-free.shp.zip | application/zip | 262,956,628 | not tried |
+| 34 | Singapore hawker centres | page link | — (data.gov.sg issues a signed S3 link that expires after 1 hour) | | | |
+
+Findings from the check:
+- **Solar PV (Kruitwagen):** `predicted_set.geojson` contains `NaN` values (`"ind_comm_10km": [ NaN ]`),
+  which is not valid JSON, so NimbleMap refuses it ("isn't valid GeoJSON"). The button now gets
+  `trn_polygons.geojson` (17 MB, 36,882 polygons, no NaN; opens), and the card says why. Accepting
+  NaN in the GeoJSON reader would let the full file open.
+- **White storks:** the CSV opens, but NimbleMap's column question recommends `argos:lon1/argos:lat1`;
+  the card tells people to pick `location-long / location-lat` (the Movebank standard columns).
+- **Meteorites:** opens as a table until `reclat`/`reclong` are chosen, as the card already says.
+- Sizes that changed since 2026-10-19: GISTEMP .nc.gz 11 → 26 MB; 2024 eclipse shapefile zip
+  38 → 79 MB; NYC tree CSV export 85 → 220 MB (same 683,788 rows; the export now carries more columns);
+  storks CSV 51 → 54 MB (decimal); WorldPop: the UN-adjusted China 2020 file (the listing's own
+  product) is 49 MB.
+- GitHub raw serves `text/plain`, and some CSVs may show as text in a browser; the page's tip says
+  to press ⌘S.
+
+The card pictures are hand-drawn theme illustrations, not data previews: `web/lm/img/data/*.svg`,
+written by `tools/lm/site/data_art.py` (320×180, 2–3 KB each, own light and dark palette).
 
 ## Map data you already have (intro section, not counted)
 
