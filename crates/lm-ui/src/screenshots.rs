@@ -1519,6 +1519,23 @@ fn netcdf_time_slider_above_ask() {
     h.snapshot("netcdf_time_slider_pro");
 }
 
+/// A global grid zoomed out until the world repeats: it is drawn in every copy of the world in
+/// view, filling its column across 180° (a 0–360° file), not once beside bare basemap. A click on
+/// a copy picks the cell drawn there, under its own longitude.
+#[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+fn raster_world_copies() {
+    let mut h = phase3(&["R8/r8_lon360.nc"], (180.0, 10.0, 1.4), |_| {});
+    settle(&mut h);
+    h.snapshot("raster_world_copies");
+    click(&mut h, 160.0 + 360.0, 30.0);
+    let s = h.state().as_ref().unwrap();
+    let p = s.ws.selection.pixel.as_ref().expect("a cell picked in the copy east");
+    assert_eq!((p.lon, p.lat), (160.0, 30.0));
+    let id = s.ws.doc.layers[0].id;
+    assert_eq!(s.ws.raster_pick(lm_mapview::Coord::new(160.0, 30.0)), Some((id, p.value)));
+}
+
 /// Windows display scaling (WP6.2): the screens a student meets first, at 125 % and 150 %, in
 /// the window a 1920×1080 laptop gives at each (1536×864 and 1280×720 points), and at 125 % on
 /// a 1366×768 laptop, the smallest common screen (1093×614 points less the taskbar). egui lays
