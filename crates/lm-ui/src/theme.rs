@@ -177,7 +177,7 @@ fn system_cjk_faces(cjk: lm_core::i18n::Cjk) -> Option<Vec<(std::path::PathBuf, 
                 Cjk::SimplifiedChinese => return None,
             },
         );
-        return Some(faces.iter().map(|(f, i, w)| (dir.join(f), *i, *w)).collect());
+        Some(faces.iter().map(|(f, i, w)| (dir.join(f), *i, *w)).collect())
     }
     #[cfg(windows)]
     {
@@ -193,7 +193,7 @@ fn system_cjk_faces(cjk: lm_core::i18n::Cjk) -> Option<Vec<(std::path::PathBuf, 
                 Cjk::SimplifiedChinese => return None,
             },
         );
-        return Some(faces.iter().map(|(f, i, w)| (dir.join(f), *i, *w)).collect());
+        Some(faces.iter().map(|(f, i, w)| (dir.join(f), *i, *w)).collect())
     }
     #[cfg(not(any(target_os = "macos", windows)))]
     {
