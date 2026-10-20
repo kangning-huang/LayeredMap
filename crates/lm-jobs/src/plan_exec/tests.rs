@@ -121,7 +121,7 @@ fn tokyo_map() -> Vec<PlanLayer> {
 
 fn tokyo_steps() -> Vec<Step> {
     steps(json!([
-        {"name": "filter", "args": {"layer": "Storms", "conditions": [{"field": "category", "op": "is", "value": "5"}]}},
+        {"name": "filter", "args": {"layer": "Storms", "conditions": [{"field": "strength", "op": "is", "value": "Category 5"}]}},
         {"name": "buffer", "args": {"object": {"layer": "Cities", "field": "name", "value": "Tokyo"}, "distance": "100 km"}},
         {"name": "count_in", "args": {"points": "Storms", "areas": "#2"}}
     ]))
@@ -137,6 +137,12 @@ fn count_in_over_one_area_reports_the_counted_features_as_the_answer() {
     let Some((name, rows)) = out[2].matched() else { panic!("{:?}", out[2]) };
     assert_eq!((name.as_str(), rows.as_slice()), ("Storms", &[0, 3][..]));
     assert_eq!(out[2].made_fields(), vec!["storms".to_string()]);
+    // One area: the answer is a number with what was counted where, and being outside the one
+    // area is no notice.
+    let StepOutcome::NewLayer { card, .. } = &out[2] else { panic!() };
+    let lm_core::recipe::Answer::Number { value, unit, detail } = &card.answer else { panic!("{:?}", card.answer) };
+    assert_eq!((*value, unit.as_str(), detail.as_str()), (2.0, "storms", "Category 5 storms within 100 km of Tokyo"));
+    assert!(card.notices.is_empty(), "{:?}", card.notices);
     // Over many areas the counts are a ranking, not a set of features.
     let mut layers = vec![layer("fixtures/T1/schools.csv", "Schools", 1), layer("fixtures/V1/districts.geojson", "Districts", 2)];
     let out = execute(
@@ -174,7 +180,7 @@ fn later_steps_name_made_fields_by_step_or_by_the_distance_name() {
         plan.extend(steps(json!([
             {"name": "nearest_distance", "args": {"layer": "Storms", "other": "#2"}},
             {"name": "filter", "args": {"layer": "Storms", "conditions": [
-                {"field": "category", "op": "is", "value": "5"}, {"field": field, "op": "at_most", "value": "0"}]}}
+                {"field": "strength", "op": "is", "value": "Category 5"}, {"field": field, "op": "at_most", "value": "0"}]}}
         ])));
         let mut layers = tokyo_map();
         execute(&mut layers, &plan, 0, &Control::none())

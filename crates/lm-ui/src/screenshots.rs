@@ -694,6 +694,7 @@ fn language_gallery() {
         });
         settle(&mut h);
         h.render().unwrap().save(dir.join(format!("{code}-style.png"))).unwrap();
+        ask_answer(code).render().unwrap().save(dir.join(format!("{code}-ask.png"))).unwrap();
     }
 }
 
@@ -897,20 +898,18 @@ fn pro_find_where_on_the_elevation_example() {
     assert!(s.ws.doc.layers.iter().any(|l| l.display_name.starts_with("Where elevation")));
 }
 
-/// Pro's Ask box answers "How many Category 5 storms have passed within 100 km of Tokyo?"
-/// (fixtures/A1): the preview highlights only the 2 tracks that answer, outlines the 100 km area
-/// and frames it; the filtered-out storms are hidden as Keep will hide them. Keep selects the 2.
-#[test]
-#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
-fn pro_ask_answer_preview() {
-    let mut h = phase3(&["A1/storms.geojson", "A1/cities.geojson"], (145.0, 30.0, 4.0), |s| {
+/// fixtures/A1 with the Ask box showing the plan for "How many Category 5 storms have passed
+/// within 100 km of Tokyo?", in the interface language `code`.
+fn ask_answer(code: &'static str) -> Harness<'static, Option<Shell>> {
+    let mut h = phase3(&["A1/storms.geojson", "A1/cities.geojson"], (145.0, 30.0, 4.0), move |s| {
+        s.prefs.language = code.into();
         s.account = crate::account_ui::test_ui(true, lm_account::Region::International);
         s.ws.clear_selection();
     });
     let request = "How many Category 5 storms have passed within 100 km of Tokyo?";
     if let Some(s) = h.state_mut().as_mut() {
         let steps: Vec<lm_jobs::plan_exec::Step> = serde_json::from_value(serde_json::json!([
-            {"name": "filter", "args": {"layer": "storms", "conditions": [{"field": "category", "op": "is", "value": "5"}]}},
+            {"name": "filter", "args": {"layer": "storms", "conditions": [{"field": "strength", "op": "is", "value": "Category 5"}]}},
             {"name": "buffer", "args": {"object": {"layer": "cities", "field": "name", "value": "Tokyo"}, "distance": "100 km"}},
             {"name": "count_in", "args": {"points": "storms", "areas": "#2"}}
         ]))
@@ -920,6 +919,16 @@ fn pro_ask_answer_preview() {
         crate::ask::show_plan(s, request, lm_ask::PlanResult { steps, layers, outcomes, notes: Vec::new() });
     }
     settle(&mut h);
+    h
+}
+
+/// Pro's Ask box answers "How many Category 5 storms have passed within 100 km of Tokyo?"
+/// (fixtures/A1): the preview highlights only the 2 tracks that answer, outlines the 100 km area
+/// and frames it; the filtered-out storms are hidden as Keep will hide them. Keep selects the 2.
+#[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+fn pro_ask_answer_preview() {
+    let mut h = ask_answer("en");
     h.snapshot("pro_ask_answer_preview");
     let ctx = h.ctx.clone();
     if let Some(s) = h.state_mut().as_mut() {

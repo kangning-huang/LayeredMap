@@ -1492,7 +1492,7 @@ fn preview_style(kind: LayerKind) -> Style {
         s.fill = accent;
         s.fill_opacity = 0.14;
         s.stroke = accent;
-        s.stroke_width = 2.5;
+        s.stroke_width = 4.0;
     } else {
         s.opacity = 0.45;
     }
