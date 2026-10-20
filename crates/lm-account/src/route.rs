@@ -4,7 +4,7 @@
 /// The Ask box's route for one request.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AskRoute {
-    /// OpenRouter with the key in this build or on this computer (test builds, development).
+    /// OpenRouter with a developer's key on this computer (development and evaluation only).
     Direct,
     /// The Ask proxy, with the signed-in account's access token.
     Proxy,
@@ -13,7 +13,7 @@ pub enum AskRoute {
 }
 
 impl AskRoute {
-    /// `env` is `LM_ASK_ROUTE` (`direct` or `proxy`); `has_key`: a developer or test-build key is
+    /// `env` is `LM_ASK_ROUTE` (`direct` or `proxy`); `has_key`: a developer's key is
     /// present; `proxy`: the account config has a proxy for the region.
     pub fn choose(env: Option<&str>, has_key: bool, proxy: bool) -> AskRoute {
         match env.map(str::trim) {
@@ -24,8 +24,8 @@ impl AskRoute {
         if proxy {
             AskRoute::Proxy
         } else if has_key {
-            // Today's Pro test builds: no account config yet, the owner's key built in. Goes once
-            // the proxy is live (accounts-design.md › When the test-build key goes).
+            // A developer's machine with no account config (`LM_DEV_PRO=1` unlocks the Ask box):
+            // the developer's own key. No build carries a key.
             AskRoute::Direct
         } else {
             AskRoute::Unavailable

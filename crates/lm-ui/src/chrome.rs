@@ -54,8 +54,8 @@ pub fn toolbar(shell: &mut Shell, ui: &mut Ui, rect: Rect, _system: System) {
         semibold(theme::HEADLINE),
         t.text_primary,
     );
-    if shell.pro {
-        // "Pro" as a small accent badge after the name.
+    if shell.pro() {
+        // "Pro" as a small accent badge after the name, while Pro is unlocked.
         let g = painter.layout_no_wrap("PRO".into(), semibold(10.0), t.on_accent); // i18n: brand
         let badge = Rect::from_min_size(pos2(name.right() + 6.0, rect.center().y - g.size().y / 2.0 - 2.0), g.size() + vec2(10.0, 4.0));
         painter.rect_filled(badge, 4.0, t.accent);

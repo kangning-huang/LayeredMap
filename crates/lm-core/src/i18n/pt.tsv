@@ -791,3 +791,8 @@ Couldn't reach the assistant service: {error}	Não foi possível acessar o servi
 The assistant service's answer was cut off: {error}	A resposta do serviço do assistente foi cortada: {error}
 The assistant service answered {status} with something unreadable.	O serviço do assistente respondeu {status} com algo ilegível.
 {app} is working offline, so the assistant can't be reached. Turn off View › Work Offline to ask.	O {app} está trabalhando offline, então não consegue acessar o assistente. Desative Visualizar › Trabalhar offline para perguntar.
+Signing in unlocks the Ask box, analysis tools, the built-in world layers and voice input.	Ao iniciar sessão, você desbloqueia a caixa de perguntas, as ferramentas de análise, as camadas mundiais integradas e a entrada por voz.
+Checking your account…	Verificando sua conta…
+Sign in to use analysis tools	Inicie sessão para usar as ferramentas de análise
+{action} (locked)	{action} (bloqueado)
+Settings › Account shows who is signed in and what the account includes.	Em Ajustes › Conta, você vê quem iniciou sessão e o que a conta inclui.

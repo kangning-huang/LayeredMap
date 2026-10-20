@@ -97,6 +97,12 @@ pub fn error_words(status: u16, json: &Json) -> String {
     }
 }
 
+/// Whether an Ask box message is the service's `not_pro` refusal (the account doesn't have Pro):
+/// the app then locks Pro at once (`lm_account::Account::note_ask_answer`).
+pub fn is_not_pro(message: &str) -> bool {
+    message == english(NOT_PRO, &[])
+}
+
 impl crate::session::Transport for Proxy {
     fn complete(&self, body: &Json) -> Result<Json, String> {
         if !(self.url.starts_with("https://") || self.url.starts_with("http://127.0.0.1:")) {
@@ -195,6 +201,8 @@ pub(crate) mod tests {
         let e = |status: u16, j: Json| error_words(status, &j);
         assert!(e(401, json!({"error": {"code": "unauthorized"}})).contains("Sign in again"));
         assert_eq!(e(403, json!({"error": {"code": "not_pro"}})), format!("{pro} isn't on for this account."));
+        assert!(is_not_pro(&e(403, json!({"error": {"code": "not_pro"}}))));
+        assert!(!is_not_pro(&e(403, json!({"error": {"code": "no_profile"}}))));
         assert!(e(429, json!({"error": {"code": "daily_limit", "resets_in_seconds": 5400}})).ends_with("in about 2 hours."));
         assert!(e(429, json!({"error": {"code": "daily_limit", "resets_in_seconds": 60}})).ends_with("within the hour."));
         assert!(

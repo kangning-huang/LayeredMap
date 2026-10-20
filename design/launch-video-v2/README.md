@@ -80,8 +80,8 @@ The first step fires about 2 s after the first map render. Map steps such as `ex
 | `file` (+ `file.files` = `data/places to visit.csv`) | 3 holds | own-file beat |
 | `color` | `example storms` · `160,22,3.1` · `card style_by_value max_wind_kt` · 2 holds | colour (free build) |
 | `share` (+ `LM_DEV=1`) | `example storms` · `160,22,3.1` · `card style_by_value max_wind_kt` · hold · `export` · hold | export sheet only |
-| `pro2` (+ `LM_TIER=pro`, `pro2.files` = `assets/examples/cities.geojson`) | 2 holds · `ask Which capital city sits highest above sea level?` · 3 holds | Pro beat (1 paid call) |
-| `pro` (+ `LM_TIER=pro`) | `example world` · hold · `ask …` · 3 holds | rough cut's Pro take, now unused (elevation raster too busy) |
+| `pro2` (+ `LM_DEV_PRO=1`, `pro2.files` = `assets/examples/cities.geojson`) | 2 holds · `ask Which capital city sits highest above sea level?` · 3 holds | Pro beat (1 paid call) |
+| `pro` (+ `LM_DEV_PRO=1`) | `example world` · hold · `ask …` · 3 holds | rough cut's Pro take, now unused (elevation raster too busy) |
 | `ex_volcanoes`, `ex_airports`, `ex_wallsat` | `example …` · holds | captured alternates, not in this cut |
 
 `data/places to visit.csv` holds 22 real cities (name, country, lat, lon, population) taken from the app's own Natural Earth `cities.geojson`.

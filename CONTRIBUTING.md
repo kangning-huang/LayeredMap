@@ -75,10 +75,12 @@ used GIS: "Located using lon and lat as GPS coordinates", not "CRS inferred: EPS
 
 ## What not to commit
 
-- **Keys and passwords.** The assistant in NimbleMap Pro needs an OpenRouter key; it comes from
-  your Mac's keychain or, on Windows, the `OPENROUTER_API_KEY` environment variable, and must never appear in the repository,
-  a test or a log. Contributors build and test the free app; Pro test builds are made by the
-  maintainer.
+- **Keys and passwords.** NimbleMap is one app: Pro's features unlock when someone signs in, and
+  the Ask box goes through NimbleMap's assistant service, which holds the model key. No build
+  carries an OpenRouter key. For prompt work a developer can use their own key
+  (`LM_ASK_ROUTE=direct`, the key from your Mac's keychain or, on Windows, the
+  `OPENROUTER_API_KEY` environment variable); it must never appear in the repository, a test or a
+  log. `LM_DEV_PRO=1` unlocks Pro's local features without an account, for development only.
 - **Data you can't share.** Test fixtures must be generated (`cargo xtask fixtures`) or carry a
   licence that allows redistribution; record their source in `ATTRIBUTION.md`.
 - **Build output and system files:** `target/`, `dist/`, `.DS_Store`, and the `._*` files macOS

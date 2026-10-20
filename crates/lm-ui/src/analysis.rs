@@ -1,7 +1,7 @@
-//! The developer surface for the certified actions (spec › Composer, Preview, Result card).
-//! After the tier decision (2026-10-16) analysis actions are never buttons in either tier: the
-//! composer appears only with the developer flag (`LM_DEV=1` or a debug build), to test what
-//! Pro's assistant will call. The result card and the recipe are the same either way.
+//! The composer for the certified actions (spec › Composer, Preview, Result card): opened by a
+//! card's analysis action when Pro is unlocked, and on the developer surface (`LM_DEV=1` or a
+//! debug build). While Pro is locked the actions show with a lock and open Settings › Account
+//! instead (`account_ui::locked`). The result card and the recipe are the same either way.
 
 use std::collections::BTreeMap;
 use std::sync::Arc;
@@ -69,9 +69,13 @@ fn companion_kinds(action: &str, main: LayerKind) -> Vec<LayerKind> {
     }
 }
 
-/// Opens the composer for an analysis suggestion (developer surface), and previews at once when
-/// the estimate is under a second.
+/// Opens the composer for an analysis suggestion, and previews at once when the estimate is under
+/// a second. With Pro locked, Settings › Account opens instead.
 pub fn open(shell: &mut Shell, main: LayerId, row: Option<usize>, a: &Suggested) {
+    if !shell.analysis_unlocked() {
+        crate::account_ui::locked(shell);
+        return;
+    }
     if !lm_jobs::actions::ACTIONS.contains(&a.action_id.as_str()) {
         shell.notice = Some((i18n::fmt("“{action}” isn't connected yet.", &[("action", &a.label)]), 0.0));
         return;
@@ -412,7 +416,7 @@ pub fn composer(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
     let Some(c) = shell.composer.as_ref() else { return };
     let kinds = companion_kinds(&c.action, l.profile.kind);
     let action = c.action.clone();
-    let caption = if shell.pro { tl!("Analysis") } else { tl!("Developer surface · assistant action") };
+    let caption = if shell.pro() { tl!("Analysis") } else { tl!("Developer surface · assistant action") };
     ui.label(RichText::new(caption).size(CAPTION).color(t.text_secondary));
     ui.add_space(2.0);
     // The sentence with its tokens.

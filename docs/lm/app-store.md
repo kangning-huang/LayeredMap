@@ -86,6 +86,10 @@ allowance is used up, the Ask box says so and when it renews.
   production) and that the purchase hasn't been refunded or revoked, then applies the daily
   allowance per `originalTransactionId`. App Store Server Notifications (version 2) tell the server
   about refunds, renewals and lapses. Nothing about the buyer except that ID is stored.
+- **The same entitlement.** The direct download already unlocks Pro from one answer, the account's
+  `Entitlement` (`pro`, `plan`, `expires_at`; `accounts-design.md` › Entitlement). A verified
+  purchase feeds that same `Entitlement` (the plan is the product, `expires_at` the subscription's
+  end), so the interface's locked and unlocked states need no change.
 - **Accounts become optional.** An App Store buyer never signs in. Sign in with Apple can come
   later for anyone who wants Pro on two Macs with different Apple IDs, or on Windows.
 - **Review rules this already meets.** In-app purchase for digital features (3.1.1): the App Store
@@ -171,8 +175,9 @@ the Developer ID build (`signing.md`).
 ## The owner's part
 
 1. Activate the Apple Developer membership (pending; the same problem blocks Developer ID signing).
-2. In App Store Connect: create the app record (bundle ID `app.layeredmap.pro`, or a new ID for
-   the App Store build; decide before the first upload, since it can't change), the Pro product,
+2. In App Store Connect: create the app record (bundle ID `app.layeredmap.desktop`, the one app's
+   id since Free and Pro merged on 2026-10-19, or a new ID for the App Store build; decide before
+   the first upload, since it can't change), the Pro product,
    its price and storefronts, the Paid Applications agreement, and tax and banking details.
 3. Join the App Store Small Business Program (15 % commission).
 4. Create the certificates: Apple Distribution and Mac Installer Distribution, and a Mac App

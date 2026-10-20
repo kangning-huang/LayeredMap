@@ -97,6 +97,9 @@ jobs:
         env:
           LM_BUILD_NUMBER: ${{ github.run_number }}
           LM_UPDATE_FEED_URL: ${{ vars.LM_UPDATE_FEED_URL }}
+          # The account config (public: the sign-in service's URL and public key). Unset, the
+          # installer can't sign in and Pro stays locked (docs/lm/accounts.md).
+          LM_ACCOUNT_CONFIG_JSON: ${{ vars.LM_ACCOUNT_CONFIG_JSON }}
           AZURE_TENANT_ID: ${{ secrets.LM_AZURE_TENANT_ID }}
           AZURE_CLIENT_ID: ${{ secrets.LM_AZURE_CLIENT_ID }}
           AZURE_CLIENT_SECRET: ${{ secrets.LM_AZURE_CLIENT_SECRET }}
@@ -151,6 +154,7 @@ jobs:
           LM_NOTARY_TEAM_ID: ${{ secrets.LM_NOTARY_TEAM_ID }}
           LM_NOTARY_PASSWORD: ${{ secrets.LM_NOTARY_PASSWORD }}
           LM_DOWNLOAD_BASE: ${{ vars.LM_DOWNLOAD_BASE }}
+          LM_ACCOUNT_CONFIG_JSON: ${{ vars.LM_ACCOUNT_CONFIG_JSON }}
         run: packaging/lm/build-dmg.sh dist/lm
       - uses: actions/upload-artifact@v7
         with:

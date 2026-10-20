@@ -355,12 +355,24 @@ pub fn drawer(shell: &mut Shell, ui: &mut Ui, map: egui::Rect, left: f32, right:
                         }
                     });
                     let scroll = egui::ScrollArea::vertical().id_salt(("lm-table-v", id.0)).auto_shrink([false, false]);
-                    // Bring a selection made on the map into view.
+                    // Bring a selection made on the map into view. While the rows are still being
+                    // built (the table just opened), the selected row isn't among them yet: try
+                    // again next frame rather than marking it scrolled to, or a row far down stays
+                    // out of view and ⌘T can't give it the keyboard.
                     let scroll = if selected != shell.table.scrolled_for {
-                        shell.table.scrolled_for = selected.clone();
                         match selected.first().and_then(|s| rows.iter().position(|r| r == s)) {
-                            Some(pos) => scroll.vertical_scroll_offset((pos as f32 * ROW_H - ROW_H * 3.0).max(0.0)),
-                            None => scroll,
+                            Some(pos) => {
+                                shell.table.scrolled_for = selected.clone();
+                                // Rows are ROW_H apart plus the item spacing (as show_rows lays them out).
+                                let pitch = ROW_H + ui.spacing().item_spacing.y;
+                                scroll.vertical_scroll_offset(((pos as f32 - 3.0) * pitch).max(0.0))
+                            }
+                            None => {
+                                if !shell.table.busy() {
+                                    shell.table.scrolled_for = selected.clone();
+                                }
+                                scroll
+                            }
                         }
                     } else {
                         scroll

@@ -318,20 +318,42 @@ pub fn paint(p: &Painter, rect: Rect, id: &str, t: &Theme) {
 
 /// An action button with its illustration on the left and the label beside it.
 pub fn button(ui: &mut egui::Ui, t: &Theme, id: &str, label: &str) -> egui::Response {
+    button_locked(ui, t, id, label, false)
+}
+
+/// [`button`], or with `locked` a Pro action while Pro is locked: the picture dimmed, the words
+/// quieter, a lock at the right, and "(locked)" in its spoken name. Clicking it still answers
+/// (the caller opens Settings › Account).
+pub fn button_locked(ui: &mut egui::Ui, t: &Theme, id: &str, label: &str, locked: bool) -> egui::Response {
     let w = ui.available_width();
     let h = 52.0;
     let (rect, resp) = ui.allocate_exact_size(vec2(w, h), egui::Sense::click());
     let resp = resp.on_hover_cursor(egui::CursorIcon::PointingHand);
-    resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, label));
+    let name = if locked { crate::insight::locked_name(label) } else { label.to_string() };
+    resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, &name));
     let visuals = ui.style().interact(&resp);
     ui.painter().rect_filled(rect, theme::RADIUS_CONTROL, visuals.weak_bg_fill);
     let art = Rect::from_min_size(rect.left_top() + vec2(8.0, (h - SIZE.y) / 2.0), SIZE);
     if has(id) {
         paint(ui.painter(), art, id, t);
+        if locked {
+            ui.painter().rect_filled(art, 0.0, visuals.weak_bg_fill.gamma_multiply(0.6));
+        }
     }
     let text_left = art.right() + 10.0;
-    let galley = ui.painter().layout(label.to_string(), theme::regular(theme::BODY), t.text_primary, rect.right() - text_left - 8.0);
-    ui.painter().galley(egui::pos2(text_left, rect.center().y - galley.size().y / 2.0), galley, t.text_primary);
+    let lock_w = if locked { 22.0 } else { 0.0 };
+    let color = if locked { t.text_secondary } else { t.text_primary };
+    let galley = ui.painter().layout(label.to_string(), theme::regular(theme::BODY), color, rect.right() - text_left - 8.0 - lock_w);
+    ui.painter().galley(egui::pos2(text_left, rect.center().y - galley.size().y / 2.0), galley, color);
+    if locked {
+        ui.painter().text(
+            egui::pos2(rect.right() - 12.0, rect.center().y),
+            egui::Align2::RIGHT_CENTER,
+            egui_phosphor::regular::LOCK_SIMPLE,
+            theme::icon_font(15.0),
+            t.text_secondary,
+        );
+    }
     resp
 }
 

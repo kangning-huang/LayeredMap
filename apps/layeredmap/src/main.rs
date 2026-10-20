@@ -433,20 +433,6 @@ impl Step {
     }
 }
 
-/// NimbleMap Pro: the Pro app bundle carries `Contents/Resources/tier` reading "pro"
-/// (`packaging/lm/bundle-macos.sh` with `LM_TIER=pro`; on Windows `Resources\tier` beside the exe,
-/// from the Pro installer); `LM_TIER=pro` does the same for a run
-/// outside a bundle. Until accounts exist (Phase 7) the tier is the app you open.
-fn is_pro() -> bool {
-    if std::env::var("LM_TIER").is_ok_and(|v| v.eq_ignore_ascii_case("pro")) {
-        return true;
-    }
-    lm_core::platform::current_resources_dir()
-        .map(|r| r.join("tier"))
-        .and_then(|p| std::fs::read_to_string(p).ok())
-        .is_some_and(|s| s.trim().eq_ignore_ascii_case("pro"))
-}
-
 fn main() -> eframe::Result {
     let started = std::time::Instant::now();
     let args: Vec<String> = std::env::args_os().skip(1).map(|a| a.to_string_lossy().into_owned()).collect();
@@ -470,8 +456,10 @@ fn main() -> eframe::Result {
     });
     let flags = Flags::from_env(std::env::var("LM_PHASE").ok().as_deref());
     let developer = cfg!(debug_assertions) || std::env::var_os("LM_DEV").is_some();
-    let pro = is_pro();
-    let app_name = lm_core::brand::name(pro);
+    // One app (owner, 2026-10-19): Pro unlocks with a signed-in account that has it
+    // (docs/lm/accounts-design.md › Entitlement); `LM_DEV_PRO=1` is the developer override.
+    let dev_pro = lm_ui::dev_pro_override();
+    let app_name = lm_core::brand::NAME;
     // Crash logs and the log file stay on this computer (~/Library/Logs/LayeredMap,
     // %LOCALAPPDATA%\LayeredMap\Logs).
     diagnostics::install_logger();
@@ -479,7 +467,9 @@ fn main() -> eframe::Result {
     let mut options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_title(app_name)
-            .with_app_id(if pro { "app.layeredmap.pro" } else { "app.layeredmap.desktop" })
+            // The bundle identifier, and the folder egui keeps the window and settings in: the
+            // Free app's, so its users' settings carry over.
+            .with_app_id("app.layeredmap.desktop")
             .with_inner_size([1280.0, 800.0])
             // Windows: low enough for a 1366×768 laptop at 125 % (1093×614 points less the taskbar
             // and title bar), the smallest screen in the course's likely machines.
@@ -513,9 +503,14 @@ fn main() -> eframe::Result {
             let mut shell = Shell::new(&cc.egui_ctx, flags, prefs, system);
             shell.set_system_languages(system_languages());
             shell.developer = developer;
-            shell.pro = pro;
-            // Pro's account (WP7.4): only with an account config; otherwise the Ask box works as before.
-            if pro && !ephemeral {
+            shell.dev_pro = dev_pro;
+            if dev_pro {
+                log::info!("LM_DEV_PRO=1: Pro unlocked by the developer override");
+            }
+            // The account (WP7.4) and with it Pro: only with an account config; without one Pro's
+            // features stay hidden (open-source builds). Tours start it too, so screenshots show
+            // the app as it is (locked signed out, unlocked signed in); they never sign in.
+            if !ephemeral || !tour.is_empty() {
                 shell.start_account();
             }
             shell.set_library_catalog(lm_ui::library::catalog_url(std::env::var("LM_LIBRARY_URL").ok().as_deref(), developer));
@@ -524,7 +519,7 @@ fn main() -> eframe::Result {
                 shell.set_question_log(question_log_path());
                 shell.start_autosave(&autosave_dir());
                 // The update feed (off unless built with LM_UPDATE_FEED_URL), on its own thread.
-                lm_ui::update::start(&cc.egui_ctx, pro);
+                lm_ui::update::start(&cc.egui_ctx);
             }
             // Files passed on the command line (and Open With: through macOS, or Explorer starting
             // `layeredmap.exe "<file>"` on Windows) are opened.

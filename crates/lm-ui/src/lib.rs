@@ -288,9 +288,10 @@ pub struct Shell {
     /// The developer flag (`LM_DEV=1` or a debug build): shows assistant actions and the
     /// composer (Phase 4's developer surface).
     pub developer: bool,
-    /// NimbleMap Pro (the Pro app bundle, or `LM_TIER=pro`): the analysis actions are buttons
-    /// and open the composer. Until the assistant (Phase 7) exists this is how Pro asks.
-    pub pro: bool,
+    /// The developer override for Pro (`LM_DEV_PRO=1`, `lm_account::entitlement::developer_override`;
+    /// tests and scripted tours): Pro's local features work without an account. Off in every
+    /// build; what unlocks Pro for people is their account ([`Shell::pro_access`]).
+    pub dev_pro: bool,
     /// A question being composed (developer surface).
     pub(crate) composer: Option<analysis::Composer>,
     /// "Summarize in an area I draw": the raster to summarize once the area is drawn.
@@ -315,6 +316,12 @@ pub struct Shell {
     pub(crate) library: library::LibraryState,
     /// The time slider playing (WP6.12).
     pub(crate) playing: Option<time_ui::Playing>,
+}
+
+/// The developer override for Pro (`LM_DEV_PRO=1`; `lm_account::entitlement::developer_override`):
+/// the app sets [`Shell::dev_pro`] from it at launch. No build turns it on.
+pub fn dev_pro_override() -> bool {
+    lm_account::entitlement::developer_override()
 }
 
 impl Shell {
@@ -352,7 +359,7 @@ impl Shell {
             last_map_size: egui::vec2(1280.0, 748.0),
             archive_url: None,
             developer: false,
-            pro: false,
+            dev_pro: false,
             composer: None,
             after_drawing: None,
             ask: ask::AskState::default(),
@@ -395,14 +402,32 @@ impl Shell {
         }
     }
 
-    /// Whether analysis actions are offered: in Pro, and on the developer surface.
-    pub fn analysis_actions(&self) -> bool {
-        self.pro || self.developer
+    /// Whether Pro is unlocked now, and if not why (docs/lm/accounts-design.md › Entitlement):
+    /// the signed-in account's entitlement, or the developer override. Without an account config
+    /// (open-source builds) Pro's features stay hidden ([`lm_account::Access::Unavailable`]).
+    pub fn pro_access(&self) -> lm_account::Access {
+        self.account.access(self.dev_pro)
+    }
+
+    /// Pro is unlocked: the Ask box, analysis actions, the built-in world layers and voice input work.
+    pub fn pro(&self) -> bool {
+        self.pro_access().unlocked()
+    }
+
+    /// Whether the cards offer analysis actions (working, or locked with a way to unlock them):
+    /// when Pro can be unlocked in this build, and on the developer surface.
+    pub fn analysis_offered(&self) -> bool {
+        self.developer || self.pro_access().visible()
+    }
+
+    /// Whether analysis actions run: Pro unlocked, or the developer surface.
+    pub fn analysis_unlocked(&self) -> bool {
+        self.developer || self.pro()
     }
 
     /// Whether export (Share, File › Export…) is offered (WP5.3; see [`export::shown`]).
     pub fn export_shown(&self) -> bool {
-        export::shown(self.flags, self.developer, self.pro)
+        export::shown(self.flags, self.developer, self.pro())
     }
 
     /// The map image sheet is open.
@@ -410,9 +435,9 @@ impl Shell {
         self.export_sheet.is_some()
     }
 
-    /// "NimbleMap" or "NimbleMap Pro" (`lm_core::brand`).
+    /// "NimbleMap" (`lm_core::brand`): one app, whether or not Pro is unlocked.
     pub fn app_name(&self) -> &'static str {
-        lm_core::brand::name(self.pro)
+        lm_core::brand::NAME
     }
 
     pub fn theme(&self) -> &Theme {
@@ -870,7 +895,7 @@ impl Shell {
         let t = ctx.input(|i| i.time);
         analysis::poll(self);
         ask::poll(self);
-        account_ui::poll(self);
+        account_ui::poll(self, ctx);
         library::poll(self, ctx);
         // Files dropped on the window (Open With and the Dock icon arrive through the app).
         let dropped: Vec<PathBuf> =

@@ -791,3 +791,8 @@ Couldn't reach the assistant service: {error}	Der Assistentendienst ist nicht er
 The assistant service's answer was cut off: {error}	Die Antwort des Assistentendienstes wurde abgeschnitten: {error}
 The assistant service answered {status} with something unreadable.	Der Assistentendienst antwortete mit {status} und etwas Unlesbarem.
 {app} is working offline, so the assistant can't be reached. Turn off View › Work Offline to ask.	{app} arbeitet offline, daher ist der Assistent nicht erreichbar. Deaktivieren Sie Darstellung › Offline arbeiten, um zu fragen.
+Signing in unlocks the Ask box, analysis tools, the built-in world layers and voice input.	Mit der Anmeldung werden das Fragefeld, die Analysewerkzeuge, die eingebauten Weltlayer und die Spracheingabe freigeschaltet.
+Checking your account…	Ihr Account wird geprüft …
+Sign in to use analysis tools	Melden Sie sich an, um die Analysewerkzeuge zu nutzen
+{action} (locked)	{action} (gesperrt)
+Settings › Account shows who is signed in and what the account includes.	Unter Einstellungen › Account sehen Sie, wer angemeldet ist und was der Account umfasst.

@@ -83,12 +83,14 @@ Twelve rules decide every design dispute in this plan. When two rules conflict, 
 ## Product tiers
 NimbleMap ships in two tiers (owner decision, 2026-10-16): Free, an open-source app for opening, overlaying and mapping data; and Pro, a closed subscription that adds an assistant you ask about your layers in plain words. The business case is in the NimbleMap Business Case document.
 
+**One app (owner decision, 2026-10-19).** The tiers are one download, not two apps. Signed out, Free works fully and Pro's features show locked with a sign-in prompt; signed in to an account with Pro, they unlock. The server says whether an account has Pro, and Pro is free with an account for now (`docs/lm/accounts.md`, `docs/lm/accounts-design.md` › Entitlement).
+
 | | Free | Pro |
 |---|---|---|
 | Who | People with no GIS training who need to examine map data (the first audience) | The same people, when they need answers the map alone doesn't give |
 | Code | This repository, Apache-2.0 | A closed module built into the official app; open-source builds have no assistant |
 | Phases | 0–3, 5, 6 | Phase 7, on top of the Phase 4 tool library |
-| Analysis | None exposed: no tool menus, composer or analysis buttons. Display-only suggestions (Color by a value, Filter, Compare, Change colors) stay on cards. Joining a table to places by a shared column is Free (WP3.11): it is the most common GIS task, and it creates no new geometry | Through the Ask box only; the model calls Phase 4's vetted actions |
+| Analysis | None exposed: no tool menus, composer or analysis buttons. Display-only suggestions (Color by a value, Filter, Compare, Change colors) stay on cards. Joining a table to places by a shared column is Free (WP3.11): it is the most common GIS task, and it creates no new geometry | Through the Ask box, where the model calls Phase 4's vetted actions, and as suggested actions on cards (since 2026-10-17). Signed out they show with a lock and "Sign in to use analysis tools" |
 | Model | None | Hosted by NimbleMap behind its assistant service; no bring-your-own key for now |
 
 Rules that follow from the tiers:
@@ -1468,7 +1470,7 @@ Candidates, in likely order:
 
 ### Work packages
 **WP7.1 The Ask box** (P0)
-- One field at the bottom of the map: "Ask about your layers". Pro only; Free shows nothing in its place.
+- One field at the bottom of the map: "Ask about your layers". Pro only: until Pro is unlocked, a prompt takes the field's place ("Sign in to use NimbleMap Pro", with Sign In…). A build that can't sign in (no account config) shows nothing in its place.
 - The answer appears as the plan's preview banner and result card, never as a chat transcript that hides the map.
 - Questions the tools can't answer get a plain "I can't answer that with these layers, because…", never a guess.
 - **Speaking instead of typing** (owner's request, 2026-10-17): a microphone button in the Ask box starts the system's dictation (macOS Dictation: on-device on Apple silicon, English and Chinese, nothing sent to us), and the usual dictation shortcut works while the box has focus. The recognised text stays editable before it is sent. Windows uses its own voice typing (Win+H) the same way.
@@ -1491,7 +1493,7 @@ Candidates, in likely order:
 - Subscription later: Stripe or Paddle internationally, WeChat Pay and Alipay in China; a payment webhook sets the plan.
 
 **WP7.6 The Ask service holds the key** (P0, with WP7.3)
-- The assistant service checks the user's token and `pro`, applies per-user daily limits and calls the model. The OpenRouter key exists only there, and the test builds' bundled key and its scrambling pad are removed, so Pro builds can be shared.
+- The assistant service checks the user's token and `pro`, applies per-user daily limits and calls the model. The OpenRouter key exists only there; the test builds' bundled key and its scrambling pad are removed (done 2026-10-19, with the one-app merge), so every build can be shared.
 - China: generative AI offered to the public in mainland China must use a model that has completed filing (备案), and OpenRouter isn't reachable there; the China service uses a filed domestic model behind the same interface. Legal advice before a China launch.
 
 **WP7.5 Evaluation set** (P0)

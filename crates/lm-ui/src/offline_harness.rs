@@ -90,7 +90,7 @@ fn harness(offline: bool, basemap: &str) -> Harness<'static, Option<Shell>> {
             let shell = state.get_or_insert_with(|| {
                 let mut s = Shell::new(ui.ctx(), Flags::up_to(4), prefs.clone(), system);
                 s.developer = true;
-                s.pro = true;
+                s.dev_pro = true;
                 s
             });
             shell.ui(ui, system);
@@ -194,7 +194,7 @@ fn strict_offline_core_tasks() {
     h.step();
     let ctx = h.ctx.clone();
     crate::basemap::start_archive_lookup(&ctx);
-    crate::update::start_with("https://updates.invalid/layeredmap/feed.json", &ctx, true);
+    crate::update::start_with("https://updates.invalid/layeredmap/feed.json", &ctx);
     core_tasks(&mut h);
 
     // Pro's assistant explains instead of asking.

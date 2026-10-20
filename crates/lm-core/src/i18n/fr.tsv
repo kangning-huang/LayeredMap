@@ -791,3 +791,8 @@ Couldn't reach the assistant service: {error}	Impossible de joindre le service d
 The assistant service's answer was cut off: {error}	La réponse du service de l’assistant a été tronquée : {error}
 The assistant service answered {status} with something unreadable.	Le service de l’assistant a répondu {status} avec un contenu illisible.
 {app} is working offline, so the assistant can't be reached. Turn off View › Work Offline to ask.	{app} est hors ligne et ne peut pas joindre l’assistant. Désactivez Présentation › Travailler hors ligne pour poser une question.
+Signing in unlocks the Ask box, analysis tools, the built-in world layers and voice input.	La connexion débloque la zone de questions, les outils d’analyse, les couches mondiales intégrées et la saisie vocale.
+Checking your account…	Vérification de votre compte…
+Sign in to use analysis tools	Connectez-vous pour utiliser les outils d’analyse
+{action} (locked)	{action} (verrouillé)
+Settings › Account shows who is signed in and what the account includes.	Réglages › Compte indique qui est connecté et ce que comprend le compte.

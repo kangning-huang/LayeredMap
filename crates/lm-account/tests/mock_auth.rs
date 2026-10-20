@@ -29,6 +29,8 @@ struct Mock {
     /// The code the email carried, and whether verify answers 429 (too many attempts).
     email_code: String,
     verify_limited: bool,
+    /// What the account function says about Pro (`profiles.pro`); `None`: no profile (404).
+    pro: Option<bool>,
     /// (method, path with query, headers, body) of every request.
     seen: Vec<(String, String, HashMap<String, String>, String)>,
 }
@@ -89,6 +91,15 @@ fn route(m: &mut Mock, method: &str, path: &str, headers: &HashMap<String, Strin
             // A code is used once.
             m.email_code.clear();
             (200, tokens(m))
+        }
+        ("GET", "/functions/v1/account") => {
+            if !m.access_valid.contains(&bearer) {
+                return (401, r#"{"error":{"code":"unauthorized","message":"Sign in again."}}"#.into());
+            }
+            match m.pro {
+                Some(pro) => (200, format!(r#"{{"pro":{pro},"plan":null,"today":{{"requests":0,"tokens":0}}}}"#)),
+                None => (404, r#"{"error":{"code":"no_profile","message":"This account has no profile yet."}}"#.into()),
+            }
         }
         ("DELETE", "/functions/v1/account") => {
             if !m.access_valid.contains(&bearer) {
@@ -245,6 +256,72 @@ fn sign_in_refresh_reuse_and_delete() {
     }
 }
 
+/// After signing in the app asks the account function whether Pro is on (the entitlement), keeps
+/// the answer with the stored session (so an offline launch stays unlocked), and follows the
+/// server when it changes: the owner flipping `profiles.pro` needs no app update.
+#[test]
+fn the_entitlement_comes_from_the_account_function_and_is_kept() {
+    let _serial = SERIAL.lock().unwrap_or_else(|e| e.into_inner());
+    lm_net::set_offline(false);
+    let mock = Arc::new(Mutex::new(Mock { expires_in: 3600, pro: Some(true), ..Default::default() }));
+    let base = start(mock.clone());
+    let store = Arc::new(MemoryStore::default());
+    let account = Account::new(config(&base), Arc::new(lm_account::http::GatedHttp), store.clone());
+    assert_eq!(account.access(false), lm_account::Access::SignedOut);
+    let sign_in = account.begin(Region::International, &Method::Provider(Provider::Google)).unwrap();
+    let q = query(sign_in.url().unwrap());
+    mock.lock().unwrap().challenge = q["code_challenge"].clone();
+    let redirect = q["redirect_to"].clone();
+    let browser = std::thread::spawn(move || browse(&redirect, "&code=code-123"));
+    account.complete(sign_in, &AtomicBool::new(false), Duration::from_secs(20)).unwrap();
+    browser.join().unwrap();
+    assert_eq!(account.access(false), lm_account::Access::Checking);
+
+    let e = account.refresh_entitlement().unwrap();
+    assert!(e.pro && e.plan.is_none());
+    assert_eq!(account.access(false), lm_account::Access::Unlocked);
+    {
+        let m = mock.lock().unwrap();
+        let get = m.seen.iter().find(|(meth, ..)| meth == "GET").unwrap();
+        assert_eq!(get.1, "/functions/v1/account");
+        assert_eq!(get.2.get("authorization").map(String::as_str), Some("Bearer access-1"));
+        assert_eq!(get.2.get("apikey").map(String::as_str), Some("anon-key"));
+    }
+
+    // Kept with the session: another launch, offline, is still unlocked.
+    let rec = store.load().unwrap().unwrap();
+    assert_eq!(Session::from_record(&rec).and_then(|s| s.entitlement).map(|e| e.pro), Some(true));
+    let later = Account::new(config(&base), Arc::new(lm_account::http::GatedHttp), Arc::new(MemoryStore::with(&rec)));
+    later.restore();
+    lm_net::set_offline(true);
+    let offline = later.refresh_entitlement();
+    let unlocked = later.access(false);
+    lm_net::set_offline(false);
+    assert_eq!(offline, Err(AccountError::Offline));
+    assert_eq!(unlocked, lm_account::Access::Unlocked);
+
+    // The server turns Pro off (later: payment lapsed): the next check locks it.
+    mock.lock().unwrap().pro = Some(false);
+    assert!(!account.refresh_entitlement().unwrap().pro);
+    assert_eq!(account.access(false), lm_account::Access::NotPro);
+    // No profile at all counts as no Pro.
+    mock.lock().unwrap().pro = None;
+    assert!(!account.refresh_entitlement().unwrap().pro);
+    // A refresh of the access token keeps the entitlement.
+    mock.lock().unwrap().pro = Some(true);
+    account.refresh_entitlement().unwrap();
+    let rec = store.load().unwrap().unwrap();
+    let short_store = Arc::new(MemoryStore::with(&rec));
+    let short = Account::new(config(&base), Arc::new(lm_account::http::GatedHttp), short_store.clone());
+    short.restore();
+    // (The restored session has no access token: this is a refresh, with token rotation.)
+    short.access_token().unwrap();
+    assert_eq!(short.access(false), lm_account::Access::Unlocked);
+    let rotated = Session::from_record(&short_store.load().unwrap().unwrap()).unwrap();
+    assert_ne!(rotated.refresh, Session::from_record(&rec).unwrap().refresh);
+    assert!(rotated.entitlement.is_some_and(|e| e.pro));
+}
+
 #[test]
 fn sign_out_revokes_at_the_service_and_forgets_here() {
     let _serial = SERIAL.lock().unwrap_or_else(|e| e.into_inner());
@@ -340,6 +417,7 @@ fn offline_nothing_goes_out_and_sign_out_still_forgets() {
         region: Region::International,
         access: None,
         refresh: "refresh-x".into(),
+        entitlement: None,
     };
     store.save(&stale.to_record()).unwrap();
     assert!(account.restore().is_some());
