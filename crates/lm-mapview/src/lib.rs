@@ -79,6 +79,14 @@ pub struct MapOutput {
     pub id: Option<egui::Id>,
 }
 
+/// The resolution (metres per point) at which `e` fills a `w` × `h` point box with a margin, as
+/// [`MapView::zoom_to_extent`] fits it (no deeper than zoom 16). Smaller is bigger on screen.
+pub fn fit_res(e: &Extent, w: f32, h: f32) -> f64 {
+    let m = extent_to_merc(e);
+    let res = (m.width() / (f64::from(w.max(1.0)) * 0.85)).max(m.height() / (f64::from(h.max(1.0)) * 0.85));
+    if res.is_finite() { res.max(res_of(16.0)) } else { res_of(2.0) }
+}
+
 /// NimbleMap's selection highlight (Visual specification › Default symbols › Selected): the
 /// `accent` token's 3 px outline with a 2 px halo, white on light, black on dark.
 pub fn selection_style(dark: bool) -> SelectionStyle {
@@ -307,6 +315,20 @@ impl MapView {
         self.anim = None;
         let mut center = m.center();
         center.x -= f64::from(left - right) / 2.0 * res;
+        self.camera = Camera { center, res };
+    }
+
+    /// Fits an extent into `free`, a part of the map's `size` (in the map's own points, origin
+    /// top left), so it lands beside or above what floats over the map (the Ask answer).
+    pub fn zoom_to_extent_in(&mut self, e: &Extent, size: egui::Vec2, free: Rect) {
+        let m = extent_to_merc(e);
+        let res = fit_res(e, free.width(), free.height());
+        self.velocity = egui::Vec2::ZERO;
+        self.anim = None;
+        // The extent's centre goes to the free part's centre.
+        let mut center = m.center();
+        center.x -= f64::from(free.center().x - size.x / 2.0) * res;
+        center.y += f64::from(free.center().y - size.y / 2.0) * res;
         self.camera = Camera { center, res };
     }
 

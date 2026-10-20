@@ -894,6 +894,41 @@ fn pro_find_where_on_the_elevation_example() {
     assert!(s.ws.doc.layers.iter().any(|l| l.display_name.starts_with("Where elevation")));
 }
 
+/// Pro's Ask box answers "How many Category 5 storms have passed within 100 km of Tokyo?"
+/// (fixtures/A1): the preview highlights only the 2 tracks that answer, outlines the 100 km area
+/// and frames it; the filtered-out storms are hidden as Keep will hide them. Keep selects the 2.
+#[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+fn pro_ask_answer_preview() {
+    let mut h = phase3(&["A1/storms.geojson", "A1/cities.geojson"], (145.0, 30.0, 4.0), |s| {
+        s.account = crate::account_ui::test_ui(true, lm_account::Region::International);
+        s.ws.clear_selection();
+    });
+    let request = "How many Category 5 storms have passed within 100 km of Tokyo?";
+    if let Some(s) = h.state_mut().as_mut() {
+        let steps: Vec<lm_jobs::plan_exec::Step> = serde_json::from_value(serde_json::json!([
+            {"name": "filter", "args": {"layer": "storms", "conditions": [{"field": "category", "op": "is", "value": "5"}]}},
+            {"name": "buffer", "args": {"object": {"layer": "cities", "field": "name", "value": "Tokyo"}, "distance": "100 km"}},
+            {"name": "count_in", "args": {"points": "storms", "areas": "#2"}}
+        ]))
+        .unwrap();
+        let (mut layers, _) = s.ws.ask_inputs();
+        let outcomes = lm_jobs::plan_exec::execute(&mut layers, &steps, 0, &lm_jobs::jobs::Control::none()).unwrap();
+        crate::ask::show_plan(s, request, lm_ask::PlanResult { steps, layers, outcomes, notes: Vec::new() });
+    }
+    settle(&mut h);
+    h.snapshot("pro_ask_answer_preview");
+    let ctx = h.ctx.clone();
+    if let Some(s) = h.state_mut().as_mut() {
+        s.command(&ctx, crate::Command::KeepAsk);
+    }
+    settle(&mut h);
+    let s = h.state().as_ref().unwrap();
+    let storms = s.ws.doc.layers.iter().find(|l| l.display_name == "storms").map(|l| l.id).unwrap();
+    assert_eq!(s.ws.selection.rows_in(storms), vec![0, 3]);
+    assert_eq!(s.ws.doc.layers.len(), 4);
+}
+
 /// Phase 5: the launch after a crash offers the autosave (WP5.2).
 #[test]
 #[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]

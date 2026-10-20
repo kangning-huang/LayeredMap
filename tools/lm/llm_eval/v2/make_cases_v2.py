@@ -124,6 +124,18 @@ case("r09", ["resolve", "multi"], "en", "shanghai", "How many high schools are t
      [filt("Schools", cond("type", "is", "High")),
       call("count_here", points="Schools", area=PUDONG)],
      alts=[[filt("Schools", cond("type", "any_of", values=["High"])), call("count_here", points="Schools", area=PUDONG)]])
+# Added 2026-10-20 after the launch-video bug ("How many Category 5 storms have passed within 100 km
+# of Tokyo?"): a count within a distance of a named city. Written after the v2 runs, so it is
+# outside the measured 97; run it offline (--dry-run) only.
+TOKYO = obj("Populated places", ("name", "Tokyo"), ("name_zh", "东京"))
+case("r10", ["resolve", "multi", "units", "count_in"], "en", "world", "How many cities are within 300 km of Tokyo?",
+     [call("buffer", layer="Populated places", object=TOKYO, distance={"distance_m": 300000}),
+      call("count_in", points="Populated places", areas=["#1"])],
+     alts=[[call("buffer", layer="Populated places", object=TOKYO, distance={"distance_m": 300000}),
+            call("whats_inside", area={"layer": ["#1"], "selected": True}, layer="Populated places")],
+           [call("buffer", layer="Populated places", object=TOKYO, distance={"distance_m": 300000}),
+            call("count_here", points="Populated places", area={"layer": ["#1"], "selected": True})]],
+     notes="Buffer the city, then count the cities in that area (count_in into #1, or whats_inside / count_here on it).")
 
 
 def with_default_stats(plan: list[dict]) -> list[dict]:

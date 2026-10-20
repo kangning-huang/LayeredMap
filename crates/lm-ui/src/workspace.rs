@@ -148,6 +148,9 @@ pub struct Workspace {
     fit_batches: Vec<(u64, Option<Extent>)>,
     /// Where to fly after this frame (the first extent of a batch on an empty map).
     pub fit: Option<Extent>,
+    /// Where an Ask answer wants the map (its area with room, or its features), until the Ask
+    /// box has laid the answer out and the map can fly beside it.
+    pub answer_fit: Option<Extent>,
     /// A notice to show ("Zoom to new data", errors), taken by the shell.
     pub notice: Option<String>,
     /// Extent of the newest layers when the map wasn't empty, for "Zoom to new data".
@@ -1141,7 +1144,10 @@ impl Workspace {
             .iter()
             .filter_map(|l| {
                 let s = self.synced.iter().find(|s| s.id == l.id)?;
-                let key = self.derived.get(&l.id).map(|d| d.key.clone()).unwrap_or_default();
+                let mut key = self.derived.get(&l.id).map(|d| d.key.clone()).unwrap_or_default();
+                if self.preview_mask(l.id).is_some() {
+                    key.push_str(&format!("|preview {}", self.analysis.preview_generation));
+                }
                 Some((s.map_id, key, self.highlighted(l.id)))
             })
             .collect();
@@ -1164,7 +1170,8 @@ impl Workspace {
                     Some((
                         s.map_id,
                         d.and_then(|d| d.symbols.clone()),
-                        d.and_then(|d| d.mask.clone()),
+                        // An Ask preview shows the rows its plan's filter keeps.
+                        self.preview_mask(l.id).or_else(|| d.and_then(|d| d.mask.clone())),
                         self.highlighted(l.id),
                         l.style.labels.clone(),
                     ))
@@ -1477,8 +1484,18 @@ impl Workspace {
 /// An action's preview: the accent blue at low opacity with a strong outline, so it reads as
 /// "not yet part of the map".
 fn preview_style(kind: LayerKind) -> Style {
-    let mut s = Style::for_kind(kind, [0x25, 0x63, 0xEB, 0xFF], 0);
-    s.opacity = 0.45;
+    let accent = [0x25, 0x63, 0xEB, 0xFF];
+    let mut s = Style::for_kind(kind, accent, 0);
+    if kind == LayerKind::Areas {
+        // An area (a buffer, the counted area) is outlined in the accent over a light tint, so
+        // it reads as a boundary and what lies inside it stays visible.
+        s.fill = accent;
+        s.fill_opacity = 0.14;
+        s.stroke = accent;
+        s.stroke_width = 2.5;
+    } else {
+        s.opacity = 0.45;
+    }
     s
 }
 

@@ -58,19 +58,24 @@ pub enum StepOutcome {
         filter: Filter,
     },
     Display,
-    /// `alias` is the new layer's `#k`; `color_by` the field the action colours it by.
+    /// `alias` is the new layer's `#k`; `color_by` the field the action colours it by;
+    /// `matched` the features that answer the question (`count_in` over a few areas), by their
+    /// layer's name and rows.
     NewLayer {
         name: String,
         alias: String,
         card: Box<ResultCard>,
         recipe: Box<Recipe>,
         color_by: Option<String>,
+        matched: Option<(String, Vec<usize>)>,
     },
+    /// `matched`: the features `join_by_location` matched to a few areas.
     NewFields {
         layer: String,
         fields: Vec<String>,
         card: Box<ResultCard>,
         recipe: Box<Recipe>,
+        matched: Option<(String, Vec<usize>)>,
     },
     Card {
         card: Box<ResultCard>,
@@ -79,6 +84,105 @@ pub enum StepOutcome {
     },
     Asked(String),
     Refused(String),
+}
+
+impl StepOutcome {
+    /// The features this step found as its answer, by layer name and rows: what "what's
+    /// inside", "how many here" and "which area" select, the things `count_in` counted in a few
+    /// areas, or the features `join_by_location` matched to them.
+    pub fn matched(&self) -> Option<&(String, Vec<usize>)> {
+        match self {
+            StepOutcome::Card { highlight, .. } => highlight.as_ref(),
+            StepOutcome::NewLayer { matched, .. } | StepOutcome::NewFields { matched, .. } => matched.as_ref(),
+            _ => None,
+        }
+    }
+
+    /// The fields this step made: the fields it added to a layer, or the value field of the new
+    /// layer it made (`count_in`'s count, `summarize_each`'s statistic).
+    pub fn made_fields(&self) -> Vec<String> {
+        match self {
+            StepOutcome::NewFields { fields, .. } => fields.clone(),
+            StepOutcome::NewLayer { color_by: Some(f), .. } => vec![f.clone()],
+            _ => Vec::new(),
+        }
+    }
+}
+
+/// Fields earlier steps of a plan made: (step number, layer name, field names).
+type Made = Vec<(usize, String, Vec<String>)>;
+
+/// The keys of a step's arguments that name a field (calculate_field's `first`/`second` arrive
+/// as `a`/`b`; `fields` is a comma-separated list).
+const FIELD_KEYS: [&str; 5] = ["field", "a", "b", "layer_field", "fields"];
+
+/// A field as a step names it, made exact (owner's bug report, 2026-10-20: a plan failed on
+/// "km to nearest buffer" because the model guessed the name `nearest_distance` gives):
+/// - `#k` is the first field step k made (`nearest_distance`'s km, `count_in`'s count,
+///   `calculate_field`'s result), the stable name the assistant is told about;
+/// - a name no layer has that starts with "km to nearest" is the one distance field an earlier
+///   step added, when there is exactly one.
+///
+/// Anything else is left as written.
+fn resolve_field(name: &str, made: &Made, layers: &[PlanLayer]) -> Option<String> {
+    let n = name.trim();
+    if let Some(k) = n.strip_prefix('#').and_then(|k| k.parse::<usize>().ok()) {
+        return made.iter().find(|(step, _, f)| *step == k && !f.is_empty()).and_then(|(_, _, f)| f.first().cloned());
+    }
+    let known = layers.iter().any(|l| matches!(&l.data, LayerData::Vector(ds) if ds.field_index(n).is_some()));
+    if known || made.iter().any(|(_, _, f)| f.iter().any(|x| x.eq_ignore_ascii_case(n))) {
+        return None;
+    }
+    const DISTANCE: &str = "km to nearest";
+    if !n.to_lowercase().starts_with(DISTANCE) {
+        return None;
+    }
+    let mut hits = made.iter().flat_map(|(_, _, f)| f.iter()).filter(|f| f.to_lowercase().starts_with(DISTANCE));
+    match (hits.next(), hits.next()) {
+        (Some(one), None) => Some(one.clone()),
+        _ => None,
+    }
+}
+
+/// `args` with every field name resolved ([`resolve_field`]), conditions included.
+fn resolve_fields(args: &Json, made: &Made, layers: &[PlanLayer]) -> Json {
+    let mut a = args.clone();
+    let Some(obj) = a.as_object_mut() else { return a };
+    for key in FIELD_KEYS {
+        let Some(v) = obj.get(key).and_then(Json::as_str) else { continue };
+        let fixed = if key == "fields" {
+            let parts: Vec<String> = v.split(',').map(|p| resolve_field(p, made, layers).unwrap_or_else(|| p.trim().to_string())).collect();
+            Some(parts.join(","))
+        } else {
+            resolve_field(v, made, layers)
+        };
+        if let Some(f) = fixed {
+            obj.insert(key.to_string(), Json::String(f));
+        }
+    }
+    if let Some(Json::Array(conds)) = obj.get_mut("conditions") {
+        for c in conds.iter_mut() {
+            let Some(c) = c.as_object_mut() else { continue };
+            if let Some(f) = c.get("field").and_then(Json::as_str).and_then(|v| resolve_field(v, made, layers)) {
+                c.insert("field".into(), Json::String(f));
+            }
+        }
+    }
+    a
+}
+
+/// What a failed step's message gains when earlier steps made fields: their exact names, so a
+/// repair names them right.
+fn made_words(made: &Made) -> String {
+    let parts: Vec<String> = made
+        .iter()
+        .filter(|(_, _, f)| !f.is_empty())
+        .map(|(k, layer, f)| {
+            let names = f.iter().map(|x| format!("“{x}”")).collect::<Vec<_>>().join(", ");
+            format!("step {k} added {names} to {layer} (or name its first field \"#{k}\")")
+        })
+        .collect();
+    if parts.is_empty() { String::new() } else { format!(" Fields made by earlier steps: {}.", parts.join("; ")) }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -175,92 +279,120 @@ fn input_of(l: &PlanLayer, rows: Option<Vec<usize>>) -> PlanInput {
 /// Runs `steps` on `layers` (which gain the steps' outputs). Stops at the first error, or at
 /// `ask_user` / `cannot_do`.
 pub fn execute(layers: &mut Vec<PlanLayer>, steps: &[Step], computed_at: i64, ctl: &Control) -> Result<Vec<StepOutcome>, PlanError> {
-    let mut out = Vec::new();
+    let mut out: Vec<StepOutcome> = Vec::new();
+    let mut made: Made = Vec::new();
     for (i, s) in steps.iter().enumerate() {
         let n = i + 1;
-        let a = &s.args;
-        let layer_arg = |key: &str, layers: &[PlanLayer]| -> Result<usize, PlanError> {
-            let name = arg(a, key).ok_or_else(|| err(n, format!("missing {key}")))?;
-            find(layers, &name).ok_or_else(|| err(n, format!("no layer “{name}”")))
-        };
-        match s.name.as_str() {
-            "filter" => {
-                let li = layer_arg("layer", layers)?;
-                let conds: Vec<Condition> = a
-                    .get("conditions")
-                    .and_then(Json::as_array)
-                    .map(|cs| cs.iter().map(|c| condition(c, n)).collect::<Result<_, _>>())
-                    .transpose()?
-                    .unwrap_or_default();
-                let LayerData::Vector(ds) = &layers[li].data else { return Err(err(n, "only points, lines and areas can be filtered")) };
-                for c in &conds {
-                    if ds.field_index(&c.field).is_none() {
-                        return Err(err(n, format!("{} has no field “{}”", layers[li].name, c.field)));
-                    }
-                }
-                let f = Filter { conditions: conds };
-                let total = ds.features.len();
-                let rows = crate::inspect::filter_mask(ds, Some(&f))
-                    .map(|m| m.iter().enumerate().filter(|(_, k)| **k).map(|(r, _)| r).collect::<Vec<_>>());
-                let shown = rows.as_ref().map_or(total, Vec::len);
-                layers[li].rows = rows;
-                out.push(StepOutcome::Filtered { layer: layers[li].name.clone(), shown, of: total, filter: f });
+        let resolved = resolve_fields(&s.args, &made, layers);
+        let o = run_step(layers, &s.name, &resolved, n, computed_at, ctl).map_err(|mut e| {
+            if e.message.contains("no field") {
+                e.message.push_str(&made_words(&made));
             }
-            "color_by" | "zoom_to" | "view_data" => out.push(StepOutcome::Display),
-            "ask_user" => {
-                out.push(StepOutcome::Asked(arg(a, "question").unwrap_or_default()));
-                return Ok(out);
-            }
-            "cannot_do" => {
-                out.push(StepOutcome::Refused(arg(a, "reason").unwrap_or_default()));
-                return Ok(out);
-            }
-            action if actions::ACTIONS.contains(&action) => {
-                let (inputs, params) = plan_inputs(action, a, layers, n)?;
-                let plan = Plan {
-                    action: action.to_string(),
-                    inputs,
-                    params,
-                    method: lm_actions_method(action),
-                    computed_at,
-                    software: lm_core::brand::with_version(env!("CARGO_PKG_VERSION")),
-                };
-                let r = actions::run(&plan, ctl).map_err(|e| match e {
-                    ActionError::Cancelled => err(n, "cancelled"),
-                    other => err(n, other.to_string()),
-                })?;
-                let recipe = Box::new(r.recipe);
-                match r.output {
-                    ActionOutput::NewLayer { layer, color_by } => {
-                        let name = layer.name.clone();
-                        let id = lm_core::model::LayerId(10_000 + n as u64);
-                        let style = lm_core::document::Style::for_profile(&layer.profile, [0, 0, 0, 255]);
-                        layers.push(PlanLayer {
-                            name: name.clone(),
-                            alias: Some(format!("#{n}")),
-                            layer: DocLayer::new(id, name.clone(), layer.profile.clone(), style),
-                            data: layer.data.clone(),
-                            rows: None,
-                            path: None,
-                        });
-                        out.push(StepOutcome::NewLayer { name, alias: format!("#{n}"), card: Box::new(r.card), recipe, color_by });
-                    }
-                    ActionOutput::NewFields { layer, data, fields } => {
-                        let li = layers.iter().position(|l| l.layer.id == layer).ok_or_else(|| err(n, "the layer went away"))?;
-                        layers[li].data = LayerData::Vector(data);
-                        out.push(StepOutcome::NewFields { layer: layers[li].name.clone(), fields, card: Box::new(r.card), recipe });
-                    }
-                    ActionOutput::Card => {
-                        let hl =
-                            r.highlight.and_then(|(id, rows)| layers.iter().find(|l| l.layer.id == id).map(|l| (l.name.clone(), rows)));
-                        out.push(StepOutcome::Card { card: Box::new(r.card), recipe, highlight: hl });
-                    }
-                }
-            }
-            other => return Err(err(n, format!("“{other}” isn't an action {APP} knows"))),
+            e
+        })?;
+        let fields = o.made_fields();
+        if !fields.is_empty() {
+            let layer = match &o {
+                StepOutcome::NewFields { layer, .. } => layer.clone(),
+                StepOutcome::NewLayer { alias, .. } => alias.clone(),
+                _ => String::new(),
+            };
+            made.push((n, layer, fields));
+        }
+        let end = matches!(o, StepOutcome::Asked(_) | StepOutcome::Refused(_));
+        out.push(o);
+        if end {
+            break;
         }
     }
     Ok(out)
+}
+
+/// Runs one step (`n`, from 1) with its fields resolved.
+fn run_step(
+    layers: &mut Vec<PlanLayer>,
+    name: &str,
+    a: &Json,
+    n: usize,
+    computed_at: i64,
+    ctl: &Control,
+) -> Result<StepOutcome, PlanError> {
+    let layer_arg = |key: &str, layers: &[PlanLayer]| -> Result<usize, PlanError> {
+        let name = arg(a, key).ok_or_else(|| err(n, format!("missing {key}")))?;
+        find(layers, &name).ok_or_else(|| err(n, format!("no layer “{name}”")))
+    };
+    Ok(match name {
+        "filter" => {
+            let li = layer_arg("layer", layers)?;
+            let conds: Vec<Condition> = a
+                .get("conditions")
+                .and_then(Json::as_array)
+                .map(|cs| cs.iter().map(|c| condition(c, n)).collect::<Result<_, _>>())
+                .transpose()?
+                .unwrap_or_default();
+            let LayerData::Vector(ds) = &layers[li].data else { return Err(err(n, "only points, lines and areas can be filtered")) };
+            for c in &conds {
+                if ds.field_index(&c.field).is_none() {
+                    return Err(err(n, format!("{} has no field “{}”", layers[li].name, c.field)));
+                }
+            }
+            let f = Filter { conditions: conds };
+            let total = ds.features.len();
+            let rows = crate::inspect::filter_mask(ds, Some(&f))
+                .map(|m| m.iter().enumerate().filter(|(_, k)| **k).map(|(r, _)| r).collect::<Vec<_>>());
+            let shown = rows.as_ref().map_or(total, Vec::len);
+            layers[li].rows = rows;
+            StepOutcome::Filtered { layer: layers[li].name.clone(), shown, of: total, filter: f }
+        }
+        "color_by" | "zoom_to" | "view_data" => StepOutcome::Display,
+        "ask_user" => StepOutcome::Asked(arg(a, "question").unwrap_or_default()),
+        "cannot_do" => StepOutcome::Refused(arg(a, "reason").unwrap_or_default()),
+        action if actions::ACTIONS.contains(&action) => {
+            let (inputs, params) = plan_inputs(action, a, layers, n)?;
+            let plan = Plan {
+                action: action.to_string(),
+                inputs,
+                params,
+                method: lm_actions_method(action),
+                computed_at,
+                software: lm_core::brand::with_version(env!("CARGO_PKG_VERSION")),
+            };
+            let r = actions::run(&plan, ctl).map_err(|e| match e {
+                ActionError::Cancelled => err(n, "cancelled"),
+                other => err(n, other.to_string()),
+            })?;
+            let recipe = Box::new(r.recipe);
+            let name_of =
+                |id: lm_core::model::LayerId, layers: &[PlanLayer]| layers.iter().find(|l| l.layer.id == id).map(|l| l.name.clone());
+            let matched = r.matched.and_then(|(id, rows)| name_of(id, layers).map(|l| (l, rows)));
+            match r.output {
+                ActionOutput::NewLayer { layer, color_by } => {
+                    let name = layer.name.clone();
+                    let id = lm_core::model::LayerId(10_000 + n as u64);
+                    let style = lm_core::document::Style::for_profile(&layer.profile, [0, 0, 0, 255]);
+                    layers.push(PlanLayer {
+                        name: name.clone(),
+                        alias: Some(format!("#{n}")),
+                        layer: DocLayer::new(id, name.clone(), layer.profile.clone(), style),
+                        data: layer.data.clone(),
+                        rows: None,
+                        path: None,
+                    });
+                    StepOutcome::NewLayer { name, alias: format!("#{n}"), card: Box::new(r.card), recipe, color_by, matched }
+                }
+                ActionOutput::NewFields { layer, data, fields } => {
+                    let li = layers.iter().position(|l| l.layer.id == layer).ok_or_else(|| err(n, "the layer went away"))?;
+                    layers[li].data = LayerData::Vector(data);
+                    StepOutcome::NewFields { layer: layers[li].name.clone(), fields, card: Box::new(r.card), recipe, matched }
+                }
+                ActionOutput::Card => {
+                    let hl = r.highlight.and_then(|(id, rows)| name_of(id, layers).map(|l| (l, rows)));
+                    StepOutcome::Card { card: Box::new(r.card), recipe, highlight: hl }
+                }
+            }
+        }
+        other => return Err(err(n, format!("“{other}” isn't an action {APP} knows"))),
+    })
 }
 
 /// The recipe method for an action (the runner's tests use fixed text; the app takes it from

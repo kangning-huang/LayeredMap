@@ -111,3 +111,90 @@ fn an_assistant_plan_matches_a_table_by_named_columns() {
     assert!(card.title.contains("ward ↔ ward_code"), "{}", card.title);
     assert!(matches!(&out[1], StepOutcome::Filtered { shown: 7, .. }), "{:?}", out[1]);
 }
+
+/// fixtures/A1: five storm tracks around Tokyo (category 5 except row 2): rows 0 (through Tokyo)
+/// and 3 (about 50 km east) pass within 100 km; row 2 passes too but is category 3; rows 1 and 4
+/// stay far. And one city, Tokyo.
+fn tokyo_map() -> Vec<PlanLayer> {
+    vec![layer("fixtures/A1/storms.geojson", "Storms", 1), layer("fixtures/A1/cities.geojson", "Cities", 2)]
+}
+
+fn tokyo_steps() -> Vec<Step> {
+    steps(json!([
+        {"name": "filter", "args": {"layer": "Storms", "conditions": [{"field": "category", "op": "is", "value": "5"}]}},
+        {"name": "buffer", "args": {"object": {"layer": "Cities", "field": "name", "value": "Tokyo"}, "distance": "100 km"}},
+        {"name": "count_in", "args": {"points": "Storms", "areas": "#2"}}
+    ]))
+}
+
+/// The launch-video bug: "How many Category 5 storms have passed within 100 km of Tokyo?". The
+/// answer's features are the tracks count_in counted in the one area, not the step-1 filter's.
+#[test]
+fn count_in_over_one_area_reports_the_counted_features_as_the_answer() {
+    let mut layers = tokyo_map();
+    let out = execute(&mut layers, &tokyo_steps(), 0, &Control::none()).unwrap();
+    assert!(matches!(&out[0], StepOutcome::Filtered { shown: 4, of: 5, .. }));
+    let Some((name, rows)) = out[2].matched() else { panic!("{:?}", out[2]) };
+    assert_eq!((name.as_str(), rows.as_slice()), ("Storms", &[0, 3][..]));
+    assert_eq!(out[2].made_fields(), vec!["storms".to_string()]);
+    // Over many areas the counts are a ranking, not a set of features.
+    let mut layers = vec![layer("fixtures/T1/schools.csv", "Schools", 1), layer("fixtures/V1/districts.geojson", "Districts", 2)];
+    let out = execute(
+        &mut layers,
+        &steps(json!([{"name": "count_in", "args": {"points": "Schools", "areas": "Districts"}}])),
+        0,
+        &Control::none(),
+    )
+    .unwrap();
+    assert!(out[0].matched().is_none());
+}
+
+/// whats_inside and join_by_location over one area give their features too.
+#[test]
+fn whats_inside_and_join_by_location_report_their_features() {
+    let mut layers = tokyo_map();
+    let mut plan = tokyo_steps();
+    plan[2] = steps(json!([{"name": "whats_inside", "args": {"area": {"layer": "#2"}, "layer": "Storms"}}])).remove(0);
+    let out = execute(&mut layers, &plan, 0, &Control::none()).unwrap();
+    assert_eq!(out[2].matched().map(|(l, r)| (l.as_str(), r.clone())), Some(("Storms", vec![0, 3])));
+    let mut layers = tokyo_map();
+    plan[2] = steps(json!([{"name": "join_by_location", "args": {"layer": "Cities", "areas": "#2"}}])).remove(0);
+    let out = execute(&mut layers, &plan, 0, &Control::none()).unwrap();
+    assert_eq!(out[2].matched().map(|(l, r)| (l.as_str(), r.clone())), Some(("Cities", vec![0])));
+}
+
+/// Fields a step made can be named reliably by later steps: "#k" is step k's first made field,
+/// and a guessed "km to nearest …" is the one distance field made earlier. A wrong name fails
+/// with the exact names of the fields earlier steps made.
+#[test]
+fn later_steps_name_made_fields_by_step_or_by_the_distance_name() {
+    let distance_then = |field: &str| {
+        let mut plan = tokyo_steps();
+        plan.truncate(2);
+        plan.extend(steps(json!([
+            {"name": "nearest_distance", "args": {"layer": "Storms", "other": "#2"}},
+            {"name": "filter", "args": {"layer": "Storms", "conditions": [
+                {"field": "category", "op": "is", "value": "5"}, {"field": field, "op": "at_most", "value": "0"}]}}
+        ])));
+        let mut layers = tokyo_map();
+        execute(&mut layers, &plan, 0, &Control::none())
+    };
+    for field in ["#3", "km to nearest buffer", "km to nearest area"] {
+        let out = distance_then(field).unwrap_or_else(|e| panic!("{field}: {e}"));
+        let StepOutcome::Filtered { shown, filter, .. } = &out[3] else { panic!("{:?}", out[3]) };
+        assert_eq!(*shown, 2, "{field}");
+        assert_eq!(filter.conditions[1].field, "km to nearest area", "{field}: the filter keeps the real name");
+    }
+    let e = distance_then("distance to Tokyo").unwrap_err();
+    assert_eq!(e.step, 4);
+    assert!(e.message.contains("step 3 added “km to nearest area”, “nearest area” to Storms"), "{}", e.message);
+    assert!(e.message.contains("\"#3\""), "{}", e.message);
+    // "#k" of a step that made no field stays as written and fails the same way.
+    let e = distance_then("#2").unwrap_err();
+    assert!(e.message.contains("no field “#2”"), "{}", e.message);
+    // count_in's count is "#k" too.
+    let mut plan = tokyo_steps();
+    plan.extend(steps(json!([{"name": "rank_by_value", "args": {"layer": "#3", "field": "#3"}}])));
+    let mut layers = tokyo_map();
+    assert!(execute(&mut layers, &plan, 0, &Control::none()).is_ok());
+}
