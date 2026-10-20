@@ -1,13 +1,19 @@
-# Library catalog / example text payloads compared by SHA-256. Force LF so a
-# Windows checkout stays byte-identical. Do NOT mark all of fixtures/** as text —
-# that LF-normalizes .png/.nc and breaks pre-commit + SHA checks.
-/fixtures/library/*.geojson text eol=lf
-/fixtures/library/*.csv text eol=lf
-/fixtures/library/*.json text eol=lf
-/fixtures/library/*.md text eol=lf
-/assets/examples/** text eol=lf
-
-# Never treat these as text under any broader rule.
+# Fixtures and catalogs are compared by byte size and SHA (library tests, gate2 snapshots).
+# Force LF so Windows checkouts without core.autocrlf=false stay byte-identical to macOS/Linux.
+# Extension-based (not fixtures/** as text) so .png/.nc/.tif under fixtures are never LF-normalized.
+*.geojson text eol=lf
+*.json text eol=lf
+*.csv text eol=lf
+*.tsv text eol=lf
+*.kml text eol=lf
+*.gpx text eol=lf
+*.md text eol=lf
+*.rs text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.toml text eol=lf
+*.cpg text eol=lf
+*.prj text eol=lf
 *.tif -text
 *.tiff -text
 *.png -text
@@ -15,3 +21,6 @@
 *.nc -text
 *.zip -text
 *.xlsx -text
+*.shp -text
+*.dbf -text
+*.shx -text
