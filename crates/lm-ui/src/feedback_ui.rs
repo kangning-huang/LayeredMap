@@ -2,7 +2,9 @@
 //! message, an optional title and reply address, and "Include app version and macOS version".
 //! Send posts it through the feedback service, which puts it on GitHub Discussions; the person
 //! needs no GitHub account. The sheet says before sending that the message will be public and the
-//! address won't. The request runs on a background thread (`lm_account::feedback::send_now`);
+//! address won't; signed in, it adds that the message goes with the account, which isn't shown
+//! publicly (the server keeps the account id privately). The request runs on a background thread
+//! (`lm_account::feedback::send_now`, with the session's token when signed in);
 //! the sheet shows "Sending…", then the discussion's link, or what to do when it failed, with the
 //! text kept.
 //!
@@ -10,6 +12,7 @@
 //! also clear the selection behind the sheet). A click outside doesn't close it: typing is never
 //! lost by accident.
 
+use std::sync::Arc;
 use std::sync::mpsc::{Receiver, TryRecvError, channel};
 
 use egui::{RichText, Ui, vec2};
@@ -96,8 +99,12 @@ fn words(template: &str, values: &[(&str, String)]) -> String {
     i18n::fmt(template, &args)
 }
 
+/// The note under the privacy line when the message goes with the account.
+const WITH_ACCOUNT: &str = lm_core::tn!("Sent with your account so we can follow up. Your account isn't shown publicly.");
+
 /// Starts sending after checking the draft (the server's bounds, so most problems are caught here).
-fn start(s: &mut Sheet, ctx: &egui::Context, language: &str) {
+/// `account`: its token goes with the message when it is signed in to the feedback service.
+fn start(s: &mut Sheet, ctx: &egui::Context, language: &str, account: Option<Arc<lm_account::Account>>) {
     if let Err(p) = fb::check(&s.draft) {
         s.error = Some(problem_text(p, &s.draft));
         return;
@@ -109,12 +116,12 @@ fn start(s: &mut Sheet, ctx: &egui::Context, language: &str) {
     let wake = ctx.clone();
     #[cfg(not(target_arch = "wasm32"))]
     std::thread::spawn(move || {
-        let _ = tx.send(fb::send_now(&draft, &language));
+        let _ = tx.send(fb::send_now(&draft, &language, account.as_deref()));
         wake.request_repaint();
     });
     #[cfg(target_arch = "wasm32")]
     {
-        let _ = (draft, language, wake);
+        let _ = (draft, language, wake, account);
         let _ = tx.send(Err(FeedbackError::NotConfigured));
     }
     s.phase = Phase::Sending(rx);
@@ -143,6 +150,8 @@ pub(crate) fn sheet(shell: &mut Shell, ctx: &egui::Context) {
     let Some(mut s) = shell.feedback.take() else { return };
     let t = *shell.theme();
     let language = shell.language().code();
+    let account = shell.account.account.clone();
+    let signed_in = account.as_ref().is_some_and(|a| a.feedback_signed_in());
     let was_sending = s.sending();
     poll(&mut s);
     let mut close = std::mem::take(&mut s.escape);
@@ -161,14 +170,14 @@ pub(crate) fn sheet(shell: &mut Shell, ctx: &egui::Context) {
                 close |= done;
             }
             _ => {
-                let (go, cancel) = form(ui, &t, &mut s);
+                let (go, cancel) = form(ui, &t, &mut s, signed_in);
                 send |= go;
                 close |= cancel;
             }
         }
     });
     if send && !s.sending() {
-        start(&mut s, ctx, language);
+        start(&mut s, ctx, language, account);
     }
     // Screen readers hear the outcome.
     let id = egui::Id::new("lm-feedback-status");
@@ -195,8 +204,8 @@ pub(crate) fn sheet(shell: &mut Shell, ctx: &egui::Context) {
     }
 }
 
-/// The form; returns (Send pressed, Cancel pressed).
-fn form(ui: &mut Ui, t: &Theme, s: &mut Sheet) -> (bool, bool) {
+/// The form; returns (Send pressed, Cancel pressed). `signed_in`: the message goes with the account.
+fn form(ui: &mut Ui, t: &Theme, s: &mut Sheet, signed_in: bool) -> (bool, bool) {
     let sending = s.sending();
     let mut send = false;
     let mut cancel = false;
@@ -277,6 +286,13 @@ fn form(ui: &mut Ui, t: &Theme, s: &mut Sheet) -> (bool, bool) {
             .wrap(),
         );
     });
+    if signed_in {
+        ui.add_space(4.0);
+        ui.horizontal_top(|ui| {
+            ui.label(RichText::new(icon::USER_CIRCLE).font(theme::icon_font(15.0)).color(t.text_secondary));
+            ui.add(egui::Label::new(RichText::new(tl!(WITH_ACCOUNT)).size(CAPTION).color(t.text_secondary)).wrap());
+        });
+    }
     if let Some(e) = &s.error {
         ui.add_space(8.0);
         ui.add(egui::Label::new(RichText::new(e).color(t.critical)).wrap());
@@ -367,7 +383,7 @@ mod tests {
         let ctx = egui::Context::default();
         let mut s = Sheet::new();
         s.draft.message = "hi".into();
-        start(&mut s, &ctx, "en");
+        start(&mut s, &ctx, "en", None);
         assert!(matches!(s.phase, Phase::Editing));
         assert_eq!(s.error.as_deref(), Some("Write a few words about your idea or problem."));
     }
@@ -406,6 +422,27 @@ mod tests {
             assert!(h.query_by_label(label).is_some(), "{label}");
         }
         h.snapshot("feedback_sheet");
+    }
+
+    /// Signed in, the sheet says the message goes with the account, not publicly; signed out it
+    /// doesn't.
+    #[test]
+    #[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+    fn feedback_sheet_signed_in() {
+        let mut h = harness_phase(1, false, WORLD, |s| {
+            s.account = crate::account_ui::test_ui(true, lm_account::Region::International);
+            let mut sheet = Sheet::new();
+            sheet.draft.message = "Please add a dark basemap with labels.".into();
+            s.feedback = Some(sheet);
+        });
+        assert!(h.query_by_label(WITH_ACCOUNT).is_some());
+        h.snapshot("feedback_sheet_signed_in");
+        let out = harness_phase(1, false, WORLD, |s| {
+            s.account = crate::account_ui::test_ui(false, lm_account::Region::International);
+            s.feedback = Some(Sheet::new());
+        });
+        assert!(out.query_by_label(WITH_ACCOUNT).is_none());
+        assert!(out.query_by_label("Your feedback will be posted publicly on GitHub Discussions, without your email.").is_some());
     }
 
     #[test]

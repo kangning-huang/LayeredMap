@@ -1,8 +1,11 @@
 //! Help › Send Feedback… (docs/lm/feedback.md): the request the app sends to the feedback
-//! function, which posts it as a GitHub Discussion on the public repository. Nobody signs in and
-//! nothing here is tied to the account: it lives in this crate because it uses the same service
-//! (`account.json`'s international `proxy_url`, the publishable key) and the same gated client
-//! (`http::FeedbackHttp`, network purpose Feedback).
+//! function, which posts it as a GitHub Discussion on the public repository. Anyone may send,
+//! signed in or not. It lives in this crate because it uses the same service (`account.json`'s
+//! international `proxy_url`, the publishable key) and the same gated client
+//! (`http::FeedbackHttp`, network purpose Feedback). When someone is signed in to that service,
+//! the session's access token goes with it (`Authorization: Bearer …`, as Ask sends it): the
+//! server verifies it and keeps the account id privately, never on GitHub. The body never carries
+//! an account id; the server wouldn't trust one.
 //!
 //! The draft is checked here with the server's own bounds, so the sheet can say what to change
 //! before anything is sent. The request carries a random install id, made once on this computer
@@ -341,9 +344,19 @@ pub fn read_answer(r: &Response) -> Result<String, FeedbackError> {
     })
 }
 
-/// Posts `body` to the feedback function of `service` (blocking: call it on a background thread).
-pub fn send(http: &dyn Http, service: &RegionConfig, body: &str) -> Result<String, FeedbackError> {
-    let r = http.send("POST", &service.feedback_url(), &[("apikey", service.anon_key.clone())], Some(body)).map_err(|e| match e {
+/// The request's headers: the publishable key, and the access token when someone is signed in.
+pub fn headers(service: &RegionConfig, token: Option<&str>) -> Vec<(&'static str, String)> {
+    let mut h = vec![("apikey", service.anon_key.clone())];
+    if let Some(t) = token.filter(|t| !t.is_empty()) {
+        h.push(("Authorization", format!("Bearer {t}")));
+    }
+    h
+}
+
+/// Posts `body` to the feedback function of `service`, with the signed-in session's access token
+/// when there is one (blocking: call it on a background thread).
+pub fn send(http: &dyn Http, service: &RegionConfig, body: &str, token: Option<&str>) -> Result<String, FeedbackError> {
+    let r = http.send("POST", &service.feedback_url(), &headers(service, token), Some(body)).map_err(|e| match e {
         crate::AccountError::Offline => FeedbackError::Offline,
         crate::AccountError::Network(m) => FeedbackError::Network(m),
         other => FeedbackError::Network(other.to_string()),
@@ -399,9 +412,10 @@ fn random_install_id() -> Result<String, String> {
 
 /// Everything Send does, on a background thread: the service from `account.json`, the install id
 /// from the support folder (a fresh one for this message if it can't be kept), the app details,
-/// the request. `language` is the interface language's code.
+/// the request, and the access token when `account` is signed in to the feedback service
+/// ([`crate::Account::feedback_token`]). `language` is the interface language's code.
 #[cfg(not(target_arch = "wasm32"))]
-pub fn send_now(draft: &Draft, language: &str) -> Result<String, FeedbackError> {
+pub fn send_now(draft: &Draft, language: &str, account: Option<&crate::Account>) -> Result<String, FeedbackError> {
     check(draft).map_err(|p| FeedbackError::Invalid(format!("{p:?}")))?;
     let config = crate::Config::load().ok_or(FeedbackError::NotConfigured)?;
     let service = config.feedback().ok_or(FeedbackError::NotConfigured)?;
@@ -416,7 +430,8 @@ pub fn send_now(draft: &Draft, language: &str) -> Result<String, FeedbackError> 
         }
     };
     let body = request_body(draft, &About::current(language), &id);
-    send(&crate::http::FeedbackHttp, service, &body)
+    let token = account.and_then(crate::Account::feedback_token);
+    send(&crate::http::FeedbackHttp, service, &body, token.as_deref())
 }
 
 #[cfg(test)]
@@ -583,7 +598,7 @@ mod tests {
         let url = "https://github.com/kangning-huang/NimbleMap/discussions/7";
         let fake = Fake { seen: Mutex::new(vec![]), answer: Ok(answer(200, &format!(r#"{{"url":"{url}"}}"#))) };
         let body = request_body(&draft("A dark basemap, please."), &about(), ID);
-        assert_eq!(send(&fake, &service(), &body), Ok(url.to_string()));
+        assert_eq!(send(&fake, &service(), &body, None), Ok(url.to_string()));
         let seen = fake.seen.lock().unwrap();
         let (method, to, headers, sent) = &seen[0];
         assert_eq!((method.as_str(), to.as_str()), ("POST", "https://abc.supabase.co/functions/v1/feedback"));
@@ -592,11 +607,29 @@ mod tests {
     }
 
     #[test]
+    fn the_token_goes_in_a_header_only_when_signed_in() {
+        let url = "https://github.com/kangning-huang/NimbleMap/discussions/7";
+        let fake = Fake { seen: Mutex::new(vec![]), answer: Ok(answer(200, &format!(r#"{{"url":"{url}"}}"#))) };
+        let body = request_body(&draft("A dark basemap, please."), &about(), ID);
+        assert_eq!(send(&fake, &service(), &body, Some("eyJ.access.sig")), Ok(url.to_string()));
+        assert_eq!(send(&fake, &service(), &body, None), Ok(url.to_string()));
+        assert_eq!(send(&fake, &service(), &body, Some("")), Ok(url.to_string()));
+        let seen = fake.seen.lock().unwrap();
+        let key = ("apikey".to_string(), "sb_publishable_test".to_string());
+        assert_eq!(seen[0].2, vec![key.clone(), ("Authorization".to_string(), "Bearer eyJ.access.sig".to_string())]);
+        assert_eq!(seen[1].2, vec![key.clone()], "signed out: the publishable key only");
+        assert_eq!(seen[2].2, vec![key], "an empty token is no token");
+        // The body is the same either way: the account is never in it.
+        assert!(seen.iter().all(|(_, _, _, b)| b.as_deref() == Some(body.as_str())));
+        assert!(!body.contains("eyJ") && !body.contains("user"));
+    }
+
+    #[test]
     fn offline_and_network_failures_say_what_to_do() {
         let offline = Fake { seen: Mutex::new(vec![]), answer: Err(crate::AccountError::Offline) };
-        assert_eq!(send(&offline, &service(), "{}"), Err(FeedbackError::Offline));
+        assert_eq!(send(&offline, &service(), "{}", None), Err(FeedbackError::Offline));
         let down = Fake { seen: Mutex::new(vec![]), answer: Err(crate::AccountError::Network("dns".into())) };
-        assert_eq!(send(&down, &service(), "{}"), Err(FeedbackError::Network("dns".into())));
+        assert_eq!(send(&down, &service(), "{}", None), Err(FeedbackError::Network("dns".into())));
     }
 
     #[test]

@@ -1,13 +1,18 @@
 // In-app feedback (Supabase Edge Function `feedback`; docs/lm/feedback.md): a message from the
 // app's Help › Send Feedback… sheet, checked here and posted as a GitHub Discussion on the public
-// repository. Nobody signs in. Abuse is held back by daily limits per install, per network address
-// and overall (counted under keyed hashes, never the values), a honeypot field, length and link
-// bounds. The text is quoted with mentions, issue references, images, links and HTML neutralised,
-// so a message can't ping anyone or embed anything. A reply address, when given, is never posted:
-// it goes to the private `feedback_contacts` table.
+// repository. Anyone may send, signed in or not. Abuse is held back by daily limits per install,
+// per network address and overall (counted under keyed hashes, never the values), a honeypot
+// field, length and link bounds. The text is quoted with mentions, issue references, images,
+// links and HTML neutralised, so a message can't ping anyone or embed anything. A reply address,
+// when given, is never posted: it goes to the private `feedback_contacts` table.
+// A signed-in sender's app adds its access token (`Authorization: Bearer …`); the token is
+// verified here and the account id goes to the private `feedback_senders` table, never to GitHub
+// (the post only says "From a signed-in user"). A token that doesn't verify doesn't stop the
+// message: it is posted as anonymous. The body never carries an id the server would trust.
 // Every outside service is injected (Deno, supabase-js and GitHub in feedback/index.ts; fakes in
 // the Node tests).
 
+import { bearer, type Claims, userFromClaims } from "./auth.ts";
 import { errorResponse } from "./handler.ts";
 import { secondsUntilReset, utcDay } from "./limits.ts";
 
@@ -151,7 +156,8 @@ export function countLinks(s: string): number {
 }
 
 const INSTALL_ID = /^[A-Za-z0-9-]{8,64}$/;
-// What the app sends: "0.7.3", "macOS 14.5", "Windows 11 (26100)". Anything else is dropped.
+// What the app sends: "0.7.3", "macOS 14.5", "Windows". Anything else of this shape is kept too
+// (a bare "26.6" is labelled when posted, `systemLabel`); other text is dropped.
 const VERSION = /^[A-Za-z0-9][A-Za-z0-9 .+()_-]{0,47}$/;
 const LANGUAGE = /^[A-Za-z]{2,3}(?:[-_][A-Za-z0-9]{2,8}){0,2}$/;
 const EMAIL = /^[^\s@<>()[\]\\,;:"]+@[^\s@<>()[\]\\,;:"]+\.[^\s@<>()[\]\\,;:"]{2,}$/;
@@ -267,13 +273,35 @@ function shorten(s: string, max: number): string {
   return `${(space > max / 2 ? cut.slice(0, space) : cut).trimEnd()}…`;
 }
 
+/** The app's version as posted: "NimbleMap 0.7.3" (already labelled: as it is). */
+export function appLabel(v: string): string {
+  return /^nimblemap\b/i.test(v) ? v : `NimbleMap ${v}`;
+}
+
+/** The system's version as posted. The app sends "macOS 26.6" or "Windows"; a bare version number
+ * (an older build, or a hand-made request) gets its system's name: "10.0.26100" (Windows' build
+ * numbers have four or more digits) → "Windows 10.0.26100", any other → "macOS 26.6". Text that
+ * already names the system is left as it is, so nothing is labelled twice. */
+export function systemLabel(v: string): string {
+  if (!/^\d+(?:\.\d+){0,3}$/.test(v)) return v;
+  const parts = v.split(".");
+  return parts.length >= 3 && parts[2].length >= 4 ? `Windows ${v}` : `macOS ${v}`;
+}
+
+/** The line a signed-in sender's post carries: no id, no hash, no email. */
+export const SIGNED_IN_LINE = "From a signed-in user";
+
 /** The discussion's body: the message quoted, the app details the user agreed to send, and where
- * it came from. Never the reply address or the install id. */
-export function discussionBody(f: Feedback): string {
-  const details = [f.appVersion && `App: ${f.appVersion}`, f.osVersion, f.language].filter((x): x is string => !!x);
+ * it came from; for a verified signed-in sender, only that it was one. Never the reply address,
+ * the install id or the account. */
+export function discussionBody(f: Feedback, sender: { signedIn: boolean } = { signedIn: false }): string {
+  const details = [f.appVersion && appLabel(f.appVersion), f.osVersion && systemLabel(f.osVersion), f.language].filter(
+    (x): x is string => !!x,
+  );
   const parts = [quoted(f.message), "---"];
   if (details.length > 0) parts.push(escapeLine(details.join(" · ")));
   parts.push("Sent from the NimbleMap app");
+  if (sender.signedIn) parts.push(SIGNED_IN_LINE);
   return parts.join("\n\n");
 }
 
@@ -339,7 +367,33 @@ export interface FeedbackDeps {
   github(query: string, variables: Record<string, unknown>): Promise<Response>;
   /** Keeps a reply address beside the discussion it belongs to (private table). */
   saveContact(discussionUrl: string, email: string): Promise<boolean>;
+  /** Checks an access token's signature (supabase-js `auth.getClaims`, the project's signing
+   * keys, as Ask does): its claims, or null. */
+  verify(token: string): Promise<Claims | null>;
+  /** Keeps a verified sender's account id beside the discussion (private `feedback_senders`). */
+  saveSender(discussionUrl: string, userId: string): Promise<boolean>;
   options: FeedbackOptions;
+}
+
+/** Who sent it, from the `Authorization` header: `user` with the verified account id; `none`
+ * without a token; `invalid` when there is one that doesn't verify (bad, expired, not a user's),
+ * which is treated as anonymous. The token itself is never logged or kept. */
+export async function feedbackSender(
+  req: Request,
+  deps: Pick<FeedbackDeps, "verify" | "now">,
+): Promise<{ auth: "user"; userId: string } | { auth: "none" | "invalid" }> {
+  const header = req.headers.get("Authorization");
+  if (header === null || header.trim() === "") return { auth: "none" };
+  const token = bearer(header);
+  if (!token) return { auth: "invalid" };
+  let claims: Claims | null = null;
+  try {
+    claims = await deps.verify(token);
+  } catch {
+    claims = null;
+  }
+  const user = userFromClaims(claims, Math.floor(deps.now().getTime() / 1000));
+  return user ? { auth: "user", userId: user } : { auth: "invalid" };
 }
 
 /** `POST /feedback`: checks the message, counts it, posts it, answers `{ url }`. */
@@ -374,11 +428,13 @@ export async function handleFeedback(req: Request, deps: FeedbackDeps): Promise<
       resets_in_seconds: secondsUntilReset(now),
     });
   }
+  // Signed in or not, the same limits apply (above): an account gets no more than an install.
+  const sender = await feedbackSender(req, deps);
   const input = {
     repositoryId: opts.repositoryId,
     categoryId: opts.categories[f.kind],
     title: discussionTitle(f),
-    body: discussionBody(f),
+    body: discussionBody(f, { signedIn: sender.auth === "user" }),
   };
   let url: string | null = null;
   let status = 0;
@@ -392,14 +448,19 @@ export async function handleFeedback(req: Request, deps: FeedbackDeps): Promise<
   }
   if (!url) {
     // GitHub's own message may name the token or the repository settings: it stays in the log.
-    deps.log(`feedback kind=${f.kind} status=502 upstream github=${status}`);
+    deps.log(`feedback kind=${f.kind} status=502 upstream github=${status} auth=${sender.auth}`);
     return errorResponse(502, "upstream", "GitHub didn't take the message. Try again later.");
   }
   let contact = "none";
   if (f.contactEmail) {
     contact = (await deps.saveContact(url, f.contactEmail).catch(() => false)) ? "kept" : "lost";
   }
-  deps.log(`feedback kind=${f.kind} status=200 contact=${contact}`);
+  // The account id goes to the private table only, the same way as a reply address.
+  let kept = "none";
+  if (sender.auth === "user") {
+    kept = (await deps.saveSender(url, sender.userId).catch(() => false)) ? "kept" : "lost";
+  }
+  deps.log(`feedback kind=${f.kind} status=200 contact=${contact} auth=${sender.auth} sender=${kept}`);
   return json({ url });
 }
 

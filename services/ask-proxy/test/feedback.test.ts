@@ -5,6 +5,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import {
+  appLabel,
   cleanText,
   clientIp,
   countLinks,
@@ -23,6 +24,8 @@ import {
   hmacHex,
   quoted,
   readFeedback,
+  SIGNED_IN_LINE,
+  systemLabel,
 } from "../supabase/functions/_shared/feedback.ts";
 
 const NOW = new Date("2026-10-20T22:00:00Z");
@@ -198,7 +201,7 @@ test("the body: the quoted message, the app details, where it came from; never t
       "",
       "---",
       "",
-      "App: 0.7.3 · macOS 14.5 · de",
+      "NimbleMap 0.7.3 · macOS 14.5 · de",
       "",
       "Sent from the NimbleMap app",
     ].join("\n"),
@@ -207,6 +210,21 @@ test("the body: the quoted message, the app details, where it came from; never t
   assert.ok(!discussionBody(f).includes(INSTALL));
   const bare = feedback(appBody({ include_diagnostics: false, language: undefined }));
   assert.ok(discussionBody(bare).endsWith("---\n\nSent from the NimbleMap app"), discussionBody(bare));
+});
+
+test("versions are labelled once: a bare number gets its system's name", () => {
+  assert.equal(appLabel("0.7.1"), "NimbleMap 0.7.1");
+  assert.equal(appLabel("NimbleMap 0.7.1"), "NimbleMap 0.7.1");
+  assert.equal(systemLabel("26.6"), "macOS 26.6");
+  assert.equal(systemLabel("14.5.1"), "macOS 14.5.1");
+  assert.equal(systemLabel("10.0.26100"), "Windows 10.0.26100");
+  for (const v of ["macOS 26.6", "Windows", "Windows 11 (26100)", "linux"]) assert.equal(systemLabel(v), v);
+  // The request the release check sent: "App: 0.7.1 · 26.6" before, now named.
+  const f = feedback(appBody({ app_version: "0.7.1", os_version: "26.6", language: undefined }));
+  assert.ok(discussionBody(f).includes("\n\nNimbleMap 0.7.1 · macOS 26.6\n\n"), discussionBody(f));
+  const g = feedback(appBody({ app_version: "0.7.1", os_version: "macOS 26.6", language: "en" }));
+  assert.ok(discussionBody(g).includes("\n\nNimbleMap 0.7.1 · macOS 26.6 · en\n\n"), discussionBody(g));
+  assert.ok(!discussionBody(g).includes("macOS macOS"));
 });
 
 test("the title: the user's, else the first line shortened; problems are marked", () => {
@@ -253,12 +271,20 @@ interface Seen {
   github: { query: string; variables: Record<string, unknown> }[];
   reserved: { device: string; ip: string; day: string }[];
   contacts: [string, string][];
+  senders: [string, string][];
+  verified: string[];
   logs: string[];
 }
 
 function seen(): Seen {
-  return { github: [], reserved: [], contacts: [], logs: [] };
+  return { github: [], reserved: [], contacts: [], senders: [], verified: [], logs: [] };
 }
+
+// A signed-in user's access token, as the fake verifier knows it, and one that has expired.
+const USER = "8d3c1e52-7f0a-4b6e-9c2d-5a1b3e4f6a7b";
+const GOOD_TOKEN = "eyJhbGciOiJFUzI1NiJ9.good.sig";
+const EXPIRED_TOKEN = "eyJhbGciOiJFUzI1NiJ9.expired.sig";
+const nowSeconds = Math.floor(NOW.getTime() / 1000);
 
 function deps(s: Seen, over: Partial<FeedbackDeps> = {}): FeedbackDeps {
   return {
@@ -277,15 +303,28 @@ function deps(s: Seen, over: Partial<FeedbackDeps> = {}): FeedbackDeps {
       s.contacts.push([url, email]);
       return true;
     },
+    verify: async (token) => {
+      s.verified.push(token);
+      const base = { sub: USER, aud: "authenticated", role: "authenticated" };
+      if (token === GOOD_TOKEN) return { ...base, exp: nowSeconds + 600 };
+      if (token === EXPIRED_TOKEN) return { ...base, exp: nowSeconds - 1 };
+      return null;
+    },
+    saveSender: async (url, userId) => {
+      s.senders.push([url, userId]);
+      return true;
+    },
     options: DEFAULT_FEEDBACK,
     ...over,
   };
 }
 
-function post(body: unknown, method = "POST", ip = "203.0.113.7") {
+function post(body: unknown, method = "POST", ip = "203.0.113.7", authorization?: string) {
+  const headers: Record<string, string> = { "Content-Type": "application/json", "X-Forwarded-For": ip };
+  if (authorization !== undefined) headers.Authorization = authorization;
   return new Request("https://example.supabase.co/functions/v1/feedback", {
     method,
-    headers: { "Content-Type": "application/json", "X-Forwarded-For": ip },
+    headers,
     body: method === "GET" ? undefined : typeof body === "string" ? body : JSON.stringify(body),
   });
 }
@@ -426,4 +465,98 @@ test("the database failing: upstream, nothing posted", async () => {
   const t = seen();
   const nul = await handleFeedback(post(appBody()), deps(t, { reserve: async () => null }));
   assert.equal(nul.status, 503);
+});
+
+// ── signed-in senders ───────────────────────────────────────────────────────────────────────────
+
+function postedBody(s: Seen): string {
+  return (s.github[0].variables.input as Record<string, string>).body;
+}
+
+test("a signed-in sender: the verified id is kept privately and the post says only that", async () => {
+  const s = seen();
+  const r = await handleFeedback(post(appBody(), "POST", "203.0.113.7", `Bearer ${GOOD_TOKEN}`), deps(s));
+  assert.equal(r.status, 200);
+  assert.deepEqual(await r.json(), { url: DISCUSSION });
+  assert.deepEqual(s.verified, [GOOD_TOKEN]);
+  assert.deepEqual(s.senders, [[DISCUSSION, USER]]);
+  const body = postedBody(s);
+  assert.ok(body.endsWith("Sent from the NimbleMap app\n\nFrom a signed-in user"), body);
+  assert.equal(SIGNED_IN_LINE, "From a signed-in user");
+  // Never the id, a part of it, the token or anything derived from it on GitHub or in the log.
+  const github = JSON.stringify(s.github);
+  for (const secret of [USER, USER.replace(/-/g, ""), USER.slice(0, 8), GOOD_TOKEN, "good.sig"]) {
+    assert.ok(!github.includes(secret), secret);
+    assert.ok(s.logs.every((l) => !l.includes(secret)), secret);
+  }
+  assert.ok(s.logs.some((l) => l.includes("status=200") && l.includes("auth=user") && l.includes("sender=kept")), s.logs.join("\n"));
+  // The same per-install limits: one reservation, under the install's and the address's hashes.
+  assert.equal(s.reserved.length, 1);
+  assert.match(s.reserved[0].device, /^device:[0-9a-f]{64}$/);
+});
+
+test("a token that doesn't verify: posted as anonymous, logged auth=invalid without the token", async () => {
+  for (const authorization of [`Bearer ${EXPIRED_TOKEN}`, "Bearer eyJ.forged.sig", "Basic dXNlcjpwYXNz", "Bearer"]) {
+    const s = seen();
+    const r = await handleFeedback(post(appBody(), "POST", "203.0.113.7", authorization), deps(s));
+    assert.equal(r.status, 200, authorization);
+    assert.equal(s.github.length, 1, authorization);
+    assert.deepEqual(s.senders, [], authorization);
+    const body = postedBody(s);
+    assert.ok(body.endsWith("---\n\nNimbleMap 0.7.3 · macOS 14.5 · de\n\nSent from the NimbleMap app"), body);
+    assert.ok(!body.includes(SIGNED_IN_LINE));
+    assert.ok(s.logs.some((l) => l.includes("auth=invalid")), s.logs.join("\n"));
+    const token = authorization.replace(/^\S+\s*/, "");
+    if (token) assert.ok(s.logs.every((l) => !l.includes(token)), authorization);
+  }
+  // A verifier that fails (network, keys) is the same: anonymous, still posted.
+  const s = seen();
+  const failing = deps(s, { verify: async () => Promise.reject(new Error("jwks down")) });
+  assert.equal((await handleFeedback(post(appBody(), "POST", "203.0.113.7", `Bearer ${GOOD_TOKEN}`), failing)).status, 200);
+  assert.deepEqual(s.senders, []);
+  assert.ok(!postedBody(s).includes(SIGNED_IN_LINE));
+  // An anon key (verified, but not a user) isn't a signed-in user either.
+  const t = seen();
+  const anon = deps(t, { verify: async () => ({ sub: undefined, aud: "authenticated", role: "anon", exp: nowSeconds + 600 }) });
+  assert.equal((await handleFeedback(post(appBody(), "POST", "203.0.113.7", "Bearer eyJ.anon.sig"), anon)).status, 200);
+  assert.deepEqual(t.senders, []);
+});
+
+test("no token: unchanged, nothing verified or kept", async () => {
+  const s = seen();
+  const r = await handleFeedback(post(appBody()), deps(s));
+  assert.equal(r.status, 200);
+  assert.deepEqual(s.verified, []);
+  assert.deepEqual(s.senders, []);
+  assert.equal(postedBody(s), discussionBody(feedback(appBody())));
+  assert.ok(s.logs.some((l) => l.includes("auth=none") && l.includes("sender=none")));
+});
+
+test("an id in the body is not trusted: not kept, not posted", async () => {
+  const s = seen();
+  await handleFeedback(post(appBody({ user_id: USER, sub: USER, signed_in: true })), deps(s));
+  assert.deepEqual(s.senders, []);
+  assert.ok(!JSON.stringify(s.github).includes(USER));
+  assert.ok(!postedBody(s).includes(SIGNED_IN_LINE));
+});
+
+test("a signed-in sender over the limit is refused like anyone", async () => {
+  const s = seen();
+  const r = await handleFeedback(
+    post(appBody(), "POST", "203.0.113.7", `Bearer ${GOOD_TOKEN}`),
+    deps(s, { reserve: async () => ({ allowed: false, blocked: "device" }) }),
+  );
+  assert.equal(r.status, 429);
+  assert.equal(s.github.length + s.senders.length, 0);
+});
+
+test("the sender's row failing doesn't fail the feedback; GitHub failing keeps no row", async () => {
+  const s = seen();
+  const lost = deps(s, { saveSender: async () => Promise.reject(new Error("db down")) });
+  assert.equal((await handleFeedback(post(appBody(), "POST", "203.0.113.7", `Bearer ${GOOD_TOKEN}`), lost)).status, 200);
+  assert.ok(s.logs.some((l) => l.includes("sender=lost")));
+  const t = seen();
+  const down = deps(t, { github: async () => new Response("", { status: 502 }) });
+  assert.equal((await handleFeedback(post(appBody(), "POST", "203.0.113.7", `Bearer ${GOOD_TOKEN}`), down)).status, 502);
+  assert.deepEqual(t.senders, []);
 });
