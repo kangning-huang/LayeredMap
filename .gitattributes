@@ -1,20 +1,5 @@
-# Fixtures and catalogs are compared by byte size and SHA (library tests, gate2 snapshots).
-# Force LF so Windows checkouts without core.autocrlf=false stay byte-identical to macOS/Linux.
-*.geojson text eol=lf
-*.json text eol=lf
-*.csv text eol=lf
-*.tsv text eol=lf
-*.kml text eol=lf
-*.gpx text eol=lf
-*.md text eol=lf
-*.rs text eol=lf
-*.yml text eol=lf
-*.yaml text eol=lf
-*.toml text eol=lf
-*.tif -text
-*.tiff -text
-*.png -text
-*.gpkg -text
-*.nc -text
-*.zip -text
-*.xlsx -text
+# Library catalog fixtures are compared by byte size and SHA. Force LF so a
+# Windows checkout (default autocrlf) stays byte-identical to macOS/Linux.
+# Broader text=auto here churns pre-commit EOF/whitespace across the tree.
+/assets/examples/** text eol=lf
+/fixtures/** text eol=lf
