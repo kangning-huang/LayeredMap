@@ -225,6 +225,19 @@ pub fn ungated(files: &[(String, String)]) -> Vec<String> {
         .collect()
 }
 
+/// Repo-relative path with forward slashes (Windows `display()` uses `\`).
+fn repo_rel(path: &Path, root: &Path) -> String {
+    path.strip_prefix(root)
+        .unwrap_or(path)
+        .to_string_lossy()
+        .replace('\\', "/")
+}
+
+/// True when `path` is inside the lm-net crate (the gate itself may use ureq).
+fn is_lm_net(path: &str) -> bool {
+    path.replace('\\', "/").starts_with("crates/lm-net/")
+}
+
 fn rust_files(dir: &Path, out: &mut Vec<(String, String)>, root: &Path) {
     for e in std::fs::read_dir(dir).into_iter().flatten().flatten() {
         let p = e.path();
@@ -237,7 +250,7 @@ fn rust_files(dir: &Path, out: &mut Vec<(String, String)>, root: &Path) {
         } else if name.ends_with(".rs")
             && let Ok(text) = std::fs::read_to_string(&p)
         {
-            out.push((p.strip_prefix(root).unwrap_or(&p).display().to_string(), text));
+            out.push((repo_rel(&p, root), text));
         }
     }
 }
@@ -252,7 +265,7 @@ pub fn net_lint(root: &Path) -> Result<(), String> {
     }
     rust_files(&root.join("apps/layeredmap/src"), &mut files, root);
     // lm-net itself is the gate.
-    files.retain(|(p, _)| !p.starts_with("crates/lm-net/"));
+    files.retain(|(p, _)| !is_lm_net(p));
     let mut errs = ungated(&files);
     let cache = std::fs::read_to_string(root.join("crates/tiles/src/cache.rs")).map_err(|e| format!("crates/tiles/src/cache.rs: {e}"))?;
     if !cache.contains("if !super::gate_allows(url)") {
@@ -288,6 +301,14 @@ mod tests {
         ];
         assert_eq!(ungated(&files).len(), 1);
         assert!(ungated(&files)[0].starts_with("crates/lm-x/src/a.rs"));
+    }
+
+    #[test]
+    fn lm_net_allowlist_accepts_windows_backslash_paths() {
+        assert!(is_lm_net(r"crates\lm-net\src\lib.rs"));
+        assert!(is_lm_net("crates/lm-net/src/lib.rs"));
+        assert!(!is_lm_net(r"crates\lm-jobs\src\lib.rs"));
+        assert!(!is_lm_net("crates/lm-jobs/src/lib.rs"));
     }
 
     #[test]
