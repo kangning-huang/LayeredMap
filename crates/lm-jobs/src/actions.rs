@@ -735,12 +735,21 @@ fn one_area_caption(things_in: &PlanInput, area: &str) -> String {
     }
 }
 
-/// Where, for one area: "within 100 km of Tokyo" for a buffer's area, else "in Japan".
+/// Where, for one area: "within 100 km of Tokyo" for a buffer's area (named "Within 100 km of
+/// Tokyo" when merged, "Tokyo (within 100 km)" one per object), else "in Japan".
 fn area_phrase(area: &str) -> String {
-    match area.strip_prefix("Within ") {
-        Some(rest) => format!("within {rest}"),
-        None => format!("in {area}"),
+    place_phrase(area, "in")
+}
+
+/// [`area_phrase`] with another preposition for a plain area ("inside Pudong").
+fn place_phrase(area: &str, preposition: &str) -> String {
+    if let Some(rest) = area.strip_prefix("Within ") {
+        return format!("within {rest}");
     }
+    if let Some((place, d)) = area.strip_suffix(')').and_then(|a| a.rsplit_once(" (within ")) {
+        return format!("within {d} of {place}");
+    }
+    format!("{preposition} {area}")
 }
 
 /// The single area of an "…here" action: the scoped row's geometry.
@@ -761,15 +770,22 @@ fn count_here(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
     let inside = overlay::whats_inside(&g, &pts, ctl)?;
     let n = inside.rows.len() as u64;
     let things = pts_in.plural_noun();
-    let title = format!("{} in {area_name}", capitalized(&things));
+    let title = format!("{} {}", capitalized(&things), area_phrase(&area_name));
     let excluded = exclusions(pts_in);
     let inputs = [pts_in, area_in];
     Ok(ActionResult {
-        label: format!("Count {things} in {area_name}"),
+        label: format!("Count {things} {}", area_phrase(&area_name)),
         card: ResultCard {
             title: title.clone(),
-            summary: format!("{} in {area_name}", pts_in.things(n)),
-            answer: Answer::Number { value: n as f64, unit: things, detail: format!("inside or on the edge of {area_name}") },
+            summary: format!("{} {}", pts_in.things(n), area_phrase(&area_name)),
+            answer: Answer::Number {
+                value: n as f64,
+                unit: things,
+                detail: match area_phrase(&area_name).strip_prefix("in ") {
+                    Some(_) => format!("inside or on the edge of {area_name}"),
+                    None => format!("{}, edge included", area_phrase(&area_name)),
+                },
+            },
             context: context(&inputs, &excluded),
             notices: Vec::new(),
         },
@@ -824,7 +840,7 @@ fn whats_inside(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError>
     let (ds, rows) = layer_in.scoped()?;
     let r = overlay::whats_inside(&g, &ds, ctl)?;
     let n = r.rows.len() as u64;
-    let title = format!("{} inside {area_name}", capitalized(&layer_in.plural_noun()));
+    let title = format!("{} {}", capitalized(&layer_in.plural_noun()), place_phrase(&area_name, "inside"));
     let full = layer_in.vector()?;
     let items: Vec<String> = r.rows.iter().take(50).map(|i| layer_in.title(full, rows[*i])).collect();
     let heading = format!("{} inside", capitalized(&layer_in.things(n)));
@@ -833,7 +849,7 @@ fn whats_inside(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError>
         label: title.clone(),
         card: ResultCard {
             title: title.clone(),
-            summary: format!("{} inside {area_name}", layer_in.things(n)),
+            summary: format!("{} {}", layer_in.things(n), place_phrase(&area_name, "inside")),
             answer: Answer::List { heading, items },
             context: context(&inputs, &[]),
             notices: if n > 50 {
@@ -896,7 +912,10 @@ fn buffer_action(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError
                     if let geodesic::Measure::Area(a) = geodesic::measure(&g) {
                         total_m2 += a.area_m2;
                     }
-                    layer.push_next(Some(g), vec![Value::Text(input.title(full, rows[i]))]);
+                    // Each area says what it is: "Tokyo (within 100 km)", never just "Tokyo",
+                    // so a count or a list in it reads "within 100 km of Tokyo".
+                    let name = format!("{} (within {words})", input.title(full, rows[i]));
+                    layer.push_next(Some(g), vec![Value::Text(name)]);
                 }
             }
         }

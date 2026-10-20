@@ -204,3 +204,43 @@ fn later_steps_name_made_fields_by_step_or_by_the_distance_name() {
     let mut layers = tokyo_map();
     assert!(execute(&mut layers, &plan, 0, &Control::none()).is_ok());
 }
+
+/// The real model plan from the launch video buffered Tokyo with merge false, so the area kept
+/// the city's own name: the card read "Lines in Tokyo". A buffer's area always says it is one,
+/// and a count, a list or a "how many here" in it reads "within 100 km of Tokyo".
+#[test]
+fn an_area_made_by_a_buffer_is_described_as_the_buffer_whatever_it_is_called() {
+    for merge in [false, true] {
+        let mut plan = tokyo_steps();
+        plan[1].args["merge"] = json!(merge);
+        let mut layers = tokyo_map();
+        let out = execute(&mut layers, &plan, 0, &Control::none()).unwrap();
+        let StepOutcome::NewLayer { name, .. } = &out[1] else { panic!() };
+        assert_eq!(name, "Within 100 km of Tokyo", "the buffer layer's own name");
+        let StepOutcome::NewLayer { name, card, .. } = &out[2] else { panic!() };
+        assert_eq!(name, "Storms within 100 km of Tokyo", "merge {merge}");
+        assert_eq!(card.title, "Storms within 100 km of Tokyo");
+        let lm_core::recipe::Answer::Number { detail, .. } = &card.answer else { panic!("{:?}", card.answer) };
+        assert_eq!(detail, "Category 5 storms within 100 km of Tokyo");
+        for (action, args, title) in [
+            ("whats_inside", json!({"area": {"layer": "#2"}, "layer": "Storms"}), "Storms within 100 km of Tokyo"),
+            ("count_here", json!({"points": "Storms", "area": {"layer": "#2"}}), "Storms within 100 km of Tokyo"),
+        ] {
+            let mut p = plan.clone();
+            p[2] = Step { name: action.into(), args };
+            let mut layers = tokyo_map();
+            let out = execute(&mut layers, &p, 0, &Control::none()).unwrap();
+            let StepOutcome::Card { card, .. } = &out[2] else { panic!() };
+            assert_eq!(card.title, title, "{action}, merge {merge}");
+            assert!(!card.summary.contains("in Tokyo") && !card.summary.contains("inside Tokyo"), "{}", card.summary);
+        }
+    }
+    // One area per object keeps each place's name with the distance.
+    let mut plan = tokyo_steps();
+    plan[1].args["merge"] = json!(false);
+    plan.truncate(2);
+    let mut layers = tokyo_map();
+    execute(&mut layers, &plan, 0, &Control::none()).unwrap();
+    let LayerData::Vector(ds) = &layers[2].data else { panic!() };
+    assert_eq!(ds.features[0].attrs[0].to_string(), "Tokyo (within 100 km)");
+}
