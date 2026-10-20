@@ -280,6 +280,8 @@ impl MenuBar {
             &[
                 // The help pages ship inside the app (WP6.10), so this works offline.
                 &MenuItem::with_id("help", i18n::fmt("{app} Help", &brand), true, None),
+                // Posted publicly on GitHub Discussions through the feedback service (docs/lm/feedback.md).
+                &MenuItem::with_id("feedback", tl!("Send Feedback…"), true, None),
                 &PredefinedMenuItem::separator(),
                 &MenuItem::with_id("credits", tl!("Credits"), true, None),
                 &MenuItem::with_id("diagnostics", tl!("Export Diagnostics…"), true, None),
@@ -342,6 +344,7 @@ impl MenuBar {
                 "units-imperial" => Action::Shell(Command::SetUnits(Units::Imperial)),
                 "debug" => Action::Shell(Command::ToggleDebugOverlay),
                 "credits" => Action::Shell(Command::ShowCredits),
+                "feedback" => Action::Shell(Command::ShowFeedback),
                 "offline" => Action::ToggleOffline,
                 "diagnostics" => Action::ExportDiagnostics,
                 "help" => Action::Help,

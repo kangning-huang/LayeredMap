@@ -349,6 +349,7 @@ impl eframe::App for App {
 /// `card ID [FIELD]` runs a card's display action (`filter strength`, `style_by_value`, …) on the
 /// selected layer (`card apply_filter` presses the filter's Apply); `time N` shows the n-th time step;
 /// `export` or `export-image` opens the map image sheet; `package` opens the map package dialog;
+/// `feedback` opens Help › Send Feedback… (nothing is sent without pressing Send);
 /// `theme light|dark|system` sets the appearance and `language CODE|auto` the interface language
 /// (for screenshots; tour runs never save prefs).
 #[derive(Clone, Debug, PartialEq)]
@@ -408,6 +409,7 @@ impl Step {
             "undo" => Step::Other(Command::Undo),
             "export-image" => Step::Other(Command::ExportMapImage),
             "package" => Step::Other(Command::ExportPackage),
+            "feedback" => Step::Other(Command::ShowFeedback),
             "redo" => Step::Other(Command::Redo),
             "language" if rest.trim() == lm_core::i18n::AUTO || lm_core::i18n::Lang::from_code(rest).is_some() => {
                 Step::Other(Command::SetLanguage(rest.trim().to_string()))

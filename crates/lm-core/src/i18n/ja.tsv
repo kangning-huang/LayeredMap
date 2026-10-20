@@ -667,6 +667,42 @@ Full Screen	フルスクリーン
 Window	ウインドウ
 Help	ヘルプ
 Export Diagnostics…	診断情報を書き出す…
+Send Feedback…	フィードバックを送信…
+Send Feedback	フィードバックを送信
+Tell us what would make {app} better, or what went wrong.	{app} をより良くするアイデアや、うまくいかなかったことをお知らせください。
+Idea	アイデア
+Problem	問題
+Other	その他
+Message	メッセージ
+What would you like {app} to do?	{app} にどんなことをしてほしいですか？
+What happened, and what did you expect?	何が起きましたか？何を期待していましたか？
+What's on your mind?	どんなことでもお聞かせください。
+{n} of {max} characters	{n} / {max} 文字
+Title (optional)	タイトル（任意）
+A short summary	短い要約
+Email (optional)	メール（任意）
+Only used to reply to you. Never shown publicly.	返信のためだけに使います。公開されることはありません。
+Include app version and macOS version	アプリと macOS のバージョンを含める
+Include app version and Windows version	アプリと Windows のバージョンを含める
+Your feedback will be posted publicly on GitHub Discussions, without your email.	フィードバックは GitHub Discussions で公開されます。メールアドレスは公開されません。
+Send	送信
+Sending…	送信中…
+Thank you! Your feedback is posted.	ありがとうございます！フィードバックを投稿しました。
+It's public on GitHub Discussions, where you can follow replies.	GitHub Discussions で公開され、返信を確認できます。
+View on GitHub	GitHub で見る
+Write a few words about your idea or problem.	アイデアや問題について、少し書いてください。
+The message is {n} characters long. Shorten it to {max} or fewer.	メッセージは {n} 文字です。{max} 文字以内にしてください。
+Shorten the title to {max} characters or fewer.	タイトルを {max} 文字以内にしてください。
+Include at most {max} links.	リンクは {max} 個までにしてください。
+Check the email address, or leave it empty.	メールアドレスを確認するか、空欄のままにしてください。
+Feedback can't be sent from this build. You can post on GitHub Discussions yourself: {url}	このビルドからはフィードバックを送信できません。GitHub Discussions に直接投稿できます: {url}
+{app} is working offline. Turn off View › Work Offline, then press Send again.	{app} はオフラインで作業中です。表示 › オフラインで作業 をオフにしてから、もう一度「送信」を押してください。
+You've sent a lot of feedback today. Please try again tomorrow.	今日はたくさんのフィードバックをお送りいただきました。明日もう一度お試しください。
+The message is too long. Shorten it, then press Send again.	メッセージが長すぎます。短くしてから、もう一度「送信」を押してください。
+The feedback service didn't accept the message: {reason}	フィードバックサービスがメッセージを受け付けませんでした: {reason}
+Your feedback couldn't be posted just now. Your text is still here: try again in a few minutes.	今はフィードバックを投稿できませんでした。入力した内容は残っています。数分後にもう一度お試しください。
+Couldn't reach the feedback service. Check your internet connection, then press Send again.	フィードバックサービスに接続できません。インターネット接続を確認してから、もう一度「送信」を押してください。
+The feedback service answered {status}. Try again in a few minutes.	フィードバックサービスが {status} を返しました。数分後にもう一度お試しください。
 About {app}	{app} について
 Quit {app}	{app} を終了
 Undo ({key})	取り消す（{key}）

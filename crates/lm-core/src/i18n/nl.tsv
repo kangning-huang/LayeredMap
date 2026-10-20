@@ -667,6 +667,42 @@ Full Screen	Schermvullende weergave
 Window	Venster
 Help	Help
 Export Diagnostics…	Diagnose exporteren…
+Send Feedback…	Feedback versturen…
+Send Feedback	Feedback versturen
+Tell us what would make {app} better, or what went wrong.	Vertel ons wat {app} beter zou maken, of wat er misging.
+Idea	Idee
+Problem	Probleem
+Other	Overig
+Message	Bericht
+What would you like {app} to do?	Wat zou u willen dat {app} doet?
+What happened, and what did you expect?	Wat gebeurde er, en wat had u verwacht?
+What's on your mind?	Wat wilt u ons vertellen?
+{n} of {max} characters	{n} van {max} tekens
+Title (optional)	Titel (optioneel)
+A short summary	Een korte samenvatting
+Email (optional)	E-mail (optioneel)
+Only used to reply to you. Never shown publicly.	Alleen gebruikt om u te antwoorden. Nooit openbaar getoond.
+Include app version and macOS version	App-versie en macOS-versie meesturen
+Include app version and Windows version	App-versie en Windows-versie meesturen
+Your feedback will be posted publicly on GitHub Discussions, without your email.	Uw feedback wordt openbaar geplaatst op GitHub Discussions, zonder uw e-mailadres.
+Send	Versturen
+Sending…	Bezig met versturen…
+Thank you! Your feedback is posted.	Bedankt! Uw feedback is geplaatst.
+It's public on GitHub Discussions, where you can follow replies.	Het staat openbaar op GitHub Discussions, waar u reacties kunt volgen.
+View on GitHub	Bekijken op GitHub
+Write a few words about your idea or problem.	Schrijf een paar woorden over uw idee of probleem.
+The message is {n} characters long. Shorten it to {max} or fewer.	Het bericht is {n} tekens lang. Kort het in tot maximaal {max}.
+Shorten the title to {max} characters or fewer.	Kort de titel in tot maximaal {max} tekens.
+Include at most {max} links.	Gebruik maximaal {max} links.
+Check the email address, or leave it empty.	Controleer het e-mailadres of laat het veld leeg.
+Feedback can't be sent from this build. You can post on GitHub Discussions yourself: {url}	Vanuit deze build kan geen feedback worden verstuurd. U kunt zelf een bericht plaatsen op GitHub Discussions: {url}
+{app} is working offline. Turn off View › Work Offline, then press Send again.	{app} werkt offline. Zet Weergave › Offline werken uit en klik daarna opnieuw op Versturen.
+You've sent a lot of feedback today. Please try again tomorrow.	U hebt vandaag al veel feedback verstuurd. Probeer het morgen opnieuw.
+The message is too long. Shorten it, then press Send again.	Het bericht is te lang. Kort het in en klik daarna opnieuw op Versturen.
+The feedback service didn't accept the message: {reason}	De feedbackdienst heeft het bericht niet geaccepteerd: {reason}
+Your feedback couldn't be posted just now. Your text is still here: try again in a few minutes.	Uw feedback kon nu niet worden geplaatst. Uw tekst staat er nog: probeer het over een paar minuten opnieuw.
+Couldn't reach the feedback service. Check your internet connection, then press Send again.	De feedbackdienst is niet bereikbaar. Controleer uw internetverbinding en klik daarna opnieuw op Versturen.
+The feedback service answered {status}. Try again in a few minutes.	De feedbackdienst antwoordde {status}. Probeer het over een paar minuten opnieuw.
 About {app}	Over {app}
 Quit {app}	Stop {app}
 Undo ({key})	Ongedaan maken ({key})

@@ -124,6 +124,11 @@ impl RegionConfig {
         format!("{}/account", self.proxy_url)
     }
 
+    /// The feedback function's address (Help › Send Feedback…, docs/lm/feedback.md).
+    pub fn feedback_url(&self) -> String {
+        format!("{}/feedback", self.proxy_url)
+    }
+
     fn parse(region: Region, j: &Json) -> Result<Option<RegionConfig>, String> {
         if j.is_null() {
             return Ok(None);
@@ -199,6 +204,12 @@ impl Config {
         }
     }
 
+    /// The service feedback goes to: the international one, which posts to GitHub for everyone
+    /// (mainland China included: the app reaches only this service, never GitHub).
+    pub fn feedback(&self) -> Option<&RegionConfig> {
+        self.international.as_ref()
+    }
+
     /// Whether any region can sign in.
     pub fn any(&self) -> bool {
         self.international.is_some() || self.china.is_some()
@@ -247,6 +258,8 @@ mod tests {
         assert_eq!(i.auth_url, "https://abc.supabase.co");
         assert_eq!(i.ask_url(), "https://abc.supabase.co/functions/v1/ask");
         assert_eq!(i.account_url(), "https://abc.supabase.co/functions/v1/account");
+        assert_eq!(i.feedback_url(), "https://abc.supabase.co/functions/v1/feedback");
+        assert_eq!(c.feedback(), Some(i));
         assert_eq!(
             i.providers,
             vec![(Provider::Google, "google".into()), (Provider::X, "twitter".into()), (Provider::Email, "email".into())]

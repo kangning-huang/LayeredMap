@@ -667,6 +667,42 @@ Full Screen	Во весь экран
 Window	Окно
 Help	Справка
 Export Diagnostics…	Экспорт диагностики…
+Send Feedback…	Отправить отзыв…
+Send Feedback	Отправить отзыв
+Tell us what would make {app} better, or what went wrong.	Расскажите, что сделало бы {app} лучше или что пошло не так.
+Idea	Идея
+Problem	Проблема
+Other	Другое
+Message	Сообщение
+What would you like {app} to do?	Что бы вы хотели, чтобы делал {app}?
+What happened, and what did you expect?	Что произошло и чего вы ожидали?
+What's on your mind?	Что вы хотите нам сказать?
+{n} of {max} characters	{n} из {max} символов
+Title (optional)	Заголовок (необязательно)
+A short summary	Краткое описание
+Email (optional)	Эл. почта (необязательно)
+Only used to reply to you. Never shown publicly.	Используется только для ответа вам. Никогда не публикуется.
+Include app version and macOS version	Приложить версию приложения и macOS
+Include app version and Windows version	Приложить версию приложения и Windows
+Your feedback will be posted publicly on GitHub Discussions, without your email.	Ваш отзыв будет опубликован в открытом доступе в GitHub Discussions, без адреса электронной почты.
+Send	Отправить
+Sending…	Отправка…
+Thank you! Your feedback is posted.	Спасибо! Ваш отзыв опубликован.
+It's public on GitHub Discussions, where you can follow replies.	Он опубликован в GitHub Discussions, где можно следить за ответами.
+View on GitHub	Открыть на GitHub
+Write a few words about your idea or problem.	Напишите пару слов о вашей идее или проблеме.
+The message is {n} characters long. Shorten it to {max} or fewer.	Длина сообщения — {n} символов. Сократите его до {max}.
+Shorten the title to {max} characters or fewer.	Сократите заголовок до {max} символов.
+Include at most {max} links.	Добавьте не больше {max} ссылок.
+Check the email address, or leave it empty.	Проверьте адрес электронной почты или оставьте поле пустым.
+Feedback can't be sent from this build. You can post on GitHub Discussions yourself: {url}	Из этой сборки нельзя отправить отзыв. Вы можете написать сами в GitHub Discussions: {url}
+{app} is working offline. Turn off View › Work Offline, then press Send again.	{app} работает офлайн. Отключите Вид › Работать офлайн и снова нажмите «Отправить».
+You've sent a lot of feedback today. Please try again tomorrow.	Сегодня вы отправили много отзывов. Попробуйте снова завтра.
+The message is too long. Shorten it, then press Send again.	Сообщение слишком длинное. Сократите его и снова нажмите «Отправить».
+The feedback service didn't accept the message: {reason}	Служба отзывов не приняла сообщение: {reason}
+Your feedback couldn't be posted just now. Your text is still here: try again in a few minutes.	Сейчас не удалось опубликовать отзыв. Ваш текст сохранён: повторите попытку через несколько минут.
+Couldn't reach the feedback service. Check your internet connection, then press Send again.	Не удалось связаться со службой отзывов. Проверьте подключение к интернету и снова нажмите «Отправить».
+The feedback service answered {status}. Try again in a few minutes.	Служба отзывов ответила {status}. Повторите попытку через несколько минут.
 About {app}	О программе {app}
 Quit {app}	Завершить {app}
 Undo ({key})	Отменить ({key})

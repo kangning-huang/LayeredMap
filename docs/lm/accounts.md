@@ -7,6 +7,9 @@ the first goal is a good, popular app; a subscription comes only with a big user
 This page is the plan. How it is built (endpoints, tokens, the redirect, the Ask proxy, the China
 adapter): `docs/lm/accounts-design.md`.
 
+Help › Send Feedback… uses the same service (the `feedback` function) but needs no account:
+`docs/lm/feedback.md`.
+
 A Mac App Store channel with Pro as an in-app purchase, which needs no account and no WeChat or
 Alipay sign-in, is planned in `docs/lm/app-store.md`.
 

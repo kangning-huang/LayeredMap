@@ -17,6 +17,7 @@ pub mod draw;
 pub mod examples;
 pub mod export;
 pub mod export_data;
+mod feedback_ui;
 pub mod find_ui;
 pub mod form;
 pub mod illustrations;
@@ -70,6 +71,8 @@ pub enum Command {
     ZoomToAll,
     FocusSearch,
     ShowCredits,
+    /// Help › Send Feedback…: the feedback sheet (docs/lm/feedback.md).
+    ShowFeedback,
     SetBasemap(String),
     /// Developer only: load a fixture (a file or a folder of GeoJSON/CSV) as map layers.
     LoadFixture(PathBuf),
@@ -236,6 +239,8 @@ pub struct Shell {
     /// Screen readers and the keyboard (WP5.6, WP6.3).
     pub(crate) a11y: a11y::A11y,
     credits_open: bool,
+    /// Help › Send Feedback…, while open.
+    pub(crate) feedback: Option<feedback_ui::Sheet>,
     basemap_open: bool,
     focus_search: bool,
     /// The map's ground colour, painted before the first frame arrives.
@@ -342,6 +347,7 @@ impl Shell {
             search: search::Search::new(),
             debug_overlay: false,
             credits_open: false,
+            feedback: None,
             basemap_open: false,
             focus_search: false,
             backdrop,
@@ -458,6 +464,7 @@ impl Shell {
             }
             Command::FocusSearch => self.focus_search = true,
             Command::ShowCredits => self.credits_open = true,
+            Command::ShowFeedback => feedback_ui::open(self),
             Command::SetBasemap(id) => {
                 self.prefs.basemap = id;
                 self.basemap_changed();
@@ -976,6 +983,7 @@ impl Shell {
         a11y::begin(self, &ctx);
         // The map image sheet takes the whole window (and the keyboard) while it is open.
         if self.export_sheet.is_none() {
+            feedback_ui::keys(self, &ctx);
             self.shortcuts(&ctx);
         }
         self.poll_loading(&ctx);
@@ -1091,6 +1099,7 @@ impl Shell {
         export_data::dialog(self, &ctx);
         package::dialog(self, &ctx);
         diagnostics::window(self, &ctx);
+        feedback_ui::sheet(self, &ctx);
         account_ui::window(self, &ctx);
         library::panel(self, &ctx);
         panels::drop_overlay(self, ui, full);

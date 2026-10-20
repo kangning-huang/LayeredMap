@@ -667,6 +667,42 @@ Full Screen	Tela cheia
 Window	Janela
 Help	Ajuda
 Export Diagnostics…	Exportar diagnóstico…
+Send Feedback…	Enviar feedback…
+Send Feedback	Enviar feedback
+Tell us what would make {app} better, or what went wrong.	Conte o que deixaria o {app} melhor ou o que deu errado.
+Idea	Ideia
+Problem	Problema
+Other	Outro
+Message	Mensagem
+What would you like {app} to do?	O que você gostaria que o {app} fizesse?
+What happened, and what did you expect?	O que aconteceu e o que você esperava?
+What's on your mind?	O que você quer nos contar?
+{n} of {max} characters	{n} de {max} caracteres
+Title (optional)	Título (opcional)
+A short summary	Um resumo curto
+Email (optional)	E-mail (opcional)
+Only used to reply to you. Never shown publicly.	Usado só para responder a você. Nunca é exibido publicamente.
+Include app version and macOS version	Incluir a versão do app e do macOS
+Include app version and Windows version	Incluir a versão do app e do Windows
+Your feedback will be posted publicly on GitHub Discussions, without your email.	Seu feedback será publicado abertamente no GitHub Discussions, sem o seu e-mail.
+Send	Enviar
+Sending…	Enviando…
+Thank you! Your feedback is posted.	Obrigado! Seu feedback foi publicado.
+It's public on GitHub Discussions, where you can follow replies.	Ele é público no GitHub Discussions, onde você pode acompanhar as respostas.
+View on GitHub	Ver no GitHub
+Write a few words about your idea or problem.	Escreva algumas palavras sobre sua ideia ou problema.
+The message is {n} characters long. Shorten it to {max} or fewer.	A mensagem tem {n} caracteres. Encurte-a para no máximo {max}.
+Shorten the title to {max} characters or fewer.	Encurte o título para no máximo {max} caracteres.
+Include at most {max} links.	Inclua no máximo {max} links.
+Check the email address, or leave it empty.	Verifique o endereço de e-mail ou deixe o campo vazio.
+Feedback can't be sent from this build. You can post on GitHub Discussions yourself: {url}	Não é possível enviar feedback desta versão. Você pode publicar diretamente no GitHub Discussions: {url}
+{app} is working offline. Turn off View › Work Offline, then press Send again.	O {app} está trabalhando offline. Desative Visualizar › Trabalhar offline e clique em Enviar novamente.
+You've sent a lot of feedback today. Please try again tomorrow.	Você enviou muito feedback hoje. Tente novamente amanhã.
+The message is too long. Shorten it, then press Send again.	A mensagem é longa demais. Encurte-a e clique em Enviar novamente.
+The feedback service didn't accept the message: {reason}	O serviço de feedback não aceitou a mensagem: {reason}
+Your feedback couldn't be posted just now. Your text is still here: try again in a few minutes.	Não foi possível publicar seu feedback agora. Seu texto continua aqui: tente novamente em alguns minutos.
+Couldn't reach the feedback service. Check your internet connection, then press Send again.	Não foi possível acessar o serviço de feedback. Verifique sua conexão com a internet e clique em Enviar novamente.
+The feedback service answered {status}. Try again in a few minutes.	O serviço de feedback respondeu {status}. Tente novamente em alguns minutos.
 About {app}	Sobre o {app}
 Quit {app}	Sair do {app}
 Undo ({key})	Desfazer ({key})

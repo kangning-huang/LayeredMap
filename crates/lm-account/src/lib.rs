@@ -22,6 +22,9 @@ pub mod session;
 pub mod store;
 pub mod url;
 
+// Help › Send Feedback…: not the account, but the same service and gated client.
+pub mod feedback;
+
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
