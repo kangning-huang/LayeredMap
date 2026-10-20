@@ -1,5 +1,17 @@
-# Library catalog fixtures are compared by byte size and SHA. Force LF so a
-# Windows checkout (default autocrlf) stays byte-identical to macOS/Linux.
-# Broader text=auto here churns pre-commit EOF/whitespace across the tree.
+# Library catalog / example text payloads compared by SHA-256. Force LF so a
+# Windows checkout stays byte-identical. Do NOT mark all of fixtures/** as text —
+# that LF-normalizes .png/.nc and breaks pre-commit + SHA checks.
+/fixtures/library/*.geojson text eol=lf
+/fixtures/library/*.csv text eol=lf
+/fixtures/library/*.json text eol=lf
+/fixtures/library/*.md text eol=lf
 /assets/examples/** text eol=lf
-/fixtures/** text eol=lf
+
+# Never treat these as text under any broader rule.
+*.tif -text
+*.tiff -text
+*.png -text
+*.gpkg -text
+*.nc -text
+*.zip -text
+*.xlsx -text

@@ -337,4 +337,3 @@ a GIS user) checks each item and signs off here.
 **简体中文 (app catalog only; the Chinese pages were written earlier)** (`zh`) — reviewer: ______ date: ______
 - [ ] App catalog (`crates/lm-core/src/i18n/<code>.tsv`): every string, read in the running app (`LM_LANGUAGE=<code>`), with an eye on labels that are too long for their buttons
 - [ ] App: the action labels from `rules.toml` read naturally with layer names filled in
-

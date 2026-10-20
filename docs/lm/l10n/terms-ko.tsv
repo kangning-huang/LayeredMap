@@ -6,140 +6,140 @@ Satellite	위성	basemap choice
 Offline	오프라인	basemap choice
 Light	밝게	basemap/theme choice
 Dark	어둡게	basemap/theme choice
-Auto	자동	
-Background strength	배경 강도	
+Auto	자동
+Background strength	배경 강도
 Attribute table	속성 테이블	QGIS term
-Table	테이블	
+Table	테이블
 Field	필드	QGIS term
 Fields	필드	Details › Fields
 Feature	피처	QGIS term; prose may add '지도 위의 대상'
-Record	레코드	
+Record	레코드
 Point	점	everyday word; QGIS uses 포인트
 Line	선	everyday word; QGIS uses 라인
 Area (polygon)	면	everyday GIS word (점·선·면); QGIS uses 폴리곤
 Raster	래스터	QGIS term
-Grid	격자	
-Cell	셀	
+Grid	격자
+Cell	셀
 Vector data	벡터 데이터	QGIS term
 Coordinate system (CRS)	좌표계(CRS)	QGIS: 좌표계 / 좌표참조체계
 Coordinate system	좌표계	Details label
 Projection	투영법	QGIS: 투영
 Legend	범례	QGIS term
 Scale bar	축척 막대	QGIS term
-Title	제목	
-Credits	출처	
+Title	제목
+Credits	출처
 Caption	설명문	export sheet
 Filter	필터	QGIS term
-+ Filter	+ 필터	
-Filtered:	필터 적용됨:	
++ Filter	+ 필터
+Filtered:	필터 적용됨:
 Style	스타일	QGIS uses 심볼(로지); everyday 스타일 chosen
-Style…	스타일…	
+Style…	스타일…
 Colour by value	값에 따라 색칠	button 'Color by a value'
-Color by a value	값에 따라 색칠	
+Color by a value	값에 따라 색칠
 Color	색상	Style tab menu
-Palette	팔레트	
+Palette	팔레트
 Range	범위	colour range
 Label	라벨	QGIS term
-Labels	라벨	
+Labels	라벨
 Join	조인	QGIS term; everyday 연결/결합 in prose
-Unjoin	조인 해제	
-Show joined fields	조인된 필드 표시	
-joined · N of M matched	조인됨 · M개 중 N개 일치	
+Unjoin	조인 해제
+Show joined fields	조인된 필드 표시
+joined · N of M matched	조인됨 · M개 중 N개 일치
 Buffer	버퍼	QGIS term; app says 'Show an area within a distance'
 Show an area within a distance of each	각각 일정 거리 이내 영역 표시	Pro button (= buffer)
-Show an area within a distance	일정 거리 이내 영역 표시	
+Show an area within a distance	일정 거리 이내 영역 표시
 Overview	개요	card tab
 Details	세부 정보	card tab
-Card	카드	
-Examples	예제	
-Open	열기	
-Open file…	파일 열기…	
-Share	공유	
-Map image…	지도 이미지…	
-Data…	데이터…	
-Export	내보내기	
-Undo	실행 취소	
-Search places or your data	장소 또는 내 데이터 검색	
-Zoom in	확대	
-Zoom out	축소	
+Card	카드
+Examples	예제
+Open	열기
+Open file…	파일 열기…
+Share	공유
+Map image…	지도 이미지…
+Data…	데이터…
+Export	내보내기
+Undo	실행 취소
+Search places or your data	장소 또는 내 데이터 검색
+Zoom in	확대
+Zoom out	축소
 Zoom to layer	레이어로 확대	QGIS: 레이어로 확대/축소
-Zoom to All Data	전체 데이터로 확대	
-Rename	이름 바꾸기	
-Remove from map	지도에서 제거	
-Time slider	시간 슬라이더	
-Time step	시간 단계	
-Play	재생	
-Previous step (←)	이전 단계(←)	
-Next step (→)	다음 단계(→)	
+Zoom to All Data	전체 데이터로 확대
+Rename	이름 바꾸기
+Remove from map	지도에서 제거
+Time slider	시간 슬라이더
+Time step	시간 단계
+Play	재생
+Previous step (←)	이전 단계(←)
+Next step (→)	다음 단계(→)
 No data	데이터 없음	NoData
-No value	값 없음	
-This cell has no data.	이 셀에는 데이터가 없습니다.	
-Median	중앙값	
-Rank	순위	
-Selected	선택됨	
+No value	값 없음
+This cell has no data.	이 셀에는 데이터가 없습니다.
+Median	중앙값
+Rank	순위
+Selected	선택됨
 Keep	유지	Pro result: keep vs discard
-Discard	버리기	
+Discard	버리기
 Ask	질문하기	Pro assistant
-Ask box	질문 상자	
-Ask about your layers	레이어에 대해 질문하기	
+Ask box	질문 상자
+Ask about your layers	레이어에 대해 질문하기
 Pro	Pro	keep Latin
-Free	무료	
-Help	도움말	
-Glossary	용어집	
-Download	다운로드	
-Home	홈	
-Apply	적용	
-Assumptions	가정	
-Assumption	가정	
-Back	뒤로	
+Free	무료
+Help	도움말
+Glossary	용어집
+Download	다운로드
+Home	홈
+Apply	적용
+Assumptions	가정
+Assumption	가정
+Back	뒤로
 By basin	해역별	ocean basin
 Category	범주	field kind
-Change	변경	
-Change colors and range	색상과 범위 변경	
-Clear	지우기	
-Compare	비교	
-Compare by	비교 기준	
-Compare on the map first	먼저 지도에서 비교	
-Compare with other [layer]	다른 [layer]와 비교	
-Current view	현재 화면	
-Date	날짜	
-Drop to add to the map	놓으면 지도에 추가됩니다	
+Change	변경
+Change colors and range	색상과 범위 변경
+Clear	지우기
+Compare	비교
+Compare by	비교 기준
+Compare on the map first	먼저 지도에서 비교
+Compare with other [layer]	다른 [layer]와 비교
+Current view	현재 화면
+Date	날짜
+Drop to add to the map	놓으면 지도에 추가됩니다
 Extent	범위	QGIS term
 Find in [layer]	[layer]에서 찾기	e.g. Find in storms
-Fit to data	데이터에 맞춤	
-Format	형식	
-Grid lines	격자선	
+Fit to data	데이터에 맞춤
+Format	형식
+Grid lines	격자선
 Groups	구간	classed colours; QGIS uses 등급/분류
 Smooth	연속	continuous ramp
 Heat	히트	palette name
-Imperial Units	야드파운드 단위	
-Metric Units	미터법 단위	
-Lat/lon labels	위경도 라벨	
+Imperial Units	야드파운드 단위
+Metric Units	미터법 단위
+Lat/lon labels	위경도 라벨
 Level shown	표시할 층	depth/height level
-Variable shown	표시할 변수	
-Variable	변수	
+Variable shown	표시할 변수
+Variable	변수
 Measure length	길이 재기	Pro
 Name	이름	field kind
 Value	값	field kind
 Values	값	overview section
 North arrow	방위표	QGIS term
-Opacity	불투명도	
-Outline	윤곽선	
-Width	너비	
-Report A4	보고서 A4	
-Slide 16:9	슬라이드 16:9	
-Square	정사각형	
-Save	저장	
-Save…	저장…	
+Opacity	불투명도
+Outline	윤곽선
+Width	너비
+Report A4	보고서 A4
+Slide 16:9	슬라이드 16:9
+Square	정사각형
+Save	저장
+Save…	저장…
 Show	표시	export sheet
-Size	크기	
-Show only values above…	다음 값보다 큰 값만 표시…	
-Show where values are like this	비슷한 값인 곳 표시	
-View data	데이터 보기	
-View in table	테이블에서 보기	
-Work Offline	오프라인으로 작업	
-Working offline: online backgrounds are off	오프라인 작업 중: 온라인 배경 지도가 꺼져 있습니다	
-Your data	내 데이터	
+Size	크기
+Show only values above…	다음 값보다 큰 값만 표시…
+Show where values are like this	비슷한 값인 곳 표시
+View data	데이터 보기
+View in table	테이블에서 보기
+Work Offline	오프라인으로 작업
+Working offline: online backgrounds are off	오프라인 작업 중: 온라인 배경 지도가 꺼져 있습니다
+Your data	내 데이터
 Typhoons and hurricanes	태풍과 허리케인	example name
 Heatwaves, summer 2023	2023년 여름 폭염	example name
 Walled cities of China, 1866	1866년 중국의 성곽 도시	example name
@@ -150,24 +150,24 @@ N points	점 N개	layer subtitle
 N areas	면 N개	layer subtitle
 N objects here	이곳에 대상 N개	pick list
 N match	N개 일치	filter preview
-Showing N of M	M개 중 N개 표시	
-N areas, highest first	면 N개, 높은 순	
+Showing N of M	M개 중 N개 표시
+N areas, highest first	면 N개, 높은 순
 higher than X% of N …	N개 중 X%보다 높음	insight line
-lower than X% of this layer’s cells (estimated from a sample)	이 레이어 셀의 X%보다 낮음(표본으로 추정)	
-tied Nth highest of M filtered	필터된 M개 중 공동 N위	
-Time: … (N steps)	시간: … (N단계)	
-Treated as measured values (averaged, not summed)	측정값으로 처리함(합계가 아닌 평균)	
-Located using longitude and latitude as GPS coordinates (WGS 84)	경도·위도를 GPS 좌표(WGS 84)로 보고 위치를 정함	
-Amap/Tencent coordinates (GCJ-02): convert	Amap/Tencent 좌표(GCJ-02): 변환	
-GPS coordinates (WGS 84): keep where they are	GPS 좌표(WGS 84): 그대로 두기	
-If these came from a Chinese map app (Amap, Tencent or Baidu), they may sit a few hundred meters off.	중국 지도 앱(Amap, Tencent, Baidu)에서 가져온 데이터라면 수백 미터 어긋나 있을 수 있습니다.	
+lower than X% of this layer’s cells (estimated from a sample)	이 레이어 셀의 X%보다 낮음(표본으로 추정)
+tied Nth highest of M filtered	필터된 M개 중 공동 N위
+Time: … (N steps)	시간: … (N단계)
+Treated as measured values (averaged, not summed)	측정값으로 처리함(합계가 아닌 평균)
+Located using longitude and latitude as GPS coordinates (WGS 84)	경도·위도를 GPS 좌표(WGS 84)로 보고 위치를 정함
+Amap/Tencent coordinates (GCJ-02): convert	Amap/Tencent 좌표(GCJ-02): 변환
+GPS coordinates (WGS 84): keep where they are	GPS 좌표(WGS 84): 그대로 두기
+If these came from a Chinese map app (Amap, Tencent or Baidu), they may sit a few hundred meters off.	중국 지도 앱(Amap, Tencent, Baidu)에서 가져온 데이터라면 수백 미터 어긋나 있을 수 있습니다.
 Show storms where strength is any of Category 5	strength가 Category 5 중 하나인 storms 표시	filter sentence; data values stay
 Show areas where type is any of Provincial Capital	type이 Provincial Capital 중 하나인 면 표시	filter sentence
 Keep the part of [layer] inside [other]	[other] 안에 있는 [layer] 부분만 남기기	Pro recipe
-area · N km²	면적 · N km²	
-Toolbar	도구 모음	
-Insight line	비교 정보	
-Recipe	작업 기록(레시피)	
-Geodesic	측지선	
+area · N km²	면적 · N km²
+Toolbar	도구 모음
+Insight line	비교 정보
+Recipe	작업 기록(레시피)
+Geodesic	측지선
 Clip	자르기	QGIS term
-Resolution	해상도	
+Resolution	해상도
