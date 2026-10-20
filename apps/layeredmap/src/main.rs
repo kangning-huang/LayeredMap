@@ -508,8 +508,9 @@ fn main() -> eframe::Result {
                 log::info!("LM_DEV_PRO=1: Pro unlocked by the developer override");
             }
             // The account (WP7.4) and with it Pro: only with an account config; without one Pro's
-            // features stay hidden (open-source builds).
-            if !ephemeral {
+            // features stay hidden (open-source builds). Tours start it too, so screenshots show
+            // the app as it is (locked signed out, unlocked signed in); they never sign in.
+            if !ephemeral || !tour.is_empty() {
                 shell.start_account();
             }
             shell.set_library_catalog(lm_ui::library::catalog_url(std::env::var("LM_LIBRARY_URL").ok().as_deref(), developer));

@@ -254,6 +254,11 @@ CFBundleDisplayName = "${name_zh}";
 STRINGS
 plutil -lint "$app/Contents/Resources/zh-Hans.lproj/InfoPlist.strings" >/dev/null
 
+# On an exFAT or FAT drive macOS keeps extended attributes in AppleDouble `._*` files, which
+# codesign rejects as unsigned subcomponents: drop them and the attributes before signing.
+xattr -cr "$app" 2>/dev/null || true
+find "$app" -name '._*' -delete
+
 if [[ -n "${LM_SIGN_IDENTITY:-}" ]]; then
   # The microphone needs the audio-input entitlement under the hardened runtime.
   ent=(--entitlements "$root/packaging/lm/app.entitlements")

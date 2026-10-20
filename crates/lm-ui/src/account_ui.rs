@@ -584,11 +584,9 @@ fn account_pane(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme) -> Option<Pane
             );
             ui.add_space(2.0);
             ui.label(
-                RichText::new(tl!(
-                    "Signing in unlocks the Ask box, analysis tools, the built-in world layers and voice input."
-                ))
-                .size(CAPTION)
-                .color(t.text_secondary),
+                RichText::new(tl!("Signing in unlocks the Ask box, analysis tools, the built-in world layers and voice input."))
+                    .size(CAPTION)
+                    .color(t.text_secondary),
             );
             ui.add_space(10.0);
             let regions = [Region::International, Region::China];

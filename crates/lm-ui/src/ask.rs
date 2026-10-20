@@ -394,9 +394,8 @@ pub fn ask_box(shell: &mut Shell, ui: &mut Ui, map: egui::Rect) {
     let width = (x1 - x0).min(MAX_WIDTH);
     let bottom = egui::pos2((x0 + x1) / 2.0, map.bottom() - 34.0);
     let area_id = egui::Id::new("lm-ask");
-    let shown = egui::Area::new(area_id).order(egui::Order::Foreground).pivot(Align2::CENTER_BOTTOM).fixed_pos(bottom).show(
-        ui.ctx(),
-        |ui| {
+    let shown =
+        egui::Area::new(area_id).order(egui::Order::Foreground).pivot(Align2::CENTER_BOTTOM).fixed_pos(bottom).show(ui.ctx(), |ui| {
             ui.set_width(width);
             ui.vertical(|ui| {
                 if shell.ask.shown.is_some() || shell.ask.pending.is_some() {
@@ -415,8 +414,7 @@ pub fn ask_box(shell: &mut Shell, ui: &mut Ui, map: egui::Rect) {
                     field(shell, ui, &t, width);
                 }
             });
-        },
-    );
+        });
     // The box grows upwards from its bottom edge, placed with last frame's size: when the size
     // changes (a message or an answer appears), draw once more so it lands in place rather than
     // hanging below the window until the next input.
