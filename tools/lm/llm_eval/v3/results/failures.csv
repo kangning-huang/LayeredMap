@@ -1,0 +1,844 @@
+run,case,class,qtype,lang,answer_kind,headline,error,preview_ok,highlight_n,drawn
+mock/mock,w24,preview-UI,within,ja,plan,0.0,,False,414,Within 200 km of Tokyo
+mock/mock,w02,preview-UI,within,en,plan,0.0,,False,228,Within 100 km of New York
+mock/mock,w40,preview-UI,within,zh,plan,0.0,,False,228,Within 100 km of New York
+mock/mock,o01,preview-UI,outside,en,plan,73,,False,100,Earthquakes outside World countries
+mock/mock,o02,preview-UI,outside,zh,plan,73,,False,100,Earthquakes outside World countries
+mock/mock,w12,preview-UI,within,en,plan,0.0,,False,100,Within 100 km of Paris
+mock/mock,w30,preview-UI,within,en,plan,0.0,,False,60,Within 100 km of Seattle
+mock/mock,n01,preview-UI,nearest,en,plan,83.12238278702696,,False,1,
+mock/mock,n04,preview-UI,nearest,es,plan,33.92462468147702,,False,1,
+mock/mock,n05,preview-UI,nearest,en,plan,93.13116353621557,,False,1,
+mock/mock,n07,preview-UI,nearest,zh,plan,15.824198904254747,,False,1,
+mock/mock,n13,preview-UI,nearest,zh,plan,33.92462468147702,,False,1,
+mock/mock,x01,preview-UI,cities_near,en,plan,4,,False,4,Within 50 km of Vesuvius
+mock/mock,x02,preview-UI,cities_near,zh,plan,1,,False,1,Within 50 km of Fujisan
+mock/mock,x03,preview-UI,cities_near,en,plan,3,,False,3,Within 100 km of Popocatepetl
+mock/mock,n02,preview-UI,nearest,zh,plan,97.96199326811302,,False,1,
+mock/mock,n03,preview-UI,nearest,de,plan,74.62186107288932,,False,1,
+mock/mock,n06,preview-UI,nearest,en,plan,342.78823280661175,,False,1,
+mock/mock,n08,preview-UI,nearest,fr,plan,58.955522957082636,,False,1,
+mock/mock,n14,preview-UI,nearest,zh,plan,74.62186107288932,,False,1,
+mock/mock,x10,preview-UI,cities_near,zh,plan,4,,False,4,Within 50 km of Vesuvius
+mock-prefix/mock,w22,preview-UI,within,fr,plan,2.0,,False,,Within 100 km of Paris
+mock-prefix/mock,w23,preview-UI,within,zh,plan,9,,False,,Within 150 km of Shanghai
+mock-prefix/mock,w24,preview-UI,within,ja,plan,0.0,,False,414,Within 200 km of Tokyo
+mock-prefix/mock,i02,preview-UI,inside,zh,plan,13.0,,False,,
+mock-prefix/mock,i06,preview-UI,inside,en,plan,129,,False,,
+mock-prefix/mock,w01,preview-UI,within,en,plan,7.0,,False,228,Within 100 km of Tokyo
+mock-prefix/mock,w37,preview-UI,within,pt,plan,14.0,,False,,Within 300 km of Seoul
+mock-prefix/mock,w02,preview-UI,within,en,plan,0.0,,False,228,Within 100 km of New York
+mock-prefix/mock,w03,preview-UI,within,zh,plan,6.0,,False,228,Within 100 km of Manila
+mock-prefix/mock,w04,preview-UI,within,zh,plan,3,,False,784,Within 50 km of Hong Kong
+mock-prefix/mock,w05,preview-UI,within,zh,plan,18.0,,False,,Within 50 km of Shanghai
+mock-prefix/mock,w06,preview-UI,within,en,plan,7,,False,228,Within 200 km of Miami
+mock-prefix/mock,w07,preview-UI,within,en,plan,31.0,,False,1126,Within 150 km of Taipei
+mock-prefix/mock,w09,preview-UI,within,zh,plan,18.0,,False,1287,Within 100 km of Hong Kong
+mock-prefix/mock,w10,preview-UI,within,en,plan,1.0,,False,47,Within 300 km of Manila
+mock-prefix/mock,w36,preview-UI,within,ko,plan,21.0,,False,,Within 100 km of Seoul
+mock-prefix/mock,w40,preview-UI,within,zh,plan,0.0,,False,228,Within 100 km of New York
+mock-prefix/mock,i05,preview-UI,inside,en,plan,82.0,,False,,
+mock-prefix/mock,i01,preview-UI,inside,en,plan,12.0,,False,1619,
+mock-prefix/mock,i07,preview-UI,inside,es,plan,8,,False,100,
+mock-prefix/mock,i11,preview-UI,inside,zh,plan,12.0,,False,1619,
+mock-prefix/mock,i04,preview-UI,inside,en,plan,4620.0,,False,,
+mock-prefix/mock,i08,preview-UI,inside,en,plan,403.0,,False,3325,
+mock-prefix/mock,n01,preview-UI,nearest,en,plan,83.12238278702696,,False,1,
+mock-prefix/mock,n04,preview-UI,nearest,es,plan,33.92462468147702,,False,1,
+mock-prefix/mock,n05,preview-UI,nearest,en,plan,93.13116353621557,,False,1,
+mock-prefix/mock,n07,preview-UI,nearest,zh,plan,15.824198904254747,,False,1,
+mock-prefix/mock,n13,preview-UI,nearest,zh,plan,33.92462468147702,,False,1,
+mock-prefix/mock,w26,preview-UI,within,en,plan,3.0,,False,1176,Within 100 km of New York
+mock-prefix/mock,w27,preview-UI,within,en,plan,4,,False,1,Within 60 km of London
+mock-prefix/mock,w28,preview-UI,within,de,plan,1.0,,False,4336,Within 30 km of Berlin
+mock-prefix/mock,w43,preview-UI,within,zh,plan,2.0,,False,1176,Within 100 km of Seoul
+mock-prefix/mock,w17,preview-UI,within,it,plan,3,,False,1,Within 100 km of Naples
+mock-prefix/mock,w18,preview-UI,within,en,plan,7,,False,,Within 200 km of Seattle
+mock-prefix/mock,o01,preview-UI,outside,en,plan,73,,False,100,Earthquakes outside World countries
+mock-prefix/mock,w19,preview-UI,within,es,plan,6.0,,False,,Within 100 km of Mexico City
+mock-prefix/mock,w20,preview-UI,within,zh,plan,2.0,,False,,Within 100 km of Tokyo
+mock-prefix/mock,w38,preview-UI,within,nl,plan,21.0,,False,,Within 150 km of Quito
+mock-prefix/mock,o02,preview-UI,outside,zh,plan,73,,False,100,Earthquakes outside World countries
+mock-prefix/mock,w42,preview-UI,within,zh,plan,7,,False,,Within 200 km of Seattle
+mock-prefix/mock,x01,preview-UI,cities_near,en,plan,4,,False,,Within 50 km of Vesuvius
+mock-prefix/mock,x02,preview-UI,cities_near,zh,plan,1,,False,,Within 50 km of Fujisan
+mock-prefix/mock,x03,preview-UI,cities_near,en,plan,3,,False,500,Within 100 km of Popocatepetl
+mock-prefix/mock,w11,preview-UI,within,en,plan,12.0,,False,1619,Within 200 km of Tokyo
+mock-prefix/mock,w12,preview-UI,within,en,plan,0.0,,False,100,Within 100 km of Paris
+mock-prefix/mock,w13,preview-UI,within,es,plan,16.0,,False,1,Within 300 km of Santiago
+mock-prefix/mock,w14,preview-UI,within,es,plan,1.0,,False,4734,Within 100 km of Mexico City
+mock-prefix/mock,w15,preview-UI,within,zh,plan,5,,False,,Within 50 km of Taipei
+mock-prefix/mock,w16,preview-UI,within,en,plan,3.0,,False,509,Within 500 km of Jakarta
+mock-prefix/mock,w39,preview-UI,within,ru,plan,27.0,,False,1619,Within 200 km of Sendai
+mock-prefix/mock,w41,preview-UI,within,zh,plan,12.0,,False,1619,Within 200 km of Tokyo
+mock-prefix/mock,k16,preview-UI,chain,en,plan,6.0,,False,155,Within 100 km of Tokyo
+mock-prefix/mock,w08,preview-UI,within,en,plan,7.0,,False,228,Within 100 km of Tokyo
+mock-prefix/mock,w35,preview-UI,within,zh,plan,2,,False,,Within 100 km of Tokyo
+mock-prefix/mock,i03,preview-UI,inside,fr,plan,71.0,,False,,
+mock-prefix/mock,i12,preview-UI,inside,zh,plan,71.0,,False,,
+mock-prefix/mock,x10,preview-UI,cities_near,zh,plan,4,,False,,Within 50 km of Vesuvius
+mock-prefix/mock,w29,preview-UI,within,en,plan,13.0,,False,656,Within 50 km of Oklahoma City
+mock-prefix/mock,w30,preview-UI,within,en,plan,0.0,,False,60,Within 100 km of Seattle
+mock-prefix/mock,w31,preview-UI,within,en,plan,10,,False,8094,Within 15 km of Oklahoma City
+mock-prefix/mock,w44,preview-UI,within,zh,plan,13.0,,False,656,Within 50 km of Oklahoma City
+mock-prefix/mock,i09,preview-UI,inside,en,plan,401.0,,False,,
+mock-prefix/mock,i10,preview-UI,inside,zh,plan,40.0,,False,228,
+mock-prefix/mock,n02,preview-UI,nearest,zh,plan,97.96199326811302,,False,1,
+mock-prefix/mock,n03,preview-UI,nearest,de,plan,74.62186107288932,,False,1,
+mock-prefix/mock,n06,preview-UI,nearest,en,plan,342.78823280661175,,False,1,
+mock-prefix/mock,n08,preview-UI,nearest,fr,plan,58.955522957082636,,False,1,
+mock-prefix/mock,n14,preview-UI,nearest,zh,plan,74.62186107288932,,False,1,
+mock-prefix/mock,w32,preview-UI,within,en,plan,195.0,,False,1,Within 100 km of Los Angeles
+mock-prefix/mock,w33,preview-UI,within,ja,plan,7.0,,False,650,Within 200 km of Tokyo
+mock-prefix/mock,w34,preview-UI,within,en,plan,69,,False,,Within 50 km of Anchorage
+mock-prefix/mock,w45,preview-UI,within,zh,plan,195.0,,False,1,Within 100 km of Los Angeles
+paid-main/anthropic_claude-haiku-5.5,u14,model plan,honest,zh,plan,257,,,,
+paid-main/anthropic_claude-haiku-5.5,i02,model plan,inside,zh,plan,14,,False,14,
+paid-main/anthropic_claude-haiku-5.5,i06,model plan,inside,en,plan,136,,False,136,
+paid-main/anthropic_claude-haiku-5.5,w24,preview-UI,within,ja,plan,0,,False,414,Nuclear power plants within 200 km of Tokyo
+paid-main/anthropic_claude-haiku-5.5,x05,model plan,cities_near,en,plan,414,,False,200,World cities in each area of Within 100 km of nuclear power plants
+paid-main/anthropic_claude-haiku-5.5,x08,model plan,cities_near,en,plan,759,,False,53,World cities in each area of Within 50 km of nuclear power plants
+paid-main/anthropic_claude-haiku-5.5,n01,preview-UI,nearest,en,plan,83.12238278702696,,False,1,
+paid-main/anthropic_claude-haiku-5.5,n04,model plan,nearest,es,plan,1609,,False,1,
+paid-main/anthropic_claude-haiku-5.5,n05,preview-UI,nearest,en,plan,93.13116353621557,,False,1,
+paid-main/anthropic_claude-haiku-5.5,i01,model plan,inside,en,plan,257,,False,1619,Earthquakes in each world country
+paid-main/anthropic_claude-haiku-5.5,n07,model plan,nearest,zh,plan,1609,,False,1,
+paid-main/anthropic_claude-haiku-5.5,i07,model plan,inside,es,plan,27,,False,100,Earthquakes inside World countries
+paid-main/anthropic_claude-haiku-5.5,w27,model plan,within,en,plan,0,,False,1176,Within 60 km of London
+paid-main/anthropic_claude-haiku-5.5,n10,model plan,nearest,ja,plan,1,,True,1,
+paid-main/anthropic_claude-haiku-5.5,i11,model plan,inside,zh,plan,1,,False,1,Earthquakes in each world country
+paid-main/anthropic_claude-haiku-5.5,n13,model plan,nearest,zh,plan,1609,,False,,
+paid-main/anthropic_claude-haiku-5.5,w40,preview-UI,within,zh,plan,0,,False,228,Lines within 100 km of New York
+paid-main/anthropic_claude-haiku-5.5,k13,prompt-tool gap,chain,en,plan,0,,,,
+paid-main/anthropic_claude-haiku-5.5,o01,preview-UI,outside,en,plan,73,,False,100,Earthquakes outside World countries
+paid-main/anthropic_claude-haiku-5.5,o02,preview-UI,outside,zh,plan,73,,False,100,Earthquakes outside World countries
+paid-main/anthropic_claude-haiku-5.5,i08,model plan,inside,en,plan,1,,False,1,Lines in each area of World states and provinces
+paid-main/anthropic_claude-haiku-5.5,w17,model plan,within,it,plan,0,,False,2,Ncei volcano locations in Naples
+paid-main/anthropic_claude-haiku-5.5,e09,model plan,raster,ja,plan,,,,,
+paid-main/anthropic_claude-haiku-5.5,w12,preview-UI,within,en,plan,0,,False,100,Earthquakes in Paris
+paid-main/anthropic_claude-haiku-5.5,x01,preview-UI,cities_near,en,plan,4,,False,4,Within 50 km of Vesuvius
+paid-main/anthropic_claude-haiku-5.5,x02,preview-UI,cities_near,zh,plan,1,,False,1,Within 50 km of Fujisan
+paid-main/anthropic_claude-haiku-5.5,x03,preview-UI,cities_near,en,plan,3,,False,3,World cities within 100 km of Popocatepetl
+paid-main/anthropic_claude-haiku-5.5,w30,model plan,within,en,cannot_do,,,,,
+paid-main/anthropic_claude-haiku-5.5,x06,model plan,cities_near,zh,plan,75,,False,200,World cities in each area of Within 50 km of ncei volcano locations
+paid-main/anthropic_claude-haiku-5.5,w44,model plan,within,zh,plan,656,,False,449,Lines in Oklahoma City
+paid-main/anthropic_claude-haiku-5.5,x07,preview-UI,cities_near,en,plan,8,,False,200,Earthquakes in each area of Within 200 km of world cities
+paid-main/anthropic_claude-haiku-5.5,x10,preview-UI,cities_near,zh,plan,4,,False,4,Within 50 km of Vesuvius
+paid-main/anthropic_claude-haiku-5.5,n02,model plan,nearest,zh,plan,804,,False,1,
+paid-main/anthropic_claude-haiku-5.5,n03,model plan,nearest,de,plan,0,,False,,Nuclear power plants in Berlin
+paid-main/anthropic_claude-haiku-5.5,n06,model plan,nearest,en,plan,414,,False,414,"Within 1,000 km of Tokyo"
+paid-main/anthropic_claude-haiku-5.5,w32,model plan,within,en,plan,0,,False,,Points within 100 km of Los Angeles
+paid-main/anthropic_claude-haiku-5.5,n08,model plan,nearest,fr,plan,0,,False,,Within 1 km of Rome
+paid-main/anthropic_claude-haiku-5.5,n14,preview-UI,nearest,zh,plan,74.62186107288932,,False,1,
+paid-main/anthropic_claude-haiku-5.5,i10,preview-UI,inside,zh,plan,40,,False,228,Lines in each world country
+paid-main/anthropic_claude-haiku-5.5,e01,model plan,raster,en,cannot_do,,,,,
+paid-main/anthropic_claude-haiku-5.5,e02,model plan,raster,zh,plan,1403.0,,True,1,
+paid-main/anthropic_claude-haiku-5.5,e03,model plan,raster,en,plan,,,,,
+paid-main/z-ai_glm-5.3-flash,e07,model plan,raster,en,plan,1609,,False,,
+paid-main/z-ai_glm-5.3-flash,c05,model plan,per_area,en,error,,The plan didn't run: step 1: missing layer,,,
+paid-main/z-ai_glm-5.3-flash,i02,model plan,inside,zh,error,,The plan didn't run: step 1: missing layer,,,
+paid-main/z-ai_glm-5.3-flash,r01,model plan,rank,en,error,,The plan didn't run: step 1: missing layer,,,
+paid-main/z-ai_glm-5.3-flash,i06,model plan,inside,en,plan,136,,False,136,
+paid-main/z-ai_glm-5.3-flash,w24,model plan,within,ja,error,,The plan didn't run: step 1: missing layer,,,
+paid-main/z-ai_glm-5.3-flash,x05,preview-UI,cities_near,en,plan,17,,False,17,Within 100 km of nuclear power plants
+paid-main/z-ai_glm-5.3-flash,k01,model plan,chain,en,error,,The plan didn't run: step 1: missing layer,,,
+paid-main/z-ai_glm-5.3-flash,c11,model plan,per_area,en,plan,,,True,,Earthquakes in each world country
+paid-main/z-ai_glm-5.3-flash,e08,model plan,raster,en,plan,1747,,False,,"Earthquakes in each area of Where World elevation at most -4,000"
+paid-main/z-ai_glm-5.3-flash,w02,preview-UI,within,en,plan,0,,False,228,Lines in New York
+paid-main/z-ai_glm-5.3-flash,w26,model plan,within,en,plan,513,,False,513,Airports within 100 km of New York
+paid-main/z-ai_glm-5.3-flash,i01,model plan,inside,en,error,,The plan didn't run: step 1: missing layer,,,
+paid-main/z-ai_glm-5.3-flash,k04,model plan,chain,ja,cannot_do,,,,,
+paid-main/z-ai_glm-5.3-flash,w27,model plan,within,en,plan,0,,False,1176,Within 60 km of London
+paid-main/z-ai_glm-5.3-flash,i07,model plan,inside,es,error,,The plan didn't run: step 1: missing layer,,,
+paid-main/z-ai_glm-5.3-flash,k12,model plan,chain,en,error,,The plan didn't run: step 1: missing points,,,
+paid-main/z-ai_glm-5.3-flash,n01,preview-UI,nearest,en,plan,,,False,1,
+paid-main/z-ai_glm-5.3-flash,w43,model plan,within,zh,plan,793,,False,793,Airports within 100 km of Seoul
+paid-main/z-ai_glm-5.3-flash,w04,preview-UI,within,zh,plan,3,,False,784,Lines inside Within 50 km of Hong Kong
+paid-main/z-ai_glm-5.3-flash,k07,model plan,chain,zh,error,,The plan didn't run: step 1: missing layer,,,
+paid-main/z-ai_glm-5.3-flash,n04,model plan,nearest,es,error,,The plan didn't run: step 1: missing layer,,,
+paid-main/z-ai_glm-5.3-flash,n05,model plan,nearest,en,plan,7342,,False,,
+paid-main/z-ai_glm-5.3-flash,w06,model plan,within,en,error,,The plan didn't run: step 1: missing layer,,,
+paid-main/z-ai_glm-5.3-flash,n07,model plan,nearest,zh,error,,The plan didn't run: step 1: missing layer,,,
+paid-main/z-ai_glm-5.3-flash,w09,model plan,within,zh,plan,56,,False,56,Lines in Hong Kong
+paid-main/z-ai_glm-5.3-flash,t06,model plan,time,en,error,,The plan didn't run: step 1: missing raster,,,
+paid-main/z-ai_glm-5.3-flash,t03,prompt-tool gap,time,zh,plan,1,,,,
+paid-main/z-ai_glm-5.3-flash,n11,preview-UI,nearest,en,plan,,,False,1,
+paid-main/z-ai_glm-5.3-flash,w40,preview-UI,within,zh,plan,0,,False,228,Lines in New York
+paid-main/z-ai_glm-5.3-flash,o01,model plan,outside,en,cannot_do,,,,,
+paid-main/z-ai_glm-5.3-flash,n12,model plan,nearest,zh,plan,,,True,1,
+paid-main/z-ai_glm-5.3-flash,o02,model plan,outside,zh,plan,60,,False,80,Earthquakes outside World countries
+paid-main/z-ai_glm-5.3-flash,e09,model plan,raster,ja,cannot_do,,,,,
+paid-main/z-ai_glm-5.3-flash,i04,model plan,inside,en,plan,4596,,False,,Lines in each area of World states and provinces
+paid-main/z-ai_glm-5.3-flash,n13,model plan,nearest,zh,cannot_do,,,,,
+paid-main/z-ai_glm-5.3-flash,i08,model plan,inside,en,error,,The plan didn't run: step 1: missing layer,,,
+paid-main/z-ai_glm-5.3-flash,w12,preview-UI,within,en,plan,0,,False,100,Earthquakes in Paris
+paid-main/z-ai_glm-5.3-flash,r03,model plan,rank,en,error,,The plan didn't run: step 1: missing layer,,,
+paid-main/z-ai_glm-5.3-flash,w13,model plan,within,es,error,,The plan didn't run: step 1: missing layer,,,
+paid-main/z-ai_glm-5.3-flash,w16,model plan,within,en,error,,The plan didn't run: step 1: missing layer,,,
+paid-main/z-ai_glm-5.3-flash,w39,model plan,within,ru,plan,166,,False,166,Earthquakes within 200 km of Sendai
+paid-main/z-ai_glm-5.3-flash,i03,model plan,inside,fr,error,,The plan didn't run: step 1: missing points,,,
+paid-main/z-ai_glm-5.3-flash,x07,model plan,cities_near,en,error,,The plan didn't run: step 1: missing layer,,,
+paid-main/z-ai_glm-5.3-flash,w20,model plan,within,zh,error,,The plan didn't run: step 1: missing layer,,,
+paid-main/z-ai_glm-5.3-flash,k14,model plan,chain,en,cannot_do,,,,,
+paid-main/z-ai_glm-5.3-flash,w38,model plan,within,nl,error,,The plan didn't run: step 1: missing layer,,,
+paid-main/z-ai_glm-5.3-flash,c07,model plan,per_area,zh,error,,The plan didn't run: step 1: missing layer,,,
+paid-main/z-ai_glm-5.3-flash,x01,model plan,cities_near,en,error,,The plan didn't run: step 1: missing layer,,,
+paid-main/z-ai_glm-5.3-flash,i09,model plan,inside,en,plan,257,,False,,Lines in each world country
+paid-main/z-ai_glm-5.3-flash,i10,preview-UI,inside,zh,plan,40,,False,228,Lines in each world country
+paid-main/z-ai_glm-5.3-flash,x02,preview-UI,cities_near,zh,plan,1,,False,1,Within 50 km of Fujisan
+paid-main/z-ai_glm-5.3-flash,w29,model plan,within,en,cannot_do,,,,,
+paid-main/z-ai_glm-5.3-flash,w30,model plan,within,en,plan,28,,False,28,Lines within 100 km of Seattle
+paid-main/z-ai_glm-5.3-flash,x03,model plan,cities_near,en,error,,The plan didn't run: step 1: missing layer,,,
+paid-main/z-ai_glm-5.3-flash,n02,model plan,nearest,zh,plan,,,False,1,
+paid-main/z-ai_glm-5.3-flash,w31,model plan,within,en,plan,8,,False,8094,Lines inside Within 15 km of Oklahoma City
+paid-main/z-ai_glm-5.3-flash,n03,model plan,nearest,de,plan,,,True,1,
+paid-main/z-ai_glm-5.3-flash,w44,model plan,within,zh,error,,The plan didn't run: step 1: missing layer,,,
+paid-main/z-ai_glm-5.3-flash,x06,preview-UI,cities_near,zh,plan,27,,False,27,
+paid-main/z-ai_glm-5.3-flash,n06,model plan,nearest,en,error,,The plan didn't run: step 1: missing layer,,,
+paid-main/z-ai_glm-5.3-flash,n08,preview-UI,nearest,fr,plan,,,False,1,
+paid-main/z-ai_glm-5.3-flash,c08,model plan,per_area,en,error,,The plan didn't run: step 1: missing points,,,
+paid-main/z-ai_glm-5.3-flash,x10,preview-UI,cities_near,zh,plan,4,,False,4,Within 50 km of Vesuvius
+paid-main/z-ai_glm-5.3-flash,n14,model plan,nearest,zh,error,,The plan didn't run: step 1: missing layer,,,
+paid-main/z-ai_glm-5.3-flash,w33,model plan,within,ja,error,,The plan didn't run: step 1: missing layer,,,
+paid-main/z-ai_glm-5.3-flash,w45,model plan,within,zh,plan,0,,False,,Points in Los Angeles
+paid-main/z-ai_glm-5.3-flash,o04,model plan,outside,en,cannot_do,,,,,
+paid-main/z-ai_glm-5.3-flash,e01,model plan,raster,en,error,,The plan didn't run: step 1: missing layer,,,
+paid-main/z-ai_glm-5.3-flash,e02,model plan,raster,zh,plan,1609,,False,,
+paid-norule19/anthropic_claude-haiku-5.5,u14,model plan,honest,zh,plan,257,,,,
+paid-norule19/anthropic_claude-haiku-5.5,i02,model plan,inside,zh,plan,14,,False,14,
+paid-norule19/anthropic_claude-haiku-5.5,i06,model plan,inside,en,plan,136,,False,136,
+paid-norule19/anthropic_claude-haiku-5.5,w24,preview-UI,within,ja,plan,0,,False,414,Nuclear power plants within 200 km of Tokyo
+paid-norule19/anthropic_claude-haiku-5.5,u16,model plan,honest,en,plan,50,,,,
+paid-norule19/anthropic_claude-haiku-5.5,x05,model plan,cities_near,en,plan,414,,False,200,World cities in each area of Within 100 km of nuclear power plants
+paid-norule19/anthropic_claude-haiku-5.5,n01,model plan,nearest,en,plan,1,,False,1,
+paid-norule19/anthropic_claude-haiku-5.5,x08,model plan,cities_near,en,plan,53,,False,53,World cities in each area of Within 50 km of nuclear power plants
+paid-norule19/anthropic_claude-haiku-5.5,n04,model plan,nearest,es,plan,1609,,False,1,
+paid-norule19/anthropic_claude-haiku-5.5,n05,preview-UI,nearest,en,plan,93.13116353621557,,False,1,
+paid-norule19/anthropic_claude-haiku-5.5,n07,preview-UI,nearest,zh,plan,15.824198904254747,,False,1,
+paid-norule19/anthropic_claude-haiku-5.5,e08,model plan,raster,en,plan,1747,,False,,"Earthquakes in each area of Where World elevation at most -4,000"
+paid-norule19/anthropic_claude-haiku-5.5,i01,model plan,inside,en,plan,1,,False,1,Earthquakes in each world country
+paid-norule19/anthropic_claude-haiku-5.5,w27,model plan,within,en,plan,0,,False,1176,Within 60 km of London
+paid-norule19/anthropic_claude-haiku-5.5,n10,model plan,nearest,ja,plan,7342,,True,1,
+paid-norule19/anthropic_claude-haiku-5.5,i07,model plan,inside,es,plan,27,,False,100,Earthquakes inside World countries
+paid-norule19/anthropic_claude-haiku-5.5,n11,model plan,nearest,en,plan,7,,True,7,World cities in Pinatubo
+paid-norule19/anthropic_claude-haiku-5.5,i11,model plan,inside,zh,plan,257,,False,1619,Earthquakes in each world country
+paid-norule19/anthropic_claude-haiku-5.5,n12,model plan,nearest,zh,plan,0,,False,,
+paid-norule19/anthropic_claude-haiku-5.5,t01,model plan,time,en,plan,7342,,,,
+paid-norule19/anthropic_claude-haiku-5.5,n13,model plan,nearest,zh,plan,,,False,,
+paid-norule19/anthropic_claude-haiku-5.5,t02,prompt-tool gap,time,en,plan,7342,,,,
+paid-norule19/anthropic_claude-haiku-5.5,t05,prompt-tool gap,time,zh,plan,7342,,,,
+paid-norule19/anthropic_claude-haiku-5.5,k07,model plan,chain,zh,plan,0,,True,,Earthquakes in Vatican City
+paid-norule19/anthropic_claude-haiku-5.5,w40,preview-UI,within,zh,plan,0,,False,228,Lines in New York
+paid-norule19/anthropic_claude-haiku-5.5,k13,prompt-tool gap,chain,en,plan,0,,,,
+paid-norule19/anthropic_claude-haiku-5.5,o01,preview-UI,outside,en,plan,73,,False,100,Earthquakes outside World countries
+paid-norule19/anthropic_claude-haiku-5.5,o02,preview-UI,outside,zh,plan,73,,False,100,Earthquakes outside World countries
+paid-norule19/anthropic_claude-haiku-5.5,i08,model plan,inside,en,plan,4596,,False,3325,Lines in each area of World states and provinces
+paid-norule19/anthropic_claude-haiku-5.5,e09,model plan,raster,ja,plan,,,,,
+paid-norule19/anthropic_claude-haiku-5.5,w17,model plan,within,it,error,,The assistant didn't finish a plan.,,,
+paid-norule19/anthropic_claude-haiku-5.5,w12,preview-UI,within,en,plan,0,,False,100,Earthquakes in Paris
+paid-norule19/anthropic_claude-haiku-5.5,x01,preview-UI,cities_near,en,plan,4,,False,4,Within 50 km of Vesuvius
+paid-norule19/anthropic_claude-haiku-5.5,x02,preview-UI,cities_near,zh,plan,1,,False,1,World cities within 50 km of Fujisan
+paid-norule19/anthropic_claude-haiku-5.5,x03,preview-UI,cities_near,en,plan,3,,False,3,World cities within 100 km of Popocatepetl
+paid-norule19/anthropic_claude-haiku-5.5,w30,model plan,within,en,cannot_do,,,,,
+paid-norule19/anthropic_claude-haiku-5.5,x07,model plan,cities_near,en,plan,100,,False,200,World cities in each area of Within 200 km of earthquakes
+paid-norule19/anthropic_claude-haiku-5.5,x06,model plan,cities_near,zh,plan,1609,,False,200,World cities in each area of Within 50 km of ncei volcano locations
+paid-norule19/anthropic_claude-haiku-5.5,x09,preview-UI,cities_near,fr,plan,15,,False,15,World cities within 30 km of ncei volcano locations
+paid-norule19/anthropic_claude-haiku-5.5,n02,model plan,nearest,zh,plan,804,,False,1,
+paid-norule19/anthropic_claude-haiku-5.5,x10,preview-UI,cities_near,zh,plan,4,,False,4,Within 50 km of Vesuvius
+paid-norule19/anthropic_claude-haiku-5.5,n03,model plan,nearest,de,plan,804,,False,1,
+paid-norule19/anthropic_claude-haiku-5.5,n06,preview-UI,nearest,en,plan,342.78823280661175,,False,1,
+paid-norule19/anthropic_claude-haiku-5.5,n08,model plan,nearest,fr,plan,1,,False,1,
+paid-norule19/anthropic_claude-haiku-5.5,i09,preview-UI,inside,en,plan,401,,False,,Lines in each world country
+paid-norule19/anthropic_claude-haiku-5.5,n14,preview-UI,nearest,zh,plan,74.62186107288932,,False,1,
+paid-norule19/anthropic_claude-haiku-5.5,w32,model plan,within,en,plan,0,,False,,Points within 100 km of Los Angeles
+paid-norule19/anthropic_claude-haiku-5.5,i10,model plan,inside,zh,plan,257,,False,228,Lines in each world country
+paid-norule19/anthropic_claude-haiku-5.5,w45,model plan,within,zh,plan,0,,False,2,Points within 100 km of Los Angeles
+paid-norule19/anthropic_claude-haiku-5.5,e01,model plan,raster,en,cannot_do,,,,,
+paid-norule19/anthropic_claude-haiku-5.5,e02,model plan,raster,zh,cannot_do,,,,,
+paid-norule19/anthropic_claude-haiku-5.5,e03,model plan,raster,en,plan,,,,,
+paid-ref/anthropic_claude-sonnet-5.5,i06,model plan,inside,en,plan,136,,False,136,
+paid-ref/anthropic_claude-sonnet-5.5,w24,preview-UI,within,ja,plan,0.0,,False,414,Within 200 km of Tokyo
+paid-ref/anthropic_claude-sonnet-5.5,w02,preview-UI,within,en,plan,0,,False,228,Lines within 100 km of New York
+paid-ref/anthropic_claude-sonnet-5.5,x05,preview-UI,cities_near,en,plan,17,,False,17,
+paid-ref/anthropic_claude-sonnet-5.5,x08,preview-UI,cities_near,en,plan,8,,False,8,
+paid-ref/anthropic_claude-sonnet-5.5,n01,preview-UI,nearest,en,plan,,,False,1,
+paid-ref/anthropic_claude-sonnet-5.5,n04,preview-UI,nearest,es,plan,33.92462468147702,,False,1,
+paid-ref/anthropic_claude-sonnet-5.5,n05,preview-UI,nearest,en,plan,93.13116353621557,,False,1,
+paid-ref/anthropic_claude-sonnet-5.5,n07,preview-UI,nearest,zh,plan,15.824198904254747,,False,1,
+paid-ref/anthropic_claude-sonnet-5.5,w40,preview-UI,within,zh,plan,0,,False,228,Lines within 100 km of New York
+paid-ref/anthropic_claude-sonnet-5.5,k13,prompt-tool gap,chain,en,plan,0,,,,
+paid-ref/anthropic_claude-sonnet-5.5,o01,preview-UI,outside,en,plan,73,,False,100,Earthquakes outside World countries
+paid-ref/anthropic_claude-sonnet-5.5,o02,preview-UI,outside,zh,plan,73,,False,100,Earthquakes outside World countries
+paid-ref/anthropic_claude-sonnet-5.5,n13,preview-UI,nearest,zh,plan,33.92462468147702,,False,1,
+paid-ref/anthropic_claude-sonnet-5.5,t03,prompt-tool gap,time,zh,plan,1,,,,
+paid-ref/anthropic_claude-sonnet-5.5,o03,model plan,outside,en,plan,186,,False,186,
+paid-ref/anthropic_claude-sonnet-5.5,w12,preview-UI,within,en,plan,0.0,,False,100,Within 100 km of Paris
+paid-ref/anthropic_claude-sonnet-5.5,e09,model plan,raster,ja,plan,,,,,
+paid-ref/anthropic_claude-sonnet-5.5,w30,preview-UI,within,en,plan,0.0,,False,60,Within 100 km of Seattle
+paid-ref/anthropic_claude-sonnet-5.5,x07,preview-UI,cities_near,en,plan,8,,False,8,
+paid-ref/anthropic_claude-sonnet-5.5,x01,preview-UI,cities_near,en,plan,4,,False,4,Within 50 km of Vesuvius
+paid-ref/anthropic_claude-sonnet-5.5,x02,preview-UI,cities_near,zh,plan,1,,False,1,Within 50 km of Fujisan
+paid-ref/anthropic_claude-sonnet-5.5,x03,preview-UI,cities_near,en,plan,3,,False,3,Within 100 km of Popocatepetl
+paid-ref/anthropic_claude-sonnet-5.5,x06,preview-UI,cities_near,zh,plan,27,,False,27,
+paid-ref/anthropic_claude-sonnet-5.5,x09,preview-UI,cities_near,fr,plan,15,,False,15,
+paid-ref/anthropic_claude-sonnet-5.5,x10,preview-UI,cities_near,zh,plan,4,,False,4,Within 50 km of Vesuvius
+paid-ref/anthropic_claude-sonnet-5.5,n02,preview-UI,nearest,zh,plan,97.96199326811302,,False,1,
+paid-ref/anthropic_claude-sonnet-5.5,n03,preview-UI,nearest,de,plan,74.62186107288932,,False,1,
+paid-ref/anthropic_claude-sonnet-5.5,e01,model plan,raster,en,plan,1468.0,,True,1,
+paid-ref/anthropic_claude-sonnet-5.5,n06,preview-UI,nearest,en,plan,,,False,1,
+paid-ref/anthropic_claude-sonnet-5.5,e02,model plan,raster,zh,plan,1403.0,,True,1,
+paid-ref/anthropic_claude-sonnet-5.5,n08,preview-UI,nearest,fr,plan,,,False,1,
+paid-ref/anthropic_claude-sonnet-5.5,n14,preview-UI,nearest,zh,plan,74.62186107288932,,False,1,
+paid-repeat2/anthropic_claude-haiku-5.5,u14,model plan,honest,zh,plan,257,,,,
+paid-repeat2/anthropic_claude-haiku-5.5,e07,model plan,raster,en,cannot_do,,,,,
+paid-repeat2/anthropic_claude-haiku-5.5,i02,model plan,inside,zh,plan,14,,False,14,
+paid-repeat2/anthropic_claude-haiku-5.5,i06,model plan,inside,en,plan,136,,False,136,
+paid-repeat2/anthropic_claude-haiku-5.5,w24,preview-UI,within,ja,plan,0,,False,414,Within 200 km of Tokyo
+paid-repeat2/anthropic_claude-haiku-5.5,x05,model plan,cities_near,en,plan,414,,False,200,World cities in each area of Within 100 km of nuclear power plants
+paid-repeat2/anthropic_claude-haiku-5.5,x08,model plan,cities_near,en,plan,759,,False,53,World cities in each area of Within 50 km of nuclear power plants
+paid-repeat2/anthropic_claude-haiku-5.5,n01,model plan,nearest,en,plan,,,False,,
+paid-repeat2/anthropic_claude-haiku-5.5,n04,preview-UI,nearest,es,plan,,,False,1,
+paid-repeat2/anthropic_claude-haiku-5.5,w27,model plan,within,en,plan,0,,False,1176,Within 60 km of London
+paid-repeat2/anthropic_claude-haiku-5.5,n05,preview-UI,nearest,en,plan,93.13116353621557,,False,1,
+paid-repeat2/anthropic_claude-haiku-5.5,i07,model plan,inside,es,plan,27,,False,100,Earthquakes inside World countries
+paid-repeat2/anthropic_claude-haiku-5.5,n07,model plan,nearest,zh,plan,1,,False,,"Within 1,000 km of Taipei"
+paid-repeat2/anthropic_claude-haiku-5.5,i11,model plan,inside,zh,plan,1,,False,1,Earthquakes in each world country
+paid-repeat2/anthropic_claude-haiku-5.5,n10,model plan,nearest,ja,plan,1,,True,1,
+paid-repeat2/anthropic_claude-haiku-5.5,n11,model plan,nearest,en,plan,1,,False,1,
+paid-repeat2/anthropic_claude-haiku-5.5,w40,preview-UI,within,zh,plan,0,,False,228,Lines within 100 km of New York
+paid-repeat2/anthropic_claude-haiku-5.5,t02,prompt-tool gap,time,en,plan,7342,,,,
+paid-repeat2/anthropic_claude-haiku-5.5,n13,model plan,nearest,zh,plan,20,,False,20,Ncei volcano locations in Mexico City
+paid-repeat2/anthropic_claude-haiku-5.5,k13,prompt-tool gap,chain,en,plan,0,,,,
+paid-repeat2/anthropic_claude-haiku-5.5,o01,preview-UI,outside,en,plan,73,,False,100,Earthquakes outside World countries
+paid-repeat2/anthropic_claude-haiku-5.5,t05,prompt-tool gap,time,zh,plan,2,,,,
+paid-repeat2/anthropic_claude-haiku-5.5,o02,preview-UI,outside,zh,plan,73,,False,100,Earthquakes outside World countries
+paid-repeat2/anthropic_claude-haiku-5.5,t03,prompt-tool gap,time,zh,plan,7342,,,,
+paid-repeat2/anthropic_claude-haiku-5.5,e09,model plan,raster,ja,plan,,,,,
+paid-repeat2/anthropic_claude-haiku-5.5,w12,preview-UI,within,en,plan,0,,False,100,Earthquakes in Paris
+paid-repeat2/anthropic_claude-haiku-5.5,r05,model plan,rank,en,error,,The assistant didn't finish a plan.,,,
+paid-repeat2/anthropic_claude-haiku-5.5,w30,model plan,within,en,cannot_do,,,,,
+paid-repeat2/anthropic_claude-haiku-5.5,x01,preview-UI,cities_near,en,plan,4,,False,4,Within 50 km of Vesuvius
+paid-repeat2/anthropic_claude-haiku-5.5,x02,preview-UI,cities_near,zh,plan,1,,False,1,World cities within 50 km of Fujisan
+paid-repeat2/anthropic_claude-haiku-5.5,x03,preview-UI,cities_near,en,plan,3,,False,3,World cities in Popocatepetl
+paid-repeat2/anthropic_claude-haiku-5.5,x07,preview-UI,cities_near,en,plan,8,,False,200,Earthquakes in each area of Within 200 km of world cities
+paid-repeat2/anthropic_claude-haiku-5.5,n02,model plan,nearest,zh,plan,804,,False,1,
+paid-repeat2/anthropic_claude-haiku-5.5,x06,model plan,cities_near,zh,plan,75,,False,200,World cities in each area of Within 50 km of ncei volcano locations
+paid-repeat2/anthropic_claude-haiku-5.5,x09,model plan,cities_near,fr,plan,15,,False,15,World cities within 30 km of ncei volcano locations
+paid-repeat2/anthropic_claude-haiku-5.5,n03,model plan,nearest,de,plan,0,,False,,Nuclear power plants in Berlin
+paid-repeat2/anthropic_claude-haiku-5.5,w32,model plan,within,en,error,,The assistant didn't finish a plan.,,,
+paid-repeat2/anthropic_claude-haiku-5.5,n06,model plan,nearest,en,plan,,,False,414,Within 1 km of Tokyo
+paid-repeat2/anthropic_claude-haiku-5.5,x10,preview-UI,cities_near,zh,plan,4,,False,4,Within 50 km of Vesuvius
+paid-repeat2/anthropic_claude-haiku-5.5,n08,model plan,nearest,fr,plan,804,,False,1,
+paid-repeat2/anthropic_claude-haiku-5.5,n14,model plan,nearest,zh,plan,7342,,False,,
+paid-repeat2/anthropic_claude-haiku-5.5,e01,model plan,raster,en,cannot_do,,,,,
+paid-repeat2/anthropic_claude-haiku-5.5,e02,model plan,raster,zh,plan,1403.0,,True,1,
+paid-repeat2/anthropic_claude-haiku-5.5,e03,model plan,raster,en,plan,,,,,
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,u14,model plan,honest,zh,plan,257,,,,
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,w22,preview-UI,within,fr,plan,2,,False,,Nuclear power plants in each area of Within 100 km of Paris
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,w23,preview-UI,within,zh,plan,9,,False,,Within 150 km of Shanghai
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,i02,model plan,inside,zh,plan,14,,False,14,
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,i06,model plan,inside,en,plan,136,,False,136,
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,w24,preview-UI,within,ja,plan,0,,False,414,Nuclear power plants in each area of Within 200 km of Tokyo
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,w01,preview-UI,within,en,plan,7,,False,1,Lines in each area of Within 100 km of Tokyo
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,w37,preview-UI,within,pt,plan,14,,False,,Nuclear power plants in each area of Within 300 km of Seoul
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,w03,preview-UI,within,zh,plan,6,,False,228,Lines in each area of Within 100 km of Manila
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,w04,model plan,within,zh,plan,3,,False,784,Lines in each area of Within 50 km of Hong Kong
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,w05,preview-UI,within,zh,plan,18,,False,,Lines in each area of Within 50 km of Shanghai
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,x05,model plan,cities_near,en,plan,414,,False,200,World cities in each area of Within 100 km of nuclear power plants
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,w06,model plan,within,en,plan,7,,False,228,Lines in each area of Within 200 km of Miami
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,w07,preview-UI,within,en,plan,31,,False,1126,Lines in each area of Within 150 km of Taipei
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,w09,preview-UI,within,zh,plan,18,,False,1287,Lines in each area of Within 100 km of Hong Kong
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,w10,preview-UI,within,en,plan,1,,False,47,Lines in each area of Within 300 km of Manila
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,w36,preview-UI,within,ko,plan,21,,False,,Lines in each area of Within 100 km of Seoul
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,w40,preview-UI,within,zh,plan,0,,False,228,Lines in each area of Within 100 km of New York
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,x08,model plan,cities_near,en,plan,759,,False,53,World cities in each area of Within 50 km of nuclear power plants
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,i01,model plan,inside,en,plan,257,,False,1619,Earthquakes in each world country
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,i07,model plan,inside,es,plan,27,,False,100,Earthquakes inside World countries
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,i11,model plan,inside,zh,plan,1,,False,1,Earthquakes in each world country
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,i04,preview-UI,inside,en,plan,4620.0,,False,,
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,i08,model plan,inside,en,plan,1,,False,1,Lines in each area of World states and provinces
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,w26,preview-UI,within,en,plan,3,,False,1176,Airports in each area of Within 100 km of New York
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,w27,model plan,within,en,plan,0,,False,1176,Within 60 km of London
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,w28,preview-UI,within,de,plan,1,,False,4336,Airports in each area of Within 30 km of Berlin
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,w43,preview-UI,within,zh,plan,2,,False,1176,Airports in each area of Within 100 km of Seoul
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,k01,prompt-tool gap,chain,en,error,,The plan didn't run: step 2: NCEI_volcano_locations has no field “km to nearest city”,,,
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,k02,prompt-tool gap,chain,zh,error,,The plan didn't run: step 2: NCEI_volcano_locations has no field “#1”,,,
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,k04,prompt-tool gap,chain,ja,error,,The plan didn't run: step 2: NCEI_volcano_locations has no field “#1”,,,
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,n01,preview-UI,nearest,en,plan,83.12238278702696,,False,1,
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,k05,prompt-tool gap,chain,en,error,,The plan didn't run: step 3: earthquakes has no field “km to nearest city”,,,
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,n04,model plan,nearest,es,plan,1609,,False,1,
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,n05,preview-UI,nearest,en,plan,93.13116353621557,,False,1,
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,n07,model plan,nearest,zh,plan,1609,,False,1,
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,n09,prompt-tool gap,nearest,en,error,,The plan didn't run: step 3: World cities has no field “km to nearest volcano”.,,,
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,n10,model plan,nearest,ja,plan,1,,True,1,
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,k07,prompt-tool gap,chain,zh,error,,The plan didn't run: step 5: Earthquakes in each area of Within 200 km of world cities has no field “#4”,,,
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,e09,model plan,raster,ja,plan,,,,,
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,k16,preview-UI,chain,en,plan,6,,False,155,Lines in each area of Within 100 km of Tokyo
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,w08,preview-UI,within,en,plan,7,,False,228,Lines in each area of Within 100 km of Tokyo
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,n13,model plan,nearest,zh,plan,1609,,False,,
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,w35,preview-UI,within,zh,plan,2,,False,,Within 100 km of Tokyo
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,k13,prompt-tool gap,chain,en,error,,,,,
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,r07,prompt-tool gap,per_area,nl,error,,The plan didn't run: step 3: Ncei volcano locations in each world country has no field “#2”.,,,
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,w17,model plan,within,it,plan,0,,False,2,Ncei volcano locations in each area of Within 100 km of Naples
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,w18,model plan,within,en,plan,7,,False,,Ncei volcano locations in each area of Within 200 km of Seattle
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,w19,preview-UI,within,es,plan,6,,False,,Ncei volcano locations in each area of Within 100 km of Mexico City
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,o01,preview-UI,outside,en,plan,73,,False,100,Earthquakes outside World countries
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,w20,preview-UI,within,zh,plan,2,,False,,Ncei volcano locations in each area of Within 100 km of Tokyo
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,w38,preview-UI,within,nl,plan,21,,False,,Ncei volcano locations in each area of Within 150 km of Quito
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,w42,preview-UI,within,zh,plan,7,,False,,Within 200 km of Seattle
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,x01,preview-UI,cities_near,en,plan,4,,False,,Within 50 km of Vesuvius
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,o02,preview-UI,outside,zh,plan,73,,False,100,Earthquakes outside World countries
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,x02,preview-UI,cities_near,zh,plan,1,,False,,Within 50 km of Fujisan
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,x03,model plan,cities_near,en,plan,3,,False,500,World cities in each area of Within 100 km of Popocatepetl
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,w11,preview-UI,within,en,plan,12,,False,1,Earthquakes in each area of Within 200 km of Tokyo
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,w12,preview-UI,within,en,plan,0,,False,100,Earthquakes in each area of Within 100 km of Paris
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,w14,preview-UI,within,es,plan,1,,False,4734,Within 100 km of Mexico City
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,w15,preview-UI,within,zh,plan,5,,False,,Within 50 km of Taipei
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,w16,preview-UI,within,en,plan,3,,False,509,Earthquakes in each area of Within 500 km of Jakarta
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,w39,preview-UI,within,ru,plan,27,,False,1619,Earthquakes in each area of Within 200 km of Sendai
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,w41,preview-UI,within,zh,plan,12,,False,1619,Earthquakes in each area of Within 200 km of Tokyo
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,x07,preview-UI,cities_near,en,plan,8,,False,200,Earthquakes in each area of Within 200 km of world cities
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,x06,model plan,cities_near,zh,plan,75,,False,200,World cities in each area of Within 50 km of ncei volcano locations
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,w29,preview-UI,within,en,plan,13,,False,1,Lines in each area of Within 50 km of Oklahoma City
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,w30,model plan,within,en,cannot_do,,,,,
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,w31,preview-UI,within,en,plan,10,,False,8094,Within 15 km of Oklahoma City
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,w44,model plan,within,zh,plan,656,,False,1,Lines in each area of Within 50 km of Oklahoma City
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,k03,prompt-tool gap,chain,en,error,,The plan didn't run: step 2: nuclear_power_plants has no field “#1”,,,
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,n02,model plan,nearest,zh,plan,804,,False,1,
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,n03,model plan,nearest,de,plan,0,,False,,Nuclear power plants in each area of Within 1 km of Berlin
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,x10,preview-UI,cities_near,zh,plan,4,,False,1,Within 50 km of Vesuvius
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,n06,model plan,nearest,en,plan,414,,False,414,"Within 1,000 km of Tokyo"
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,n08,model plan,nearest,fr,plan,0,,False,,Within 1 km of Rome
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,c08,prompt-tool gap,per_area,en,error,,The plan didn't run: step 2: Points in each world country has no field “#1”.,,,
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,n14,preview-UI,nearest,zh,plan,74.62186107288932,,False,1,
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,r04,prompt-tool gap,rank,en,error,,The plan didn't run: step 4: Nuclear power plants in each area of Within 200 km of world cities has no field “#3”.,,,
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,r06,prompt-tool gap,per_area,en,error,,The plan didn't run: step 3: Nuclear power plants in each world country has no field “#2”.,,,
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,i09,preview-UI,inside,en,plan,401,,False,1,Lines in each world country
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,i10,preview-UI,inside,zh,plan,40,,False,228,Lines in each world country
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,w32,model plan,within,en,plan,0,,False,,Points in each area of Within 100 km of Los Angeles
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,w33,preview-UI,within,ja,plan,7,,False,650,Points in each area of Within 200 km of Tokyo
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,w34,preview-UI,within,en,plan,69,,False,,Within 50 km of Anchorage
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,w45,preview-UI,within,zh,plan,195,,False,,Points in each area of Within 100 km of Los Angeles
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,e01,model plan,raster,en,cannot_do,,,,,
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,e02,model plan,raster,zh,plan,1403.0,,True,1,
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,e03,model plan,raster,en,plan,,,,,
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,c03,prompt-tool gap,per_area,en,error,,The plan didn't run: step 2: Ncei volcano locations in each world country has no field “#1”.,,,
+replay-paid-main-prefix/anthropic_claude-haiku-5.5,k15,prompt-tool gap,chain,en,error,,The plan didn't run: step 3: IBTrACS_storm_tracks_1980-2026 has no field “km to nearest city”,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,w22,preview-UI,within,fr,plan,2,,False,,Nuclear power plants in each area of Within 100 km of Paris
+replay-paid-main-prefix/z-ai_glm-5.3-flash,r01,model plan,rank,en,error,,The plan didn't run: step 1: missing layer,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,w23,preview-UI,within,zh,plan,9,,False,,Within 150 km of Shanghai
+replay-paid-main-prefix/z-ai_glm-5.3-flash,w24,model plan,within,ja,error,,The plan didn't run: step 1: missing layer,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,w01,preview-UI,within,en,plan,7,,False,228,Lines in each area of Within 100 km of Tokyo
+replay-paid-main-prefix/z-ai_glm-5.3-flash,w02,preview-UI,within,en,plan,0,,False,228,Lines in each area of Within 100 km of New York
+replay-paid-main-prefix/z-ai_glm-5.3-flash,e07,model plan,raster,en,plan,1609,,False,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,i02,model plan,inside,zh,error,,The plan didn't run: step 1: missing layer,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,w37,preview-UI,within,pt,plan,14,,False,,Nuclear power plants in each area of Within 300 km of Seoul
+replay-paid-main-prefix/z-ai_glm-5.3-flash,i06,model plan,inside,en,plan,136,,False,136,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,w03,preview-UI,within,zh,plan,6,,False,228,Lines in each area of Within 100 km of Manila
+replay-paid-main-prefix/z-ai_glm-5.3-flash,w04,preview-UI,within,zh,plan,3,,False,784,Lines inside Within 50 km of Hong Kong
+replay-paid-main-prefix/z-ai_glm-5.3-flash,w05,preview-UI,within,zh,plan,18,,False,,Lines in each area of Within 50 km of Shanghai
+replay-paid-main-prefix/z-ai_glm-5.3-flash,x05,preview-UI,cities_near,en,plan,17,,False,200,Within 100 km of nuclear power plants
+replay-paid-main-prefix/z-ai_glm-5.3-flash,w06,model plan,within,en,error,,The plan didn't run: step 1: missing layer,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,w07,preview-UI,within,en,plan,31,,False,1126,Lines in each area of Within 150 km of Taipei
+replay-paid-main-prefix/z-ai_glm-5.3-flash,w09,model plan,within,zh,plan,56,,False,,Lines in each area of Within 100 km of Hong Kong
+replay-paid-main-prefix/z-ai_glm-5.3-flash,w10,preview-UI,within,en,plan,1,,False,47,Lines in each area of Within 300 km of Manila
+replay-paid-main-prefix/z-ai_glm-5.3-flash,w36,preview-UI,within,ko,plan,21,,False,,Lines in each area of Within 100 km of Seoul
+replay-paid-main-prefix/z-ai_glm-5.3-flash,w40,preview-UI,within,zh,plan,0,,False,228,Lines in each area of Within 100 km of New York
+replay-paid-main-prefix/z-ai_glm-5.3-flash,c05,model plan,per_area,en,error,,The plan didn't run: step 1: missing layer,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,c11,model plan,per_area,en,plan,,,True,,Earthquakes in each world country
+replay-paid-main-prefix/z-ai_glm-5.3-flash,i05,preview-UI,inside,en,plan,82.0,,False,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,e08,model plan,raster,en,plan,1747,,False,,"Earthquakes in each area of Where World elevation at most -4,000"
+replay-paid-main-prefix/z-ai_glm-5.3-flash,i01,model plan,inside,en,error,,The plan didn't run: step 1: missing layer,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,i07,model plan,inside,es,error,,The plan didn't run: step 1: missing layer,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,i11,preview-UI,inside,zh,plan,12,,False,1,Earthquakes in each world country
+replay-paid-main-prefix/z-ai_glm-5.3-flash,c09,prompt-tool gap,per_area,en,error,,The plan didn't run: step 3: Lines in each area of World states and provinces has no field “#2”.,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,i04,model plan,inside,en,plan,4596,,False,,Lines in each area of World states and provinces
+replay-paid-main-prefix/z-ai_glm-5.3-flash,i08,model plan,inside,en,error,,The plan didn't run: step 1: missing layer,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,k14,model plan,chain,en,cannot_do,,,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,r05,prompt-tool gap,rank,en,error,,The plan didn't run: step 5: Lines in each area of Within 50 km of world cities has no field “#4”.,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,w29,model plan,within,en,cannot_do,,,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,w30,model plan,within,en,plan,28,,True,,Lines in each area of Within 100 km of Seattle
+replay-paid-main-prefix/z-ai_glm-5.3-flash,w31,model plan,within,en,plan,8,,False,8094,Lines inside Within 15 km of Oklahoma City
+replay-paid-main-prefix/z-ai_glm-5.3-flash,w26,model plan,within,en,plan,513,,False,,Airports in each area of Within 100 km of New York
+replay-paid-main-prefix/z-ai_glm-5.3-flash,w44,model plan,within,zh,error,,The plan didn't run: step 1: missing layer,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,w27,model plan,within,en,plan,0,,False,1176,Within 60 km of London
+replay-paid-main-prefix/z-ai_glm-5.3-flash,w28,preview-UI,within,de,plan,1,,False,4336,Airports in each area of Within 30 km of Berlin
+replay-paid-main-prefix/z-ai_glm-5.3-flash,c08,model plan,per_area,en,error,,The plan didn't run: step 1: missing points,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,w43,model plan,within,zh,plan,793,,False,,Airports in each area of Within 100 km of Seoul
+replay-paid-main-prefix/z-ai_glm-5.3-flash,t06,model plan,time,en,error,,The plan didn't run: step 1: missing raster,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,k05,prompt-tool gap,chain,en,error,,The plan didn't run: step 3: earthquakes has no field “#2”,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,k07,model plan,chain,zh,error,,The plan didn't run: step 1: missing layer,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,t03,prompt-tool gap,time,zh,plan,1,,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,k01,model plan,chain,en,error,,The plan didn't run: step 1: missing layer,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,k02,prompt-tool gap,chain,zh,error,,The plan didn't run: step 2: NCEI_volcano_locations has no field “km to nearest city”,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,k04,model plan,chain,ja,cannot_do,,,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,k12,model plan,chain,en,error,,The plan didn't run: step 1: missing points,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,n01,prompt-tool gap,nearest,en,error,,The plan didn't run: step 3: NCEI_volcano_locations has no field “#2”.,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,n04,model plan,nearest,es,error,,The plan didn't run: step 1: missing layer,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,n05,model plan,nearest,en,plan,7342,,False,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,n07,model plan,nearest,zh,error,,The plan didn't run: step 1: missing layer,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,t07,prompt-tool gap,time,zh,error,,The plan didn't run: step 2: GDO_heatwave_intensity_JJA_2023 in each world country has no field “#1”.,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,n10,prompt-tool gap,nearest,ja,error,,The plan didn't run: step 3: World cities has no field “#2”.,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,e09,model plan,raster,ja,cannot_do,,,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,k16,preview-UI,chain,en,plan,6,,False,155,Lines in each area of Within 100 km of Tokyo
+replay-paid-main-prefix/z-ai_glm-5.3-flash,n11,prompt-tool gap,nearest,en,error,,The plan didn't run: step 3: World cities has no field “#1”.,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,w08,preview-UI,within,en,plan,7,,False,228,Lines in each area of Within 100 km of Tokyo
+replay-paid-main-prefix/z-ai_glm-5.3-flash,w35,preview-UI,within,zh,plan,2,,False,,Within 100 km of Tokyo
+replay-paid-main-prefix/z-ai_glm-5.3-flash,n12,prompt-tool gap,nearest,zh,error,,The plan didn't run: step 3: NCEI_volcano_locations has no field “#2”.,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,n13,model plan,nearest,zh,cannot_do,,,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,r03,model plan,rank,en,error,,The plan didn't run: step 1: missing layer,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,w17,preview-UI,within,it,plan,3,,False,1,Within 100 km of Naples
+replay-paid-main-prefix/z-ai_glm-5.3-flash,w18,preview-UI,within,en,plan,7,,False,,Within 200 km of Seattle
+replay-paid-main-prefix/z-ai_glm-5.3-flash,w19,preview-UI,within,es,plan,6,,False,,Ncei volcano locations in each area of Within 100 km of Mexico City
+replay-paid-main-prefix/z-ai_glm-5.3-flash,w20,model plan,within,zh,error,,The plan didn't run: step 1: missing layer,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,i03,model plan,inside,fr,error,,The plan didn't run: step 1: missing points,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,w38,model plan,within,nl,error,,The plan didn't run: step 1: missing layer,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,i12,preview-UI,inside,zh,plan,71.0,,False,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,w42,preview-UI,within,zh,plan,7,,False,,Within 200 km of Seattle
+replay-paid-main-prefix/z-ai_glm-5.3-flash,x01,model plan,cities_near,en,error,,The plan didn't run: step 1: missing layer,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,x02,preview-UI,cities_near,zh,plan,1,,False,,Within 50 km of Fujisan
+replay-paid-main-prefix/z-ai_glm-5.3-flash,x03,model plan,cities_near,en,error,,The plan didn't run: step 1: missing layer,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,x06,prompt-tool gap,cities_near,zh,error,,The plan didn't run: step 3: World cities has no field “#2”,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,x10,preview-UI,cities_near,zh,plan,4,,False,,Within 50 km of Vesuvius
+replay-paid-main-prefix/z-ai_glm-5.3-flash,k10,prompt-tool gap,chain,en,error,,The plan didn't run: step 4: Earthquakes in each world country has no field “#2”.,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,k13,prompt-tool gap,chain,en,error,,,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,o01,model plan,outside,en,cannot_do,,,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,k03,prompt-tool gap,chain,en,error,,The plan didn't run: step 2: nuclear_power_plants has no field “#1”,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,k11,prompt-tool gap,chain,zh,error,,The plan didn't run: step 2: Nuclear power plants in each world country has no field “#1”.,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,o02,model plan,outside,zh,plan,60,,False,80,Earthquakes outside World countries
+replay-paid-main-prefix/z-ai_glm-5.3-flash,n02,prompt-tool gap,nearest,zh,error,,The plan didn't run: step 3: nuclear_power_plants has no field “#1”.,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,n03,prompt-tool gap,nearest,de,error,,The plan didn't run: step 3: nuclear_power_plants has no field “#1”.,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,n06,model plan,nearest,en,error,,The plan didn't run: step 1: missing layer,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,n08,prompt-tool gap,nearest,fr,error,,The plan didn't run: step 3: nuclear_power_plants has no field “#2”.,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,n14,model plan,nearest,zh,error,,The plan didn't run: step 1: missing layer,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,o04,model plan,outside,en,cannot_do,,,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,w11,preview-UI,within,en,plan,12,,False,1619,Earthquakes in each area of Within 200 km of Tokyo
+replay-paid-main-prefix/z-ai_glm-5.3-flash,r04,prompt-tool gap,rank,en,error,,The plan didn't run: step 4: Nuclear power plants in each area of Within 200 km of world cities has no field “#3”.,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,w12,preview-UI,within,en,plan,0,,False,100,Earthquakes in each area of Within 100 km of Paris
+replay-paid-main-prefix/z-ai_glm-5.3-flash,w13,model plan,within,es,error,,The plan didn't run: step 1: missing layer,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,w14,preview-UI,within,es,plan,1,,False,4734,Earthquakes in each area of Within 100 km of Mexico City
+replay-paid-main-prefix/z-ai_glm-5.3-flash,w15,preview-UI,within,zh,plan,5,,False,,Within 50 km of Taipei
+replay-paid-main-prefix/z-ai_glm-5.3-flash,w16,model plan,within,en,error,,The plan didn't run: step 1: missing layer,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,w33,model plan,within,ja,error,,The plan didn't run: step 1: missing layer,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,w39,model plan,within,ru,plan,166,,False,,Earthquakes in each area of Within 200 km of Sendai
+replay-paid-main-prefix/z-ai_glm-5.3-flash,w34,preview-UI,within,en,plan,69,,False,,Within 50 km of Anchorage
+replay-paid-main-prefix/z-ai_glm-5.3-flash,w41,preview-UI,within,zh,plan,12,,False,1619,Earthquakes in each area of Within 200 km of Tokyo
+replay-paid-main-prefix/z-ai_glm-5.3-flash,x07,model plan,cities_near,en,error,,The plan didn't run: step 1: missing layer,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,w45,model plan,within,zh,plan,0,,False,,Points in each area of Within 100 km of Los Angeles
+replay-paid-main-prefix/z-ai_glm-5.3-flash,e01,model plan,raster,en,error,,The plan didn't run: step 1: missing layer,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,e02,model plan,raster,zh,plan,1609,,False,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,c03,prompt-tool gap,per_area,en,error,,The plan didn't run: step 2: Ncei volcano locations in each world country has no field “#1”.,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,c10,prompt-tool gap,per_area,zh,error,,The plan didn't run: step 2: Ncei volcano locations in each world country has no field “#1”.,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,c06,prompt-tool gap,per_area,en,error,,The plan didn't run: step 3: Lines in each world country has no field “#2”.,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,c07,model plan,per_area,zh,error,,The plan didn't run: step 1: missing layer,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,i09,model plan,inside,en,plan,257,,False,,Lines in each world country
+replay-paid-main-prefix/z-ai_glm-5.3-flash,i10,preview-UI,inside,zh,plan,40,,False,228,Lines in each world country
+replay-paid-main-prefix/z-ai_glm-5.3-flash,k06,prompt-tool gap,chain,en,error,,The plan didn't run: step 5: Lines in each area of Within 200 km of world cities has no field “#4”,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,k15,prompt-tool gap,chain,en,error,,The plan didn't run: step 3: IBTrACS_storm_tracks_1980-2026 has no field “km to nearest city”,,,
+replay-paid-main-prefix/z-ai_glm-5.3-flash,k17,prompt-tool gap,chain,zh,error,,The plan didn't run: step 5: Lines in each area of Within 200 km of world cities has no field “#4”,,,
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,u14,model plan,honest,zh,plan,257,,,,
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,w22,preview-UI,within,fr,plan,2,,False,,Nuclear power plants in each area of Within 100 km of Paris
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,w23,preview-UI,within,zh,plan,9,,False,,Within 150 km of Shanghai
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,i02,model plan,inside,zh,plan,14,,False,14,
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,i06,model plan,inside,en,plan,136,,False,136,
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,w24,preview-UI,within,ja,plan,0,,False,414,Nuclear power plants in each area of Within 200 km of Tokyo
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,u16,model plan,honest,en,plan,50,,,,
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,w37,preview-UI,within,pt,plan,14,,False,,Nuclear power plants in each area of Within 300 km of Seoul
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,w01,preview-UI,within,en,plan,7,,False,1,Lines in each area of Within 100 km of Tokyo
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,w03,preview-UI,within,zh,plan,6,,False,1,Lines in each area of Within 100 km of Manila
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,w04,model plan,within,zh,plan,3,,False,784,Lines in each area of Within 50 km of Hong Kong
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,x05,model plan,cities_near,en,plan,414,,False,200,World cities in each area of Within 100 km of nuclear power plants
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,w05,preview-UI,within,zh,plan,18,,False,1,Lines in each area of Within 50 km of Shanghai
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,w06,model plan,within,en,plan,7,,False,228,Lines in each area of Within 200 km of Miami
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,w07,preview-UI,within,en,plan,31,,False,1126,Lines in each area of Within 150 km of Taipei
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,w09,preview-UI,within,zh,plan,18,,False,1287,Lines in each area of Within 100 km of Hong Kong
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,w10,preview-UI,within,en,plan,1,,False,47,Lines in each area of Within 300 km of Manila
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,w36,preview-UI,within,ko,plan,21,,False,,Lines in each area of Within 100 km of Seoul
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,w40,preview-UI,within,zh,plan,0,,False,228,Lines in each area of Within 100 km of New York
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,x08,model plan,cities_near,en,plan,53,,False,53,World cities in each area of Within 50 km of nuclear power plants
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,i04,preview-UI,inside,en,plan,4620,,False,1,Lines in each area of World states and provinces
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,i08,model plan,inside,en,plan,4596,,False,3325,Lines in each area of World states and provinces
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,w26,preview-UI,within,en,plan,3,,False,1176,Airports in each area of Within 100 km of New York
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,w27,model plan,within,en,plan,0,,False,1176,Within 60 km of London
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,w28,preview-UI,within,de,plan,1,,False,4336,Airports in each area of Within 30 km of Berlin
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,w43,preview-UI,within,zh,plan,2,,False,1,Airports in each area of Within 100 km of Seoul
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,t01,model plan,time,en,plan,7342,,,,
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,k01,prompt-tool gap,chain,en,error,,The plan didn't run: step 2: NCEI_volcano_locations has no field “km to nearest city”,,,
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,t02,prompt-tool gap,time,en,plan,7342,,,,
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,k02,prompt-tool gap,chain,zh,error,,The plan didn't run: step 2: NCEI_volcano_locations has no field “km to nearest city”,,,
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,t05,prompt-tool gap,time,zh,plan,7342,,,,
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,k04,prompt-tool gap,chain,ja,error,,The plan didn't run: step 2: NCEI_volcano_locations has no field “km to nearest city”,,,
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,n01,model plan,nearest,en,plan,1,,False,,
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,n04,model plan,nearest,es,plan,1609,,False,1,
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,n05,preview-UI,nearest,en,plan,93.13116353621557,,False,1,
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,n07,preview-UI,nearest,zh,plan,15.824198904254747,,False,1,
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,n10,model plan,nearest,ja,plan,7342,,True,1,
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,n11,model plan,nearest,en,plan,7,,False,1,World cities in each area of Within 100 km of Pinatubo
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,n12,model plan,nearest,zh,plan,0,,False,,
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,n13,model plan,nearest,zh,plan,,,False,,
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,e09,model plan,raster,ja,plan,,,,,
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,w17,model plan,within,it,cannot_do,,,,,
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,k16,preview-UI,chain,en,plan,6.0,,False,155,Within 100 km of Tokyo
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,w18,preview-UI,within,en,plan,7,,False,,Within 200 km of Seattle
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,w19,preview-UI,within,es,plan,6,,False,1,Ncei volcano locations in each area of Within 100 km of Mexico City
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,w08,preview-UI,within,en,plan,7,,False,228,Lines in each area of Within 100 km of Tokyo
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,w20,preview-UI,within,zh,plan,2,,False,,Ncei volcano locations in each area of Within 100 km of Tokyo
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,w35,preview-UI,within,zh,plan,2,,False,,Within 100 km of Tokyo
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,w38,preview-UI,within,nl,plan,21,,False,,Ncei volcano locations in each area of Within 150 km of Quito
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,w42,preview-UI,within,zh,plan,7,,False,,Within 200 km of Seattle
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,x01,preview-UI,cities_near,en,plan,4,,False,,Within 50 km of Vesuvius
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,x02,model plan,cities_near,zh,plan,1,,False,,World cities in each area of Within 50 km of Fujisan
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,x03,model plan,cities_near,en,plan,3,,False,500,World cities in each area of Within 100 km of Popocatepetl
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,e08,model plan,raster,en,plan,1747,,False,,"Earthquakes in each area of Where World elevation at most -4,000"
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,i01,model plan,inside,en,plan,1,,False,1,Earthquakes in each world country
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,i07,model plan,inside,es,plan,27,,False,100,Earthquakes inside World countries
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,i11,model plan,inside,zh,plan,257,,False,1619,Earthquakes in each world country
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,x06,model plan,cities_near,zh,plan,1609,,False,200,World cities in each area of Within 50 km of ncei volcano locations
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,w29,preview-UI,within,en,plan,13,,False,656,Lines in each area of Within 50 km of Oklahoma City
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,w30,model plan,within,en,cannot_do,,,,,
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,w31,preview-UI,within,en,plan,10,,False,8094,Within 15 km of Oklahoma City
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,w44,preview-UI,within,zh,plan,13,,False,656,Lines in each area of Within 50 km of Oklahoma City
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,x09,model plan,cities_near,fr,plan,15,,False,500,World cities in each area of Within 30 km of ncei volcano locations
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,x10,preview-UI,cities_near,zh,plan,4,,False,,Within 50 km of Vesuvius
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,k03,prompt-tool gap,chain,en,error,,The plan didn't run: step 2: nuclear_power_plants has no field “km to nearest city”,,,
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,n02,model plan,nearest,zh,plan,804,,False,1,
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,n03,model plan,nearest,de,plan,804,,False,1,
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,n06,preview-UI,nearest,en,plan,342.78823280661175,,False,1,
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,n08,model plan,nearest,fr,plan,1,,False,1,
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,n14,preview-UI,nearest,zh,plan,74.62186107288932,,False,1,
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,k05,prompt-tool gap,chain,en,error,,The plan didn't run: step 3: earthquakes has no field “km to nearest city”,,,
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,k07,model plan,chain,zh,plan,0,,True,,Earthquakes in each area of Within 200 km of Vatican City
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,k13,prompt-tool gap,chain,en,plan,0,,,,
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,o01,preview-UI,outside,en,plan,73,,False,100,Earthquakes outside World countries
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,o02,preview-UI,outside,zh,plan,73,,False,100,Earthquakes outside World countries
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,w11,preview-UI,within,en,plan,12,,False,1619,Earthquakes in each area of Within 200 km of Tokyo
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,w12,preview-UI,within,en,plan,0,,False,100,Earthquakes in each area of Within 100 km of Paris
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,w13,preview-UI,within,es,plan,16,,False,1,Earthquakes in each area of Within 300 km of Santiago
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,w14,preview-UI,within,es,plan,1,,False,4734,Earthquakes in each area of Within 100 km of Mexico City
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,w15,preview-UI,within,zh,plan,5,,False,,Within 50 km of Taipei
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,w16,preview-UI,within,en,plan,3,,False,509,Earthquakes in each area of Within 500 km of Jakarta
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,w39,preview-UI,within,ru,plan,27,,False,1619,Earthquakes in each area of Within 200 km of Sendai
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,w41,preview-UI,within,zh,plan,12.0,,False,1619,Within 200 km of Tokyo
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,x07,model plan,cities_near,en,plan,100,,False,200,World cities in each area of Within 200 km of earthquakes
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,w32,model plan,within,en,plan,0,,False,,Points in each area of Within 100 km of Los Angeles
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,w33,preview-UI,within,ja,plan,7,,False,650,Points in each area of Within 200 km of Tokyo
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,w34,preview-UI,within,en,plan,69,,False,,Within 50 km of Anchorage
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,w45,model plan,within,zh,plan,0,,False,2,Points in each area of Within 100 km of Los Angeles
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,e01,model plan,raster,en,cannot_do,,,,,
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,e02,model plan,raster,zh,cannot_do,,,,,
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,e03,model plan,raster,en,plan,,,,,
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,i09,preview-UI,inside,en,plan,401,,False,,Lines in each world country
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,i10,model plan,inside,zh,plan,257,,False,228,Lines in each world country
+replay-paid-norule19-prefix/anthropic_claude-haiku-5.5,k15,prompt-tool gap,chain,en,error,,The plan didn't run: step 3: IBTrACS_storm_tracks_1980-2026 has no field “km to nearest city”,,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,w22,preview-UI,within,fr,plan,2.0,,False,,Within 100 km of Paris
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,w23,preview-UI,within,zh,plan,9,,False,,Within 150 km of Shanghai
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,i02,preview-UI,inside,zh,plan,13.0,,False,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,i06,model plan,inside,en,plan,136,,False,136,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,w24,preview-UI,within,ja,plan,0.0,,False,414,Within 200 km of Tokyo
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,w37,preview-UI,within,pt,plan,14.0,,False,,Within 300 km of Seoul
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,x05,prompt-tool gap,cities_near,en,error,,The plan didn't run: step 4: World cities has no field “#3”,,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,r01,prompt-tool gap,rank,en,error,,The plan didn't run: step 5: Lines in each area of Within 200 km of world cities has no field “#4”.,,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,x08,prompt-tool gap,cities_near,en,error,,The plan didn't run: step 3: World cities has no field “#2”,,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,w01,preview-UI,within,en,plan,7,,False,228,Lines in each area of Within 100 km of Tokyo
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,w02,preview-UI,within,en,plan,0,,False,228,Lines in each area of Within 100 km of New York
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,w03,preview-UI,within,zh,plan,6,,False,228,Lines in each area of Within 100 km of Manila
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,w04,preview-UI,within,zh,plan,3,,False,784,Within 50 km of Hong Kong
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,c01,prompt-tool gap,per_area,en,error,,The plan didn't run: step 3: Earthquakes in each world country has no field “#2”.,,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,w05,preview-UI,within,zh,plan,18,,False,,Lines in each area of Within 50 km of Shanghai
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,w06,preview-UI,within,en,plan,7,,False,228,Within 200 km of Miami
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,c02,prompt-tool gap,per_area,zh,error,,The plan didn't run: step 3: Earthquakes in each world country has no field “#2”.,,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,w07,preview-UI,within,en,plan,31,,False,1126,Lines in each area of Within 150 km of Taipei
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,c11,prompt-tool gap,per_area,en,error,,The plan didn't run: step 3: Earthquakes in each world country has no field “#2”.,,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,w09,preview-UI,within,zh,plan,18,,False,1287,Lines in each area of Within 100 km of Hong Kong
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,w10,preview-UI,within,en,plan,1,,False,47,Lines in each area of Within 300 km of Manila
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,w36,preview-UI,within,ko,plan,21,,False,,Lines in each area of Within 100 km of Seoul
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,i01,preview-UI,inside,en,plan,12.0,,False,1619,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,w40,preview-UI,within,zh,plan,0,,False,228,Lines in each area of Within 100 km of New York
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,i07,preview-UI,inside,es,plan,8,,False,100,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,i11,preview-UI,inside,zh,plan,12.0,,False,1619,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,i05,preview-UI,inside,en,plan,82.0,,False,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,k05,prompt-tool gap,chain,en,error,,The plan didn't run: step 3: earthquakes has no field “#2”,,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,k07,prompt-tool gap,chain,zh,error,,The plan didn't run: step 5: Earthquakes in each area of Within 200 km of world cities has no field “#4”,,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,c09,prompt-tool gap,per_area,en,error,,The plan didn't run: step 3: Lines in each area of World states and provinces has no field “#2”.,,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,i04,preview-UI,inside,en,plan,4620,,False,1,Lines in each area of World states and provinces
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,i08,preview-UI,inside,en,plan,403,,False,1,Lines in each area of World states and provinces
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,k13,prompt-tool gap,chain,en,error,,,,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,k01,prompt-tool gap,chain,en,error,,The plan didn't run: step 2: NCEI_volcano_locations has no field “#1”,,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,o01,preview-UI,outside,en,plan,73,,False,100,Earthquakes outside World countries
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,k02,prompt-tool gap,chain,zh,error,,The plan didn't run: step 2: NCEI_volcano_locations has no field “#1”,,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,w26,preview-UI,within,en,plan,3.0,,False,1176,Within 100 km of New York
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,k04,prompt-tool gap,chain,ja,error,,The plan didn't run: step 2: NCEI_volcano_locations has no field “#1”,,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,o02,preview-UI,outside,zh,plan,73,,False,100,Earthquakes outside World countries
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,w28,preview-UI,within,de,plan,1.0,,False,4336,Within 30 km of Berlin
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,w43,preview-UI,within,zh,plan,2.0,,False,1176,Within 100 km of Seoul
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,k12,prompt-tool gap,chain,en,error,,The plan didn't run: step 2: Ncei volcano locations in each world country has no field “#1”.,,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,n01,prompt-tool gap,nearest,en,error,,The plan didn't run: step 3: NCEI_volcano_locations has no field “#2”.,,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,n04,preview-UI,nearest,es,plan,33.92462468147702,,False,1,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,n05,preview-UI,nearest,en,plan,93.13116353621557,,False,1,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,r02,prompt-tool gap,rank,zh,error,,The plan didn't run: step 5: Earthquakes in each area of Within 300 km of world cities has no field “#4”.,,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,n07,preview-UI,nearest,zh,plan,15.824198904254747,,False,1,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,w11,preview-UI,within,en,plan,12.0,,False,1619,Within 200 km of Tokyo
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,n09,prompt-tool gap,nearest,en,error,,The plan didn't run: step 3: World cities has no field “#2”.,,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,w12,preview-UI,within,en,plan,0.0,,False,100,Within 100 km of Paris
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,w13,preview-UI,within,es,plan,16.0,,False,1,Within 300 km of Santiago
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,n10,prompt-tool gap,nearest,ja,error,,The plan didn't run: step 3: World cities has no field “#2”.,,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,w14,preview-UI,within,es,plan,1.0,,False,4734,Within 100 km of Mexico City
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,w15,preview-UI,within,zh,plan,5,,False,,Within 50 km of Taipei
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,w16,preview-UI,within,en,plan,3.0,,False,509,Within 500 km of Jakarta
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,n11,prompt-tool gap,nearest,en,error,,The plan didn't run: step 3: World cities has no field “#2”.,,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,w39,preview-UI,within,ru,plan,27.0,,False,1619,Within 200 km of Sendai
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,w41,preview-UI,within,zh,plan,12.0,,False,1619,Within 200 km of Tokyo
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,n13,preview-UI,nearest,zh,plan,33.92462468147702,,False,1,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,t06,prompt-tool gap,time,en,error,,The plan didn't run: step 2: GDO_heatwave_intensity_JJA_2022 in each world country has no field “#1”.,,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,x07,prompt-tool gap,cities_near,en,error,,The plan didn't run: step 4: World cities has no field “#3”,,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,t03,prompt-tool gap,time,zh,plan,1,,,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,e09,model plan,raster,ja,plan,,,,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,k16,preview-UI,chain,en,plan,6,,False,155,Lines in each area of Within 100 km of Tokyo
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,w08,preview-UI,within,en,plan,7,,False,228,Lines in each area of Within 100 km of Tokyo
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,w35,preview-UI,within,zh,plan,2,,False,,Within 100 km of Tokyo
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,c04,prompt-tool gap,per_area,en,error,,The plan didn't run: step 3: Nuclear power plants in each world country has no field “#2”.,,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,c12,prompt-tool gap,per_area,ja,error,,The plan didn't run: step 2: Nuclear power plants in each world country has no field “#1”.,,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,o03,model plan,outside,en,plan,186,,False,186,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,r03,prompt-tool gap,rank,en,error,,The plan didn't run: step 4: Ncei volcano locations in each area of Within 300 km of world cities has no field “#3”.,,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,i03,preview-UI,inside,fr,plan,71.0,,False,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,i12,preview-UI,inside,zh,plan,71.0,,False,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,r07,prompt-tool gap,per_area,nl,error,,The plan didn't run: step 3: Ncei volcano locations in each world country has no field “#2”.,,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,w17,preview-UI,within,it,plan,3,,False,1,Within 100 km of Naples
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,w18,preview-UI,within,en,plan,7,,False,,Within 200 km of Seattle
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,w19,preview-UI,within,es,plan,6.0,,False,,Within 100 km of Mexico City
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,w20,preview-UI,within,zh,plan,2.0,,False,,Within 100 km of Tokyo
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,w38,preview-UI,within,nl,plan,21.0,,False,,Within 150 km of Quito
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,w42,preview-UI,within,zh,plan,7,,False,,Within 200 km of Seattle
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,x01,preview-UI,cities_near,en,plan,4,,False,,Within 50 km of Vesuvius
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,x02,preview-UI,cities_near,zh,plan,1,,False,,Within 50 km of Fujisan
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,x03,preview-UI,cities_near,en,plan,3,,False,500,Within 100 km of Popocatepetl
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,x06,prompt-tool gap,cities_near,zh,error,,The plan didn't run: step 3: World cities has no field “#2”,,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,x09,prompt-tool gap,cities_near,fr,error,,The plan didn't run: step 3: World cities has no field “#2”,,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,x10,preview-UI,cities_near,zh,plan,4,,False,,Within 50 km of Vesuvius
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,k14,preview-UI,chain,en,plan,70.0,,False,656,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,r05,prompt-tool gap,rank,en,error,,The plan didn't run: step 5: Lines in each area of Within 50 km of world cities has no field “#4”.,,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,c06,prompt-tool gap,per_area,en,error,,The plan didn't run: step 3: Lines in each world country has no field “#2”.,,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,w29,preview-UI,within,en,plan,13.0,,False,656,Within 50 km of Oklahoma City
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,w30,preview-UI,within,en,plan,0.0,,False,60,Within 100 km of Seattle
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,w31,preview-UI,within,en,plan,10,,False,8094,Within 15 km of Oklahoma City
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,w44,preview-UI,within,zh,plan,13,,False,656,Lines in each area of Within 50 km of Oklahoma City
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,k03,prompt-tool gap,chain,en,error,,The plan didn't run: step 2: nuclear_power_plants has no field “#1”,,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,k11,prompt-tool gap,chain,zh,error,,The plan didn't run: step 2: Nuclear power plants in each world country has no field “#1”.,,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,n02,preview-UI,nearest,zh,plan,97.96199326811302,,False,1,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,n03,preview-UI,nearest,de,plan,74.62186107288932,,False,1,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,n06,prompt-tool gap,nearest,en,error,,The plan didn't run: step 4: nuclear_power_plants has no field “#3”.,,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,n08,prompt-tool gap,nearest,fr,error,,The plan didn't run: step 3: nuclear_power_plants has no field “#2”.,,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,n14,preview-UI,nearest,zh,plan,74.62186107288932,,False,1,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,c08,prompt-tool gap,per_area,en,error,,The plan didn't run: step 2: Points in each world country has no field “#1”.,,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,r04,prompt-tool gap,rank,en,error,,The plan didn't run: step 4: Nuclear power plants in each area of Within 200 km of world cities has no field “#3”.,,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,r06,prompt-tool gap,per_area,en,error,,The plan didn't run: step 3: Nuclear power plants in each world country has no field “#2”.,,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,c07,prompt-tool gap,per_area,zh,error,,The plan didn't run: step 3: Lines in each world country has no field “#2”.,,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,i09,preview-UI,inside,en,plan,401,,False,1,Lines in each world country
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,i10,preview-UI,inside,zh,plan,40,,False,1,Lines in each world country
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,k06,prompt-tool gap,chain,en,error,,The plan didn't run: step 5: Lines in each area of Within 200 km of world cities has no field “#4”,,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,w32,preview-UI,within,en,plan,195.0,,False,1,Within 100 km of Los Angeles
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,w33,preview-UI,within,ja,plan,7.0,,False,650,Within 200 km of Tokyo
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,w34,preview-UI,within,en,plan,69,,False,,Within 50 km of Anchorage
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,w45,preview-UI,within,zh,plan,195.0,,False,,Within 100 km of Los Angeles
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,e01,model plan,raster,en,plan,1468.0,,True,1,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,e02,model plan,raster,zh,plan,1403.0,,True,1,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,c03,prompt-tool gap,per_area,en,error,,The plan didn't run: step 2: Ncei volcano locations in each world country has no field “#1”.,,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,c10,prompt-tool gap,per_area,zh,error,,The plan didn't run: step 2: Ncei volcano locations in each world country has no field “#1”.,,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,k15,prompt-tool gap,chain,en,error,,The plan didn't run: step 3: IBTrACS_storm_tracks_1980-2026 has no field “#2”,,,
+replay-paid-ref-prefix/anthropic_claude-sonnet-5.5,k17,prompt-tool gap,chain,zh,error,,The plan didn't run: step 5: Lines in each area of Within 200 km of world cities has no field “#4”,,,
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,e07,model plan,raster,en,cannot_do,,,,,
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,i02,model plan,inside,zh,plan,14,,False,14,
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,i06,model plan,inside,en,plan,136,,False,136,
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,u14,model plan,honest,zh,plan,257,,,,
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,w22,preview-UI,within,fr,plan,2,,False,,Nuclear power plants in each area of Within 100 km of Paris
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,w23,preview-UI,within,zh,plan,9,,False,,Within 150 km of Shanghai
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,w24,preview-UI,within,ja,plan,0,,False,414,Within 200 km of Tokyo
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,w01,preview-UI,within,en,plan,7,,False,1,Lines in each area of Within 100 km of Tokyo
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,w37,preview-UI,within,pt,plan,14,,False,1,Nuclear power plants in each area of Within 300 km of Seoul
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,w03,preview-UI,within,zh,plan,6,,False,1,Lines in each area of Within 100 km of Manila
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,w04,model plan,within,zh,plan,3,,False,784,Lines in each area of Within 50 km of Hong Kong
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,w05,preview-UI,within,zh,plan,18,,False,,Lines in each area of Within 50 km of Shanghai
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,x05,model plan,cities_near,en,plan,414,,False,200,World cities in each area of Within 100 km of nuclear power plants
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,w06,preview-UI,within,en,plan,7,,False,228,Within 200 km of Miami
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,w07,preview-UI,within,en,plan,31,,False,1126,Lines in each area of Within 150 km of Taipei
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,w09,preview-UI,within,zh,plan,18,,False,1287,Lines in each area of Within 100 km of Hong Kong
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,w10,preview-UI,within,en,plan,1,,False,47,Lines in each area of Within 300 km of Manila
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,w36,preview-UI,within,ko,plan,21,,False,,Lines in each area of Within 100 km of Seoul
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,w40,preview-UI,within,zh,plan,0,,False,228,Lines in each area of Within 100 km of New York
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,x08,model plan,cities_near,en,plan,759,,False,53,World cities in each area of Within 50 km of nuclear power plants
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,i01,preview-UI,inside,en,plan,12.0,,False,1619,
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,i07,model plan,inside,es,plan,27,,False,100,Earthquakes inside World countries
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,i11,model plan,inside,zh,plan,1,,False,1,Earthquakes in each world country
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,i04,preview-UI,inside,en,plan,4620.0,,False,,
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,i08,preview-UI,inside,en,plan,403.0,,False,1,Lines in each area of World states and provinces
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,w26,preview-UI,within,en,plan,3,,False,1176,Airports in each area of Within 100 km of New York
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,w27,model plan,within,en,plan,0,,False,1176,Within 60 km of London
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,w28,preview-UI,within,de,plan,1,,False,4336,Within 30 km of Berlin
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,w43,preview-UI,within,zh,plan,2,,False,1176,Airports in each area of Within 100 km of Seoul
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,t02,prompt-tool gap,time,en,plan,7342,,,,
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,k01,prompt-tool gap,chain,en,error,,The plan didn't run: step 2: NCEI_volcano_locations has no field “km to nearest city”,,,
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,k05,prompt-tool gap,chain,en,error,,The plan didn't run: step 3: earthquakes has no field “km to nearest city”,,,
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,t05,prompt-tool gap,time,zh,plan,2,,,,
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,k02,prompt-tool gap,chain,zh,error,,The plan didn't run: step 2: NCEI_volcano_locations has no field “#1”,,,
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,k04,prompt-tool gap,chain,ja,error,,The plan didn't run: step 2: NCEI_volcano_locations has no field “km to nearest city”,,,
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,n01,model plan,nearest,en,plan,,,False,,
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,t03,prompt-tool gap,time,zh,plan,7342,,,,
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,n04,prompt-tool gap,nearest,es,error,,The plan didn't run: step 3: NCEI_volcano_locations has no field “km to nearest city”.,,,
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,n05,preview-UI,nearest,en,plan,93.13116353621557,,False,1,
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,n07,model plan,nearest,zh,plan,1,,False,,"Within 1,000 km of Taipei"
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,n09,prompt-tool gap,nearest,en,error,,The plan didn't run: step 3: World cities has no field “km to nearest volcano”.,,,
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,n10,model plan,nearest,ja,plan,1,,True,1,
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,n11,model plan,nearest,en,plan,1,,False,,
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,k13,prompt-tool gap,chain,en,error,,,,,
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,n13,model plan,nearest,zh,plan,20,,False,,Ncei volcano locations in each area of Within 500 km of Mexico City
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,e09,model plan,raster,ja,plan,,,,,
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,o01,preview-UI,outside,en,plan,73,,False,100,Earthquakes outside World countries
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,k16,preview-UI,chain,en,plan,6,,False,155,Lines in each area of Within 100 km of Tokyo
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,w08,preview-UI,within,en,plan,7,,False,228,Lines in each area of Within 100 km of Tokyo
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,w35,preview-UI,within,zh,plan,2,,False,,Within 100 km of Tokyo
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,o02,preview-UI,outside,zh,plan,73,,False,100,Earthquakes outside World countries
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,r07,prompt-tool gap,per_area,nl,error,,The plan didn't run: step 3: Ncei volcano locations in each world country has no field “#2”.,,,
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,w18,preview-UI,within,en,plan,7,,False,,Within 200 km of Seattle
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,w19,preview-UI,within,es,plan,6,,False,1,Ncei volcano locations in each area of Within 100 km of Mexico City
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,w11,preview-UI,within,en,plan,12,,False,1,Earthquakes in each area of Within 200 km of Tokyo
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,w20,preview-UI,within,zh,plan,2,,False,,Ncei volcano locations in each area of Within 100 km of Tokyo
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,w12,preview-UI,within,en,plan,0,,False,100,Earthquakes in each area of Within 100 km of Paris
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,w38,preview-UI,within,nl,plan,21,,False,,Ncei volcano locations in each area of Within 150 km of Quito
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,w13,preview-UI,within,es,plan,16,,False,1,Earthquakes in each area of Within 300 km of Santiago
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,w42,preview-UI,within,zh,plan,7,,False,,Within 200 km of Seattle
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,w14,preview-UI,within,es,plan,1,,False,4734,Within 100 km of Mexico City
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,x01,preview-UI,cities_near,en,plan,4,,False,,Within 50 km of Vesuvius
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,w15,preview-UI,within,zh,plan,5,,False,,Within 50 km of Taipei
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,x02,model plan,cities_near,zh,plan,1,,False,,World cities in each area of Within 50 km of Fujisan
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,x03,model plan,cities_near,en,plan,3,,False,500,World cities in each area of Within 100 km of Popocatepetl
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,w16,preview-UI,within,en,plan,3,,False,509,Earthquakes in each area of Within 500 km of Jakarta
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,w39,preview-UI,within,ru,plan,27,,False,1619,Earthquakes in each area of Within 200 km of Sendai
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,w41,preview-UI,within,zh,plan,12,,False,1619,Earthquakes in each area of Within 200 km of Tokyo
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,x07,preview-UI,cities_near,en,plan,8,,False,200,Earthquakes in each area of Within 200 km of world cities
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,x06,model plan,cities_near,zh,plan,75,,False,200,World cities in each area of Within 50 km of ncei volcano locations
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,r05,model plan,rank,en,cannot_do,,,,,
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,w29,preview-UI,within,en,plan,13,,False,656,Lines in each area of Within 50 km of Oklahoma City
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,w30,model plan,within,en,cannot_do,,,,,
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,w31,preview-UI,within,en,plan,10,,False,8094,Within 15 km of Oklahoma City
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,w44,preview-UI,within,zh,plan,13,,False,656,Lines in each area of Within 50 km of Oklahoma City
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,x09,model plan,cities_near,fr,plan,15,,False,500,World cities in each area of Within 30 km of ncei volcano locations
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,x10,preview-UI,cities_near,zh,plan,4,,False,1,Within 50 km of Vesuvius
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,k03,prompt-tool gap,chain,en,error,,The plan didn't run: step 2: nuclear_power_plants has no field “km to nearest city”,,,
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,n02,model plan,nearest,zh,plan,804,,False,1,
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,n03,model plan,nearest,de,plan,0,,False,,Nuclear power plants in each area of Within 1 km of Berlin
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,c08,prompt-tool gap,per_area,en,error,,The plan didn't run: step 2: Points in each world country has no field “#1”.,,,
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,n06,model plan,nearest,en,plan,,,False,414,Within 1 km of Tokyo
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,n08,model plan,nearest,fr,plan,804,,False,1,
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,i09,preview-UI,inside,en,plan,401,,False,1,Lines in each world country
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,i10,preview-UI,inside,zh,plan,40,,False,1,Lines in each world country
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,n14,model plan,nearest,zh,plan,7342,,False,,
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,r04,prompt-tool gap,rank,en,error,,The plan didn't run: step 4: Nuclear power plants in each area of Within 200 km of world cities has no field “#3”.,,,
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,w32,model plan,within,en,cannot_do,,,,,
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,w33,preview-UI,within,ja,plan,7,,False,650,Points in each area of Within 200 km of Tokyo
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,w34,preview-UI,within,en,plan,69,,False,,Within 50 km of Anchorage
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,w45,preview-UI,within,zh,plan,195,,False,,Points in each area of Within 100 km of Los Angeles
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,e01,model plan,raster,en,cannot_do,,,,,
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,e02,model plan,raster,zh,plan,1403.0,,True,1,
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,e03,model plan,raster,en,plan,,,,,
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,c03,prompt-tool gap,per_area,en,error,,The plan didn't run: step 2: Ncei volcano locations in each world country has no field “#1”.,,,
+replay-paid-repeat2-prefix/anthropic_claude-haiku-5.5,k15,prompt-tool gap,chain,en,error,,The plan didn't run: step 3: IBTrACS_storm_tracks_1980-2026 has no field “km to nearest city”,,,
