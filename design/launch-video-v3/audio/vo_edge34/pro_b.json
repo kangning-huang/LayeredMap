@@ -1,0 +1,72 @@
+{
+ "voice": "en-US-AndrewNeural",
+ "rate": "+4%",
+ "text": "Ask: how many Category 5 storms have passed within 100 kilometres of Tokyo?",
+ "words": [
+  {
+   "text": "Ask",
+   "offset": 0.096166,
+   "duration": 0.3245
+  },
+  {
+   "text": "how",
+   "offset": 0.709125,
+   "duration": 0.108166
+  },
+  {
+   "text": "many",
+   "offset": 0.829333,
+   "duration": 0.204333
+  },
+  {
+   "text": "Category",
+   "offset": 1.045666,
+   "duration": 0.540875
+  },
+  {
+   "text": "5",
+   "offset": 1.598541,
+   "duration": 0.3125
+  },
+  {
+   "text": "storms",
+   "offset": 1.923083,
+   "duration": 0.384625
+  },
+  {
+   "text": "have",
+   "offset": 2.319708,
+   "duration": 0.120208
+  },
+  {
+   "text": "passed",
+   "offset": 2.451916,
+   "duration": 0.396625
+  },
+  {
+   "text": "within",
+   "offset": 2.860583,
+   "duration": 0.336541
+  },
+  {
+   "text": "100",
+   "offset": 3.209125,
+   "duration": 0.528874
+  },
+  {
+   "text": "kilometres",
+   "offset": 3.75,
+   "duration": 0.540875
+  },
+  {
+   "text": "of",
+   "offset": 4.302875,
+   "duration": 0.072125
+  },
+  {
+   "text": "Tokyo",
+   "offset": 4.387,
+   "duration": 0.46875
+  }
+ ]
+}

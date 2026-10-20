@@ -1,0 +1,62 @@
+{
+ "voice": "en-US-AndrewNeural",
+ "rate": "+4%",
+ "text": "Palermo, 25 July: a heatwave more intense than most of the map.",
+ "words": [
+  {
+   "text": "Palermo",
+   "offset": 0.108166,
+   "duration": 0.492791
+  },
+  {
+   "text": "25 July",
+   "offset": 0.757208,
+   "duration": 0.961542
+  },
+  {
+   "text": "a",
+   "offset": 2.007208,
+   "duration": 0.0360409
+  },
+  {
+   "text": "heatwave",
+   "offset": 2.055291,
+   "duration": 0.432708
+  },
+  {
+   "text": "more",
+   "offset": 2.5,
+   "duration": 0.240375
+  },
+  {
+   "text": "intense",
+   "offset": 2.752416,
+   "duration": 0.444708
+  },
+  {
+   "text": "than",
+   "offset": 3.209125,
+   "duration": 0.16825
+  },
+  {
+   "text": "most",
+   "offset": 3.389416,
+   "duration": 0.276458
+  },
+  {
+   "text": "of",
+   "offset": 3.677875,
+   "duration": 0.048083
+  },
+  {
+   "text": "the",
+   "offset": 3.738,
+   "duration": 0.072125
+  },
+  {
+   "text": "map",
+   "offset": 3.822125,
+   "duration": 0.384625
+  }
+ ]
+}

@@ -1,0 +1,9 @@
+# v3.2 Pro beat (LM_TIER=pro; ONE paid ask call): the storm shapefile (file argument), world view,
+# then one plain-words request in the Ask box; holds while the answer shows
+esc
+150,15,2.3
+layer 99
+ask Show only Category 5 storms
+layer 99
+layer 99
+layer 99

@@ -1,0 +1,32 @@
+{
+ "voice": "en-US-AndrewNeural",
+ "rate": "+4%",
+ "text": "Nearly 5,000 storm tracks, since 1980.",
+ "words": [
+  {
+   "text": "Nearly",
+   "offset": 0.096166,
+   "duration": 0.264416
+  },
+  {
+   "text": "5,000",
+   "offset": 0.372583,
+   "duration": 0.817333
+  },
+  {
+   "text": "storm",
+   "offset": 1.201916,
+   "duration": 0.264416
+  },
+  {
+   "text": "tracks",
+   "offset": 1.478375,
+   "duration": 0.516833
+  },
+  {
+   "text": "since 1980",
+   "offset": 2.1995,
+   "duration": 0.841375
+  }
+ ]
+}

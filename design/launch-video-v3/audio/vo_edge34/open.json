@@ -1,0 +1,102 @@
+{
+ "voice": "en-US-AndrewNeural",
+ "rate": "+4%",
+ "text": "Now you can just drag them into NimbleMap, and they will be shown on a map. Any of them.",
+ "words": [
+  {
+   "text": "Now",
+   "offset": 0.096166,
+   "duration": 0.108166
+  },
+  {
+   "text": "you",
+   "offset": 0.216333,
+   "duration": 0.096166
+  },
+  {
+   "text": "can",
+   "offset": 0.3245,
+   "duration": 0.120208
+  },
+  {
+   "text": "just",
+   "offset": 0.45675,
+   "duration": 0.228375
+  },
+  {
+   "text": "drag",
+   "offset": 0.697125,
+   "duration": 0.348541
+  },
+  {
+   "text": "them",
+   "offset": 1.057708,
+   "duration": 0.132208
+  },
+  {
+   "text": "into",
+   "offset": 1.201916,
+   "duration": 0.16825
+  },
+  {
+   "text": "NimbleMap",
+   "offset": 1.382208,
+   "duration": 0.613
+  },
+  {
+   "text": "and",
+   "offset": 2.295666,
+   "duration": 0.060083
+  },
+  {
+   "text": "they",
+   "offset": 2.367791,
+   "duration": 0.096166
+  },
+  {
+   "text": "will",
+   "offset": 2.475958,
+   "duration": 0.096166
+  },
+  {
+   "text": "be",
+   "offset": 2.584125,
+   "duration": 0.072125
+  },
+  {
+   "text": "shown",
+   "offset": 2.66825,
+   "duration": 0.276458
+  },
+  {
+   "text": "on",
+   "offset": 2.95675,
+   "duration": 0.096166
+  },
+  {
+   "text": "a",
+   "offset": 3.064916,
+   "duration": 0.0360409
+  },
+  {
+   "text": "map",
+   "offset": 3.113,
+   "duration": 0.420666
+  },
+  {
+   "text": "Any",
+   "offset": 3.930291,
+   "duration": 0.192291
+  },
+  {
+   "text": "of",
+   "offset": 4.134625,
+   "duration": 0.072125
+  },
+  {
+   "text": "them",
+   "offset": 4.21875,
+   "duration": 0.16825
+  }
+ ]
+}

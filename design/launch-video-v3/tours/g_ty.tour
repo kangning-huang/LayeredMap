@@ -1,0 +1,14 @@
+# v3.1 film 1: the storm shapefile (file argument). World view; the place search's landing for
+# "New York" (New York City, pop 8,804,190 -> zoom 17 - log10(pop) = 10.055); Sandy (2012) clicked
+# close up inland, then a regional view around New York with its card
+esc
+150,15,2.3
+layer 99
+-74.00597,40.71427,10.055
+layer 99
+layer 99
+-76.6,39.95,9
+click -76.6,39.95
+-75,39.5,6.4
+layer 99
+layer 99

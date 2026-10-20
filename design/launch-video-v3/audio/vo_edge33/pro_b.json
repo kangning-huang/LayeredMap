@@ -1,0 +1,52 @@
+{
+ "voice": "en-US-AndrewNeural",
+ "rate": "+4%",
+ "text": "Show only Category 5 storms. 228 of nearly 5,000.",
+ "words": [
+  {
+   "text": "Show",
+   "offset": 0.096166,
+   "duration": 0.240375
+  },
+  {
+   "text": "only",
+   "offset": 0.348541,
+   "duration": 0.252416
+  },
+  {
+   "text": "Category",
+   "offset": 0.613,
+   "duration": 0.528833
+  },
+  {
+   "text": "5",
+   "offset": 1.153833,
+   "duration": 0.276458
+  },
+  {
+   "text": "storms",
+   "offset": 1.442291,
+   "duration": 0.564916
+  },
+  {
+   "text": "228",
+   "offset": 2.415875,
+   "duration": 0.9495
+  },
+  {
+   "text": "of",
+   "offset": 3.473541,
+   "duration": 0.132208
+  },
+  {
+   "text": "nearly",
+   "offset": 3.617791,
+   "duration": 0.348541
+  },
+  {
+   "text": "5,000",
+   "offset": 3.978375,
+   "duration": 0.8533739
+  }
+ ]
+}

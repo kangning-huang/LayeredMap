@@ -1,0 +1,5 @@
+{"steps": [
+  {"action": "filter", "layer": "IBTrACS_storm_tracks_1980-2026", "conditions": [{"field": "strength", "op": "is", "value": "Category 5"}]},
+  {"action": "buffer", "layer": "World cities", "object": {"layer": "World cities", "field": "name", "value": "Tokyo"}, "distance": "100 km", "merge": false},
+  {"action": "count_in", "points": "IBTrACS_storm_tracks_1980-2026", "areas": "#2"}
+]}

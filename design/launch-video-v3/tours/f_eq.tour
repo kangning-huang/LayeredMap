@@ -1,0 +1,11 @@
+# v3.1 film 2: the earthquake GeoPackage, opened as a file argument, dark
+theme dark
+card style_by_value magnitude
+esc
+175,12,2.4
+layer 99
+142.373,38.297,10
+click 142.373,38.297
+175,12,2.4
+layer 99
+layer 99

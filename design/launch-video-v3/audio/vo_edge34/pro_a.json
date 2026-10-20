@@ -1,0 +1,67 @@
+{
+ "voice": "en-US-AndrewNeural",
+ "rate": "+4%",
+ "text": "Sign in for Pro, and talk to your data in plain words.",
+ "words": [
+  {
+   "text": "Sign",
+   "offset": 0.108166,
+   "duration": 0.252416
+  },
+  {
+   "text": "in",
+   "offset": 0.372583,
+   "duration": 0.096166
+  },
+  {
+   "text": "for",
+   "offset": 0.48075,
+   "duration": 0.132208
+  },
+  {
+   "text": "Pro",
+   "offset": 0.625,
+   "duration": 0.360583
+  },
+  {
+   "text": "and",
+   "offset": 1.334125,
+   "duration": 0.096166
+  },
+  {
+   "text": "talk",
+   "offset": 1.442291,
+   "duration": 0.228375
+  },
+  {
+   "text": "to",
+   "offset": 1.682708,
+   "duration": 0.072125
+  },
+  {
+   "text": "your",
+   "offset": 1.766833,
+   "duration": 0.108166
+  },
+  {
+   "text": "data",
+   "offset": 1.887,
+   "duration": 0.348541
+  },
+  {
+   "text": "in",
+   "offset": 2.319708,
+   "duration": 0.084125
+  },
+  {
+   "text": "plain",
+   "offset": 2.415875,
+   "duration": 0.3005
+  },
+  {
+   "text": "words",
+   "offset": 2.728375,
+   "duration": 0.444708
+  }
+ ]
+}

@@ -1,0 +1,57 @@
+{
+ "voice": "en-US-AndrewNeural",
+ "rate": "+4%",
+ "text": "NimbleMap. Explore real data about the planet. Free for Mac.",
+ "words": [
+  {
+   "text": "NimbleMap",
+   "offset": 0.096166,
+   "duration": 0.552875
+  },
+  {
+   "text": "Explore",
+   "offset": 1.045666,
+   "duration": 0.504791
+  },
+  {
+   "text": "real",
+   "offset": 1.5625,
+   "duration": 0.216333
+  },
+  {
+   "text": "data",
+   "offset": 1.790875,
+   "duration": 0.3245
+  },
+  {
+   "text": "about",
+   "offset": 2.1755,
+   "duration": 0.204333
+  },
+  {
+   "text": "the",
+   "offset": 2.391833,
+   "duration": 0.072125
+  },
+  {
+   "text": "planet",
+   "offset": 2.475958,
+   "duration": 0.420666
+  },
+  {
+   "text": "Free",
+   "offset": 3.353375,
+   "duration": 0.14425
+  },
+  {
+   "text": "for",
+   "offset": 3.509625,
+   "duration": 0.120208
+  },
+  {
+   "text": "Mac",
+   "offset": 3.641833,
+   "duration": 0.348541
+  }
+ ]
+}

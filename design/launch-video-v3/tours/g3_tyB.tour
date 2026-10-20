@@ -1,0 +1,14 @@
+# v3.3 film 1, part 2: the storm shapefile, started at the place search's landing for "New York"
+# (--view); Find in the layer: "Sandy" (the real find field selects and lists both storms named
+# Sandy); Sandy (2012) clicked close up; a regional view around New York with its card
+layer 99
+layer 0
+find Sandy
+layer 99
+layer 99
+layer 99
+-76.6,39.95,9
+click -76.6,39.95
+-75,39.5,6.4
+layer 99
+layer 99

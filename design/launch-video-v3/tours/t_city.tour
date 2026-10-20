@@ -1,0 +1,12 @@
+# v3.1 check: which famous city sits in the hot cells on 16 Jul 2023 (cards read from the footage)
+esc
+time 45
+-3.70256,40.4165,5
+click -3.70256,40.4165
+layer 99
+12.51133,41.89193,5
+click 12.51133,41.89193
+layer 99
+-112.07404,33.44838,5
+click -112.07404,33.44838
+layer 99

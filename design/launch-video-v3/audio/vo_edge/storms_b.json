@@ -1,0 +1,37 @@
+{
+ "voice": "en-US-AndrewNeural",
+ "rate": "+4%",
+ "text": "Search New York, and there's Sandy.",
+ "words": [
+  {
+   "text": "Search",
+   "offset": 0.108166,
+   "duration": 0.228375
+  },
+  {
+   "text": "New",
+   "offset": 0.348541,
+   "duration": 0.108166
+  },
+  {
+   "text": "York",
+   "offset": 0.46875,
+   "duration": 0.3125
+  },
+  {
+   "text": "and",
+   "offset": 1.069708,
+   "duration": 0.048083
+  },
+  {
+   "text": "there's",
+   "offset": 1.129791,
+   "duration": 0.16825
+  },
+  {
+   "text": "Sandy",
+   "offset": 1.310083,
+   "duration": 0.420666
+  }
+ ]
+}

@@ -1,0 +1,7 @@
+# v3.4 check: heatwaves 2022 zoomed out (world copies)
+esc
+time 76
+160,10,1.0
+layer 99
+layer 99
+layer 99

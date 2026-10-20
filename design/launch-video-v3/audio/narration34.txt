@@ -1,0 +1,17 @@
+# NimbleMap launch film v3.4: narration script (one line per beat).
+# Voice: Microsoft en-US-AndrewNeural via edge-tts, rate +4% (VO_SCRIPT=narration34.txt VO_OUT=vo_edge34
+# python audio/voice_edge.py); it reads the 3rd column. Start times: edit/edl34.py (VO).
+# Columns: id | (unused: say fallback text) | the spoken and caption text.
+folder   | - | Shapefiles. GeoPackages. NetCDF. GeoTIFFs. You found interesting map data online. But they're in file types your computer can't open.
+open     | - | Now you can just drag them into NimbleMap, and they will be shown on a map. Any of them.
+storms_a | - | Nearly 5,000 storm tracks since 1980. Zoom and pan anywhere.
+storms_b | - | Search a place, like New York.
+storms_c | - | Or search your data: type Sandy, and it finds both storms with that name.
+quakes_a | - | Earthquakes of magnitude 6 and up, since 1900.
+quakes_b | - | Fly to Tokyo, click a dot: Tōhoku, magnitude 9.1, stronger than 99% of them.
+heat_a   | - | Summer 2022, day by day. Scrub through time,
+heat_b   | - | and find Barcelona on 16 August: a heatwave more intense than most of the map.
+pro_a    | - | Sign in for Pro, and talk to your data in plain words.
+pro_b    | - | Ask: how many Category 5 storms have passed within 100 kilometres of Tokyo?
+pro_c    | - | NimbleMap draws 100 kilometres around Tokyo and counts the storm tracks that cross it: seven storms that reached Category 5.
+end      | - | NimbleMap. Explore real data about the planet. Free for Mac.

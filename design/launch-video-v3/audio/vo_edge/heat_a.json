@@ -1,0 +1,32 @@
+{
+ "voice": "en-US-AndrewNeural",
+ "rate": "+4%",
+ "text": "Summer 2023, day by day.",
+ "words": [
+  {
+   "text": "Summer",
+   "offset": 0.108166,
+   "duration": 0.3125
+  },
+  {
+   "text": "2023",
+   "offset": 0.432708,
+   "duration": 0.901416
+  },
+  {
+   "text": "day",
+   "offset": 1.598541,
+   "duration": 0.14425
+  },
+  {
+   "text": "by",
+   "offset": 1.754791,
+   "duration": 0.180291
+  },
+  {
+   "text": "day",
+   "offset": 1.947125,
+   "duration": 0.276458
+  }
+ ]
+}

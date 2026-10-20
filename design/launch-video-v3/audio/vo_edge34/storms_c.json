@@ -1,0 +1,77 @@
+{
+ "voice": "en-US-AndrewNeural",
+ "rate": "+4%",
+ "text": "Or search your data: type Sandy, and it finds both storms with that name.",
+ "words": [
+  {
+   "text": "Or",
+   "offset": 0.096166,
+   "duration": 0.108166
+  },
+  {
+   "text": "search",
+   "offset": 0.216333,
+   "duration": 0.240375
+  },
+  {
+   "text": "your",
+   "offset": 0.46875,
+   "duration": 0.108166
+  },
+  {
+   "text": "data",
+   "offset": 0.588958,
+   "duration": 0.3245
+  },
+  {
+   "text": "type",
+   "offset": 1.298083,
+   "duration": 0.216333
+  },
+  {
+   "text": "Sandy",
+   "offset": 1.526458,
+   "duration": 0.45675
+  },
+  {
+   "text": "and",
+   "offset": 2.295666,
+   "duration": 0.096166
+  },
+  {
+   "text": "it",
+   "offset": 2.403833,
+   "duration": 0.072125
+  },
+  {
+   "text": "finds",
+   "offset": 2.488,
+   "duration": 0.3245
+  },
+  {
+   "text": "both",
+   "offset": 2.8245,
+   "duration": 0.252416
+  },
+  {
+   "text": "storms",
+   "offset": 3.088958,
+   "duration": 0.396625
+  },
+  {
+   "text": "with",
+   "offset": 3.497583,
+   "duration": 0.120208
+  },
+  {
+   "text": "that",
+   "offset": 3.629791,
+   "duration": 0.204333
+  },
+  {
+   "text": "name",
+   "offset": 3.846166,
+   "duration": 0.276458
+  }
+ ]
+}

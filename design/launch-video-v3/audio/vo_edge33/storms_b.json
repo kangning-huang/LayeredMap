@@ -1,0 +1,37 @@
+{
+ "voice": "en-US-AndrewNeural",
+ "rate": "+4%",
+ "text": "Search a place, like New York.",
+ "words": [
+  {
+   "text": "Search",
+   "offset": 0.096166,
+   "duration": 0.180291
+  },
+  {
+   "text": "a",
+   "offset": 0.288458,
+   "duration": 0.048083
+  },
+  {
+   "text": "place",
+   "offset": 0.348541,
+   "duration": 0.432708
+  },
+  {
+   "text": "like",
+   "offset": 0.961541,
+   "duration": 0.14425
+  },
+  {
+   "text": "New",
+   "offset": 1.117791,
+   "duration": 0.120208
+  },
+  {
+   "text": "York",
+   "offset": 1.25,
+   "duration": 0.348541
+  }
+ ]
+}

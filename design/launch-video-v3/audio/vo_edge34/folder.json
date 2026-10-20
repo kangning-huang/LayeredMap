@@ -1,0 +1,102 @@
+{
+ "voice": "en-US-AndrewNeural",
+ "rate": "+4%",
+ "text": "Shapefiles. GeoPackages. NetCDF. GeoTIFFs. You found interesting map data online. But they're in file types your computer can't open.",
+ "words": [
+  {
+   "text": "Shapefiles",
+   "offset": 0.084125,
+   "duration": 0.649041
+  },
+  {
+   "text": "GeoPackages",
+   "offset": 1.129791,
+   "duration": 0.901458
+  },
+  {
+   "text": "NetCDF",
+   "offset": 2.427875,
+   "duration": 0.76925
+  },
+  {
+   "text": "GeoTIFFs",
+   "offset": 3.59375,
+   "duration": 0.841333
+  },
+  {
+   "text": "You",
+   "offset": 4.83175,
+   "duration": 0.096166
+  },
+  {
+   "text": "found",
+   "offset": 4.939916,
+   "duration": 0.240375
+  },
+  {
+   "text": "interesting",
+   "offset": 5.288458,
+   "duration": 0.444708
+  },
+  {
+   "text": "map",
+   "offset": 5.745208,
+   "duration": 0.276458
+  },
+  {
+   "text": "data",
+   "offset": 6.033666,
+   "duration": 0.264416
+  },
+  {
+   "text": "online",
+   "offset": 6.310083,
+   "duration": 0.444708
+  },
+  {
+   "text": "But",
+   "offset": 7.163458,
+   "duration": 0.084125
+  },
+  {
+   "text": "they're",
+   "offset": 7.259625,
+   "duration": 0.14425
+  },
+  {
+   "text": "in",
+   "offset": 7.415875,
+   "duration": 0.096166
+  },
+  {
+   "text": "file",
+   "offset": 7.524041,
+   "duration": 0.3245
+  },
+  {
+   "text": "types",
+   "offset": 7.860583,
+   "duration": 0.276458
+  },
+  {
+   "text": "your",
+   "offset": 8.149041,
+   "duration": 0.096166
+  },
+  {
+   "text": "computer",
+   "offset": 8.257208,
+   "duration": 0.408666
+  },
+  {
+   "text": "can't",
+   "offset": 8.677875,
+   "duration": 0.240375
+  },
+  {
+   "text": "open",
+   "offset": 8.930291,
+   "duration": 0.276458
+  }
+ ]
+}
