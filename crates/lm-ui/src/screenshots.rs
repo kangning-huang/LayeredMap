@@ -24,14 +24,20 @@ pub(crate) fn harness_phase(
     harness_sized(SIZE, 1.0, phase, dark, view, setup)
 }
 
-/// wgpu setup for tests: same as egui_kittest defaults, plus the noop backend so Ubuntu CI
-/// (no GPU / no lavapipe) still gets an adapter. Real adapters remain preferred.
+/// wgpu setup for tests. On Linux CI (no GPU) enable the noop backend so AccessKit harness
+/// tests still get an adapter. Elsewhere keep egui_kittest defaults — marking noop as Cpu made
+/// macOS prefer it over Metal and crash in screenshots.
 fn headless_wgpu_setup() -> egui_wgpu::WgpuSetup {
+    #[cfg(not(target_os = "linux"))]
+    {
+        return egui_kittest::wgpu::default_wgpu_setup();
+    }
+    #[cfg(target_os = "linux")]
     match egui_kittest::wgpu::default_wgpu_setup() {
         egui_wgpu::WgpuSetup::CreateNew(mut create) => {
             create.instance_descriptor.backends |= wgpu::Backends::NOOP;
             create.instance_descriptor.backend_options.noop =
-                wgpu::NoopBackendOptions { enable: true, device_type: Some(wgpu::DeviceType::Cpu), ..Default::default() };
+                wgpu::NoopBackendOptions { enable: true, ..Default::default() };
             egui_wgpu::WgpuSetup::CreateNew(create)
         }
         other => other,
