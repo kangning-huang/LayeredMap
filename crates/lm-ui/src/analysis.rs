@@ -770,7 +770,7 @@ pub fn composer(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
                 egui::Id::new("lm-result-live"),
                 &crate::a11y::spoken(&i18n::fmt("Kept: {title}. {summary}", &[("title", &r.card.title), ("summary", &r.card.summary)])),
             );
-            result_card(shell, ui, t, &r.card, &r.recipe.text(), Some(&r));
+            result_card(shell, ui, t, &r.card, &r.recipe.text(), Some(&r), false);
         }
         if ui.button(tl!("Done")).clicked() {
             close(shell);
@@ -801,7 +801,7 @@ pub fn composer(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
                 return;
             }
             ui.add_space(8.0);
-            result_card(shell, ui, t, &r.card, &r.recipe.text(), None);
+            result_card(shell, ui, t, &r.card, &r.recipe.text(), None, false);
         }
         _ => {
             if c.stale {
@@ -835,6 +835,7 @@ pub fn result_card(
     card: &ResultCard,
     recipe: &str,
     kept: Option<&lm_core::recipe::ResultRecord>,
+    in_ask: bool,
 ) {
     ui.label(RichText::new(&card.title).font(semibold(theme::HEADLINE)));
     ui.add_space(4.0);
@@ -923,7 +924,10 @@ pub fn result_card(
         ui.label(RichText::new(n).size(CAPTION).color(t.warning));
     }
     ui.add_space(6.0);
-    for c in &card.context {
+    // In an Ask answer the inputs and scope lines are bookkeeping: the step list already says
+    // what was filtered, so they go under "How this was calculated" (exclusions stay in view).
+    let (shown_context, in_recipe): (Vec<&String>, Vec<&String>) = card.context.iter().partition(|c| !in_ask || c.starts_with("Excluded:"));
+    for c in shown_context {
         ui.label(RichText::new(c).size(CAPTION).color(t.text_secondary));
     }
     if let Some(r) = kept {
@@ -936,6 +940,9 @@ pub fn result_card(
     egui::CollapsingHeader::new(RichText::new(tl!("How this was calculated")).size(CAPTION)).id_salt(("lm-recipe", &card.title)).show(
         ui,
         |ui| {
+            for c in &in_recipe {
+                ui.label(RichText::new(*c).size(CAPTION).color(t.text_secondary));
+            }
             ui.label(RichText::new(recipe).size(CAPTION).family(egui::FontFamily::Proportional));
             if ui.small_button(tl!("Copy")).clicked() {
                 ui.ctx().copy_text(recipe.to_string());
@@ -960,7 +967,7 @@ pub fn kept_cards(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
     for r in records {
         egui::Frame::new().fill(t.surface_raised).corner_radius(theme::RADIUS_CARD).inner_margin(12.0).show(ui, |ui| {
             ui.set_width(ui.available_width());
-            result_card(shell, ui, t, &r.card, &r.recipe.text(), Some(&r));
+            result_card(shell, ui, t, &r.card, &r.recipe.text(), Some(&r), false);
         });
         ui.add_space(8.0);
     }

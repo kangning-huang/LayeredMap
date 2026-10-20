@@ -552,7 +552,7 @@ pub(crate) mod ask_preview_tests {
             _ => serde_json::json!({"name": "count_in", "args": {"points": "Storms", "areas": "#2"}}),
         };
         serde_json::from_value(serde_json::json!([
-            {"name": "filter", "args": {"layer": "Storms", "conditions": [{"field": "category", "op": "is", "value": "5"}]}},
+            {"name": "filter", "args": {"layer": "Storms", "conditions": [{"field": "strength", "op": "is", "value": "Category 5"}]}},
             {"name": "buffer", "args": {"object": {"layer": "Cities", "field": "name", "value": "Tokyo"}, "distance": "100 km"}},
             last
         ]))

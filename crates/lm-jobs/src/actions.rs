@@ -598,7 +598,12 @@ fn count_in(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
     let (title, values, color_by, unit, summary_what) = match value_field {
         None => {
             let values: Vec<Option<f64>> = r.counts.iter().map(|c| Some(*c as f64)).collect();
-            (format!("{} in {each}", capitalized(&things)), values, count_field.clone(), things.clone(), things.clone())
+            // One area: "Storms within 100 km of Tokyo", not "… in each area of Within 100 km…".
+            let title = match area_rows.as_slice() {
+                [_] => format!("{} {}", capitalized(&things), area_phrase(&areas_in.title(&areas, 0))),
+                _ => format!("{} in {each}", capitalized(&things)),
+            };
+            (title, values, count_field.clone(), things.clone(), things.clone())
         }
         Some(field) => {
             let vk = pts.field_index(field).ok_or_else(|| ActionError::Input(format!("{} has no field “{field}”.", pts_in.name())))?;
@@ -676,32 +681,66 @@ fn count_in(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
             plural(&area_one)
         ));
     }
-    if r.outside_all > 0 {
+    // With one area ("within 100 km of Tokyo") being outside it is the expected case, not a
+    // notice.
+    let one_area = area_rows.len() == 1;
+    if r.outside_all > 0 && !one_area {
         notices.push(format!("{} {} in no {area_one}.", pts_in.things(r.outside_all), if r.outside_all == 1 { "is" } else { "are" }));
     }
     let mut excluded = exclusions(pts_in);
     if r.points_without_geometry > 0 && excluded.is_empty() {
         excluded.push(format!("{} with no usable location", pts_in.things(r.points_without_geometry)));
     }
+    // One area counted: the answer is a number ("7 lines"), with what was counted where.
+    let (answer, summary) = match (one_area, value_field, r.counts.first()) {
+        (true, None, Some(&n)) => {
+            let unit = if n == 1 { pts_in.singular_noun() } else { things.clone() };
+            let caption = one_area_caption(pts_in, &areas_in.title(&areas, 0));
+            (Answer::Number { value: n as f64, unit, detail: caption.clone() }, format!("{} · {caption}", pts_in.things(n)))
+        }
+        _ => (Answer::Ranking { rows: ranking(rows), unit }, summary),
+    };
     let inputs = [pts_in, areas_in];
     Ok(ActionResult {
         label: match value_field {
             None => format!("Count {things} in {each}"),
             Some(f) => format!("{} {f} of {things} in {each}", stat_label(POINT_STATS, stat)),
         },
-        card: ResultCard {
-            title: title.clone(),
-            summary,
-            answer: Answer::Ranking { rows: ranking(rows), unit },
-            context: context(&inputs, &excluded),
-            notices,
-        },
+        card: ResultCard { title: title.clone(), summary, answer, context: context(&inputs, &excluded), notices },
         recipe: recipe(plan, &title, &inputs, PLANAR, decisions, excluded),
         output: ActionOutput::NewLayer { layer: layer_from(&title, "Result", out), color_by: Some(color_by) },
         highlight: None,
         matched: (area_rows.len() <= ANSWER_AREAS)
             .then(|| (pts_in.layer.id, r.matched.iter().filter_map(|i| pt_rows.get(*i).copied()).collect())),
     })
+}
+
+/// What a count in one area counted, in a line: "Category 5 lines within 100 km of Tokyo" (a
+/// filter of one "is" condition names the kind), "Lines (strength is Category 5; season after
+/// 2000) in Japan" otherwise.
+fn one_area_caption(things_in: &PlanInput, area: &str) -> String {
+    let where_ = area_phrase(area);
+    let things = things_in.plural_noun();
+    let filter = things_in.layer.filter.as_ref().filter(|f| !f.conditions.is_empty() && things_in.rows.is_some());
+    match filter.map(|f| f.conditions.as_slice()) {
+        None => format!("{} {where_}", capitalized(&things)),
+        Some([c]) if matches!(&c.test, lm_core::filter::Test::Is(_)) => {
+            let lm_core::filter::Test::Is(v) = &c.test else { return format!("{} {where_}", capitalized(&things)) };
+            format!("{} {things} {where_}", capitalized(v.trim()))
+        }
+        Some(cs) => {
+            let words = cs.iter().map(lm_core::filter::Condition::chip).collect::<Vec<_>>().join("; ");
+            format!("{} ({}) {where_}", capitalized(&things), lower_first(&words))
+        }
+    }
+}
+
+/// Where, for one area: "within 100 km of Tokyo" for a buffer's area, else "in Japan".
+fn area_phrase(area: &str) -> String {
+    match area.strip_prefix("Within ") {
+        Some(rest) => format!("within {rest}"),
+        None => format!("in {area}"),
+    }
 }
 
 /// The single area of an "…here" action: the scoped row's geometry.

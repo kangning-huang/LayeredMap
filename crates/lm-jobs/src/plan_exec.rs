@@ -342,6 +342,8 @@ fn run_step(
                 .map(|m| m.iter().enumerate().filter(|(_, k)| **k).map(|(r, _)| r).collect::<Vec<_>>());
             let shown = rows.as_ref().map_or(total, Vec::len);
             layers[li].rows = rows;
+            // Later steps' words name what the filter kept ("Category 5 lines").
+            layers[li].layer.filter = Some(f.clone());
             StepOutcome::Filtered { layer: layers[li].name.clone(), shown, of: total, filter: f }
         }
         "color_by" | "zoom_to" | "view_data" => StepOutcome::Display,

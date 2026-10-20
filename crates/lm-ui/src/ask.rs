@@ -374,6 +374,15 @@ fn keep(shell: &mut Shell) {
     }
 }
 
+/// Whether a step after step `i` (from 0) of the plan uses the layer it made (`alias`, "#k").
+fn feeds_later(plan: &PlanResult, i: usize, alias: &str) -> bool {
+    plan.steps.iter().skip(i + 1).any(|s| {
+        let mut names = Vec::new();
+        lm_ask::reference::names_in(&s.args, &mut names);
+        names.iter().any(|n| n.trim() == alias)
+    })
+}
+
 fn short(s: &str, n: usize) -> String {
     if s.chars().count() <= n { s.to_string() } else { format!("{}…", s.chars().take(n - 1).collect::<String>()) }
 }
@@ -611,8 +620,12 @@ fn answer_panel(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, width: f32, ma
                     let cards: Vec<(lm_core::recipe::ResultCard, String)> = plan
                         .outcomes
                         .iter()
-                        .filter_map(|o| match o {
+                        .enumerate()
+                        .filter_map(|(i, o)| match o {
                             StepOutcome::Card { card, recipe, .. } => Some(((**card).clone(), recipe.text())),
+                            // A buffer that only feeds a later step is a means, not an answer:
+                            // its size isn't shown (the step list names it).
+                            StepOutcome::NewLayer { alias, recipe, .. } if recipe.action == "buffer" && feeds_later(plan, i, alias) => None,
                             StepOutcome::NewLayer { card, recipe, .. } => Some(((**card).clone(), recipe.text())),
                             _ => None,
                         })
@@ -625,7 +638,7 @@ fn answer_panel(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, width: f32, ma
                     }
                     for (card, recipe) in cards {
                         ui.add_space(10.0);
-                        crate::analysis::result_card(shell, ui, t, &card, &recipe, None);
+                        crate::analysis::result_card(shell, ui, t, &card, &recipe, None, true);
                     }
                 }
                 Some(Shown::Question { text, choices }) => {
