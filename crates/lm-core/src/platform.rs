@@ -1,6 +1,6 @@
 //! Where NimbleMap keeps things on each platform (WP6.2): the bundled resources next to the
 //! executable, and the per-user folders. Pure path rules: callers pass the executable's path and
-//! an environment lookup, so the macOS and Windows rules are both tested on either system.
+//! an environment lookup, so the macOS, Windows and Linux rules are all tested on any system.
 
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 pub enum Os {
     MacOs,
     Windows,
-    /// Linux and the rest (best effort, unpackaged).
+    /// Linux and the rest (best effort: a portable tarball, `packaging/lm/linux`).
     Other,
 }
 
@@ -27,12 +27,13 @@ impl Os {
 
 /// The bundled resources folder (examples, reference layers, the tier file) for an executable.
 /// macOS: `<App>.app/Contents/Resources` for `Contents/MacOS/layeredmap`. Windows: `Resources`
-/// beside `layeredmap.exe`, as the installer lays it out (`packaging/lm/windows`).
+/// beside `layeredmap.exe`, as the installer lays it out (`packaging/lm/windows`). Linux and the
+/// rest: `Resources` beside `layeredmap` too, as the tarball lays it out (`packaging/lm/linux`).
 pub fn resources_dir(exe: &Path, os: Os) -> Option<PathBuf> {
     let dir = exe.parent()?;
     match os {
-        Os::Windows => Some(dir.join("Resources")),
-        Os::MacOs | Os::Other => Some(dir.parent()?.join("Resources")),
+        Os::Windows | Os::Other => Some(dir.join("Resources")),
+        Os::MacOs => Some(dir.parent()?.join("Resources")),
     }
 }
 
@@ -57,7 +58,9 @@ pub enum Folder {
 /// Where `folder` is for the user `env` describes. macOS: `~/Library/Application Support`,
 /// `~/Library/Logs` and `~/Library/Caches`. Windows: the roaming `%APPDATA%` for Support and the
 /// local `%LOCALAPPDATA%` for the rest (each falling back to `%USERPROFILE%\AppData\…`).
-/// `None` when the environment names no home.
+/// Linux and the rest: the XDG base directories, `$XDG_DATA_HOME` (`~/.local/share`) for Support,
+/// `$XDG_STATE_HOME` (`~/.local/state`) for autosaves and logs, `$XDG_CACHE_HOME` (`~/.cache`)
+/// for caches, each in a `layeredmap` folder. `None` when the environment names no home.
 ///
 /// The folders keep the name `LayeredMap` after the rename to NimbleMap (`crate::brand`): they
 /// hold the user's autosaves, question log and caches, so moving them needs a migration of its
@@ -85,18 +88,16 @@ pub fn user_dir(folder: Folder, os: Os, env: impl Fn(&str) -> Option<OsString>) 
                 Folder::Caches => lib.join("Caches/LayeredMap"),
             })
         }
-        // Unchanged from before Windows (best effort): the macOS-style support folder under the
-        // home folder, `~/LayeredMap/logs`, and the XDG cache.
+        // The XDG base directories (best effort; docs/lm/linux.md). Lower-case `layeredmap`, as
+        // Linux folders are named. Builds before the tarball used a macOS-style folder under the
+        // home folder; nothing moves it, as Linux had no users then.
         Os::Other => {
-            let home = var("HOME");
+            let xdg = |k: &str, fallback: &str| var(k).or_else(|| var("HOME").map(|h| h.join(fallback)));
             Some(match folder {
-                Folder::Support => home?.join("Library/Application Support/LayeredMap"),
-                Folder::Autosave => home?.join("Library/Application Support/LayeredMap/Autosave"),
-                Folder::Logs => home?.join("LayeredMap/logs"),
-                Folder::Caches => match var("XDG_CACHE_HOME") {
-                    Some(x) => x.join("layeredmap"),
-                    None => home?.join(".cache/layeredmap"),
-                },
+                Folder::Support => xdg("XDG_DATA_HOME", ".local/share")?.join("layeredmap"),
+                Folder::Autosave => xdg("XDG_STATE_HOME", ".local/state")?.join("layeredmap/autosave"),
+                Folder::Logs => xdg("XDG_STATE_HOME", ".local/state")?.join("layeredmap/logs"),
+                Folder::Caches => xdg("XDG_CACHE_HOME", ".cache")?.join("layeredmap"),
             })
         }
     }
@@ -116,12 +117,42 @@ mod tests {
     }
 
     #[test]
-    fn resources_sit_in_the_bundle_on_macos_and_beside_the_exe_on_windows() {
+    fn resources_sit_in_the_bundle_on_macos_and_beside_the_exe_on_windows_and_linux() {
         let mac = Path::new("/Applications/NimbleMap.app/Contents/MacOS/layeredmap");
         assert_eq!(resources_dir(mac, Os::MacOs), Some(PathBuf::from("/Applications/NimbleMap.app/Contents/Resources")));
         // Built with `/` so the test reads the same on both systems; the rule is "the exe's folder".
         let win = Path::new("C:/Program Files/NimbleMap/layeredmap.exe");
         assert_eq!(resources_dir(win, Os::Windows), Some(PathBuf::from("C:/Program Files/NimbleMap/Resources")));
+        // The tarball's root, wherever it was unpacked.
+        let linux = Path::new("/home/me/NimbleMap-0.7.0-12-linux-x86_64/layeredmap");
+        assert_eq!(resources_dir(linux, Os::Other), Some(PathBuf::from("/home/me/NimbleMap-0.7.0-12-linux-x86_64/Resources")));
+    }
+
+    #[test]
+    #[cfg_attr(windows, ignore = "Unix paths are not absolute on Windows")]
+    fn linux_folders_follow_xdg() {
+        // Only HOME: the XDG defaults under it.
+        let e = env(&[("HOME", "/home/me")]);
+        assert_eq!(user_dir(Folder::Support, Os::Other, &e), Some(PathBuf::from("/home/me/.local/share/layeredmap")));
+        assert_eq!(user_dir(Folder::Autosave, Os::Other, &e), Some(PathBuf::from("/home/me/.local/state/layeredmap/autosave")));
+        assert_eq!(user_dir(Folder::Logs, Os::Other, &e), Some(PathBuf::from("/home/me/.local/state/layeredmap/logs")));
+        assert_eq!(user_dir(Folder::Caches, Os::Other, &e), Some(PathBuf::from("/home/me/.cache/layeredmap")));
+        // The XDG variables win over HOME.
+        let vars = [("HOME", "/home/me"), ("XDG_DATA_HOME", "/d"), ("XDG_STATE_HOME", "/s"), ("XDG_CACHE_HOME", "/c")];
+        let e = env(&vars);
+        assert_eq!(user_dir(Folder::Support, Os::Other, &e), Some(PathBuf::from("/d/layeredmap")));
+        assert_eq!(user_dir(Folder::Autosave, Os::Other, &e), Some(PathBuf::from("/s/layeredmap/autosave")));
+        assert_eq!(user_dir(Folder::Logs, Os::Other, &e), Some(PathBuf::from("/s/layeredmap/logs")));
+        assert_eq!(user_dir(Folder::Caches, Os::Other, &e), Some(PathBuf::from("/c/layeredmap")));
+        // Without HOME an XDG variable still names its folder, and the others have none.
+        let e = env(&[("XDG_STATE_HOME", "/s")]);
+        assert_eq!(user_dir(Folder::Logs, Os::Other, &e), Some(PathBuf::from("/s/layeredmap/logs")));
+        assert_eq!(user_dir(Folder::Support, Os::Other, &e), None);
+        // A relative or empty XDG value is ignored, as the spec says: the default is used instead.
+        let e = env(&[("HOME", "/home/me"), ("XDG_DATA_HOME", "rel"), ("XDG_CACHE_HOME", "")]);
+        assert_eq!(user_dir(Folder::Support, Os::Other, &e), Some(PathBuf::from("/home/me/.local/share/layeredmap")));
+        assert_eq!(user_dir(Folder::Caches, Os::Other, &e), Some(PathBuf::from("/home/me/.cache/layeredmap")));
+        assert_eq!(user_dir(Folder::Caches, Os::Other, env(&[])), None);
     }
 
     /// `/Users/me` is only absolute off Windows, where the rule refuses it as it should.

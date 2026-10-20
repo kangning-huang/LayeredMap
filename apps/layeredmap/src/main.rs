@@ -435,7 +435,7 @@ impl Step {
 
 /// NimbleMap Pro: the Pro app bundle carries `Contents/Resources/tier` reading "pro"
 /// (`packaging/lm/bundle-macos.sh` with `LM_TIER=pro`; on Windows `Resources\tier` beside the exe,
-/// from the Pro installer); `LM_TIER=pro` does the same for a run
+/// from the Pro installer; on Linux `Resources/tier` beside it in the Pro tarball); `LM_TIER=pro` does the same for a run
 /// outside a bundle. Until accounts exist (Phase 7) the tier is the app you open.
 fn is_pro() -> bool {
     if std::env::var("LM_TIER").is_ok_and(|v| v.eq_ignore_ascii_case("pro")) {
