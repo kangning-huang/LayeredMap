@@ -95,8 +95,18 @@ mod tests {
 
     #[test]
     fn a_missing_page_falls_back_to_english() {
-        let exe = Path::new("/Applications/NimbleMap.app/Contents/MacOS/layeredmap");
-        let english = PathBuf::from("/Applications/NimbleMap.app/Contents/Resources/help/help.html");
+        // Same layout as the_bundle_page_wins_when_present: Os::CURRENT decides Resources.
+        let (exe, english) = if cfg!(target_os = "macos") {
+            (
+                Path::new("/Applications/NimbleMap.app/Contents/MacOS/layeredmap"),
+                PathBuf::from("/Applications/NimbleMap.app/Contents/Resources/help/help.html"),
+            )
+        } else {
+            (
+                Path::new("/opt/NimbleMap/layeredmap"),
+                PathBuf::from("/opt/NimbleMap/Resources/help/help.html"),
+            )
+        };
         assert_eq!(page(Some(exe), lang("ja"), |p| p == english), english);
     }
 
