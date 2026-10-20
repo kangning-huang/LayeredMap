@@ -189,7 +189,18 @@ pub struct ActionResult {
     pub output: ActionOutput,
     /// Rows to select on the map while the result is shown.
     pub highlight: Option<(LayerId, Vec<usize>)>,
+    /// The features that answer a question about a few areas ("how many storms passed within
+    /// 100 km of Tokyo"): the things `count_in` counted, or the features `join_by_location`
+    /// matched, when the areas in scope are at most [`ANSWER_AREAS`]. The assistant's preview
+    /// highlights them and Keep selects them; None for everything else.
+    pub matched: Option<(LayerId, Vec<usize>)>,
 }
+
+/// The most areas a `count_in` or `join_by_location` may have in scope for its counted or
+/// matched features to be the answer ([`ActionResult::matched`]): "within 100 km of Tokyo" is
+/// one area, "in Japan or Korea" two; counting schools in each of 17 districts is a ranking of
+/// the districts, not a set of schools.
+pub const ANSWER_AREAS: usize = 5;
 
 #[derive(Clone)]
 pub enum ActionOutput {
@@ -554,7 +565,7 @@ fn range_words(lo: f64, hi: f64) -> String {
 
 fn count_in(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
     let (pts_in, areas_in) = (plan.input(0)?, plan.input(1)?);
-    let (pts, _) = pts_in.scoped()?;
+    let (pts, pt_rows) = pts_in.scoped()?;
     // Areas (islands) are counted by a point inside each: their label point. Lines (storm tracks,
     // rivers) count once in every area they pass through or touch.
     let lines = pts_in.layer.profile.kind == LayerKind::Lines;
@@ -688,6 +699,8 @@ fn count_in(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
         recipe: recipe(plan, &title, &inputs, PLANAR, decisions, excluded),
         output: ActionOutput::NewLayer { layer: layer_from(&title, "Result", out), color_by: Some(color_by) },
         highlight: None,
+        matched: (area_rows.len() <= ANSWER_AREAS)
+            .then(|| (pts_in.layer.id, r.matched.iter().filter_map(|i| pt_rows.get(*i).copied()).collect())),
     })
 }
 
@@ -724,6 +737,7 @@ fn count_here(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
         recipe: recipe(plan, &title, &inputs, PLANAR, Vec::new(), excluded),
         output: ActionOutput::Card,
         highlight: Some((pts_in.layer.id, inside.rows.iter().map(|r| pt_rows[*r]).collect())),
+        matched: None,
     })
 }
 
@@ -761,6 +775,7 @@ fn which_container(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionErr
         recipe: recipe(plan, &title, &inputs, PLANAR, Vec::new(), Vec::new()),
         output: ActionOutput::Card,
         highlight: Some((areas_in.layer.id, found.iter().map(|i| area_rows[*i]).collect())),
+        matched: None,
     })
 }
 
@@ -791,6 +806,7 @@ fn whats_inside(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError>
         recipe: recipe(plan, &title, &inputs, PLANAR, Vec::new(), Vec::new()),
         output: ActionOutput::Card,
         highlight: Some((layer_in.layer.id, r.rows.iter().map(|i| rows[*i]).collect())),
+        matched: None,
     })
 }
 
@@ -877,6 +893,7 @@ fn buffer_action(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError
         recipe: recipe(plan, &title, &inputs, GEODESIC, decisions, excluded),
         output: ActionOutput::NewLayer { layer: layer_from(&title, "Result", layer), color_by: None },
         highlight: None,
+        matched: None,
     })
 }
 
@@ -925,6 +942,7 @@ fn measure(plan: &Plan) -> Result<ActionResult, ActionError> {
         recipe: recipe(plan, &title, &inputs, GEODESIC, Vec::new(), Vec::new()),
         output: ActionOutput::Card,
         highlight: None,
+        matched: None,
     })
 }
 
@@ -1123,6 +1141,7 @@ fn summarize_each(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionErro
         recipe: recipe(plan, &title, &inputs, CELL_AREAS, decisions, Vec::new()),
         output: ActionOutput::NewLayer { layer: layer_from(&title, "Result", out), color_by },
         highlight: None,
+        matched: None,
     })
 }
 
@@ -1184,6 +1203,7 @@ fn summarize_one(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError
         recipe: recipe(plan, &title, &inputs, CELL_AREAS, b.decisions.clone(), Vec::new()),
         output: ActionOutput::Card,
         highlight: None,
+        matched: None,
     })
 }
 
@@ -1246,6 +1266,7 @@ fn add_raster_values(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionE
         ),
         output: ActionOutput::NewFields { layer: pts_in.layer.id, data: Arc::new(out), fields: vec![field] },
         highlight: None,
+        matched: None,
     })
 }
 
@@ -1299,6 +1320,7 @@ fn rank_by_value(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError
         recipe: recipe(plan, &title, &inputs, "", Vec::new(), Vec::new()),
         output: ActionOutput::Card,
         highlight: None,
+        matched: None,
     })
 }
 
@@ -1402,6 +1424,7 @@ fn calculate_field(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionErr
         ),
         output: ActionOutput::NewFields { layer: input.layer.id, data: Arc::new(out), fields: vec![name] },
         highlight: None,
+        matched: None,
     })
 }
 
@@ -1453,6 +1476,7 @@ fn split_parts(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> 
         recipe: recipe(plan, &title, &inputs, "", Vec::new(), Vec::new()),
         output: ActionOutput::NewLayer { layer: layer_from(&title, "Result", out), color_by: None },
         highlight: None,
+        matched: None,
     })
 }
 
@@ -1570,6 +1594,7 @@ fn find_where(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
         recipe: recipe(plan, &title, &inputs, CELL_AREAS, decisions, Vec::new()),
         output: ActionOutput::NewLayer { layer: layer_from(&title, "Result", layer), color_by: None },
         highlight: None,
+        matched: None,
     })
 }
 
@@ -1624,6 +1649,7 @@ fn clip_action(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> 
         recipe: recipe(plan, &title, &inputs, "", vec![decision], Vec::new()),
         output: ActionOutput::NewLayer { layer: layer_from(&title, "Result", out), color_by: None },
         highlight: None,
+        matched: None,
     })
 }
 
@@ -1752,6 +1778,7 @@ fn nearest_action(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionErro
         ),
         output: ActionOutput::NewFields { layer: layer_in.layer.id, data: Arc::new(out), fields },
         highlight: None,
+        matched: None,
     })
 }
 
@@ -1759,6 +1786,7 @@ fn join_action(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> 
     let (layer_in, areas_in) = (plan.input(0)?, plan.input(1)?);
     let (ds, rows) = layer_in.scoped()?;
     let (areas, _) = areas_in.scoped()?;
+    let area_count = areas.features.len();
     let mut res = lm_analysis::overlay::join_by_location(&ds, &areas, ctl)?;
     // Points just outside every area (a coastline drawn a little inland) take the nearest area
     // within JOIN_NEAR_M, counted and stated (owner's decision, 2026-10-17).
@@ -1857,6 +1885,12 @@ fn join_action(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> 
         ),
         output: ActionOutput::NewFields { layer: layer_in.layer.id, data: Arc::new(out), fields },
         highlight: None,
+        matched: (area_count <= ANSWER_AREAS).then(|| {
+            (
+                layer_in.layer.id,
+                res.area_of.iter().enumerate().filter(|(_, a)| a.is_some()).filter_map(|(i, _)| rows.get(i).copied()).collect(),
+            )
+        }),
     })
 }
 
@@ -1927,6 +1961,7 @@ fn measure_fields(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionErro
         ),
         output: ActionOutput::NewFields { layer: input.layer.id, data: Arc::new(out), fields },
         highlight: None,
+        matched: None,
     })
 }
 
@@ -2003,6 +2038,7 @@ fn match_table(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> 
         recipe: recipe(plan, &title, &inputs, "", decisions, Vec::new()),
         output: ActionOutput::NewFields { layer: layer_in.layer.id, data: Arc::new(joined.data), fields: joined.new_fields },
         highlight: None,
+        matched: None,
     })
 }
 

@@ -13,7 +13,7 @@ The plan for v2 came from `docs/lm/llm-eval-failures.md`; the results are in `do
 | `tools_v2.py` | Tools per map context: layer enums per slot, `stat` menus, `resolve_feature`; designs `per_action` and `submit_plan` |
 | `prompt_v2.py` | Instructions (10 rules) and 9 worked examples on an invented map; system message with `cache_control` |
 | `checker.py` | The deterministic plan checker: per-step checks with corrections, plan-level lint, trailing display drop |
-| `make_cases_v2.py` → `cases_v2.jsonl` | The 97-case v2 benchmark (78 from v1 with 2 corrections, 19 new) |
+| `make_cases_v2.py` → `cases_v2.jsonl` | The 97-case v2 benchmark (78 from v1 with 2 corrections, 19 new), plus `r10` (added later, offline only) |
 | `scoring_v2.py` | Two scoring modes: `v1` (the original 78 with v1's cases and rules) and `v2` (97 cases, statistic checked) |
 | `run_v2.py` | The runner (OpenRouter), the text-plan fallback parser, the mock client |
 | `report_v2.py` | Summary of the v2 runs beside the v1 baseline → `results/summary.{md,csv}` |
@@ -51,6 +51,10 @@ All in `make_cases_v2.py`; `../cases.jsonl` is untouched.
 | 9 new name/category cases `r01`–`r09` (6 Chinese): 南京路, 初中, 东京, 浦东新区, Huaihai Road, 内环, 城市公园, "high schools in Pudong", and **Portland** (two places: should ask) | `resolve_feature` |
 
 97 cases, 26 in Chinese. The 19 new cases were written before any v2 run and not changed after.
+
+`r10` ("How many cities are within 300 km of Tokyo?": buffer the city, count in that area) was added on
+2026-10-20 after the launch-video bug, so `cases_v2.jsonl` holds 98 lines. It is not part of the measured runs;
+check it offline with `run_v2.py --dry-run --only r10` (no model call).
 
 **v1-compatible scoring.** `scoring_v2.score_both` scores every final plan twice: against the
 original 78 cases with v1's `scoring.score` (so x05 still expects `cannot_do` and `stat` isn't

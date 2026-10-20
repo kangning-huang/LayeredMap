@@ -75,6 +75,9 @@ pub struct CountInAreas {
     pub points_without_geometry: u64,
     /// Area rows without a usable polygon geometry (each counted 0).
     pub areas_without_geometry: Vec<usize>,
+    /// The point (or line) rows counted in at least one area, ascending: the features behind
+    /// the counts.
+    pub matched: Vec<usize>,
 }
 
 /// The result of "Which [area] is it in?".
@@ -132,16 +135,22 @@ pub fn count_lines_in_areas(lines: &Dataset, areas: &Dataset, ctl: &Control) -> 
         areas_without_geometry: index.without_geometry.clone(),
         ..CountInAreas::default()
     };
-    index.for_each_line(lines, ctl, |hits| match hits {
-        None => out.points_without_geometry += 1,
-        Some([]) => out.outside_all += 1,
-        Some(hits) => {
-            if hits.len() > 1 {
-                out.counted_more_than_once += 1;
-            }
-            for &a in hits {
-                if let Some(c) = out.counts.get_mut(a) {
-                    *c += 1;
+    let mut row = 0usize;
+    index.for_each_line(lines, ctl, |hits| {
+        let r = row;
+        row += 1;
+        match hits {
+            None => out.points_without_geometry += 1,
+            Some([]) => out.outside_all += 1,
+            Some(hits) => {
+                if hits.len() > 1 {
+                    out.counted_more_than_once += 1;
+                }
+                out.matched.push(r);
+                for &a in hits {
+                    if let Some(c) = out.counts.get_mut(a) {
+                        *c += 1;
+                    }
                 }
             }
         }
@@ -165,13 +174,14 @@ pub fn count_points_in_areas(points: &Dataset, areas: &Dataset, ctl: &Control) -
         areas_without_geometry: index.without_geometry.clone(),
         ..CountInAreas::default()
     };
-    index.for_each_point(points, ctl, PHASE_COUNT, |_, hits| match hits {
+    index.for_each_point(points, ctl, PHASE_COUNT, |row, hits| match hits {
         None => out.points_without_geometry += 1,
         Some([]) => out.outside_all += 1,
         Some(hits) => {
             if hits.len() > 1 {
                 out.counted_more_than_once += 1;
             }
+            out.matched.push(row);
             for &a in hits {
                 if let Some(c) = out.counts.get_mut(a) {
                     *c += 1;

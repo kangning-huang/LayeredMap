@@ -1,0 +1,7 @@
+{"type": "FeatureCollection", "name": "storms", "features": [
+{"type": "Feature", "properties": {"name": "Abby", "category": 5}, "geometry": {"type": "LineString", "coordinates": [[139.0, 34.0], [140.5, 37.0]]}},
+{"type": "Feature", "properties": {"name": "Far", "category": 5}, "geometry": {"type": "LineString", "coordinates": [[150.0, 20.0], [155.0, 30.0]]}},
+{"type": "Feature", "properties": {"name": "Weak", "category": 3}, "geometry": {"type": "LineString", "coordinates": [[138.5, 35.5], [141.0, 36.0]]}},
+{"type": "Feature", "properties": {"name": "Near", "category": 5}, "geometry": {"type": "LineString", "coordinates": [[140.2, 34.5], [140.4, 37.0]]}},
+{"type": "Feature", "properties": {"name": "Wide", "category": 5}, "geometry": {"type": "LineString", "coordinates": [[142.0, 34.0], [142.2, 37.0]]}}
+]}

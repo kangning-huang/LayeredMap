@@ -116,6 +116,8 @@ pub fn submit(shell: &mut Shell, ctx: &egui::Context, text: String) {
     // Which way the request goes (docs/lm/accounts-design.md): a developer's key
     // straight to OpenRouter, or the Ask proxy with the signed-in account's token.
     let via = match shell.account.route() {
+        // A recorded answer (`LM_ASK_FIXTURE`): no request leaves the Mac.
+        _ if fixture_path().is_some() => fixture_path().map(Via::Fixture),
         lm_account::AskRoute::Direct => direct_key().map(Via::Direct),
         lm_account::AskRoute::Proxy => match shell.account.proxy_target() {
             Some((account, url, anon_key)) => Some(Via::Proxy { account, url, anon_key }),
@@ -158,6 +160,10 @@ pub fn submit(shell: &mut Shell, ctx: &egui::Context, text: String) {
     #[cfg(not(target_arch = "wasm32"))]
     std::thread::spawn(move || {
         let turn = match via {
+            Via::Fixture(path) => match lm_ask::fixture::Fixture::open(&path) {
+                Ok(f) => lm_ask::ask(&f as &dyn Transport, &req, &c),
+                Err(e) => Turn { answer: Err(e), messages: Vec::new(), usage: Usage::default() },
+            },
             Via::Direct(key) => lm_ask::ask(&lm_ask::openrouter::OpenRouter::new(key) as &dyn Transport, &req, &c),
             // A fresh token first (refreshed when it is about to expire; the network gate decides).
             Via::Proxy { account, url, anon_key } => match account.access_token() {
@@ -189,8 +195,26 @@ pub fn submit(shell: &mut Shell, ctx: &egui::Context, text: String) {
 
 /// How a request is sent.
 enum Via {
+    /// A recorded answer (`LM_ASK_FIXTURE`), for filming and checks without a model call.
+    #[cfg_attr(target_arch = "wasm32", allow(dead_code))]
+    Fixture(std::path::PathBuf),
     Direct(String),
-    Proxy { account: std::sync::Arc<lm_account::Account>, url: String, anon_key: String },
+    Proxy {
+        account: std::sync::Arc<lm_account::Account>,
+        url: String,
+        anon_key: String,
+    },
+}
+
+/// The recorded answer `LM_ASK_FIXTURE` names, when set.
+#[cfg(not(target_arch = "wasm32"))]
+fn fixture_path() -> Option<std::path::PathBuf> {
+    std::env::var_os(lm_ask::fixture::ENV).filter(|p| !p.is_empty()).map(std::path::PathBuf::from)
+}
+
+#[cfg(target_arch = "wasm32")]
+fn fixture_path() -> Option<std::path::PathBuf> {
+    None
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -262,6 +286,14 @@ pub fn poll(shell: &mut Shell) {
         // messages): translated here, on the interface's.
         Err(e) => Shown::Message { text: crate::account_ui::shown(&e), warning: true },
     });
+}
+
+/// Shows `plan` as if the assistant had just answered `request` with it (tests and snapshots).
+#[cfg(test)]
+pub(crate) fn show_plan(shell: &mut Shell, request: &str, plan: PlanResult) {
+    shell.ws.preview_plan(Some(&plan));
+    shell.ask.answer_no += 1;
+    shell.ask.shown = Some(Shown::Plan { request: request.into(), plan: Box::new(plan), usage: Usage::default(), seconds: 0.0 });
 }
 
 fn discard(shell: &mut Shell) {
@@ -427,7 +459,33 @@ pub fn ask_box(shell: &mut Shell, ui: &mut Ui, map: egui::Rect) {
     });
     if before.is_some_and(|b| b != size) {
         ui.ctx().request_repaint();
+    } else if before.is_some() && shell.ws.answer_fit.is_some() && shell.ask.pending.is_none() {
+        // The answer is laid out: the map frames it in the free part beside or above it.
+        if let Some(e) = shell.ws.answer_fit.take() {
+            frame_answer(shell, map, shown.response.rect, x0, x1, e);
+        }
     }
+}
+
+/// Flies the map so `e` lands in the largest free part of `map` around the Ask box `card`
+/// (above it, or beside it between the side panels at `x0`–`x1`).
+fn frame_answer(shell: &mut Shell, map: egui::Rect, card: egui::Rect, x0: f32, x1: f32, e: lm_core::model::Extent) {
+    let gap = theme::PANEL_MARGIN;
+    let top = map.top() + gap;
+    let candidates = [
+        egui::Rect::from_min_max(egui::pos2(x0, top), egui::pos2(x1, card.top() - gap)),
+        egui::Rect::from_min_max(egui::pos2(x0, top), egui::pos2(card.left() - gap, map.bottom() - gap)),
+        egui::Rect::from_min_max(egui::pos2(card.right() + gap, top), egui::pos2(x1, map.bottom() - gap)),
+    ];
+    let e = lm_mapview::Extent { min_x: e.min_x, min_y: e.min_y, max_x: e.max_x, max_y: e.max_y };
+    // The part that shows the frame biggest (the smallest resolution); a sliver is no use.
+    let best = candidates
+        .into_iter()
+        .filter(|r| r.width() >= 160.0 && r.height() >= 120.0)
+        .min_by(|a, b| lm_mapview::fit_res(&e, a.width(), a.height()).total_cmp(&lm_mapview::fit_res(&e, b.width(), b.height())));
+    let free = best.unwrap_or(egui::Rect::from_min_max(egui::pos2(x0, map.top()), egui::pos2(x1, map.bottom())));
+    let local = free.translate(-map.min.to_vec2());
+    shell.map_view_mut().zoom_to_extent_in(&e, map.size(), local);
 }
 
 fn field(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, width: f32) {
