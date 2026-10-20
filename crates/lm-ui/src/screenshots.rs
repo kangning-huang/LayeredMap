@@ -438,6 +438,7 @@ fn phase3_style_tab() {
 /// Details lists every field with wrapped evidence; the inspector keeps its width however long
 /// the evidence is, frame after frame (owner's Phase 3 recording: it used to grow off the window).
 #[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
 fn phase3_details_tab() {
     let mut h = phase3(&["../assets/examples/cities.geojson"], (100.0, 35.0, 3.0), |s| {
         // The same source text on every machine.
@@ -460,6 +461,7 @@ fn phase3_details_tab() {
 /// Find in a layer (WP3.10): "pu" selects every matching district on the map and lists
 /// them with the matched field in bold.
 #[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
 fn phase3_find() {
     let mut h = phase3(&["V1/districts.geojson"], SHANGHAI, |s| {
         let id = s.ws.doc.layers[0].id;
@@ -476,6 +478,7 @@ fn phase3_find() {
 /// question, colour the layer, and show the result card with the typo suggestion. The join is
 /// one undo step: Undo brings the table back and the layer's fields as they were.
 #[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
 fn phase3_join_card() {
     let mut h = phase3(&["J5/provinces.geojson", "J5/population_zh.csv"], (5.0, 30.5, 6.0), |_| {});
     settle(&mut h);
@@ -502,6 +505,7 @@ fn phase3_join_card() {
 /// ISO3 codes join countries, not cities (their country field repeats), and the table shows as
 /// a child row of countries, expanded right after the join, with how many countries matched.
 #[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
 fn phase3_joined_sublayer() {
     use egui_kittest::kittest::Queryable as _;
     let mut h =
@@ -556,6 +560,7 @@ fn phase3_joined_sublayer() {
 
 /// A table whose places aren't clear asks one question (J4).
 #[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
 fn phase3_join_question() {
     let mut h = phase3(&["J4/places.geojson", "J4/mixed_keys.csv"], (6.0, 0.5, 6.0), |_| {});
     settle(&mut h);
@@ -569,6 +574,7 @@ fn phase3_join_question() {
 /// district per year, shows the row counts and how the repeats are handled, with Join and Keep
 /// as a table.
 #[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
 fn phase3_join_confirm() {
     let mut h = phase3(&["V1/districts.geojson", "J3/population_by_year.csv"], SHANGHAI, |_| {});
     settle(&mut h);
@@ -581,6 +587,7 @@ fn phase3_join_confirm() {
 /// "Match to a layer" (WP6.4): the column picker on a table whose key column has another name
 /// than the layer's (J6: `ward` ↔ `ward_code`), with the live preview.
 #[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
 fn phase3_match_picker() {
     let mut h = phase3(&["J6/wards.geojson", "J6/ward_people.csv"], (121.37, 31.02, 9.0), |s| {
         let table = s.ws.doc.layers.iter().find(|l| l.profile.kind == lm_core::model::LayerKind::Table).unwrap().id;
@@ -597,6 +604,7 @@ fn phase3_match_picker() {
 /// Drawing an area (WP4.4): the outline so far and the banner; a finished outline becomes the
 /// layer "Area 1" in WGS 84.
 #[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
 fn phase4_drawing() {
     let mut h = phase3(&["V1/districts.geojson"], SHANGHAI, |s| {
         s.ws.clear_selection();
