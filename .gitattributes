@@ -1,0 +1,20 @@
+# Fixtures and catalogs are compared by byte size and SHA (library tests, gate2 snapshots).
+# Force LF so Windows checkouts without core.autocrlf=false stay byte-identical to macOS/Linux.
+*.geojson text eol=lf
+*.json text eol=lf
+*.csv text eol=lf
+*.tsv text eol=lf
+*.kml text eol=lf
+*.gpx text eol=lf
+*.md text eol=lf
+*.rs text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.toml text eol=lf
+*.tif -text
+*.tiff -text
+*.png -text
+*.gpkg -text
+*.nc -text
+*.zip -text
+*.xlsx -text

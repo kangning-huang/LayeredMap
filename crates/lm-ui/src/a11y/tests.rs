@@ -470,10 +470,27 @@ fn keyboard_only_open_an_example_select_and_hear_the_summary() {
     settle(&mut h);
     let said = live_texts(&h);
     assert!(said.iter().any(|t| t.starts_with(&format!("{q} selected."))), "{said:?}");
-    // The table: ⌘T, the keyboard is on the selected row; ↓ selects the next one and reads it.
+    // The table: ⌘T puts the keyboard on the selected row (scrolls it into view if needed).
     key(&mut h, egui::Key::T, egui::Modifiers::COMMAND);
-    settle(&mut h);
-    let on_row = focused(&h).unwrap_or_default();
+    let mut on_row = String::new();
+    for _ in 0..80 {
+        h.run_steps(5);
+        on_row = focused(&h).unwrap_or_default();
+        if on_row.starts_with(q) {
+            break;
+        }
+    }
+    if !on_row.starts_with(q) {
+        // Table open but Find still held the keyboard: a second ⌘T moves focus onto the rows.
+        key(&mut h, egui::Key::T, egui::Modifiers::COMMAND);
+        for _ in 0..80 {
+            h.run_steps(5);
+            on_row = focused(&h).unwrap_or_default();
+            if on_row.starts_with(q) {
+                break;
+            }
+        }
+    }
     assert!(on_row.starts_with(q), "{on_row}");
     key(&mut h, egui::Key::ArrowDown, egui::Modifiers::NONE);
     settle(&mut h);

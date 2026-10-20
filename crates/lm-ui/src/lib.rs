@@ -583,6 +583,14 @@ impl Shell {
                         self.ws.doc.layers.iter().rev().find(|l| l.profile.kind != lm_core::model::LayerKind::Raster).map(|l| l.id)
                     }),
                 };
+                // Leave a Find/search field so the table row can take AccessKit focus.
+                if self.table.focus {
+                    ctx.memory_mut(|m| {
+                        if let Some(id) = m.focused() {
+                            m.surrender_focus(id);
+                        }
+                    });
+                }
             }
             Command::ApplyPreset(n) => {
                 if let Some(l) = self.ws.selected().and_then(|id| self.ws.doc.layer(id)).cloned()
