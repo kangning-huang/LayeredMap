@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>NimbleMap — Explore real data about the planet</title>
-<meta name="description" content="A free Mac app with eight built-in maps — typhoons, earthquakes, heatwaves and more. Click anything to see how it compares. Then bring your own data.">
+<title>NimbleMap: drag in the map data you download</title>
+<meta name="description" content="A free Mac app that opens the map data you download as a map in seconds: Shapefiles, GeoPackages, NetCDF, GeoTIFFs, GPX, KML and CSVs with coordinates. No GIS training, no setup.">
 <link rel="canonical" href="index.html">
 <link rel="alternate" hreflang="en" href="index.html">
 <link rel="alternate" hreflang="zh-Hans" href="zh/index.html">
@@ -21,13 +21,14 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="NimbleMap">
 <meta property="og:locale" content="en_US">
-<meta property="og:title" content="NimbleMap — Explore real data about the planet">
-<meta property="og:description" content="A free Mac app with eight built-in maps — typhoons, earthquakes, heatwaves and more. Click anything to see how it compares. Then bring your own data.">
+<meta property="og:title" content="Found map data online? Drag it into NimbleMap.">
+<meta property="og:description" content="Shapefiles, GeoPackages, NetCDF, GeoTIFFs, GPX, KML, CSVs with coordinates: NimbleMap opens them as a map in seconds. Free for Mac.">
 <meta property="og:url" content="index.html">
-<meta property="og:image" content="img/typhoons-card.jpg">
+<meta property="og:image" content="img/open-storms.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
 <link rel="stylesheet" href="assets/site.css">
+<link rel="stylesheet" href="assets/data.css">
 <script src="assets/site.js"></script>
 <script type="application/ld+json">
 {
@@ -37,7 +38,7 @@
   "inLanguage": "en",
   "operatingSystem": "macOS 13 or later (Apple silicon)",
   "applicationCategory": "UtilitiesApplication",
-  "description": "A free Mac app with eight built-in maps — typhoons, earthquakes, heatwaves and more. Click anything to see how it compares. Then bring your own data.",
+  "description": "A free Mac app that opens the map data you download as a map in seconds: Shapefiles, GeoPackages, NetCDF, GeoTIFFs, GPX, KML and CSVs with coordinates. No GIS training, no setup.",
   "isAccessibleForFree": true,
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
 }
@@ -75,51 +76,159 @@
 </header>
 
 <main>
-<section class="hero contours">
+<section class="hero contours drop-hero">
   <div class="wrap hero-grid">
     <div>
       <p class="eyebrow">Free for Mac</p>
-      <h1>Explore real data about the planet.</h1>
-      <p class="lede">Eight maps built in — typhoons, earthquakes, heatwaves and more. Then bring your own.</p>
+      <h1>Found map data online? Drag it into NimbleMap.</h1>
+      <p class="lede">Shapefiles, GeoPackages, NetCDF, GeoTIFFs, GPX, KML, CSVs with coordinates: the files you download from NASA, USGS or your city’s open-data portal. NimbleMap opens them as a map in seconds. No GIS training, no setup.</p>
+      <p class="hero-how">Drag the file into NimbleMap, or double-click a Shapefile, GeoPackage or NetCDF file to open it straight away.</p>
       <div class="actions">
         <a class="btn btn-primary btn-get" href="https://github.com/kangning-huang/NimbleMap/releases/latest/download/NimbleMap-macos-arm64.dmg" download>Download free for Mac</a>
-        <a class="btn btn-quiet" href="#examples">See the built-in maps</a>
+        <a class="btn btn-quiet" href="#data">Where to find data</a>
       </div>
       <p class="mac-only" hidden>NimbleMap needs a Mac with Apple silicon. A Windows version is on the way.</p>
       <p class="dl-fine">Free · about 74 MB · macOS 13 or later · Apple silicon · works offline</p>
       <p class="dl-fine"><a href="download.html#get">First time: macOS asks you to allow it — how to open it</a></p>
     </div>
-    <div class="hero-shot showcase" data-rotate="3000">
+    <div class="hero-shot showcase drop-scene" data-rotate="3500">
+      <!-- Hero video hook: for the launch-video web loop, put
+             <video class="slide is-on" autoplay muted loop playsinline poster="img/open-storms.jpg" width="1600" height="996"><source src="video/hero-loop.mp4" type="video/mp4"></video>
+           in place of the <img> slides in .stage (and drop the file list, or keep it as a legend). -->
       <figure class="frame stage">
-        <img class="slide is-on" src="img/points-earthquakes.jpg" alt="NimbleMap showing 14,537 big earthquakes since 1900 as points coloured by magnitude around the Pacific; the 2011 Tohoku earthquake is selected and its card says its magnitude of 9.1 is higher than 99% of them." width="1600" height="996">
-        <img class="slide" src="img/typhoons-card.jpg" alt="NimbleMap with 4,999 typhoon tracks over Asia and the Pacific; Typhoon Haiyan is selected and its card says its top wind of 170 knots is higher than 99% of 4,547 storms." width="1600" height="996" loading="lazy" aria-hidden="true">
-        <img class="slide" src="img/areas-countries.jpg" alt="NimbleMap showing the world's countries coloured by population; India is selected and its card says its population is the 2nd highest of 177 countries." width="1600" height="996" loading="lazy" aria-hidden="true">
-        <img class="slide" src="img/heatwave-slider.jpg" alt="The 2023 heatwave example on 16 July, with the time slider at the bottom of the map." width="1600" height="996" loading="lazy" aria-hidden="true">
+        <img class="slide is-on" src="img/open-storms.jpg" alt="NimbleMap with the file IBTrACS_storm_tracks_1980-2026.shp open: 4,999 storm tracks over Asia and the Pacific, coloured by top wind, with the layer card listing the file name and legend." width="1600" height="996">
+        <img class="slide" src="img/open-earthquakes.jpg" alt="NimbleMap with usgs_earthquakes_M6plus_1900-2026.gpkg open: 14,537 earthquakes ringing the Pacific, coloured by magnitude." width="1600" height="996" loading="lazy" aria-hidden="true">
+        <img class="slide" src="img/open-heatwave.jpg" alt="NimbleMap with GDO_heatwave_intensity_JJA_2023.nc open on 16 July 2023, heatwave intensity in reds over three continents and the time slider below the map." width="1600" height="996" loading="lazy" aria-hidden="true">
+        <img class="slide" src="img/open-relief.jpg" alt="NimbleMap with ETOPO_2022_relief_30min.tif open: elevation of land and sea floor for the whole planet in a colour ramp." width="1600" height="996" loading="lazy" aria-hidden="true">
+        <img class="slide" src="img/open-volcanoes.jpg" alt="NimbleMap with NCEI_volcano_locations.csv open: 1,609 volcanoes as points around the Pacific Ring of Fire, coloured by elevation." width="1600" height="996" loading="lazy" aria-hidden="true">
       </figure>
-      <div class="kinds" role="group" aria-label="Kinds of map data">
-        <button type="button" class="kind" data-i="0" data-caption="Big earthquakes since 1900, coloured by magnitude" aria-pressed="true">Points</button>
-        <button type="button" class="kind" data-i="1" data-caption="Typhoon and hurricane tracks since 1980" aria-pressed="false">Lines</button>
-        <button type="button" class="kind" data-i="2" data-caption="Countries coloured by population" aria-pressed="false">Areas</button>
-        <button type="button" class="kind" data-i="3" data-caption="Daily heatwave grids, summer 2023" aria-pressed="false">Grids</button>
-        <button type="button" class="pause" aria-label="Pause the slideshow" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><rect class="bars" x="4" y="3" width="2.6" height="10" rx="1"/><rect class="bars" x="9.4" y="3" width="2.6" height="10" rx="1"/><path class="play" d="M5 3.2v9.6a.6.6 0 0 0 .9.5l7.4-4.8a.6.6 0 0 0 0-1L5.9 2.7a.6.6 0 0 0-.9.5z"/></svg></button>
+      <svg class="drop-arrow" viewBox="0 0 110 70" aria-hidden="true"><path d="M6 64C26 30 56 14 98 10"/><path class="head" d="M88 3l11 7-10 8"/></svg>
+      <div class="files" role="group" aria-label="A folder of downloaded map files: choose one to see it opened in NimbleMap">
+        <p class="files-head"><svg class="folder" viewBox="0 0 20 20" aria-hidden="true"><path d="M2 5.5A1.5 1.5 0 0 1 3.5 4h4l1.6 1.8h7.4A1.5 1.5 0 0 1 18 7.3v7.2a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 2 14.5z"/></svg><span>map data</span><button type="button" class="pause" aria-label="Pause the slideshow" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><rect class="bars" x="4" y="3" width="2.6" height="10" rx="1"/><rect class="bars" x="9.4" y="3" width="2.6" height="10" rx="1"/><path class="play" d="M5 3.2v9.6a.6.6 0 0 0 .9.5l7.4-4.8a.6.6 0 0 0 0-1L5.9 2.7a.6.6 0 0 0-.9.5z"/></svg></button></p>
+        <button type="button" class="kind file" data-i="0" data-caption="IBTrACS_storm_tracks_1980-2026.shp: 4,999 storm tracks, coloured by top wind" aria-pressed="true"><span class="ext">SHP</span><span class="fname">IBTrACS_storm_tracks_1980-2026.shp</span><span class="fsize">5.3 MB</span><svg class="grab" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5l10 7.2-4.4.7 2.6 5.3-2.2 1-2.5-5.3L5 14.6z"/></svg></button>
+        <button type="button" class="kind file" data-i="1" data-caption="usgs_earthquakes_M6plus_1900-2026.gpkg: 14,537 big earthquakes, coloured by magnitude" aria-pressed="false"><span class="ext">GPKG</span><span class="fname">usgs_earthquakes_M6plus_1900-2026.gpkg</span><span class="fsize">2.2 MB</span><svg class="grab" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5l10 7.2-4.4.7 2.6 5.3-2.2 1-2.5-5.3L5 14.6z"/></svg></button>
+        <button type="button" class="kind file" data-i="2" data-caption="GDO_heatwave_intensity_JJA_2023.nc: daily heatwave grids, with a time slider" aria-pressed="false"><span class="ext">NC</span><span class="fname">GDO_heatwave_intensity_JJA_2023.nc</span><span class="fsize">12.6 MB</span><svg class="grab" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5l10 7.2-4.4.7 2.6 5.3-2.2 1-2.5-5.3L5 14.6z"/></svg></button>
+        <button type="button" class="kind file" data-i="3" data-caption="ETOPO_2022_relief_30min.tif: land and sea-floor elevation of the whole planet" aria-pressed="false"><span class="ext">TIF</span><span class="fname">ETOPO_2022_relief_30min.tif</span><span class="fsize">375 KB</span><svg class="grab" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5l10 7.2-4.4.7 2.6 5.3-2.2 1-2.5-5.3L5 14.6z"/></svg></button>
+        <button type="button" class="kind file" data-i="4" data-caption="NCEI_volcano_locations.csv: 1,609 volcanoes, coloured by elevation" aria-pressed="false"><span class="ext">CSV</span><span class="fname">NCEI_volcano_locations.csv</span><span class="fsize">106 KB</span><svg class="grab" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5l10 7.2-4.4.7 2.6 5.3-2.2 1-2.5-5.3L5 14.6z"/></svg></button>
       </div>
-      <p class="kind-caption">Big earthquakes since 1900, coloured by magnitude</p>
+      <p class="kind-caption">IBTrACS_storm_tracks_1980-2026.shp: 4,999 storm tracks, coloured by top wind</p>
     </div>
+  </div>
+</section>
+
+<section id="formats">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">What it opens</p>
+      <h2>The files you actually download</h2>
+      <p class="lede">Drag a file into NimbleMap and it lands in the right place, in the right projection, ready to explore.</p>
+    </div>
+    <ul class="formats">
+      <li><p class="exts"><span>.shp</span></p><h3>Shapefile</h3><p>Boundaries, roads, storm tracks. Keep the .dbf, .shx and .prj files beside it.</p></li>
+      <li><p class="exts"><span>.zip</span></p><h3>Zipped Shapefile</h3><p>Open it as it is, no unzipping needed.</p></li>
+      <li><p class="exts"><span>.gpkg</span></p><h3>GeoPackage</h3><p>One tidy file that can hold many layers.</p></li>
+      <li><p class="exts"><span>.geojson</span><span>.json</span></p><h3>GeoJSON</h3><p>The web’s map format, from open-data portals and APIs.</p></li>
+      <li><p class="exts"><span>.csv</span><span>.tsv</span><span>.xlsx</span></p><h3>Tables</h3><p>CSV, TSV or Excel with latitude and longitude columns.</p></li>
+      <li><p class="exts"><span>.kml</span><span>.kmz</span></p><h3>KML and KMZ</h3><p>Placemarks, paths and areas from Google Earth.</p></li>
+      <li><p class="exts"><span>.gpx</span></p><h3>GPX</h3><p>Runs, rides and hikes from your watch or phone.</p></li>
+      <li><p class="exts"><span>.tif</span><span>.tiff</span></p><h3>GeoTIFF</h3><p>Elevation, land cover, satellite and drone images.</p></li>
+      <li><p class="exts"><span>.nc</span></p><h3>NetCDF</h3><p>Climate and weather grids, played with a time slider.</p></li>
+    </ul>
+    <p class="formats-note">Double-click opens Shapefiles, GeoPackages and NetCDF files in NimbleMap. Other files open in other apps when double-clicked, so drag them into NimbleMap, or right-click › Open With › NimbleMap.</p>
+  </div>
+</section>
+
+<section id="data">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Free data</p>
+      <h2>Where to find data</h2>
+      <p class="lede">Hand-picked public datasets, from live earthquakes to Roman roads. Most download in one click.</p>
+    </div>
+    <div class="ds-grid ds-teaser">
+        <article class="ds">
+          <img class="ds-art" src="img/data/earthquakes.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
+          <h3>Earthquakes, live</h3>
+          <p class="ds-src">USGS Earthquake Hazards Program</p>
+          <div class="ds-actions"><a class="ds-get" href="https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.csv" download>Download CSV · 2 MB</a><a class="ds-more" href="https://earthquake.usgs.gov/earthquakes/feed/v1.0/csv.php" rel="noopener" target="_blank">Source page<span aria-hidden="true"> ↗</span></a></div>
+        </article>
+        <article class="ds">
+          <img class="ds-art" src="img/data/tornadoes.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
+          <h3>Every US tornado since 1950</h3>
+          <p class="ds-src">NOAA Storm Prediction Center</p>
+          <div class="ds-actions"><a class="ds-get" href="https://www.spc.noaa.gov/gis/svrgis/zipped/1950-2025-torn-aspath.zip" download>Download Shapefile (zip) · 5 MB</a><a class="ds-more" href="https://www.spc.noaa.gov/gis/svrgis/" rel="noopener" target="_blank">Source page<span aria-hidden="true"> ↗</span></a></div>
+        </article>
+        <article class="ds">
+          <img class="ds-art" src="img/data/precipitation.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
+          <h3>Rain and snow everywhere since 1979</h3>
+          <p class="ds-src">GPCP v2.3, via NOAA PSL</p>
+          <div class="ds-actions"><a class="ds-get" href="https://downloads.psl.noaa.gov/Datasets/gpcp/precip.mon.mean.nc" download>Download NetCDF · 20 MB</a><a class="ds-more" href="https://psl.noaa.gov/data/gridded/data.gpcp.html" rel="noopener" target="_blank">Source page<span aria-hidden="true"> ↗</span></a></div>
+        </article>
+        <article class="ds">
+          <img class="ds-art" src="img/data/roman-roads.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
+          <h3>Roads of the Roman Empire</h3>
+          <p class="ds-src">Itiner-e, de Soto et al. 2025 (Zenodo)</p>
+          <div class="ds-actions"><a class="ds-get" href="https://zenodo.org/records/17122148/files/itinere_roads.gpkg?download=1" download>Download GeoPackage · 34 MB</a><a class="ds-more" href="https://zenodo.org/records/17122148" rel="noopener" target="_blank">Source page<span aria-hidden="true"> ↗</span></a></div>
+        </article>
+    </div>
+    <p class="more-link"><a class="btn btn-quiet" href="data.html">See all 34 datasets →</a></p>
+  </div>
+</section>
+
+<section id="principles">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Once it’s open</p>
+      <h2>Then explore</h2>
+    </div>
+    <div class="principle-shots four">
+      <div class="principle">
+        <figure class="frame"><img src="img/open-zoom.jpg" alt="Thousands of storm tracks crossing the South China Sea and the Philippines, zoomed in, coloured by top wind." loading="lazy" width="800" height="500"></figure>
+        <svg class="p-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21M10.5 7.5v6M7.5 10.5h6"/></svg><h3>Zoom and pan</h3>
+        <p>Scroll, pinch and drag, from the whole planet down to a single coast.</p>
+      </div>
+      <div class="principle">
+        <figure class="frame"><img src="img/open-search.jpg" alt="The layer card&#x27;s search box with “Haiyan” typed in: 3 found, and the three storm tracks named Haiyan drawn bold on the map." loading="lazy" width="800" height="500"></figure>
+        <svg class="p-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 6h9M3.5 11h6M3.5 16h5"/><circle cx="15.5" cy="13.5" r="4"/><path d="m18.5 16.5 3 3"/></svg><h3>Search places or your data</h3>
+        <p>Type a city to fly there, or a name to find it in your file: here, every storm called Haiyan.</p>
+      </div>
+      <div class="principle">
+        <figure class="frame"><img src="img/open-click.jpg" alt="An object card: the 2011 Great Tohoku Earthquake’s magnitude of 9.10 is higher than 99% of 14,537 earthquakes." loading="lazy" width="800" height="500"></figure>
+        <svg class="p-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v9a1.5 1.5 0 0 1-1.5 1.5H10l-4.2 3.6V16H5.5A1.5 1.5 0 0 1 4 14.5z"/><path d="M10.2 8.4a1.9 1.9 0 1 1 2.6 1.8c-.5.2-.8.6-.8 1.1v.4"/><circle cx="12" cy="13.6" r=".6" class="dot"/></svg><h3>Click anything</h3>
+        <p>See what it is and how it compares. The 2011 Tohoku earthquake was stronger than 99% of 14,537.</p>
+      </div>
+      <div class="principle">
+        <figure class="frame"><img src="img/open-time.jpg" alt="Heatwave intensity on 16 July 2023 over the Americas, Africa and Europe, with the time slider at step 46 of 92." loading="lazy" width="800" height="500"></figure>
+        <svg class="p-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M10 8.5v7l5.5-3.5z"/></svg><h3>Play time</h3>
+        <p>Files with time steps get a slider. Press Play and watch a summer of heatwaves move.</p>
+      </div>
+    </div>
+    <p class="also">Every number comes from all your data, not just what’s on screen, and every step can be undone.</p>
+  </div>
+</section>
+
+<section class="pro-band">
+  <div class="wrap">
+    <span class="tag">PRO</span>
+    <p><strong>NimbleMap Pro:</strong> ask your data questions in plain words. Free with an account — coming in the next version.</p>
+    <a class="pro-more" href="pro.html">What Pro adds →</a>
   </div>
 </section>
 
 <section id="examples">
   <div class="wrap">
     <div class="section-head">
-      <p class="eyebrow">Built in</p>
-      <h2>Start with something amazing</h2>
+      <p class="eyebrow">Practice</p>
+      <h2>New to maps? Practise on eight built‑in examples</h2>
+      <p class="lede">No download needed: they come with the app.</p>
     </div>
-    <div class="features">
+    <div class="features mini">
       <article class="example feature">
         <figure class="frame"><img src="img/typhoons-card.jpg" alt="NimbleMap with 4,999 typhoon tracks over Asia and the Pacific; Typhoon Haiyan is selected and its card says its top wind of 170 knots is higher than 99% of 4,547 storms." loading="lazy" width="1600" height="996"></figure>
         <div class="feature-body">
           <h3>Typhoons and hurricanes</h3>
           <p>4,999 storm tracks since 1980. Haiyan’s 170-knot winds beat 99% of 4,547 storms.</p>
+          <a class="ex-link" href="workflow-typhoons.html">Try it step by step →</a>
           <span class="coords">IBTrACS v04r01</span>
         </div>
       </article>
@@ -128,6 +237,7 @@
         <div class="feature-body">
           <h3>Walled cities of China, 1866</h3>
           <p>1,789 city walls. Beijing’s enclosed 35.3&nbsp;km², larger than 99% of them.</p>
+          <a class="ex-link" href="workflow-walled-cities.html">Try it step by step →</a>
           <span class="coords">Xue et al. 2021 · CC BY 4.0</span>
         </div>
       </article>
@@ -136,56 +246,12 @@
         <div class="feature-body">
           <h3>Heatwaves, summer 2023</h3>
           <p>Press Play and watch the heat move across the world.</p>
+          <a class="ex-link" href="workflow-heatwave.html">Try it step by step →</a>
           <span class="coords">Copernicus GDO / JRC · CC BY 4.0</span>
         </div>
       </article>
     </div>
     <p class="also">Also built in: earthquakes since 1900, volcanoes, airports, power plants, world cities, countries and elevation.</p>
-  </div>
-</section>
-
-<section id="yours">
-  <div class="wrap">
-    <div class="why-grid layers-grid">
-    <div class="section-head">
-      <p class="eyebrow">Your data</p>
-      <h2>Then bring your own</h2>
-      <p class="lede">Drop in a spreadsheet of places, a GPX track from your run, or a satellite image. It lands in the right place — no setup.</p>
-      <ul class="chips" aria-label="Files it opens"><li>CSV/Excel</li><li>GeoJSON</li><li>Shapefile</li><li>GeoPackage</li><li>KML</li><li>GPX</li><li>GeoTIFF</li><li>NetCDF</li></ul>
-      <p class="find-data"><a href="data.html">Where can I find map data? →</a></p>
-    </div>
-    <figure class="layer-art">
-  <svg viewBox="0 0 470 312" role="img" aria-label="Four sheets stacked like tracing paper: a background map, then areas, lines and points, with one place lined up through all four">
-    <path d="M153.8 53V263" class="ly-guide"/><g transform="matrix(1 0 1.4 1 28 241)"><rect width="230" height="60" rx="5" class="ly-shadow"/></g><g transform="matrix(1 0 1.4 1 24 236)"><rect width="230" height="60" rx="5" class="ly-sheet"/><rect width="230" height="60" rx="5" class="ly-water"/><path d="M0 0h116c-6 9 3 16-3 26s-20 12-17 34H0z" class="ly-land"/><path d="M150 60c5-11 17-13 22-25s16-19 33-21 25 3 25 3v43z" class="ly-land"/><path d="M18 52c14-6 20-16 34-18s22-12 28-24" class="ly-river"/><path d="M58 0v60" class="ly-grid"/><path d="M115 0v60" class="ly-grid"/><path d="M172 0v60" class="ly-grid"/><path d="M0 20h230" class="ly-grid"/><path d="M0 40h230" class="ly-grid"/><rect width="230" height="60" rx="5" class="ly-edge"/></g><circle cx="153.8" cy="263" r="2.2" class="ly-pin"/><path d="M302 266h16" class="ly-lead"/><g transform="translate(324 259)"><svg width="14" height="14" viewBox="0 0 14 14" class="ly-ic"><path d="M1.5 3.5l3.5-1.5 4 1.5 3.5-1.5v8.5L9 12 5 10.5 1.5 12z"/><path d="M5 2v8.5M9 3.5V12"/></svg></g><text x="342" y="270.5" class="ly-label">Background map</text><g transform="matrix(1 0 1.4 1 28 171)"><rect width="230" height="60" rx="5" class="ly-shadow"/></g><g transform="matrix(1 0 1.4 1 24 166)"><rect width="230" height="60" rx="5" class="ly-sheet"/><path d="M20 10L70 6L78 30L44 40L18 32Z" class="ly-a ly-a1"/><path d="M70 6L120 10L116 34L78 30Z" class="ly-a ly-a3"/><path d="M44 40L78 30L116 34L112 54L52 56Z" class="ly-a ly-a2"/><path d="M120 10L170 12L176 40L116 34Z" class="ly-a ly-a4"/><path d="M116 34L176 40L168 56L112 54Z" class="ly-a ly-a1"/><path d="M170 12L210 16L212 46L176 40Z" class="ly-a ly-a2"/><path d="M70 6L120 10L116 34L78 30Z" class="ly-hl"/><rect width="230" height="60" rx="5" class="ly-edge"/></g><path d="M302 196h16" class="ly-lead"/><g transform="translate(324 189)"><svg width="14" height="14" viewBox="0 0 14 14" class="ly-ic"><path d="M2 3l6-1.5 4 4-2 6.5-6.5-1z"/></svg></g><text x="342" y="200.5" class="ly-label">Areas</text><g transform="matrix(1 0 1.4 1 28 101)"><rect width="230" height="60" rx="5" class="ly-shadow"/></g><g transform="matrix(1 0 1.4 1 24 96)"><rect width="230" height="60" rx="5" class="ly-sheet"/><path d="M0 32C40 36 80 50 122 52" class="ly-l ly-l3"/><path d="M28 6C60 16 92 36 132 39S192 44 222 40" class="ly-l ly-l2"/><path d="M8 50C38 46 60 32 92 27S152 14 204 8" class="ly-l ly-l1"/><rect width="230" height="60" rx="5" class="ly-edge"/></g><circle cx="102" cy="146" r="1.7" class="ly-fix"/><circle cx="123.1" cy="142.5" r="1.7" class="ly-fix"/><circle cx="134.4" cy="132" r="1.7" class="ly-fix"/><circle cx="153.8" cy="123" r="1.7" class="ly-fix"/><circle cx="175.4" cy="117" r="1.7" class="ly-fix"/><circle cx="197.7" cy="111.5" r="1.7" class="ly-fix"/><circle cx="219.4" cy="107" r="1.7" class="ly-fix"/><circle cx="239.2" cy="104" r="1.7" class="ly-fix"/><path d="M302 126h16" class="ly-lead"/><g transform="translate(324 119)"><svg width="14" height="14" viewBox="0 0 14 14" class="ly-ic"><path d="M1.5 11.5C4 6 7 9 12.5 2.5"/></svg></g><text x="342" y="130.5" class="ly-label">Lines</text><g transform="matrix(1 0 1.4 1 28 31)"><rect width="230" height="60" rx="5" class="ly-shadow"/></g><g transform="matrix(1 0 1.4 1 24 26)"><rect width="230" height="60" rx="5" class="ly-sheet"/><rect width="230" height="60" rx="5" class="ly-edge"/></g><circle cx="89.6" cy="60" r="2.4" class="ly-pt ly-pt1"/><circle cx="86.4" cy="42" r="3.2" class="ly-pt ly-pt2"/><circle cx="143.6" cy="70" r="2.2" class="ly-pt ly-pt1"/><circle cx="127.6" cy="50" r="4.2" class="ly-pt ly-pt3"/><circle cx="153.8" cy="53" r="5.2" class="ly-pt ly-pt3"/><circle cx="200.4" cy="72" r="2.6" class="ly-pt ly-pt1"/><circle cx="177.2" cy="44" r="3.4" class="ly-pt ly-pt2"/><circle cx="223.2" cy="64" r="2.4" class="ly-pt ly-pt1"/><circle cx="204.8" cy="38" r="3.8" class="ly-pt ly-pt3"/><circle cx="250.8" cy="58" r="2.8" class="ly-pt ly-pt2"/><circle cx="252" cy="46" r="2.2" class="ly-pt ly-pt1"/><circle cx="299.6" cy="70" r="3" class="ly-pt ly-pt2"/><circle cx="153.8" cy="53" r="9" class="ly-halo"/><path d="M302 56h16" class="ly-lead"/><g transform="translate(324 49)"><svg width="14" height="14" viewBox="0 0 14 14" class="ly-ic"><circle cx="4" cy="9" r="2"/><circle cx="9" cy="4" r="2"/><circle cx="10.5" cy="10.5" r="1.4"/></svg></g><text x="342" y="60.5" class="ly-label">Points</text>
-  </svg>
-</figure>
-    </div>
-  </div>
-</section>
-
-<section id="principles">
-  <div class="wrap">
-    <div class="section-head">
-      <p class="eyebrow">How it works</p>
-      <h2>Made for the curious</h2>
-    </div>
-    <div class="principle-shots">
-      <div class="principle">
-        <figure class="frame"><img src="img/step-click.jpg" alt="An object card: the 2011 Tohoku earthquake’s magnitude of 9.1 is higher than 99% of 14,537 earthquakes." loading="lazy" width="800" height="500"></figure>
-        <svg class="p-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v9a1.5 1.5 0 0 1-1.5 1.5H10l-4.2 3.6V16H5.5A1.5 1.5 0 0 1 4 14.5z"/><path d="M10.2 8.4a1.9 1.9 0 1 1 2.6 1.8c-.5.2-.8.6-.8 1.1v.4"/><circle cx="12" cy="13.6" r=".6" class="dot"/></svg><h3>Answers before tools</h3>
-        <p>Click anything. See what it is and how it compares.</p>
-      </div>
-      <div class="principle">
-        <figure class="frame"><img src="img/step-honest.jpg" alt="Beijing’s card ranks its walled area against all 1,789 walled cities of 1866, highest first, while the map shows only the Beijing area." loading="lazy" width="800" height="500"></figure>
-        <svg class="p-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 20h17"/><path d="M6.5 20v-6M11 20V8M15.5 20v-9M20 20V5"/><path d="M5 9.5l3.5-3 3 2L17 4"/></svg><h3>Honest numbers</h3>
-        <p>Every number comes from all your data, not just what’s on screen.</p>
-      </div>
-      <div class="principle">
-        <figure class="frame"><img src="img/step-try.jpg" alt="A filter written as a sentence, “Show storms where strength is any of Category 5”, says 228 match before you apply it, with Cancel beside Apply." loading="lazy" width="800" height="500"></figure>
-        <svg class="p-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg><h3>Try anything</h3>
-        <p>Every step can be undone, and every result explains itself.</p>
-      </div>
-    </div>
   </div>
 </section>
 
@@ -197,14 +263,6 @@
       <p class="lede">Add a title, legend and credits. Export for a slide, a report or a post.</p>
     </div>
     <figure class="frame"><img src="img/heatwave-export.jpg" alt="The Export map image sheet: the 2023 heatwave map with a legend, latitude and longitude labels and credits, and size choices for a slide, an A4 report or a square post." loading="lazy" width="1600" height="996"></figure>
-  </div>
-</section>
-
-<section class="pro-band">
-  <div class="wrap">
-    <span class="tag">PRO</span>
-    <p><strong>NimbleMap Pro:</strong> ask your map questions in plain words. Free with an account — coming in the next version.</p>
-    <a class="pro-more" href="pro.html">What Pro adds →</a>
   </div>
 </section>
 
@@ -228,7 +286,7 @@
   <div class="wrap">
     <div>
       <p><strong>NimbleMap</strong> · a map-first app built on RustGIS.</p>
-      <p>Screenshots show map data © OpenStreetMap contributors (ODbL) via Protomaps, Natural Earth (public domain), and NASA Blue Marble imagery (NASA Earth Observatory, GIBS). Example data: NOAA IBTrACS, Xue et al. 2021 (CC BY 4.0), Copernicus Global Drought Observatory / JRC (CC BY 4.0).</p>
+      <p>Screenshots show map data © OpenStreetMap contributors (ODbL) via Protomaps, Natural Earth (public domain), and NASA Blue Marble imagery (NASA Earth Observatory, GIBS). Example data: NOAA IBTrACS, Xue et al. 2021 (CC BY 4.0), Copernicus Global Drought Observatory / JRC (CC BY 4.0), USGS, NOAA ETOPO 2022, NOAA NCEI.</p>
     </div>
     <div class="foot-nav"><p class="foot-links"><a href="help.html">Help</a> · <a href="glossary.html">Glossary</a> · <a href="data.html">Data</a> · <a href="pro.html">Pro</a> · <a href="https://github.com/kangning-huang/NimbleMap/blob/main/CHANGELOG.md">Changelog</a></p><p class="foot-note">NimbleMap is an independent project, not affiliated with Apple, Esri or the QGIS project.</p><p class="foot-langs"><a href="zh/index.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="de/index.html" hreflang="de" lang="de">Deutsch</a> · <a href="es/index.html" hreflang="es" lang="es">Español</a> · <a href="fr/index.html" hreflang="fr" lang="fr">Français</a> · <a href="it/index.html" hreflang="it" lang="it">Italiano</a> · <a href="nl/index.html" hreflang="nl" lang="nl">Nederlands</a> · <a href="pt-br/index.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="ru/index.html" hreflang="ru" lang="ru">Русский</a> · <a href="ja/index.html" hreflang="ja" lang="ja">日本語</a> · <a href="ko/index.html" hreflang="ko" lang="ko">한국어</a></p></div>
   </div>

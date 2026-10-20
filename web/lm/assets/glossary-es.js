@@ -94,7 +94,7 @@ window.LM_GLOSSARY_L10N = {
       w: "NimbleMap Pro: cada respuesta del cuadro de preguntas llega como una ficha de resultado con sus pasos enumerados, una vista previa en el mapa y <span class=\"ui\">Keep</span> (Conservar) o <span class=\"ui\">Discard</span> (Descartar)." },
     geojson: { t: "GeoJSON, GeoPackage, Shapefile", alt: ["formatos de archivo"],
       d: "Archivos habituales para datos vectoriales. GeoJSON es un único archivo de texto; GeoPackage (.gpkg) es un único archivo de base de datos que puede contener varias capas; un Shapefile es un conjunto de archivos con el mismo nombre (.shp, .dbf, .shx, .prj) que van juntos.",
-      w: "<span class=\"ui\">Open</span> (Abrir, ⌘O) en la barra de herramientas, o arrastra archivos a la ventana (<span class=\"ui\">Drop to add to the map</span>, Suelta para añadir al mapa). <span class=\"ui\">Details</span> › <span class=\"ui\">Format</span> (Detalles › Formato) indica el formato." },
+      w: "<span class=\"ui\">Open</span> (Abrir, ⌘O) en la barra de herramientas, o arrastra archivos a NimbleMap (<span class=\"ui\">Drop to add to the map</span>, Suelta para añadir al mapa). <span class=\"ui\">Details</span> › <span class=\"ui\">Format</span> (Detalles › Formato) indica el formato." },
     geotiff: { t: "GeoTIFF", alt: ["MDE", "modelo digital de elevaciones", "elevación", "imagen de satélite"],
       d: "Un archivo de imagen que además sabe en qué lugar de la Tierra está. Los modelos de elevación y las imágenes de satélite suelen venir en GeoTIFF.",
       w: "La capa de elevación del ejemplo <span class=\"ui\">World basics</span> (Lo básico del mundo) es un GeoTIFF." },

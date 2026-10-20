@@ -104,6 +104,29 @@ DMG_GITHUB = f"https://github.com/kangning-huang/NimbleMap/releases/latest/downl
 GITCODE = "https://gitcode.com/KN-Huang/NimbleMap"
 DMG_GITCODE = f"{GITCODE}/releases/download/v0.7.0/{DMG_NAME}"
 DMG = {"zh": DMG_GITCODE}  # every other language: DMG_GITHUB
+# The download page's second card offers the other host: GitCode everywhere, GitHub on Chinese
+# pages. Its links carry data-dl="alt" (the DMG) and data-dl="alt-releases" (the releases page).
+DMG_ALT = {"zh": DMG_GITHUB}  # every other language: DMG_GITCODE
+RELEASES_GITHUB = "https://github.com/kangning-huang/NimbleMap/releases"
+RELEASES_GITCODE = f"{GITCODE}/releases"
+RELEASES_ALT = {"zh": RELEASES_GITHUB}  # every other language: RELEASES_GITCODE
+
+# The line under the download page's main card about Pro (`<p class="dl-pro">`), one per language.
+# For 0.7.0 Pro is not in the app yet; when the release that unlocks Pro by signing in ships, switch
+# each to the "unlock when you sign in" wording.
+PRO_UNLOCK = {
+    "": "Coming in the next update: sign in inside the app to unlock Pro.",
+    "zh": "下次更新起：在应用内登录即可解锁 Pro。",
+    "de": "Mit dem nächsten Update: Melden Sie sich in der App an, um Pro freizuschalten.",
+    "es": "Llega en la próxima actualización: inicia sesión dentro de la app para desbloquear Pro.",
+    "fr": "Dans la prochaine mise à jour : connectez-vous dans l’app pour débloquer Pro.",
+    "it": "In arrivo con il prossimo aggiornamento: accedi dall’app per sbloccare Pro.",
+    "nl": "Met de volgende update: meld u aan in de app om Pro te ontgrendelen.",
+    "pt-br": "Na próxima atualização: entre na sua conta dentro do app para liberar o Pro.",
+    "ru": "В следующем обновлении: войдите в приложении, чтобы открыть Pro.",
+    "ja": "次のアップデートから：アプリ内でサインインすると Pro が使えるようになります。",
+    "ko": "다음 업데이트부터: 앱 안에서 로그인하면 Pro가 열립니다.",
+}
 
 GLOBE = (
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">'
@@ -124,7 +147,9 @@ FOOT_END = re.compile(r"(</div>\n  </div>\n</footer>)")
 # The header's page links, between the <nav> and the language menu.
 NAV = re.compile(r'(<nav class="nav" aria-label="[^"]*">\n)(?:[ \t]*<a [^>]*>[^<]*</a>\n)*([ \t]*<details class="lang-menu">)')
 # The footer's right-hand column: the old "Help · Glossary" links, or the column written here.
-DMG_LINK = re.compile(r'href="https://[^"]*/' + re.escape(DMG_NAME) + r'(\.sha256)?"')
+DMG_LINK = re.compile(r'href="https://[^"]*/' + re.escape(DMG_NAME) + r'(\.sha256)?"( data-dl="alt")?')
+RELEASES_LINK = re.compile(r'href="https://[^"]*/releases" data-dl="alt-releases"')
+PRO_LINE = re.compile(r'(<p class="dl-pro">)[^<]*(<a )')
 FOOT_COL = re.compile(r'<div(?: class="foot-nav")?>(?:<a href="help\.html">|<p class="foot-links">).*?<p class="foot-langs">.*?</p></div>', re.S)
 
 
@@ -197,8 +222,10 @@ def foot(lang: Lang, name: str, site: Path) -> str:
     return f'<p class="foot-langs">{" · ".join(links)}</p>'
 
 
-def dmg(lang: Lang) -> str:
-    """The app download URL for pages in this language."""
+def dmg(lang: Lang, alt: bool = False) -> str:
+    """The app download URL for pages in this language (`alt`: the download page's other host)."""
+    if alt:
+        return DMG_ALT.get(lang.folder, DMG_GITCODE)
     return DMG.get(lang.folder, DMG_GITHUB)
 
 
@@ -283,7 +310,10 @@ def rewrite(text: str, rel: str, site: Path = SITE) -> str:
     text, n = FOOT_COL.subn(lambda _: foot_col(lang, name, site), text, count=1)
     if n != 1:
         raise ValueError(f"{rel}: no footer links column")
-    text = DMG_LINK.sub(lambda m: f'href="{dmg(lang)}{m.group(1) or ""}"', text)
+    text = DMG_LINK.sub(lambda m: f'href="{dmg(lang, alt=bool(m.group(2)))}{m.group(1) or ""}"{m.group(2) or ""}', text)
+    text = RELEASES_LINK.sub(f'href="{RELEASES_ALT.get(lang.folder, RELEASES_GITCODE)}" data-dl="alt-releases"', text)
+    text = PRO_LINE.sub(lambda m: m.group(1) + PRO_UNLOCK.get(lang.folder, PRO_UNLOCK[""])
+                      + ("" if lang.folder in ("zh", "ja") else " ") + m.group(2), text)
     return text
 
 

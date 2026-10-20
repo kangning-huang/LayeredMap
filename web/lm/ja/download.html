@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Mac で Shapefile・GeoJSON・CSV・GeoTIFF を無料で開く · NimbleMap</title>
-<meta name="description" content="Shapefile、GeoJSON、緯度・経度入りの CSV、GeoTIFF をダブルクリックで地図に表示できる無料の Mac アプリ。座標系を設定しなくてもレイヤーが重なり、ファイルが Mac の外に出ることはありません。">
+<meta name="description" content="Shapefile、GeoPackage、NetCDF、GeoTIFF、GeoJSON、緯度・経度入りの CSV を NimbleMap にドラッグするだけで地図に表示できる無料の Mac アプリ。座標系を設定しなくてもレイヤーが重なり、ファイルが Mac の外に出ることはありません。">
 <link rel="canonical" href="download.html">
 <link rel="alternate" hreflang="en" href="../download.html">
 <link rel="alternate" hreflang="zh-Hans" href="../zh/download.html">
@@ -22,7 +22,7 @@
 <meta property="og:site_name" content="NimbleMap">
 <meta property="og:locale" content="ja_JP">
 <meta property="og:title" content="Mac で Shapefile・GeoJSON・CSV・GeoTIFF を無料で開く">
-<meta property="og:description" content="地図ファイルをダブルクリックすれば、もう地図の上。レイヤーは自動で重なり、ファイルが Mac の外に出ることはありません。">
+<meta property="og:description" content="地図ファイルを NimbleMap にドラッグすれば、もう地図の上。レイヤーは自動で重なり、ファイルが Mac の外に出ることはありません。">
 <meta property="og:url" content="download.html">
 <meta property="og:image" content="../img/walls-compare.jpg">
 <meta name="twitter:card" content="summary_large_image">
@@ -37,7 +37,7 @@
   "inLanguage": "ja",
   "operatingSystem": "macOS 13 以降（Apple シリコン）",
   "applicationCategory": "UtilitiesApplication",
-  "description": "Shapefile、GeoJSON、CSV、GeoTIFF、GeoPackage、Excel、KML、GPX、NetCDF のファイルをダブルクリックやドラッグ＆ドロップで開ける Mac の地図アプリ。ファイルがコンピューターの外に出ることはありません。",
+  "description": "Shapefile、GeoJSON、CSV、GeoTIFF、GeoPackage、Excel、KML、GPX、NetCDF のファイルをドラッグするだけで開ける Mac の地図アプリ。ファイルがコンピューターの外に出ることはありません。",
   "isAccessibleForFree": true,
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "JPY" }
 }
@@ -80,7 +80,7 @@
     <div>
       <p class="eyebrow">Mac 用・無料</p>
       <h1>地図ファイルを Mac で開く。ぴたりと重なる。</h1>
-      <p class="lede">Shapefile、GeoJSON、緯度・経度の列がある CSV、GeoTIFF をダブルクリックすれば、もう地図の上です。別のファイルを足しても、正しい位置に重なります。座標系の設定も、プロジェクトの作成もいりません。</p>
+      <p class="lede">Shapefile、GeoJSON、緯度・経度の列がある CSV、GeoTIFF を NimbleMap にドラッグすれば、もう地図の上です。別のファイルを足しても、正しい位置に重なります。座標系の設定も、プロジェクトの作成もいりません。</p>
       <div class="actions">
         <a class="btn btn-primary" href="#get">Mac 版をダウンロード</a>
         <a class="btn btn-quiet" href="#formats">開けるファイル</a>
@@ -101,9 +101,9 @@
       <p class="lede">シェープファイルを持っている人の多くは、本格的な GIS を必要としていません。中身を確かめ、ほかのデータと重なるかを確認し、場合によっては画像にして送れれば十分です。</p>
     </div>
     <div class="claims">
-      <div><h3>Finder でダブルクリック</h3><p>Shapefile、GeoJSON、GeoPackage、GeoTIFF、KML、GPX、NetCDF のファイルは Finder から直接開けます。ウインドウにドラッグしてもかまいません。</p></div>
+      <div><h3>ドラッグするか、ダブルクリック</h3><p>NimbleMap が読めるファイルなら、NimbleMap か Dock のアイコンにドラッグすれば開けます。Shapefile、GeoPackage、NetCDF、KML、GPX のファイルは、ほかの地図アプリに関連付けられていなければ Finder でダブルクリックしても開けます。CSV、Excel、GeoTIFF、GeoJSON、zip のファイルはダブルクリックすると別のアプリで開くので、右クリック › このアプリケーションで開く › NimbleMap を選んでください。</p></div>
       <div><h3>レイヤーが自動で重なる</h3><p>シェープファイルの <code>.prj</code> を読み取って座標を変換するので、CSV の点が地図の外れではなく、きちんと区域の境界の上に載ります。ファイルの座標系を読み取れないときは、アプリが 1 行でそう伝えます。</p></div>
-      <div><h3>CSV の点もドロップひとつで</h3><p>緯度と経度の列があるスプレッドシートをドロップしてください。アプリが列を見つけてすべての行を地図に載せ、どの列を使ったかを表示するので、あとから変えることもできます。</p></div>
+      <div><h3>CSV の点もドロップひとつで</h3><p>緯度と経度の列があるスプレッドシートを NimbleMap にドラッグしてください。アプリが列を見つけてすべての行を地図に載せ、どの列を使ったかを表示するので、あとから変えることもできます。</p></div>
       <div><h3>GeoTIFF を本物の地図の上に</h3><p>プレビューでは GeoTIFF はただの平らな画像です。ここでは衛星画像、ドローン測量、標高モデルが、ほかのレイヤーの下の本来の位置に配置されます。</p></div>
       <div><h3>ファイルは Mac から出ません</h3><p>何もアップロードされません。無料版はファイルをローカルで開き、オフラインでも動きます。測量データや取引先のファイルなど、機密性の高いデータを扱うときに大切なことです。</p></div>
       <div><h3>中国の地図座標</h3><p>Amap（高徳地図）、Tencent、Baidu Maps（百度地図）の点は、中国独自のずらしが入った GCJ-02 や BD-09 という座標を使っています。中国国内のレイヤーがこれらしく見えると、アプリがそれを知らせ、ワンクリックで変換します。これで背景地図やほかのデータと重なります。</p></div>
@@ -141,19 +141,13 @@
         <p>無料 · プレビュー版 0.7.0</p>
         <a class="btn btn-primary" href="https://github.com/kangning-huang/NimbleMap/releases/latest/download/NimbleMap-macos-arm64.dmg" download>ダウンロード</a>
         <p class="dl-note" style="margin-top:12px">まだ Apple の公証を受けていないため、初回は macOS にブロックされます。「システム設定」›「プライバシーとセキュリティ」を開き、「このまま開く」をクリックしてください（初回のみ）。</p>
+        <p class="dl-pro">次のアップデートから：アプリ内でサインインすると Pro が使えるようになります。<a href="pro.html">Pro で増える機能</a></p>
       </div>
       <div class="dl">
         <h3>中国本土向けミラー</h3>
-        <p>同じ署名済みアプリを中国国内のサーバーから</p>
-        <!-- TODO(owner): mainland China mirror. -->
-        <a class="btn btn-quiet disabled" href="#get" aria-disabled="true">ダウンロード</a>
-        <p style="margin-top:12px">近日公開。</p>
-      </div>
-      <div class="dl">
-        <h3>NimbleMap Pro</h3>
-        <p>アカウント登録で無料 · 質問ボックスと世界のレイヤー</p>
-        <a class="btn btn-quiet disabled" href="#get" aria-disabled="true">近日公開</a>
-        <p style="margin-top:12px"><a href="pro.html">Pro で増える機能</a></p>
+        <p>同じアプリを GitCode から。中国本土でのダウンロード向けです。ファイルは同一（SHA-256 も同じ）。</p>
+        <a class="btn btn-quiet" href="https://gitcode.com/KN-Huang/NimbleMap/releases/download/v0.7.0/NimbleMap-macos-arm64.dmg" data-dl="alt" download>ダウンロード</a>
+        <p class="dl-note" style="margin-top:12px"><a href="https://gitcode.com/KN-Huang/NimbleMap/releases" data-dl="alt-releases">GitCode のすべてのリリース</a></p>
       </div>
     </div>
     <div class="share" role="group" aria-label="共有"><span class="share-label">共有</span><a class="share-btn" data-net="x" href="#" target="_blank" rel="noopener" aria-label="共有: X">X</a><a class="share-btn" data-net="facebook" href="#" target="_blank" rel="noopener" aria-label="共有: Facebook">Facebook</a><a class="share-btn" data-net="reddit" href="#" target="_blank" rel="noopener" aria-label="共有: Reddit">Reddit</a><a class="share-btn" data-net="linkedin" href="#" target="_blank" rel="noopener" aria-label="共有: LinkedIn">LinkedIn</a></div>
@@ -228,7 +222,7 @@
     </div>
     <div class="faq">
       <h3>Mac でシェープファイルを開ける無料ソフトはありますか？</h3>
-      <p>はい。NimbleMap は無料です。Finder で <code>.shp</code> をダブルクリックするか、.shp またはその .zip をウインドウにドラッグしてください。シェープファイルは実際には複数のファイルの組なので、<code>.dbf</code>、<code>.shx</code>、<code>.prj</code> も同じ場所に置いておきます。</p>
+      <p>はい。NimbleMap は無料です。Finder で <code>.shp</code> をダブルクリックするか、.shp またはその .zip を NimbleMap にドラッグしてください。シェープファイルは実際には複数のファイルの組なので、<code>.dbf</code>、<code>.shx</code>、<code>.prj</code> も同じ場所に置いておきます。</p>
 
       <h3>CSV の点がシェープファイルの上に表示されないのはなぜ？</h3>
       <p>多くの場合、シェープファイルは投影座標系（ある原点からのメートル単位）で保存されている一方、CSV には緯度・経度が入っているため、両者が別々の場所に表示されてしまいます。NimbleMap はシェープファイルの <code>.prj</code> を読んで緯度・経度に変換するので、どちらもきちんと重なります。<code>.prj</code> がない、または解釈できない場合は、黙って推測せずにそう伝えます。</p>

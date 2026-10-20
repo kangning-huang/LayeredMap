@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Abrir Shapefile, GeoJSON, CSV y GeoTIFF en Mac, gratis · NimbleMap</title>
-<meta name="description" content="Una aplicación gratuita para Mac que abre archivos Shapefile, GeoJSON, CSV con latitud y longitud y GeoTIFF en un mapa con doble clic. Las capas se superponen bien sin configurar un sistema de coordenadas, y tus archivos nunca salen de tu Mac.">
+<meta name="description" content="Una aplicación gratuita para Mac que abre archivos Shapefile, GeoPackage, NetCDF, GeoTIFF, GeoJSON y CSV con latitud y longitud en un mapa: basta con arrastrarlos a NimbleMap. Las capas se superponen bien sin configurar un sistema de coordenadas, y tus archivos nunca salen de tu Mac.">
 <link rel="canonical" href="download.html">
 <link rel="alternate" hreflang="en" href="../download.html">
 <link rel="alternate" hreflang="zh-Hans" href="../zh/download.html">
@@ -22,7 +22,7 @@
 <meta property="og:site_name" content="NimbleMap">
 <meta property="og:locale" content="es_ES">
 <meta property="og:title" content="Abrir Shapefile, GeoJSON, CSV y GeoTIFF en Mac, gratis">
-<meta property="og:description" content="Haz doble clic en un archivo de mapa y ya está en el mapa. Las capas se colocan solas en su sitio y tus archivos nunca salen de tu Mac.">
+<meta property="og:description" content="Arrastra un archivo de mapa a NimbleMap y ya está en el mapa. Las capas se colocan solas en su sitio y tus archivos nunca salen de tu Mac.">
 <meta property="og:url" content="download.html">
 <meta property="og:image" content="../img/walls-compare.jpg">
 <meta name="twitter:card" content="summary_large_image">
@@ -37,7 +37,7 @@
   "inLanguage": "es",
   "operatingSystem": "macOS 13 o posterior (Apple silicon)",
   "applicationCategory": "UtilitiesApplication",
-  "description": "Una aplicación de mapas para Mac que abre archivos Shapefile, GeoJSON, CSV, GeoTIFF, GeoPackage, Excel, KML, GPX y NetCDF con doble clic o arrastrándolos. Los archivos nunca salen del equipo.",
+  "description": "Una aplicación de mapas para Mac que abre los archivos Shapefile, GeoJSON, CSV, GeoTIFF, GeoPackage, Excel, KML, GPX y NetCDF que arrastres a ella. Los archivos nunca salen del equipo.",
   "isAccessibleForFree": true,
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" }
 }
@@ -80,7 +80,7 @@
     <div>
       <p class="eyebrow">Gratis para Mac</p>
       <h1>Abre tus archivos de mapa en el Mac. Encajan solos.</h1>
-      <p class="lede">Haz doble clic en un Shapefile, un GeoJSON, un CSV con latitud y longitud o un GeoTIFF, y aparece en un mapa. Añade otro y se coloca encima, en su sitio. No hay que configurar ningún sistema de coordenadas ni crear ningún proyecto.</p>
+      <p class="lede">Arrastra un Shapefile, un GeoJSON, un CSV con latitud y longitud o un GeoTIFF a NimbleMap, y aparece en un mapa. Añade otro y se coloca encima, en su sitio. No hay que configurar ningún sistema de coordenadas ni crear ningún proyecto.</p>
       <div class="actions">
         <a class="btn btn-primary" href="#get">Descargar para Mac</a>
         <a class="btn btn-quiet" href="#formats">Qué archivos abre</a>
@@ -101,9 +101,9 @@
       <p class="lede">La mayoría de quienes tienen un shapefile no necesitan un SIG completo. Necesitan ver qué contiene, comprobar que coincide con otra cosa y, quizá, enviar una imagen.</p>
     </div>
     <div class="claims">
-      <div><h3>Doble clic en el Finder</h3><p>Los archivos Shapefile, GeoJSON, GeoPackage, GeoTIFF, KML, GPX y NetCDF se abren directamente desde el Finder. O arrástralos a la ventana.</p></div>
+      <div><h3>Arrástralo o haz doble clic</h3><p>Arrastra a NimbleMap cualquier archivo que lea, o suéltalo sobre su icono en el Dock. Los archivos Shapefile, GeoPackage, NetCDF, KML y GPX también se abren con doble clic en el Finder, salvo que otra aplicación de mapas los tenga asignados. Los archivos CSV, Excel, GeoTIFF, GeoJSON y zip se abren en otras aplicaciones con doble clic: usa clic derecho › Abrir con › NimbleMap.</p></div>
       <div><h3>Las capas encajan solas</h3><p>La aplicación lee el <code>.prj</code> de un shapefile y convierte sus coordenadas, así que los puntos de un CSV caen sobre los límites de los distritos y no en cualquier otro lugar fuera del mapa. Si no puede leer el sistema de coordenadas de un archivo, te lo dice en una línea.</p></div>
-      <div><h3>Puntos de un CSV de una sola vez</h3><p>Suelta una hoja de cálculo con columnas de latitud y longitud. La aplicación encuentra las columnas, pone cada fila en el mapa y te dice qué columnas ha elegido para que puedas cambiarlas.</p></div>
+      <div><h3>Puntos de un CSV de una sola vez</h3><p>Arrastra a NimbleMap una hoja de cálculo con columnas de latitud y longitud. La aplicación encuentra las columnas, pone cada fila en el mapa y te dice qué columnas ha elegido para que puedas cambiarlas.</p></div>
       <div><h3>GeoTIFF sobre un mapa de verdad</h3><p>Vista Previa muestra un GeoTIFF como una imagen plana. Aquí, una escena de satélite, un vuelo de dron o un modelo de elevación se coloca donde le corresponde, bajo tus otras capas.</p></div>
       <div><h3>Tus archivos se quedan en tu Mac</h3><p>No se sube nada. La aplicación gratuita abre los archivos en local y funciona sin conexión, algo importante para datos de campo, archivos de clientes y cualquier información sensible.</p></div>
       <div><h3>Las coordenadas de los mapas de China</h3><p>Los puntos de Amap, Tencent o Baidu Maps usan las coordenadas desplazadas de China, GCJ-02 o BD-09. Cuando una capa situada en China parece usar una de ellas, la aplicación te lo dice y la convierte con un clic, para que coincida con el mapa base y con el resto de tus datos.</p></div>
@@ -141,19 +141,13 @@
         <p>Gratis · versión preliminar 0.7.0</p>
         <a class="btn btn-primary" href="https://github.com/kangning-huang/NimbleMap/releases/latest/download/NimbleMap-macos-arm64.dmg" download>Descargar</a>
         <p class="dl-note" style="margin-top:12px">Aún no está notarizada, así que macOS la bloquea la primera vez: abre Ajustes del Sistema › Privacidad y seguridad y haz clic en «Abrir igualmente» (solo una vez).</p>
+        <p class="dl-pro">Llega en la próxima actualización: inicia sesión dentro de la app para desbloquear Pro. <a href="pro.html">Qué añade Pro</a></p>
       </div>
       <div class="dl">
         <h3>Réplica para China continental</h3>
-        <p>La misma aplicación firmada, desde un servidor en China</p>
-        <!-- TODO(owner): mainland China mirror. -->
-        <a class="btn btn-quiet disabled" href="#get" aria-disabled="true">Descargar</a>
-        <p style="margin-top:12px">Próximamente.</p>
-      </div>
-      <div class="dl">
-        <h3>NimbleMap Pro</h3>
-        <p>Gratis con una cuenta · el cuadro de preguntas y capas del mundo</p>
-        <a class="btn btn-quiet disabled" href="#get" aria-disabled="true">Próximamente</a>
-        <p style="margin-top:12px"><a href="pro.html">Qué añade Pro</a></p>
+        <p>La misma app, desde GitCode, para descargas en China continental. Archivo idéntico (mismo SHA-256).</p>
+        <a class="btn btn-quiet" href="https://gitcode.com/KN-Huang/NimbleMap/releases/download/v0.7.0/NimbleMap-macos-arm64.dmg" data-dl="alt" download>Descargar</a>
+        <p class="dl-note" style="margin-top:12px"><a href="https://gitcode.com/KN-Huang/NimbleMap/releases" data-dl="alt-releases">Todas las versiones en GitCode</a></p>
       </div>
     </div>
     <div class="share" role="group" aria-label="Compartir"><span class="share-label">Compartir</span><a class="share-btn" data-net="x" href="#" target="_blank" rel="noopener" aria-label="Compartir: X">X</a><a class="share-btn" data-net="facebook" href="#" target="_blank" rel="noopener" aria-label="Compartir: Facebook">Facebook</a><a class="share-btn" data-net="reddit" href="#" target="_blank" rel="noopener" aria-label="Compartir: Reddit">Reddit</a><a class="share-btn" data-net="linkedin" href="#" target="_blank" rel="noopener" aria-label="Compartir: LinkedIn">LinkedIn</a></div>
@@ -228,7 +222,7 @@
     </div>
     <div class="faq">
       <h3>¿Hay algún programa gratis para abrir un shapefile en Mac?</h3>
-      <p>Sí. NimbleMap es gratis. Haz doble clic en el <code>.shp</code> en el Finder, o arrástralo (o su .zip) a la ventana. Deja los archivos <code>.dbf</code>, <code>.shx</code> y <code>.prj</code> a su lado, porque un shapefile es en realidad un conjunto de archivos.</p>
+      <p>Sí. NimbleMap es gratis. Haz doble clic en el <code>.shp</code> en el Finder, o arrástralo (o su .zip) a NimbleMap. Deja los archivos <code>.dbf</code>, <code>.shx</code> y <code>.prj</code> a su lado, porque un shapefile es en realidad un conjunto de archivos.</p>
 
       <h3>¿Por qué los puntos de mi CSV no aparecen encima de mi shapefile?</h3>
       <p>Normalmente, el shapefile está guardado en un sistema de coordenadas proyectado (metros desde un origen), mientras que el CSV contiene latitud y longitud, así que cada uno acaba en un sitio distinto. NimbleMap lee el <code>.prj</code> del shapefile y lo convierte a latitud y longitud, de modo que ambos coinciden. Si falta el <code>.prj</code> o no lo entiende, te lo dice en lugar de adivinar en silencio.</p>

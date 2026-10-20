@@ -57,7 +57,7 @@ def test_stamps_absolute_urls_sitemap_and_robots(tmp_path):
     home = (out / "index.html").read_text(encoding="utf-8")
     assert '<link rel="canonical" href="https://maps.example/">' in home
     assert '<link rel="alternate" hreflang="zh-Hans" href="https://maps.example/zh/">' in home
-    assert '<meta property="og:image" content="https://maps.example/img/typhoons-card.jpg">' in home
+    assert '<meta property="og:image" content="https://maps.example/img/open-storms.jpg">' in home
     zh = (out / "zh" / "download.html").read_text(encoding="utf-8")
     assert '<link rel="alternate" hreflang="en" href="https://maps.example/download.html">' in zh
     assert '<meta property="og:image" content="https://maps.example/img/walls-compare.jpg">' in zh
@@ -139,5 +139,9 @@ def test_app_downloads_come_from_the_languages_host(rel):
     lang = langs.lang_of(rel)
     want = langs.dmg(lang)
     assert want.startswith(langs.GITCODE if lang.folder == "zh" else "https://github.com/")
-    for url, sha in re.findall(r'href="(https://[^"]*' + re.escape(langs.DMG_NAME) + r')(\.sha256)?"', text):
-        assert url == want, (rel, url)
+    for url, sha, alt in re.findall(r'href="(https://[^"]*' + re.escape(langs.DMG_NAME) + r')(\.sha256)?"( data-dl="alt")?', text):
+        assert url == (langs.dmg(lang, alt=True) if alt else want), (rel, url)
+    if Path(rel).name == "download.html":
+        # The second card offers the other host, and the Pro line is the one set in langs.py.
+        assert langs.dmg(lang, alt=True) != want
+        assert langs.PRO_UNLOCK[lang.folder] in text
