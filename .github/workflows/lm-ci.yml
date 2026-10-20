@@ -5,6 +5,8 @@
 # `windows` runs the same `cargo xtask ci` on Windows x64 (WP6.2, Gate 6: every suite on both
 # systems), and `windows-installer` builds the Free installer, signed when a Windows signing
 # account is configured (docs/lm/signing.md), unsigned otherwise (docs/lm/windows.md).
+# `linux-tarball` builds the portable Free tarball for Linux x64 (best effort, unsigned;
+# docs/lm/linux.md).
 # The workflow and job names keep "LayeredMap": they are the status-check names branch rules
 # refer to (the app was renamed NimbleMap; docs/lm/naming.md).
 name: LayeredMap CI
@@ -105,6 +107,36 @@ jobs:
         with:
           name: NimbleMap-windows-x64
           path: dist/lm/*-windows-x64-setup.exe
+          if-no-files-found: error
+
+  linux-tarball:
+    name: LayeredMap tarball (Linux x64)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      # What winit, wgpu and the clipboard link or look for when building on Linux. Most are
+      # loaded at run time; the headers keep build scripts and pkg-config happy.
+      - name: Build libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends pkg-config libxkbcommon-dev libxkbcommon-x11-dev \
+            libwayland-dev libx11-dev libxcursor-dev libxi-dev libxrandr-dev \
+            libxcb1-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev \
+            libegl1-mesa-dev libgl1-mesa-dev libvulkan-dev
+      # The path rules the tarball depends on (Resources beside the executable, the XDG folders),
+      # checked on Linux itself.
+      - name: Platform rules on Linux
+        run: cargo test --locked -p lm-core platform
+      - name: Tarball
+        env:
+          LM_BUILD_NUMBER: ${{ github.run_number }}
+        run: packaging/lm/linux/build-tarball.sh dist/lm
+      - uses: actions/upload-artifact@v7
+        with:
+          name: NimbleMap-linux-x64
+          path: dist/lm/*-linux-x64.tar.gz
           if-no-files-found: error
 
   wasm:
