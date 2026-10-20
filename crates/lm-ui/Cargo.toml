@@ -26,6 +26,9 @@ image = { workspace = true }
 
 [dev-dependencies]
 egui_kittest = { workspace = true, features = ["wgpu", "snapshot"] }
+egui-wgpu = "0.36"
+# Feature-unify wgpu so the noop backend is linked for headless CI without a GPU.
+wgpu = { version = "30", features = ["noop"] }
 
 # The system's preferred language on Windows, for the update notes (registry; safe API).
 [target.'cfg(windows)'.dependencies]

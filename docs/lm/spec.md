@@ -1672,4 +1672,3 @@ The two biggest risks are builder time and map feel. Phase 0 settles the second;
 | Natural-language experiment | Run WP6.11 · skip | Gate 5 | Pilot question log |
 | Finder Quick Look preview | A Quick Look extension that previews .shp, .geojson, .gpx, .kml and .tif in Finder (space bar) · not now | A phase start after Phase 6 | Reddit pains survey (2026-10-19): people want to peek at a GIS file without launching a full app |
 | Editing | Table edits only (cells, rename/delete/add columns, with undo) · also geometry (move points, vertices) · neither | A phase start after Phase 6 | Table edits are cheap and match the audience; vertex editing is a large surface (snapping, topology, undo, saving back to each format) and is QGIS's job. Proposed: table edits only |
-

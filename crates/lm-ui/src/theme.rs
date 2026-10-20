@@ -165,33 +165,41 @@ pub fn fonts_for(cjk: Option<lm_core::i18n::Cjk>) -> egui::FontDefinitions {
 /// The system faces for a language: (path, face index in a collection, weight), in order of
 /// preference.
 fn system_cjk_faces(cjk: lm_core::i18n::Cjk) -> Option<Vec<(std::path::PathBuf, u32, Weight)>> {
-    use lm_core::i18n::Cjk;
     #[cfg(target_os = "macos")]
-    let (dir, faces): (std::path::PathBuf, &[(&str, u32, Weight)]) = (
-        "/System/Library/Fonts".into(),
-        match cjk {
-            Cjk::Japanese => &[("ヒラギノ角ゴシック W3.ttc", 0, Weight::Regular), ("ヒラギノ角ゴシック W6.ttc", 0, Weight::Semibold)],
-            // One collection: Regular is face 0, SemiBold face 4.
-            Cjk::Korean => &[("AppleSDGothicNeo.ttc", 0, Weight::Regular), ("AppleSDGothicNeo.ttc", 4, Weight::Semibold)],
-            Cjk::SimplifiedChinese => return None,
-        },
-    );
+    {
+        use lm_core::i18n::Cjk;
+        let (dir, faces): (std::path::PathBuf, &[(&str, u32, Weight)]) = (
+            "/System/Library/Fonts".into(),
+            match cjk {
+                Cjk::Japanese => &[("ヒラギノ角ゴシック W3.ttc", 0, Weight::Regular), ("ヒラギノ角ゴシック W6.ttc", 0, Weight::Semibold)],
+                // One collection: Regular is face 0, SemiBold face 4.
+                Cjk::Korean => &[("AppleSDGothicNeo.ttc", 0, Weight::Regular), ("AppleSDGothicNeo.ttc", 4, Weight::Semibold)],
+                Cjk::SimplifiedChinese => return None,
+            },
+        );
+        Some(faces.iter().map(|(f, i, w)| (dir.join(f), *i, *w)).collect())
+    }
     #[cfg(windows)]
-    let (dir, faces): (std::path::PathBuf, &[(&str, u32, Weight)]) = (
-        windows_fonts_dir(),
-        match cjk {
-            // Face 1 of the Yu Gothic collections is the interface cut, Yu Gothic UI.
-            Cjk::Japanese => &[("YuGothR.ttc", 1, Weight::Regular), ("YuGothB.ttc", 1, Weight::Semibold), ("meiryo.ttc", 0, Weight::Both)],
-            Cjk::Korean => &[("malgun.ttf", 0, Weight::Regular), ("malgunbd.ttf", 0, Weight::Semibold)],
-            Cjk::SimplifiedChinese => return None,
-        },
-    );
+    {
+        use lm_core::i18n::Cjk;
+        let (dir, faces): (std::path::PathBuf, &[(&str, u32, Weight)]) = (
+            windows_fonts_dir(),
+            match cjk {
+                // Face 1 of the Yu Gothic collections is the interface cut, Yu Gothic UI.
+                Cjk::Japanese => {
+                    &[("YuGothR.ttc", 1, Weight::Regular), ("YuGothB.ttc", 1, Weight::Semibold), ("meiryo.ttc", 0, Weight::Both)]
+                }
+                Cjk::Korean => &[("malgun.ttf", 0, Weight::Regular), ("malgunbd.ttf", 0, Weight::Semibold)],
+                Cjk::SimplifiedChinese => return None,
+            },
+        );
+        Some(faces.iter().map(|(f, i, w)| (dir.join(f), *i, *w)).collect())
+    }
     #[cfg(not(any(target_os = "macos", windows)))]
-    let (dir, faces): (std::path::PathBuf, &[(&str, u32, Weight)]) = {
+    {
         let _ = cjk;
-        return None;
-    };
-    Some(faces.iter().map(|(f, i, w)| (dir.join(f), *i, *w)).collect())
+        None
+    }
 }
 
 /// Font files read so far, kept for the life of the process: switching languages back and forth

@@ -355,11 +355,18 @@ pub fn drawer(shell: &mut Shell, ui: &mut Ui, map: egui::Rect, left: f32, right:
                         }
                     });
                     let scroll = egui::ScrollArea::vertical().id_salt(("lm-table-v", id.0)).auto_shrink([false, false]);
-                    // Bring a selection made on the map into view.
-                    let scroll = if selected != shell.table.scrolled_for {
+                    // Bring a selection made on the map into view. Keep applying the offset while
+                    // ⌘T is waiting to put the keyboard on that row: egui applies scroll on the
+                    // next frame, and until then the selected row is not among the drawn ones.
+                    let bring_into_view = shell.table.focus || selected != shell.table.scrolled_for;
+                    if selected != shell.table.scrolled_for {
                         shell.table.scrolled_for = selected.clone();
+                    }
+                    // show_rows uses ROW_H + item_spacing.y; match that or the selected row stays off-screen.
+                    let row_step = ROW_H + ui.spacing().item_spacing.y;
+                    let scroll = if bring_into_view {
                         match selected.first().and_then(|s| rows.iter().position(|r| r == s)) {
-                            Some(pos) => scroll.vertical_scroll_offset((pos as f32 * ROW_H - ROW_H * 3.0).max(0.0)),
+                            Some(pos) => scroll.animated(false).vertical_scroll_offset((pos as f32 * row_step - row_step * 3.0).max(0.0)),
                             None => scroll,
                         }
                     } else {
@@ -383,7 +390,6 @@ pub fn drawer(shell: &mut Shell, ui: &mut Ui, map: egui::Rect, left: f32, right:
                             let take_focus = shell.table.focus && (selected.first() == Some(&r) || (selected.is_empty() && i == first));
                             if take_focus {
                                 resp.request_focus();
-                                shell.table.focus = false;
                             }
                             let p = ui.painter();
                             if on {
@@ -460,6 +466,9 @@ pub fn drawer(shell: &mut Shell, ui: &mut Ui, map: egui::Rect, left: f32, right:
     // ↑ ↓ (and Home, End) move through the rows while one has the keyboard, selecting as they go
     // like a list, and the row scrolls into view.
     shell.table.has_keyboard = focus_at.is_some();
+    if shell.table.has_keyboard {
+        shell.table.focus = false;
+    }
     if let Some(i) = focus_at {
         let fid = rows.get(i).map(|r| row_id(id, *r));
         if let Some(fid) = fid {

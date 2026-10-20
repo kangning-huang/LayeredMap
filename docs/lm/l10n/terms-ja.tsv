@@ -2,14 +2,14 @@ English	日本語	note
 Layer	レイヤー	QGIS 日本語版は「レイヤ」（長音なし）。Web/Apple の表記慣行に合わせて長音付きを採用
 Layers (panel)	レイヤー	パネル名。本文では「レイヤーパネル」
 Basemap	背景地図	日常語を採用。GIS 用語は「ベースマップ」（alt に入れる）
-Satellite	衛星画像	
+Satellite	衛星画像
 Offline	オフライン	背景地図の選択肢（インターネット不要の輪郭地図）
 Light	ライト	背景地図の選択肢
 Dark	ダーク	背景地図の選択肢
-Auto	自動	
+Auto	自動
 Background strength	背景の濃さ	日常語
 Attribute table	属性テーブル	QGIS と同じ
-Table	テーブル	
+Table	テーブル
 Field	フィールド	QGIS と同じ（表の「列」）
 Fields	フィールド	詳細タブの項目
 Feature	地物	QGIS と同じ。初出で「ひとつひとつの対象」と説明
@@ -18,8 +18,8 @@ Point	点	日常語。QGIS は「ポイント」
 Line	線	日常語。QGIS は「ライン」
 Area (polygon)	面	日常語。QGIS は「ポリゴン」
 Raster	ラスター	QGIS は「ラスタ」（長音なし）
-Grid	グリッド	
-Cell	セル	
+Grid	グリッド
+Cell	セル
 Vector data	ベクターデータ	QGIS は「ベクタ」（長音なし）
 Coordinate system (CRS)	座標系	日常語。QGIS は「座標参照系（CRS）」
 Coordinate system	座標系	詳細タブの項目
@@ -27,150 +27,150 @@ Projection	投影法	地図投影法
 Legend	凡例	QGIS と同じ
 Scale bar	スケールバー	QGIS と同じ
 North arrow	方位記号	QGIS と同じ
-Lat/lon labels	緯度経度ラベル	
+Lat/lon labels	緯度経度ラベル
 Grid lines	経緯線	地図画像のオプション
-Title	タイトル	
-Caption	キャプション	
-Credits	出典表記	
+Title	タイトル
+Caption	キャプション
+Credits	出典表記
 Filter	フィルター	本文では「絞り込む」も使用。QGIS は「フィルタ」
-+ Filter	＋ フィルター	
-Filtered:	絞り込み中：	
-Clear	解除	
-Apply	適用	
++ Filter	＋ フィルター
+Filtered:	絞り込み中：
+Clear	解除
+Apply	適用
 Style	スタイル	QGIS は「シンボロジ」も使う
-Style…	スタイル…	
-Colour by value	値で色分け	
+Style…	スタイル…
+Colour by value	値で色分け
 Color by a value	値で色分け	カードのボタン
-Color	色	
-Palette	パレット	
+Color	色
+Palette	パレット
 Range	範囲	色を割り当てる値の範囲
 Groups	段階	値をいくつかの階級に分ける
 Smooth	連続	連続グラデーション
 Heat	ヒート	パレット名
-Size	サイズ	
-Labels	ラベル	
-Label	ラベル	
+Size	サイズ
+Labels	ラベル
+Label	ラベル
 Opacity	不透明度	QGIS と同じ
-Outline	輪郭線	
-Width	太さ	
-By basin	海域別	
+Outline	輪郭線
+Width	太さ
+By basin	海域別
 Join	結合	QGIS は「テーブル結合」
-Show joined fields	結合したフィールドを表示	
-Unjoin	結合を解除	
-joined · 172 of 177 matched	結合済み · 177 件中 172 件が一致	
+Show joined fields	結合したフィールドを表示
+Unjoin	結合を解除
+joined · 172 of 177 matched	結合済み · 177 件中 172 件が一致
 Buffer	バッファ	GIS 用語。アプリでは日常語の「一定距離内の範囲」
 Show an area within a distance	一定距離内の範囲を表示	バッファのアプリでの呼び方
 Show an area within a distance of each	各地物から一定距離内の範囲を表示	Pro のボタン
 Clip	切り抜き	QGIS は「クリップ」
-Keep the part of [layer] inside [other]	［レイヤー］のうち［別のレイヤー］の内側を残す	
+Keep the part of [layer] inside [other]	［レイヤー］のうち［別のレイヤー］の内側を残す
 Measure length	長さを測る	Pro のボタン
 Overview	概要	カードのタブ
 Details	詳細	カードのタブ
-Card	カード	
-Examples	サンプル	
-Open	開く	
-Open file…	ファイルを開く…	
-Share	共有	
-Map image…	地図画像…	
-Data…	データ…	
+Card	カード
+Examples	サンプル
+Open	開く
+Open file…	ファイルを開く…
+Share	共有
+Map image…	地図画像…
+Data…	データ…
 Export	書き出し	「エクスポート」も可
-Save	保存	
-Save…	保存…	
-Undo	取り消す	
-Search places or your data	場所やデータを検索	
+Save	保存
+Save…	保存…
+Undo	取り消す
+Search places or your data	場所やデータを検索
 Your data	あなたのデータ	検索結果の見出し
 Find in storms	storms 内を検索	「Find in [レイヤー名]」の形
-Find in walled cities 1866	walled cities 1866 内を検索	
-Zoom in	拡大	
-Zoom out	縮小	
-Zoom to layer	レイヤーにズーム	
-Zoom to All Data	すべてのデータにズーム	
-Rename	名前を変更	
+Find in walled cities 1866	walled cities 1866 内を検索
+Zoom in	拡大
+Zoom out	縮小
+Zoom to layer	レイヤーにズーム
+Zoom to All Data	すべてのデータにズーム
+Rename	名前を変更
 Remove from map	地図から外す	ファイルは消えないので「削除」を避けた
-Time slider	タイムスライダー	
-Time step	時間ステップ	
-Play	再生	
-Previous step (←)	前のステップ（←）	
-Next step (→)	次のステップ（→）	
-46 of 92	92 中 46	
+Time slider	タイムスライダー
+Time step	時間ステップ
+Play	再生
+Previous step (←)	前のステップ（←）
+Next step (→)	次のステップ（→）
+46 of 92	92 中 46
 No data	データなし	GIS 用語は「NoData」
-No value	値なし	
-This cell has no data.	このセルにはデータがありません。	
-Median	中央値	
-Rank	順位	
-Selected	選択中	
+No value	値なし
+This cell has no data.	このセルにはデータがありません。
+Median	中央値
+Rank	順位
+Selected	選択中
 Keep	残す	Pro の結果を保存
-Discard	破棄	
+Discard	破棄
 Ask	質問	Pro の機能名
-Ask box (Pro)	質問ボックス（Pro）	
+Ask box (Pro)	質問ボックス（Pro）
 Ask about your layers	レイヤーについて質問	質問ボックスのプレースホルダ
 Pro	Pro	NimbleMap Pro
-Free	無料版	
-Help	ヘルプ	
-Glossary	用語集	
-Download	ダウンロード	
-Home	ホーム	
+Free	無料版
+Help	ヘルプ
+Glossary	用語集
+Download	ダウンロード
+Home	ホーム
 Change	変更	仮定の横のリンク
 Assumptions	仮定	アプリが自動で決めた設定
-Assumption	仮定	
+Assumption	仮定
 Insight line	比較の一文	アプリ独自の概念。「インサイト」とも
 Recipe	レシピ	結果の作り方の記録
-Compare	比較	
-Compare by	比較の基準	
-Compare with other [layer]	他の［レイヤー］と比較	
-Compare on the map first	まず地図上で比較	
-Back	戻る	
+Compare	比較
+Compare by	比較の基準
+Compare with other [layer]	他の［レイヤー］と比較
+Compare on the map first	まず地図上で比較
+Back	戻る
 Category	カテゴリ	フィールドの読み方
 Value	数値	フィールドの読み方
 Values	値	概要タブの項目
 Name	名前	フィールドの読み方
 Date	日付	フィールドの読み方
 Extent	領域	QGIS と同じ（「範囲」は Range に使用）
-Format	形式	
-Variable	変数	
-Variable shown	表示する変数	
+Format	形式
+Variable	変数
+Variable shown	表示する変数
 Level shown	表示する高度	深さ・高さのある NetCDF
-Metric Units	メートル法	
-Imperial Units	ヤード・ポンド法	
-Work Offline	オフラインで作業	
-Working offline: online backgrounds are off	オフラインで作業中：オンラインの背景地図はオフです	
-Drop to add to the map	ドロップして地図に追加	
-Located using longitude and latitude as GPS coordinates (WGS 84)	経度・緯度を GPS 座標（WGS 84）として配置しました	
-Amap/Tencent coordinates (GCJ-02): convert	Amap/Tencent の座標（GCJ-02）：変換する	
-GPS coordinates (WGS 84): keep where they are	GPS 座標（WGS 84）：そのままにする	
+Metric Units	メートル法
+Imperial Units	ヤード・ポンド法
+Work Offline	オフラインで作業
+Working offline: online backgrounds are off	オフラインで作業中：オンラインの背景地図はオフです
+Drop to add to the map	ドロップして地図に追加
+Located using longitude and latitude as GPS coordinates (WGS 84)	経度・緯度を GPS 座標（WGS 84）として配置しました
+Amap/Tencent coordinates (GCJ-02): convert	Amap/Tencent の座標（GCJ-02）：変換する
+GPS coordinates (WGS 84): keep where they are	GPS 座標（WGS 84）：そのままにする
 World basics	世界の基本データ	サンプル名
 Typhoons and hurricanes	台風とハリケーン	サンプル名
 Heatwaves, summer 2023	2023年夏の熱波	サンプル名
 Walled cities of China, 1866	1866年の中国の城郭都市	サンプル名
 Heat-wave intensity (°C)	熱波の強度（°C）	データの変数名
-Time: 1 Jun 2023 to 31 Aug 2023 (92 steps)	期間：2023年6月1日〜2023年8月31日（92 ステップ）	
-Treated as measured values (averaged, not summed)	測定値として扱います（合計ではなく平均）	
-If these came from a Chinese map app (Amap, Tencent or Baidu), they may sit a few hundred meters off.	中国の地図アプリ（Amap、Tencent、Baidu）から取得したデータなら、数百メートルずれている可能性があります。	
-Show only values above…	指定した値より上だけを表示…	
-Change colors and range	色と範囲を変更	
-Show where values are like this	似た値の場所を表示	
-View in table	テーブルで表示	
-View data	データを表示	
+Time: 1 Jun 2023 to 31 Aug 2023 (92 steps)	期間：2023年6月1日〜2023年8月31日（92 ステップ）
+Treated as measured values (averaged, not summed)	測定値として扱います（合計ではなく平均）
+If these came from a Chinese map app (Amap, Tencent or Baidu), they may sit a few hundred meters off.	中国の地図アプリ（Amap、Tencent、Baidu）から取得したデータなら、数百メートルずれている可能性があります。
+Show only values above…	指定した値より上だけを表示…
+Change colors and range	色と範囲を変更
+Show where values are like this	似た値の場所を表示
+View in table	テーブルで表示
+View data	データを表示
 Show storms where strength is any of Category 5	strength が Category 5 のいずれかである storms を表示	フィルターの文
 Show areas where type is any of Provincial Capital	type が Provincial Capital のいずれかである面を表示	フィルターの文
-228 match	228 件が一致	
-19 match	19 件が一致	
-Showing 228 of 4,999	4,999 件中 228 件を表示	
-tied 2nd highest of 228 filtered	絞り込んだ 228 件中、同率 2 位	
-4 objects here	ここに 4 個のオブジェクト	
-4,999 lines	4,999 本の線	
-1,251 points	1,251 個の点	
-1,789 areas	1,789 個の面	
-1,789 areas, highest first	1,789 個の面（大きい順）	
-higher than 99% of 4,547 storms with values	値のある 4,547 個の嵐の 99% より高い	
-higher than 99% of 1,789 areas	1,789 個の面の 99% より大きい	
-lower than 58% of this layer’s cells (estimated from a sample)	このレイヤーのセルの 58% より低い（サンプルからの推定）	
-area · 23.4 km²	面積 · 23.4 km²	
+228 match	228 件が一致
+19 match	19 件が一致
+Showing 228 of 4,999	4,999 件中 228 件を表示
+tied 2nd highest of 228 filtered	絞り込んだ 228 件中、同率 2 位
+4 objects here	ここに 4 個のオブジェクト
+4,999 lines	4,999 本の線
+1,251 points	1,251 個の点
+1,789 areas	1,789 個の面
+1,789 areas, highest first	1,789 個の面（大きい順）
+higher than 99% of 4,547 storms with values	値のある 4,547 個の嵐の 99% より高い
+higher than 99% of 1,789 areas	1,789 個の面の 99% より大きい
+lower than 58% of this layer’s cells (estimated from a sample)	このレイヤーのセルの 58% より低い（サンプルからの推定）
+area · 23.4 km²	面積 · 23.4 km²
 Fit to data	データに合わせる	地図画像の「表示」
 Current view	現在の表示	地図画像の「表示」
 Show	表示	地図画像の項目
-Slide 16:9	スライド 16:9	
-Report A4	レポート A4	
-Square	正方形	
-Toolbar	ツールバー	
-Welcome card	ようこそカード	
+Slide 16:9	スライド 16:9
+Report A4	レポート A4
+Square	正方形
+Toolbar	ツールバー
+Welcome card	ようこそカード

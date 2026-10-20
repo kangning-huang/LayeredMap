@@ -7,7 +7,9 @@ repos:
       - id: check-json
         exclude: \.geojson$
       - id: end-of-file-fixer
+        exclude: ^(fixtures/|dist/)
       - id: trailing-whitespace
+        exclude: ^(fixtures/|dist/)
       - id: check-added-large-files
         args: ["--maxkb=1024"]
   - repo: local
