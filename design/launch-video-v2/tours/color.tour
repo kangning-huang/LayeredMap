@@ -1,0 +1,6 @@
+# Colour storms by max wind in the free build (no developer extras on the card)
+example storms
+160,22,3.1
+card style_by_value max_wind_kt
+layer 99
+layer 99

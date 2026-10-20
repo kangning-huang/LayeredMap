@@ -105,3 +105,40 @@
     setStopped(stopped);
   });
 })();
+
+// Share buttons: built from the page's canonical address and title, so each language shares
+// itself. Hidden without JavaScript (see .share in site.css).
+document.addEventListener("DOMContentLoaded", function () {
+  var links = document.querySelectorAll(".share a[data-net]");
+  if (!links.length) return;
+  var canon = document.querySelector('link[rel="canonical"]');
+  var url = encodeURIComponent(canon ? canon.href : location.href);
+  var title = encodeURIComponent(document.title);
+  var to = {
+    x: "https://x.com/intent/post?url=" + url + "&text=" + title,
+    facebook: "https://www.facebook.com/sharer/sharer.php?u=" + url,
+    reddit: "https://www.reddit.com/submit?url=" + url + "&title=" + title,
+    linkedin: "https://www.linkedin.com/sharing/share-offsite/?url=" + url,
+  };
+  for (var i = 0; i < links.length; i++) {
+    var net = links[i].getAttribute("data-net");
+    if (to[net]) links[i].href = to[net];
+  }
+});
+
+// Download buttons link straight to the Mac app. On a phone, a tablet, Windows or Linux, show the
+// line under the button (.mac-only, in the page's language) saying it needs a Mac. Intel Macs
+// can't be told apart reliably, so they aren't singled out.
+document.addEventListener("DOMContentLoaded", function () {
+  var notes = document.querySelectorAll(".mac-only");
+  if (!notes.length) return;
+  var nav = window.navigator;
+  var uad = nav.userAgentData;
+  var platform = (uad && uad.platform) || nav.platform || "";
+  var ua = nav.userAgent || "";
+  var mobile = (uad && uad.mobile) || /iPhone|iPad|iPod|Android/i.test(ua);
+  var ipad = /Mac/i.test(platform) && nav.maxTouchPoints > 1;  // iPadOS says it is a Mac
+  var other = platform ? !/Mac/i.test(platform) : /Windows|Linux|CrOS|X11/i.test(ua);
+  if (!(mobile || ipad || other)) return;
+  for (var i = 0; i < notes.length; i++) notes[i].hidden = false;
+});

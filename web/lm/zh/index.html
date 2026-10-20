@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>凌波微图 NimbleMap：免费的 Mac 地图应用，打开 Shapefile、GeoJSON、CSV、GeoTIFF</title>
-<meta name="description" content="凌波微图是一款免费的 Mac 地图应用，给爱看地图、但没学过 GIS 的人用。双击 Shapefile、GeoJSON、CSV 或 GeoTIFF 就能放到地图上，点一下就知道它在同类里排第几，还能导出一张完整的地图分享出去。">
+<title>凌波微图 NimbleMap：探索地球的真实数据</title>
+<meta name="description" content="一款免费的 Mac 应用，内置八张地图：台风、地震、热浪等等。点一下任何东西，就知道它和同类比起来怎么样。然后，放进你自己的数据。">
 <link rel="canonical" href="index.html">
 <link rel="alternate" hreflang="en" href="../index.html">
 <link rel="alternate" hreflang="zh-Hans" href="index.html">
@@ -21,8 +21,8 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="凌波微图 NimbleMap">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:title" content="凌波微图 NimbleMap：免费的 Mac 地图应用，打开 Shapefile、GeoJSON、CSV、GeoTIFF">
-<meta property="og:description" content="凌波微图是一款免费的 Mac 地图应用，给爱看地图、但没学过 GIS 的人用。双击 Shapefile、GeoJSON、CSV 或 GeoTIFF 就能放到地图上，点一下就知道它在同类里排第几，还能导出一张完整的地图分享出去。">
+<meta property="og:title" content="凌波微图 NimbleMap：探索地球的真实数据">
+<meta property="og:description" content="一款免费的 Mac 应用，内置八张地图：台风、地震、热浪等等。点一下任何东西，就知道它和同类比起来怎么样。然后，放进你自己的数据。">
 <meta property="og:url" content="index.html">
 <meta property="og:image" content="../img/typhoons-card.jpg">
 <meta name="twitter:card" content="summary_large_image">
@@ -38,7 +38,7 @@
   "inLanguage": "zh-Hans",
   "operatingSystem": "macOS 13 或更高版本（Apple 芯片）",
   "applicationCategory": "UtilitiesApplication",
-  "description": "凌波微图是一款免费的 Mac 地图应用，给爱看地图、但没学过 GIS 的人用。双击 Shapefile、GeoJSON、CSV 或 GeoTIFF 就能放到地图上，点一下就知道它在同类里排第几，还能导出一张完整的地图分享出去。",
+  "description": "一款免费的 Mac 应用，内置八张地图：台风、地震、热浪等等。点一下任何东西，就知道它和同类比起来怎么样。然后，放进你自己的数据。",
   "isAccessibleForFree": true,
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "CNY" }
 }
@@ -50,8 +50,9 @@
     <a class="brand" href="index.html"><img src="../assets/logo.svg" alt="" width="30" height="30">凌波微图<span class="brand-en" lang="en">NimbleMap</span></a>
     <nav class="nav" aria-label="网站导航">
       <a href="index.html" aria-current="page">首页</a>
+      <a href="index.html#examples">示例</a>
+      <a href="data.html">数据</a>
       <a href="help.html">帮助</a>
-      <a href="glossary.html">术语表</a>
       <a href="download.html">下载</a>
       <details class="lang-menu">
         <summary aria-label="语言：简体中文" title="语言"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.6 3.9 5.6 3.9 9s-1.3 6.4-3.9 9c-2.6-2.6-3.9-5.6-3.9-9S9.4 5.6 12 3z"/></svg><span>中文</span></summary>
@@ -78,14 +79,16 @@
 <section class="hero contours">
   <div class="wrap hero-grid">
     <div>
-      <p class="eyebrow">给好奇心的地图应用</p>
-      <h1>打开地图文件，<br>看懂它在说什么。</h1>
-      <p class="lede">凌波微图（NimbleMap）是为爱看地图、却从没学过 GIS 的人做的。双击一个地点、轨迹或气候数据文件，它就出现在地图上。点一下任何东西，它会告诉你这个东西在同类里处于什么位置：最强的台风、最大的城池、最热的一周。</p>
+      <p class="eyebrow">Mac 版 · 免费</p>
+      <h1>探索地球的<br>真实数据。</h1>
+      <p class="lede">内置八张地图：台风、地震、热浪……然后，放进你自己的数据。</p>
       <div class="actions">
-        <a class="btn btn-primary" href="download.html">下载 Mac 版</a>
-        <a class="btn btn-quiet" href="help.html">跟着教程试一试</a>
+        <a class="btn btn-primary btn-get" href="https://gitcode.com/KN-Huang/NimbleMap/releases/download/v0.7.0/NimbleMap-macos-arm64.dmg" download>免费下载 Mac 版</a>
+        <a class="btn btn-quiet" href="#examples">看看内置地图</a>
       </div>
-      <p class="coords" style="margin-top:28px">免费 · macOS · 英文界面，支持中文地名（中文界面制作中）</p>
+      <p class="mac-only" hidden>凌波微图需要搭载 Apple 芯片的 Mac。Windows 版正在制作中。</p>
+      <p class="dl-fine">免费 · 约 74 MB · macOS 13 及以上 · Apple 芯片 · 断网可用</p>
+      <p class="dl-fine"><a href="download.html#get">首次打开时 macOS 会请你确认：看看怎么打开</a></p>
     </div>
     <div class="hero-shot showcase" data-rotate="3000">
       <figure class="frame stage">
@@ -106,39 +109,51 @@
   </div>
 </section>
 
-<section id="why">
+<section id="examples">
   <div class="wrap">
-    <div class="why-grid">
     <div class="section-head">
-      <p class="eyebrow">为什么不一样</p>
-      <h2>如果 GIS 像苹果的应用一样好用，会是什么样？</h2>
-      <p class="lede">QGIS 和 ArcGIS 是处理空间数据的强大工具。但对第一次打开它们的人来说，连做一张简单的地图都不容易：几百个工具和设置挡在人和地图之间。如果 GIS 由做 iPhone 的那群人来设计，会是什么样？他们会留下哪些工具、藏起哪些、干脆去掉哪些？凌波微图就在探索这个问题：把 GIS 里真正有用的部分，放进一款任何对地方好奇的人都能用的地图应用。</p>
+      <p class="eyebrow">内置地图</p>
+      <h2>先看看这些精彩的地图</h2>
     </div>
-    <figure class="sketch" aria-label="示意图：典型 GIS 窗口满是工具栏和对话框，旁边是凌波微图，一张地图和一张卡片">
-  <svg viewBox="0 0 600 272" role="img" aria-labelledby="sk-cap">
-    <g><rect x="6" y="6" width="282" height="232" rx="10" class="sk-win"/><path d="M6 16a10 10 0 0 1 10-10h262a10 10 0 0 1 10 10v12H6z" class="sk-bar"/><circle cx="19" cy="17" r="3.2" class="sk-dot"/><circle cx="29" cy="17" r="3.2" class="sk-dot"/><circle cx="39" cy="17" r="3.2" class="sk-dot"/><rect x="118" y="14.5" width="58" height="5" rx="2.5" class="sk-line"/><rect x="16" y="34" width="16" height="4" rx="2" class="sk-line"/><rect x="38" y="34" width="14" height="4" rx="2" class="sk-line"/><rect x="58" y="34" width="18" height="4" rx="2" class="sk-line"/><rect x="82" y="34" width="22" height="4" rx="2" class="sk-line"/><rect x="110" y="34" width="16" height="4" rx="2" class="sk-line"/><rect x="132" y="34" width="20" height="4" rx="2" class="sk-line"/><rect x="158" y="34" width="24" height="4" rx="2" class="sk-line"/><rect x="188" y="34" width="14" height="4" rx="2" class="sk-line"/><rect x="208" y="34" width="18" height="4" rx="2" class="sk-line"/><circle cx="19.5" cy="48.5" r="3.8" class="sk-tool"/><rect x="28" y="44" width="9" height="9" rx="2" class="sk-tool"/><rect x="41" y="44" width="9" height="9" rx="2" class="sk-tool"/><rect x="54" y="44" width="9" height="9" rx="2" class="sk-tool"/><circle cx="71.5" cy="48.5" r="3.8" class="sk-tool"/><path d="M81 44v9" class="sk-sep"/><rect x="85" y="44" width="9" height="9" rx="2" class="sk-tool"/><rect x="98" y="44" width="9" height="9" rx="2" class="sk-tool"/><circle cx="115.5" cy="48.5" r="3.8" class="sk-tool"/><rect x="124" y="44" width="9" height="9" rx="2" class="sk-tool"/><rect x="137" y="44" width="9" height="9" rx="2" class="sk-tool"/><path d="M151 44v9" class="sk-sep"/><circle cx="159.5" cy="48.5" r="3.8" class="sk-tool"/><rect x="168" y="44" width="9" height="9" rx="2" class="sk-tool"/><rect x="181" y="44" width="9" height="9" rx="2" class="sk-tool"/><rect x="194" y="44" width="9" height="9" rx="2" class="sk-tool"/><circle cx="211.5" cy="48.5" r="3.8" class="sk-tool"/><rect x="15" y="57" width="9" height="9" rx="2" class="sk-tool"/><rect x="28" y="57" width="9" height="9" rx="2" class="sk-tool"/><rect x="41" y="57" width="9" height="9" rx="2" class="sk-tool"/><circle cx="58.5" cy="61.5" r="3.8" class="sk-tool"/><rect x="67" y="57" width="9" height="9" rx="2" class="sk-tool"/><path d="M81 57v9" class="sk-sep"/><rect x="85" y="57" width="9" height="9" rx="2" class="sk-tool"/><circle cx="102.5" cy="61.5" r="3.8" class="sk-tool"/><rect x="111" y="57" width="9" height="9" rx="2" class="sk-tool"/><rect x="124" y="57" width="9" height="9" rx="2" class="sk-tool"/><rect x="137" y="57" width="9" height="9" rx="2" class="sk-tool"/><path d="M151 57v9" class="sk-sep"/><rect x="155" y="57" width="9" height="9" rx="2" class="sk-tool"/><rect x="168" y="57" width="9" height="9" rx="2" class="sk-tool"/><rect x="181" y="57" width="9" height="9" rx="2" class="sk-tool"/><circle cx="198.5" cy="61.5" r="3.8" class="sk-tool"/><rect x="207" y="57" width="9" height="9" rx="2" class="sk-tool"/><rect x="15" y="70" width="9" height="9" rx="2" class="sk-tool"/><rect x="28" y="70" width="9" height="9" rx="2" class="sk-tool"/><circle cx="45.5" cy="74.5" r="3.8" class="sk-tool"/><rect x="54" y="70" width="9" height="9" rx="2" class="sk-tool"/><rect x="67" y="70" width="9" height="9" rx="2" class="sk-tool"/><path d="M81 70v9" class="sk-sep"/><circle cx="89.5" cy="74.5" r="3.8" class="sk-tool"/><rect x="98" y="70" width="9" height="9" rx="2" class="sk-tool"/><rect x="111" y="70" width="9" height="9" rx="2" class="sk-tool"/><rect x="124" y="70" width="9" height="9" rx="2" class="sk-tool"/><circle cx="141.5" cy="74.5" r="3.8" class="sk-tool"/><path d="M151 70v9" class="sk-sep"/><rect x="155" y="70" width="9" height="9" rx="2" class="sk-tool"/><rect x="168" y="70" width="9" height="9" rx="2" class="sk-tool"/><circle cx="185.5" cy="74.5" r="3.8" class="sk-tool"/><rect x="194" y="70" width="9" height="9" rx="2" class="sk-tool"/><rect x="207" y="70" width="9" height="9" rx="2" class="sk-tool"/><rect x="14" y="86" width="64" height="128" rx="4" class="sk-panel"/><rect x="20" y="92" width="34" height="4.5" rx="2.2" class="sk-line-strong"/><rect x="20" y="104" width="6" height="6" rx="1.2" class="sk-check"/><rect x="30" y="105" width="38" height="4" rx="2" class="sk-line"/><rect x="25" y="117" width="6" height="6" rx="1.2" class="sk-check"/><rect x="35" y="118" width="25" height="4" rx="2" class="sk-line"/><rect x="30" y="130" width="6" height="6" rx="1.2" class="sk-check"/><rect x="40" y="131" width="28" height="4" rx="2" class="sk-line"/><rect x="20" y="143" width="6" height="6" rx="1.2" class="sk-check"/><rect x="30" y="144" width="30" height="4" rx="2" class="sk-line"/><rect x="25" y="156" width="6" height="6" rx="1.2" class="sk-check"/><rect x="35" y="157" width="33" height="4" rx="2" class="sk-line"/><rect x="30" y="169" width="6" height="6" rx="1.2" class="sk-check"/><rect x="40" y="170" width="20" height="4" rx="2" class="sk-line"/><rect x="20" y="182" width="6" height="6" rx="1.2" class="sk-check"/><rect x="30" y="183" width="38" height="4" rx="2" class="sk-line"/><rect x="25" y="195" width="6" height="6" rx="1.2" class="sk-check"/><rect x="35" y="196" width="25" height="4" rx="2" class="sk-line"/><rect x="84" y="86" width="196" height="128" rx="4" class="sk-empty"/><path d="M182 146v8M178 150h8" class="sk-sep"/><g class="sk-dialog-g"><rect x="114" y="104" width="136" height="94" rx="6" class="sk-dialog"/><path d="M114 110a6 6 0 0 1 6-6h124a6 6 0 0 1 6 6v6H114z" class="sk-bar"/><rect x="122" y="108" width="54" height="4" rx="2" class="sk-line-strong"/><path d="M240 107.5l4 4m0-4l-4 4" class="sk-x"/><rect x="122" y="122" width="120" height="10" rx="2.5" class="sk-field"/><path d="M234 125.5l3 3 3-3" class="sk-x"/><rect x="122" y="137" width="120" height="7" rx="1.5" class="sk-row"/><rect x="126" y="139.5" width="70" height="2.5" rx="1.2" class="sk-line"/><rect x="122" y="146" width="120" height="7" rx="1.5" class="sk-row-sel"/><rect x="126" y="148.5" width="61" height="2.5" rx="1.2" class="sk-line"/><rect x="122" y="155" width="120" height="7" rx="1.5" class="sk-row"/><rect x="126" y="157.5" width="52" height="2.5" rx="1.2" class="sk-line"/><rect x="122" y="164" width="120" height="7" rx="1.5" class="sk-row"/><rect x="126" y="166.5" width="43" height="2.5" rx="1.2" class="sk-line"/><rect x="180" y="181" width="28" height="10" rx="3" class="sk-tool"/><rect x="213" y="181" width="29" height="10" rx="3" class="sk-btn"/></g><rect x="6" y="218" width="282" height="20" class="sk-status"/><path d="M6 218h282" class="sk-sep"/><rect x="14" y="225.5" width="66" height="4" rx="2" class="sk-line"/><rect x="200" y="225.5" width="34" height="4" rx="2" class="sk-line"/><rect x="240" y="224" width="40" height="7" rx="2" class="sk-tool"/></g><g transform="translate(312 0)"><defs><linearGradient id="sk-ramp"><stop offset="0" class="sk-r0"/><stop offset="1" class="sk-r1"/></linearGradient><clipPath id="sk-map"><rect x="6" y="50" width="282" height="188" rx="0"/></clipPath></defs><rect x="6" y="6" width="282" height="232" rx="10" class="sk-win"/><circle cx="19" cy="17" r="3.2" class="sk-dot"/><circle cx="29" cy="17" r="3.2" class="sk-dot"/><circle cx="39" cy="17" r="3.2" class="sk-dot"/><circle cx="18" cy="38" r="5" class="sk-logo"/><rect x="27" y="35.5" width="34" height="5" rx="2.5" class="sk-line-strong"/><rect x="92" y="32" width="96" height="12" rx="6" class="sk-search"/><circle cx="100" cy="38" r="2.4" class="sk-x"/><rect x="198" y="35" width="5" height="6" rx="1.2" class="sk-ic"/><rect x="205" y="36.5" width="10" height="3" rx="1.5" class="sk-line"/><rect x="220" y="35" width="5" height="6" rx="1.2" class="sk-ic"/><rect x="227" y="36.5" width="10" height="3" rx="1.5" class="sk-line"/><rect x="242" y="35" width="5" height="6" rx="1.2" class="sk-ic"/><rect x="249" y="36.5" width="10" height="3" rx="1.5" class="sk-line"/><rect x="264" y="35" width="5" height="6" rx="1.2" class="sk-ic"/><rect x="271" y="36.5" width="10" height="3" rx="1.5" class="sk-line"/><g clip-path="url(#sk-map)"><rect x="6" y="50" width="282" height="188" class="sk-water"/><path d="M70 50v188" class="sk-grid"/><path d="M140 50v188" class="sk-grid"/><path d="M210 50v188" class="sk-grid"/><path d="M6 100h282" class="sk-grid"/><path d="M6 160h282" class="sk-grid"/><path d="M6 220h282" class="sk-grid"/><path d="M6 92c18-6 34 4 52-2s26-24 50-22 34 18 56 16 30-14 52-12 34 8 72 6v160H6z" class="sk-land"/><path d="M60 82c6 26-8 50 6 78s4 52 10 78M118 70c-4 30 14 52 4 80s10 50 2 88M160 86c8 30-6 60 10 86" class="sk-border"/><path d="M6 92c18-6 34 4 52-2s26-24 50-22 34 18 56 16 30-14 52-12 34 8 72 6" class="sk-coast"/><circle cx="30" cy="118" r="2.6" class="sk-v sk-v1"/><circle cx="44" cy="134" r="3.4" class="sk-v sk-v2"/><circle cx="56" cy="112" r="2.4" class="sk-v sk-v1"/><circle cx="74" cy="116" r="5" class="sk-v sk-v3"/><circle cx="92" cy="148" r="3" class="sk-v sk-v2"/><circle cx="108" cy="128" r="2.6" class="sk-v sk-v1"/><circle cx="122" cy="170" r="3.6" class="sk-v sk-v2"/><circle cx="88" cy="188" r="2.4" class="sk-v sk-v1"/><circle cx="52" cy="200" r="3" class="sk-v sk-v2"/><circle cx="136" cy="140" r="2.4" class="sk-v sk-v1"/><circle cx="150" cy="196" r="4.2" class="sk-v sk-v3"/><circle cx="34" cy="170" r="2.4" class="sk-v sk-v1"/><circle cx="70" cy="214" r="2.8" class="sk-v sk-v1"/><circle cx="112" cy="212" r="3.2" class="sk-v sk-v2"/><circle cx="160" cy="160" r="2.4" class="sk-v sk-v1"/><circle cx="74" cy="116" r="9.5" class="sk-halo"/><circle cx="74" cy="116" r="14" class="sk-halo2"/></g><rect x="14" y="206" width="62" height="24" rx="4" class="sk-chip"/><rect x="19" y="211" width="38" height="3" rx="1.5" class="sk-line"/><rect x="19" y="219" width="52" height="5" rx="2" class="sk-ramp"/><path d="M84 226h30M84 223v3M114 223v3" class="sk-scale"/><rect x="160" y="200" width="12" height="12" rx="3" class="sk-chip"/><rect x="160" y="214" width="12" height="12" rx="3" class="sk-chip"/><path d="M163 206h6M166 203v6M163 220h6" class="sk-x"/><rect x="180" y="58" width="102" height="148" rx="7" class="sk-card"/><rect x="189" y="68" width="66" height="5.5" rx="2.7" class="sk-line-strong"/><rect x="189" y="77" width="42" height="5.5" rx="2.7" class="sk-line-strong"/><path d="M271 67l5 5m0-5l-5 5" class="sk-x"/><rect x="189" y="88" width="36" height="3" rx="1.5" class="sk-line"/><path d="M189 96h84" class="sk-sep"/><rect x="189" y="103" width="30" height="3.5" rx="1.7" class="sk-line"/><rect x="224" y="102.5" width="16" height="4.5" rx="2" class="sk-line-strong"/><rect x="189" y="111" width="44" height="3" rx="1.5" class="sk-line"/><path d="M238 110v5" class="sk-tick"/><path d="M240.4 110v3" class="sk-tick"/><path d="M242.8 110v3" class="sk-tick"/><path d="M245.2 110v5" class="sk-tick"/><path d="M247.6 110v3" class="sk-tick"/><path d="M250 110v3" class="sk-tick"/><path d="M252.4 110v5" class="sk-tick"/><path d="M254.8 110v3" class="sk-tick"/><path d="M257.2 110v3" class="sk-tick"/><path d="M259.6 110v5" class="sk-tick"/><path d="M262 110v3" class="sk-tick"/><path d="M264.4 110v3" class="sk-tick"/><path d="M266.8 110v5" class="sk-tick"/><path d="M269.2 110v3" class="sk-tick"/><path d="M271.6 110v3" class="sk-tick"/><circle cx="269.96" cy="112" r="2.6" class="sk-mark"/><rect x="189" y="118" width="32" height="2.5" rx="1.2" class="sk-line"/><rect x="189" y="131" width="34" height="3.5" rx="1.7" class="sk-line"/><rect x="228" y="130.5" width="16" height="4.5" rx="2" class="sk-line-strong"/><rect x="189" y="139" width="44" height="3" rx="1.5" class="sk-line"/><path d="M238 138v5" class="sk-tick"/><path d="M240.4 138v3" class="sk-tick"/><path d="M242.8 138v3" class="sk-tick"/><path d="M245.2 138v5" class="sk-tick"/><path d="M247.6 138v3" class="sk-tick"/><path d="M250 138v3" class="sk-tick"/><path d="M252.4 138v5" class="sk-tick"/><path d="M254.8 138v3" class="sk-tick"/><path d="M257.2 138v3" class="sk-tick"/><path d="M259.6 138v5" class="sk-tick"/><path d="M262 138v3" class="sk-tick"/><path d="M264.4 138v3" class="sk-tick"/><path d="M266.8 138v5" class="sk-tick"/><path d="M269.2 138v3" class="sk-tick"/><path d="M271.6 138v3" class="sk-tick"/><circle cx="255.68" cy="140" r="2.6" class="sk-mark"/><rect x="189" y="146" width="32" height="2.5" rx="1.2" class="sk-line"/><rect x="188" y="156" width="86" height="15" rx="4" class="sk-act"/><circle cx="197" cy="163.5" r="3.6" class="sk-acti"/><rect x="205" y="162" width="50" height="3" rx="1.5" class="sk-line"/><rect x="188" y="175" width="86" height="15" rx="4" class="sk-act"/><path d="M194 186l6-5" class="sk-acti-l"/><rect x="205" y="181" width="40" height="3" rx="1.5" class="sk-line"/><rect x="189" y="196" width="28" height="3" rx="1.5" class="sk-link"/><rect x="222" y="196" width="22" height="3" rx="1.5" class="sk-link"/></g>
-    <text x="147" y="262" class="sk-label">典型 GIS，第一次打开</text>
-    <text x="459" y="262" class="sk-label">凌波微图，第一次点击</text>
-  </svg>
-  <figcaption id="sk-cap">示意图，不是截图。</figcaption>
-</figure>
+    <div class="features">
+      <article class="example feature">
+        <figure class="frame"><img src="../img/typhoons-card.jpg" alt="凌波微图显示亚洲和太平洋上空的 4999 条台风路径；选中了台风“海燕”，卡片显示它 170 节的最大风速比有记录的 4547 场风暴中的 99% 都强。" loading="lazy" width="1600" height="996"></figure>
+        <div class="feature-body">
+          <h3>台风与飓风</h3>
+          <p>1980 年以来的 4999 条风暴路径。台风“海燕”170 节的最大风速，比 4547 场风暴中的 99% 都强。</p>
+          <span class="coords">IBTrACS v04r01</span>
+        </div>
+      </article>
+      <article class="example feature">
+        <figure class="frame"><img src="../img/walls-satellite.jpg" alt="1866 年北京的城墙叠在卫星影像上，卡片显示城内面积 35.3 平方公里，比 1789 座城池中的 99% 都大。" loading="lazy" width="1600" height="996"></figure>
+        <div class="feature-body">
+          <h3>1866 年的中国城墙</h3>
+          <p>1789 座城池的城墙。北京城内面积 35.3&nbsp;平方公里，比其中 99% 的城池都大。</p>
+          <span class="coords">Xue 等，2021 · CC BY 4.0</span>
+        </div>
+      </article>
+      <article class="example feature">
+        <figure class="frame"><img src="../img/heatwave-click.jpg" alt="2023 年 7 月 16 日欧洲和北非的热浪强度，选中了一个格子，下方是时间滑块。" loading="lazy" width="1600" height="996"></figure>
+        <div class="feature-body">
+          <h3>2023 年夏季热浪</h3>
+          <p>点一下播放，看热浪怎样在全球蔓延、移动。</p>
+          <span class="coords">哥白尼 GDO / JRC · CC BY 4.0</span>
+        </div>
+      </article>
     </div>
-    <div class="principles">
-      <div><svg class="p-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v9a1.5 1.5 0 0 1-1.5 1.5H10l-4.2 3.6V16H5.5A1.5 1.5 0 0 1 4 14.5z"/><path d="M10.2 8.4a1.9 1.9 0 1 1 2.6 1.8c-.5.2-.8.6-.8 1.1v.4"/><circle cx="12" cy="13.6" r=".6" class="dot"/></svg><h3>先给答案，再给工具</h3><p>大多数 GIS 软件从工具开始，凌波微图从问题开始。点一下地图上的东西，它会告诉你这是什么，以及它在同一图层里处于什么位置。</p></div>
-      <div><svg class="p-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 20h17"/><path d="M6.5 20v-6M11 20V8M15.5 20v-9M20 20V5"/><path d="M5 9.5l3.5-3 3 2L17 4"/></svg><h3>数字不掺水</h3><p>每个数字都来自你的数据，而不只是屏幕上看得见的部分。有记录放不上地图时，凌波微图会告诉你有几条、为什么。你的原始文件保持不变。</p></div>
-      <div><svg class="p-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg><h3>放心去试</h3><p>每一步都能撤销。每个结果都附有说明，用大白话讲清楚它是怎么得出来的。</p></div>
-    </div>
-    <p class="aside-note">凌波微图是独立项目，与苹果公司、Esri 及 QGIS 项目均无关联。</p>
+    <p class="also">还内置了：1900 年以来的地震、火山、机场、发电厂、世界城市、国家和地形。</p>
   </div>
 </section>
 
-<section id="what">
+<section id="yours">
   <div class="wrap">
     <div class="why-grid layers-grid">
     <div class="section-head">
-      <p class="eyebrow">怎么用</p>
-      <h2>图层，就像一叠描图纸</h2>
-      <p class="lede">在凌波微图里，一张地图就是底图上叠放的几层数据。开始之前什么都不用设置：没有向导，不用建项目，也没有一屏空荡荡的工具箱。</p>
+      <p class="eyebrow">你的数据</p>
+      <h2>然后，放进你自己的数据</h2>
+      <p class="lede">拖进一张地点表格、一段跑步的 GPX 轨迹，或一幅卫星影像，它就会落在地图上正确的位置，什么都不用设置。</p>
+      <ul class="chips" aria-label="支持的文件"><li>CSV/Excel</li><li>GeoJSON</li><li>Shapefile</li><li>GeoPackage</li><li>KML</li><li>GPX</li><li>GeoTIFF</li><li>NetCDF</li></ul>
+      <p class="find-data"><a href="data.html">去哪里找地图数据？→</a></p>
     </div>
     <figure class="layer-art">
   <svg viewBox="0 0 470 312" role="img" aria-label="四层像描图纸一样叠在一起：底图，然后是面、线和点，同一个地方在四层里对齐">
@@ -146,97 +161,66 @@
   </svg>
 </figure>
     </div>
-    <div class="strata">
-      <div><img class="step-shot" src="../img/step-open.jpg" alt="地图上的欢迎卡片：打开文件、示例、浏览数据库。" width="800" height="500" loading="lazy"><h3>打开</h3><p>把带坐标的 CSV、GeoJSON、Shapefile、GeoPackage、GeoTIFF 或 NetCDF 气候数据拖进来就行。如果应用需要推断些什么，比如哪几列是坐标，它会用一行字说明，并允许你一键修改。</p></div>
-      <div><img class="step-shot" src="../img/step-click.jpg" alt="对象卡片：2011 年日本东北大地震的 9.1 级震级高于 14537 次地震中的 99%。" width="800" height="500" loading="lazy"><h3>点选</h3><p>选中一座城市、一场台风，或气候格网里的一个格子。在给出任何工具之前，卡片会先告诉你它处在什么位置：“4999 个里最高”“比其他 80% 的都低”。</p></div>
-      <div><img class="step-shot" src="../img/step-share.jpg" alt="导出的 2023 年热浪地图，带图例、经纬度标注和数据来源。" width="800" height="500" loading="lazy"><h3>分享</h3><p>按数值上色，筛出你关心的部分，再导出一张带标题、图例、比例尺和数据来源的完整图片，尺寸可选幻灯片、A4 页面或方形社交图。</p></div>
-    </div>
   </div>
 </section>
 
-<section id="examples">
+<section id="principles">
   <div class="wrap">
     <div class="section-head">
-      <p class="eyebrow">自带示例</p>
-      <h2>普通地图应用看不到的东西</h2>
-      <p class="lede">应用自带八组示例数据，点一下 <span class="ui">Examples</span>（示例）就能打开。几组大家最喜欢的：</p>
+      <p class="eyebrow">设计理念</p>
+      <h2>为好奇的人而设计</h2>
     </div>
-    <div class="examples">
-      <article class="example">
-        <figure class="frame"><img src="../img/typhoons-color.jpg" alt="亚洲和太平洋上空的台风路径，在样式标签页中按年份上色。" loading="lazy" width="1600" height="996"></figure>
-        <h3>台风与飓风</h3>
-        <p>来自美国 NOAA IBTrACS 档案的 4999 条风暴路径，覆盖 1980 年以来的所有大洋。找到 “海燕”，按风速上色，看台风带一下子亮起来。</p>
-        <span class="coords">IBTrACS v04r01 · 1980–2026</span>
-      </article>
-      <article class="example">
-        <figure class="frame"><img src="../img/walls-satellite.jpg" alt="1866 年北京的城墙叠在卫星影像上，卡片显示城内面积 35.3 平方公里，比 1789 座城池中的 99% 都大。" loading="lazy" width="1600" height="996"></figure>
-        <h3>1866 年的中国城墙</h3>
-        <p>晚清 1789 座城池的城墙，从京师、省城到县城和满城，叠在卫星影像上看。</p>
-        <span class="coords">Xue 等，2021 · CC BY 4.0</span>
-      </article>
-      <article class="example">
-        <figure class="frame"><img src="../img/heatwave-click.jpg" alt="2023 年 7 月 16 日欧洲和北非的热浪强度，选中了一个格子，下方是时间滑块。" loading="lazy" width="1600" height="996"></figure>
-        <h3>2023 年夏季热浪</h3>
-        <p>2023 年 6 月到 8 月的全球逐日热浪强度，一个带时间滑块的 NetCDF 气候文件。点播放，看热浪怎样一路移动。</p>
-        <span class="coords">哥白尼 GDO（JRC）· CC BY 4.0</span>
-      </article>
-    </div>
-    <p style="margin-top:30px;color:var(--ink-2)">此外还有：1900 年以来的大地震、全球火山、机场、发电厂，以及世界城市、国家和地形。</p>
-  </div>
-</section>
-
-<section id="pro">
-  <div class="wrap">
-    <div class="section-head">
-      <p class="eyebrow">免费版与 Pro 版</p>
-      <h2>免费看，Pro 能问。</h2>
-      <p class="lede">免费版可以打开、叠加、美化和分享地图数据。凌波微图 Pro 多了一位助手，你可以用大白话问它关于图层的问题。</p>
-    </div>
-    <div class="tiers">
-      <div class="tier">
-        <h3>免费版</h3>
-        <p class="sub">免费下载</p>
-        <ul>
-          <li>支持 CSV、Excel、GeoJSON、Shapefile、GeoPackage、KML、GPX、GeoTIFF 和 NetCDF</li>
-          <li>点一下就能看到详细信息和排名对比</li>
-          <li>按数值上色、筛选、比较、加标注</li>
-          <li>按共有的一列把表格连接到地图上</li>
-          <li>气候格网的时间滑块</li>
-          <li>浅色、深色和卫星底图；断网也能用</li>
-          <li>支持国内地图坐标（GCJ-02、BD-09）</li>
-          <li>导出地图图片和数据</li>
-        </ul>
+    <div class="principle-shots">
+      <div class="principle">
+        <figure class="frame"><img src="../img/step-click.jpg" alt="对象卡片：2011 年日本东北大地震的 9.1 级震级高于 14537 次地震中的 99%。" loading="lazy" width="800" height="500"></figure>
+        <svg class="p-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v9a1.5 1.5 0 0 1-1.5 1.5H10l-4.2 3.6V16H5.5A1.5 1.5 0 0 1 4 14.5z"/><path d="M10.2 8.4a1.9 1.9 0 1 1 2.6 1.8c-.5.2-.8.6-.8 1.1v.4"/><circle cx="12" cy="13.6" r=".6" class="dot"/></svg><h3>先给答案，再给工具</h3>
+        <p>点一下任何东西，就知道它是什么、和同类比起来怎么样。</p>
       </div>
-      <div class="tier">
-        <h3>Pro 版 <span class="tag">PRO</span></h3>
-        <p class="sub">包含免费版的全部功能，另外还有：</p>
-        <ul>
-          <li>提问框：用中文或英文、打字或语音，询问关于图层的问题</li>
-          <li>答案以地图预览和可核对的分步说明呈现，绝不瞎猜</li>
-          <li>内置世界图层：国家、省份、城市、河流、湖泊和地形，可以直接问 “哪个国家的发电厂最多？” 这样的问题</li>
-          <li>卡片上的分析按钮，比如 “显示一定距离内的范围”</li>
-          <li>数据留在你的 Mac 上：只发送图层名称、字段和范围，绝不发送数据值</li>
-        </ul>
-        <div class="ask-sample">哪个国家的首都海拔最高？</div>
+      <div class="principle">
+        <figure class="frame"><img src="../img/step-honest.jpg" alt="北京的卡片把城内面积与 1866 年全部 1789 座城池从大到小排列比较，而地图上只显示北京一带。" loading="lazy" width="800" height="500"></figure>
+        <svg class="p-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 20h17"/><path d="M6.5 20v-6M11 20V8M15.5 20v-9M20 20V5"/><path d="M5 9.5l3.5-3 3 2L17 4"/></svg><h3>数字不掺水</h3>
+        <p>每个数字都来自你的全部数据，而不只是屏幕上看得见的那一部分。</p>
+      </div>
+      <div class="principle">
+        <figure class="frame"><img src="../img/step-try.jpg" alt="写成一句话的筛选条件“Show storms where strength is any of Category 5”（显示强度为 5 级的风暴），应用之前就告诉你有 228 条符合，旁边可以取消。" loading="lazy" width="800" height="500"></figure>
+        <svg class="p-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg><h3>放心去试</h3>
+        <p>每一步都能撤销，每个结果都讲得清来龙去脉。</p>
       </div>
     </div>
-    <figure class="frame shot" style="margin-top:34px"><img src="../img/pro-ask.jpg" alt="凌波微图 Pro 回答 “Which country has the most cities?”（哪个国家的城市最多？），给出排名列表并在地图上预览。" loading="lazy" width="1600" height="1040"><figcaption>凌波微图 Pro 借助内置的世界国家图层回答 “哪个国家的城市最多？”。点 Keep（保留）之前，什么都不会保存。</figcaption></figure>
   </div>
 </section>
 
-<section id="download">
-  <div class="wrap">
+<section id="share">
+  <div class="wrap share-grid">
     <div class="section-head">
-      <p class="eyebrow">下载</p>
-      <h2>获取凌波微图</h2>
-      <p class="lede">免费，适用于搭载 Apple 芯片、macOS 13 或更高版本的 Mac。双击就能打开 Shapefile、GeoJSON、CSV、GeoTIFF 等文件，文件不离开你的 Mac。Windows 版正在制作中。</p>
+      <p class="eyebrow">分享</p>
+      <h2>把发现分享出去</h2>
+      <p class="lede">加上标题、图例和数据来源，导出成幻灯片、报告或社交媒体上用的图片。</p>
     </div>
+    <figure class="frame"><img src="../img/heatwave-export.jpg" alt="“导出地图图片”面板：2023 年热浪地图带图例、经纬度标注和数据来源，尺寸可选幻灯片、A4 报告或方形图片。" loading="lazy" width="1600" height="996"></figure>
+  </div>
+</section>
+
+<section class="pro-band">
+  <div class="wrap">
+    <span class="tag">PRO</span>
+    <p><strong>凌波微图 Pro：</strong>用大白话向地图提问。注册账号即可免费使用，将在下一个版本推出。</p>
+    <a class="pro-more" href="pro.html">Pro 版多了什么 →</a>
+  </div>
+</section>
+
+<section id="download" class="final-cta contours">
+  <div class="wrap">
+    <img class="cta-icon" src="../img/icon-256.png" alt="" width="96" height="96">
+    <h2>探索地球的真实数据。</h2>
     <div class="cta-actions">
-      <a class="btn btn-primary" href="download.html#get">下载 Mac 版</a>
-      <a class="btn btn-quiet" href="download.html#formats">支持哪些格式</a>
-      <a class="btn btn-quiet" href="download.html#qgis">用它还是 QGIS？</a>
+      <a class="btn btn-primary btn-get" href="https://gitcode.com/KN-Huang/NimbleMap/releases/download/v0.7.0/NimbleMap-macos-arm64.dmg" download>免费下载 Mac 版</a>
     </div>
-    <p style="margin-top:24px;color:var(--ink-3);font-size:15px">凌波微图基于 <a href="https://github.com/opengeos/RustGIS">RustGIS</a> 构建。</p>
+    <p class="mac-only" hidden>凌波微图需要搭载 Apple 芯片的 Mac。Windows 版正在制作中。</p>
+    <p class="dl-fine">免费 · 约 74 MB · macOS 13 及以上 · Apple 芯片 · 断网可用</p>
+    <p class="dl-fine"><a href="download.html#get">首次打开时 macOS 会请你确认：看看怎么打开</a></p>
+    <div class="share" role="group" aria-label="分享"><span class="share-label">分享</span><a class="share-btn" data-net="x" href="#" target="_blank" rel="noopener" aria-label="分享: X">X</a><a class="share-btn" data-net="facebook" href="#" target="_blank" rel="noopener" aria-label="分享: Facebook">Facebook</a><a class="share-btn" data-net="reddit" href="#" target="_blank" rel="noopener" aria-label="分享: Reddit">Reddit</a><a class="share-btn" data-net="linkedin" href="#" target="_blank" rel="noopener" aria-label="分享: LinkedIn">LinkedIn</a></div>
+    <p class="built-on">凌波微图基于 <a href="https://github.com/opengeos/RustGIS">RustGIS</a> 构建。</p>
   </div>
 </section>
 </main>
@@ -247,7 +231,7 @@
       <p><strong>凌波微图 NimbleMap</strong> · 以地图为中心的应用，基于 RustGIS。</p>
       <p>截图中的地图数据：© OpenStreetMap 贡献者（ODbL），经 Protomaps 提供；Natural Earth（公有领域）；NASA “蓝色弹珠” 卫星影像（NASA Earth Observatory，GIBS）。示例数据：NOAA IBTrACS；Xue 等，2021（CC BY 4.0）；哥白尼全球干旱观测站 / JRC（CC BY 4.0）。</p>
     </div>
-    <div><a href="help.html">帮助</a> · <a href="glossary.html">术语表</a><p class="foot-langs"><a href="../index.html" hreflang="en" lang="en">English</a> · <a href="../de/index.html" hreflang="de" lang="de">Deutsch</a> · <a href="../es/index.html" hreflang="es" lang="es">Español</a> · <a href="../fr/index.html" hreflang="fr" lang="fr">Français</a> · <a href="../it/index.html" hreflang="it" lang="it">Italiano</a> · <a href="../nl/index.html" hreflang="nl" lang="nl">Nederlands</a> · <a href="../pt-br/index.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ru/index.html" hreflang="ru" lang="ru">Русский</a> · <a href="../ja/index.html" hreflang="ja" lang="ja">日本語</a> · <a href="../ko/index.html" hreflang="ko" lang="ko">한국어</a></p></div>
+    <div class="foot-nav"><p class="foot-links"><a href="help.html">帮助</a> · <a href="glossary.html">术语表</a> · <a href="data.html">数据</a> · <a href="pro.html">Pro 版</a> · <a href="https://github.com/kangning-huang/NimbleMap/blob/main/CHANGELOG.md">更新日志</a></p><p class="foot-note">凌波微图是独立项目，与苹果公司、Esri 及 QGIS 项目均无关联。</p><p class="foot-langs"><a href="../index.html" hreflang="en" lang="en">English</a> · <a href="../de/index.html" hreflang="de" lang="de">Deutsch</a> · <a href="../es/index.html" hreflang="es" lang="es">Español</a> · <a href="../fr/index.html" hreflang="fr" lang="fr">Français</a> · <a href="../it/index.html" hreflang="it" lang="it">Italiano</a> · <a href="../nl/index.html" hreflang="nl" lang="nl">Nederlands</a> · <a href="../pt-br/index.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ru/index.html" hreflang="ru" lang="ru">Русский</a> · <a href="../ja/index.html" hreflang="ja" lang="ja">日本語</a> · <a href="../ko/index.html" hreflang="ko" lang="ko">한국어</a></p></div>
   </div>
 </footer>
 </body>

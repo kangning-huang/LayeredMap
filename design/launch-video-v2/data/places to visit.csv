@@ -1,0 +1,23 @@
+place,country,lat,lon,population
+Lisbon,Portugal,38.7247,-9.1468,2812000
+Marrakesh,Morocco,31.6319,-8.0019,872000
+Cairo,Egypt,30.0519,31.248,11893000
+Istanbul,Turkey,41.0176,28.9743,10061000
+Nairobi,Kenya,-1.2814,36.8147,3010000
+Cape Town,South Africa,-33.9181,18.433,3215000
+Mumbai,India,19.0684,72.8758,18978000
+Kathmandu,Nepal,27.7186,85.3147,895000
+Hanoi,Vietnam,21.0353,105.8481,4378000
+Kyoto,Japan,35.0319,135.7481,1805000
+Sydney,Australia,-33.8714,151.2125,4630000
+Auckland,New Zealand,-36.8481,174.763,1377200
+Lima,Peru,-12.0461,-77.052,8012000
+Mexico City,Mexico,19.4444,-99.1329,19028000
+Havana,Cuba,23.1339,-82.3661,2174000
+Vancouver,Canada,49.2754,-123.1236,2313328
+Buenos Aires,Argentina,-34.6107,-58.4325,12795000
+Ulaanbaatar,Mongolia,47.9186,106.9147,885000
+Tehran,Iran,35.6739,51.4224,7873000
+Reykjavík,Iceland,64.1435,-21.9366,166212
+Anchorage,United States of America,61.214,-149.8875,260283
+Honolulu,United States of America,21.3034,-157.8583,786000

@@ -486,3 +486,88 @@ code { font: .88em var(--mono); background: var(--paper-2); padding: 1px 5px; bo
 }
 .foot-langs { margin: 10px 0 0; line-height: 1.9; }
 .foot-langs a { white-space: nowrap; }
+
+/* Share buttons (X, Facebook, Reddit, LinkedIn): links filled in by site.js, so hidden without it. */
+.share { display: none; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 22px; }
+html.js .share { display: flex; }
+.share-label { font-size: 14px; color: var(--ink-3); margin-right: 4px; }
+.share-btn {
+  font-size: 14px; font-weight: 600; color: var(--ink-2); text-decoration: none;
+  padding: 6px 12px; border: 1px solid var(--rule); border-radius: 999px; background: var(--card);
+}
+.share-btn:hover, .share-btn:focus-visible { color: var(--accent-ink); border-color: var(--accent); }
+.dl-note { font-size: 14px; color: var(--ink-3); }
+
+/* ==== Landing page for the map-curious (2026-10-19): hero download, built-in map cards, ====
+   ==== "bring your own", principles with real screenshots, share, Pro band, final CTA, footer links ==== */
+.dl-fine { margin: 6px 0 0; font-size: 13.5px; line-height: 1.5; color: var(--ink-3); }
+.hero .actions + .dl-fine, .hero .actions + .mac-only + .dl-fine { margin-top: 16px; }
+.dl-fine a { color: var(--ink-2); }
+.mac-only {
+  margin: 14px 0 0; padding: 8px 12px; border-radius: 8px; font-size: 14.5px; line-height: 1.5;
+  color: var(--ink); background: var(--paper-2); border-left: 3px solid var(--seal); max-width: 34em;
+}
+.mac-only[hidden] { display: none; }
+
+/* Built-in maps: three large cards, a real screenshot over one surprising fact and its source. */
+.features { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+@media (max-width: 900px) { .features { grid-template-columns: 1fr; gap: 20px; } }
+.feature { background: var(--card); border: 1px solid var(--rule); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; }
+.feature .frame { border: 0; border-bottom: 1px solid var(--rule); border-radius: 0; box-shadow: none; }
+.feature .frame img { aspect-ratio: 1600 / 996; object-fit: cover; }
+.feature-body { padding: 18px 20px 20px; display: flex; flex-direction: column; flex: 1; }
+.feature-body h3 { margin: 0 0 8px; font-size: 1.35rem; }
+.feature-body p { margin: 0; color: var(--ink); font-size: 16.5px; flex: 1; }
+.feature-body .coords { margin-top: 14px; display: block; line-height: 1.4; }
+.also { margin: 30px 0 0; color: var(--ink-2); }
+
+/* Bring your own: the formats as chips. */
+.chips { list-style: none; padding: 0; margin: 22px 0 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.chips li {
+  font: 600 13px/1 var(--mono); letter-spacing: .02em; color: var(--ink-2);
+  padding: 8px 11px; border: 1px solid var(--rule); border-radius: 999px; background: var(--card);
+}
+.find-data { margin: 22px 0 0; font-weight: 600; }
+
+/* Principles: one line each under a real cropped screenshot. */
+.principle-shots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; }
+@media (max-width: 900px) { .principle-shots { grid-template-columns: 1fr; gap: 34px; } }
+.principle .frame { margin-bottom: 18px; }
+.principle .frame img { aspect-ratio: 16 / 10; object-fit: cover; }
+.principle .p-icon { display: inline-block; vertical-align: -7px; width: 26px; height: 26px; margin: 0 8px 0 0; }
+.principle h3 { display: inline; margin: 0; font-size: 1.25rem; }
+.principle p { margin: 8px 0 0; color: var(--ink-2); font-size: 16px; }
+
+/* Share: one line beside the export sheet. */
+.share-grid { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); gap: 44px; align-items: center; }
+.share-grid .section-head { margin-bottom: 0; }
+@media (max-width: 900px) { .share-grid { grid-template-columns: 1fr; gap: 24px; } }
+
+/* Pro: a slim band, the details live on pro.html. */
+section.pro-band { padding: 26px 0; background: var(--paper-2); background: color-mix(in srgb, var(--accent) 7%, var(--paper)); }
+.pro-band .wrap { display: flex; align-items: center; gap: 14px 18px; flex-wrap: wrap; }
+.pro-band p { margin: 0; flex: 1 1 320px; color: var(--ink-2); }
+.pro-band p strong { color: var(--ink); }
+.pro-band .tag, .pro-tag { font: 600 11px/1 var(--mono); letter-spacing: .12em; padding: 5px 8px; border-radius: 5px; background: var(--accent); color: #fff; }
+:root[data-theme="dark"] .pro-band .tag { color: #0b1220; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .pro-band .tag { color: #0b1220; } }
+.pro-more { font-weight: 600; white-space: nowrap; }
+
+/* Final call to action: the app icon, the headline again, the same button. */
+.final-cta { text-align: center; padding: 84px 0 76px; }
+.final-cta .cta-icon { width: 96px; height: 96px; margin: 0 auto 20px; }
+.final-cta h2 { margin-bottom: 22px; }
+.final-cta .cta-actions, .final-cta .share { justify-content: center; }
+.final-cta .mac-only { margin-inline: auto; text-align: left; }
+.final-cta .cta-actions + .dl-fine, .final-cta .cta-actions + .mac-only + .dl-fine { margin-top: 14px; }
+.final-cta .share { margin-top: 30px; }
+.built-on { margin: 22px 0 0; color: var(--ink-3); font-size: 15px; }
+
+/* Footer links and the non-affiliation line (tools/lm/site/langs.py writes the markup). */
+.foot-nav { max-width: 34em; }
+.site-foot .foot-links { margin: 0; }
+.site-foot .foot-note { margin: 10px 0 0; font-size: 13px; color: var(--ink-3); }
+@media (min-width: 900px) {
+  .site-foot .wrap { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 48px; }
+  .foot-nav { max-width: none; }
+}

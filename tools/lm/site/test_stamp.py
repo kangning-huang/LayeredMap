@@ -30,6 +30,16 @@ def test_stamps_a_project_site_below_the_host_root(tmp_path):
     assert '<link rel="alternate" hreflang="zh-Hans" href="https://someone.github.io/NimbleMap/zh/">' in home
     assert "<loc>https://someone.github.io/NimbleMap/download.html</loc>" in (out / "sitemap.xml").read_text()
     assert not (out / "robots.txt").exists()
+    assert not (out / "CNAME").exists()
+
+
+def test_defaults_to_the_live_site(tmp_path):
+    assert stamp.DEFAULT_ORIGIN == "https://nimblemap.com/"
+    out = tmp_path / "out"
+    assert stamp.main(["stamp.py", str(out)]) == 0
+    assert '<link rel="canonical" href="https://nimblemap.com/data.html">' in (out / "data.html").read_text(encoding="utf-8")
+    assert (out / "CNAME").read_text() == "nimblemap.com\n"
+    assert (out / "robots.txt").read_text() == "User-agent: *\nAllow: /\n\nSitemap: https://nimblemap.com/sitemap.xml\n"
 
 
 def test_drops_owner_notes(tmp_path):
@@ -55,6 +65,7 @@ def test_stamps_absolute_urls_sitemap_and_robots(tmp_path):
     assert "<loc>https://maps.example/zh/workflow-heatwave.html</loc>" in sitemap
     assert sitemap.count("<url>") == len(PAGES)
     assert "Sitemap: https://maps.example/sitemap.xml" in (out / "robots.txt").read_text()
+    assert (out / "CNAME").read_text() == "maps.example\n"
     # Nothing relative is left in the stamped tags.
     for page in out.rglob("*.html"):
         for pat in stamp.ABSOLUTE:
@@ -79,7 +90,7 @@ def test_every_page_has_search_and_preview_tags(rel):
     # Placeholders stay in HTML comments, never on the page.
     assert 'class="todo"' not in text
     # Every linked page and image in the site exists.
-    for href in re.findall(r'(?:href|src|content)="([^"#:]+\.(?:html|jpg|svg|css|js))(?:#[^"]*)?"', text):
+    for href in re.findall(r'(?:href|src|content)="([^"#:]+\.(?:html|jpg|webp|png|svg|css|js))(?:#[^"]*)?"', text):
         assert (stamp.SITE / rel).parent.joinpath(href).resolve().exists(), href
 
 
@@ -119,3 +130,14 @@ def test_every_page_speaks_its_folders_language(rel):
     if lang.hreflang != "en":
         nav = re.search(r'<nav class="nav" aria-label="([^"]*)"', text).group(1)
         assert nav != "Site", rel
+
+
+@pytest.mark.parametrize("rel", PAGES)
+def test_app_downloads_come_from_the_languages_host(rel):
+    """Chinese pages download the app from the GitCode mirror; every other language from GitHub."""
+    text = (stamp.SITE / rel).read_text(encoding="utf-8")
+    lang = langs.lang_of(rel)
+    want = langs.dmg(lang)
+    assert want.startswith(langs.GITCODE if lang.folder == "zh" else "https://github.com/")
+    for url, sha in re.findall(r'href="(https://[^"]*' + re.escape(langs.DMG_NAME) + r')(\.sha256)?"', text):
+        assert url == want, (rel, url)
