@@ -95,7 +95,7 @@ window.LM_GLOSSARY_L10N = {
       w: "NimbleMap Pro: каждый ответ в поле Ask приходит в виде карточки результата со списком шагов, предпросмотром на карте и кнопками <span class=\"ui\">Keep</span> (Оставить) или <span class=\"ui\">Discard</span> (Отбросить)." },
     geojson: { t: "GeoJSON, GeoPackage, Shapefile", alt: [".geojson", ".gpkg", ".shp", "шейп-файл", "форматы файлов", "KML", "GPX"],
       d: "Распространённые форматы векторных данных. GeoJSON — один текстовый файл; GeoPackage (.gpkg) — один файл базы данных, в котором может быть несколько слоёв; Shapefile (шейп-файл) — набор файлов с одинаковым именем (.shp, .dbf, .shx, .prj), которые должны лежать вместе.",
-      w: "<span class=\"ui\">Open</span> (Открыть) на панели инструментов (⌘O) или перетаскивание файлов в окно (<span class=\"ui\">Drop to add to the map</span> — Отпустите, чтобы добавить на карту). <span class=\"ui\">Details</span> › <span class=\"ui\">Format</span> (Подробности › Формат) называет формат." },
+      w: "<span class=\"ui\">Open</span> (Открыть) на панели инструментов (⌘O) или перетаскивание файлов в NimbleMap (<span class=\"ui\">Drop to add to the map</span> — Отпустите, чтобы добавить на карту). <span class=\"ui\">Details</span> › <span class=\"ui\">Format</span> (Подробности › Формат) называет формат." },
     geotiff: { t: "GeoTIFF", alt: [".tif", ".tiff", "ЦМР", "цифровая модель рельефа", "высоты", "спутниковый снимок"],
       d: "Файл изображения, который к тому же знает, в каком месте Земли он находится. Модели рельефа и спутниковые снимки часто распространяются в формате GeoTIFF.",
       w: "Слой рельефа в примере <span class=\"ui\">World basics</span> (Основы мира) — это GeoTIFF." },

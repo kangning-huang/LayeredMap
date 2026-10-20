@@ -827,3 +827,8 @@ Couldn't reach the assistant service: {error}	어시스턴트 서비스에 연�
 The assistant service's answer was cut off: {error}	어시스턴트 서비스의 응답이 중간에 끊겼습니다: {error}
 The assistant service answered {status} with something unreadable.	어시스턴트 서비스가 읽을 수 없는 내용으로 응답했습니다({status}).
 {app} is working offline, so the assistant can't be reached. Turn off View › Work Offline to ask.	{app}이(가) 오프라인으로 작업 중이라 어시스턴트에 연결할 수 없습니다. 질문하려면 보기 › 오프라인으로 작업을 끄세요.
+Signing in unlocks the Ask box, analysis tools, the built-in world layers and voice input.	로그인하면 질문 상자, 분석 도구, 내장 세계 레이어, 음성 입력을 쓸 수 있습니다.
+Checking your account…	계정을 확인하는 중…
+Sign in to use analysis tools	분석 도구를 쓰려면 로그인하세요
+{action} (locked)	{action} (잠김)
+Settings › Account shows who is signed in and what the account includes.	설정 › 계정에서 로그인한 사람과 계정에 포함된 내용을 볼 수 있습니다.

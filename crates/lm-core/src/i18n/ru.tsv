@@ -827,3 +827,8 @@ Couldn't reach the assistant service: {error}	Не удалось связать
 The assistant service's answer was cut off: {error}	Ответ службы помощника оборвался: {error}
 The assistant service answered {status} with something unreadable.	Служба помощника ответила {status}, но ответ не удалось прочитать.
 {app} is working offline, so the assistant can't be reached. Turn off View › Work Offline to ask.	{app} работает офлайн, поэтому помощник недоступен. Чтобы задать вопрос, отключите Вид › Работать офлайн.
+Signing in unlocks the Ask box, analysis tools, the built-in world layers and voice input.	После входа становятся доступны поле вопросов, инструменты анализа, встроенные слои мира и голосовой ввод.
+Checking your account…	Проверяем учётную запись…
+Sign in to use analysis tools	Войдите, чтобы пользоваться инструментами анализа
+{action} (locked)	{action} (заблокировано)
+Settings › Account shows who is signed in and what the account includes.	В разделе «Настройки › Учётная запись» видно, кто вошёл и что входит в учётную запись.

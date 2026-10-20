@@ -827,3 +827,8 @@ Couldn't reach the assistant service: {error}	Impossibile raggiungere il servizi
 The assistant service's answer was cut off: {error}	La risposta del servizio dell'assistente si è interrotta: {error}
 The assistant service answered {status} with something unreadable.	Il servizio dell'assistente ha risposto {status} con qualcosa di illeggibile.
 {app} is working offline, so the assistant can't be reached. Turn off View › Work Offline to ask.	{app} sta lavorando offline, quindi l'assistente non è raggiungibile. Disattiva Vista › Lavora offline per fare domande.
+Signing in unlocks the Ask box, analysis tools, the built-in world layers and voice input.	Con l’accesso si sbloccano la casella delle domande, gli strumenti di analisi, i layer del mondo integrati e l’input vocale.
+Checking your account…	Verifica dell’account…
+Sign in to use analysis tools	Accedi per usare gli strumenti di analisi
+{action} (locked)	{action} (bloccato)
+Settings › Account shows who is signed in and what the account includes.	In Impostazioni › Account vedi chi ha effettuato l’accesso e cosa include l’account.

@@ -26,11 +26,11 @@ for the file (no identifiers, no usage data; the User-Agent is `NimbleMap/<versi
   "notes": { "en": "Saving and exporting.", "zh": "保存与导出。" },
   "download": {
     "free": "https://download.example.cn/layeredmap/NimbleMap-0.3.0-0-macos-arm64.dmg",
-    "pro": "https://download.example.cn/layeredmap/NimbleMap-Pro-0.3.0-0-macos-arm64.dmg"
+    "pro": "https://download.example.cn/layeredmap/NimbleMap-0.3.0-0-macos-arm64.dmg"
   },
   "download_windows": {
     "free": "https://download.example.cn/layeredmap/NimbleMap-0.3.0-0-windows-x64-setup.exe",
-    "pro": "https://download.example.cn/layeredmap/NimbleMap-Pro-0.3.0-0-windows-x64-setup.exe"
+    "pro": "https://download.example.cn/layeredmap/NimbleMap-0.3.0-0-windows-x64-setup.exe"
   },
   "sha256": { "free": "…", "pro": "…" },
   "page": "https://download.example.cn/layeredmap/",
@@ -44,10 +44,10 @@ for the file (no identifiers, no usage data; the User-Agent is `NimbleMap/<versi
 | `version` | yes | The newest release, `MAJOR.MINOR.PATCH` with an optional `-pre` suffix. Compared numerically with the running version; a pre-release sorts before its release. The notice shows only when this is newer. |
 | `released` | no | The release date, `YYYY-MM-DD` (informational). |
 | `notes` | no | One line on what changed, by language (`en`, `zh`). Shown when the pointer rests on the notice; Chinese when the system's first language is Chinese and `zh` is present, else English. |
-| `download.free`, `download.pro` | no | The .dmg for each tier. NimbleMap links its own tier's. |
-| `download_windows.free`, `download_windows.pro` | no | The Windows installer for each tier (WP6.2). A Windows build links its own tier's, else `page`; it never links a .dmg. macOS builds ignore the field. |
-| `page` | yes, unless both downloads are given | The download page, linked when the tier has no `download` entry. |
-| `sha256` | no | The .dmg's SHA-256 by tier, for people who verify downloads (the app doesn't read it). |
+| `download.free`, `download.pro` | no | The .dmg. The app reads `free`; `pro` (the same file since the one-app merge) is for Pro apps from 0.7.0 and earlier. |
+| `download_windows.free`, `download_windows.pro` | no | The Windows installer (WP6.2), under both keys as above. A Windows build links `free`, else `page`; it never links a .dmg. macOS builds ignore the field. |
+| `page` | yes, unless both downloads are given | The download page, linked when there is no `download` entry. |
+| `sha256` | no | The .dmg's SHA-256 (under `free` and `pro`), for people who verify downloads (the app doesn't read it). |
 | `minimum_macos` | no | The oldest macOS the new version runs on. On an older macOS the notice is not shown. |
 
 Rules the app applies:
@@ -60,15 +60,16 @@ Rules the app applies:
 ## Making the feed
 
 `packaging/lm/build-dmg.sh` writes `update-feed.json` next to the .dmg when `LM_DOWNLOAD_BASE`
-(where the files will be uploaded) is set, adding one tier per run:
+(where the files will be uploaded) is set. Since Free and Pro became one app (2026-10-19) it
+writes the one .dmg under both `free` and `pro`, so Pro apps from before the merge (0.7.0 and
+earlier) update to the one app:
 
 ```sh
 LM_DOWNLOAD_BASE=https://download.example.cn/layeredmap/ LM_RELEASE_NOTES="Saving and exporting." \
   LM_RELEASE_NOTES_ZH="保存与导出。" packaging/lm/build-dmg.sh dist/lm
-LM_TIER=pro LM_DOWNLOAD_BASE=https://download.example.cn/layeredmap/ packaging/lm/build-dmg.sh dist/lm
 ```
 
-Upload both .dmg files first, then `update-feed.json`, so the feed never points at a file that
+Upload the .dmg first, then `update-feed.json`, so the feed never points at a file that
 isn't there yet.
 
 ## Open (owner)

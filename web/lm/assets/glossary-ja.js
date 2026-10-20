@@ -94,7 +94,7 @@ window.LM_GLOSSARY_L10N = {
       w: "NimbleMap Pro：質問ボックスへの答えはどれも、手順の一覧、地図上のプレビュー、<span class=\"ui\">Keep</span>（残す）または <span class=\"ui\">Discard</span>（破棄）が付いた結果カードとして届きます。" },
     geojson: { t: "GeoJSON、GeoPackage、Shapefile", alt: [".geojson", ".gpkg", ".shp", "シェープファイル", "ファイル形式", "KML", "GPX"],
       d: "ベクターデータでよく使われるファイル。GeoJSON は 1 つのテキストファイル、GeoPackage（.gpkg）は複数のレイヤーを入れられる 1 つのデータベースファイルです。Shapefile は同じ名前を持つファイル（.shp、.dbf、.shx、.prj）の組で、まとめて扱います。",
-      w: "ツールバーの <span class=\"ui\">Open</span>（開く、⌘O）、またはファイルをウインドウにドラッグ（<span class=\"ui\">Drop to add to the map</span>（ドロップして地図に追加））。<span class=\"ui\">Details</span>（詳細）› <span class=\"ui\">Format</span>（形式）に形式名が表示されます。" },
+      w: "ツールバーの <span class=\"ui\">Open</span>（開く、⌘O）、またはファイルを NimbleMap にドラッグ（<span class=\"ui\">Drop to add to the map</span>（ドロップして地図に追加））。<span class=\"ui\">Details</span>（詳細）› <span class=\"ui\">Format</span>（形式）に形式名が表示されます。" },
     geotiff: { t: "GeoTIFF", alt: [".tif", ".tiff", "DEM", "標高", "衛星画像", "ジオティフ"],
       d: "地球上のどこに位置するかの情報も持っている画像ファイル。標高モデルや衛星画像は GeoTIFF で配布されることがよくあります。",
       w: "サンプル <span class=\"ui\">World basics</span>（世界の基本データ）の標高レイヤーは GeoTIFF です。" },

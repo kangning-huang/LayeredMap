@@ -827,3 +827,8 @@ Couldn't reach the assistant service: {error}	无法连接助手服务：{error}
 The assistant service's answer was cut off: {error}	助手服务的回复被截断了：{error}
 The assistant service answered {status} with something unreadable.	助手服务返回了 {status}，内容无法读取。
 {app} is working offline, so the assistant can't be reached. Turn off View › Work Offline to ask.	{app}正在离线工作，无法连接助手。请关闭“视图 › 离线工作”后再提问。
+Signing in unlocks the Ask box, analysis tools, the built-in world layers and voice input.	登录后即可使用提问框、分析工具、内置世界图层和语音输入。
+Checking your account…	正在检查账户…
+Sign in to use analysis tools	登录后即可使用分析工具
+{action} (locked)	{action}（已锁定）
+Settings › Account shows who is signed in and what the account includes.	在“设置 › 账户”中可以查看登录的是谁，以及账户包含哪些功能。

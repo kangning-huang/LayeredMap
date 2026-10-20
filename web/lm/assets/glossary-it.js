@@ -94,7 +94,7 @@ window.LM_GLOSSARY_L10N = {
       w: "NimbleMap Pro: ogni risposta della casella Chiedi arriva come un riquadro del risultato con i suoi passaggi elencati, un'anteprima sulla mappa e <span class=\"ui\">Keep</span> (Mantieni) o <span class=\"ui\">Discard</span> (Scarta)." },
     geojson: { t: "GeoJSON, GeoPackage, Shapefile", alt: [".geojson", ".gpkg", ".shp", "formati di file", "KML", "GPX"],
       d: "File comuni per i dati vettoriali. GeoJSON è un unico file di testo; GeoPackage (.gpkg) è un unico file di database che può contenere più layer; uno Shapefile è un insieme di file con lo stesso nome (.shp, .dbf, .shx, .prj) che vanno tenuti insieme.",
-      w: "<span class=\"ui\">Open</span> (Apri, ⌘O) nella barra degli strumenti, oppure trascina i file sulla finestra (<span class=\"ui\">Drop to add to the map</span>, Rilascia per aggiungere alla mappa). <span class=\"ui\">Details</span> › <span class=\"ui\">Format</span> (Dettagli › Formato) indica il formato." },
+      w: "<span class=\"ui\">Open</span> (Apri, ⌘O) nella barra degli strumenti, oppure trascina i file in NimbleMap (<span class=\"ui\">Drop to add to the map</span>, Rilascia per aggiungere alla mappa). <span class=\"ui\">Details</span> › <span class=\"ui\">Format</span> (Dettagli › Formato) indica il formato." },
     geotiff: { t: "GeoTIFF", alt: [".tif", ".tiff", "DEM", "DTM", "elevazione", "quota", "immagine satellitare"],
       d: "Un file immagine che sa anche dove si trova sulla Terra. I modelli di elevazione e le immagini satellitari arrivano spesso come GeoTIFF.",
       w: "Il layer di elevazione dell'esempio <span class=\"ui\">World basics</span> (Il mondo: dati di base) è un GeoTIFF." },
