@@ -484,6 +484,16 @@ code { font: .88em var(--mono); background: var(--paper-2); padding: 1px 5px; bo
   .nav { gap: 0; }
   .nav a, .nav button, .lang-menu summary { padding: 6px 6px; }
 }
+/* On a phone the language menu and the theme button sit at the right of the brand row, so the
+   five page links have the second row to themselves in every language (Japanese, German, French,
+   Dutch, Russian and Spanish wrapped the theme button onto a third line once Data joined the nav). */
+@media (max-width: 640px) {
+  .nav .theme-btn { position: absolute; top: 8px; right: 0; }
+  .nav .lang-menu summary { position: absolute; top: 8px; right: 36px; }
+}
+@media (max-width: 380px) {
+  .nav > a { padding: 6px 4px; font-size: 13px; }
+}
 .foot-langs { margin: 10px 0 0; line-height: 1.9; }
 .foot-langs a { white-space: nowrap; }
 

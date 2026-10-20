@@ -102,7 +102,7 @@ CHANGELOG = "https://github.com/kangning-huang/NimbleMap/blob/main/CHANGELOG.md"
 DMG_NAME = "NimbleMap-macos-arm64.dmg"
 DMG_GITHUB = f"https://github.com/kangning-huang/NimbleMap/releases/latest/download/{DMG_NAME}"
 GITCODE = "https://gitcode.com/KN-Huang/NimbleMap"
-DMG_GITCODE = f"{GITCODE}/releases/download/v0.7.0/{DMG_NAME}"
+DMG_GITCODE = f"{GITCODE}/releases/download/v0.7.1/{DMG_NAME}"
 DMG = {"zh": DMG_GITCODE}  # every other language: DMG_GITHUB
 # The download page's second card offers the other host: GitCode everywhere, GitHub on Chinese
 # pages. Its links carry data-dl="alt" (the DMG) and data-dl="alt-releases" (the releases page).
@@ -112,20 +112,19 @@ RELEASES_GITCODE = f"{GITCODE}/releases"
 RELEASES_ALT = {"zh": RELEASES_GITHUB}  # every other language: RELEASES_GITCODE
 
 # The line under the download page's main card about Pro (`<p class="dl-pro">`), one per language.
-# For 0.7.0 Pro is not in the app yet; when the release that unlocks Pro by signing in ships, switch
-# each to the "unlock when you sign in" wording.
+# From 0.7.1 Pro is in the one app and unlocks when you sign in.
 PRO_UNLOCK = {
-    "": "Coming in the next update: sign in inside the app to unlock Pro.",
-    "zh": "下次更新起：在应用内登录即可解锁 Pro。",
-    "de": "Mit dem nächsten Update: Melden Sie sich in der App an, um Pro freizuschalten.",
-    "es": "Llega en la próxima actualización: inicia sesión dentro de la app para desbloquear Pro.",
-    "fr": "Dans la prochaine mise à jour : connectez-vous dans l’app pour débloquer Pro.",
-    "it": "In arrivo con il prossimo aggiornamento: accedi dall’app per sbloccare Pro.",
-    "nl": "Met de volgende update: meld u aan in de app om Pro te ontgrendelen.",
-    "pt-br": "Na próxima atualização: entre na sua conta dentro do app para liberar o Pro.",
-    "ru": "В следующем обновлении: войдите в приложении, чтобы открыть Pro.",
-    "ja": "次のアップデートから：アプリ内でサインインすると Pro が使えるようになります。",
-    "ko": "다음 업데이트부터: 앱 안에서 로그인하면 Pro가 열립니다.",
+    "": "Pro features (the Ask box and analysis actions) unlock when you sign in inside the app, free with an account.",
+    "zh": "Pro 功能（提问框和分析操作）在应用内登录后即可解锁，注册账户即可免费使用。",
+    "de": "Die Pro-Funktionen (das Fragefeld und die Analyseaktionen) werden freigeschaltet, wenn Sie sich in der App anmelden – kostenlos mit einem Konto.",
+    "es": "Las funciones Pro (el cuadro de preguntas y las acciones de análisis) se desbloquean al iniciar sesión dentro de la app, gratis con una cuenta.",
+    "fr": "Les fonctions Pro (la zone de questions et les actions d’analyse) se débloquent quand vous vous connectez dans l’app, gratuitement avec un compte.",
+    "it": "Le funzioni Pro (la casella delle domande e le azioni di analisi) si sbloccano quando accedi dall’app, gratis con un account.",
+    "nl": "De Pro-functies (het vraagvak en de analyseacties) worden ontgrendeld zodra u zich in de app aanmeldt, gratis met een account.",
+    "pt-br": "Os recursos Pro (a caixa de perguntas e as ações de análise) são liberados quando você entra na sua conta dentro do app, de graça com uma conta.",
+    "ru": "Функции Pro (поле вопросов и действия анализа) открываются, когда вы входите в приложении, — бесплатно с учётной записью.",
+    "ja": "Pro の機能（質問ボックスと分析アクション）は、アプリ内でサインインすると使えるようになります。アカウントがあれば無料です。",
+    "ko": "Pro 기능(질문 상자와 분석 작업)은 앱 안에서 로그인하면 열립니다. 계정만 있으면 무료입니다.",
 }
 
 GLOBE = (
