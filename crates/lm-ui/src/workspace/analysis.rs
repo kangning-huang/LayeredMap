@@ -134,6 +134,14 @@ impl Workspace {
         self.analysis.preview.is_some()
     }
 
+    /// What the preview puts on the map, read by the evaluation harness
+    /// (`tools/lm/llm_eval/v3`, `examples/ask_eval.rs`): the layer drawn over the map (until the
+    /// map takes it) and the rows highlighted in a layer. Changes nothing.
+    pub fn preview_shown(&self) -> (Option<&lm_mapview::map::Layer>, Option<&(LayerId, Vec<usize>)>) {
+        let layer = self.analysis.preview.as_ref().and_then(|p| p.map_pair.as_ref()).map(|(l, _)| l);
+        (layer, self.analysis.highlight.as_ref())
+    }
+
     /// Keeps a result: its layer or fields, its style and its record, as one undo step labelled
     /// with the action. Returns the record's id.
     pub fn keep_result(&mut self, r: &ActionResult, about: Option<LayerId>) -> Option<u64> {
