@@ -94,7 +94,7 @@ window.LM_GLOSSARY_L10N = {
       w: "NimbleMap Pro: Jede Antwort des Fragefelds kommt als Ergebniskarte mit aufgelisteten Schritten, einer Vorschau auf der Karte und <span class=\"ui\">Keep</span> (Behalten) oder <span class=\"ui\">Discard</span> (Verwerfen)." },
     geojson: { t: "GeoJSON, GeoPackage, Shapefile", alt: [".geojson", ".gpkg", ".shp", "Dateiformate", "KML", "GPX"],
       d: "Gängige Dateien für Vektordaten. GeoJSON ist eine einzelne Textdatei; GeoPackage (.gpkg) ist eine einzelne Datenbankdatei, die mehrere Layer enthalten kann; ein Shapefile ist eine Gruppe gleichnamiger Dateien (.shp, .dbf, .shx, .prj), die zusammengehören.",
-      w: "<span class=\"ui\">Open</span> (Öffnen) in der Symbolleiste (⌘O), oder ziehen Sie Dateien ins Fenster (<span class=\"ui\">Drop to add to the map</span> (Zum Hinzufügen auf der Karte ablegen)). <span class=\"ui\">Details</span> › <span class=\"ui\">Format</span> nennt das Format." },
+      w: "<span class=\"ui\">Open</span> (Öffnen) in der Symbolleiste (⌘O), oder ziehen Sie Dateien in NimbleMap (<span class=\"ui\">Drop to add to the map</span> (Zum Hinzufügen auf der Karte ablegen)). <span class=\"ui\">Details</span> › <span class=\"ui\">Format</span> nennt das Format." },
     geotiff: { t: "GeoTIFF", alt: [".tif", ".tiff", "DGM", "Höhenmodell", "Höhe", "Satellitenbild"],
       d: "Eine Bilddatei, die zusätzlich weiß, wo auf der Erde sie liegt. Höhenmodelle und Satellitenbilder kommen oft als GeoTIFF.",
       w: "Der Höhen-Layer im Beispiel <span class=\"ui\">World basics</span> (Welt-Grunddaten) ist ein GeoTIFF." },

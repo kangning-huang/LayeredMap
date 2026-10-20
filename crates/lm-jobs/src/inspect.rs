@@ -868,10 +868,20 @@ pub fn style_band(r: &Raster, style: &lm_core::document::Style) -> usize {
     (style.band.max(1) as usize - 1).min(r.bands.len().saturating_sub(1))
 }
 
+/// A longitude brought into −180 to 180°. The zoomed-out map repeats the world east and west,
+/// and a click in a copy has a longitude past ±180°: this is where it lands on the data.
+pub fn wrap_lon(lon: f64) -> f64 {
+    (lon + 180.0).rem_euclid(360.0) - 180.0
+}
+
 /// The value of a band at a longitude/latitude: `Some(None)` for a NoData cell inside the
-/// raster, `None` outside it.
+/// raster, `None` outside it. The longitude may be in any copy of the world: it is wrapped into
+/// −180 to 180°, then tried a world west and east, for a grid whose first column straddles the
+/// antimeridian or that is laid out over 0 to 360°.
 pub fn raster_value_at(r: &Raster, band: usize, lon: f64, lat: f64) -> Option<Option<f64>> {
-    let (col, row) = r.pixel_at(rustgis_engine::geom::Coord::new(lon, lat))?;
+    let lon = wrap_lon(lon);
+    let at = |x: f64| r.pixel_at(rustgis_engine::geom::Coord::new(x, lat));
+    let (col, row) = at(lon).or_else(|| at(lon - 360.0)).or_else(|| at(lon + 360.0))?;
     Some(r.value(band, col, row).map(f64::from))
 }
 

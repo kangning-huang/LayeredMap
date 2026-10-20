@@ -94,7 +94,7 @@ window.LM_GLOSSARY_L10N = {
       w: "NimbleMap Pro: elk antwoord in het vraagvak komt als een resultaatkaart met de stappen erop, een voorbeeld op de kaart, en <span class=\"ui\">Keep</span> (Behouden) of <span class=\"ui\">Discard</span> (Verwerpen)." },
     geojson: { t: "GeoJSON, GeoPackage, Shapefile", alt: [".geojson", ".gpkg", ".shp", "bestandsformaten", "KML", "GPX"],
       d: "Gangbare bestanden voor vectordata. GeoJSON is één tekstbestand; GeoPackage (.gpkg) is één databasebestand dat meerdere kaartlagen kan bevatten; een Shapefile is een set bestanden met dezelfde naam (.shp, .dbf, .shx, .prj) die bij elkaar horen.",
-      w: "<span class=\"ui\">Open</span> (Openen) in de knoppenbalk (⌘O), of sleep bestanden naar het venster (<span class=\"ui\">Drop to add to the map</span>, Loslaten om aan de kaart toe te voegen). <span class=\"ui\">Details</span> › <span class=\"ui\">Format</span> (Formaat) noemt het formaat." },
+      w: "<span class=\"ui\">Open</span> (Openen) in de knoppenbalk (⌘O), of sleep bestanden naar NimbleMap (<span class=\"ui\">Drop to add to the map</span>, Loslaten om aan de kaart toe te voegen). <span class=\"ui\">Details</span> › <span class=\"ui\">Format</span> (Formaat) noemt het formaat." },
     geotiff: { t: "GeoTIFF", alt: [".tif", ".tiff", "DEM", "hoogtemodel", "satellietbeeld", "luchtfoto"],
       d: "Een afbeeldingsbestand dat ook weet waar op aarde het ligt. Hoogtemodellen en satellietbeelden komen vaak als GeoTIFF.",
       w: "De hoogtelaag van het voorbeeld <span class=\"ui\">World basics</span> (Wereld: basis) is een GeoTIFF." },

@@ -24,7 +24,7 @@ touches no upstream file or workflow.
 
 | English | 中文 | What |
 |---|---|---|
-| `index.html` | `zh/index.html` | Landing for people who have never used GIS: a direct download button, the built-in maps (one fact each), bring your own data, three principles with real screenshots, sharing, a slim Pro band, a final download button |
+| `index.html` | `zh/index.html` | Landing: “Found map data online? Drag it into NimbleMap.” A folder of real downloaded files beside the map each opens (hero; a hook for the launch-video loop), what it opens, a Data page teaser, four “once it’s open” screenshots, a slim Pro band, the built-in examples as practice, sharing, a final download button |
 | `download.html` | `zh/download.html` | For people who already have a GIS file: what it opens, why layers line up, the download buttons, why NimbleMap differs from a typical GIS (for people who know GIS), NimbleMap or QGIS, and a FAQ in the words people search with |
 | `pro.html` | `zh/pro.html` | Free vs Pro: what Pro adds (free with an account, unlocked by signing in inside the app, coming in the next version); the other languages' footers link the English page |
 | `help.html` | `zh/help.html` | Help start page (what Help › NimbleMap Help opens): the workflows and the window in one minute |
@@ -137,6 +137,21 @@ per-process Cocoa default `-NSRequiresAquaSystemAppearance YES`, so captures mat
 (`LM_TIER=pro`, unbundled, so the key comes from the keychain and no cost line shows) without an
 Ask call.
 
+- **Home page, 2026-10-20 (`open-*.jpg`):** captured the same way (release build, `--tour`, light
+  theme, window only, `retake_screenshots.py shot`/`cut`) but from the real downloaded-style files
+  that `design/launch-video-v3/data/make_files.sh "<folder>"` writes (IBTrACS storms `.shp`, USGS
+  earthquakes `.gpkg`, GDO heatwave `.nc`, ETOPO `.tif`, NCEI volcano `.csv`), passed as file
+  arguments. They are not in `retake_screenshots.sh` because those files live outside the repo.
+  Tours (steps are 2.5 s apart, 6 s after a fly): storms
+  `theme light;basemap light;tab 0;tab 0;card style_by_value max_wind_k;tab 0;150,22,3.2;tab 0;150,22,3.2…`
+  (capture at 30 s); search: the same with `find Haiyan` after the style step (29 s); zoom:
+  `…card style_by_value max_wind_k;tab 0;124,16,4.6;esc;esc;124,16,4.6…` (36 s); earthquakes
+  `…175,12,2.4 ×3;card style_by_value magnitude;tab 0…` (34 s); click: `142.373,38.297,10 ×2;card
+  style_by_value magnitude;142.373,38.297,10;click 142.373,38.297;160,20,2.6…` (36 s); heatwave
+  `-5,25,2.6 ×3;time 45;tab 0…` (34 s); relief `60,10,1.9 ×3;tab 0…` (30 s); volcanoes
+  `175,10,2.3 ×3;card style_by_value elevation_m;tab 0…` (32 s). Cuts (from the 1600-px shots, to
+  800×500): zoom 345,100,1545,850; search 700,100,1600,662; click 600,110,1600,735; time (from the
+  heatwave shot) 210,420,1130,995.
 - **Retaken 2026-10-19 after the line-transparency fix** (55db6c3: tracks coloured by basin or
   season keep the layer's faint line transparency, so overlaps show density), all with the script
   on the phase-4 build, Light appearance (`theme light`; the Light basemap except the

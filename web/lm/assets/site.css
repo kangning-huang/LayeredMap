@@ -497,6 +497,7 @@ html.js .share { display: flex; }
 }
 .share-btn:hover, .share-btn:focus-visible { color: var(--accent-ink); border-color: var(--accent); }
 .dl-note { font-size: 14px; color: var(--ink-3); }
+.dl-pro { margin: 10px 0 0; font-size: 14px; color: var(--ink-2); }
 
 /* ==== Landing page for the map-curious (2026-10-19): hero download, built-in map cards, ====
    ==== "bring your own", principles with real screenshots, share, Pro band, final CTA, footer links ==== */
@@ -571,3 +572,97 @@ section.pro-band { padding: 26px 0; background: var(--paper-2); background: colo
   .site-foot .wrap { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 48px; }
   .foot-nav { max-width: none; }
 }
+
+/* ---- Home: the drop scene (a folder of downloaded files beside the map each one opens) ---- */
+.drop-hero h1 { font-size: clamp(2.2rem, 4.1vw, 3.5rem); }
+.hero-how { margin: 14px 0 0; color: var(--ink-2); font-size: 16px; }
+.drop-scene { padding-bottom: 8px; }
+.drop-scene .files {
+  position: absolute; left: -34px; bottom: 34px; z-index: 2; width: min(340px, 64%);
+  background: var(--card); border: 1px solid var(--rule); border-radius: 12px; box-shadow: var(--shadow);
+  padding: 8px 8px 10px;
+}
+.files-head { display: flex; align-items: center; gap: 7px; margin: 2px 4px 6px; font: 600 13px/1.2 var(--sans); color: var(--ink-2); }
+.files-head .folder { width: 18px; height: 18px; flex: none; }
+.files-head .folder path { fill: color-mix(in srgb, var(--accent) 55%, var(--card)); }
+.files-head .pause { margin-left: auto; }
+.showcase .file {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px;
+  width: 100%; margin: 0; padding: 6px 8px; border: 0; border-radius: 7px; background: transparent;
+  font: 12.5px/1.25 var(--sans); color: var(--ink); text-align: left; cursor: pointer; position: relative;
+  transition: transform .25s ease, box-shadow .25s ease, background .25s ease;
+}
+.showcase .file:hover { background: var(--paper-2); }
+.showcase .file .ext {
+  font: 700 9.5px/1 var(--mono); letter-spacing: .04em; color: var(--card); background: var(--ink-3);
+  border-radius: 4px; padding: 4px 0; width: 36px; text-align: center;
+}
+.showcase .file .fname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.showcase .file .fsize { font-size: 11.5px; color: var(--ink-3); white-space: nowrap; }
+.showcase .file .grab { position: absolute; right: -14px; top: 50%; width: 20px; height: 20px; margin-top: -4px; opacity: 0; transition: opacity .25s ease; }
+.showcase .file .grab path { fill: var(--card); stroke: var(--ink); stroke-width: 1.4; stroke-linejoin: round; }
+/* The file being dragged: lifted out of the list, the cursor holding it. */
+.showcase .file[aria-pressed="true"] {
+  background: var(--accent); color: #fff; transform: translate(10px, -2px) rotate(-1.2deg);
+  box-shadow: 0 6px 18px rgba(20, 40, 90, .25);
+}
+.showcase .file[aria-pressed="true"] .ext { background: #fff; color: var(--accent-ink); }
+.showcase .file[aria-pressed="true"] .fsize { color: rgba(255, 255, 255, .8); }
+.showcase .file[aria-pressed="true"] .grab { opacity: 1; }
+:root[data-theme="dark"] .showcase .file[aria-pressed="true"] { color: #0b1220; }
+:root[data-theme="dark"] .showcase .file[aria-pressed="true"] .fsize { color: rgba(11, 18, 32, .75); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .showcase .file[aria-pressed="true"] { color: #0b1220; }
+  :root:not([data-theme="light"]) .showcase .file[aria-pressed="true"] .fsize { color: rgba(11, 18, 32, .75); }
+}
+.drop-arrow { position: absolute; z-index: 1; left: calc(min(340px, 64%) - 50px); bottom: 150px; width: 110px; height: 70px; pointer-events: none; }
+.drop-arrow path { fill: none; stroke: var(--accent); stroke-width: 2; stroke-dasharray: 5 5; stroke-linecap: round; }
+.drop-arrow .head { stroke-dasharray: none; }
+.drop-scene .kind-caption { margin-left: calc(min(340px, 64%) - 20px); }
+.drop-scene .pause { display: none; }
+.js .drop-scene .pause { display: inline-flex; }
+@media (max-width: 900px) {
+  .drop-scene .files { position: static; width: auto; margin-top: 14px; }
+  .drop-arrow { display: none; }
+  .drop-scene .kind-caption { margin-left: 2px; }
+  .showcase .file[aria-pressed="true"] { transform: none; }
+  .showcase .file .grab { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .showcase .file { transition: none; } }
+
+/* ---- Home: what it opens ---- */
+.formats { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 900px) { .formats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .formats { grid-template-columns: 1fr; } }
+.formats li { background: var(--card); border: 1px solid var(--rule); border-radius: 12px; padding: 16px 16px 14px; }
+.formats .exts { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
+.formats .exts span {
+  font: 700 12px/1 var(--mono); color: var(--accent-ink); padding: 5px 7px; border-radius: 6px;
+  background: color-mix(in srgb, var(--accent) 12%, var(--card));
+}
+.formats h3 { margin: 0 0 4px; font-size: 1.08rem; }
+.formats p { margin: 0; color: var(--ink-2); font-size: 15px; line-height: 1.5; }
+.formats-note { margin: 22px 0 0; color: var(--ink-3); font-size: 15px; max-width: 52em; }
+
+/* ---- Home: data teaser (cards from the Data page) ---- */
+.ds-grid.ds-teaser { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 1000px) { .ds-grid.ds-teaser { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .ds-grid.ds-teaser { grid-template-columns: 1fr; } }
+.ds-teaser .ds-more { display: none; }
+.ds-teaser .ds h3 { font-size: 1.1rem; }
+.more-link { margin: 26px 0 0; }
+
+/* ---- Home: once it's open (four shots) ---- */
+.principle-shots.four { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 22px; }
+@media (max-width: 1100px) { .principle-shots.four { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .principle-shots.four { grid-template-columns: 1fr; } }
+.principle-shots.four .principle h3 { font-size: 1.12rem; }
+.principle-shots.four .principle p { font-size: 15px; }
+
+/* ---- Home: built-in examples, demoted to practice ---- */
+.features.mini { gap: 18px; }
+.features.mini .feature-body { padding: 14px 16px 16px; }
+.features.mini .feature-body h3 { font-size: 1.1rem; margin-bottom: 4px; }
+.features.mini .feature-body p { font-size: 15px; color: var(--ink-2); }
+.features.mini .ex-link { margin-top: 10px; font-weight: 600; font-size: 15px; }
+.features.mini .coords { margin-top: 10px; }

@@ -857,7 +857,9 @@ impl Shell {
         match hits.len() {
             0 => {
                 if let Some(p) = self.ws.raster_pick(lonlat) {
-                    self.ws.selection = SelectionContext::pixel(PixelPick { layer: p.0, lon: lonlat.x, lat: lonlat.y, value: p.1 });
+                    // A click in a neighbouring copy of the world names the cell's own longitude.
+                    let lon = lm_jobs::inspect::wrap_lon(lonlat.x);
+                    self.ws.selection = SelectionContext::pixel(PixelPick { layer: p.0, lon, lat: lonlat.y, value: p.1 });
                 } else {
                     self.ws.selection.features.clear();
                     self.ws.selection.pixel = None;

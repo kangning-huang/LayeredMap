@@ -365,10 +365,14 @@ pub fn hit_test(layers: &[HitLayer<'_>], click: Coord, mpp: f64) -> Vec<Hit> {
 
 /// The band values of a raster layer's pixel under `lonlat`: one per band, `None` for a band
 /// that is NoData there. `None` when the raster isn't loaded, the point is outside it, or every
-/// band is NoData (nothing to identify).
+/// band is NoData (nothing to identify). A click in a world copy (longitude past ±180°) reads
+/// the cell it is drawn over: the longitude is wrapped into −180 to 180°, then tried a world west
+/// and east, for a grid whose first column straddles the antimeridian or that is laid out over
+/// 0 to 360°.
 pub fn raster_values(layer: &RasterLayer, lonlat: Coord) -> Option<Vec<Option<f32>>> {
     let r = layer.data.as_ref()?;
-    let (col, row) = r.pixel_at(lonlat)?;
+    let lon = (lonlat.x + 180.0).rem_euclid(360.0) - 180.0;
+    let (col, row) = [lon, lon - 360.0, lon + 360.0].into_iter().find_map(|x| r.pixel_at(Coord::new(x, lonlat.y)))?;
     let vals: Vec<Option<f32>> = (0..r.band_count()).map(|b| r.value(b, col, row)).collect();
     if vals.iter().all(Option::is_none) { None } else { Some(vals) }
 }
@@ -593,8 +597,28 @@ mod tests {
         assert_eq!(raster_values(&layer, Coord::new(11.75, 48.75)), Some(vec![Some(12.0)]));
         assert_eq!(raster_values(&layer, Coord::new(10.75, 49.25)), None, "NoData");
         assert_eq!(raster_values(&layer, Coord::new(9.0, 49.0)), None, "outside");
+        // A click in a world copy east or west reads the cell it is drawn over.
+        for k in [-2.0, -1.0, 1.0, 2.0] {
+            assert_eq!(raster_values(&layer, Coord::new(10.25 + k * 360.0, 49.75)), Some(vec![Some(1.0)]), "{k} worlds");
+        }
         layer.data = None;
         assert_eq!(raster_values(&layer, Coord::new(10.25, 49.75)), None, "not loaded");
+    }
+
+    /// A grid whose first column straddles the antimeridian (from 191.25°W, as a 0–360° NetCDF is
+    /// shown) answers on both sides of 180°, and in the world copies.
+    #[test]
+    fn raster_values_across_the_antimeridian() {
+        use rustgis_render::rustgis_data::raster::{ColorHint, Crs, GeoTransform, Raster};
+        let gt = GeoTransform { origin_x: -191.25, origin_y: 90.0, pixel_width: 22.5, pixel_height: -22.5 };
+        let data: Vec<f32> = (0..16 * 8).map(|i| (i % 16) as f32).collect();
+        let r = Raster::new("lon360", 16, 8, vec![data], gt, Crs::LonLat, None, ColorHint::Gray, "Float32").unwrap();
+        let layer = RasterLayer::from_path(r, "lon360.nc");
+        for lon in [175.0, -175.0, -185.0, 535.0, -545.0] {
+            assert_eq!(raster_values(&layer, Coord::new(lon, 10.0)), Some(vec![Some(0.0)]), "{lon}");
+        }
+        assert_eq!(raster_values(&layer, Coord::new(160.0, 10.0)), Some(vec![Some(15.0)]));
+        assert_eq!(raster_values(&layer, Coord::new(160.0 - 360.0, 10.0)), Some(vec![Some(15.0)]));
     }
 
     /// `cargo test -p lm-mapview --release -- --ignored --nocapture hit_index_timing`
