@@ -36,8 +36,7 @@ fn headless_wgpu_setup() -> egui_wgpu::WgpuSetup {
     match egui_kittest::wgpu::default_wgpu_setup() {
         egui_wgpu::WgpuSetup::CreateNew(mut create) => {
             create.instance_descriptor.backends |= wgpu::Backends::NOOP;
-            create.instance_descriptor.backend_options.noop =
-                wgpu::NoopBackendOptions { enable: true, ..Default::default() };
+            create.instance_descriptor.backend_options.noop = wgpu::NoopBackendOptions { enable: true, ..Default::default() };
             egui_wgpu::WgpuSetup::CreateNew(create)
         }
         other => other,
