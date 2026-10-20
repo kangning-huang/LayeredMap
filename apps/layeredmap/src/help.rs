@@ -102,10 +102,7 @@ mod tests {
                 PathBuf::from("/Applications/NimbleMap.app/Contents/Resources/help/help.html"),
             )
         } else {
-            (
-                Path::new("/opt/NimbleMap/layeredmap"),
-                PathBuf::from("/opt/NimbleMap/Resources/help/help.html"),
-            )
+            (Path::new("/opt/NimbleMap/layeredmap"), PathBuf::from("/opt/NimbleMap/Resources/help/help.html"))
         };
         assert_eq!(page(Some(exe), lang("ja"), |p| p == english), english);
     }
