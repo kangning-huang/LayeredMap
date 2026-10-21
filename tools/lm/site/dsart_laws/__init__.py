@@ -1,0 +1,41 @@
+"""The nature-journal set of Data page card illustrations, one function per slug (see ../data_art_laws.py)."""
+from . import climate, energy, hazards, history, nature, osm, people, sky, transport
+
+
+def registry():
+    return {
+        "earthquakes": hazards.earthquakes,
+        "fires": hazards.fires,
+        "tornadoes": hazards.tornadoes,
+        "temperature": climate.temperature,
+        "sea-temperature": climate.sea_temperature,
+        "precipitation": climate.precipitation,
+        "wind-turbines": energy.wind_turbines,
+        "nuclear": energy.nuclear,
+        "solar": energy.solar,
+        "mines": energy.mines,
+        "cities": people.cities_art,
+        "life-expectancy": people.life_expectancy,
+        "population": people.population,
+        "airports": transport.airports,
+        "ports": transport.ports,
+        "railways": transport.railways,
+        "heritage": history.heritage,
+        "ancient-places": history.ancient_places,
+        "roman-roads": history.roman_roads,
+        "county-seats": history.county_seats,
+        "temples": history.temples,
+        "castles": history.castles,
+        "species": nature.species,
+        "storks": nature.storks,
+        "street-trees": nature.street_trees,
+        "forest-loss": nature.forest_loss,
+        "meteorites": sky.meteorites,
+        "eclipse": sky.eclipse,
+        "night-lights": sky.night_lights,
+        "chain-stores": osm.chain_stores,
+        "openstreetmap": osm.openstreetmap,
+        "city-extract": osm.city_extract,
+        "country-extract": osm.country_extract,
+        "hawker": osm.hawker,
+    }
