@@ -5,3 +5,8 @@ cache/
 capture/wrec
 capture/winid
 __pycache__/
+render/
+/raw
+/cfr
+/cache
+/out

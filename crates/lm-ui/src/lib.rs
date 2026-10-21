@@ -459,6 +459,12 @@ impl Shell {
         self.loading.is_some()
     }
 
+    /// A request sent from the Ask box is still being answered (scripted renders wait for it, so
+    /// the answer lands on the same frame every time).
+    pub fn ask_pending(&self) -> bool {
+        self.ask.busy()
+    }
+
     pub fn map_view(&self) -> &MapView {
         &self.map
     }

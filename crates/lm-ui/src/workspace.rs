@@ -1340,6 +1340,12 @@ impl Workspace {
         format!("{}|{:?}|{:?}", l.profile.data_rev, l.filter, l.roles)
     }
 
+    /// Background work (indexes, statistics, edits) is still running: scripted renders wait
+    /// for it, so what it shows lands on the same frame every time.
+    pub fn jobs_running(&self) -> bool {
+        !self.jobs.is_empty()
+    }
+
     /// A layer's find index for its current data; the first call starts building it in the
     /// background and returns None until it is ready.
     pub fn find_index(&mut self, id: LayerId) -> Option<Arc<lm_jobs::find::FindIndex>> {
