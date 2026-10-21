@@ -162,6 +162,10 @@ pub enum Command {
     OpenLibrary,
     /// Add a library dataset to the map by its id (scripts and tests; the panel's Add to map).
     AddFromLibrary(String),
+    /// NimbleMap › Check for Updates… (Help › on Windows): check now and say what was found.
+    CheckForUpdates,
+    /// The update notice's Update Now (scripts and tests: the button's action).
+    UpdateNow,
 }
 
 /// A file dialog the shell asks the app to show (the shell itself never opens dialogs).
@@ -321,6 +325,8 @@ pub struct Shell {
     pub(crate) library: library::LibraryState,
     /// The time slider playing (WP6.12).
     pub(crate) playing: Option<time_ui::Playing>,
+    /// The update check and Update Now (WP5.7).
+    pub(crate) updater: update::Updater,
 }
 
 /// The developer override for Pro (`LM_DEV_PRO=1`; `lm_account::entitlement::developer_override`):
@@ -379,6 +385,7 @@ impl Shell {
             diagnostics: None,
             library: Default::default(),
             playing: None,
+            updater: update::Updater::default(),
             find: find_ui::FindState::default(),
             drawing: None,
             ws: workspace::Workspace::with_waker(ctx),
@@ -490,6 +497,8 @@ impl Shell {
             Command::FocusSearch => self.focus_search = true,
             Command::ShowCredits => self.credits_open = true,
             Command::ShowFeedback => feedback_ui::open(self),
+            Command::CheckForUpdates => self.updater.check_now(ctx, self.language().code() == "zh"),
+            Command::UpdateNow => self.updater.update_now(ctx),
             Command::SetBasemap(id) => {
                 self.prefs.basemap = id;
                 self.basemap_changed();
@@ -753,6 +762,17 @@ impl Shell {
     /// A clean quit (the journal is marked clean).
     pub fn shutdown(&mut self) {
         saving::shutdown(self);
+    }
+
+    /// Starts the launch-time update check against the compiled-in feed (off without one).
+    pub fn start_update_check(&mut self, ctx: &egui::Context) {
+        self.updater.start(update::feed_urls(), ctx, self.language().code() == "zh");
+    }
+
+    /// At quit: a downloaded, verified update to install, and whether to open it afterwards
+    /// (the app passes it to [`update::finish_at_exit`] after saving its state).
+    pub fn take_staged_update(&mut self) -> Option<(update::install::Staged, bool)> {
+        self.updater.take_staged()
     }
 
     /// File dialogs the app should show, oldest first.

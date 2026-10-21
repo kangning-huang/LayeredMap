@@ -1903,3 +1903,81 @@ mod account {
         assert!(h.state().as_ref().is_some_and(|s| s.account.open));
     }
 }
+
+/// WP5.7: the update notice in its states (docs/lm/update-feed.md). The offer has Update Now
+/// beside the download link (a signed feed on macOS).
+fn update_offer() -> crate::update::Update {
+    crate::update::Update {
+        version: "0.7.3".into(),
+        url: "https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.3/NimbleMap-macos-arm64.dmg".into(),
+        notes: Some("In-app updates.".into()),
+        github: Some("https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.3/NimbleMap-macos-arm64.dmg".into()),
+        gitcode: Some("https://gitcode.com/KN-Huang/NimbleMap/releases/download/v0.7.3/NimbleMap-macos-arm64.dmg".into()),
+        sha256: Some("053ac3d7965cd2cff0a1b85044cd926e40b552ae0e437526d223849ecf6a3c05".into()),
+        signature: Some("c2lnbmF0dXJl".into()),
+    }
+}
+
+#[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+fn update_notice_offer() {
+    use egui_kittest::kittest::Queryable as _;
+    let mut h = harness(false, WORLD, |s| s.updater.set_phase(crate::update::Phase::Found(update_offer())));
+    assert!(h.query_by_label("Update Now").is_some());
+    assert!(h.query_by_label("Download 0.7.3").is_some());
+    h.snapshot("update_notice_offer");
+}
+
+#[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+fn update_notice_downloading() {
+    use egui_kittest::kittest::Queryable as _;
+    let mut h = harness(false, WORLD, |s| {
+        s.updater.set_phase(crate::update::Phase::Downloading { update: update_offer(), got: 48_200_000, total: Some(121_500_000) })
+    });
+    assert!(h.query_by_label("48 of 122 MB").is_some());
+    h.snapshot("update_notice_downloading");
+    // Cancel goes back to the offer.
+    h.get_by_label("Cancel").click();
+    h.run_steps(3);
+    assert_eq!(h.state().as_ref().map(|s| s.updater.phase()), Some(crate::update::Phase::Found(update_offer())));
+}
+
+#[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+fn update_notice_error() {
+    use egui_kittest::kittest::Queryable as _;
+    let mut h =
+        harness(false, WORLD, |s| s.updater.set_phase(crate::update::Phase::Failed(update_offer(), crate::update::Failure::Checksum)));
+    assert!(h.query_by_label("Try again").is_some());
+    h.snapshot("update_notice_error");
+}
+
+#[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+fn update_notice_up_to_date() {
+    let mut h = harness(true, WORLD, |s| s.updater.set_phase(crate::update::Phase::UpToDate("0.7.2".into())));
+    h.snapshot("update_notice_up_to_date");
+}
+
+/// The offer in Chinese (GitCode link) and the fallback note in German (formal), for the
+/// translations' length.
+#[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+fn update_notice_offer_zh() {
+    let mut h = harness(false, WORLD, |s| {
+        s.prefs.language = "zh".into();
+        s.updater.set_phase(crate::update::Phase::Found(update_offer()));
+    });
+    h.snapshot("update_notice_offer_zh");
+}
+
+#[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+fn update_notice_manual_de() {
+    let mut h = harness(false, WORLD, |s| {
+        s.prefs.language = "de".into();
+        s.updater.set_phase(crate::update::Phase::Manual(update_offer(), crate::update::install::Manual::NotWritable));
+    });
+    h.snapshot("update_notice_manual_de");
+}

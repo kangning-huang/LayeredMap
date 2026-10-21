@@ -124,8 +124,9 @@ The App Store build runs in the App Sandbox. What that touches in NimbleMap:
 5. **Recent files and reopening maps.** A saved `.lmap` that refers to its source files needs
    security-scoped bookmarks to reopen them later; map packages carry their data inside and are
    unaffected.
-6. **The update check** is compiled out of the App Store build (a build flag beside
-   `LM_UPDATE_FEED_URL`).
+6. **The update check and Update Now** are compiled out of the App Store build
+   (`LM_UPDATE_FEED_URL=none LM_UPDATE_FEED_FALLBACK_URL=none`; docs/lm/update-feed.md): the App
+   Store updates the app, and a sandboxed app can't replace itself.
 7. **A privacy manifest** (`PrivacyInfo.xcprivacy`) listing the "required reason" APIs used (file
    timestamps, user defaults, disk space) and the data collected (none, or for Pro the purchase
    ID). The App Store privacy label says the same.

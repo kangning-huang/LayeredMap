@@ -194,7 +194,8 @@ fn strict_offline_core_tasks() {
     h.step();
     let ctx = h.ctx.clone();
     crate::basemap::start_archive_lookup(&ctx);
-    crate::update::start_with("https://updates.invalid/layeredmap/feed.json", &ctx);
+    let updater = crate::update::Updater::default();
+    updater.start(vec!["https://updates.invalid/layeredmap/feed.json"], &ctx, false);
     core_tasks(&mut h);
 
     // Pro's assistant explains instead of asking.
@@ -203,12 +204,12 @@ fn strict_offline_core_tasks() {
     assert!(msg.as_deref().is_some_and(|m| m.contains("offline")), "{msg:?}");
 
     for _ in 0..500 {
-        if crate::update::finished() {
+        if updater.finished() {
             break;
         }
         std::thread::sleep(std::time::Duration::from_millis(10));
     }
-    assert!(crate::update::finished() && crate::update::found().is_none());
+    assert!(updater.finished() && updater.found().is_none());
     let s = h.state().as_ref().unwrap();
     assert!(s.map_view().map().tiles.is_empty(), "offline, the map has no tile layer");
     assert!(!lm_mapview::archive::looking() && lm_mapview::archive::found().is_none());

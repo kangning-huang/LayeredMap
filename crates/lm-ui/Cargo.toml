@@ -23,6 +23,15 @@ egui = { workspace = true }
 egui-phosphor = { version = "0.14", default-features = false, features = ["regular"] }
 log = { workspace = true }
 image = { workspace = true }
+# Updates (docs/lm/update-feed.md): the Ed25519 signature and the disk image's SHA-256 (ring is
+# already in the build through rustls), and the signature's base64.
+ring = "0.17"
+base64 = { workspace = true }
+
+[features]
+# The update dry run only (docs/lm/update-feed.md › Dry run): reads file:// feeds and disk images
+# and passes LM_UPDATE_TEST_RELAUNCH_ARGS to the reopened app. Never in a release build.
+update-test-hook = []
 
 [dev-dependencies]
 egui_kittest = { workspace = true, features = ["wgpu", "snapshot"] }
