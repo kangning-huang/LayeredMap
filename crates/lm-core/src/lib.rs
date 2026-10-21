@@ -21,3 +21,4 @@ pub mod question;
 pub mod recipe;
 pub mod selection;
 pub mod undo;
+pub mod zh_fold;

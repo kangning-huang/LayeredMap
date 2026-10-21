@@ -720,6 +720,14 @@ fn language_gallery() {
         settle(&mut h);
         h.render().unwrap().save(dir.join(format!("{code}-style.png"))).unwrap();
         ask_answer(code).render().unwrap().save(dir.join(format!("{code}-ask.png"))).unwrap();
+        // The time slider on the 92-day heatwave example at day 77: its caption fits its column.
+        let mut h = phase3(&["../assets/examples/heatwaves summer 2023.nc"], (-5.0, 25.0, 2.6), move |s| {
+            s.prefs.language = code.into();
+            let id = s.ws.doc.layers[0].id;
+            s.ws.set_time(id, 76);
+        });
+        settle(&mut h);
+        h.render().unwrap().save(dir.join(format!("{code}-slider.png"))).unwrap();
     }
 }
 
