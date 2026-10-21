@@ -374,6 +374,23 @@ fn keep(shell: &mut Shell) {
     }
 }
 
+/// The result cards an Ask answer shows, the answer (the last step's) first. A layer that only
+/// feeds a later step (a buffer, the counts a ranking ranks) is a means, not an answer: no card of
+/// its own (the step list names it). A final one keeps its card.
+pub(crate) fn answer_cards(plan: &PlanResult) -> Vec<(lm_core::recipe::ResultCard, String)> {
+    plan.outcomes
+        .iter()
+        .enumerate()
+        .filter_map(|(i, o)| match o {
+            StepOutcome::Card { card, recipe, .. } => Some(((**card).clone(), recipe.text())),
+            StepOutcome::NewLayer { alias, .. } if feeds_later(plan, i, alias) => None,
+            StepOutcome::NewLayer { card, recipe, .. } => Some(((**card).clone(), recipe.text())),
+            _ => None,
+        })
+        .rev()
+        .collect()
+}
+
 /// Whether a step after step `i` (from 0) of the plan uses the layer it made (`alias`, "#k").
 fn feeds_later(plan: &PlanResult, i: usize, alias: &str) -> bool {
     plan.steps.iter().skip(i + 1).any(|s| {
@@ -625,20 +642,7 @@ fn answer_panel(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, width: f32, ma
                     for n in &plan.notes {
                         ui.label(RichText::new(n).size(CAPTION).color(t.warning));
                     }
-                    let cards: Vec<(lm_core::recipe::ResultCard, String)> = plan
-                        .outcomes
-                        .iter()
-                        .enumerate()
-                        .filter_map(|(i, o)| match o {
-                            StepOutcome::Card { card, recipe, .. } => Some(((**card).clone(), recipe.text())),
-                            // A buffer that only feeds a later step is a means, not an answer:
-                            // its size isn't shown (the step list names it).
-                            StepOutcome::NewLayer { alias, recipe, .. } if recipe.action == "buffer" && feeds_later(plan, i, alias) => None,
-                            StepOutcome::NewLayer { card, recipe, .. } => Some(((**card).clone(), recipe.text())),
-                            _ => None,
-                        })
-                        .rev() // the last step's card is the answer: first
-                        .collect();
+                    let cards = answer_cards(plan);
                     // The answer is read once when it arrives: the first card's summary.
                     if let Some((card, _)) = cards.first() {
                         let said = crate::a11y::spoken(&format!("{}. {}", card.title, card.summary));
