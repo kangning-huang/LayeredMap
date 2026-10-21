@@ -462,12 +462,22 @@ if ZH:
     S.PCAM = [(k[0], _circ[0] + (k[1] - S.CIRC[0]), _circ[1], *k[3:]) if k[2] == S.CIRC[1] and k[1] - S.CIRC[0] in (0, 20)
               else k for k in S.PCAM]
 
+# v3.7.1-zh (LM_FILM_TRIM=1): v3.7-zh shortened by retiming its folder section (edit/edl371zh.py)
+TRIM = os.environ.get('LM_FILM_TRIM') == '1'
+if TRIM:
+    import edl371zh as TR
+    _render_full = render
+
+    def render(t):  # noqa: F811
+        return _render_full(TR.old_time(t))
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('out')
     ap.add_argument('--fps', type=int, default=N.FPS)
     ap.add_argument('--from', dest='t0', type=float, default=0.0)
-    ap.add_argument('--to', dest='t1', type=float, default=N.DUR)
+    ap.add_argument('--to', dest='t1', type=float, default=TR.DUR if TRIM else N.DUR)
     ap.add_argument('--stills', default='')
     a = ap.parse_args()
     if a.stills:

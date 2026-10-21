@@ -386,3 +386,18 @@ python path/tilecheck.py _zh ty eq hw pro     # the map matches the English rend
   - A failed basemap fetch was cached as an empty tile in some Chinese frames, though the renderer had counted them as loaded.
   - The renderer now waits past the tile cache's one-minute retry.
   - `path/tilecheck.py` compares each language frame with the English one. Only the expected UI differences remain (the search lists, the Chinese answer card).
+
+## v3.7.1-zh: the folder pause shortened (74.77 s)
+
+`./build.sh 6 3.7.1-zh` (with the v3.7-zh renders in place).
+- **Why:** the Chinese folder line ends at 5.23 s, and the next line ("拖进凌波微图…") started at 9.95 s.
+- **Picture (`edit/edl371zh.py`, `LM_FILM_TRIM=1` in compose37):**
+  - v3.7-zh's 0–9.90 s plays uniformly in 0–5.85 s (1.69×): the slow push on the folder and the file-type strip.
+  - From 9.90 s on, the picture is v3.7-zh shifted 4.05 s earlier.
+  - The table camera is at rest at 9.90 s (between its 9.80 and 10.15 keys), so the change of speed doesn't show.
+  - The selection, the drag and the GeoTIFF/CSV/shapefile windows opening play at normal speed.
+- **Sound (`audio/trim.py`):**
+  - v3.7-zh's masters lose 5.85–9.90 s. The span sits inside the folder's held pad chord, before the first downbeat; a 0.4 s equal-power crossfade before 9.90 s keeps the next line's first word untouched.
+  - Re-mastered to −14 LUFS.
+  - Narration spans and captions shift 4.05 s.
+- **Result:** "拖进凌波微图…" starts at 5.90 s, after a 0.67 s pause.
