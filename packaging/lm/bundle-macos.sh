@@ -10,6 +10,18 @@
 #   LM_NOTARY_PROFILE  a notarytool keychain profile (xcrun notarytool store-credentials), on a Mac;
 #   or LM_NOTARY_APPLE_ID, LM_NOTARY_TEAM_ID, LM_NOTARY_PASSWORD (an app-specific password), in CI
 # Without them the bundle is ad-hoc signed, which runs locally but warns on other Macs.
+#   LM_SIGNING_KEYCHAIN  the keychain holding the Developer ID identity (default
+#                     ~/Library/Keychains/nimblemap-signing.keychain-db on the owner's Mac). When it
+#                     exists and LM_SIGN_IDENTITY is set, it is unlocked first with its password from
+#                     the login keychain (service nimblemap-signing-keychain, account developer-id);
+#                     the password is never printed or written anywhere.
+#
+# Updates (WP5.7, docs/lm/update-feed.md): the feed addresses are compiled in by default:
+#   LM_UPDATE_FEED_URL           default https://nimblemap.com/update/feed.json
+#   LM_UPDATE_FEED_FALLBACK_URL  default the same file in the GitCode mirror (mainland China)
+# Set either to "none" to leave it out (a build with neither never checks).
+#   LM_CARGO_FEATURES  extra cargo features, for the update dry run only (update-test-hook);
+#                     refused unless the version in Cargo.toml contains "-test".
 set -euo pipefail
 
 # The display name (bundle, menus, Finder); keep in step with lm_core::brand (docs/lm/naming.md).
@@ -26,7 +38,19 @@ target_dir="${CARGO_TARGET_DIR:-$root/target}"
 version="$(sed -n 's/^version = "\(.*\)"/\1/p' "$root/Cargo.toml" | head -1)"
 build="${LM_BUILD_NUMBER:-0}"
 
-cargo build --release --locked -p layeredmap --manifest-path "$root/Cargo.toml"
+export LM_UPDATE_FEED_URL="${LM_UPDATE_FEED_URL:-https://nimblemap.com/update/feed.json}"
+export LM_UPDATE_FEED_FALLBACK_URL="${LM_UPDATE_FEED_FALLBACK_URL:-https://api.gitcode.com/api/v5/repos/KN-Huang/NimbleMap/raw/docs/update/feed.json?ref=main}"
+echo "bundle-macos: update feed $LM_UPDATE_FEED_URL (fallback $LM_UPDATE_FEED_FALLBACK_URL)"
+features=()
+if [[ -n "${LM_CARGO_FEATURES:-}" ]]; then
+  if [[ "$version" != *-test* ]]; then
+    echo "bundle-macos: LM_CARGO_FEATURES ($LM_CARGO_FEATURES) is for test builds only, not version $version" >&2
+    exit 1
+  fi
+  features=(--features "$LM_CARGO_FEATURES")
+fi
+
+cargo build --release --locked -p layeredmap --manifest-path "$root/Cargo.toml" ${features[@]+"${features[@]}"}
 
 # One app (owner's decision, 2026-10-19; docs/lm/decisions.md): Pro unlocks when someone signs
 # in, so there is one bundle, one id and one set of resources.
@@ -41,7 +65,8 @@ rsync -a --exclude '._*' "$root/assets/examples/" "$app/Contents/Resources/examp
 # Help › NimbleMap Help (WP6.10): the help pages, read from disk so they work offline.
 mkdir -p "$app/Contents/Resources/help"
 # The home page's hero video (web/lm/video, 3 MB) stays on the website; in the app its poster shows.
-rsync -a --exclude '._*' --exclude 'README.md' --exclude 'video/' "$root/web/lm/" "$app/Contents/Resources/help/"
+# The update feed (web/lm/update) is for the website, not the help pages.
+rsync -a --exclude '._*' --exclude 'README.md' --exclude 'video/' --exclude 'update/' "$root/web/lm/" "$app/Contents/Resources/help/"
 # The app icon (the Strata logo; tools/lm/make_app_icon.py builds it from design/logo).
 cp "$root/packaging/lm/AppIcon.icns" "$app/Contents/Resources/AppIcon.icns"
 # Licences (Gate 5 licence audit): the assets' sources and every Rust crate's licence text.
@@ -261,6 +286,18 @@ xattr -cr "$app" 2>/dev/null || true
 find "$app" -name '._*' -delete
 
 if [[ -n "${LM_SIGN_IDENTITY:-}" ]]; then
+  # The Developer ID identity's own keychain (scripts get errSecInternalComponent from the login
+  # keychain): unlock it with the password the login keychain keeps. Never echoed.
+  signing_kc="${LM_SIGNING_KEYCHAIN:-$HOME/Library/Keychains/nimblemap-signing.keychain-db}"
+  if [[ -f "$signing_kc" ]]; then
+    if kc_pw="$(security find-generic-password -s nimblemap-signing-keychain -a developer-id -w 2>/dev/null)"; then
+      security unlock-keychain -p "$kc_pw" "$signing_kc"
+      echo "bundle-macos: unlocked $signing_kc"
+    else
+      echo "bundle-macos: warning: no password for $signing_kc in the login keychain (nimblemap-signing-keychain)" >&2
+    fi
+    unset kc_pw
+  fi
   # The microphone needs the audio-input entitlement under the hardened runtime.
   ent=(--entitlements "$root/packaging/lm/app.entitlements")
   codesign --force --options runtime --timestamp "${ent[@]}" --sign "$LM_SIGN_IDENTITY" "$app/Contents/MacOS/lm-dictate"

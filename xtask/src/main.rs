@@ -1,5 +1,6 @@
 //! `cargo xtask ci | layers | web-pwa <dir>` (LayeredMap adds `fixtures`, `feel`, `launch`, `stress`,
-//! `fuzz`, `audit`, `licenses` and `sbom`; see `lm.rs`, `fixtures.rs`, `gate.rs` and `security.rs`).
+//! `fuzz`, `audit`, `licenses`, `sbom`, `update-keygen` and `update-sign`; see `lm.rs`,
+//! `fixtures.rs`, `gate.rs`, `security.rs` and `update.rs`).
 //!
 //! - `layers`: enforces the crate layering (nothing below L6 may depend on egui/eframe/rfd).
 //! - `ci`: fmt check, clippy -D warnings, tests and the layer check.
@@ -12,6 +13,7 @@ mod fixtures;
 mod gate;
 mod lm;
 mod security;
+mod update;
 
 const LAYERS: &[(&str, u8)] = &[
     ("geom", 0),
@@ -164,7 +166,9 @@ fn main() -> ExitCode {
         "audit" => security::audit(&root()),
         "licenses" => security::licenses(&root()),
         "sbom" => security::sbom(&root(), &std::env::args().skip(2).collect::<Vec<_>>()),
-        _ => Err("usage: cargo xtask ci | layers | web-pwa <dir> | fixtures [--out DIR] [--only IDS] [--large] | feel [--runs N] [--out DIR] | launch [--n N] | stress | fuzz [--secs N] [--target T] | audit | licenses | sbom [--out FILE] [--target TRIPLE]".into()),
+        "update-keygen" => update::keygen(&root()),
+        "update-sign" => update::sign(&root(), &std::env::args().skip(2).collect::<Vec<_>>()),
+        _ => Err("usage: cargo xtask ci | layers | web-pwa <dir> | fixtures [--out DIR] [--only IDS] [--large] | feel [--runs N] [--out DIR] | launch [--n N] | stress | fuzz [--secs N] [--target T] | audit | licenses | sbom [--out FILE] [--target TRIPLE] | update-keygen | update-sign <dmg> <version> [--out FILE] [--notes TEXT] [--notes-zh TEXT]".into()),
     };
     match r {
         Ok(()) => ExitCode::SUCCESS,
