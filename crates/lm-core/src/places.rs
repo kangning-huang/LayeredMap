@@ -8,8 +8,10 @@
 //! The query and each place's `name` and `ascii` name are *folded*: lower-cased, Latin accents
 //! removed (é→e, ü→u, ß→ss, ø→o, ł→l …; Latin-1, Latin Extended-A and the Vietnamese horned
 //! letters), hyphens and underscores read as spaces, apostrophes dropped, runs of spaces collapsed.
-//! So "sao paulo" finds São Paulo and "xian" finds Xi'an. The Chinese name (`zh`) is compared
-//! as typed. A place matches in the best of these classes, best first:
+//! So "sao paulo" finds São Paulo and "xian" finds Xi'an. The Chinese name (`zh`) and a query in
+//! Chinese are both folded to simplified characters ([`crate::zh_fold`]), so 纽约 finds New York
+//! City, whose GeoNames name is the traditional 紐約, and 紐約 still does. A place matches in the
+//! best of these classes, best first:
 //!
 //! 1. **Exact**: the folded name equals the query, or the Chinese name equals it, or equals a
 //!    query of two or more characters plus one administrative suffix (成都 → 成都市).
@@ -70,6 +72,8 @@ pub struct Hit<'a> {
 #[derive(Debug, Clone)]
 struct Keys {
     name: Vec<char>,
+    /// The Chinese name in simplified characters (empty when there is none).
+    zh: String,
     /// The folded ASCII name, only when it differs from the folded name.
     ascii: Option<Vec<char>>,
 }
@@ -114,7 +118,8 @@ impl PlaceIndex {
             .map(|p| {
                 let name: Vec<char> = fold(&p.name).chars().collect();
                 let ascii: Vec<char> = fold(&p.ascii).chars().collect();
-                Keys { ascii: (ascii != name && !ascii.is_empty()).then_some(ascii), name }
+                let zh = crate::zh_fold::to_simplified(&p.zh);
+                Keys { ascii: (ascii != name && !ascii.is_empty()).then_some(ascii), name, zh }
             })
             .collect();
         Ok(PlaceIndex { places, keys, skipped })
@@ -153,12 +158,13 @@ impl PlaceIndex {
             _ => 2,
         };
         let has_han = raw.chars().any(is_han);
+        let raw = if has_han { crate::zh_fold::to_simplified(&raw) } else { raw };
         let mut buf = vec![0u8; 3 * (q.len() + 1)];
         let mut hits: Vec<(MatchKind, usize)> = Vec::new();
-        for (i, (place, keys)) in self.places.iter().zip(&self.keys).enumerate() {
+        for (i, keys) in self.keys.iter().enumerate() {
             let mut best = None;
-            if has_han && !place.zh.is_empty() {
-                best = match_zh(&place.zh, &raw);
+            if has_han && !keys.zh.is_empty() {
+                best = match_zh(&keys.zh, &raw);
             }
             if best != Some(MatchKind::Exact) {
                 for key in std::iter::once(&keys.name).chain(keys.ascii.as_ref()) {
@@ -413,6 +419,46 @@ mod tests {
         assert_eq!(first("成").name, "Chengdu");
         assert_eq!(first("上海").name, "Shanghai");
         assert_eq!(first("东京").name, "Tokyo");
+    }
+
+    /// GeoNames gives some places traditional-character names (紐約): a simplified query finds
+    /// them, the traditional query still does, and the stored name is shown as it is.
+    #[test]
+    fn simplified_queries_find_traditional_names() {
+        let nyc = first("纽约");
+        assert_eq!((nyc.name.as_str(), nyc.zh.as_str()), ("New York City", "紐約"));
+        assert_eq!(index().search("纽约", 1)[0].kind, MatchKind::Exact);
+        assert_eq!(first("紐約").name, "New York City");
+        assert_eq!(first("达喀尔").name, "Dakar");
+        assert_eq!(first("達喀爾").name, "Dakar");
+        assert_eq!(first("布宜诺斯艾利斯").name, "Buenos Aires");
+        assert_eq!(first("斋浦尔").name, "Jaipur");
+    }
+
+    /// Folding leaves the names that were already simplified where they were.
+    #[test]
+    fn simplified_names_are_unchanged() {
+        assert_eq!(first("东京").name, "Tokyo");
+        assert_eq!(first("東京").name, "Tokyo");
+        assert_eq!(first("巴塞罗那").name, "Barcelona");
+        assert_eq!(first("成都").zh, "成都市");
+    }
+
+    /// Latin queries never take the Chinese path: their results are as before.
+    #[test]
+    fn english_search_is_unchanged() {
+        for (q, name) in [
+            ("New York", "New York City"),
+            ("Tokyo", "Tokyo"),
+            ("Barcelona", "Barcelona"),
+            ("new york", "New York City"),
+            ("sao paulo", "São Paulo"),
+            ("Dakar", "Dakar"),
+            ("Buenos", "Buenos Aires"),
+            ("Jaipur", "Jaipur"),
+        ] {
+            assert_eq!(first(q).name, name, "{q}");
+        }
     }
 
     #[test]

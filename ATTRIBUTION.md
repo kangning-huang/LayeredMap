@@ -36,6 +36,7 @@ bundle. The licence audit (Gate 5) last ran on 2026-10-18.
 |---|---|---|
 | Interface fonts (`assets/fonts/Inter-*.ttf`, `NotoSansSC-*.otf`), sources and changes in `assets/fonts/README.md` | Inter 4.1 by Rasmus Andersson (tabular figures frozen in); Noto Sans SC 2.004 by Adobe and Google | SIL Open Font License 1.1 (`assets/fonts/OFL-*.txt`) |
 | Place-search index (`assets/geonames/cities.tsv`), made by `tools/lm/build_city_index.py` | [GeoNames](https://www.geonames.org) cities15000, admin codes and country info, 2026-10-15; columns selected, one Chinese name chosen | CC BY 4.0 |
+| Traditional→simplified Chinese character table (`assets/zh/ts-characters.txt`, 3,221 pairs; place search folds Chinese names and queries with it), made by `tools/lm/build_ts_table.py` | [OpenCC](https://github.com/BYVoid/OpenCC) (Open Chinese Convert) `data/dictionary/TSCharacters.txt`, commit ba09ffb; one-to-one pairs kept, first candidate of several | Apache License 2.0 (`assets/zh/LICENSE-OpenCC.txt`) |
 | Interface symbols (Phosphor, through the `egui-phosphor` crate) | Phosphor Icons | MIT |
 | App icon (`assets/icon`, `packaging/lm/AppIcon.icns`), made by `tools/lm/make_app_icon.py` from `design/logo` | NimbleMap (original drawing) | Apache-2.0, as the code |
 | Basemap chooser thumbnails (`assets/thumbnails`), sources in `assets/thumbnails/README.md` | Crops of the app's own rendering of the basemaps below | As the basemap each shows |
