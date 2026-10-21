@@ -352,3 +352,37 @@ The compositor (`edit/compose37.py`) is v3.6's, with these changes:
 - the drawn-in typing is gone;
 - ripples follow their places through the moving camera;
 - the table camera is a monotone cubic through its keys (continuous speed; the whips are kept), instead of easing to a stop at each key.
+
+---
+
+# v3.7-zh: the Chinese version (78.8 s)
+
+The same camera paths, timing, music and structure as v3.7, with the app in its Chinese interface. Build:
+
+```bash
+LM_FILM_PRO_MODE=replay path/render.sh ty_zh eq_zh hw_zh pro_zh ty_plate_zh eq_plate_zh
+./build.sh 6 3.7-zh
+python path/tilecheck.py _zh ty eq hw pro     # the map matches the English render, frame by frame
+```
+
+- **Interface:** the renderer's shot script sets `"language": "zh"`, as the screenshot tests do (`Prefs.language`). Shots are `<name>_zh`; `edit/compose37.py` reads them with `LM_FILM_LANG=zh`.
+- **Searches:** 纽约, 东京, 巴塞罗那. Each character lands on one of the English cut's key-click times (as a pinyin input method commits it), so the sound bed is unchanged.
+  - 纽约 finds New York City only with branch **zh-search** (7b4fe8d, place search folds traditional and simplified Chinese; GeoNames names it 紐約). The film binary was built from smooth-camera plus zh-search, merged locally for the render only.
+  - Sandy stays Sandy.
+- **Pro:** the Chinese question typed into the Ask box. One real call (`LM_FILM_PRO_MODE=paid`: `LM_ASK_ROUTE=direct`, the developer key read by the app from the keychain), recorded by `LM_ASK_RECORD` into `tours/tokyo_plan_zh_replies.json`. The plan the model sent is in `tours/tokyo_plan_zh.json`:
+  - filter Category 5 (228 of 4,999);
+  - World cities where name is Tokyo (1 of 7,342);
+  - a 100 km buffer around Tokyo;
+  - count the lines in it: **7**.
+
+  Renders replay the recording (`LM_FILM_PRO_MODE=replay`). A second paid run is refused once the recording exists. The app frames this answer at 149.824, 35.748, z5.333 (`shots.PRO_ANSWER_ZH`), and the table camera's push onto the circle follows it there.
+- **Narration:** `audio/narration37zh.txt` (the owner's lines exactly as written) and `audio/vo_zh.py`, using edge-tts zh-CN-YunxiNeural at +6%. A line that overran its beat would be read faster in 2% steps up to +15%; none needed it (`audio/vo_edge37zh/fit.txt`). Mixed by `audio/synth36.py` with `VO_OUT=vo_edge37zh`, with the same music and ducking: −14.0 LUFS, true peak −1.2 dBTP.
+- **Overlays and subtitles:**
+  - Overlays are in Chinese (`compose37.ZH_TEXT`) in Noto Sans SC. The file-type strip and the Finder window stay as they are.
+  - The window titles read 凌波微图.
+  - The end pill writes 凌波微图 NimbleMap after the app's placeholder 搜索地名或你的数据, then 探索地球的真实数据 · Mac 版免费 · nimblemap.com/zh.
+  - `-1080p-subtitled.mp4` burns in the SRT (`path/subs.py`: an ASS script, Noto Sans SC Medium 46 px, bottom centre).
+- **Blank tiles:**
+  - A failed basemap fetch was cached as an empty tile in some Chinese frames, though the renderer had counted them as loaded.
+  - The renderer now waits past the tile cache's one-minute retry.
+  - `path/tilecheck.py` compares each language frame with the English one. Only the expected UI differences remain (the search lists, the Chinese answer card).

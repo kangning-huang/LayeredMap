@@ -1,0 +1,107 @@
+{
+ "voice": "zh-CN-YunxiNeural",
+ "rate": "+6%",
+ "text": "你在网上可能找到很多很有意思的地图数据，可这些数据电脑根本打不开。",
+ "words": [
+  {
+   "text": "你",
+   "offset": 0.097166,
+   "duration": 0.165083
+  },
+  {
+   "text": "在",
+   "offset": 0.26225,
+   "duration": 0.094333
+  },
+  {
+   "text": "网上",
+   "offset": 0.368416,
+   "duration": 0.400958
+  },
+  {
+   "text": "可能",
+   "offset": 0.792916,
+   "duration": 0.200458
+  },
+  {
+   "text": "找到",
+   "offset": 1.005208,
+   "duration": 0.200458
+  },
+  {
+   "text": "很多",
+   "offset": 1.217458,
+   "duration": 0.306583
+  },
+  {
+   "text": "很",
+   "offset": 1.547625,
+   "duration": 0.129708
+  },
+  {
+   "text": "有",
+   "offset": 1.677375,
+   "duration": 0.094333
+  },
+  {
+   "text": "意思",
+   "offset": 1.771708,
+   "duration": 0.224041
+  },
+  {
+   "text": "的",
+   "offset": 1.99575,
+   "duration": 0.082541
+  },
+  {
+   "text": "地图",
+   "offset": 2.101875,
+   "duration": 0.224041
+  },
+  {
+   "text": "数据",
+   "offset": 2.33775,
+   "duration": 0.377375
+  },
+  {
+   "text": "可",
+   "offset": 3.139625,
+   "duration": 0.1415
+  },
+  {
+   "text": "这些",
+   "offset": 3.281125,
+   "duration": 0.188666
+  },
+  {
+   "text": "数据",
+   "offset": 3.481583,
+   "duration": 0.247625
+  },
+  {
+   "text": "电脑",
+   "offset": 3.741041,
+   "duration": 0.342
+  },
+  {
+   "text": "根本",
+   "offset": 4.106583,
+   "duration": 0.259416
+  },
+  {
+   "text": "打",
+   "offset": 4.377833,
+   "duration": 0.117916
+  },
+  {
+   "text": "不",
+   "offset": 4.49575,
+   "duration": 0.082541
+  },
+  {
+   "text": "开",
+   "offset": 4.578291,
+   "duration": 0.247625
+  }
+ ]
+}

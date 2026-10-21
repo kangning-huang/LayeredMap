@@ -1,0 +1,57 @@
+{
+ "voice": "zh-CN-YunxiNeural",
+ "rate": "+6%",
+ "text": "拖进凌波微图，马上就能做出漂亮的地图。",
+ "words": [
+  {
+   "text": "拖进",
+   "offset": 0.097166,
+   "duration": 0.330208
+  },
+  {
+   "text": "凌波",
+   "offset": 0.450958,
+   "duration": 0.235833
+  },
+  {
+   "text": "微图",
+   "offset": 0.698583,
+   "duration": 0.530666
+  },
+  {
+   "text": "马上",
+   "offset": 1.524041,
+   "duration": 0.377375
+  },
+  {
+   "text": "就",
+   "offset": 1.913208,
+   "duration": 0.094333
+  },
+  {
+   "text": "能",
+   "offset": 2.007541,
+   "duration": 0.117916
+  },
+  {
+   "text": "做出",
+   "offset": 2.13725,
+   "duration": 0.271208
+  },
+  {
+   "text": "漂亮",
+   "offset": 2.432083,
+   "duration": 0.294791
+  },
+  {
+   "text": "的",
+   "offset": 2.726875,
+   "duration": 0.058958
+  },
+  {
+   "text": "地图",
+   "offset": 2.797625,
+   "duration": 0.424541
+  }
+ ]
+}

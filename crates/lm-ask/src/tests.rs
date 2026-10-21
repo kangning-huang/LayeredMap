@@ -415,3 +415,18 @@ fn c05_steps_without_arguments_are_sent_back_naming_the_missing_ones() {
         assert!(repair.contains(want), "{repair}");
     }
 }
+
+/// `LM_ASK_RECORD`: a request's replies are written as they arrive, and replay as a fixture.
+#[test]
+fn recorded_replies_replay_as_a_fixture() {
+    let plan = json!({"steps": [{"name": "filter", "args": {"layer": "Schools", "conditions": []}}]});
+    let script = Script::new(vec![call("a", "submit_plan", plan.clone())]);
+    let path = std::env::temp_dir().join(format!("lm-ask-record-{}.json", std::process::id()));
+    let rec = crate::fixture::Recorder::new(&script, path.clone());
+    let reply = rec.complete(&json!({"messages": []})).unwrap();
+    let saved: Json = serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+    assert_eq!(saved["replies"][0], reply);
+    let fixture = crate::fixture::Fixture::open(&path).unwrap();
+    assert_eq!(fixture.complete(&json!({})).unwrap(), reply);
+    let _ = std::fs::remove_file(&path);
+}

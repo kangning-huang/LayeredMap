@@ -362,7 +362,7 @@ import subprocess as _sp  # noqa: E402
 # at the line's start time, and the caption span runs to the end of its last word.
 import json as _json  # noqa: E402
 ENGINE = os.environ.get('VO_ENGINE', 'edge')
-VO_DIR = os.path.join(HERE, E.VO_DIR)
+VO_DIR = os.path.join(HERE, os.environ.get('VO_OUT') or E.VO_DIR)   # v3.7-zh: vo_edge37zh
 vo = np.zeros(N)
 spans = []
 for vid, t0 in E.VO:

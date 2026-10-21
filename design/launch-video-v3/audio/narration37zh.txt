@@ -1,0 +1,17 @@
+# NimbleMap launch film v3.7-zh: the owner's Chinese narration, exactly as written
+# (凌波微图_旁白_口语 timed_v1.txt). Voice: edge-tts zh-CN-YunxiNeural, +6% (audio/voice_edge.py; a line
+# that overruns its beat is read a little faster, see VO_RATES in audio/vo_zh.py).
+# Columns: id | (v3.7 span, s) | the spoken and caption text.
+folder   | 0.5-9.6 | 你在网上可能找到很多很有意思的地图数据，可这些数据电脑根本打不开。
+open     | 9.9-14.2 | 拖进凌波微图，马上就能做出漂亮的地图。
+storms_a | 14.8-19.3 | 1980年以来近五千条气旋路径。随意缩放拖动。
+storms_b | 19.7-21.2 | 搜索地点，比如纽约。
+storms_c | 23.3-27.3 | 也能搜你的数据：输入Sandy，两个同名风暴都找到。
+quakes_a | 28.4-31.9 | 1900年以来，六级以上的地震。
+quakes_b | 32.1-38.6 | 飞到东京，点一下：2011年东日本大地震，9.1级，比99%的地震都强。
+heat_a   | 40.2-43.5 | 打开2022年热浪，拖动时间轴，
+heat_b   | 43.9-48.8 | 8月16日巴塞罗那：热浪强度超过大部分地方。
+pro_a    | 51.0-54.1 | 注册登录用Pro，大白话问数据。
+pro_b    | 54.4-59.2 | 问它：有多少场五级风暴经过东京100公里内？
+pro_c    | 59.6-67.3 | 凌波微图在东京周围画出100公里范围，数出穿过它的风暴路径：共七条。
+end      | 73.7-77.6 | 凌波微图。探索地球的真实数据。免费。
