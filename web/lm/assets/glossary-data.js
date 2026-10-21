@@ -171,8 +171,8 @@ window.LM_GLOSSARY = [
     alt: ["great circle", "true distance", "ellipsoid", "大圆", "球面距离", "真实距离"],
     d_en: "Measured along the curved surface of the Earth, the way a plane actually flies, instead of along a straight line on a flat map. On a flat map the shortest route from Shanghai to New York looks curved; geodesically, it is the straight one. NimbleMap measures distances and areas this way, so a 100 km circle is 100 km everywhere, near the equator or near the poles.",
     d_zh: "沿着弯曲的地球表面来量，就像飞机真正飞的航线，而不是在平面地图上拉一条直线。在平面地图上，上海飞纽约的最短航线看起来是弯的；按测地线算，它才是 “直” 的。凌波微图计算距离和面积都用这种方法，所以 100 公里的圆，在赤道附近和在两极附近都是真正的 100 公里。",
-    w_en: "Behind every distance and area the app shows: the scale bar, area facts such as <span class=\"ui\">area · 23.4 km²</span>, and in Pro, distances such as “within 100 km”.",
-    w_zh: "应用里显示的所有距离和面积都按这种方式计算：比例尺、“area · 23.4 km²” 这样的面积信息，以及 Pro 版里 “100 公里以内” 这类距离。",
+    w_en: "Behind every distance and area the app shows: the scale bar, area facts such as <span class=\"ui\">area · 23.4 km²</span>, and analysis distances such as “within 100 km”.",
+    w_zh: "应用里显示的所有距离和面积都按这种方式计算：比例尺、“area · 23.4 km²” 这样的面积信息，以及分析里 “100 公里以内” 这类距离。",
     see: ""
   },
   {
@@ -180,8 +180,8 @@ window.LM_GLOSSARY = [
     alt: ["within a distance", "radius", "circle around", "距离范围", "周边", "半径"],
     d_en: "The area within a set distance of something: everywhere within 100 km of Hong Kong, or within 50 km of each storm track. GIS software calls it a buffer; NimbleMap calls it “Show an area within a distance”.",
     d_zh: "离某个东西一定距离以内的区域，比如香港周边 100 公里以内，或每条台风路径两侧 50 公里以内。GIS 软件里叫 “缓冲区”，凌波微图里叫 “Show an area within a distance”（显示一定距离内的区域）。",
-    w_en: "NimbleMap Pro: the card's <span class=\"ui\">Show an area within a distance of each</span> button, or ask in the Ask box, for example “Show everything within 100 km of Hong Kong”.",
-    w_zh: "凌波微图 Pro：卡片上的 <span class=\"ui\">Show an area within a distance of each</span> 按钮，或者在提问框里直接问，例如 “显示香港周边 100 公里以内的范围”。",
+    w_en: "The card's <span class=\"ui\">Show an area within a distance of each</span> button, free for everyone. In NimbleMap Pro you can also ask in the Ask box, for example “Show everything within 100 km of Hong Kong”.",
+    w_zh: "卡片上的 <span class=\"ui\">Show an area within a distance of each</span> 按钮，所有人都能免费使用。在凌波微图 Pro 里，还可以在提问框里直接问，例如 “显示香港周边 100 公里以内的范围”。",
     see: "workflow-typhoons.html#pro"
   },
   {
@@ -189,8 +189,8 @@ window.LM_GLOSSARY = [
     alt: ["cut", "keep inside", "crop", "intersect", "相交", "截取"],
     d_en: "Keeping only the part of a layer that lies inside an area, like cutting a map with scissors along a border. The source file is never changed; the result is a new layer.",
     d_zh: "只保留图层落在某个区域里的那部分，就像沿着边界用剪刀剪地图。原文件不会被改动，结果是一个新图层。",
-    w_en: "NimbleMap Pro: ask, for example “Keep the part of the storm tracks inside the area I drew”. The action reads <span class=\"ui\">Keep the part of [layer] inside [other]</span> in the answer's recipe.",
-    w_zh: "凌波微图 Pro：直接提问，例如 “只保留我画的区域里面那一段台风路径”。答案里的步骤说明会写作 “Keep the part of [图层] inside [另一图层]”。",
+    w_en: "The card's <span class=\"ui\">Keep the part of [layer] inside [other]</span> button, free for everyone; the result's recipe names the step the same way. In NimbleMap Pro you can also ask, for example “Keep the part of the storm tracks inside the area I drew”.",
+    w_zh: "卡片上的 <span class=\"ui\">Keep the part of [layer] inside [other]</span> 按钮，所有人都能免费使用；结果的步骤说明里也这样写这一步。在凌波微图 Pro 里，还可以直接提问，例如 “只保留我画的区域里面那一段台风路径”。",
     see: ""
   },
   {
@@ -261,8 +261,8 @@ window.LM_GLOSSARY = [
     alt: ["result card", "method", "provenance", "how it was made", "方法", "来源"],
     d_en: "The plain-words record of how a result was made: which layers went in, which step ran, over what scope, and what was left out. You can copy it as text and check it.",
     d_zh: "用大白话记录一个结果是怎么得出来的：用了哪些图层、做了哪一步、范围是什么、排除了什么。可以复制成文字，方便核对。",
-    w_en: "NimbleMap Pro: every answer to the Ask box comes as a result card with its steps listed, a preview on the map, and <span class=\"ui\">Keep</span> or <span class=\"ui\">Discard</span>.",
-    w_zh: "凌波微图 Pro：提问框给出的每个答案都带一张结果卡片，列出各个步骤，并在地图上预览，你可以选 <span class=\"ui\">Keep</span>（保留）或 <span class=\"ui\">Discard</span>（放弃）。",
+    w_en: "Every analysis result, from a card button or (in NimbleMap Pro) the Ask box, comes as a result card with its steps listed, a preview on the map, and <span class=\"ui\">Keep</span> or <span class=\"ui\">Discard</span>.",
+    w_zh: "每个分析结果，无论来自卡片上的按钮还是凌波微图 Pro 的提问框，都带一张结果卡片，列出各个步骤，并在地图上预览，你可以选 <span class=\"ui\">Keep</span>（保留）或 <span class=\"ui\">Discard</span>（放弃）。",
     see: "workflow-typhoons.html#pro"
   },
   {

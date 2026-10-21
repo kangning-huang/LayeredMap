@@ -5,8 +5,9 @@ the first goal is a good, popular app; a subscription comes only with a big user
 (`app-store.md` › Pricing). The app only needs to know who is who, so it can grant Pro.
 
 **One app** (owner decision, 2026-10-19): Free and Pro are the same download. Signed out, every
-Free feature works and Pro's features (the Ask box and its microphone, the analysis actions on
-cards, the built-in world layers) show locked, each with a Sign In… prompt. Signed in to an account
+Free feature works, the analysis actions on cards included (Free since 2026-10-21), and Pro's
+features (the Ask box and its microphone, the built-in world layers) show locked, each with a
+Sign In… prompt. Signed in to an account
 with Pro, they unlock. The app asks the server whether the account has Pro (the `account`
 function's `pro`), so a later subscription changes only the server's answer. There is no separate
 Pro app, bundle id or installer, and no build carries an OpenRouter key. `LM_DEV_PRO=1` unlocks

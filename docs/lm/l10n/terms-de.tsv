@@ -42,7 +42,7 @@ Labels	Beschriftungen
 Join	Verknüpfung	QGIS: "Join"/"Tabellenverknüpfung"; everyday word chosen
 Buffer	Puffer	QGIS term; app button uses the everyday phrase below
 Show an area within a distance	Bereich im Umkreis anzeigen	everyday phrase instead of "Puffer"
-Show an area within a distance of each	Bereich im Umkreis um jedes Objekt anzeigen	Pro card button
+Show an area within a distance of each	Bereich im Umkreis um jedes Objekt anzeigen	card button
 Overview	Übersicht	card tab
 Details	Details	card tab
 Card	Infokarte	"Karte" alone would clash with the map
@@ -121,7 +121,7 @@ Heat	Hitze	palette name
 Drop to add to the map	Zum Hinzufügen auf der Karte ablegen
 Find in [layer]	In [layer] suchen	e.g. Find in storms
 Your data	Ihre Daten	search results section
-Measure length	Länge messen	Pro
+Measure length	Länge messen	card button
 Next step (→)	Nächster Schritt (→)
 Previous step (←)	Vorheriger Schritt (←)
 Variable shown	Angezeigte Variable
@@ -136,7 +136,7 @@ Work Offline	Offline arbeiten	View menu
 Working offline: online backgrounds are off	Offline: Online-Hintergrundkarten sind aus
 Metric Units	Metrische Einheiten
 Imperial Units	Imperiale Einheiten	as in macOS de
-Keep the part of [layer] inside [other]	Den Teil von [layer] innerhalb von [other] behalten	Pro recipe step
+Keep the part of [layer] inside [other]	Den Teil von [layer] innerhalb von [other] behalten	recipe step
 Located using longitude and latitude as GPS coordinates (WGS 84)	Verortet über Längen- und Breitengrad als GPS-Koordinaten (WGS 84)
 Amap/Tencent coordinates (GCJ-02): convert	Amap/Tencent-Koordinaten (GCJ-02): umrechnen
 GPS coordinates (WGS 84): keep where they are	GPS-Koordinaten (WGS 84): so lassen

@@ -43,7 +43,6 @@ Add a layer of areas to answer this.	Añade una capa de áreas para responder a 
 Add a layer of cells to answer this.	Añade una capa de celdas para responder a esto.
 Add a layer of points or lines or areas to answer this.	Añade una capa de puntos, líneas o áreas para responder a esto.
 Analysis	Análisis
-Developer surface · assistant action	Superficie de desarrollo · acción del asistente
 Choose a layer	Elige una capa
 With	Con
 Distance	Distancia
@@ -832,8 +831,6 @@ The assistant service answered {status} with something unreadable.	El servicio d
 {app} is working offline, so the assistant can't be reached. Turn off View › Work Offline to ask.	{app} está trabajando sin conexión, así que no se puede acceder al asistente. Desactiva Ver › Trabajar sin conexión para preguntar.
 Signing in unlocks the Ask box, analysis tools, the built-in world layers and voice input.	Al iniciar sesión se desbloquean el cuadro de preguntas, las herramientas de análisis, las capas del mundo integradas y la entrada por voz.
 Checking your account…	Comprobando tu cuenta…
-Sign in to use analysis tools	Inicia sesión para usar las herramientas de análisis
-{action} (locked)	{action} (bloqueado)
 Settings › Account shows who is signed in and what the account includes.	En Ajustes › Cuenta puedes ver quién ha iniciado sesión y qué incluye la cuenta.
 Nothing matches, so nothing is highlighted on the map.	No hay coincidencias, así que no se resalta nada en el mapa.
 # Updates: Check for Updates…, Update Now (WP5.7, docs/lm/update-feed.md)

@@ -60,10 +60,10 @@ Unjoin	結合を解除
 joined · 172 of 177 matched	結合済み · 177 件中 172 件が一致
 Buffer	バッファ	GIS 用語。アプリでは日常語の「一定距離内の範囲」
 Show an area within a distance	一定距離内の範囲を表示	バッファのアプリでの呼び方
-Show an area within a distance of each	各地物から一定距離内の範囲を表示	Pro のボタン
+Show an area within a distance of each	各地物から一定距離内の範囲を表示	カードのボタン
 Clip	切り抜き	QGIS は「クリップ」
 Keep the part of [layer] inside [other]	［レイヤー］のうち［別のレイヤー］の内側を残す
-Measure length	長さを測る	Pro のボタン
+Measure length	長さを測る	カードのボタン
 Overview	概要	カードのタブ
 Details	詳細	カードのタブ
 Card	カード
@@ -99,7 +99,7 @@ This cell has no data.	このセルにはデータがありません。
 Median	中央値
 Rank	順位
 Selected	選択中
-Keep	残す	Pro の結果を保存
+Keep	残す	結果を保存
 Discard	破棄
 Ask	質問	Pro の機能名
 Ask box (Pro)	質問ボックス（Pro）

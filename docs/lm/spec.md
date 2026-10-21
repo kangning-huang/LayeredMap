@@ -89,12 +89,12 @@ NimbleMap ships in two tiers (owner decision, 2026-10-16): Free, an open-source 
 |---|---|---|
 | Who | People with no GIS training who need to examine map data (the first audience) | The same people, when they need answers the map alone doesn't give |
 | Code | This repository, Apache-2.0 | A closed module built into the official app; open-source builds have no assistant |
-| Phases | 0–3, 5, 6 | Phase 7, on top of the Phase 4 tool library |
-| Analysis | None exposed: no tool menus, composer or analysis buttons. Display-only suggestions (Color by a value, Filter, Compare, Change colors) stay on cards. Joining a table to places by a shared column is Free (WP3.11): it is the most common GIS task, and it creates no new geometry | Through the Ask box, where the model calls Phase 4's vetted actions, and as suggested actions on cards (since 2026-10-17). Signed out they show with a lock and "Sign in to use analysis tools" |
+| Phases | 0–6 (Phase 4's analysis actions since 2026-10-21) | Phase 7, on top of the Phase 4 tool library |
+| Analysis | Phase 4's vetted actions as suggested-action buttons on cards, with their composer, preview, result card and Keep, for everyone and without signing in (owner, 2026-10-21; before that they were Pro). Display-only suggestions (Color by a value, Filter, Compare, Change colors) stay on cards too. Joining a table to places by a shared column is Free (WP3.11) | The same actions through the Ask box, where the model calls them from a question in plain words; with voice input and the built-in world reference layers |
 | Model | None | Hosted by NimbleMap behind its assistant service; no bring-your-own key for now |
 
 Rules that follow from the tiers:
-- **One door to analysis.** Phase 4's actions have no menus or buttons of their own; the Ask box is the only way to run them, so the interface stays simple.
+- **Two doors to the same actions** (revised 2026-10-21). Phase 4's actions run from the buttons on cards (Free) or from the Ask box (Pro); both use the same registry, previews, result cards and recipes. The actions have no tool menus of their own, so the interface stays simple. What Pro charges for is the model: each question has a running cost, while the actions are local, certified algorithms.
 - **The model never computes numbers.** It chooses actions and fills their inputs; NimbleMap checks the plan, runs the actions locally and shows scope, assumptions, preview and recipe, as every result does.
 - **Only descriptions leave the Mac.** The assistant sends layer names, kinds, field names and types, extents and assumptions; never feature values or file contents.
 - **A new network service.** The assistant service joins the allowed list (basemap, search, library, update, assistant); it is used only in Pro.
@@ -1107,6 +1107,8 @@ There is nothing to roll back yet. If no strategy passes, change stack and repea
 **Goal:** from any selection, a novice can ask one of up to three relevant questions, preview the answer, and keep a result that explains itself. **Effort:** 5 effort-weeks, the largest phase. **Scope:** P0 registry, relevance, composer, jobs, area drawing, certified actions and result cards; P1 action search.
 
 **Revised 2026-10-16 (Product tiers):** Phase 4 builds the action library, jobs, previews and result cards as the engine behind Pro's assistant. The composer, suggested-action buttons, More actions and action search described below are not shown in either tier; they stay as a developer surface for testing the actions. Result cards, recipes, previews and the certified algorithms are unchanged. Each action also gets a machine-readable description (inputs, requirements, decisions, output) that the assistant uses to call it. The Phase 4 gate validates the actions through that developer surface and the certified-algorithm fixtures.
+
+**Revised 2026-10-17 and 2026-10-21:** the suggested-action buttons came back on cards as a Pro feature (2026-10-17), and since 2026-10-21 they are Free: the buttons, with their composer, preview, result card and Keep, show for everyone without signing in. Pro is the Ask box only (with its voice input and the built-in world reference layers). See `docs/lm/decisions.md`.
 
 ### Work packages
 **WP4.1 Action registry and relevance** (P0)

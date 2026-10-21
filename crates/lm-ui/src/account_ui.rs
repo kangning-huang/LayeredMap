@@ -4,8 +4,8 @@
 //! Once a sign-in email is sent, the pane asks for its 6-digit code while the link can still be
 //! clicked on this computer: whichever comes first signs in.
 //! What unlocks Pro is the signed-in account's entitlement (`lm_account::entitlement`): checked
-//! after signing in, at launch and every few hours, and kept with the session. Locked Pro
-//! features say how to unlock them ([`ask_prompt`], [`locked_line`]) and open Settings › Account.
+//! after signing in, at launch and every few hours, and kept with the session. The Ask box,
+//! while Pro is locked, says how to unlock it ([`ask_prompt`]) and opens Settings › Account.
 //! Accounts are on only when the build has an account config (`lm_account::Config::load`); without
 //! one nothing here shows and Pro's features stay hidden (docs/lm/accounts-design.md).
 
@@ -811,42 +811,15 @@ pub(crate) fn ask_prompt(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, width
     });
 }
 
-/// What a locked Pro feature says, in one line: "Sign in to use analysis tools", "NimbleMap Pro
+/// What the locked Ask box says, in one line: "Sign in to use NimbleMap Pro", "NimbleMap Pro
 /// isn't on for this account.", or "Checking your account…".
 pub(crate) fn locked_words(access: Access) -> String {
+    let pro = [("pro", lm_core::brand::shown(true))];
     match access {
-        Access::NotPro => i18n::fmt("{pro} isn't on for this account.", &[("pro", lm_core::brand::shown(true))]),
+        Access::NotPro => i18n::fmt("{pro} isn't on for this account.", &pro),
         Access::Checking => tl!("Checking your account…").to_string(),
-        _ => tl!("Sign in to use analysis tools").to_string(),
+        _ => i18n::fmt("Sign in to use {pro}", &pro),
     }
-}
-
-/// Under a card's locked analysis actions: the line saying how to unlock them, and Sign In… (or
-/// Settings…) opening Settings › Account.
-pub(crate) fn locked_line(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme) {
-    let access = shell.pro_access();
-    ui.add_space(4.0);
-    ui.horizontal_wrapped(|ui| {
-        ui.label(RichText::new(egui_phosphor::regular::LOCK_SIMPLE).font(theme::icon_font(13.0)).color(t.text_secondary));
-        ui.label(RichText::new(locked_words(access)).size(CAPTION).color(t.text_secondary));
-        let label = match access {
-            Access::SignedOut => Some(tl!("Sign In…")),
-            Access::NotPro => Some(tl!("Settings…")),
-            _ => None,
-        };
-        if let Some(label) = label
-            && ui.link(RichText::new(label).size(CAPTION)).clicked()
-        {
-            open(shell);
-        }
-    });
-}
-
-/// A locked Pro feature was asked for (a locked button, or a script): Settings › Account opens,
-/// and the notice says why.
-pub(crate) fn locked(shell: &mut Shell) {
-    shell.notice = Some((locked_words(shell.pro_access()), 0.0));
-    open(shell);
 }
 
 /// An account error in the interface's language.

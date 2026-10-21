@@ -422,20 +422,10 @@ impl Shell {
         self.account.access(self.dev_pro)
     }
 
-    /// Pro is unlocked: the Ask box, analysis actions, the built-in world layers and voice input work.
+    /// Pro is unlocked: the Ask box, with its built-in world layers and voice input, works. Analysis
+    /// actions are free and never ask for it.
     pub fn pro(&self) -> bool {
         self.pro_access().unlocked()
-    }
-
-    /// Whether the cards offer analysis actions (working, or locked with a way to unlock them):
-    /// when Pro can be unlocked in this build, and on the developer surface.
-    pub fn analysis_offered(&self) -> bool {
-        self.developer || self.pro_access().visible()
-    }
-
-    /// Whether analysis actions run: Pro unlocked, or the developer surface.
-    pub fn analysis_unlocked(&self) -> bool {
-        self.developer || self.pro()
     }
 
     /// Whether export (Share, File › Export…) is offered (WP5.3; see [`export::shown`]).

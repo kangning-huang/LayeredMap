@@ -70,12 +70,8 @@ fn companion_kinds(action: &str, main: LayerKind) -> Vec<LayerKind> {
 }
 
 /// Opens the composer for an analysis suggestion, and previews at once when the estimate is under
-/// a second. With Pro locked, Settings › Account opens instead.
+/// a second. Analysis is free: no account needed.
 pub fn open(shell: &mut Shell, main: LayerId, row: Option<usize>, a: &Suggested) {
-    if !shell.analysis_unlocked() {
-        crate::account_ui::locked(shell);
-        return;
-    }
     if !lm_jobs::actions::ACTIONS.contains(&a.action_id.as_str()) {
         shell.notice = Some((i18n::fmt("“{action}” isn't connected yet.", &[("action", &a.label)]), 0.0));
         return;
@@ -416,8 +412,7 @@ pub fn composer(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer) {
     let Some(c) = shell.composer.as_ref() else { return };
     let kinds = companion_kinds(&c.action, l.profile.kind);
     let action = c.action.clone();
-    let caption = if shell.pro() { tl!("Analysis") } else { tl!("Developer surface · assistant action") };
-    ui.label(RichText::new(caption).size(CAPTION).color(t.text_secondary));
+    ui.label(RichText::new(tl!("Analysis")).size(CAPTION).color(t.text_secondary));
     ui.add_space(2.0);
     // The sentence with its tokens.
     ui.horizontal_wrapped(|ui| {

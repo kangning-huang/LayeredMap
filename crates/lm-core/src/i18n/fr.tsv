@@ -43,7 +43,6 @@ Add a layer of areas to answer this.	Ajoutez une couche de surfaces pour répond
 Add a layer of cells to answer this.	Ajoutez une couche de cellules pour répondre.
 Add a layer of points or lines or areas to answer this.	Ajoutez une couche de points, de lignes ou de surfaces pour répondre.
 Analysis	Analyse
-Developer surface · assistant action	Interface de développement · action de l’assistant
 Choose a layer	Choisir une couche
 With	Avec
 Distance	Distance
@@ -832,8 +831,6 @@ The assistant service answered {status} with something unreadable.	Le service de
 {app} is working offline, so the assistant can't be reached. Turn off View › Work Offline to ask.	{app} est hors ligne et ne peut pas joindre l’assistant. Désactivez Présentation › Travailler hors ligne pour poser une question.
 Signing in unlocks the Ask box, analysis tools, the built-in world layers and voice input.	La connexion débloque la zone de questions, les outils d’analyse, les couches mondiales intégrées et la saisie vocale.
 Checking your account…	Vérification de votre compte…
-Sign in to use analysis tools	Connectez-vous pour utiliser les outils d’analyse
-{action} (locked)	{action} (verrouillé)
 Settings › Account shows who is signed in and what the account includes.	Réglages › Compte indique qui est connecté et ce que comprend le compte.
 Nothing matches, so nothing is highlighted on the map.	Aucun résultat : rien n’est mis en évidence sur la carte.
 # Updates: Check for Updates…, Update Now (WP5.7, docs/lm/update-feed.md)

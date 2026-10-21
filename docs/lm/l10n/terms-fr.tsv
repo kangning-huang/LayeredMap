@@ -47,8 +47,8 @@ Unjoin	Supprimer la jointure
 joined · 172 of 177 matched	joint · 172 sur 177 associés
 Buffer	Zone tampon	QGIS term
 Show an area within a distance	Afficher une zone à une certaine distance	NimbleMap's everyday name for a buffer
-Show an area within a distance of each	Afficher une zone à une certaine distance de chacun	Pro card button
-Measure length	Mesurer la longueur	Pro card button
+Show an area within a distance of each	Afficher une zone à une certaine distance de chacun	card button
+Measure length	Mesurer la longueur	card button
 Keep the part of [layer] inside [other]	Conserver la partie de [couche] à l’intérieur de [autre]	clip, in a recipe
 Overview	Aperçu	layer card tab
 Details	Détails	layer card tab

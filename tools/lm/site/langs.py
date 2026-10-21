@@ -112,19 +112,20 @@ RELEASES_GITCODE = f"{GITCODE}/releases"
 RELEASES_ALT = {"zh": RELEASES_GITHUB}  # every other language: RELEASES_GITCODE
 
 # The line under the download page's main card about Pro (`<p class="dl-pro">`), one per language.
-# From 0.7.1 Pro is in the one app and unlocks when you sign in.
+# From 0.7.1 Pro is in the one app and unlocks when you sign in. Since 2026-10-21 the analysis
+# actions are free for everyone; Pro is the Ask box only.
 PRO_UNLOCK = {
-    "": "Pro features (the Ask box and analysis actions) unlock when you sign in inside the app, free with an account.",
-    "zh": "Pro 功能（提问框和分析操作）在应用内登录后即可解锁，注册账户即可免费使用。",
-    "de": "Die Pro-Funktionen (das Fragefeld und die Analyseaktionen) werden freigeschaltet, wenn Sie sich in der App anmelden – kostenlos mit einem Konto.",
-    "es": "Las funciones Pro (el cuadro de preguntas y las acciones de análisis) se desbloquean al iniciar sesión dentro de la app, gratis con una cuenta.",
-    "fr": "Les fonctions Pro (la zone de questions et les actions d’analyse) se débloquent quand vous vous connectez dans l’app, gratuitement avec un compte.",
-    "it": "Le funzioni Pro (la casella delle domande e le azioni di analisi) si sbloccano quando accedi dall’app, gratis con un account.",
-    "nl": "De Pro-functies (het vraagvak en de analyseacties) worden ontgrendeld zodra u zich in de app aanmeldt, gratis met een account.",
-    "pt-br": "Os recursos Pro (a caixa de perguntas e as ações de análise) são liberados quando você entra na sua conta dentro do app, de graça com uma conta.",
-    "ru": "Функции Pro (поле вопросов и действия анализа) открываются, когда вы входите в приложении, — бесплатно с учётной записью.",
-    "ja": "Pro の機能（質問ボックスと分析アクション）は、アプリ内でサインインすると使えるようになります。アカウントがあれば無料です。",
-    "ko": "Pro 기능(질문 상자와 분석 작업)은 앱 안에서 로그인하면 열립니다. 계정만 있으면 무료입니다.",
+    "": "Analysis tools are free, with no sign-in. Pro, the Ask box for questions in plain words, unlocks when you sign in inside the app, free with an account.",
+    "zh": "分析工具免费使用，无需登录。Pro 版即用大白话提问的提问框，在应用内登录后即可解锁，注册账户即可免费使用。",
+    "de": "Die Analysewerkzeuge sind kostenlos und ohne Anmeldung nutzbar. Pro, das Fragefeld für Fragen in einfachen Worten, wird freigeschaltet, wenn Sie sich in der App anmelden – kostenlos mit einem Konto.",
+    "es": "Las herramientas de análisis son gratis, sin iniciar sesión. Pro, el cuadro de preguntas para preguntar con palabras normales, se desbloquea al iniciar sesión dentro de la app, gratis con una cuenta.",
+    "fr": "Les outils d’analyse sont gratuits, sans connexion. Pro, la zone de questions pour interroger vos couches en langage courant, se débloque quand vous vous connectez dans l’app, gratuitement avec un compte.",
+    "it": "Gli strumenti di analisi sono gratuiti, senza accedere. Pro, la casella delle domande per chiedere a parole tue, si sblocca quando accedi dall’app, gratis con un account.",
+    "nl": "De analysehulpmiddelen zijn gratis, zonder aanmelden. Pro, het vraagvak voor vragen in gewone woorden, wordt ontgrendeld zodra u zich in de app aanmeldt, gratis met een account.",
+    "pt-br": "As ferramentas de análise são grátis, sem precisar entrar na conta. O Pro, a caixa de perguntas para perguntar em palavras simples, é liberado quando você entra na sua conta dentro do app, de graça com uma conta.",
+    "ru": "Инструменты анализа бесплатны и работают без входа. Pro — поле вопросов простыми словами — открывается, когда вы входите в приложении, — бесплатно с учётной записью.",
+    "ja": "分析ツールは無料で、サインインも不要です。Pro（普通の言葉で質問できる質問ボックス）は、アプリ内でサインインすると使えるようになります。アカウントがあれば無料です。",
+    "ko": "분석 도구는 로그인 없이 무료입니다. Pro, 즉 평범한 말로 질문하는 질문 상자는 앱 안에서 로그인하면 열립니다. 계정만 있으면 무료입니다.",
 }
 
 GLOBE = (

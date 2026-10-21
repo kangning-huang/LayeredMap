@@ -43,7 +43,6 @@ Add a layer of areas to answer this.	需要一个面图层才能回答。
 Add a layer of cells to answer this.	需要一个栅格图层才能回答。
 Add a layer of points or lines or areas to answer this.	需要一个点、线或面图层才能回答。
 Analysis	分析
-Developer surface · assistant action	开发者界面 · 助手操作
 Choose a layer	选择图层
 With	与
 Distance	距离
@@ -832,8 +831,6 @@ The assistant service answered {status} with something unreadable.	助手服务�
 {app} is working offline, so the assistant can't be reached. Turn off View › Work Offline to ask.	{app}正在离线工作，无法连接助手。请关闭“视图 › 离线工作”后再提问。
 Signing in unlocks the Ask box, analysis tools, the built-in world layers and voice input.	登录后即可使用提问框、分析工具、内置世界图层和语音输入。
 Checking your account…	正在检查账户…
-Sign in to use analysis tools	登录后即可使用分析工具
-{action} (locked)	{action}（已锁定）
 Settings › Account shows who is signed in and what the account includes.	在“设置 › 账户”中可以查看登录的是谁，以及账户包含哪些功能。
 Nothing matches, so nothing is highlighted on the map.	没有符合条件的对象，因此地图上没有高亮显示。
 # Updates: Check for Updates…, Update Now (WP5.7, docs/lm/update-feed.md)
