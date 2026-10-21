@@ -88,30 +88,16 @@
         <a class="btn btn-quiet" href="#data">データはどこで手に入る？</a>
       </div>
       <p class="mac-only" hidden>NimbleMap には Apple シリコン搭載の Mac が必要です。Windows 版も準備中です。</p>
-      <p class="dl-fine">無料 · 約 74 MB · macOS 13 以降 · Apple シリコン · オフラインで動作</p>
+      <p class="dl-fine">無料 · 約 109 MB · macOS 13 以降 · Apple シリコン · オフラインで動作</p>
       <p class="dl-fine"><a href="download.html#get">初回は macOS が許可を求めます — 開き方はこちら</a></p>
     </div>
-    <div class="hero-shot showcase drop-scene" data-rotate="3500">
-      <!-- Hero video hook: for the launch-video web loop, put
-             <video class="slide is-on" autoplay muted loop playsinline poster="../img/open-storms.jpg" width="1600" height="996"><source src="video/hero-loop.mp4" type="video/mp4"></video>
-           in place of the <img> slides in .stage (and drop the file list, or keep it as a legend). -->
-      <figure class="frame stage">
-        <img class="slide is-on" src="../img/open-storms.jpg" alt="IBTrACS_storm_tracks_1980-2026.shp を開いた NimbleMap。アジアと太平洋に嵐の経路 4,999 本が最大風速で色分けされ、レイヤーのカードにはファイル名と凡例が表示されています。" width="1600" height="996">
-        <img class="slide" src="../img/open-earthquakes.jpg" alt="usgs_earthquakes_M6plus_1900-2026.gpkg を開いた NimbleMap。太平洋を取り巻く地震 14,537 件がマグニチュードで色分けされています。" width="1600" height="996" loading="lazy" aria-hidden="true">
-        <img class="slide" src="../img/open-heatwave.jpg" alt="GDO_heatwave_intensity_JJA_2023.nc を 2023年7月16日で開いた NimbleMap。3 つの大陸にまたがる熱波の強度が赤系の色で表示され、地図の下にタイムスライダーがあります。" width="1600" height="996" loading="lazy" aria-hidden="true">
-        <img class="slide" src="../img/open-relief.jpg" alt="ETOPO_2022_relief_30min.tif を開いた NimbleMap。地球全体の陸地と海底の標高がカラーランプで表示されています。" width="1600" height="996" loading="lazy" aria-hidden="true">
-        <img class="slide" src="../img/open-volcanoes.jpg" alt="NCEI_volcano_locations.csv を開いた NimbleMap。環太平洋火山帯を中心に火山 1,609 か所が点で表示され、標高で色分けされています。" width="1600" height="996" loading="lazy" aria-hidden="true">
+    <div class="hero-shot hero-film">
+      <figure class="frame film">
+        <video class="film-loop" autoplay muted loop playsinline preload="metadata" poster="../img/hero-poster.jpg" width="1280" height="720" aria-label="NimbleMap を紹介する 78 秒の動画：地図ファイルをドラッグして開き、約 5,000 本の嵐の進路を検索し、地震をクリックし、夏の熱波を日ごとに再生し、Pro で質問に答えます。"><source src="../video/hero-loop.mp4" type="video/mp4"></video>
+        <img class="film-still" src="../img/hero-poster.jpg" alt="NimbleMap を紹介する 78 秒の動画：地図ファイルをドラッグして開き、約 5,000 本の嵐の進路を検索し、地震をクリックし、夏の熱波を日ごとに再生し、Pro で質問に答えます。" width="1280" height="720" loading="lazy">
+        <button type="button" class="film-pause" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><rect class="bars" x="4" y="3" width="2.6" height="10" rx="1"/><rect class="bars" x="9.4" y="3" width="2.6" height="10" rx="1"/><path class="play" d="M5 3.2v9.6a.6.6 0 0 0 .9.5l7.4-4.8a.6.6 0 0 0 0-1L5.9 2.7a.6.6 0 0 0-.9.5z"/></svg></button>
       </figure>
-      <svg class="drop-arrow" viewBox="0 0 110 70" aria-hidden="true"><path d="M6 64C26 30 56 14 98 10"/><path class="head" d="M88 3l11 7-10 8"/></svg>
-      <div class="files" role="group" aria-label="ダウンロードした地図ファイルのフォルダ：1 つ選ぶと、NimbleMap で開いた様子が見られます">
-        <p class="files-head"><svg class="folder" viewBox="0 0 20 20" aria-hidden="true"><path d="M2 5.5A1.5 1.5 0 0 1 3.5 4h4l1.6 1.8h7.4A1.5 1.5 0 0 1 18 7.3v7.2a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 2 14.5z"/></svg><span>地図データ</span><button type="button" class="pause" aria-label="スライドショーを一時停止" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><rect class="bars" x="4" y="3" width="2.6" height="10" rx="1"/><rect class="bars" x="9.4" y="3" width="2.6" height="10" rx="1"/><path class="play" d="M5 3.2v9.6a.6.6 0 0 0 .9.5l7.4-4.8a.6.6 0 0 0 0-1L5.9 2.7a.6.6 0 0 0-.9.5z"/></svg></button></p>
-        <button type="button" class="kind file" data-i="0" data-caption="IBTrACS_storm_tracks_1980-2026.shp：嵐の経路 4,999 本、最大風速で色分け" aria-pressed="true"><span class="ext">SHP</span><span class="fname">IBTrACS_storm_tracks_1980-2026.shp</span><span class="fsize">5.3 MB</span><svg class="grab" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5l10 7.2-4.4.7 2.6 5.3-2.2 1-2.5-5.3L5 14.6z"/></svg></button>
-        <button type="button" class="kind file" data-i="1" data-caption="usgs_earthquakes_M6plus_1900-2026.gpkg：大地震 14,537 件、マグニチュードで色分け" aria-pressed="false"><span class="ext">GPKG</span><span class="fname">usgs_earthquakes_M6plus_1900-2026.gpkg</span><span class="fsize">2.2 MB</span><svg class="grab" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5l10 7.2-4.4.7 2.6 5.3-2.2 1-2.5-5.3L5 14.6z"/></svg></button>
-        <button type="button" class="kind file" data-i="2" data-caption="GDO_heatwave_intensity_JJA_2023.nc：毎日の熱波のグリッド、タイムスライダー付き" aria-pressed="false"><span class="ext">NC</span><span class="fname">GDO_heatwave_intensity_JJA_2023.nc</span><span class="fsize">12.6 MB</span><svg class="grab" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5l10 7.2-4.4.7 2.6 5.3-2.2 1-2.5-5.3L5 14.6z"/></svg></button>
-        <button type="button" class="kind file" data-i="3" data-caption="ETOPO_2022_relief_30min.tif：地球全体の陸地と海底の標高" aria-pressed="false"><span class="ext">TIF</span><span class="fname">ETOPO_2022_relief_30min.tif</span><span class="fsize">375 KB</span><svg class="grab" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5l10 7.2-4.4.7 2.6 5.3-2.2 1-2.5-5.3L5 14.6z"/></svg></button>
-        <button type="button" class="kind file" data-i="4" data-caption="NCEI_volcano_locations.csv：火山 1,609 か所、標高で色分け" aria-pressed="false"><span class="ext">CSV</span><span class="fname">NCEI_volcano_locations.csv</span><span class="fsize">106 KB</span><svg class="grab" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5l10 7.2-4.4.7 2.6 5.3-2.2 1-2.5-5.3L5 14.6z"/></svg></button>
-      </div>
-      <p class="kind-caption">IBTrACS_storm_tracks_1980-2026.shp：嵐の経路 4,999 本、最大風速で色分け</p>
+      <p class="film-caption">78 秒でわかる NimbleMap：ファイルをドラッグして、探って、質問する。</p>
     </div>
   </div>
 </section>
@@ -274,7 +260,7 @@
       <a class="btn btn-primary btn-get" href="https://github.com/kangning-huang/NimbleMap/releases/latest/download/NimbleMap-macos-arm64.dmg" download>Mac 版を無料でダウンロード</a>
     </div>
     <p class="mac-only" hidden>NimbleMap には Apple シリコン搭載の Mac が必要です。Windows 版も準備中です。</p>
-    <p class="dl-fine">無料 · 約 74 MB · macOS 13 以降 · Apple シリコン · オフラインで動作</p>
+    <p class="dl-fine">無料 · 約 109 MB · macOS 13 以降 · Apple シリコン · オフラインで動作</p>
     <p class="dl-fine"><a href="download.html#get">初回は macOS が許可を求めます — 開き方はこちら</a></p>
     <div class="share" role="group" aria-label="共有"><span class="share-label">共有</span><a class="share-btn" data-net="x" href="#" target="_blank" rel="noopener" aria-label="共有：X">X</a><a class="share-btn" data-net="facebook" href="#" target="_blank" rel="noopener" aria-label="共有：Facebook">Facebook</a><a class="share-btn" data-net="reddit" href="#" target="_blank" rel="noopener" aria-label="共有：Reddit">Reddit</a><a class="share-btn" data-net="linkedin" href="#" target="_blank" rel="noopener" aria-label="共有：LinkedIn">LinkedIn</a></div>
     <p class="built-on">NimbleMap は <a href="https://github.com/opengeos/RustGIS">RustGIS</a> をベースに作られています。</p>

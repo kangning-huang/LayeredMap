@@ -676,3 +676,24 @@ section.pro-band { padding: 26px 0; background: var(--paper-2); background: colo
 .features.mini .feature-body p { font-size: 15px; color: var(--ink-2); }
 .features.mini .ex-link { margin-top: 10px; font-weight: 600; font-size: 15px; }
 .features.mini .coords { margin-top: 10px; }
+
+/* ---- Home: the hero film (launch video v3.6 web loop: muted, looping, with a pause button) ----
+   Under Reduce Motion the still (the film's end card) shows instead and the video never plays. */
+.hero-film .frame { transform: none; position: relative; }
+.hero-film video, .hero-film .film-still { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; background: var(--paper-2); }
+.hero-film .film-still { display: none; }
+.film-pause {
+  display: none; position: absolute; right: 10px; bottom: 10px; z-index: 1; width: 34px; height: 34px;
+  align-items: center; justify-content: center; border: 0; border-radius: 999px; cursor: pointer;
+  background: rgba(15, 23, 42, .62); color: #fff;
+}
+.js .film-pause { display: flex; }
+.film-pause:hover, .film-pause:focus-visible { background: rgba(15, 23, 42, .85); }
+.film-pause svg { width: 14px; height: 14px; fill: currentColor; }
+.film-pause .play, .film-pause[aria-pressed="true"] .bars { display: none; }
+.film-pause[aria-pressed="true"] .play { display: inline; }
+.film-caption { margin: 10px 2px 0; font-size: 14px; color: var(--ink-3); }
+@media (prefers-reduced-motion: reduce) {
+  .hero-film video, .js .film-pause { display: none; }
+  .hero-film .film-still { display: block; }
+}

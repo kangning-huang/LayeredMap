@@ -88,30 +88,16 @@
         <a class="btn btn-quiet" href="#data">Wo finde ich Kartendaten?</a>
       </div>
       <p class="mac-only" hidden>NimbleMap braucht einen Mac mit Apple Silicon. Eine Windows-Version ist in Arbeit.</p>
-      <p class="dl-fine">Kostenlos · etwa 74 MB · macOS 13 oder neuer · Apple Silicon · funktioniert offline</p>
+      <p class="dl-fine">Kostenlos · etwa 109 MB · macOS 13 oder neuer · Apple Silicon · funktioniert offline</p>
       <p class="dl-fine"><a href="download.html#get">Beim ersten Start fragt macOS nach Ihrer Erlaubnis – so öffnen Sie die App</a></p>
     </div>
-    <div class="hero-shot showcase drop-scene" data-rotate="3500">
-      <!-- Hero video hook: for the launch-video web loop, put
-             <video class="slide is-on" autoplay muted loop playsinline poster="../img/open-storms.jpg" width="1600" height="996"><source src="video/hero-loop.mp4" type="video/mp4"></video>
-           in place of the <img> slides in .stage (and drop the file list, or keep it as a legend). -->
-      <figure class="frame stage">
-        <img class="slide is-on" src="../img/open-storms.jpg" alt="NimbleMap mit geöffneter Datei IBTrACS_storm_tracks_1980-2026.shp: 4.999 Sturmbahnen über Asien und dem Pazifik, eingefärbt nach Spitzenwind, mit der Infokarte des Layers, die Dateinamen und Legende zeigt." width="1600" height="996">
-        <img class="slide" src="../img/open-earthquakes.jpg" alt="NimbleMap mit geöffneter Datei usgs_earthquakes_M6plus_1900-2026.gpkg: 14.537 Erdbeben rund um den Pazifik, eingefärbt nach Magnitude." width="1600" height="996" loading="lazy" aria-hidden="true">
-        <img class="slide" src="../img/open-heatwave.jpg" alt="NimbleMap mit geöffneter Datei GDO_heatwave_intensity_JJA_2023.nc am 16. Juli 2023: Hitzewellen-Intensität in Rottönen über drei Kontinenten, mit dem Zeitschieberegler unter der Karte." width="1600" height="996" loading="lazy" aria-hidden="true">
-        <img class="slide" src="../img/open-relief.jpg" alt="NimbleMap mit geöffneter Datei ETOPO_2022_relief_30min.tif: Höhen von Land und Meeresboden des ganzen Planeten in einem Farbverlauf." width="1600" height="996" loading="lazy" aria-hidden="true">
-        <img class="slide" src="../img/open-volcanoes.jpg" alt="NimbleMap mit geöffneter Datei NCEI_volcano_locations.csv: 1.609 Vulkane als Punkte rund um den Pazifischen Feuerring, eingefärbt nach Höhe." width="1600" height="996" loading="lazy" aria-hidden="true">
+    <div class="hero-shot hero-film">
+      <figure class="frame film">
+        <video class="film-loop" autoplay muted loop playsinline preload="metadata" poster="../img/hero-poster.jpg" width="1280" height="720" aria-label="Ein 78-sekündiger Film über NimbleMap: Kartendateien werden hineingezogen und geöffnet, fast 5.000 Sturmbahnen durchsucht, ein Erdbeben angeklickt, eine Sommerhitzewelle Tag für Tag abgespielt und eine Frage mit Pro beantwortet."><source src="../video/hero-loop.mp4" type="video/mp4"></video>
+        <img class="film-still" src="../img/hero-poster.jpg" alt="Ein 78-sekündiger Film über NimbleMap: Kartendateien werden hineingezogen und geöffnet, fast 5.000 Sturmbahnen durchsucht, ein Erdbeben angeklickt, eine Sommerhitzewelle Tag für Tag abgespielt und eine Frage mit Pro beantwortet." width="1280" height="720" loading="lazy">
+        <button type="button" class="film-pause" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><rect class="bars" x="4" y="3" width="2.6" height="10" rx="1"/><rect class="bars" x="9.4" y="3" width="2.6" height="10" rx="1"/><path class="play" d="M5 3.2v9.6a.6.6 0 0 0 .9.5l7.4-4.8a.6.6 0 0 0 0-1L5.9 2.7a.6.6 0 0 0-.9.5z"/></svg></button>
       </figure>
-      <svg class="drop-arrow" viewBox="0 0 110 70" aria-hidden="true"><path d="M6 64C26 30 56 14 98 10"/><path class="head" d="M88 3l11 7-10 8"/></svg>
-      <div class="files" role="group" aria-label="Ein Ordner mit heruntergeladenen Kartendateien: Wählen Sie eine aus, um sie geöffnet in NimbleMap zu sehen">
-        <p class="files-head"><svg class="folder" viewBox="0 0 20 20" aria-hidden="true"><path d="M2 5.5A1.5 1.5 0 0 1 3.5 4h4l1.6 1.8h7.4A1.5 1.5 0 0 1 18 7.3v7.2a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 2 14.5z"/></svg><span>Kartendaten</span><button type="button" class="pause" aria-label="Diashow anhalten" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><rect class="bars" x="4" y="3" width="2.6" height="10" rx="1"/><rect class="bars" x="9.4" y="3" width="2.6" height="10" rx="1"/><path class="play" d="M5 3.2v9.6a.6.6 0 0 0 .9.5l7.4-4.8a.6.6 0 0 0 0-1L5.9 2.7a.6.6 0 0 0-.9.5z"/></svg></button></p>
-        <button type="button" class="kind file" data-i="0" data-caption="IBTrACS_storm_tracks_1980-2026.shp: 4.999 Sturmbahnen, eingefärbt nach Spitzenwind" aria-pressed="true"><span class="ext">SHP</span><span class="fname">IBTrACS_storm_tracks_1980-2026.shp</span><span class="fsize">5,3 MB</span><svg class="grab" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5l10 7.2-4.4.7 2.6 5.3-2.2 1-2.5-5.3L5 14.6z"/></svg></button>
-        <button type="button" class="kind file" data-i="1" data-caption="usgs_earthquakes_M6plus_1900-2026.gpkg: 14.537 starke Erdbeben, eingefärbt nach Magnitude" aria-pressed="false"><span class="ext">GPKG</span><span class="fname">usgs_earthquakes_M6plus_1900-2026.gpkg</span><span class="fsize">2,2 MB</span><svg class="grab" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5l10 7.2-4.4.7 2.6 5.3-2.2 1-2.5-5.3L5 14.6z"/></svg></button>
-        <button type="button" class="kind file" data-i="2" data-caption="GDO_heatwave_intensity_JJA_2023.nc: tägliche Hitzewellen-Raster, mit Zeitschieberegler" aria-pressed="false"><span class="ext">NC</span><span class="fname">GDO_heatwave_intensity_JJA_2023.nc</span><span class="fsize">12,6 MB</span><svg class="grab" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5l10 7.2-4.4.7 2.6 5.3-2.2 1-2.5-5.3L5 14.6z"/></svg></button>
-        <button type="button" class="kind file" data-i="3" data-caption="ETOPO_2022_relief_30min.tif: Höhen von Land und Meeresboden des ganzen Planeten" aria-pressed="false"><span class="ext">TIF</span><span class="fname">ETOPO_2022_relief_30min.tif</span><span class="fsize">375 KB</span><svg class="grab" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5l10 7.2-4.4.7 2.6 5.3-2.2 1-2.5-5.3L5 14.6z"/></svg></button>
-        <button type="button" class="kind file" data-i="4" data-caption="NCEI_volcano_locations.csv: 1.609 Vulkane, eingefärbt nach Höhe" aria-pressed="false"><span class="ext">CSV</span><span class="fname">NCEI_volcano_locations.csv</span><span class="fsize">106 KB</span><svg class="grab" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5l10 7.2-4.4.7 2.6 5.3-2.2 1-2.5-5.3L5 14.6z"/></svg></button>
-      </div>
-      <p class="kind-caption">IBTrACS_storm_tracks_1980-2026.shp: 4.999 Sturmbahnen, eingefärbt nach Spitzenwind</p>
+      <p class="film-caption">NimbleMap in 78 Sekunden: Datei hineinziehen, erkunden, Fragen stellen.</p>
     </div>
   </div>
 </section>
@@ -274,7 +260,7 @@
       <a class="btn btn-primary btn-get" href="https://github.com/kangning-huang/NimbleMap/releases/latest/download/NimbleMap-macos-arm64.dmg" download>Kostenlos für Mac herunterladen</a>
     </div>
     <p class="mac-only" hidden>NimbleMap braucht einen Mac mit Apple Silicon. Eine Windows-Version ist in Arbeit.</p>
-    <p class="dl-fine">Kostenlos · etwa 74 MB · macOS 13 oder neuer · Apple Silicon · funktioniert offline</p>
+    <p class="dl-fine">Kostenlos · etwa 109 MB · macOS 13 oder neuer · Apple Silicon · funktioniert offline</p>
     <p class="dl-fine"><a href="download.html#get">Beim ersten Start fragt macOS nach Ihrer Erlaubnis – so öffnen Sie die App</a></p>
     <div class="share" role="group" aria-label="Teilen"><span class="share-label">Teilen</span><a class="share-btn" data-net="x" href="#" target="_blank" rel="noopener" aria-label="Teilen: X">X</a><a class="share-btn" data-net="facebook" href="#" target="_blank" rel="noopener" aria-label="Teilen: Facebook">Facebook</a><a class="share-btn" data-net="reddit" href="#" target="_blank" rel="noopener" aria-label="Teilen: Reddit">Reddit</a><a class="share-btn" data-net="linkedin" href="#" target="_blank" rel="noopener" aria-label="Teilen: LinkedIn">LinkedIn</a></div>
     <p class="built-on">NimbleMap basiert auf <a href="https://github.com/opengeos/RustGIS">RustGIS</a>.</p>

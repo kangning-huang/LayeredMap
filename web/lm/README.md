@@ -24,7 +24,7 @@ touches no upstream file or workflow.
 
 | English | 中文 | What |
 |---|---|---|
-| `index.html` | `zh/index.html` | Landing: “Found map data online? Drag it into NimbleMap.” A folder of real downloaded files beside the map each opens (hero; a hook for the launch-video loop), what it opens, a Data page teaser, four “once it’s open” screenshots, a slim Pro band, the built-in examples as practice, sharing, a final download button |
+| `index.html` | `zh/index.html` | Landing: “Found map data online? Drag it into NimbleMap.” The launch film (v3.6 web loop, `video/hero-loop.mp4`, 3.1 MB, muted and looping with a pause button; its end card `img/hero-poster.jpg` as poster and as the still under Reduce Motion; not bundled in the app), what it opens, a Data page teaser, four “once it’s open” screenshots, a slim Pro band, the built-in examples as practice, sharing, a final download button |
 | `download.html` | `zh/download.html` | For people who already have a GIS file: what it opens, why layers line up, the download buttons, why NimbleMap differs from a typical GIS (for people who know GIS), NimbleMap or QGIS, and a FAQ in the words people search with |
 | `pro.html` | `zh/pro.html` | Free vs Pro: what Pro adds (free with an account, unlocked by signing in inside the app, coming in the next version); the other languages' footers link the English page |
 | `help.html` | `zh/help.html` | Help start page (what Help › NimbleMap Help opens): the workflows and the window in one minute |
@@ -140,6 +140,16 @@ unlocked by the developer override (`LM_DEV_PRO=1`) without an Ask call. Both us
 build shows no cost line. The home page's `open-*` shots are in the script's table too and run with
 `OPEN_FILES=<folder>` (see below).
 
+- **Retaken 2026-10-21 for 0.7.1**, every shot, with the script from the packaged 0.7.1 app
+  (`LM_APP=…/NimbleMap.app/Contents/MacOS/layeredmap NOBUILD=1 PAID=1 OPEN_FILES=…`): Share is
+  enabled in every shot and free shots show the Ask box's sign-in prompt, as the app looks signed
+  out. `pro-ask` now starts with `esc` (the layer card closed), so the answer card sits right of
+  centre and the Americas, with the top answer (United States of America, 111 cities) highlighted,
+  show on the left; two Ask requests in all. `open-time` is cut above the sign-in prompt
+  (336,330,1176,855). The Pro shots are 1600×996 like the rest. The `step-*.jpg` crops,
+  `areas-countries.jpg` and the hero's `open-storms/earthquakes/heatwave/relief/volcanoes.jpg` are no
+  longer shown on any page (the hero is the launch film; `open-storms.jpg` stays the home page's
+  og:image) but are kept current.
 - **Home page, 2026-10-20 (`open-*.jpg`):** captured the same way (release build, `--tour`, light
   theme, window only, `retake_screenshots.py shot`/`cut`) but from the real downloaded-style files
   that `design/launch-video-v3/data/make_files.sh "<folder>"` writes (IBTrACS storms `.shp`, USGS
