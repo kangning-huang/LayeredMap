@@ -34,57 +34,64 @@ def _seismogram(pg: Page, x, y, w, h):
 
 
 def earthquakes():
+    """A strike-slip fault rupture crossing a field: the fresh scarp runs away from us, and the
+    fence that crossed it has been torn apart and offset along the fault (right-lateral: the far
+    block has moved to the right as seen from either side)."""
     pg = Page(1)
-    # distant hills and sky
-    hills = [(6, 64), (30, 56), (62, 60), (96, 50), (130, 57), (170, 49), (208, 58)]
-    pg.wash(S(hills + [(208, 66), (6, 68)], True), C["sky"], 0.5, edge=0)
-    pg.ink(S(hills), 0.6, INK2)
-    # the field in perspective, as a vignette; the fault trace recedes to the hills
-    pg.vignette(4, 64, 210, 174, C["sapl"], 0.45, 5, seed=1)
-    pg.vignette(8, 66, 80, 86, C["ochrel"], 0.45, 3, seed=2)
-    # the fault trace: a narrow scarp with a shadowed face, zig-zag cracks
-    fa, fb = (50, 171), (150, 63)
-    trace = [lerp2(fa, fb, t) for t in [i / 14 for i in range(15)]]
+    # a low strip of hills, then the field as a firm vignette
+    hills = [(10, 52), (40, 45), (72, 49), (104, 40), (140, 47), (176, 40), (206, 48)]
+    pg.wash(S(hills + [(206, 56), (10, 56)], True), C["sky"], 0.7, edge=0)
+    pg.ink(S(hills), 0.7, INK2)
+    pg.vignette(6, 54, 210, 172, C["sapl"], 0.8, 4, seed=1)
+    # the fault: from the near left corner to the hills; unit vector along it, pointing away
+    fa, fb = (52, 176), (146, 54)
+    L = math.hypot(fb[0] - fa[0], fb[1] - fa[1])
+    ux, uy = (fb[0] - fa[0]) / L, (fb[1] - fa[1]) / L
     rng = random.Random(11)
-    zz = [(x + rng.uniform(-1.6, 1.6) * (1 - i / 15), y) for i, (x, y) in enumerate(trace)]
-    pg.wash(P(zz + [(x + 5 * (1 - i / 15) + 1, y) for i, (x, y) in reversed(list(enumerate(zz)))], True),
-            C["umber"], 0.55, edge=0)
-    pg.ink(P(zz), 0.9)
-    pg.ink(P([(x + 5 * (1 - i / 15) + 1, y) for i, (x, y) in enumerate(zz)]), 0.45, INK2)
-    # short oblique (en echelon) cracks beside the trace
-    for t in (0.12, 0.2, 0.3, 0.56, 0.74):
+    k = 16
+    trace = [lerp2(fa, fb, i / k) for i in range(k + 1)]
+    trace = [(x + rng.uniform(-1.2, 1.2) * (1 - i / k), y) for i, (x, y) in enumerate(trace)]
+    # scarp face: a shadowed band on the right of the trace, wider near us (perspective)
+    face = [(x + 7 * (1 - i / k) + 1.2, y + 1.5 * (1 - i / k)) for i, (x, y) in enumerate(trace)]
+    pg.wash(P(trace + face[::-1], True), C["umber"], 0.95, edge=0)
+    pg.hatch(trace + face[::-1], 20, 1.3, 0.35, INK, 0.85)
+    pg.ink(P(trace), 1.3)
+    pg.ink(P(face), 0.6, INK2)
+    # short oblique cracks beside the trace
+    for t in (0.1, 0.22, 0.36, 0.62, 0.8):
         x, y = lerp2(fa, fb, t)
-        s = 1.2 - t
-        pg.ink(P([(x + 2 * s, y + 1), (x + 9 * s, y - 2.5 * s)]) + P([(x - 2 * s, y - 1), (x - 8 * s, y - 5 * s)]), 0.35)
-    # fence: posts and wires; the near (east) block has moved toward us (right-lateral)
-    def fence(x0, x1, y0, y1, h0, h1):
-        k = 6
-        posts = [(lerp(x0, x1, i / k), lerp(y0, y1, i / k), lerp(h0, h1, i / k)) for i in range(k + 1)]
-        d = "".join(P([(x, y), (x, y - hh)]) for x, y, hh in posts)
-        pg.ink(d, 0.85)
+        s_ = 1.2 - t
+        pg.ink(P([(x + 9 * s_, y + 1), (x + 17 * s_, y - 5 * s_)]) + P([(x - 2 * s_, y - 1), (x - 9 * s_, y - 6 * s_)]), 0.45)
+
+    # the fence: one straight line across the field before the quake, now broken at the fault
+    def fence(p0, p1, h0, h1, posts):
+        pts = [(lerp(p0[0], p1[0], i / posts), lerp(p0[1], p1[1], i / posts), lerp(h0, h1, i / posts))
+               for i in range(posts + 1)]
+        pg.wash("".join(rect(x - 1.2, y - hh, 2.4, hh) for x, y, hh in pts), C["umberl"], 0.95, edge=0)
+        pg.ink("".join(P([(x, y), (x, y - hh)]) for x, y, hh in pts), 1.15)
         for f in (0.45, 0.85):
-            pg.ink(P([(x, y - hh * f) for x, y, hh in posts]), 0.45)
-        pg.wash("".join(rect(x - 0.9, y - hh, 1.8, hh) for x, y, hh in posts), C["umberl"], 0.8, edge=0)
-    # the fault crosses the fence line at about x = 96 (y = 109); left part sits on the far block
-    cx0, cy0 = lerp2(fa, fb, 0.66)
-    fence(4, cx0 - 2, 104, cy0 - 7, 13, 11)
-    cx1, cy1 = lerp2(fa, fb, 0.50)
-    fence(cx1 + 4, 210, cy1 + 1, cy1 + 10, 14, 17)
-    # offset marker: the fence's line continued as a dotted ghost across the gap
-    pg.ink(P([(cx0 - 2, cy0 - 7), (cx1 + 4, cy0 - 7 + (cy0 - 7 - 104) / (cx0 - 6) * 30)]), 0.4, INK2, 0.6, "1 1.6")
-    # half-arrows of relative motion on each side of the fault
-    ax, ay = lerp2(fa, fb, 0.28)
-    pg.arrow([(ax - 14, ay + 6), (ax - 14 + (fb[0] - fa[0]) * 0.12, ay + 6 + (fb[1] - fa[1]) * 0.12)],
-             RED_PENCIL, 1.1, 3.4, smooth=False)
-    bx, by = lerp2(fa, fb, 0.40)
-    pg.arrow([(bx + 18, by - 2), (bx + 18 - (fb[0] - fa[0]) * 0.12, by - 2 - (fb[1] - fa[1]) * 0.12)],
-             RED_PENCIL, 1.1, 3.4, smooth=False)
-    # epicentre rings on the trace, leader to the record
+            pg.ink(P([(x, y - hh * f) for x, y, hh in pts]), 0.6)
+    c = lerp2(fa, fb, 0.48)                       # where the fence crossed the fault
+    left_end = (8, c[1] - 14)
+    fence(left_end, (c[0] - 2, c[1]), 14, 16, 5)
+    off = 18                                      # the near (east) block moved toward us
+    c2 = (c[0] - ux * off + 13, c[1] - uy * off)
+    fence(c2, (210, c2[1] + 18), 17, 20, 5)
+    # dotted ghost: where the fence would continue without the offset
+    slope = 14 / (c[0] - 10)
+    for f in (0.45, 0.85):
+        pg.ink(P([(c[0] + 4, c[1] - 16 * f), (c[0] + 40, c[1] + 36 * slope - 16 * f)]), 0.7, INK2, 0.9, "1.2 1.8")
+    # relative motion on either side of the fault
+    ax, ay = lerp2(fa, fb, 0.22)
+    pg.arrow([(ax - 16, ay), (ax - 16 + ux * 18, ay + uy * 18)], RED_PENCIL, 1.3, 3.6, smooth=False)
+    bx, by = lerp2(fa, fb, 0.3)
+    pg.arrow([(bx + 20, by + 2), (bx + 20 - ux * 18, by + 2 - uy * 18)], RED_PENCIL, 1.3, 3.6, smooth=False)
+    pg.grass(14, 200, 170, 18, 3.6, seed=1)
+    # epicentre rings on the trace and the record from it
     ex, ey = lerp2(fa, fb, 0.84)
     for r in (3, 6, 9.5):
-        pg.ink(ell(ex, ey, r * 1.4, r * 0.55), 0.5, RED_PENCIL, 0.8 - r / 20)
-    pg.dot(ex, ey, 1.3, RED_PENCIL)
-    pg.grass(10, 200, 172, 16, 3.2, seed=1)
+        pg.ink(ell(ex, ey, r * 1.4, r * 0.55), 0.6, RED_PENCIL, 0.9 - r / 20)
+    pg.dot(ex, ey, 1.4, RED_PENCIL)
     pg.leader((ex + 2, ey - 1), (230, 34), dot_a=False)
     _seismogram(pg, 230, 18, 82, 36)
     # many small quakes, few large: circles sized by magnitude along a plate boundary
@@ -103,8 +110,8 @@ def earthquakes():
             q.append((x + rng.gauss(0, 9), y + rng.gauss(0, 9), min(0.6 + mag * 0.8, 6.5)))
         q.sort(key=lambda t: -t[2])
         for x, y, r in q:
-            c = C["red"] if r > 3.5 else (C["orange"] if r > 1.8 else C["ochre"])
-            pg.wash(circ(x, y, r), c, 0.55, edge=0.5)
+            c_ = C["red"] if r > 3.5 else (C["orange"] if r > 1.8 else C["ochre"])
+            pg.wash(circ(x, y, r), c_, 0.6, edge=0.5)
         pg.ink("".join(circ(x, y, r) for x, y, r in q if r > 1.8), 0.4)
     return pg.svg()
 
@@ -112,66 +119,63 @@ def earthquakes():
 # ------------------------------------------------------------------ tornadoes (classic supercell)
 def tornadoes():
     """A classic supercell seen from the south-east, moving to the right (north-east): the anvil
-    streams downwind, the rain and hail core falls under the forward flank, and the tornado hangs
-    from a lowered wall cloud under the rain-free base at the rear flank."""
+    streams downwind, the rain and hail core falls under the forward flank (right), and the
+    tornado hangs from a lowered wall cloud under the rain-free base at the rear flank (left),
+    with a gap of clearer air between the two."""
     pg = Page(3)
     gy = 158
-    pg.ground(4, 226, gy + 4, C["sapl"], 6, 0.6)
-    pg.ink(S([(4, gy), (60, gy + 1), (120, gy - 0.5), (226, gy + 0.5)]), 0.6, INK2)
-    storm = [(40, 96), (36, 80), (42, 62), (52, 46), (64, 34), (72, 28), (86, 21), (98, 17), (101, 10), (108, 6),
-             (116, 9), (120, 15), (160, 14), (206, 15), (236, 18), (238, 22), (214, 26), (192, 31), (198, 50),
-             (205, 70), (212, 88), (170, 90), (128, 92), (118, 96)]
+    pg.ground(4, 226, gy + 4, C["sapl"], 7, 0.75)
+    pg.ink(S([(4, gy), (60, gy + 1), (120, gy - 0.5), (226, gy + 0.5)]), 0.7, INK2)
     base_y = 96
-    # washes: sunlit tower left mostly white paper, shadowed forward flank and anvil underside
-    pg.wash(S(storm, True, 0.4), C["skyp"], 0.55, edge=0)
-    pg.wash(S([(124, 24), (190, 24), (230, 21), (212, 27), (196, 36), (200, 56), (206, 74), (210, 88), (170, 90),
-               (130, 92), (126, 70), (132, 40)], True), C["slate"], 0.42, edge=0)
-    pg.wash(S([(40, 96), (36, 80), (42, 62), (52, 46), (60, 56), (66, 76), (80, 92)], True), C["sky"], 0.5, edge=0)
-    # rain and hail shaft below the forward-flank base
-    rain = [(126, 93), (150, 92), (180, 90), (212, 89), (208, 104), (216, 122), (210, 140), (220, gy), (196, gy + 1),
-            (170, gy), (144, gy + 1), (136, gy), (138, 140), (128, 124), (132, 108)]
-    gid = pg.lingrad([(0, C["payne"], 0.75), (1, C["slate"], 0.35)])
+    # sunlit updraft tower and the anvil: one silhouette
+    tower = [(38, base_y), (34, 84), (36, 72), (42, 62), (48, 52), (56, 43), (64, 35), (72, 28), (86, 21), (98, 17),
+             (101, 10), (108, 6), (116, 9), (120, 15), (160, 14), (206, 15), (236, 18), (238, 22), (214, 26), (192, 31),
+             (184, 40), (186, 60), (190, 78), (194, base_y - 4)]
+    pg.wash(S(tower, True, 0.4), C["skyp"], 0.7, edge=0)
+    # shadowed underside of the anvil and the forward flank: darker values
+    pg.wash(S([(122, 22), (190, 22), (232, 20), (214, 26), (192, 31), (184, 40), (186, 60), (190, 78), (194, base_y - 4),
+               (130, base_y), (126, 70), (128, 40)], True), C["slate"], 0.7, edge=0)
+    pg.wash(S([(38, base_y), (34, 84), (36, 72), (42, 62), (52, 64), (62, 80), (78, 92)], True), C["sky"], 0.6, edge=0)
+    # rain-free base (dark) and the lowered, rotating wall cloud under the updraft
+    pg.wash(P([(36, base_y - 2), (124, base_y - 2), (122, base_y + 3), (38, base_y + 3)], True), C["payne"], 0.85, edge=0)
+    wall = [(62, base_y), (64, base_y + 9), (72, base_y + 15), (92, base_y + 16), (106, base_y + 11), (112, base_y)]
+    pg.wash(S(wall, True), "#3b3f47", 0.85)
+    # one funnel, dark, from the wall cloud to the ground, with its debris cloud
+    fl = [(81, base_y + 15), (81, 120), (82, 136), (84, 150), (85, gy - 3)]
+    fr = [(95, base_y + 15), (92, 120), (89, 136), (88, 150), (87, gy - 3)]
+    pg.wash(S(fl + fr[::-1], True), "#3b3f47", 0.92)
+    debris = [(72, gy), (74, gy - 8), (80, gy - 12), (92, gy - 11), (99, gy - 6), (101, gy)]
+    pg.wash(S(debris, True), C["umber"], 0.75)
+    # the rain and hail shaft under the forward flank, starting well right of the funnel
+    rain = [(138, base_y), (160, base_y - 1), (190, base_y - 3), (196, 110), (206, 130), (204, gy), (176, gy + 1),
+            (150, gy), (142, gy), (146, 136), (136, 116)]
+    gid = pg.lingrad([(0, "#3b3f47", 0.9), (1, C["slate"], 0.55)])
     pg.wash_grad(S(rain, True, 0.25), gid)
     rr = random.Random(9)
-    pg.ink("".join(P([(x, 95 + rr.uniform(0, 6)), (x - 6, gy - 3 - rr.uniform(0, 8))]) for x in range(140, 210, 4)),
-           0.3, INK2, 0.7)
-    # rain-free base, the lowered wall cloud, the funnel and its debris cloud
-    wall = [(66, base_y), (68, base_y + 8), (75, base_y + 13), (92, base_y + 14), (106, base_y + 10),
-            (112, base_y)]
-    pg.wash(P([(40, base_y), (118, base_y), (116, base_y + 2.5), (42, base_y + 2.5)], True), C["payne"], 0.5, edge=0)
-    pg.wash(S(wall, True), C["payne"], 0.7)
-    fl = [(84, base_y + 14), (83, 120), (83, 136), (84, 150), (85, gy - 3)]
-    fr = [(96, base_y + 14), (93, 120), (90, 136), (88, 150), (87, gy - 3)]
-    pg.wash(S(fl + fr[::-1], True), C["payne"], 0.75)
-    debris = [(74, gy), (76, gy - 8), (82, gy - 12), (92, gy - 11), (99, gy - 6), (101, gy)]
-    pg.wash(S(debris, True), C["umberl"], 0.7)
-    # ink
-    # sunlit updraft towers: crisp cauliflower outline from the base up to the anvil
-    pg.ink(scallop([(40, 96), (36, 84), (38, 72), (44, 62), (50, 52), (58, 43), (65, 34), (72, 28)], 0.32), 0.8)
-    pg.ink(S(storm[5:18], False, 0.4), 0.8)
-    pg.ink(S(storm[17:], False, 0.4), 0.45, INK2, 0.6, "4 2.5")
-    pg.ink(P([(40, base_y), (118, base_y)]), 0.8)
-    pg.ink(S(wall), 0.75)
-    pg.ink(S(fl) + S(fr), 0.75)
-    for y in (108, 118, 128, 138, 148):     # condensation bands on the funnel
-        pg.ink(S([(84.5, y), (88, y + 1.4), (92 - (y - 108) * .1, y)]), 0.33, INK2)
-    pg.ink(S(debris), 0.55)
-    pg.ink("".join(f"M{x} {y}q4 -5 8 -1" for x, y in [(44, 74), (50, 58), (60, 44), (74, 32), (88, 26)]), 0.45,
-           INK2)          # cauliflower towers on the sunlit updraft
+    pg.ink("".join(P([(x, base_y + rr.uniform(1, 6)), (x - 6, gy - 3 - rr.uniform(0, 10))]) for x in range(146, 198, 4)),
+           0.35, PAPER, 0.6)
+    # ink: crisp outline for the silhouette, softer line under the anvil
+    pg.ink(scallop([(38, base_y), (34, 84), (36, 72), (42, 62), (48, 52), (56, 43), (64, 35), (72, 28)], 0.32), 1.0)
+    pg.ink(S(tower[7:19], False, 0.4), 1.0)
+    pg.ink(S(tower[18:], False, 0.4), 0.55, INK2, 0.8)
+    pg.ink(P([(36, base_y - 2), (124, base_y - 2)]), 0.9)
+    pg.ink(S(wall), 0.9)
+    pg.ink(S(fl) + S(fr), 1.0)
+    for y in (110, 120, 130, 140, 150):
+        pg.ink(S([(82, y), (86, y + 1.4), (92 - (y - 110) * .1, y)]), 0.35, C["greyl"])
+    pg.ink(S(debris), 0.6)
     pg.ink("".join(f"M{x} {y}q3 4.5 6 0" for x, y in [(150, 26), (157, 26.5), (164, 27), (171, 27.5), (178, 28)]),
            0.45, INK2)    # mammatus under the anvil
-    # airflow in coloured pencil: warm inflow and updraft (red), downdrafts (blue)
-    pg.arrow([(124, 150), (110, 132), (104, 112), (104, 90), (102, 60), (106, 30), (112, 18), (150, 18), (200, 19)],
-             RED_PENCIL, 1.0, 3.4)
-    pg.arrow([(30, 62), (30, 100), (42, 132), (64, 148)], BLUE_ARROW, 1.0, 3.2)       # rear-flank downdraft
-    pg.arrow([(170, 60), (172, 100), (176, 140)], BLUE_ARROW, 1.0, 3.2)              # forward-flank downdraft
-    # mesocyclone: counter-clockwise seen from above, so the far side moves left, the near side right
-    rot = ell_pts(90, 74, 24, 6, 24, math.radians(-60), math.radians(-350))
+    # airflow: warm inflow and updraft (red), downdrafts (blue)
+    pg.arrow([(130, 152), (114, 136), (106, 116), (106, 90), (102, 60), (106, 30), (112, 18), (150, 18), (200, 19)],
+             RED_PENCIL, 1.1, 3.6)
+    pg.arrow([(24, 64), (24, 100), (36, 134), (60, 150)], BLUE_ARROW, 1.1, 3.4)       # rear-flank downdraft
+    pg.arrow([(214, 60), (216, 100), (216, 140)], BLUE_ARROW, 1.1, 3.4)              # forward-flank downdraft
+    rot = ell_pts(88, 76, 22, 5.5, 24, math.radians(-60), math.radians(-350))
     pg.arrow(rot, RED_PENCIL, 0.8, 2.8)
-    # a farmhouse for scale
-    house = P([(28, gy), (28, gy - 5), (32, gy - 8.5), (36, gy - 5), (36, gy)], True)
-    pg.wash(house, C["bsienna"], 0.8, edge=0)
-    pg.ink(house, 0.5)
+    house = P([(26, gy), (26, gy - 5), (30, gy - 8.5), (34, gy - 5), (34, gy)], True)
+    pg.wash(house, C["bsienna"], 0.85, edge=0)
+    pg.ink(house, 0.55)
     # radar view: the hook echo curls round the rear (south-west) flank, where the tornado is
     with pg.inset_circle(274, 124, 36):
         pg.wash(circ(274, 124, 36), C["skyp"], 0.4, edge=0)
@@ -183,8 +187,8 @@ def tornadoes():
         pg.wash(S([(280, 108), (290, 106), (290, 113), (282, 116)], True), C["red"], 0.85, edge=0)
         pg.ink(S(blob, True), 0.6)
         pg.dot(257, 139, 1.6, INK)
-        pg.arrow([(250, 108), (262, 96)], INK, 0.7, 2.4, smooth=False)     # storm motion, to the north-east
-    pg.leader((87, gy - 2), (244, 146), dot_a=True, bend=0.13)
+        pg.arrow([(250, 108), (262, 96)], INK, 0.7, 2.4, smooth=False)
+    pg.leader((88, 132), (239, 128), dot_a=True, bend=0.05)
     return pg.svg()
 
 

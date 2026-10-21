@@ -12,7 +12,8 @@ SITE = HERE.parents[2] / "web" / "lm"
 
 
 def test_every_card_has_an_illustration_and_no_orphans():
-    used = set(re.findall(r'img/data/([a-z-]+)\.svg', (SITE / "data.html").read_text(encoding="utf-8")))
+    # the site now shows the nature-journal set (img/data-laws/); this v3 set stays as the alternative
+    used = set(re.findall(r'img/data(?:-laws)?/([a-z-]+)\.svg', (SITE / "data.html").read_text(encoding="utf-8")))
     assert used == set(registry())
     assert len(used) == 34
 

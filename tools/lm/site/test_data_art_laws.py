@@ -12,7 +12,8 @@ SITE = HERE.parents[2] / "web" / "lm"
 
 
 def test_same_slugs_as_the_data_page():
-    used = set(re.findall(r'img/data/([a-z-]+)\.svg', (SITE / "data.html").read_text(encoding="utf-8")))
+    """The Data page shows this set."""
+    used = set(re.findall(r'img/data-laws/([a-z-]+)\.svg', (SITE / "data.html").read_text(encoding="utf-8")))
     assert used == set(registry())
     assert len(used) == 34
 
