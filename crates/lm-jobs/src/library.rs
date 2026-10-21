@@ -316,17 +316,22 @@ fn check(mut d: Dataset, base: &str) -> Result<Dataset, String> {
 
 /// `url` as an absolute URL: as written when it has a scheme, else relative to `base` (the
 /// catalog's URL; `..` steps up a folder).
+///
+/// Windows paths may use `\`; those are treated like `/` so a `file://C:\dir\catalog.json`
+/// base still resolves relative entries against `C:/dir/`.
 pub fn resolve(base: &str, url: &str) -> String {
     if url.contains("://") {
         return url.to_string();
     }
+    let base = base.replace('\\', "/");
+    let url = url.replace('\\', "/");
     let (root, path) = match base.find("://") {
         Some(i) => {
             let after = &base[i + 3..];
             let host_end = after.find('/').map_or(base.len(), |j| i + 3 + j);
             (&base[..host_end], &base[host_end..])
         }
-        None => ("", base),
+        None => ("", base.as_str()),
     };
     let mut parts: Vec<&str> = if url.starts_with('/') {
         Vec::new()

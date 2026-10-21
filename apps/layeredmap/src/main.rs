@@ -435,6 +435,20 @@ impl Step {
     }
 }
 
+/// NimbleMap Pro: the Pro app bundle carries `Contents/Resources/tier` reading "pro"
+/// (`packaging/lm/bundle-macos.sh` with `LM_TIER=pro`; on Windows `Resources\tier` beside the exe,
+/// from the Pro installer; on Linux `Resources/tier` beside it in the Pro tarball); `LM_TIER=pro` does the same for a run
+/// outside a bundle. Until accounts exist (Phase 7) the tier is the app you open.
+fn is_pro() -> bool {
+    if std::env::var("LM_TIER").is_ok_and(|v| v.eq_ignore_ascii_case("pro")) {
+        return true;
+    }
+    lm_core::platform::current_resources_dir()
+        .map(|r| r.join("tier"))
+        .and_then(|p| std::fs::read_to_string(p).ok())
+        .is_some_and(|s| s.trim().eq_ignore_ascii_case("pro"))
+}
+
 fn main() -> eframe::Result {
     let started = std::time::Instant::now();
     let args: Vec<String> = std::env::args_os().skip(1).map(|a| a.to_string_lossy().into_owned()).collect();

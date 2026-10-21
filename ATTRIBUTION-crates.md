@@ -2304,7 +2304,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Used by: flatgeobuf 6.0.1
 
 ```text
-Copyright (c) <year> <owner> 
+Copyright (c) <year> <owner>
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 
@@ -2523,7 +2523,7 @@ TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
 PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
 LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ```
 
@@ -6439,7 +6439,7 @@ Used by: geographiclib-rs 0.2.7
 ```text
 MIT License
 
-Copyright (c) 2019 
+Copyright (c) 2019
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -8158,7 +8158,7 @@ authorization of the copyright holder.
 Used by: zlib-rs 0.6.8
 
 ```text
-(C) 2024 Trifecta Tech Foundation 
+(C) 2024 Trifecta Tech Foundation
 
 This software is provided 'as-is', without any express or implied
 warranty. In no event will the authors be held liable for any damages
@@ -8205,4 +8205,3 @@ the following restrictions:
 
 3. This notice may not be removed or altered from any source distribution.
 ```
-

@@ -21,8 +21,8 @@ const REPORT_LOG_LINES: usize = 300;
 /// Crash logs a report includes, newest first.
 const REPORT_CRASHES: usize = 3;
 
-/// `~/Library/Logs/LayeredMap` (macOS); `%LOCALAPPDATA%\LayeredMap\Logs` (Windows); elsewhere a
-/// `LayeredMap/logs` folder in the home folder (`lm_core::platform`).
+/// `~/Library/Logs/LayeredMap` (macOS); `%LOCALAPPDATA%\LayeredMap\Logs` (Windows); elsewhere
+/// `$XDG_STATE_HOME/layeredmap/logs`, by default `~/.local/state/layeredmap/logs` (`lm_core::platform`).
 pub fn logs_dir() -> PathBuf {
     lm_core::platform::current_user_dir(lm_core::platform::Folder::Logs).unwrap_or_else(|| std::env::temp_dir().join("LayeredMap-logs"))
 }

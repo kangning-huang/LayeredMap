@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=NimbleMap
+GenericName=Map Maker
+Comment=Make maps from geographic data
+Exec=layeredmap %F
+Icon=nimblemap
+Terminal=false
+Categories=Science;Geography;Education;
+Keywords=map;GIS;geography;GeoJSON;shapefile;raster;
+MimeType=application/x-layeredmap-project;application/geo+json;application/vnd.geo+json;application/x-esri-shape;application/geopackage+sqlite3;application/vnd.google-earth.kml+xml;application/vnd.google-earth.kmz;application/gpx+xml;application/x-netcdf;
+StartupNotify=true
+StartupWMClass=app.layeredmap.desktop
