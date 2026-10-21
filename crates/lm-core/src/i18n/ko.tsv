@@ -836,3 +836,24 @@ Sign in to use analysis tools	분석 도구를 쓰려면 로그인하세요
 {action} (locked)	{action} (잠김)
 Settings › Account shows who is signed in and what the account includes.	설정 › 계정에서 로그인한 사람과 계정에 포함된 내용을 볼 수 있습니다.
 Nothing matches, so nothing is highlighted on the map.	일치하는 항목이 없어 지도에 강조 표시된 것이 없습니다.
+# Updates: Check for Updates…, Update Now (WP5.7, docs/lm/update-feed.md)
+Check for Updates…	업데이트 확인…
+Checking for updates…	업데이트 확인 중…
+Couldn't check for updates. Check your connection, or turn off View › Work Offline.	업데이트를 확인할 수 없습니다. 연결을 확인하거나 보기 › 오프라인으로 작업을 끄세요.
+Downloading {app} {version}…	{app} {version} 다운로드 중…
+Downloads {version}, checks its signature, installs it and reopens {app}. The built-in example maps and world layers update with it.	{version}을(를) 다운로드하고 서명을 확인한 다음 설치하고 {app}을(를) 다시 엽니다. 내장된 예제 지도와 세계 레이어도 함께 업데이트됩니다.
+Installing {app} {version}…	{app} {version} 설치 중…
+Restart Now	지금 재시작
+The download didn't finish. Check your connection and try again.	다운로드가 완료되지 않았습니다. 연결을 확인하고 다시 시도하세요.
+The downloaded file is damaged (its checksum doesn't match), so nothing was installed.	다운로드한 파일이 손상되어(체크섬이 일치하지 않음) 아무것도 설치하지 않았습니다.
+The new version couldn't be installed, and nothing was changed.	새 버전을 설치할 수 없었으며 아무것도 변경되지 않았습니다.
+The update's signature couldn't be verified, so nothing was installed.	업데이트의 서명을 확인할 수 없어 아무것도 설치하지 않았습니다.
+This version is not newer than the one you have.	이 버전은 현재 버전보다 최신이 아닙니다.
+Update Now	지금 업데이트
+You're up to date: {app} {version} is the newest version.	최신 버전입니다: {app} {version}이(가) 가장 최신 버전입니다.
+{app} can't update itself in this folder (it may need an administrator). The new version is open in Finder: drag {app} to Applications to replace the old one.	{app}이(가) 이 폴더에서는 스스로 업데이트할 수 없습니다(관리자 권한이 필요할 수 있습니다). 새 버전이 Finder에 열려 있습니다. {app}을(를) 응용 프로그램 폴더로 드래그하여 이전 버전을 대체하세요.
+{app} can't update itself while it runs from the disk image or a temporary location. The new version is open in Finder: drag {app} to Applications, then open it from there.	{app}이(가) 디스크 이미지나 임시 위치에서 실행 중일 때는 스스로 업데이트할 수 없습니다. 새 버전이 Finder에 열려 있습니다. {app}을(를) 응용 프로그램 폴더로 드래그한 다음 그곳에서 여세요.
+{app} is working offline. Turn off View › Work Offline, then try again.	{app}이(가) 오프라인으로 작업 중입니다. 보기 › 오프라인으로 작업을 끈 다음 다시 시도하세요.
+{app} {version} is ready	{app} {version} 준비 완료
+{done} MB	{done}MB
+{done} of {total} MB	{done}/{total}MB

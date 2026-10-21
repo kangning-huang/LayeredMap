@@ -57,6 +57,8 @@ struct Options {
     library: bool,
     #[allow(dead_code)]
     settings: bool,
+    #[allow(dead_code)]
+    updates: bool,
 }
 
 /// ⌘ on macOS, Ctrl on Windows.
@@ -73,17 +75,19 @@ impl MenuBar {
     /// Windows. `None` if that fails, or on other platforms (Linux is best effort).
     /// `export`: File › Export Map Image… and Export Data… are shown (WP5.3); `library`: File ›
     /// Browse data library… (WP5.4); `settings`: Settings… (⌘,) for Pro's account (WP7.4), in the
-    /// app menu on macOS and in File on Windows.
+    /// app menu on macOS and in File on Windows; `updates`: Check for Updates…, in the app menu on
+    /// macOS and in Help on Windows (when the build has an update feed, WP5.7).
     pub fn install(
         developer: bool,
         export: bool,
         library: bool,
         settings: bool,
+        updates: bool,
         lang: Lang,
         ctx: &egui::Context,
         hwnd: Option<isize>,
     ) -> Option<MenuBar> {
-        Self::install_with(Options { developer, export, library, settings }, lang, ctx, hwnd)
+        Self::install_with(Options { developer, export, library, settings, updates }, lang, ctx, hwnd)
     }
 
     /// Builds the bar again when the interface language has changed (View › Language, or the
@@ -131,7 +135,7 @@ impl MenuBar {
 
     #[cfg(any(target_os = "macos", windows))]
     fn build(options: Options, lang: Lang, ctx: &egui::Context, hwnd: Option<isize>) -> muda::Result<MenuBar> {
-        let Options { developer, export, library, settings } = options;
+        let Options { developer, export, library, settings, updates } = options;
         let menu = Menu::new();
         // The name as this language shows it: 凌波微图 in Chinese.
         let shown = lm_core::brand::shown_in(lang, false);
@@ -163,11 +167,17 @@ impl MenuBar {
                 &MenuItem::with_id("quit", i18n::fmt("Quit {app}", &brand), true, cmd(Code::KeyQ)),
             ],
         )?;
-        // Settings… under About, as macOS apps have it; hidden while there is nothing to set.
+        // Check for Updates… under About, as macOS apps have it (WP5.7).
+        #[cfg(target_os = "macos")]
+        if updates {
+            app.insert(&MenuItem::with_id("check-updates", tl!("Check for Updates…"), true, None), 1)?;
+        }
+        // Settings… under those, as macOS apps have it; hidden while there is nothing to set.
         #[cfg(target_os = "macos")]
         if settings {
-            app.insert(&MenuItem::with_id("settings", tl!("Settings…"), true, cmd(Code::Comma)), 2)?;
-            app.insert(&PredefinedMenuItem::separator(), 3)?;
+            let at = if updates { 3 } else { 2 };
+            app.insert(&MenuItem::with_id("settings", tl!("Settings…"), true, cmd(Code::Comma)), at)?;
+            app.insert(&PredefinedMenuItem::separator(), at + 1)?;
         }
         let file = Submenu::new(tl!("File"), true);
         file.append(&MenuItem::with_id("open", tl!("Open…"), true, cmd(Code::KeyO)))?;
@@ -297,6 +307,13 @@ impl MenuBar {
             ],
         )?;
         #[cfg(windows)]
+        if updates {
+            help.append_items(&[
+                &PredefinedMenuItem::separator(),
+                &MenuItem::with_id("check-updates", tl!("Check for Updates…"), true, None),
+            ])?;
+        }
+        #[cfg(windows)]
         help.append_items(&[
             &PredefinedMenuItem::separator(),
             &PredefinedMenuItem::about(Some(&*i18n::fmt("About {app}", &brand)), Some(about)),
@@ -354,6 +371,7 @@ impl MenuBar {
                 "debug" => Action::Shell(Command::ToggleDebugOverlay),
                 "credits" => Action::Shell(Command::ShowCredits),
                 "feedback" => Action::Shell(Command::ShowFeedback),
+                "check-updates" => Action::Shell(Command::CheckForUpdates),
                 "offline" => Action::ToggleOffline,
                 "diagnostics" => Action::ExportDiagnostics,
                 "help" => Action::Help,

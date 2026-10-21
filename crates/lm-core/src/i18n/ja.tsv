@@ -836,3 +836,24 @@ Sign in to use analysis tools	分析ツールを使うにはサインインし�
 {action} (locked)	{action}（ロック中）
 Settings › Account shows who is signed in and what the account includes.	設定 › アカウントで、サインインしている人とアカウントの内容を確認できます。
 Nothing matches, so nothing is highlighted on the map.	該当するものがないため、地図上では何も強調表示されていません。
+# Updates: Check for Updates…, Update Now (WP5.7, docs/lm/update-feed.md)
+Check for Updates…	アップデートを確認…
+Checking for updates…	アップデートを確認中…
+Couldn't check for updates. Check your connection, or turn off View › Work Offline.	アップデートを確認できませんでした。接続を確認するか、表示 › オフラインで作業 をオフにしてください。
+Downloading {app} {version}…	{app} {version} をダウンロード中…
+Downloads {version}, checks its signature, installs it and reopens {app}. The built-in example maps and world layers update with it.	{version} をダウンロードし、署名を確認してインストールし、{app} を再度開きます。内蔵のサンプルマップと世界レイヤーも一緒に更新されます。
+Installing {app} {version}…	{app} {version} をインストール中…
+Restart Now	今すぐ再起動
+The download didn't finish. Check your connection and try again.	ダウンロードが完了しませんでした。接続を確認して、もう一度お試しください。
+The downloaded file is damaged (its checksum doesn't match), so nothing was installed.	ダウンロードしたファイルが破損しているため（チェックサムが一致しません）、何もインストールされていません。
+The new version couldn't be installed, and nothing was changed.	新しいバージョンをインストールできませんでした。何も変更されていません。
+The update's signature couldn't be verified, so nothing was installed.	アップデートの署名を確認できなかったため、何もインストールされていません。
+This version is not newer than the one you have.	このバージョンはお使いのバージョンより新しくありません。
+Update Now	今すぐアップデート
+You're up to date: {app} {version} is the newest version.	最新の状態です：{app} {version} が最新バージョンです。
+{app} can't update itself in this folder (it may need an administrator). The new version is open in Finder: drag {app} to Applications to replace the old one.	{app} はこのフォルダでは自動でアップデートできません（管理者の権限が必要な場合があります）。新しいバージョンを Finder で開きました：{app} を「アプリケーション」にドラッグして、古いバージョンと置き換えてください。
+{app} can't update itself while it runs from the disk image or a temporary location. The new version is open in Finder: drag {app} to Applications, then open it from there.	{app} はディスクイメージまたは一時的な場所から実行中のため、自動でアップデートできません。新しいバージョンを Finder で開きました：{app} を「アプリケーション」にドラッグし、そこから開いてください。
+{app} is working offline. Turn off View › Work Offline, then try again.	{app} はオフラインで作業中です。表示 › オフラインで作業 をオフにしてから、もう一度お試しください。
+{app} {version} is ready	{app} {version} の準備ができました
+{done} MB	{done} MB
+{done} of {total} MB	{done} / {total} MB

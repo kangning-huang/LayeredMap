@@ -9,6 +9,10 @@ publish = false
 miniz_oxide = { workspace = true }
 # LayeredMap: reading `cargo metadata` and writing the CycloneDX bill of materials (`sbom`).
 serde_json = { workspace = true }
+# LayeredMap: the update signing key and signature (`update-keygen`, `update-sign`; ring is already
+# in the build through rustls).
+ring = "0.17"
+base64 = { workspace = true }
 
 [dev-dependencies]
 # LayeredMap: the generated GeoTIFFs are read back with an independent decoder.

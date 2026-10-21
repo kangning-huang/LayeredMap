@@ -836,3 +836,24 @@ Sign in to use analysis tools	Melden Sie sich an, um die Analysewerkzeuge zu nut
 {action} (locked)	{action} (gesperrt)
 Settings › Account shows who is signed in and what the account includes.	Unter Einstellungen › Account sehen Sie, wer angemeldet ist und was der Account umfasst.
 Nothing matches, so nothing is highlighted on the map.	Nichts trifft zu, daher ist auf der Karte nichts hervorgehoben.
+# Updates: Check for Updates…, Update Now (WP5.7, docs/lm/update-feed.md)
+Check for Updates…	Nach Updates suchen …
+Checking for updates…	Nach Updates wird gesucht …
+Couldn't check for updates. Check your connection, or turn off View › Work Offline.	Es konnte nicht nach Updates gesucht werden. Prüfen Sie Ihre Verbindung oder deaktivieren Sie Darstellung › Offline arbeiten.
+Downloading {app} {version}…	{app} {version} wird geladen …
+Downloads {version}, checks its signature, installs it and reopens {app}. The built-in example maps and world layers update with it.	Lädt {version}, prüft die Signatur, installiert die Version und öffnet {app} erneut. Die mitgelieferten Beispielkarten und Weltebenen werden dabei mit aktualisiert.
+Installing {app} {version}…	{app} {version} wird installiert …
+Restart Now	Jetzt neu starten
+The download didn't finish. Check your connection and try again.	Der Download wurde nicht abgeschlossen. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut.
+The downloaded file is damaged (its checksum doesn't match), so nothing was installed.	Die geladene Datei ist beschädigt (die Prüfsumme stimmt nicht), daher wurde nichts installiert.
+The new version couldn't be installed, and nothing was changed.	Die neue Version konnte nicht installiert werden; es wurde nichts geändert.
+The update's signature couldn't be verified, so nothing was installed.	Die Signatur des Updates konnte nicht bestätigt werden, daher wurde nichts installiert.
+This version is not newer than the one you have.	Diese Version ist nicht neuer als Ihre.
+Update Now	Jetzt aktualisieren
+You're up to date: {app} {version} is the newest version.	Sie sind auf dem neuesten Stand: {app} {version} ist die neueste Version.
+{app} can't update itself in this folder (it may need an administrator). The new version is open in Finder: drag {app} to Applications to replace the old one.	{app} kann sich in diesem Ordner nicht selbst aktualisieren (möglicherweise sind Administratorrechte nötig). Die neue Version ist im Finder geöffnet: Ziehen Sie {app} in den Ordner „Programme“, um die alte Version zu ersetzen.
+{app} can't update itself while it runs from the disk image or a temporary location. The new version is open in Finder: drag {app} to Applications, then open it from there.	{app} kann sich nicht selbst aktualisieren, solange es vom Disk-Image oder von einem temporären Ort aus läuft. Die neue Version ist im Finder geöffnet: Ziehen Sie {app} in den Ordner „Programme“ und öffnen Sie es dort.
+{app} is working offline. Turn off View › Work Offline, then try again.	{app} arbeitet offline. Deaktivieren Sie Darstellung › Offline arbeiten und versuchen Sie es dann erneut.
+{app} {version} is ready	{app} {version} ist bereit
+{done} MB	{done} MB
+{done} of {total} MB	{done} von {total} MB

@@ -1,7 +1,8 @@
 //! The one network gate (WP6.6 Strict offline mode; Gate 5's network-blocking harness).
 //!
 //! Every network request NimbleMap makes asks [`allowed`] first, with what it is for: basemap
-//! tiles and the daily-build lookup, the data library, the update check, Pro's assistant,
+//! tiles and the daily-build lookup, the data library, the update check and the update's
+//! download, Pro's assistant,
 //! Pro's account sign-in and Help › Send Feedback….
 //! When the user turns on offline mode ([`set_offline`]) every one of them is refused here, so
 //! blocking is enforced in one place. The gate also counts what it allowed and refused, which is
@@ -25,7 +26,7 @@ pub enum Purpose {
     Search,
     /// The data library's catalog and downloads (WP5.4).
     Library,
-    /// The launch-time check for a new version (WP5.7).
+    /// The check for a new version (WP5.7): at launch, and NimbleMap › Check for Updates….
     UpdateCheck,
     /// Pro's assistant service.
     Assistant,
@@ -35,10 +36,13 @@ pub enum Purpose {
     /// Help › Send Feedback…: one message to the feedback function, sent only when the user
     /// presses Send (`lm_account::feedback`, docs/lm/feedback.md).
     Feedback,
+    /// Update Now: the new version's disk image, downloaded only when the user presses it
+    /// (docs/lm/update-feed.md).
+    UpdateDownload,
 }
 
 impl Purpose {
-    pub const ALL: [Purpose; 7] = [
+    pub const ALL: [Purpose; N] = [
         Purpose::Basemap,
         Purpose::Search,
         Purpose::Library,
@@ -46,6 +50,7 @@ impl Purpose {
         Purpose::Assistant,
         Purpose::Account,
         Purpose::Feedback,
+        Purpose::UpdateDownload,
     ];
 
     pub fn label(self) -> &'static str {
@@ -57,6 +62,7 @@ impl Purpose {
             Purpose::Assistant => "assistant",
             Purpose::Account => "account service",
             Purpose::Feedback => "feedback service",
+            Purpose::UpdateDownload => "update download",
         }
     }
 
@@ -65,9 +71,12 @@ impl Purpose {
     }
 }
 
+/// How many purposes there are.
+const N: usize = 8;
+
 static OFFLINE: AtomicBool = AtomicBool::new(false);
-static ALLOWED: [AtomicU64; 7] = [const { AtomicU64::new(0) }; 7];
-static REFUSED: [AtomicU64; 7] = [const { AtomicU64::new(0) }; 7];
+static ALLOWED: [AtomicU64; N] = [const { AtomicU64::new(0) }; N];
+static REFUSED: [AtomicU64; N] = [const { AtomicU64::new(0) }; N];
 
 /// Turns strict offline mode on or off (View › Work Offline). Takes effect for the next request.
 pub fn set_offline(on: bool) {
@@ -118,8 +127,8 @@ pub fn check(purpose: Purpose) -> Result<(), Offline> {
 /// Requests the gate allowed and refused since launch, per purpose.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Counts {
-    pub allowed: [u64; 7],
-    pub refused: [u64; 7],
+    pub allowed: [u64; N],
+    pub refused: [u64; N],
 }
 
 impl Counts {
@@ -168,6 +177,64 @@ pub fn get_text(purpose: Purpose, url: &str, timeout: std::time::Duration, max_b
     resp.body_mut().with_config().limit(max_bytes).read_to_string().map_err(|e| e.to_string())
 }
 
+/// Downloads a large file (the update's disk image) over HTTPS through the gate, writing it to
+/// `out`. Redirects are followed only to other `https://` addresses. `progress` is called after
+/// each chunk with the bytes so far and the size when the server gave one; returning `false`
+/// cancels the download. Blocking: call it on a background thread. At most `max_bytes` are read.
+/// Returns the number of bytes written.
+#[cfg(not(target_arch = "wasm32"))]
+pub fn download(
+    purpose: Purpose,
+    url: &str,
+    max_bytes: u64,
+    out: &mut dyn std::io::Write,
+    progress: &mut dyn FnMut(u64, Option<u64>) -> bool,
+) -> Result<u64, String> {
+    use std::io::Read;
+    use std::time::Duration;
+    if !url.starts_with("https://") {
+        return Err(format!("{url}: only https addresses are fetched"));
+    }
+    check(purpose).map_err(|e| e.to_string())?;
+    let agent: ureq::Agent = ureq::Agent::config_builder()
+        // No timeout for the whole body (a slow connection may take minutes); connecting and the
+        // response's headers have to come promptly.
+        .timeout_connect(Some(Duration::from_secs(20)))
+        .timeout_recv_response(Some(Duration::from_secs(30)))
+        .https_only(true)
+        .max_redirects(5)
+        .user_agent(concat!("NimbleMap/", env!("CARGO_PKG_VERSION")))
+        .build()
+        .into();
+    let mut resp = agent.get(url).call().map_err(|e| e.to_string())?;
+    let total = resp.body().content_length();
+    if total.is_some_and(|t| t > max_bytes) {
+        return Err(format!("{url}: larger than {max_bytes} bytes"));
+    }
+    let mut reader = resp.body_mut().with_config().limit(max_bytes).reader();
+    let mut buf = vec![0u8; 256 * 1024];
+    let mut got = 0u64;
+    loop {
+        let n = reader.read(&mut buf).map_err(|e| e.to_string())?;
+        if n == 0 {
+            break;
+        }
+        out.write_all(&buf[..n]).map_err(|e| e.to_string())?;
+        got += n as u64;
+        if !progress(got, total) {
+            return Err(CANCELLED.into());
+        }
+    }
+    if total.is_some_and(|t| t != got) {
+        return Err(format!("{url}: the download stopped early ({got} of {} bytes)", total.unwrap_or(0)));
+    }
+    out.flush().map_err(|e| e.to_string())?;
+    Ok(got)
+}
+
+/// What [`download`] returns when its `progress` callback cancelled it.
+pub const CANCELLED: &str = "cancelled";
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -192,11 +259,16 @@ mod tests {
             assert!(r.unwrap_err().contains("offline"));
             // Plain http is never fetched, whatever the mode.
             assert!(get_text(Purpose::Library, "http://example.invalid/", std::time::Duration::from_secs(1), 1).is_err());
+            let mut sink = Vec::new();
+            let r = download(Purpose::UpdateDownload, "https://example.invalid/x.dmg", 1024, &mut sink, &mut |_, _| true);
+            assert!(r.unwrap_err().contains("offline"));
+            let r = download(Purpose::UpdateDownload, "http://example.invalid/x.dmg", 1024, &mut sink, &mut |_, _| true);
+            assert!(r.unwrap_err().contains("only https"));
         }
         let after = counts();
         assert_eq!(after.allowed_total() - before.allowed_total(), 2);
         assert!(after.refused_total() - before.refused_total() >= 8);
-        assert_eq!(after.lines().len(), 7);
+        assert_eq!(after.lines().len(), Purpose::ALL.len());
         set_offline(false);
         assert!(!offline());
     }

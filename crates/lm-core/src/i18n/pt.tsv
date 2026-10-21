@@ -836,3 +836,24 @@ Sign in to use analysis tools	Inicie sessão para usar as ferramentas de anális
 {action} (locked)	{action} (bloqueado)
 Settings › Account shows who is signed in and what the account includes.	Em Ajustes › Conta, você vê quem iniciou sessão e o que a conta inclui.
 Nothing matches, so nothing is highlighted on the map.	Nada corresponde, por isso nada está destacado no mapa.
+# Updates: Check for Updates…, Update Now (WP5.7, docs/lm/update-feed.md)
+Check for Updates…	Buscar atualizações…
+Checking for updates…	Buscando atualizações…
+Couldn't check for updates. Check your connection, or turn off View › Work Offline.	Não foi possível buscar atualizações. Verifique sua conexão ou desative Visualizar › Trabalhar offline.
+Downloading {app} {version}…	Baixando o {app} {version}…
+Downloads {version}, checks its signature, installs it and reopens {app}. The built-in example maps and world layers update with it.	Baixa a versão {version}, verifica a assinatura, instala e reabre o {app}. Os mapas de exemplo e as camadas mundiais integrados são atualizados junto.
+Installing {app} {version}…	Instalando o {app} {version}…
+Restart Now	Reiniciar agora
+The download didn't finish. Check your connection and try again.	O download não foi concluído. Verifique sua conexão e tente de novo.
+The downloaded file is damaged (its checksum doesn't match), so nothing was installed.	O arquivo baixado está danificado (a soma de verificação não confere), então nada foi instalado.
+The new version couldn't be installed, and nothing was changed.	Não foi possível instalar a nova versão, e nada foi alterado.
+The update's signature couldn't be verified, so nothing was installed.	Não foi possível verificar a assinatura da atualização, então nada foi instalado.
+This version is not newer than the one you have.	Esta versão não é mais recente do que a que você tem.
+Update Now	Atualizar agora
+You're up to date: {app} {version} is the newest version.	Você está em dia: o {app} {version} é a versão mais recente.
+{app} can't update itself in this folder (it may need an administrator). The new version is open in Finder: drag {app} to Applications to replace the old one.	O {app} não consegue se atualizar nesta pasta (talvez seja preciso um administrador). A nova versão está aberta no Finder: arraste o {app} para Aplicativos para substituir a antiga.
+{app} can't update itself while it runs from the disk image or a temporary location. The new version is open in Finder: drag {app} to Applications, then open it from there.	O {app} não consegue se atualizar enquanto é executado da imagem de disco ou de um local temporário. A nova versão está aberta no Finder: arraste o {app} para Aplicativos e abra-o de lá.
+{app} is working offline. Turn off View › Work Offline, then try again.	O {app} está trabalhando offline. Desative Visualizar › Trabalhar offline e tente de novo.
+{app} {version} is ready	O {app} {version} está pronto
+{done} MB	{done} MB
+{done} of {total} MB	{done} de {total} MB
