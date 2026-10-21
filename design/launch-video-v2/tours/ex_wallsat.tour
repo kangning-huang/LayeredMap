@@ -1,0 +1,6 @@
+# Walled cities over satellite around Beijing
+example walls
+basemap satellite
+116.3,39.5,9
+layer 99
+layer 99

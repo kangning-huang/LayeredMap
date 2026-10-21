@@ -1,10 +1,11 @@
-//! The Ask box (WP7.1, early test build for NimbleMap Pro): one field at the bottom of the map,
+//! The Ask box (WP7.1, a Pro feature): one field at the bottom of the map,
 //! "Ask about your layers". A request goes to the assistant (`lm_ask`) on a background thread;
 //! the plan comes back checked and already run on a copy of the layers. Its new layer shows over
 //! the map and its filter as a highlight. The plan and its cards show above the box; **Keep**
 //! adds everything as one undo step, **Discard** drops it. A question from the assistant shows
 //! with its choices; the reply continues the exchange. The microphone listens with Apple's
-//! speech recognizer (`crate::dictation`).
+//! speech recognizer (`crate::dictation`). While Pro is locked the box shows how to unlock it
+//! instead of the field (`account_ui::ask_prompt`), so neither asking nor the microphone works.
 
 use std::sync::mpsc::{Receiver, channel};
 use std::time::Instant;
@@ -95,15 +96,28 @@ pub fn submit(shell: &mut Shell, ctx: &egui::Context, text: String) {
     if text.is_empty() || shell.ask.pending.is_some() {
         return;
     }
+    // Pro locked (a script asking; the field isn't shown): say how to unlock it.
+    if !shell.pro() {
+        let words = match shell.pro_access() {
+            lm_account::Access::SignedOut | lm_account::Access::Unavailable => {
+                i18n::fmt("Sign in to use {pro} (Settings › Account).", &[("pro", lm_core::brand::shown(true))])
+            }
+            access => crate::account_ui::locked_words(access),
+        };
+        shell.ask.shown = Some(Shown::Message { text: words, warning: true });
+        return;
+    }
     // Strict offline mode: say so instead of trying (the transport refuses too).
     #[cfg(not(target_arch = "wasm32"))]
     if lm_net::offline() {
         shell.ask.shown = Some(Shown::Message { text: crate::account_ui::shown(lm_ask::openrouter::OFFLINE), warning: true });
         return;
     }
-    // Which way the request goes (docs/lm/accounts-design.md): a developer's or test build's key
+    // Which way the request goes (docs/lm/accounts-design.md): a developer's key
     // straight to OpenRouter, or the Ask proxy with the signed-in account's token.
     let via = match shell.account.route() {
+        // A recorded answer (`LM_ASK_FIXTURE`): no request leaves the Mac.
+        _ if fixture_path().is_some() => fixture_path().map(Via::Fixture),
         lm_account::AskRoute::Direct => direct_key().map(Via::Direct),
         lm_account::AskRoute::Proxy => match shell.account.proxy_target() {
             Some((account, url, anon_key)) => Some(Via::Proxy { account, url, anon_key }),
@@ -134,6 +148,8 @@ pub fn submit(shell: &mut Shell, ctx: &egui::Context, text: String) {
         history: shell.ask.history.clone(),
         previous,
         model: lm_ask::MODEL.into(),
+        // The built-in world layers are a Pro feature: offered to the assistant only when Pro is
+        // unlocked (checked above).
         reference: reference(),
     };
     discard(shell);
@@ -144,10 +160,24 @@ pub fn submit(shell: &mut Shell, ctx: &egui::Context, text: String) {
     #[cfg(not(target_arch = "wasm32"))]
     std::thread::spawn(move || {
         let turn = match via {
+            Via::Fixture(path) => match lm_ask::fixture::Fixture::open(&path) {
+                Ok(f) => lm_ask::ask(&f as &dyn Transport, &req, &c),
+                Err(e) => Turn { answer: Err(e), messages: Vec::new(), usage: Usage::default() },
+            },
             Via::Direct(key) => lm_ask::ask(&lm_ask::openrouter::OpenRouter::new(key) as &dyn Transport, &req, &c),
             // A fresh token first (refreshed when it is about to expire; the network gate decides).
             Via::Proxy { account, url, anon_key } => match account.access_token() {
-                Ok(token) => lm_ask::ask(&lm_ask::proxy::Proxy::new(url, anon_key, token) as &dyn Transport, &req, &c),
+                Ok(token) => {
+                    let turn = lm_ask::ask(&lm_ask::proxy::Proxy::new(url, anon_key, token) as &dyn Transport, &req, &c);
+                    // The service checks Pro on every question: its answer updates the entitlement
+                    // at once (a `not_pro` refusal locks Pro without waiting for the next check).
+                    match &turn.answer {
+                        Ok(_) => account.note_ask_answer(true),
+                        Err(e) if lm_ask::proxy::is_not_pro(e) => account.note_ask_answer(false),
+                        Err(_) => {}
+                    }
+                    turn
+                }
                 Err(lm_account::AccountError::Offline) => {
                     Turn { answer: Err(lm_ask::openrouter::OFFLINE.into()), messages: Vec::new(), usage: Usage::default() }
                 }
@@ -165,8 +195,26 @@ pub fn submit(shell: &mut Shell, ctx: &egui::Context, text: String) {
 
 /// How a request is sent.
 enum Via {
+    /// A recorded answer (`LM_ASK_FIXTURE`), for filming and checks without a model call.
+    #[cfg_attr(target_arch = "wasm32", allow(dead_code))]
+    Fixture(std::path::PathBuf),
     Direct(String),
-    Proxy { account: std::sync::Arc<lm_account::Account>, url: String, anon_key: String },
+    Proxy {
+        account: std::sync::Arc<lm_account::Account>,
+        url: String,
+        anon_key: String,
+    },
+}
+
+/// The recorded answer `LM_ASK_FIXTURE` names, when set.
+#[cfg(not(target_arch = "wasm32"))]
+fn fixture_path() -> Option<std::path::PathBuf> {
+    std::env::var_os(lm_ask::fixture::ENV).filter(|p| !p.is_empty()).map(std::path::PathBuf::from)
+}
+
+#[cfg(target_arch = "wasm32")]
+fn fixture_path() -> Option<std::path::PathBuf> {
+    None
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -179,7 +227,8 @@ fn direct_key() -> Option<String> {
     None
 }
 
-/// Pro's built-in reference layers, opened once, with the borders of this Mac's region.
+/// Pro's built-in world layers (reference layers), opened once, with the borders of this Mac's
+/// region.
 fn reference() -> Option<std::sync::Arc<lm_ask::reference::Reference>> {
     static REF: std::sync::OnceLock<Option<std::sync::Arc<lm_ask::reference::Reference>>> = std::sync::OnceLock::new();
     REF.get_or_init(|| {
@@ -239,6 +288,14 @@ pub fn poll(shell: &mut Shell) {
     });
 }
 
+/// Shows `plan` as if the assistant had just answered `request` with it (tests and snapshots).
+#[cfg(test)]
+pub(crate) fn show_plan(shell: &mut Shell, request: &str, plan: PlanResult) {
+    shell.ws.preview_plan(Some(&plan));
+    shell.ask.answer_no += 1;
+    shell.ask.shown = Some(Shown::Plan { request: request.into(), plan: Box::new(plan), usage: Usage::default(), seconds: 0.0 });
+}
+
 fn discard(shell: &mut Shell) {
     if matches!(shell.ask.shown, Some(Shown::Plan { .. })) {
         shell.ws.preview_plan(None);
@@ -248,6 +305,10 @@ fn discard(shell: &mut Shell) {
 
 /// The microphone (the button, and scripts): starts listening, or stops it.
 pub fn dictate(shell: &mut Shell, ctx: &egui::Context) {
+    // Voice input is a Pro feature.
+    if !shell.pro() {
+        return;
+    }
     #[cfg(not(target_arch = "wasm32"))]
     {
         if let Some((d, _)) = &mut shell.ask.listening {
@@ -313,14 +374,30 @@ fn keep(shell: &mut Shell) {
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
-fn internal_build() -> bool {
-    lm_ask::openrouter::internal_build()
+/// The result cards an Ask answer shows, the answer (the last step's) first. A layer that only
+/// feeds a later step (a buffer, the counts a ranking ranks) is a means, not an answer: no card of
+/// its own (the step list names it). A final one keeps its card.
+pub(crate) fn answer_cards(plan: &PlanResult) -> Vec<(lm_core::recipe::ResultCard, String)> {
+    plan.outcomes
+        .iter()
+        .enumerate()
+        .filter_map(|(i, o)| match o {
+            StepOutcome::Card { card, recipe, .. } => Some(((**card).clone(), recipe.text())),
+            StepOutcome::NewLayer { alias, .. } if feeds_later(plan, i, alias) => None,
+            StepOutcome::NewLayer { card, recipe, .. } => Some(((**card).clone(), recipe.text())),
+            _ => None,
+        })
+        .rev()
+        .collect()
 }
 
-#[cfg(target_arch = "wasm32")]
-fn internal_build() -> bool {
-    false
+/// Whether a step after step `i` (from 0) of the plan uses the layer it made (`alias`, "#k").
+fn feeds_later(plan: &PlanResult, i: usize, alias: &str) -> bool {
+    plan.steps.iter().skip(i + 1).any(|s| {
+        let mut names = Vec::new();
+        lm_ask::reference::names_in(&s.args, &mut names);
+        names.iter().any(|n| n.trim() == alias)
+    })
 }
 
 fn short(s: &str, n: usize) -> String {
@@ -349,10 +426,11 @@ fn step_words(o: &StepOutcome) -> Option<String> {
     }
 }
 
-/// Whether the Ask box shows: in Pro, once a layer is open, when the map leaves room for it.
+/// Whether the Ask box shows: once a layer is open, when the map leaves room for it, and when Pro
+/// is unlocked or can be (locked, it shows how to unlock it).
 pub fn shows(shell: &Shell, map: egui::Rect) -> bool {
     // Nothing to ask about until a layer is open; the welcome card has that space.
-    if !shell.pro || shell.ws.doc.layers.is_empty() {
+    if !shell.pro_access().visible() || shell.ws.doc.layers.is_empty() {
         return false;
     }
     let (left, right) = shell.panel_insets();
@@ -373,9 +451,9 @@ pub fn ask_box(shell: &mut Shell, ui: &mut Ui, map: egui::Rect) {
     let x1 = map.right() - right - theme::PANEL_MARGIN;
     let width = (x1 - x0).min(MAX_WIDTH);
     let bottom = egui::pos2((x0 + x1) / 2.0, map.bottom() - 34.0);
-    egui::Area::new(egui::Id::new("lm-ask")).order(egui::Order::Foreground).pivot(Align2::CENTER_BOTTOM).fixed_pos(bottom).show(
-        ui.ctx(),
-        |ui| {
+    let area_id = egui::Id::new("lm-ask");
+    let shown =
+        egui::Area::new(area_id).order(egui::Order::Foreground).pivot(Align2::CENTER_BOTTOM).fixed_pos(bottom).show(ui.ctx(), |ui| {
             ui.set_width(width);
             ui.vertical(|ui| {
                 if shell.ask.shown.is_some() || shell.ask.pending.is_some() {
@@ -386,15 +464,54 @@ pub fn ask_box(shell: &mut Shell, ui: &mut Ui, map: egui::Rect) {
                     crate::time_ui::controls(shell, ui, width);
                     ui.add_space(8.0);
                 }
-                // Pro through the Ask proxy needs an account: the prompt takes the field's place.
-                if shell.account.needs_sign_in() {
+                // Locked, the prompt takes the field's place (and with it the microphone); so it
+                // does with the developer override when the Ask proxy needs someone signed in.
+                if !shell.pro() || shell.account.needs_sign_in() {
                     crate::account_ui::ask_prompt(shell, ui, &t, width);
                 } else {
                     field(shell, ui, &t, width);
                 }
             });
-        },
-    );
+        });
+    // The box grows upwards from its bottom edge, placed with last frame's size: when the size
+    // changes (a message or an answer appears), draw once more so it lands in place rather than
+    // hanging below the window until the next input.
+    let size = shown.response.rect.size();
+    let key = area_id.with("size");
+    let before = ui.ctx().data_mut(|d| {
+        let before = d.get_temp::<egui::Vec2>(key);
+        d.insert_temp(key, size);
+        before
+    });
+    if before.is_some_and(|b| b != size) {
+        ui.ctx().request_repaint();
+    } else if before.is_some() && shell.ws.answer_fit.is_some() && shell.ask.pending.is_none() {
+        // The answer is laid out: the map frames it in the free part beside or above it.
+        if let Some(e) = shell.ws.answer_fit.take() {
+            frame_answer(shell, map, shown.response.rect, x0, x1, e);
+        }
+    }
+}
+
+/// Flies the map so `e` lands in the largest free part of `map` around the Ask box `card`
+/// (above it, or beside it between the side panels at `x0`–`x1`).
+fn frame_answer(shell: &mut Shell, map: egui::Rect, card: egui::Rect, x0: f32, x1: f32, e: lm_core::model::Extent) {
+    let gap = theme::PANEL_MARGIN;
+    let top = map.top() + gap;
+    let candidates = [
+        egui::Rect::from_min_max(egui::pos2(x0, top), egui::pos2(x1, card.top() - gap)),
+        egui::Rect::from_min_max(egui::pos2(x0, top), egui::pos2(card.left() - gap, map.bottom() - gap)),
+        egui::Rect::from_min_max(egui::pos2(card.right() + gap, top), egui::pos2(x1, map.bottom() - gap)),
+    ];
+    let e = lm_mapview::Extent { min_x: e.min_x, min_y: e.min_y, max_x: e.max_x, max_y: e.max_y };
+    // The part that shows the frame biggest (the smallest resolution); a sliver is no use.
+    let best = candidates
+        .into_iter()
+        .filter(|r| r.width() >= 160.0 && r.height() >= 120.0)
+        .min_by(|a, b| lm_mapview::fit_res(&e, a.width(), a.height()).total_cmp(&lm_mapview::fit_res(&e, b.width(), b.height())));
+    let free = best.unwrap_or(egui::Rect::from_min_max(egui::pos2(x0, map.top()), egui::pos2(x1, map.bottom())));
+    let local = free.translate(-map.min.to_vec2());
+    shell.map_view_mut().zoom_to_extent_in(&e, map.size(), local);
 }
 
 fn field(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, width: f32) {
@@ -514,19 +631,18 @@ fn answer_panel(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, width: f32, ma
                     if plan.layers.iter().any(|l| l.alias.is_some()) {
                         ui.label(RichText::new(tl!("Preview on the map — not saved")).size(CAPTION).color(t.text_secondary));
                     }
+                    // An answer of nothing: nothing is lit, and the map says why.
+                    if shell.ws.answer_empty() {
+                        ui.label(
+                            RichText::new(tl!("Nothing matches, so nothing is highlighted on the map."))
+                                .size(CAPTION)
+                                .color(t.text_secondary),
+                        );
+                    }
                     for n in &plan.notes {
                         ui.label(RichText::new(n).size(CAPTION).color(t.warning));
                     }
-                    let cards: Vec<(lm_core::recipe::ResultCard, String)> = plan
-                        .outcomes
-                        .iter()
-                        .filter_map(|o| match o {
-                            StepOutcome::Card { card, recipe, .. } => Some(((**card).clone(), recipe.text())),
-                            StepOutcome::NewLayer { card, recipe, .. } => Some(((**card).clone(), recipe.text())),
-                            _ => None,
-                        })
-                        .rev() // the last step's card is the answer: first
-                        .collect();
+                    let cards = answer_cards(plan);
                     // The answer is read once when it arrives: the first card's summary.
                     if let Some((card, _)) = cards.first() {
                         let said = crate::a11y::spoken(&format!("{}. {}", card.title, card.summary));
@@ -534,7 +650,7 @@ fn answer_panel(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, width: f32, ma
                     }
                     for (card, recipe) in cards {
                         ui.add_space(10.0);
-                        crate::analysis::result_card(shell, ui, t, &card, &recipe, None);
+                        crate::analysis::result_card(shell, ui, t, &card, &recipe, None, true);
                     }
                 }
                 Some(Shown::Question { text, choices }) => {
@@ -568,8 +684,9 @@ fn answer_panel(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, width: f32, ma
                 if ui.button(tl!("Discard")).clicked() {
                     action = Some(false);
                 }
-                // The cost shows only in internal builds (owner's decision, 2026-10-18).
-                if shell.developer || internal_build() {
+                // The cost shows only to developers (owner's decision, 2026-10-18; no build carries
+                // a key any more).
+                if shell.developer {
                     // i18n: developer only
                     let caption = format!(
                         "{} model call{} · US${:.4} · {seconds:.1} s",

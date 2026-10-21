@@ -64,6 +64,9 @@ fn harness_sized(
                 s
             });
             shell.ui(ui, system);
+            // A steady text cursor: the harness waits in real time, so a blinking one was caught
+            // on or off at random (feedback_sheet_error failed about half the time).
+            ui.ctx().all_styles_mut(|s| s.visuals.text_cursor.blink = false);
         },
         None,
     );
@@ -716,6 +719,7 @@ fn language_gallery() {
         });
         settle(&mut h);
         h.render().unwrap().save(dir.join(format!("{code}-style.png"))).unwrap();
+        ask_answer(code).render().unwrap().save(dir.join(format!("{code}-ask.png"))).unwrap();
     }
 }
 
@@ -840,26 +844,49 @@ fn phase4_summarize_in_a_drawn_area() {
     assert!(matches!(r.card.answer, lm_core::recipe::Answer::Number { value, .. } if value.is_finite()), "{:?}", r.card.answer);
 }
 
-/// NimbleMap Pro: the toolbar says Pro, and a layer's panel offers the analysis actions as
-/// buttons; the free app shows none of them.
+/// Signed in to an account with Pro (the one app's unlocked state, no override): the toolbar
+/// shows the PRO badge, and a layer's panel offers the analysis actions as working buttons.
+/// Signed out, the same actions show locked, with a line saying how to unlock them; clicking one
+/// opens Settings › Account. A build that can't sign in shows none of them.
 #[test]
 #[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
 fn pro_offers_analysis_actions() {
     use egui_kittest::kittest::Queryable as _;
-    for pro in [false, true] {
+    // One harness per case, so their snapshot results are merged into one (egui_kittest).
+    let mut results = egui_kittest::SnapshotResults::new();
+    // (account: None = no account config, Some(signed in)) → what the panel shows
+    for account in [None, Some(false), Some(true)] {
         let mut h = phase3(&["../assets/examples/countries.geojson", "../assets/examples/cities.geojson"], WORLD, move |s| {
-            s.pro = pro;
+            if let Some(signed_in) = account {
+                s.account = crate::account_ui::test_ui(signed_in, lm_account::Region::International);
+            }
             let id = s.ws.doc.layers.iter().find(|l| l.display_name == "countries").map(|l| l.id);
             if let Some(id) = id {
                 s.ws.select_layer(id);
             }
         });
         settle(&mut h);
-        let offered = h.query_by_label("Count cities in each country").is_some();
-        assert_eq!(offered, pro, "pro = {pro}");
-        if pro {
-            h.snapshot("pro_layer_panel");
+        let working = h.query_by_label("Count cities in each country").is_some();
+        let locked = h.query_by_label("Count cities in each country (locked)").is_some();
+        let line = h.query_by_label_contains("Sign in to use analysis tools").is_some();
+        match account {
+            None => assert!(!working && !locked && !line, "no account config: no analysis actions"),
+            Some(false) => {
+                assert!(locked && !working && line, "signed out: locked, with the way to unlock");
+                h.snapshot("locked_layer_panel");
+                // A locked action opens Settings › Account instead of the composer.
+                h.get_by_label("Count cities in each country (locked)").click();
+                h.run_steps(5);
+                let s = h.state().as_ref().unwrap();
+                assert!(s.account.open && s.composer.is_none());
+            }
+            Some(true) => {
+                assert!(working && !locked && !line, "Pro unlocked: working buttons");
+                assert!(h.state().as_ref().is_some_and(|s| s.pro() && s.pro_access() == lm_account::Access::Unlocked));
+                h.snapshot("pro_layer_panel");
+            }
         }
+        results.extend_harness(&mut h);
     }
 }
 
@@ -868,7 +895,7 @@ fn pro_offers_analysis_actions() {
 #[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
 fn pro_find_where_on_the_elevation_example() {
     let mut h = phase3(&["../assets/examples/elevation.tif"], WORLD, |s| {
-        s.pro = true;
+        s.account = crate::account_ui::test_ui(true, lm_account::Region::International);
         let id = s.ws.doc.layers[0].id;
         s.ws.select_layer(id);
     });
@@ -894,6 +921,58 @@ fn pro_find_where_on_the_elevation_example() {
     let s = h.state().as_ref().unwrap();
     assert_eq!(s.ws.doc.layers.len(), 2);
     assert!(s.ws.doc.layers.iter().any(|l| l.display_name.starts_with("Where elevation")));
+}
+
+/// fixtures/A1 with the Ask box showing the plan for "How many Category 5 storms have passed
+/// within 100 km of Tokyo?", in the interface language `code`.
+fn ask_answer(code: &'static str) -> Harness<'static, Option<Shell>> {
+    let mut h = phase3(&["A1/storms.geojson", "A1/cities.geojson"], (145.0, 30.0, 4.0), move |s| {
+        s.prefs.language = code.into();
+        s.account = crate::account_ui::test_ui(true, lm_account::Region::International);
+        s.ws.clear_selection();
+    });
+    let request = "How many Category 5 storms have passed within 100 km of Tokyo?";
+    if let Some(s) = h.state_mut().as_mut() {
+        let steps: Vec<lm_jobs::plan_exec::Step> = serde_json::from_value(serde_json::json!([
+            {"name": "filter", "args": {"layer": "storms", "conditions": [{"field": "strength", "op": "is", "value": "Category 5"}]}},
+            {"name": "buffer", "args": {"object": {"layer": "cities", "field": "name", "value": "Tokyo"}, "distance": "100 km"}},
+            {"name": "count_in", "args": {"points": "storms", "areas": "#2"}}
+        ]))
+        .unwrap();
+        let (mut layers, _) = s.ws.ask_inputs();
+        let outcomes = lm_jobs::plan_exec::execute(&mut layers, &steps, 0, &lm_jobs::jobs::Control::none()).unwrap();
+        crate::ask::show_plan(s, request, lm_ask::PlanResult { steps, layers, outcomes, notes: Vec::new() });
+    }
+    // The map flies to the answer once the Ask box has laid it out: wait for that (under load it
+    // can take more frames than `settle` waits), then let the map draw there.
+    for _ in 0..600 {
+        h.step();
+        if h.state().as_ref().is_some_and(|s| s.ws.answer_fit.is_none()) {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+    settle(&mut h);
+    h
+}
+
+/// Pro's Ask box answers "How many Category 5 storms have passed within 100 km of Tokyo?"
+/// (fixtures/A1): the preview highlights only the 2 tracks that answer, outlines the 100 km area
+/// and frames it; the filtered-out storms are hidden as Keep will hide them. Keep selects the 2.
+#[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+fn pro_ask_answer_preview() {
+    let mut h = ask_answer("en");
+    h.snapshot("pro_ask_answer_preview");
+    let ctx = h.ctx.clone();
+    if let Some(s) = h.state_mut().as_mut() {
+        s.command(&ctx, crate::Command::KeepAsk);
+    }
+    settle(&mut h);
+    let s = h.state().as_ref().unwrap();
+    let storms = s.ws.doc.layers.iter().find(|l| l.display_name == "storms").map(|l| l.id).unwrap();
+    assert_eq!(s.ws.selection.rows_in(storms), vec![0, 3]);
+    assert_eq!(s.ws.doc.layers.len(), 4);
 }
 
 /// Phase 5: the launch after a crash offers the autosave (WP5.2).
@@ -1539,9 +1618,26 @@ fn netcdf_variable_dropdown() {
 #[test]
 #[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
 fn netcdf_time_slider_above_ask() {
-    let mut h = phase3(&["R8/r8_lon360.nc"], WORLD, |s| s.pro = true);
+    let mut h = phase3(&["R8/r8_lon360.nc"], WORLD, |s| s.account = crate::account_ui::test_ui(true, lm_account::Region::International));
     settle(&mut h);
     h.snapshot("netcdf_time_slider_pro");
+}
+
+/// A global grid zoomed out until the world repeats: it is drawn in every copy of the world in
+/// view, filling its column across 180° (a 0–360° file), not once beside bare basemap. A click on
+/// a copy picks the cell drawn there, under its own longitude.
+#[test]
+#[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+fn raster_world_copies() {
+    let mut h = phase3(&["R8/r8_lon360.nc"], (180.0, 10.0, 1.4), |_| {});
+    settle(&mut h);
+    h.snapshot("raster_world_copies");
+    click(&mut h, 160.0 + 360.0, 30.0);
+    let s = h.state().as_ref().unwrap();
+    let p = s.ws.selection.pixel.as_ref().expect("a cell picked in the copy east");
+    assert_eq!((p.lon, p.lat), (160.0, 30.0));
+    let id = s.ws.doc.layers[0].id;
+    assert_eq!(s.ws.raster_pick(lm_mapview::Coord::new(160.0, 30.0)), Some((id, p.value)));
 }
 
 /// Windows display scaling (WP6.2): the screens a student meets first, at 125 % and 150 %, in
@@ -1652,7 +1748,6 @@ mod account {
 
     fn settings(signed_in: bool, region: Region, setup: impl Fn(&mut Shell) + 'static) -> Harness<'static, Option<Shell>> {
         let mut h = harness(false, WORLD, move |s| {
-            s.pro = true;
             s.account = crate::account_ui::test_ui(signed_in, region);
             s.account.open = true;
             setup(s);
@@ -1758,20 +1853,52 @@ mod account {
         assert_eq!(s.account.email, "kim@example.com");
     }
 
-    /// The Ask box in Pro through the proxy, signed out: the sign-in prompt takes the field's place.
+    /// The Ask box while Pro is locked, signed out: the sign-in prompt takes the field's place (and
+    /// with it the microphone).
     #[test]
     #[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
     fn ask_sign_in_prompt() {
         let mut h = phase3(&["V1/districts.geojson"], SHANGHAI, |s| {
-            s.pro = true;
             s.account = crate::account_ui::test_ui(false, Region::International);
         });
         use egui_kittest::kittest::Queryable as _;
         assert!(h.query_by_label("Sign In…").is_some());
         assert!(h.query_by_label("Ask about your layers").is_none(), "no field while signed out");
+        assert!(h.query_by_label("Speak your request").is_none(), "no microphone while signed out");
+        assert!(!h.state().as_ref().is_some_and(|s| s.pro()));
         h.snapshot("ask_sign_in_prompt");
         // Sign In… opens Settings › Account.
         h.get_by_label("Sign In…").click();
+        h.run_steps(5);
+        assert!(h.state().as_ref().is_some_and(|s| s.account.open));
+    }
+
+    /// Signed in to an account without Pro (once Pro needs payment): the Ask box says so plainly
+    /// and opens Settings › Account; asking from a script is refused the same way.
+    #[test]
+    #[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+    fn ask_not_pro_prompt() {
+        let mut h = phase3(&["V1/districts.geojson"], SHANGHAI, |s| {
+            s.account = crate::account_ui::test_ui(true, Region::International);
+            if let Some(a) = &s.account.account {
+                a.note_ask_answer(false);
+            }
+        });
+        use egui_kittest::kittest::Queryable as _;
+        assert_eq!(h.state().as_ref().map(|s| s.pro_access()), Some(lm_account::Access::NotPro));
+        assert!(h.query_by_label("NimbleMap Pro isn't on for this account.").is_some());
+        assert!(h.query_by_label("Ask about your layers").is_none());
+        h.snapshot("ask_not_pro_prompt");
+        let ctx = h.ctx.clone();
+        if let Some(s) = h.state_mut().as_mut() {
+            s.command(&ctx, crate::Command::Ask("schools near rivers".into()));
+            assert_eq!(s.ask.message(), Some("NimbleMap Pro isn't on for this account."));
+            assert!(!s.ask.busy(), "nothing was sent");
+        }
+        // The refusal shows in the Ask box above the prompt, which moves Settings… (the box
+        // settles in its new place on its own, ask::ask_box): let it, before clicking.
+        h.run();
+        h.get_by_label("Settings…").click();
         h.run_steps(5);
         assert!(h.state().as_ref().is_some_and(|s| s.account.open));
     }

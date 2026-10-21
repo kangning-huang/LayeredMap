@@ -1,0 +1,15 @@
+# NimbleMap launch film v3.2: narration script (one line per beat).
+# Voice: Microsoft en-US-AndrewNeural via edge-tts, rate +4% (audio/voice_edge.py; the owner's
+# choice): it reads the caption column (3rd), spelt normally ("Tohoku" without the macron).
+# Fallback: macOS `say` (audio/voice.sh, Samantha 158 wpm) reads the 2nd column.
+# Start times: edit/edl32.py (VO). Columns: id | what `say` reads | the caption (SRT) text.
+folder   | You found the data online. [[slnc 400]] Now, [[slnc 150]] how do you open it? | You found the data online. Now, how do you open it?
+open     | Nimble Map opens it. | NimbleMap opens it.
+storms_a | Nearly five thousand storm tracks [[slnc 60]] since 1980. | Nearly 5,000 storm tracks, since 1980.
+storms_b | Search New York, [[slnc 450]] and there's Sandy. | Search New York, and there's Sandy.
+quakes_a | Earthquakes of magnitude six and up, [[slnc 100]] since 1900. | Earthquakes of magnitude 6 and up, since 1900.
+quakes_b | Tokyo. [[slnc 300]] Toe-hoe-koo, [[slnc 80]] magnitude nine point one. | Tokyo. Tōhoku, magnitude 9.1.
+heat_a   | Summer twenty twenty-three, [[slnc 150]] day by day. | Summer 2023, day by day.
+heat_b   | Palermo, on July twenty-fifth: [[slnc 200]] a heatwave more intense than most of the map. | Palermo, 25 July: a heatwave more intense than most of the map.
+pro      | Sign in for Pro, [[slnc 150]] and ask your map questions in plain words. | Sign in for Pro, and ask your map questions in plain words.
+end      | Nimble Map. [[slnc 450]] Explore real data about the planet. [[slnc 350]] Free for Mac. | NimbleMap. Explore real data about the planet. Free for Mac.

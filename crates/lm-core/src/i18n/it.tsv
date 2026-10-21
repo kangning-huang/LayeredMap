@@ -667,6 +667,43 @@ Full Screen	Schermo intero
 Window	Finestra
 Help	Aiuto
 Export Diagnostics…	Esporta diagnostica…
+Send Feedback…	Invia feedback…
+Send Feedback	Invia feedback
+Tell us what would make {app} better, or what went wrong.	Dicci cosa renderebbe migliore {app} o cosa non ha funzionato.
+Idea	Idea
+Problem	Problema
+Other	Altro
+Message	Messaggio
+What would you like {app} to do?	Cosa vorresti che facesse {app}?
+What happened, and what did you expect?	Cosa è successo e cosa ti aspettavi?
+What's on your mind?	Cosa vuoi dirci?
+{n} of {max} characters	{n} di {max} caratteri
+Title (optional)	Titolo (facoltativo)
+A short summary	Un breve riepilogo
+Email (optional)	Email (facoltativa)
+Only used to reply to you. Never shown publicly.	Usata solo per risponderti. Mai mostrata pubblicamente.
+Include app version and macOS version	Includi la versione dell'app e di macOS
+Include app version and Windows version	Includi la versione dell'app e di Windows
+Your feedback will be posted publicly on GitHub Discussions, without your email.	Il tuo feedback sarà visibile pubblicamente su GitHub Discussions, senza la tua email.
+Sent with your account so we can follow up. Your account isn't shown publicly.	Inviato con il tuo account, così possiamo ricontattarti. Il tuo account non viene mostrato pubblicamente.
+Send	Invia
+Sending…	Invio in corso…
+Thank you! Your feedback is posted.	Grazie! Il tuo feedback è stato pubblicato.
+It's public on GitHub Discussions, where you can follow replies.	È pubblico su GitHub Discussions, dove puoi seguire le risposte.
+View on GitHub	Vedi su GitHub
+Write a few words about your idea or problem.	Scrivi qualche parola sulla tua idea o sul problema.
+The message is {n} characters long. Shorten it to {max} or fewer.	Il messaggio è lungo {n} caratteri. Accorcialo a non più di {max}.
+Shorten the title to {max} characters or fewer.	Accorcia il titolo a non più di {max} caratteri.
+Include at most {max} links.	Includi al massimo {max} link.
+Check the email address, or leave it empty.	Controlla l'indirizzo email o lascia il campo vuoto.
+Feedback can't be sent from this build. You can post on GitHub Discussions yourself: {url}	Da questa versione non è possibile inviare feedback. Puoi scrivere direttamente su GitHub Discussions: {url}
+{app} is working offline. Turn off View › Work Offline, then press Send again.	{app} sta lavorando offline. Disattiva Vista › Lavora offline, poi premi di nuovo Invia.
+You've sent a lot of feedback today. Please try again tomorrow.	Oggi hai inviato molto feedback. Riprova domani.
+The message is too long. Shorten it, then press Send again.	Il messaggio è troppo lungo. Accorcialo, poi premi di nuovo Invia.
+The feedback service didn't accept the message: {reason}	Il servizio di feedback non ha accettato il messaggio: {reason}
+Your feedback couldn't be posted just now. Your text is still here: try again in a few minutes.	Non è stato possibile pubblicare il tuo feedback in questo momento. Il testo è ancora qui: riprova tra qualche minuto.
+Couldn't reach the feedback service. Check your internet connection, then press Send again.	Impossibile raggiungere il servizio di feedback. Controlla la connessione a internet, poi premi di nuovo Invia.
+The feedback service answered {status}. Try again in a few minutes.	Il servizio di feedback ha risposto {status}. Riprova tra qualche minuto.
 About {app}	Informazioni su {app}
 Quit {app}	Esci da {app}
 Undo ({key})	Annulla ({key})
@@ -791,3 +828,9 @@ Couldn't reach the assistant service: {error}	Impossibile raggiungere il servizi
 The assistant service's answer was cut off: {error}	La risposta del servizio dell'assistente si è interrotta: {error}
 The assistant service answered {status} with something unreadable.	Il servizio dell'assistente ha risposto {status} con qualcosa di illeggibile.
 {app} is working offline, so the assistant can't be reached. Turn off View › Work Offline to ask.	{app} sta lavorando offline, quindi l'assistente non è raggiungibile. Disattiva Vista › Lavora offline per fare domande.
+Signing in unlocks the Ask box, analysis tools, the built-in world layers and voice input.	Con l’accesso si sbloccano la casella delle domande, gli strumenti di analisi, i layer del mondo integrati e l’input vocale.
+Checking your account…	Verifica dell’account…
+Sign in to use analysis tools	Accedi per usare gli strumenti di analisi
+{action} (locked)	{action} (bloccato)
+Settings › Account shows who is signed in and what the account includes.	In Impostazioni › Account vedi chi ha effettuato l’accesso e cosa include l’account.
+Nothing matches, so nothing is highlighted on the map.	Nessuna corrispondenza: sulla mappa non è evidenziato nulla.

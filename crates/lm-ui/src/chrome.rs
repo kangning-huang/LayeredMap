@@ -54,8 +54,8 @@ pub fn toolbar(shell: &mut Shell, ui: &mut Ui, rect: Rect, _system: System) {
         semibold(theme::HEADLINE),
         t.text_primary,
     );
-    if shell.pro {
-        // "Pro" as a small accent badge after the name.
+    if shell.pro() {
+        // "Pro" as a small accent badge after the name, while Pro is unlocked.
         let g = painter.layout_no_wrap("PRO".into(), semibold(10.0), t.on_accent); // i18n: brand
         let badge = Rect::from_min_size(pos2(name.right() + 6.0, rect.center().y - g.size().y / 2.0 - 2.0), g.size() + vec2(10.0, 4.0));
         painter.rect_filled(badge, 4.0, t.accent);
@@ -77,7 +77,7 @@ pub fn toolbar(shell: &mut Shell, ui: &mut Ui, rect: Rect, _system: System) {
         (icon::STACK, tn!("Layers"), LAYERS_PHASE),
         (icon::FOLDER_OPEN, tn!("Open"), OPEN_PHASE),
     ] {
-        // Share comes with export, shown ahead of its phase in developer and Pro builds.
+        // Share comes with export, released ahead of its phase (`export::shown`).
         let built = if phase == SHARE_PHASE { shell.export_shown() } else { flags.shows(phase) && phase <= lm_core::phase::BUILD_PHASE };
         let enabled = built && (label != "Undo" || shell.ws.undo.can_undo());
         let color = if enabled { t.text_primary } else { t.text_secondary.gamma_multiply(0.7) };

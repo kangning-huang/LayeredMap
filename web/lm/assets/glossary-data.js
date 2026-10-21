@@ -270,8 +270,8 @@ window.LM_GLOSSARY = [
     alt: [".geojson", ".gpkg", ".shp", "file formats", "KML", "GPX", "文件格式"],
     d_en: "Common files for vector data. GeoJSON is a single text file; GeoPackage (.gpkg) is a single database file that can hold several layers; a Shapefile is a set of files with the same name (.shp, .dbf, .shx, .prj) that belong together.",
     d_zh: "常见的矢量数据文件。GeoJSON 是一个文本文件；GeoPackage（.gpkg）是一个数据库文件，可以装好几个图层；Shapefile 是一组同名文件（.shp、.dbf、.shx、.prj），要放在一起使用。",
-    w_en: "Toolbar <span class=\"ui\">Open</span> (⌘O), or drag files onto the window (<span class=\"ui\">Drop to add to the map</span>). <span class=\"ui\">Details</span> › <span class=\"ui\">Format</span> names the format.",
-    w_zh: "工具栏 <span class=\"ui\">Open</span>（⌘O），或直接把文件拖进窗口（会提示 “Drop to add to the map”）。<span class=\"ui\">Details</span> › <span class=\"ui\">Format</span> 会写明格式。",
+    w_en: "Toolbar <span class=\"ui\">Open</span> (⌘O), or drag files into NimbleMap (<span class=\"ui\">Drop to add to the map</span>). <span class=\"ui\">Details</span> › <span class=\"ui\">Format</span> names the format.",
+    w_zh: "工具栏 <span class=\"ui\">Open</span>（⌘O），或直接把文件拖进凌波微图（会提示 “Drop to add to the map”）。<span class=\"ui\">Details</span> › <span class=\"ui\">Format</span> 会写明格式。",
     see: ""
   },
   {

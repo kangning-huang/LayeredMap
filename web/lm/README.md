@@ -24,8 +24,9 @@ touches no upstream file or workflow.
 
 | English | 中文 | What |
 |---|---|---|
-| `index.html` | `zh/index.html` | Landing for the map-curious: what NimbleMap is, examples, Free vs Pro, a link to the download page |
-| `download.html` | `zh/download.html` | For people who already have a GIS file: what it opens, why layers line up, the download buttons (placeholders), NimbleMap or QGIS, and a FAQ in the words people search with |
+| `index.html` | `zh/index.html` | Landing: “Found map data online? Drag it into NimbleMap.” The launch film (v3.6 web loop, `video/hero-loop.mp4`, 3.1 MB, muted and looping with a pause button; its end card `img/hero-poster.jpg` as poster and as the still under Reduce Motion; not bundled in the app), what it opens, a Data page teaser, four “once it’s open” screenshots, a slim Pro band, the built-in examples as practice, sharing, a final download button |
+| `download.html` | `zh/download.html` | For people who already have a GIS file: what it opens, why layers line up, the download buttons, why NimbleMap differs from a typical GIS (for people who know GIS), NimbleMap or QGIS, and a FAQ in the words people search with |
+| `pro.html` | `zh/pro.html` | Free vs Pro: what Pro adds (free with an account, unlocked by signing in inside the app, coming in the next version); the other languages' footers link the English page |
 | `help.html` | `zh/help.html` | Help start page (what Help › NimbleMap Help opens): the workflows and the window in one minute |
 | `glossary.html` | `zh/glossary.html` | 34 terms, searched in the browser in both languages (`?q=buffer`, `#gcj02` deep links, `/` focuses the box) |
 | `workflow-typhoons.html` | `zh/…` | Typhoon tracks: click, rank, colour, filter to Category 5; Pro for counting near cities |
@@ -35,10 +36,11 @@ touches no upstream file or workflow.
 `assets/site.css` (light and dark, follows the system, with a switch remembered in
 `localStorage`), `assets/site.js` (the switch), `assets/glossary-data.js` (every term, both
 languages, with where it appears in the app) and `assets/glossary.js` (drawing and search).
-Header and footer are repeated in each page; change them in all of them. The language parts
-(the `hreflang` alternates, `og:locale`, the header's language menu and the footer's language
-list) are written by `tools/lm/site/langs.py` from its `LANGS` table: add a language's folder, add
-its row, run the script. Each glossary page also loads `assets/glossary-<folder>.js`.
+Header and footer are repeated in each page. The shared parts (the `hreflang` alternates,
+`og:locale`, the header's page links and language menu, and the footer's links, non-affiliation
+line and language list) are written by `tools/lm/site/langs.py` from its `LANGS` and `WORDS`
+tables: add a language's folder, add its rows, run the script. Everything else in the header and
+footer is changed by hand in every page. Each glossary page also loads `assets/glossary-<folder>.js`.
 
 ## Preview
 
@@ -68,19 +70,21 @@ text; the tests check this, and the stamp script drops them from the published c
 
 ### Where it is published
 
-Until the domain is bought, the stamped site is served by GitHub Pages from the public
-[NimbleMap](https://github.com/kangning-huang/NimbleMap) repository (`main` › `/docs`) at
-https://kangning-huang.github.io/NimbleMap/. That repository holds only the website, the changelog
-and user feedback: never source code, packaging scripts or keys. To update it, stamp into a new
-folder, replace that repository's `docs/` with it (keep `docs/.nojekyll`) and push:
+The stamped site is served by GitHub Pages from the public
+[NimbleMap](https://github.com/kangning-huang/NimbleMap) repository (`main` › `/docs`) at its
+custom domain, https://nimblemap.com/ (nimblemap.app redirects there at Cloudflare; don't point the
+Pages CNAME at it). That repository holds only the website, the changelog and user feedback: never
+source code, packaging scripts or keys. To update it, stamp into a new folder and copy it over that
+repository's `docs/`, keeping `docs/.nojekyll` (and the `backups/` folder at the repository root):
 
 ```sh
-python3 -I tools/lm/site/stamp.py https://kangning-huang.github.io/NimbleMap /path/to/new/folder
+python3 -I tools/lm/site/stamp.py /path/to/new/folder        # ORIGIN defaults to https://nimblemap.com/
+rsync -a --delete --exclude .nojekyll /path/to/new/folder/ /path/to/NimbleMap/docs/
 ```
 
-A project site lives below the host root, where crawlers don't read `robots.txt`, so the script
-writes none; submit `sitemap.xml` in Search Console instead. When the domain is bought, stamp with
-it, add a `docs/CNAME` file holding the domain, and set it under the repository's Pages settings.
+Stamping for a host root also writes `robots.txt` and `CNAME` (holding `nimblemap.com`), so the
+copy keeps the custom domain. Always stamp with the live origin: stamping with another one rewrites
+every canonical and hreflang URL to it.
 
 ## In the app
 
@@ -101,15 +105,14 @@ local file makes no network request, so the network gate is not involved.
 - **Hosting.** Choose a host reachable from mainland China and elsewhere (and an ICP filing if
   the site is hosted in mainland China). Then add the public URL to `help.rs` as a fallback if the
   bundled pages are missing.
-- **Download links.** The three download buttons in `download.html` and `zh/download.html` are disabled
-  placeholders marked `TODO(owner)`: the signed .dmg, a mainland China mirror, Pro sign-up and
-  pricing.
+- **Download links.** The Mac button links the latest GitHub release's .dmg (the landing pages'
+  buttons too). The mainland China mirror and Pro buttons in `download.html` are disabled
+  placeholders marked `TODO(owner)`.
 - **Chinese interface.** The app is English-only for now, so the Chinese pages quote the English
   button labels with a Chinese gloss. When the Chinese interface (WP5.5) lands, swap in its labels
   and retake the screenshots in Chinese.
-- **Share in Free builds.** Share › Map image… and Data… appear in a Free release build once the
-  build reaches Phase 5 (`EXPORT_PHASE`; today they show in Pro and developer builds). The export
-  screenshots were taken from a developer build; the sheet is the same in every tier.
+- **Share in every build.** From 0.7.1 Share › Map image…, Data… and Map package… are in every
+  release build, signed in or not (`lm_ui::export::shown`; docs/lm/decisions.md, 2026-10-20).
 - **Pro examples.** The Ask questions quoted on the pages are examples of the kind of request the
   assistant takes; only “Which country has the most cities?” (the screenshot) and the questions in
   `docs/lm/demo-picks.md` were run. Run the others through the evaluation set before launch.
@@ -121,15 +124,70 @@ All screenshots are real captures of the NimbleMap window from this branch, take
 these pages, `theme` on 2026-10-19) and `screencapture -l` on the app's window only, then scaled to
 1600 px and saved as JPEG.
 
-- **Light appearance, retaken 2026-10-19** (`theme light`, the Light basemap except the satellite
-  shots `walls-satellite.jpg` and `walls-region.jpg`): every image except the two Pro shots below.
-  Two were added for the landing page's rotating hero: `points-earthquakes.jpg` (the earthquakes
-  example coloured by magnitude, `card style_by_value magnitude`, with the 2011 Tohoku earthquake
-  selected) and `areas-countries.jpg` (`countries.geojson` coloured by `pop_est`, India selected).
-  The hero's Lines and Grids slides reuse `typhoons-card.jpg` and `heatwave-slider.jpg`.
-- **Still dark, not retaken:** `pro-ask.jpg` and `typhoons-pro.jpg` need the paid Ask step. They
-  date from 2026-10-18; `pro-ask.jpg` is an earlier capture of the Pro test build with the test
-  build's cost line removed. Retake them in light when the owner approves an Ask run.
+**Retake all screenshots after any significant UI change: `tools/lm/site/retake_screenshots.sh`.**
+It builds the release app, runs each screenshot's tour script, captures only the window that run
+opens (found by its process id, so other NimbleMap windows are ignored) at a set delay, scales it to
+1600 px (Pillow, JPEG quality 90, 4:4:4) and cuts the landing-page crops. The table at the top of the
+script lists every screenshot's tour script, capture delay and crop, so adding one is one line. Pass
+names to retake a subset (`retake_screenshots.sh typhoons-card walls-satellite`; a crop is re-cut
+when its source is retaken). It never sends keys or clicks. Window chrome is forced light with the
+per-process Cocoa default `-NSRequiresAquaSystemAppearance YES`, so captures match in Dark mode.
+Every shot runs the plain release build signed out (tours start the account but never sign in), so
+free shots show the Ask box's sign-in prompt at the bottom, as a person sees the app before signing
+in. `pro-ask` spends one Ask request and runs only with `PAID=1`; `typhoons-pro` runs with Pro
+unlocked by the developer override (`LM_DEV_PRO=1`) without an Ask call. Both use
+`LM_ASK_ROUTE=direct`, so the key comes from the keychain; no build carries one, and the release
+build shows no cost line. The home page's `open-*` shots are in the script's table too and run with
+`OPEN_FILES=<folder>` (see below).
+
+- **Retaken 2026-10-21 for 0.7.1**, every shot, with the script from the packaged 0.7.1 app
+  (`LM_APP=…/NimbleMap.app/Contents/MacOS/layeredmap NOBUILD=1 PAID=1 OPEN_FILES=…`): Share is
+  enabled in every shot and free shots show the Ask box's sign-in prompt, as the app looks signed
+  out. `pro-ask` now starts with `esc` (the layer card closed), so the answer card sits right of
+  centre and the Americas, with the top answer (United States of America, 111 cities) highlighted,
+  show on the left; two Ask requests in all. `open-time` is cut above the sign-in prompt
+  (336,330,1176,855). The Pro shots are 1600×996 like the rest. The `step-*.jpg` crops,
+  `areas-countries.jpg` and the hero's `open-storms/earthquakes/heatwave/relief/volcanoes.jpg` are no
+  longer shown on any page (the hero is the launch film; `open-storms.jpg` stays the home page's
+  og:image) but are kept current.
+- **Home page, 2026-10-20 (`open-*.jpg`):** captured the same way (release build, `--tour`, light
+  theme, window only, `retake_screenshots.py shot`/`cut`) but from the real downloaded-style files
+  that `design/launch-video-v3/data/make_files.sh "<folder>"` writes (IBTrACS storms `.shp`, USGS
+  earthquakes `.gpkg`, GDO heatwave `.nc`, ETOPO `.tif`, NCEI volcano `.csv`), passed as file
+  arguments. Since 0.7.1 they are rows of `retake_screenshots.sh` that run with `OPEN_FILES` set to
+  that folder (the zoom, search and click shots are kept with the raw captures and cut from there).
+  Tours (steps are 2.5 s apart, 6 s after a fly): storms
+  `theme light;basemap light;tab 0;tab 0;card style_by_value max_wind_k;tab 0;150,22,3.2;tab 0;150,22,3.2…`
+  (capture at 30 s); search: the same with `find Haiyan` after the style step (29 s); zoom:
+  `…card style_by_value max_wind_k;tab 0;124,16,4.6;esc;esc;124,16,4.6…` (36 s); earthquakes
+  `…175,12,2.4 ×3;card style_by_value magnitude;tab 0…` (34 s); click: `142.373,38.297,10 ×2;card
+  style_by_value magnitude;142.373,38.297,10;click 142.373,38.297;160,20,2.6…` (36 s); heatwave
+  `-5,25,2.6 ×3;time 45;tab 0…` (34 s); relief `60,10,1.9 ×3;tab 0…` (30 s); volcanoes
+  `175,10,2.3 ×3;card style_by_value elevation_m;tab 0…` (32 s). Cuts (from the 1600-px shots, to
+  800×500): zoom 345,100,1545,850; search 700,100,1600,662; click 600,110,1600,735; time (from the
+  heatwave shot) 210,420,1130,995.
+- **Retaken 2026-10-19 after the line-transparency fix** (55db6c3: tracks coloured by basin or
+  season keep the layer's faint line transparency, so overlaps show density), all with the script
+  on the phase-4 build, Light appearance (`theme light`; the Light basemap except the
+  satellite shots `walls-satellite.jpg` and `walls-region.jpg`). The exact tour scripts are the
+  script's table. `points-earthquakes.jpg` is the earthquakes example coloured by magnitude
+  (`card style_by_value magnitude`) with the 2011 Tohoku earthquake selected; `areas-countries.jpg`
+  is `countries.geojson` coloured by `pop_est` with India selected. `typhoons-hero.jpg` is a crop of
+  its capture (raw pixels x 254–2564 of 2818, the framing of the earlier hero). The hero's Lines and
+  Grids slides reuse `typhoons-card.jpg` and `heatwave-slider.jpg`.
+  The landing page's principle crops are 800×500 cuts of these captures: `step-open.jpg` from
+  `welcome.jpg` (x 380–1240, y 458–996, scaled), `step-click.jpg` from `points-earthquakes.jpg`
+  (x 1000–1600, y 98–473, scaled), `step-share.jpg` from `heatwave-export.jpg` (x 60–1150,
+  y 170–851, scaled), `step-honest.jpg` from `walls-compare.jpg` (x 640–1600, y 110–710, scaled)
+  and `step-try.jpg` from `typhoons-filter.jpg` (x 340–1140, y 496–996, not scaled).
+  `img/icon-256.png` is a copy of `assets/icon/icon-256.png` (the app icon) for the final call to
+  action.
+  `heatwave-export.jpg` ran with `LM_DEV=1` then, since Share was off in the public build; from
+  0.7.1 it comes from the release build.
+- **Pro shots, retaken 2026-10-19 in light** as NimbleMap Pro (then `LM_TIER=pro`, now `LM_DEV_PRO=1`; the release
+  binary, so the Ask key comes from the keychain and no cost line shows): `typhoons-pro.jpg` (Haiyan
+  selected with the Ask box showing; no Ask call) and `pro-ask.jpg` (“Which country has the most
+  cities?” over `cities.geojson` with the built-in world layers; one Ask request, `PAID=1`).
 
 Map content in the screenshots, and the credit each needs:
 

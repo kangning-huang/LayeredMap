@@ -348,3 +348,70 @@ fn the_proxy_route_sends_the_same_request_and_no_values() {
     let text = sent.to_string();
     assert!(text.contains("Schools") && !text.contains("Shanghai No. 1"), "layer names, never values");
 }
+
+/// Answers with an error first when the body forces a tool choice (as every provider of Claude
+/// Sonnet 5.5 does), then with the scripted replies.
+struct RefusesForced {
+    inner: Script,
+}
+
+impl Transport for RefusesForced {
+    fn complete(&self, body: &Json) -> Result<Json, String> {
+        if body["tool_choice"] == "required" {
+            self.inner.seen.borrow_mut().push(body.clone());
+            return Err("The assistant service answered 400: Provider returned error".into());
+        }
+        self.inner.complete(body)
+    }
+}
+
+fn plan_call(id: &str) -> Json {
+    call(id, "submit_plan", json!({"steps": [{"action": "count_in", "points": "Schools", "areas": "Districts"}]}))
+}
+
+/// Harness v3 bug 8 (Sonnet HTTP 400): a provider that refuses a forced tool choice gets the same
+/// request again with "auto"; the model is then asked with "auto" from the start, and a reply
+/// in words gets one reminder to answer with a tool call.
+#[test]
+fn sonnet_400_a_refused_forced_tool_choice_falls_back_to_auto() {
+    let mut req = request("Count the schools in each district.", map(), vec![None, None]);
+    req.model = "test/refuses-forced-1".into();
+    let t = RefusesForced { inner: Script::new(vec![plan_call("p1")]) };
+    let turn = ask(&t, &req, &Control::none());
+    assert!(matches!(turn.answer, Ok(Answer::Plan(_))), "{:?}", turn.answer.err());
+    let seen = t.inner.seen.borrow();
+    assert_eq!(seen.iter().map(|b| b["tool_choice"].as_str().unwrap_or("").to_string()).collect::<Vec<_>>(), ["required", "auto"]);
+    drop(seen);
+    // Remembered: the next request starts with "auto". A reply in words is reminded once.
+    let t = RefusesForced {
+        inner: Script::new(vec![json!({"choices": [{"message": {"content": "I would count them per district."}}]}), plan_call("p2")]),
+    };
+    let turn = ask(&t, &req, &Control::none());
+    assert!(matches!(turn.answer, Ok(Answer::Plan(_))));
+    let seen = t.inner.seen.borrow();
+    assert!(seen.iter().all(|b| b["tool_choice"] == "auto"));
+    let last = seen.last().unwrap()["messages"].as_array().unwrap().clone();
+    assert!(last.iter().any(|m| m["role"] == "user" && m["content"].as_str().unwrap_or("").starts_with("Answer with a tool call")));
+}
+
+/// Harness v3 bug 9 (c05, GLM on InferenceNet): steps that come back as `{"action": …}` alone are
+/// sent back naming exactly the arguments each step needs, and the request leaves that provider
+/// out.
+#[test]
+fn c05_steps_without_arguments_are_sent_back_naming_the_missing_ones() {
+    let bare = call("c1", "submit_plan", json!({"steps": [{"action": "filter"}, {"action": "count_in"}, {"action": "rank_by_value"}]}));
+    let t = Script::new(vec![bare, plan_call("c2")]);
+    let turn = ask(&t, &request("Which district has the most schools?", map(), vec![None, None]), &Control::none());
+    assert!(matches!(turn.answer, Ok(Answer::Plan(_))));
+    let seen = t.seen.borrow();
+    assert_eq!(seen[0]["provider"]["ignore"], json!(["InferenceNet"]));
+    let msgs = seen[1]["messages"].as_array().unwrap();
+    let repair = msgs.iter().rev().find(|m| m["role"] == "tool").and_then(|m| m["content"].as_str()).unwrap_or("");
+    for want in [
+        "step 1 (filter) needs layer and conditions",
+        "step 2 (count_in) needs points and areas",
+        "step 3 (rank_by_value) needs layer and field",
+    ] {
+        assert!(repair.contains(want), "{repair}");
+    }
+}

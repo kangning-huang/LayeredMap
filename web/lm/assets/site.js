@@ -11,17 +11,17 @@
   }
   // The few words this script writes, per page language (the pages carry everything else).
   var WORDS = {
-    en: { dark: "Switch to dark mode", light: "Switch to light mode", play: "Play the slideshow", pause: "Pause the slideshow" },
-    zh: { dark: "切换到深色", light: "切换到浅色", play: "继续轮播", pause: "暂停轮播" },
-    de: { dark: "Dunkles Design", light: "Helles Design", play: "Diashow abspielen", pause: "Diashow anhalten" },
-    es: { dark: "Cambiar a modo oscuro", light: "Cambiar a modo claro", play: "Reanudar la presentación", pause: "Pausar la presentación" },
-    fr: { dark: "Passer en mode sombre", light: "Passer en mode clair", play: "Lire le diaporama", pause: "Mettre le diaporama en pause" },
-    it: { dark: "Passa al tema scuro", light: "Passa al tema chiaro", play: "Riproduci la presentazione", pause: "Metti in pausa la presentazione" },
-    nl: { dark: "Donkere modus", light: "Lichte modus", play: "Diavoorstelling afspelen", pause: "Diavoorstelling pauzeren" },
-    pt: { dark: "Mudar para o modo escuro", light: "Mudar para o modo claro", play: "Retomar a apresentação", pause: "Pausar a apresentação" },
-    ru: { dark: "Тёмная тема", light: "Светлая тема", play: "Продолжить показ", pause: "Приостановить показ" },
-    ja: { dark: "ダークモードに切り替え", light: "ライトモードに切り替え", play: "スライドショーを再生", pause: "スライドショーを一時停止" },
-    ko: { dark: "다크 모드로 전환", light: "라이트 모드로 전환", play: "슬라이드쇼 재생", pause: "슬라이드쇼 일시 정지" }
+    en: { dark: "Switch to dark mode", light: "Switch to light mode", play: "Play the slideshow", pause: "Pause the slideshow", vplay: "Play the video", vpause: "Pause the video" },
+    zh: { dark: "切换到深色", light: "切换到浅色", play: "继续轮播", pause: "暂停轮播", vplay: "播放视频", vpause: "暂停视频" },
+    de: { dark: "Dunkles Design", light: "Helles Design", play: "Diashow abspielen", pause: "Diashow anhalten", vplay: "Video abspielen", vpause: "Video anhalten" },
+    es: { dark: "Cambiar a modo oscuro", light: "Cambiar a modo claro", play: "Reanudar la presentación", pause: "Pausar la presentación", vplay: "Reproducir el vídeo", vpause: "Pausar el vídeo" },
+    fr: { dark: "Passer en mode sombre", light: "Passer en mode clair", play: "Lire le diaporama", pause: "Mettre le diaporama en pause", vplay: "Lire la vidéo", vpause: "Mettre la vidéo en pause" },
+    it: { dark: "Passa al tema scuro", light: "Passa al tema chiaro", play: "Riproduci la presentazione", pause: "Metti in pausa la presentazione", vplay: "Riproduci il video", vpause: "Metti in pausa il video" },
+    nl: { dark: "Donkere modus", light: "Lichte modus", play: "Diavoorstelling afspelen", pause: "Diavoorstelling pauzeren", vplay: "Video afspelen", vpause: "Video pauzeren" },
+    pt: { dark: "Mudar para o modo escuro", light: "Mudar para o modo claro", play: "Retomar a apresentação", pause: "Pausar a apresentação", vplay: "Reproduzir o vídeo", vpause: "Pausar o vídeo" },
+    ru: { dark: "Тёмная тема", light: "Светлая тема", play: "Продолжить показ", pause: "Приостановить показ", vplay: "Воспроизвести видео", vpause: "Приостановить видео" },
+    ja: { dark: "ダークモードに切り替え", light: "ライトモードに切り替え", play: "スライドショーを再生", pause: "スライドショーを一時停止", vplay: "動画を再生", vpause: "動画を一時停止" },
+    ko: { dark: "다크 모드로 전환", light: "라이트 모드로 전환", play: "슬라이드쇼 재생", pause: "슬라이드쇼 일시 정지", vplay: "동영상 재생", vpause: "동영상 일시 정지" }
   };
   var W = WORDS[(root.lang || "en").split("-")[0].toLowerCase()] || WORDS.en;
 
@@ -58,6 +58,38 @@
     document.addEventListener("click", function (ev) { if (menu.open && !menu.contains(ev.target)) { menu.open = false; } });
     document.addEventListener("keydown", function (ev) {
       if (ev.key === "Escape" && menu.open) { menu.open = false; menu.querySelector("summary").focus(); }
+    });
+  });
+
+  // Hero film: muted and looping, with a pause button. With Reduce Motion it never plays (the
+  // still shows instead, site.css), and it pauses while the tab is hidden.
+  document.addEventListener("DOMContentLoaded", function () {
+    var film = document.querySelector(".hero-film video");
+    if (!film) { return; }
+    var button = document.querySelector(".hero-film .film-pause");
+    var calm = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var stopped = false;
+    function label() {
+      if (!button) { return; }
+      button.setAttribute("aria-pressed", stopped ? "true" : "false");
+      button.setAttribute("aria-label", stopped ? W.vplay : W.vpause);
+    }
+    if (calm) {
+      film.removeAttribute("autoplay");
+      film.preload = "none";
+      film.pause();
+      return;
+    }
+    label();
+    if (button) {
+      button.addEventListener("click", function () {
+        stopped = !stopped;
+        if (stopped) { film.pause(); } else { var p = film.play(); if (p && p.catch) { p.catch(function () {}); } }
+        label();
+      });
+    }
+    document.addEventListener("visibilitychange", function () {
+      if (document.hidden) { film.pause(); } else if (!stopped) { var p = film.play(); if (p && p.catch) { p.catch(function () {}); } }
     });
   });
 
@@ -124,4 +156,21 @@ document.addEventListener("DOMContentLoaded", function () {
     var net = links[i].getAttribute("data-net");
     if (to[net]) links[i].href = to[net];
   }
+});
+
+// Download buttons link straight to the Mac app. On a phone, a tablet, Windows or Linux, show the
+// line under the button (.mac-only, in the page's language) saying it needs a Mac. Intel Macs
+// can't be told apart reliably, so they aren't singled out.
+document.addEventListener("DOMContentLoaded", function () {
+  var notes = document.querySelectorAll(".mac-only");
+  if (!notes.length) return;
+  var nav = window.navigator;
+  var uad = nav.userAgentData;
+  var platform = (uad && uad.platform) || nav.platform || "";
+  var ua = nav.userAgent || "";
+  var mobile = (uad && uad.mobile) || /iPhone|iPad|iPod|Android/i.test(ua);
+  var ipad = /Mac/i.test(platform) && nav.maxTouchPoints > 1;  // iPadOS says it is a Mac
+  var other = platform ? !/Mac/i.test(platform) : /Windows|Linux|CrOS|X11/i.test(ua);
+  if (!(mobile || ipad || other)) return;
+  for (var i = 0; i < notes.length; i++) notes[i].hidden = false;
 });

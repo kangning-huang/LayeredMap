@@ -667,6 +667,43 @@ Full Screen	Pantalla completa
 Window	Ventana
 Help	Ayuda
 Export Diagnostics…	Exportar diagnóstico…
+Send Feedback…	Enviar comentarios…
+Send Feedback	Enviar comentarios
+Tell us what would make {app} better, or what went wrong.	Cuéntanos qué haría mejor a {app} o qué ha fallado.
+Idea	Idea
+Problem	Problema
+Other	Otro
+Message	Mensaje
+What would you like {app} to do?	¿Qué te gustaría que hiciera {app}?
+What happened, and what did you expect?	¿Qué ocurrió y qué esperabas?
+What's on your mind?	¿Qué quieres contarnos?
+{n} of {max} characters	{n} de {max} caracteres
+Title (optional)	Título (opcional)
+A short summary	Un breve resumen
+Email (optional)	Correo electrónico (opcional)
+Only used to reply to you. Never shown publicly.	Solo se usa para responderte. Nunca se muestra públicamente.
+Include app version and macOS version	Incluir la versión de la app y de macOS
+Include app version and Windows version	Incluir la versión de la app y de Windows
+Your feedback will be posted publicly on GitHub Discussions, without your email.	Tus comentarios serán públicos en GitHub Discussions, sin tu correo electrónico.
+Sent with your account so we can follow up. Your account isn't shown publicly.	Se envía con tu cuenta para que podamos hacerte un seguimiento. Tu cuenta no se muestra públicamente.
+Send	Enviar
+Sending…	Enviando…
+Thank you! Your feedback is posted.	¡Gracias! Tus comentarios se han publicado.
+It's public on GitHub Discussions, where you can follow replies.	Son públicos en GitHub Discussions, donde puedes seguir las respuestas.
+View on GitHub	Ver en GitHub
+Write a few words about your idea or problem.	Escribe unas palabras sobre tu idea o problema.
+The message is {n} characters long. Shorten it to {max} or fewer.	El mensaje tiene {n} caracteres. Acórtalo a {max} como máximo.
+Shorten the title to {max} characters or fewer.	Acorta el título a {max} caracteres como máximo.
+Include at most {max} links.	Incluye como máximo {max} enlaces.
+Check the email address, or leave it empty.	Revisa la dirección de correo o deja el campo vacío.
+Feedback can't be sent from this build. You can post on GitHub Discussions yourself: {url}	No se pueden enviar comentarios desde esta versión. Puedes publicar tú mismo en GitHub Discussions: {url}
+{app} is working offline. Turn off View › Work Offline, then press Send again.	{app} está trabajando sin conexión. Desactiva Ver › Trabajar sin conexión y vuelve a pulsar Enviar.
+You've sent a lot of feedback today. Please try again tomorrow.	Hoy has enviado muchos comentarios. Inténtalo de nuevo mañana.
+The message is too long. Shorten it, then press Send again.	El mensaje es demasiado largo. Acórtalo y vuelve a pulsar Enviar.
+The feedback service didn't accept the message: {reason}	El servicio de comentarios no aceptó el mensaje: {reason}
+Your feedback couldn't be posted just now. Your text is still here: try again in a few minutes.	No se pudieron publicar tus comentarios en este momento. Tu texto sigue aquí: inténtalo de nuevo en unos minutos.
+Couldn't reach the feedback service. Check your internet connection, then press Send again.	No se pudo conectar con el servicio de comentarios. Revisa tu conexión a internet y vuelve a pulsar Enviar.
+The feedback service answered {status}. Try again in a few minutes.	El servicio de comentarios respondió {status}. Inténtalo de nuevo en unos minutos.
 About {app}	Acerca de {app}
 Quit {app}	Salir de {app}
 Undo ({key})	Deshacer ({key})
@@ -791,3 +828,9 @@ Couldn't reach the assistant service: {error}	No se ha podido acceder al servici
 The assistant service's answer was cut off: {error}	La respuesta del servicio del asistente se ha cortado: {error}
 The assistant service answered {status} with something unreadable.	El servicio del asistente ha respondido {status} con algo ilegible.
 {app} is working offline, so the assistant can't be reached. Turn off View › Work Offline to ask.	{app} está trabajando sin conexión, así que no se puede acceder al asistente. Desactiva Ver › Trabajar sin conexión para preguntar.
+Signing in unlocks the Ask box, analysis tools, the built-in world layers and voice input.	Al iniciar sesión se desbloquean el cuadro de preguntas, las herramientas de análisis, las capas del mundo integradas y la entrada por voz.
+Checking your account…	Comprobando tu cuenta…
+Sign in to use analysis tools	Inicia sesión para usar las herramientas de análisis
+{action} (locked)	{action} (bloqueado)
+Settings › Account shows who is signed in and what the account includes.	En Ajustes › Cuenta puedes ver quién ha iniciado sesión y qué incluye la cuenta.
+Nothing matches, so nothing is highlighted on the map.	No hay coincidencias, así que no se resalta nada en el mapa.

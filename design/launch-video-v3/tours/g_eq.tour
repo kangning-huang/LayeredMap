@@ -1,0 +1,16 @@
+# v3.1 film 2: the earthquake GeoPackage (file argument), dark, coloured by magnitude. Pacific view;
+# the place search's landing for "Tokyo" (pop 9,733,276 -> zoom 10.012); Tohoku clicked close up,
+# then a view of Japan with its card
+theme dark
+card style_by_value magnitude
+esc
+175,12,2.4
+layer 99
+139.69171,35.6895,10.012
+layer 99
+layer 99
+142.373,38.297,10
+click 142.373,38.297
+140.8,37.3,5.6
+layer 99
+layer 99

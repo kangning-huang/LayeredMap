@@ -1,0 +1,12 @@
+# Film 1 (typhoons, light): storms open, panel closed, world view (tracks draw in over the plate),
+# dive to Leyte, click Haiyan (2013), pull out to its whole track with the card open
+example storms
+esc
+150,15,2.3
+layer 99
+126,11,7.5
+click 124.53,11.05
+layer 99
+128,14,4.4
+layer 99
+layer 99

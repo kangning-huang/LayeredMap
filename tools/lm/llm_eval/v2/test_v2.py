@@ -165,7 +165,7 @@ def test_m06_accepts_filter_after_summary():
 def test_case_set():
     v2 = scoring_v2.CASES_V2
     new = [c for c in v2.values() if c["new_in"] == "v2"]
-    assert len(v2) == 97 and len(new) >= 10 and sum(c["lang"] == "zh" for c in new) >= 4
+    assert len(v2) == 98 and len(new) >= 10 and sum(c["lang"] == "zh" for c in new) >= 4
     assert set(scoring_v2.CASES_V1) <= set(v2)
 
 
@@ -217,7 +217,7 @@ def test_dry_run_is_perfect(tmp_path):
     for design in ("per_action", "submit_plan"):
         assert run_v2.main(["--dry-run", "--design", design, "--models", "openai/gpt-oss-120b", "--out", str(tmp_path)]) == 0
         rows = [json.loads(x) for x in (tmp_path / f"dryrun-v2-{design}" / "openai__gpt-oss-120b.jsonl").read_text().splitlines()]
-        assert len(rows) == 97 and all(r["score_v2"]["strict"] for r in rows)
+        assert len(rows) == 98 and all(r["score_v2"]["strict"] for r in rows)
         assert sum(r["score_v1"]["strict"] for r in rows if r["score_v1"]) == 77  # x05 changed
 
 

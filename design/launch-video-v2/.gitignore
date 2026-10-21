@@ -1,0 +1,7 @@
+out/
+raw/
+cfr/
+node_modules/
+capture/wrec
+capture/winid
+__pycache__/

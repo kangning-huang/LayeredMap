@@ -36,8 +36,9 @@
     <a class="brand" href="index.html"><img src="../assets/logo.svg" alt="" width="30" height="30">NimbleMap</a>
     <nav class="nav" aria-label="サイト">
       <a href="index.html">ホーム</a>
+      <a href="index.html#examples">サンプル</a>
+      <a href="data.html">データ</a>
       <a href="help.html" aria-current="page">ヘルプ</a>
-      <a href="glossary.html">用語集</a>
       <a href="download.html">ダウンロード</a>
       <details class="lang-menu">
         <summary aria-label="言語：日本語" title="言語"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.6 3.9 5.6 3.9 9s-1.3 6.4-3.9 9c-2.6-2.6-3.9-5.6-3.9-9S9.4 5.6 12 3z"/></svg><span>日本語</span></summary>
@@ -99,9 +100,21 @@
       <li><strong>何でも取り消せる</strong>：色の変更から絞り込み、レイヤーを外す操作まで、どの変更も Undo 1 回分です。元のファイルが書き換えられることはありません。</li>
     </ul>
     <h3>自分のファイルを開く</h3>
-    <p>ファイルをウインドウにドラッグするか、<span class="ui">Open</span> を使います。NimbleMap が読み込めるのは、CSV と Excel（緯度・経度の列があるもの）、GeoJSON、Shapefile、GeoPackage、KML/KMZ、GPX、GeoTIFF、NetCDF です。座標の入った列がどれかなど、アプリが何かを仮定したときは、カードがそれを 1 行で伝え、横に <span class="ui">Change</span>（変更）が表示されます。Amap（高徳地図）、Tencent、Baidu（百度地図）からコピーした点は、GPS 座標に移せます。<a href="glossary.html#gcj02">GCJ-02</a> を参照してください。</p>
+    <p>ファイルを NimbleMap にドラッグするか、<span class="ui">Open</span> を使います。NimbleMap が読み込めるのは、CSV と Excel（緯度・経度の列があるもの）、GeoJSON、Shapefile、GeoPackage、KML/KMZ、GPX、GeoTIFF、NetCDF です。座標の入った列がどれかなど、アプリが何かを仮定したときは、カードがそれを 1 行で伝え、横に <span class="ui">Change</span>（変更）が表示されます。Amap（高徳地図）、Tencent、Baidu（百度地図）からコピーした点は、GPS 座標に移せます。<a href="glossary.html#gcj02">GCJ-02</a> を参照してください。</p>
     <h3>わからない言葉があったら</h3>
     <p><a href="glossary.html">用語集</a>では、地図の用語をやさしい日本語で説明し、それぞれがアプリのどこに出てくるかも紹介しています。</p>
+  </div>
+</section>
+
+<section id="feedback">
+  <div class="narrow">
+    <h2>フィードバック</h2>
+    <p>フィードバックの送り方：アプリの <span class="ui">ヘルプ › フィードバックを送信…</span>、または <a href="https://github.com/kangning-huang/NimbleMap/discussions">GitHub Discussions</a>。</p>
+    <h3>プライバシー</h3>
+    <p><strong>アプリから送るフィードバック。</strong><span class="ui">ヘルプ › フィードバックを送信…</span> を選ぶと、NimbleMap は書いた内容を私たちのフィードバックサービスに送り、サービスはそれを <a href="https://github.com/kangning-huang/NimbleMap/discussions">GitHub Discussions</a>（github.com/kangning-huang/NimbleMap/discussions）に公開で投稿します。誰でも読んだり返信したりできます。投稿に含まれるのは、メッセージ、入力した場合はタイトル、フィードバックの種類、インターフェイスの言語です。アプリと macOS のバージョン番号は、<span class="ui">アプリと macOS のバージョンを含める</span> にチェックを入れたままにした場合だけ含まれます。メールアドレス、名前、アカウント、地図、ファイルが含まれることはありません。GitHub アカウントは不要です。</p>
+    <p>メールアドレスを入力した場合は、返信するためだけに、投稿へのリンクと一緒にサーバーに非公開で保存されます。公開されることはありません。やり取りが終わったら削除し、長くても 1 年で削除します。早めに削除してほしい場合はご連絡ください。</p>
+    <p>サインインしている場合、投稿には「サインイン済みのユーザーから」とだけ記され、サーバーはフォローアップのために、あなたのアカウント ID を投稿へのリンクと一緒に非公開で保存します。公開されることはなく、やり取りが終わったら削除し、長くても 1 年で削除します。</p>
+    <p>スパム防止のため、アプリはお使いのコンピュータで作られたランダムなインストール番号を送り、サーバーにはネットワークアドレスが見えます。どちらも集計用に鍵付きの一方向ハッシュとしてのみ保存し、1 週間後に削除します。</p>
   </div>
 </section>
 </main>
@@ -112,7 +125,7 @@
       <p><strong>NimbleMap ヘルプ</strong> · これらのページはアプリに同梱されており（Help › NimbleMap Help［ヘルプ › NimbleMap ヘルプ］）、オフラインでも読めます。</p>
       <p>スクリーンショットの地図データ：© OpenStreetMap contributors（ODbL）／Protomaps、Natural Earth（パブリックドメイン）、NASA Blue Marble 画像（NASA Earth Observatory、GIBS）。サンプルデータの出典は各ページに記載しています。</p>
     </div>
-    <div><a href="help.html">ヘルプ</a> · <a href="glossary.html">用語集</a><p class="foot-langs"><a href="../help.html" hreflang="en" lang="en">English</a> · <a href="../zh/help.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="../de/help.html" hreflang="de" lang="de">Deutsch</a> · <a href="../es/help.html" hreflang="es" lang="es">Español</a> · <a href="../fr/help.html" hreflang="fr" lang="fr">Français</a> · <a href="../it/help.html" hreflang="it" lang="it">Italiano</a> · <a href="../nl/help.html" hreflang="nl" lang="nl">Nederlands</a> · <a href="../pt-br/help.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ru/help.html" hreflang="ru" lang="ru">Русский</a> · <a href="../ko/help.html" hreflang="ko" lang="ko">한국어</a></p></div>
+    <div class="foot-nav"><p class="foot-links"><a href="help.html">ヘルプ</a> · <a href="glossary.html">用語集</a> · <a href="data.html">データ</a> · <a href="pro.html">Pro</a> · <a href="https://github.com/kangning-huang/NimbleMap/blob/main/CHANGELOG.md">変更履歴</a></p><p class="foot-note">NimbleMap は独立したプロジェクトであり、Apple、Esri、QGIS プロジェクトとは関係ありません。</p><p class="foot-langs"><a href="../help.html" hreflang="en" lang="en">English</a> · <a href="../zh/help.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="../de/help.html" hreflang="de" lang="de">Deutsch</a> · <a href="../es/help.html" hreflang="es" lang="es">Español</a> · <a href="../fr/help.html" hreflang="fr" lang="fr">Français</a> · <a href="../it/help.html" hreflang="it" lang="it">Italiano</a> · <a href="../nl/help.html" hreflang="nl" lang="nl">Nederlands</a> · <a href="../pt-br/help.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ru/help.html" hreflang="ru" lang="ru">Русский</a> · <a href="../ko/help.html" hreflang="ko" lang="ko">한국어</a></p></div>
   </div>
 </footer>
 </body>

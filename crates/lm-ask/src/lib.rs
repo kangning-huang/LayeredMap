@@ -7,6 +7,8 @@
 
 pub mod context;
 #[cfg(not(target_arch = "wasm32"))]
+pub mod fixture;
+#[cfg(not(target_arch = "wasm32"))]
 pub mod openrouter;
 mod pov;
 #[cfg(not(target_arch = "wasm32"))]

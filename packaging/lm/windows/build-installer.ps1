@@ -2,9 +2,9 @@
 # build-dmg.sh. Run on Windows with Rust (MSVC) and Inno Setup 6:
 #
 #   pwsh packaging/lm/windows/build-installer.ps1 [-OutDir dist\lm]
-#   $env:LM_TIER = "pro"; pwsh packaging/lm/windows/build-installer.ps1   # NimbleMap Pro
 #
-# Writes NimbleMap-<version>-<build>-windows-x64-setup.exe (or NimbleMap-Pro-...) to OutDir.
+# Writes NimbleMap-<version>-<build>-windows-x64-setup.exe to OutDir. One app: Pro's features
+# unlock when someone signs in (docs/lm/accounts-design.md › Entitlement).
 #
 # Signing runs only when LM_SIGNTOOL_ARGS is set: the arguments signtool needs after `sign` to
 # reach the certificate, for example (docs/lm/signing.md):
@@ -15,9 +15,8 @@
 # installer is unsigned: fine for testing, but SmartScreen warns on every other PC.
 #
 # Other environment variables, as on macOS: LM_BUILD_NUMBER, LM_UPDATE_FEED_URL (passed to cargo),
-# LM_REFERENCE_DATA (Pro's built-in reference layers), and for local Pro test builds only
-# LM_OPENROUTER_KEY (the owner's key, scrambled into Resources\assistant.dat; never set it in CI,
-# never upload such an installer). LM_NO_KEY=1 leaves the key out even when set.
+# LM_REFERENCE_DATA (the built-in reference layers), and LM_ACCOUNT_CONFIG (a path) or
+# LM_ACCOUNT_CONFIG_JSON (its text) for the account config. No build carries an assistant key.
 param([string]$OutDir = "")
 
 $ErrorActionPreference = "Stop"
@@ -34,14 +33,13 @@ $OutDir = (Resolve-Path $OutDir).Path
 $targetDir = if ($env:CARGO_TARGET_DIR) { $env:CARGO_TARGET_DIR } else { Join-Path $root "target" }
 $version = (Select-String -Path (Join-Path $root "Cargo.toml") -Pattern '^version = "(.*)"' | Select-Object -First 1).Matches[0].Groups[1].Value
 $build = if ($env:LM_BUILD_NUMBER) { $env:LM_BUILD_NUMBER } else { "0" }
-$tier = if ($env:LM_TIER -eq "pro") { "pro" } else { "free" }
-$exeName = if ($tier -eq "pro") { "layeredmap-pro.exe" } else { "layeredmap.exe" }
+$exeName = "layeredmap.exe"
 
 cargo build --release --locked -p layeredmap --manifest-path (Join-Path $root "Cargo.toml")
 if ($LASTEXITCODE -ne 0) { throw "cargo build failed" }
 
 # The staged folder mirrors the install: the exe, and Resources beside it (lm_core::platform).
-$stage = Join-Path $OutDir "stage-windows-$tier"
+$stage = Join-Path $OutDir "stage-windows"
 if (Test-Path $stage) { Remove-Item -Recurse -Force $stage }
 $res = Join-Path $stage "Resources"
 New-Item -ItemType Directory -Force -Path $res | Out-Null
@@ -49,36 +47,30 @@ Copy-Item (Join-Path $targetDir "release\layeredmap.exe") (Join-Path $stage $exe
 # The Examples menu (WP2.9): Resources\examples. AppleDouble files from the exFAT drive are left out.
 Copy-Item -Recurse (Join-Path $root "assets\examples") (Join-Path $res "examples")
 Get-ChildItem -Recurse -Force -Path $res -Filter "._*" | Remove-Item -Force
-Set-Content -NoNewline -Encoding ascii -Path (Join-Path $res "tier") -Value $tier
 # Licences (Gate 5 licence audit).
 Copy-Item (Join-Path $root "LICENSE"), (Join-Path $root "ATTRIBUTION.md") $res
 if (Test-Path (Join-Path $root "ATTRIBUTION-crates.md")) { Copy-Item (Join-Path $root "ATTRIBUTION-crates.md") $res }
 
-if ($tier -eq "pro") {
-  # Built-in reference layers (tools/lm/reference/build_reference.py), as in bundle-macos.sh.
-  $ref = $env:LM_REFERENCE_DATA
-  if ($ref -and (Test-Path (Join-Path $ref "manifest.json"))) {
-    $dst = Join-Path $res "reference"
-    Copy-Item -Recurse $ref $dst
-    if (Test-Path (Join-Path $dst "raw")) { Remove-Item -Recurse -Force (Join-Path $dst "raw") }
-    Get-ChildItem -Recurse -Force -Path $dst -Filter "._*" | Remove-Item -Force
-  } else {
-    Write-Warning "build-installer: no reference data at '$ref' (built-in layers left out)"
-  }
-  # Pro's account config (docs/lm/accounts-design.md), as in bundle-macos.sh.
-  if ($env:LM_ACCOUNT_CONFIG) {
-    Copy-Item $env:LM_ACCOUNT_CONFIG (Join-Path $res "account.json")
-    Write-Host "build-installer: account config from $($env:LM_ACCOUNT_CONFIG)"
-  }
-  # Test builds only: the owner's key, scrambled the same way as on macOS (not a secret store).
-  if ($env:LM_OPENROUTER_KEY -and -not $env:LM_NO_KEY -and -not $env:CI) {
-    # The old name is part of the scrambling key (lm-ask/src/openrouter.rs PAD): not display text.
-    $pad = [Text.Encoding]::ASCII.GetBytes("LayeredMap Pro test build: not a secret store.")
-    $key = [Text.Encoding]::UTF8.GetBytes($env:LM_OPENROUTER_KEY)
-    $hex = -join (0..($key.Length - 1) | ForEach-Object { "{0:x2}" -f ($key[$_] -bxor $pad[$_ % $pad.Length]) })
-    Set-Content -NoNewline -Encoding ascii -Path (Join-Path $res "assistant.dat") -Value $hex
-    Write-Host "build-installer: assistant key built in"
-  }
+# Built-in reference layers (tools/lm/reference/build_reference.py), as in bundle-macos.sh.
+$ref = $env:LM_REFERENCE_DATA
+if ($ref -and (Test-Path (Join-Path $ref "manifest.json"))) {
+  $dst = Join-Path $res "reference"
+  Copy-Item -Recurse $ref $dst
+  if (Test-Path (Join-Path $dst "raw")) { Remove-Item -Recurse -Force (Join-Path $dst "raw") }
+  Get-ChildItem -Recurse -Force -Path $dst -Filter "._*" | Remove-Item -Force
+} else {
+  Write-Warning "build-installer: no reference data at '$ref' (built-in layers left out)"
+}
+# The account config (docs/lm/accounts-design.md), as in bundle-macos.sh. Without it nobody can
+# sign in, so Pro stays locked.
+if ($env:LM_ACCOUNT_CONFIG_JSON) {
+  Set-Content -Encoding utf8 -Path (Join-Path $res "account.json") -Value $env:LM_ACCOUNT_CONFIG_JSON
+  Write-Host "build-installer: account config from LM_ACCOUNT_CONFIG_JSON"
+} elseif ($env:LM_ACCOUNT_CONFIG) {
+  Copy-Item $env:LM_ACCOUNT_CONFIG (Join-Path $res "account.json")
+  Write-Host "build-installer: account config from $($env:LM_ACCOUNT_CONFIG)"
+} else {
+  Write-Warning "build-installer: no account config (LM_ACCOUNT_CONFIG); this build can't sign in, so Pro stays locked"
 }
 
 # signtool from the newest Windows SDK on the machine.
@@ -111,7 +103,7 @@ if (-not $iscc) {
 }
 if (-not $iscc) { throw "Inno Setup 6 (ISCC.exe) not found: winget install JRSoftware.InnoSetup" }
 
-$isccArgs = @("/Qp", "/DTier=$tier", "/DAppVersion=$version", "/DBuildNumber=$build", "/DStage=$stage", "/DOutDir=$OutDir")
+$isccArgs = @("/Qp", "/DAppVersion=$version", "/DBuildNumber=$build", "/DStage=$stage", "/DOutDir=$OutDir")
 if ($sign) {
   # Inno runs this for the installer and the uninstaller; $f is the file, $q a quote.
   $isccArgs += "/DSign=1"
@@ -120,8 +112,7 @@ if ($sign) {
 & $iscc @isccArgs (Join-Path $PSScriptRoot "layeredmap.iss")
 if ($LASTEXITCODE -ne 0) { throw "ISCC failed" }
 
-$prefix = if ($tier -eq "pro") { "$brand-Pro" } else { $brand }
-$setup = Join-Path $OutDir "$prefix-$version-$build-windows-x64-setup.exe"
+$setup = Join-Path $OutDir "$brand-$version-$build-windows-x64-setup.exe"
 if (-not (Test-Path $setup)) { throw "no installer at $setup" }
 if ($sign) {
   & $signtool verify /pa /v $setup

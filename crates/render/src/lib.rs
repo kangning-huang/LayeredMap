@@ -894,10 +894,10 @@ fn render_with(map: &mut Map, view: &View, full_res_rasters: bool, selection: Se
                 };
                 if offscreen {
                     let mut target = Pixmap::new(w, h)?;
-                    raster::draw(&mut target, data, &rl.style, view, 1.0, full_res_rasters, place);
+                    raster::draw(&mut target, data, &rl.style, view, &copy_views, 1.0, full_res_rasters, place);
                     composite(&mut pm, &target);
                 } else {
-                    raster::draw(&mut pm, data, &rl.style, view, opacity, full_res_rasters, place);
+                    raster::draw(&mut pm, data, &rl.style, view, &copy_views, opacity, full_res_rasters, place);
                 }
             }
             continue;
@@ -1592,6 +1592,73 @@ mod tests {
         let y = (200.0 - (lonlat_to_merc(Coord::new(0.0, 10.0)).y - camera.center.y) / 60_000.0).round() as u32;
         let mid = (380..420).filter(|x| r.pixmap.pixel(*x, y).is_some_and(|p| p.red() > 150 && p.green() < 80)).count();
         assert_eq!(mid, 0, "no streak across the world");
+    }
+
+    /// The neighbouring worlds a view draws: the one either side of the data's world (which holds
+    /// longitudes past ±180°) whenever they reach the view, the far ones only once they're in
+    /// view, none with copies off. Each copy's camera is the view's moved a world the other way.
+    #[test]
+    fn world_copy_views_are_the_copies_in_view() {
+        let view = |lon: f64, res: f64, width: f64| View {
+            width,
+            height: 300.0,
+            pixels_per_point: 1.0,
+            camera: Camera { center: lonlat_to_merc(Coord::new(lon, 0.0)), res },
+            dark: false,
+        };
+        let shifts = |v: &View, on: bool| -> Vec<i64> {
+            world_copy_views(v, on).iter().map(|c| ((v.camera.center.x - c.camera.center.x) / WORLD_WIDTH).round() as i64).collect()
+        };
+        // Europe at zoom 5: only the worlds either side, for data drawn past ±180°.
+        assert_eq!(shifts(&view(10.0, 5000.0, 1200.0), true), vec![-1, 1]);
+        // Centred on the antimeridian: the world to the east only.
+        assert_eq!(shifts(&view(180.0, 25_000.0, 800.0), true), vec![1]);
+        // About 2.4 worlds across (1200 px at 80 km): two each side.
+        let wide = view(0.0, 80_000.0, 1200.0);
+        assert_eq!(shifts(&wide, true), vec![-2, -1, 1, 2]);
+        assert!(shifts(&wide, false).is_empty(), "off");
+    }
+
+    /// A global raster where the world repeats: with world copies on, it is drawn in every copy
+    /// in view, each place coloured as in the world it repeats; without them the copies show bare
+    /// basemap. (It was drawn once only, a hard edge beside the basemap.)
+    #[test]
+    fn world_copies_draw_rasters_too() {
+        use rustgis_data::raster::{ColorHint, Crs, GeoTransform, Raster};
+        // 36 × 18 cells of 10°, valued by column: dark in the west, light in the east.
+        let gt = GeoTransform { origin_x: -180.0, origin_y: 90.0, pixel_width: 10.0, pixel_height: -10.0 };
+        let data: Vec<f32> = (0..36 * 18).map(|i| (i % 36) as f32).collect();
+        let r = Raster::new("world", 36, 18, vec![data], gt, Crs::LonLat, None, ColorHint::Gray, "Float32").unwrap();
+        // 80 km per pixel, 1200 px wide: the world is 501 px wide, centred at x = 600.
+        let camera = Camera { center: Coord::new(0.0, 0.0), res: 80_000.0 };
+        let view = View { width: 1200.0, height: 300.0, pixels_per_point: 1.0, camera, dark: false };
+        let world_px = (WORLD_WIDTH / 80_000.0).round() as u32;
+        let px = |r: &Rendered, x: u32| r.pixmap.pixel(x, 150).map(|p| (p.red(), p.green(), p.blue())).unwrap_or_default();
+        let mut m = Map::new("Map");
+        m.graticule = false;
+        m.view.world_copies = true;
+        let bare = render(&mut m, &view).unwrap();
+        m.add_raster("world", rustgis_map::RasterLayer::from_path(r, "world.tif"));
+        let covered = |r: &Rendered, x: u32| px(r, x) != px(&bare, x);
+        m.view.world_copies = false;
+        let once = render(&mut m, &view).unwrap();
+        assert!(covered(&once, 700), "the world in the middle");
+        assert!(!covered(&once, 700 - world_px), "no copy to the west");
+        m.view.world_copies = true;
+        let copies = render(&mut m, &view).unwrap();
+        for x in [360, 450, 600, 700, 840] {
+            assert!(covered(&copies, x), "x {x}");
+            if x >= world_px {
+                assert_eq!(px(&copies, x - world_px), px(&copies, x), "x {x}, a world west");
+            }
+            if x + world_px < 1200 {
+                assert_eq!(px(&copies, x + world_px), px(&copies, x), "x {x}, a world east");
+            }
+        }
+        assert!(covered(&copies, 2) && covered(&copies, 1197), "out to both edges");
+        // West dark, east light, in each copy.
+        let lum = |x: u32| px(&copies, x).0;
+        assert!(lum(120) < lum(330) && lum(400) < lum(800) && lum(870) < lum(1150));
     }
 
     #[test]

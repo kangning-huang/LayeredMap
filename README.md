@@ -84,7 +84,7 @@ is **Done** when that testing has signed it off.
 | 4 | The analysis engine: previews, result cards, recipes (it powers Pro's assistant) | Done |
 | 5 | Save, export a finished map or a map package, work offline | Built, in testing |
 | 6 | Polish: keyboard and VoiceOver, help pages, Windows | Built, in testing |
-| 7 | NimbleMap Pro: ask questions of your layers in plain words | In test builds; accounts next |
+| 7 | NimbleMap Pro: ask questions of your layers in plain words; one app, unlocked by signing in (free with an account for now) | Built, in testing |
 
 Then: a signed public beta for macOS and Windows.
 

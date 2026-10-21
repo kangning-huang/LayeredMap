@@ -4,8 +4,20 @@ Owner decision, 2026-10-19: Pro needs an account. Pro is free for anyone who reg
 the first goal is a good, popular app; a subscription comes only with a big user base
 (`app-store.md` › Pricing). The app only needs to know who is who, so it can grant Pro.
 
+**One app** (owner decision, 2026-10-19): Free and Pro are the same download. Signed out, every
+Free feature works and Pro's features (the Ask box and its microphone, the analysis actions on
+cards, the built-in world layers) show locked, each with a Sign In… prompt. Signed in to an account
+with Pro, they unlock. The app asks the server whether the account has Pro (the `account`
+function's `pro`), so a later subscription changes only the server's answer. There is no separate
+Pro app, bundle id or installer, and no build carries an OpenRouter key. `LM_DEV_PRO=1` unlocks
+Pro for development only; it is never a setting in the app. Details: `accounts-design.md` ›
+Entitlement.
+
 This page is the plan. How it is built (endpoints, tokens, the redirect, the Ask proxy, the China
 adapter): `docs/lm/accounts-design.md`.
+
+Help › Send Feedback… uses the same service (the `feedback` function) but needs no account:
+`docs/lm/feedback.md`.
 
 A Mac App Store channel with Pro as an in-app purchase, which needs no account and no WeChat or
 Alipay sign-in, is planned in `docs/lm/app-store.md`.
@@ -14,7 +26,7 @@ Alipay sign-in, is planned in `docs/lm/app-store.md`.
 
 - **Store as little as possible.** Per user: the sign-in service's user ID, how they signed in, an email or phone number when the provider gives one, `pro` (true/false), the sign-up date, and later the subscription status. No names, no avatars, no map data.
 - **No user data in a git repository**, encrypted or not. A key the app can use to decrypt is a key anyone can extract; git history can't really be deleted (GDPR and PIPL give people the right to deletion); git can't handle two sign-ups at once; and one wrong visibility click publishes everything. Accounts live in a sign-in service and a database.
-- **The OpenRouter key leaves the app.** Today the Pro test build carries the key, which is why those builds can't be shared. With accounts, the Ask box goes through a small server function that holds the key, checks the user's token and Pro flag, and enforces per-user limits so one account can't run up the bill.
+- **The OpenRouter key leaves the app.** The Ask box goes through a small server function that holds the key, checks the user's token and Pro flag, and enforces per-user limits so one account can't run up the bill. The Pro test build's bundled key is gone (2026-10-19), so every build can be shared.
 - **Sign-in happens in the browser.** The app opens the system browser, the person signs in there, and the browser hands a one-time code back to the app (OAuth with PKCE, through the app's URL scheme or a loopback address, as RFC 8252 describes). The app keeps its refresh token in the macOS keychain or Windows Credential Manager. The app never sees a password.
 
 ## Two regions
@@ -50,7 +62,7 @@ These are prerequisites, not code. Most need a company registered in mainland Ch
 
 1. Sign-in in the app: a Settings › Account pane and a sign-in prompt where Pro features start. The browser flow with PKCE, the token kept in the keychain, sign out, and delete account.
 2. The international service: a Supabase project with Apple, Google, X and email; a `profiles` table (`id`, `provider`, `email`, `pro`, `created_at`, later `plan`, `renews_at`); row-level security so a user can read only their own row.
-3. The Ask proxy: a server function that checks the token and `pro`, applies per-user daily limits, calls the model and streams the answer back. The OpenRouter key exists only there. The Pro test build's bundled key and its XOR pad are removed.
+3. The Ask proxy: a server function that checks the token and `pro`, applies per-user daily limits, calls the model and streams the answer back. The OpenRouter key exists only there. The Pro test build's bundled key and its XOR pad are removed (done).
 4. The China service: WeChat, Alipay and phone sign-in through a China identity service, the same `profiles` shape, and an Ask proxy with a filed domestic model. Blocked on items 1, 5 and 7 of the owner's list above.
 5. Later, a subscription: a checkout page, a payment webhook that sets `plan` and `renews_at`, and the app reading `plan` instead of plain `pro`.
 

@@ -1,0 +1,52 @@
+{
+ "voice": "en-US-AndrewNeural",
+ "rate": "+4%",
+ "text": "Nearly 5,000 storm tracks since 1980. Zoom and pan anywhere.",
+ "words": [
+  {
+   "text": "Nearly",
+   "offset": 0.096166,
+   "duration": 0.252416
+  },
+  {
+   "text": "5,000",
+   "offset": 0.360583,
+   "duration": 0.8052919
+  },
+  {
+   "text": "storm",
+   "offset": 1.177875,
+   "duration": 0.276458
+  },
+  {
+   "text": "tracks",
+   "offset": 1.466333,
+   "duration": 0.45675
+  },
+  {
+   "text": "since 1980",
+   "offset": 2.007208,
+   "duration": 0.853374
+  },
+  {
+   "text": "Zoom",
+   "offset": 3.257208,
+   "duration": 0.288458
+  },
+  {
+   "text": "and",
+   "offset": 3.689916,
+   "duration": 0.084125
+  },
+  {
+   "text": "pan",
+   "offset": 3.786041,
+   "duration": 0.3005
+  },
+  {
+   "text": "anywhere",
+   "offset": 4.098541,
+   "duration": 0.46875
+  }
+ ]
+}

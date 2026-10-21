@@ -1,0 +1,22 @@
+{
+ "voice": "en-US-AndrewNeural",
+ "rate": "+4%",
+ "text": "NimbleMap opens it.",
+ "words": [
+  {
+   "text": "NimbleMap",
+   "offset": 0.096166,
+   "duration": 0.540875
+  },
+  {
+   "text": "opens",
+   "offset": 0.757208,
+   "duration": 0.3125
+  },
+  {
+   "text": "it",
+   "offset": 1.08175,
+   "duration": 0.16825
+  }
+ ]
+}

@@ -1,8 +1,8 @@
 //! The one network gate (WP6.6 Strict offline mode; Gate 5's network-blocking harness).
 //!
 //! Every network request NimbleMap makes asks [`allowed`] first, with what it is for: basemap
-//! tiles and the daily-build lookup, the data library, the update check, Pro's assistant and
-//! Pro's account sign-in.
+//! tiles and the daily-build lookup, the data library, the update check, Pro's assistant,
+//! Pro's account sign-in and Help › Send Feedback….
 //! When the user turns on offline mode ([`set_offline`]) every one of them is refused here, so
 //! blocking is enforced in one place. The gate also counts what it allowed and refused, which is
 //! how the harness proves that core tasks make no network calls.
@@ -32,11 +32,21 @@ pub enum Purpose {
     /// Pro's account: signing in, refreshing the session, signing out, deleting the account
     /// (`lm-account`, docs/lm/accounts-design.md).
     Account,
+    /// Help › Send Feedback…: one message to the feedback function, sent only when the user
+    /// presses Send (`lm_account::feedback`, docs/lm/feedback.md).
+    Feedback,
 }
 
 impl Purpose {
-    pub const ALL: [Purpose; 6] =
-        [Purpose::Basemap, Purpose::Search, Purpose::Library, Purpose::UpdateCheck, Purpose::Assistant, Purpose::Account];
+    pub const ALL: [Purpose; 7] = [
+        Purpose::Basemap,
+        Purpose::Search,
+        Purpose::Library,
+        Purpose::UpdateCheck,
+        Purpose::Assistant,
+        Purpose::Account,
+        Purpose::Feedback,
+    ];
 
     pub fn label(self) -> &'static str {
         match self {
@@ -46,6 +56,7 @@ impl Purpose {
             Purpose::UpdateCheck => "update check",
             Purpose::Assistant => "assistant",
             Purpose::Account => "account service",
+            Purpose::Feedback => "feedback service",
         }
     }
 
@@ -55,8 +66,8 @@ impl Purpose {
 }
 
 static OFFLINE: AtomicBool = AtomicBool::new(false);
-static ALLOWED: [AtomicU64; 6] = [const { AtomicU64::new(0) }; 6];
-static REFUSED: [AtomicU64; 6] = [const { AtomicU64::new(0) }; 6];
+static ALLOWED: [AtomicU64; 7] = [const { AtomicU64::new(0) }; 7];
+static REFUSED: [AtomicU64; 7] = [const { AtomicU64::new(0) }; 7];
 
 /// Turns strict offline mode on or off (View › Work Offline). Takes effect for the next request.
 pub fn set_offline(on: bool) {
@@ -107,8 +118,8 @@ pub fn check(purpose: Purpose) -> Result<(), Offline> {
 /// Requests the gate allowed and refused since launch, per purpose.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Counts {
-    pub allowed: [u64; 6],
-    pub refused: [u64; 6],
+    pub allowed: [u64; 7],
+    pub refused: [u64; 7],
 }
 
 impl Counts {
@@ -185,7 +196,7 @@ mod tests {
         let after = counts();
         assert_eq!(after.allowed_total() - before.allowed_total(), 2);
         assert!(after.refused_total() - before.refused_total() >= 8);
-        assert_eq!(after.lines().len(), 6);
+        assert_eq!(after.lines().len(), 7);
         set_offline(false);
         assert!(!offline());
     }

@@ -5,10 +5,13 @@ Every page carries the same language plumbing, and it must list every language t
 - the `hreflang` alternates in the head (every language that has this page, plus x-default
   English), and `og:locale`;
 - the language menu in the header (a `<details>` list, so it works without JavaScript);
-- the list of languages in the footer.
+- the list of languages in the footer;
+- the app's download links (the DMG: GitHub Releases, or the GitCode mirror on Chinese pages);
+- the site navigation in the header (Home, Examples, Data, Help, Download) and the footer's links
+  (Help, Glossary, Pro, Changelog) with the line saying NimbleMap is an independent project.
 
-Translated pages are written by hand; this script rewrites only those three parts, from
-LANGS below, so adding a language is: add its folder of pages, add one row here, run
+Translated pages are written by hand; this script rewrites only those parts, from LANGS and
+WORDS below, so adding a language is: add its folder of pages, add one row here, run
 
     python3 -I tools/lm/site/langs.py          # rewrite the pages in place
     python3 -I tools/lm/site/langs.py --check  # exit 1 if a page is out of date (the tests run this)
@@ -51,6 +54,79 @@ LANGS = [
     Lang("ko", "ko", "ko_KR", "한국어", "한국어", "언어"),
 ]
 
+@dataclass(frozen=True)
+class Words:
+    """The header's and footer's link labels, and the footer's non-affiliation line."""
+    home: str
+    examples: str
+    help: str
+    glossary: str
+    download: str
+    pro: str
+    data: str
+    changelog: str
+    independent: str
+
+
+WORDS = {
+    "": Words("Home", "Examples", "Help", "Glossary", "Download", "Pro", "Data", "Changelog",
+              "NimbleMap is an independent project, not affiliated with Apple, Esri or the QGIS project."),
+    "zh": Words("首页", "示例", "帮助", "术语表", "下载", "Pro 版", "数据", "更新日志",
+                "凌波微图是独立项目，与苹果公司、Esri 及 QGIS 项目均无关联。"),
+    "de": Words("Startseite", "Beispiele", "Hilfe", "Glossar", "Download", "Pro", "Daten", "Änderungsprotokoll",
+                "NimbleMap ist ein unabhängiges Projekt und steht in keiner Verbindung zu Apple, Esri oder dem QGIS-Projekt."),
+    "es": Words("Inicio", "Ejemplos", "Ayuda", "Glosario", "Descargar", "Pro", "Datos", "Registro de cambios",
+                "NimbleMap es un proyecto independiente, sin relación con Apple, Esri ni el proyecto QGIS."),
+    "fr": Words("Accueil", "Exemples", "Aide", "Glossaire", "Télécharger", "Pro", "Données", "Journal des modifications",
+                "NimbleMap est un projet indépendant, sans lien avec Apple, Esri ni le projet QGIS."),
+    "it": Words("Home", "Esempi", "Aiuto", "Glossario", "Scarica", "Pro", "Dati", "Registro delle modifiche",
+                "NimbleMap è un progetto indipendente, non affiliato ad Apple, Esri o al progetto QGIS."),
+    "nl": Words("Start", "Voorbeelden", "Help", "Woordenlijst", "Downloaden", "Pro", "Data", "Wijzigingslog",
+                "NimbleMap is een onafhankelijk project en is niet verbonden aan Apple, Esri of het QGIS-project."),
+    "pt-br": Words("Início", "Exemplos", "Ajuda", "Glossário", "Baixar", "Pro", "Dados", "Registro de alterações",
+                   "O NimbleMap é um projeto independente, sem vínculo com a Apple, a Esri ou o projeto QGIS."),
+    "ru": Words("Главная", "Примеры", "Справка", "Словарь", "Скачать", "Pro", "Данные", "История изменений",
+                "NimbleMap — независимый проект, не связанный с Apple, Esri или проектом QGIS."),
+    "ja": Words("ホーム", "サンプル", "ヘルプ", "用語集", "ダウンロード", "Pro", "データ", "変更履歴",
+                "NimbleMap は独立したプロジェクトであり、Apple、Esri、QGIS プロジェクトとは関係ありません。"),
+    "ko": Words("홈", "예제", "도움말", "용어집", "다운로드", "Pro", "데이터", "변경 내역",
+                "NimbleMap은 독립 프로젝트이며, Apple, Esri, QGIS 프로젝트와 관련이 없습니다."),
+}
+
+CHANGELOG = "https://github.com/kangning-huang/NimbleMap/blob/main/CHANGELOG.md"
+
+# Where the app's download buttons point, per language folder (every `href` ending in the DMG's
+# file name is rewritten to this, and one ending in its .sha256 checksum file to this + ".sha256"). GitHub's /releases/latest/ alias follows each release by itself.
+# Chinese pages use the GitCode mirror for mainland China, which has no "latest" alias: its URL
+# names the version, so BUMP THE TAG HERE WITH EVERY RELEASE.
+DMG_NAME = "NimbleMap-macos-arm64.dmg"
+DMG_GITHUB = f"https://github.com/kangning-huang/NimbleMap/releases/latest/download/{DMG_NAME}"
+GITCODE = "https://gitcode.com/KN-Huang/NimbleMap"
+DMG_GITCODE = f"{GITCODE}/releases/download/v0.7.1/{DMG_NAME}"
+DMG = {"zh": DMG_GITCODE}  # every other language: DMG_GITHUB
+# The download page's second card offers the other host: GitCode everywhere, GitHub on Chinese
+# pages. Its links carry data-dl="alt" (the DMG) and data-dl="alt-releases" (the releases page).
+DMG_ALT = {"zh": DMG_GITHUB}  # every other language: DMG_GITCODE
+RELEASES_GITHUB = "https://github.com/kangning-huang/NimbleMap/releases"
+RELEASES_GITCODE = f"{GITCODE}/releases"
+RELEASES_ALT = {"zh": RELEASES_GITHUB}  # every other language: RELEASES_GITCODE
+
+# The line under the download page's main card about Pro (`<p class="dl-pro">`), one per language.
+# From 0.7.1 Pro is in the one app and unlocks when you sign in.
+PRO_UNLOCK = {
+    "": "Pro features (the Ask box and analysis actions) unlock when you sign in inside the app, free with an account.",
+    "zh": "Pro 功能（提问框和分析操作）在应用内登录后即可解锁，注册账户即可免费使用。",
+    "de": "Die Pro-Funktionen (das Fragefeld und die Analyseaktionen) werden freigeschaltet, wenn Sie sich in der App anmelden – kostenlos mit einem Konto.",
+    "es": "Las funciones Pro (el cuadro de preguntas y las acciones de análisis) se desbloquean al iniciar sesión dentro de la app, gratis con una cuenta.",
+    "fr": "Les fonctions Pro (la zone de questions et les actions d’analyse) se débloquent quand vous vous connectez dans l’app, gratuitement avec un compte.",
+    "it": "Le funzioni Pro (la casella delle domande e le azioni di analisi) si sbloccano quando accedi dall’app, gratis con un account.",
+    "nl": "De Pro-functies (het vraagvak en de analyseacties) worden ontgrendeld zodra u zich in de app aanmeldt, gratis met een account.",
+    "pt-br": "Os recursos Pro (a caixa de perguntas e as ações de análise) são liberados quando você entra na sua conta dentro do app, de graça com uma conta.",
+    "ru": "Функции Pro (поле вопросов и действия анализа) открываются, когда вы входите в приложении, — бесплатно с учётной записью.",
+    "ja": "Pro の機能（質問ボックスと分析アクション）は、アプリ内でサインインすると使えるようになります。アカウントがあれば無料です。",
+    "ko": "Pro 기능(질문 상자와 분석 작업)은 앱 안에서 로그인하면 열립니다. 계정만 있으면 무료입니다.",
+}
+
 GLOBE = (
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">'
     '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.6 3.9 5.6 3.9 9s-1.3 6.4-3.9 9'
@@ -67,6 +143,13 @@ MENU = re.compile(r'<a class="lang" [^>]*>[^<]*</a>|<details class="lang-menu">.
 FOOT_OLD = re.compile(r'( · <a href="[^"]*" lang="[^"]*">[^<]*</a>)(</div>\n  </div>\n</footer>)')
 FOOT = re.compile(r'<p class="foot-langs">.*?</p>', re.S)
 FOOT_END = re.compile(r"(</div>\n  </div>\n</footer>)")
+# The header's page links, between the <nav> and the language menu.
+NAV = re.compile(r'(<nav class="nav" aria-label="[^"]*">\n)(?:[ \t]*<a [^>]*>[^<]*</a>\n)*([ \t]*<details class="lang-menu">)')
+# The footer's right-hand column: the old "Help · Glossary" links, or the column written here.
+DMG_LINK = re.compile(r'href="https://[^"]*/' + re.escape(DMG_NAME) + r'(\.sha256)?"( data-dl="alt")?')
+RELEASES_LINK = re.compile(r'href="https://[^"]*/releases" data-dl="alt-releases"')
+PRO_LINE = re.compile(r'(<p class="dl-pro">)[^<]*(<a )')
+FOOT_COL = re.compile(r'<div(?: class="foot-nav")?>(?:<a href="help\.html">|<p class="foot-links">).*?<p class="foot-langs">.*?</p></div>', re.S)
 
 
 def lang_of(rel: str) -> Lang:
@@ -138,6 +221,54 @@ def foot(lang: Lang, name: str, site: Path) -> str:
     return f'<p class="foot-langs">{" · ".join(links)}</p>'
 
 
+def dmg(lang: Lang, alt: bool = False) -> str:
+    """The app download URL for pages in this language (`alt`: the download page's other host)."""
+    if alt:
+        return DMG_ALT.get(lang.folder, DMG_GITCODE)
+    return DMG.get(lang.folder, DMG_GITHUB)
+
+
+def words(lang: Lang) -> Words:
+    if lang.folder not in WORDS:
+        raise ValueError(f"{lang.hreflang}: no row in WORDS")
+    return WORDS[lang.folder]
+
+
+def nav(lang: Lang, name: str) -> str:
+    """The header's page links; the current section is marked (the workflows belong to Help)."""
+    w = words(lang)
+    here = {"index.html": "index.html", "data.html": "data.html", "help.html": "help.html",
+            "download.html": "download.html"}.get(name)
+    if name.startswith("workflow-"):
+        here = "help.html"
+    rows = [("index.html", w.home), ("index.html#examples", w.examples), ("data.html", w.data), ("help.html", w.help),
+            ("download.html", w.download)]
+    out = []
+    for target, label in rows:
+        current = ' aria-current="page"' if target == here else ""
+        out.append(f'      <a href="{target}"{current}>{label}</a>\n')
+    return "".join(out)
+
+
+def foot_col(lang: Lang, name: str, site: Path) -> str:
+    """The footer's right-hand column: links, the non-affiliation line, the other languages."""
+    w = words(lang)
+    if (site / path_of(lang, "pro.html")).exists():
+        pro = f'<a href="pro.html">{w.pro}</a>'
+    else:
+        en = LANGS[0]
+        pro = f'<a href="{href(lang, en, "pro.html")}" hreflang="{en.hreflang}">{w.pro}</a>'
+    if (site / path_of(lang, "data.html")).exists():
+        data = f'<a href="data.html">{w.data}</a>'
+    else:
+        en = LANGS[0]
+        data = f'<a href="{href(lang, en, "data.html")}" hreflang="{en.hreflang}">{w.data}</a>'
+    links = " · ".join([f'<a href="help.html">{w.help}</a>', f'<a href="glossary.html">{w.glossary}</a>', data, pro,
+                        f'<a href="{CHANGELOG}">{w.changelog}</a>'])
+    return (f'<div class="foot-nav"><p class="foot-links">{links}</p>'
+            f'<p class="foot-note">{w.independent}</p>{foot(lang, name, site)}</div>')
+
+
 def rewrite(text: str, rel: str, site: Path = SITE) -> str:
     """The page with its language links rebuilt; everything else is left as it is."""
     lang = lang_of(rel)
@@ -171,6 +302,17 @@ def rewrite(text: str, rel: str, site: Path = SITE) -> str:
         text, n = FOOT_END.subn(lambda m: foot(lang, name, site) + m.group(1), text, count=1)
         if n != 1:
             raise ValueError(f"{rel}: footer not found")
+
+    text, n = NAV.subn(lambda m: m.group(1) + nav(lang, name) + m.group(2), text, count=1)
+    if n != 1:
+        raise ValueError(f"{rel}: no site navigation in the header")
+    text, n = FOOT_COL.subn(lambda _: foot_col(lang, name, site), text, count=1)
+    if n != 1:
+        raise ValueError(f"{rel}: no footer links column")
+    text = DMG_LINK.sub(lambda m: f'href="{dmg(lang, alt=bool(m.group(2)))}{m.group(1) or ""}"{m.group(2) or ""}', text)
+    text = RELEASES_LINK.sub(f'href="{RELEASES_ALT.get(lang.folder, RELEASES_GITCODE)}" data-dl="alt-releases"', text)
+    text = PRO_LINE.sub(lambda m: m.group(1) + PRO_UNLOCK.get(lang.folder, PRO_UNLOCK[""])
+                      + ("" if lang.folder in ("zh", "ja") else " ") + m.group(2), text)
     return text
 
 

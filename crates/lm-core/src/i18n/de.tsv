@@ -667,6 +667,43 @@ Full Screen	Vollbildmodus
 Window	Fenster
 Help	Hilfe
 Export Diagnostics…	Diagnosedaten exportieren …
+Send Feedback…	Feedback senden …
+Send Feedback	Feedback senden
+Tell us what would make {app} better, or what went wrong.	Sagen Sie uns, was {app} besser machen würde oder was schiefgelaufen ist.
+Idea	Idee
+Problem	Problem
+Other	Sonstiges
+Message	Nachricht
+What would you like {app} to do?	Was soll {app} für Sie tun können?
+What happened, and what did you expect?	Was ist passiert, und was haben Sie erwartet?
+What's on your mind?	Was möchten Sie uns sagen?
+{n} of {max} characters	{n} von {max} Zeichen
+Title (optional)	Titel (optional)
+A short summary	Eine kurze Zusammenfassung
+Email (optional)	E-Mail (optional)
+Only used to reply to you. Never shown publicly.	Wird nur verwendet, um Ihnen zu antworten. Nie öffentlich sichtbar.
+Include app version and macOS version	App-Version und macOS-Version mitsenden
+Include app version and Windows version	App-Version und Windows-Version mitsenden
+Your feedback will be posted publicly on GitHub Discussions, without your email.	Ihr Feedback wird öffentlich in GitHub Discussions veröffentlicht, ohne Ihre E-Mail-Adresse.
+Sent with your account so we can follow up. Your account isn't shown publicly.	Mit Ihrem Konto gesendet, damit wir nachfragen können. Ihr Konto wird nicht öffentlich angezeigt.
+Send	Senden
+Sending…	Wird gesendet …
+Thank you! Your feedback is posted.	Vielen Dank! Ihr Feedback ist veröffentlicht.
+It's public on GitHub Discussions, where you can follow replies.	Es ist öffentlich in GitHub Discussions sichtbar, wo Sie Antworten verfolgen können.
+View on GitHub	Auf GitHub ansehen
+Write a few words about your idea or problem.	Schreiben Sie ein paar Worte zu Ihrer Idee oder Ihrem Problem.
+The message is {n} characters long. Shorten it to {max} or fewer.	Die Nachricht ist {n} Zeichen lang. Kürzen Sie sie auf höchstens {max} Zeichen.
+Shorten the title to {max} characters or fewer.	Kürzen Sie den Titel auf höchstens {max} Zeichen.
+Include at most {max} links.	Fügen Sie höchstens {max} Links ein.
+Check the email address, or leave it empty.	Prüfen Sie die E-Mail-Adresse oder lassen Sie das Feld leer.
+Feedback can't be sent from this build. You can post on GitHub Discussions yourself: {url}	Aus diesem Build kann kein Feedback gesendet werden. Sie können selbst in GitHub Discussions schreiben: {url}
+{app} is working offline. Turn off View › Work Offline, then press Send again.	{app} arbeitet offline. Deaktivieren Sie Darstellung › Offline arbeiten und klicken Sie dann erneut auf „Senden“.
+You've sent a lot of feedback today. Please try again tomorrow.	Sie haben heute schon viel Feedback gesendet. Bitte versuchen Sie es morgen wieder.
+The message is too long. Shorten it, then press Send again.	Die Nachricht ist zu lang. Kürzen Sie sie und klicken Sie dann erneut auf „Senden“.
+The feedback service didn't accept the message: {reason}	Der Feedback-Dienst hat die Nachricht nicht angenommen: {reason}
+Your feedback couldn't be posted just now. Your text is still here: try again in a few minutes.	Ihr Feedback konnte gerade nicht veröffentlicht werden. Ihr Text bleibt erhalten: Versuchen Sie es in einigen Minuten erneut.
+Couldn't reach the feedback service. Check your internet connection, then press Send again.	Der Feedback-Dienst ist nicht erreichbar. Prüfen Sie Ihre Internetverbindung und klicken Sie dann erneut auf „Senden“.
+The feedback service answered {status}. Try again in a few minutes.	Der Feedback-Dienst antwortete mit {status}. Versuchen Sie es in einigen Minuten erneut.
 About {app}	Über {app}
 Quit {app}	{app} beenden
 Undo ({key})	Widerrufen ({key})
@@ -791,3 +828,9 @@ Couldn't reach the assistant service: {error}	Der Assistentendienst ist nicht er
 The assistant service's answer was cut off: {error}	Die Antwort des Assistentendienstes wurde abgeschnitten: {error}
 The assistant service answered {status} with something unreadable.	Der Assistentendienst antwortete mit {status} und etwas Unlesbarem.
 {app} is working offline, so the assistant can't be reached. Turn off View › Work Offline to ask.	{app} arbeitet offline, daher ist der Assistent nicht erreichbar. Deaktivieren Sie Darstellung › Offline arbeiten, um zu fragen.
+Signing in unlocks the Ask box, analysis tools, the built-in world layers and voice input.	Mit der Anmeldung werden das Fragefeld, die Analysewerkzeuge, die eingebauten Weltlayer und die Spracheingabe freigeschaltet.
+Checking your account…	Ihr Account wird geprüft …
+Sign in to use analysis tools	Melden Sie sich an, um die Analysewerkzeuge zu nutzen
+{action} (locked)	{action} (gesperrt)
+Settings › Account shows who is signed in and what the account includes.	Unter Einstellungen › Account sehen Sie, wer angemeldet ist und was der Account umfasst.
+Nothing matches, so nothing is highlighted on the map.	Nichts trifft zu, daher ist auf der Karte nichts hervorgehoben.

@@ -1,0 +1,10 @@
+# v3.3 Pro beat 2 (LM_TIER=pro; ONE paid ask call): the earthquake GeoPackage (file argument),
+# light, coloured by magnitude, Pacific view; one plain-words question in the Ask box
+card style_by_value magnitude
+esc
+175,12,2.4
+layer 99
+ask Which earthquakes were deeper than 300 km?
+layer 99
+layer 99
+layer 99

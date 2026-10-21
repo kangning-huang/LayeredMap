@@ -484,6 +484,16 @@ code { font: .88em var(--mono); background: var(--paper-2); padding: 1px 5px; bo
   .nav { gap: 0; }
   .nav a, .nav button, .lang-menu summary { padding: 6px 6px; }
 }
+/* On a phone the language menu and the theme button sit at the right of the brand row, so the
+   five page links have the second row to themselves in every language (Japanese, German, French,
+   Dutch, Russian and Spanish wrapped the theme button onto a third line once Data joined the nav). */
+@media (max-width: 640px) {
+  .nav .theme-btn { position: absolute; top: 8px; right: 0; }
+  .nav .lang-menu summary { position: absolute; top: 8px; right: 36px; }
+}
+@media (max-width: 380px) {
+  .nav > a { padding: 6px 4px; font-size: 13px; }
+}
 .foot-langs { margin: 10px 0 0; line-height: 1.9; }
 .foot-langs a { white-space: nowrap; }
 
@@ -497,3 +507,193 @@ html.js .share { display: flex; }
 }
 .share-btn:hover, .share-btn:focus-visible { color: var(--accent-ink); border-color: var(--accent); }
 .dl-note { font-size: 14px; color: var(--ink-3); }
+.dl-pro { margin: 10px 0 0; font-size: 14px; color: var(--ink-2); }
+
+/* ==== Landing page for the map-curious (2026-10-19): hero download, built-in map cards, ====
+   ==== "bring your own", principles with real screenshots, share, Pro band, final CTA, footer links ==== */
+.dl-fine { margin: 6px 0 0; font-size: 13.5px; line-height: 1.5; color: var(--ink-3); }
+.hero .actions + .dl-fine, .hero .actions + .mac-only + .dl-fine { margin-top: 16px; }
+.dl-fine a { color: var(--ink-2); }
+.mac-only {
+  margin: 14px 0 0; padding: 8px 12px; border-radius: 8px; font-size: 14.5px; line-height: 1.5;
+  color: var(--ink); background: var(--paper-2); border-left: 3px solid var(--seal); max-width: 34em;
+}
+.mac-only[hidden] { display: none; }
+
+/* Built-in maps: three large cards, a real screenshot over one surprising fact and its source. */
+.features { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+@media (max-width: 900px) { .features { grid-template-columns: 1fr; gap: 20px; } }
+.feature { background: var(--card); border: 1px solid var(--rule); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; }
+.feature .frame { border: 0; border-bottom: 1px solid var(--rule); border-radius: 0; box-shadow: none; }
+.feature .frame img { aspect-ratio: 1600 / 996; object-fit: cover; }
+.feature-body { padding: 18px 20px 20px; display: flex; flex-direction: column; flex: 1; }
+.feature-body h3 { margin: 0 0 8px; font-size: 1.35rem; }
+.feature-body p { margin: 0; color: var(--ink); font-size: 16.5px; flex: 1; }
+.feature-body .coords { margin-top: 14px; display: block; line-height: 1.4; }
+.also { margin: 30px 0 0; color: var(--ink-2); }
+
+/* Bring your own: the formats as chips. */
+.chips { list-style: none; padding: 0; margin: 22px 0 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.chips li {
+  font: 600 13px/1 var(--mono); letter-spacing: .02em; color: var(--ink-2);
+  padding: 8px 11px; border: 1px solid var(--rule); border-radius: 999px; background: var(--card);
+}
+.find-data { margin: 22px 0 0; font-weight: 600; }
+
+/* Principles: one line each under a real cropped screenshot. */
+.principle-shots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; }
+@media (max-width: 900px) { .principle-shots { grid-template-columns: 1fr; gap: 34px; } }
+.principle .frame { margin-bottom: 18px; }
+.principle .frame img { aspect-ratio: 16 / 10; object-fit: cover; }
+.principle .p-icon { display: inline-block; vertical-align: -7px; width: 26px; height: 26px; margin: 0 8px 0 0; }
+.principle h3 { display: inline; margin: 0; font-size: 1.25rem; }
+.principle p { margin: 8px 0 0; color: var(--ink-2); font-size: 16px; }
+
+/* Share: one line beside the export sheet. */
+.share-grid { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); gap: 44px; align-items: center; }
+.share-grid .section-head { margin-bottom: 0; }
+@media (max-width: 900px) { .share-grid { grid-template-columns: 1fr; gap: 24px; } }
+
+/* Pro: a slim band, the details live on pro.html. */
+section.pro-band { padding: 26px 0; background: var(--paper-2); background: color-mix(in srgb, var(--accent) 7%, var(--paper)); }
+.pro-band .wrap { display: flex; align-items: center; gap: 14px 18px; flex-wrap: wrap; }
+.pro-band p { margin: 0; flex: 1 1 320px; color: var(--ink-2); }
+.pro-band p strong { color: var(--ink); }
+.pro-band .tag, .pro-tag { font: 600 11px/1 var(--mono); letter-spacing: .12em; padding: 5px 8px; border-radius: 5px; background: var(--accent); color: #fff; }
+:root[data-theme="dark"] .pro-band .tag { color: #0b1220; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .pro-band .tag { color: #0b1220; } }
+.pro-more { font-weight: 600; white-space: nowrap; }
+
+/* Final call to action: the app icon, the headline again, the same button. */
+.final-cta { text-align: center; padding: 84px 0 76px; }
+.final-cta .cta-icon { width: 96px; height: 96px; margin: 0 auto 20px; }
+.final-cta h2 { margin-bottom: 22px; }
+.final-cta .cta-actions, .final-cta .share { justify-content: center; }
+.final-cta .mac-only { margin-inline: auto; text-align: left; }
+.final-cta .cta-actions + .dl-fine, .final-cta .cta-actions + .mac-only + .dl-fine { margin-top: 14px; }
+.final-cta .share { margin-top: 30px; }
+.built-on { margin: 22px 0 0; color: var(--ink-3); font-size: 15px; }
+
+/* Footer links and the non-affiliation line (tools/lm/site/langs.py writes the markup). */
+.foot-nav { max-width: 34em; }
+.site-foot .foot-links { margin: 0; }
+.site-foot .foot-note { margin: 10px 0 0; font-size: 13px; color: var(--ink-3); }
+@media (min-width: 900px) {
+  .site-foot .wrap { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 48px; }
+  .foot-nav { max-width: none; }
+}
+
+/* ---- Home: the drop scene (a folder of downloaded files beside the map each one opens) ---- */
+.drop-hero h1 { font-size: clamp(2.2rem, 4.1vw, 3.5rem); }
+.hero-how { margin: 14px 0 0; color: var(--ink-2); font-size: 16px; }
+.drop-scene { padding-bottom: 8px; }
+.drop-scene .files {
+  position: absolute; left: -34px; bottom: 34px; z-index: 2; width: min(340px, 64%);
+  background: var(--card); border: 1px solid var(--rule); border-radius: 12px; box-shadow: var(--shadow);
+  padding: 8px 8px 10px;
+}
+.files-head { display: flex; align-items: center; gap: 7px; margin: 2px 4px 6px; font: 600 13px/1.2 var(--sans); color: var(--ink-2); }
+.files-head .folder { width: 18px; height: 18px; flex: none; }
+.files-head .folder path { fill: color-mix(in srgb, var(--accent) 55%, var(--card)); }
+.files-head .pause { margin-left: auto; }
+.showcase .file {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px;
+  width: 100%; margin: 0; padding: 6px 8px; border: 0; border-radius: 7px; background: transparent;
+  font: 12.5px/1.25 var(--sans); color: var(--ink); text-align: left; cursor: pointer; position: relative;
+  transition: transform .25s ease, box-shadow .25s ease, background .25s ease;
+}
+.showcase .file:hover { background: var(--paper-2); }
+.showcase .file .ext {
+  font: 700 9.5px/1 var(--mono); letter-spacing: .04em; color: var(--card); background: var(--ink-3);
+  border-radius: 4px; padding: 4px 0; width: 36px; text-align: center;
+}
+.showcase .file .fname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.showcase .file .fsize { font-size: 11.5px; color: var(--ink-3); white-space: nowrap; }
+.showcase .file .grab { position: absolute; right: -14px; top: 50%; width: 20px; height: 20px; margin-top: -4px; opacity: 0; transition: opacity .25s ease; }
+.showcase .file .grab path { fill: var(--card); stroke: var(--ink); stroke-width: 1.4; stroke-linejoin: round; }
+/* The file being dragged: lifted out of the list, the cursor holding it. */
+.showcase .file[aria-pressed="true"] {
+  background: var(--accent); color: #fff; transform: translate(10px, -2px) rotate(-1.2deg);
+  box-shadow: 0 6px 18px rgba(20, 40, 90, .25);
+}
+.showcase .file[aria-pressed="true"] .ext { background: #fff; color: var(--accent-ink); }
+.showcase .file[aria-pressed="true"] .fsize { color: rgba(255, 255, 255, .8); }
+.showcase .file[aria-pressed="true"] .grab { opacity: 1; }
+:root[data-theme="dark"] .showcase .file[aria-pressed="true"] { color: #0b1220; }
+:root[data-theme="dark"] .showcase .file[aria-pressed="true"] .fsize { color: rgba(11, 18, 32, .75); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .showcase .file[aria-pressed="true"] { color: #0b1220; }
+  :root:not([data-theme="light"]) .showcase .file[aria-pressed="true"] .fsize { color: rgba(11, 18, 32, .75); }
+}
+.drop-arrow { position: absolute; z-index: 1; left: calc(min(340px, 64%) - 50px); bottom: 150px; width: 110px; height: 70px; pointer-events: none; }
+.drop-arrow path { fill: none; stroke: var(--accent); stroke-width: 2; stroke-dasharray: 5 5; stroke-linecap: round; }
+.drop-arrow .head { stroke-dasharray: none; }
+.drop-scene .kind-caption { margin-left: calc(min(340px, 64%) - 20px); }
+.drop-scene .pause { display: none; }
+.js .drop-scene .pause { display: inline-flex; }
+@media (max-width: 900px) {
+  .drop-scene .files { position: static; width: auto; margin-top: 14px; }
+  .drop-arrow { display: none; }
+  .drop-scene .kind-caption { margin-left: 2px; }
+  .showcase .file[aria-pressed="true"] { transform: none; }
+  .showcase .file .grab { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .showcase .file { transition: none; } }
+
+/* ---- Home: what it opens ---- */
+.formats { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 900px) { .formats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .formats { grid-template-columns: 1fr; } }
+.formats li { background: var(--card); border: 1px solid var(--rule); border-radius: 12px; padding: 16px 16px 14px; }
+.formats .exts { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
+.formats .exts span {
+  font: 700 12px/1 var(--mono); color: var(--accent-ink); padding: 5px 7px; border-radius: 6px;
+  background: color-mix(in srgb, var(--accent) 12%, var(--card));
+}
+.formats h3 { margin: 0 0 4px; font-size: 1.08rem; }
+.formats p { margin: 0; color: var(--ink-2); font-size: 15px; line-height: 1.5; }
+.formats-note { margin: 22px 0 0; color: var(--ink-3); font-size: 15px; max-width: 52em; }
+
+/* ---- Home: data teaser (cards from the Data page) ---- */
+.ds-grid.ds-teaser { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 1000px) { .ds-grid.ds-teaser { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .ds-grid.ds-teaser { grid-template-columns: 1fr; } }
+.ds-teaser .ds-more { display: none; }
+.ds-teaser .ds h3 { font-size: 1.1rem; }
+.more-link { margin: 26px 0 0; }
+
+/* ---- Home: once it's open (four shots) ---- */
+.principle-shots.four { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 22px; }
+@media (max-width: 1100px) { .principle-shots.four { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .principle-shots.four { grid-template-columns: 1fr; } }
+.principle-shots.four .principle h3 { font-size: 1.12rem; }
+.principle-shots.four .principle p { font-size: 15px; }
+
+/* ---- Home: built-in examples, demoted to practice ---- */
+.features.mini { gap: 18px; }
+.features.mini .feature-body { padding: 14px 16px 16px; }
+.features.mini .feature-body h3 { font-size: 1.1rem; margin-bottom: 4px; }
+.features.mini .feature-body p { font-size: 15px; color: var(--ink-2); }
+.features.mini .ex-link { margin-top: 10px; font-weight: 600; font-size: 15px; }
+.features.mini .coords { margin-top: 10px; }
+
+/* ---- Home: the hero film (launch video v3.6 web loop: muted, looping, with a pause button) ----
+   Under Reduce Motion the still (the film's end card) shows instead and the video never plays. */
+.hero-film .frame { transform: none; position: relative; }
+.hero-film video, .hero-film .film-still { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; background: var(--paper-2); }
+.hero-film .film-still { display: none; }
+.film-pause {
+  display: none; position: absolute; right: 10px; bottom: 10px; z-index: 1; width: 34px; height: 34px;
+  align-items: center; justify-content: center; border: 0; border-radius: 999px; cursor: pointer;
+  background: rgba(15, 23, 42, .62); color: #fff;
+}
+.js .film-pause { display: flex; }
+.film-pause:hover, .film-pause:focus-visible { background: rgba(15, 23, 42, .85); }
+.film-pause svg { width: 14px; height: 14px; fill: currentColor; }
+.film-pause .play, .film-pause[aria-pressed="true"] .bars { display: none; }
+.film-pause[aria-pressed="true"] .play { display: inline; }
+.film-caption { margin: 10px 2px 0; font-size: 14px; color: var(--ink-3); }
+@media (prefers-reduced-motion: reduce) {
+  .hero-film video, .js .film-pause { display: none; }
+  .hero-film .film-still { display: block; }
+}

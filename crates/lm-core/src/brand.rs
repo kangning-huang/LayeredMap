@@ -13,7 +13,8 @@
 /// The app's name as people see it: menus, window titles, messages, file metadata.
 pub const NAME: &str = "NimbleMap";
 
-/// The Pro tier's name.
+/// The name of what signing in unlocks, in messages ("Sign in to use NimbleMap Pro"). There is one
+/// app, always called [`NAME`]; the toolbar marks unlocked Pro with a small badge.
 pub const PRO_NAME: &str = "NimbleMap Pro";
 
 /// The Chinese brand name (owner's choice, 2026-10-19): a pun on 凌波微步, light and nimble like the
@@ -22,12 +23,12 @@ pub const PRO_NAME: &str = "NimbleMap Pro";
 /// and Korean use [`NAME`]: no kanji or hangul form (docs/lm/localization.md).
 pub const NAME_ZH: &str = "凌波微图";
 
-/// The Pro tier's Chinese name.
+/// [`PRO_NAME`] in Chinese.
 pub const PRO_NAME_ZH: &str = "凌波微图 Pro";
 
 /// The name the interface shows in its current language (`lm_core::i18n`): [`NAME_ZH`] in
-/// Chinese, [`NAME`] in every other language; with `pro`, the Pro names. Only for text people
-/// read in the interface: files, logs and reports keep [`NAME`].
+/// Chinese, [`NAME`] in every other language; with `pro`, the name of the Pro features. Only for
+/// text people read in the interface: files, logs and reports keep [`NAME`].
 pub fn shown(pro: bool) -> &'static str {
     shown_in(crate::i18n::current(), pro)
 }
@@ -37,13 +38,9 @@ pub fn shown_in(lang: crate::i18n::Lang, pro: bool) -> &'static str {
     match (lang.code(), pro) {
         ("zh", false) => NAME_ZH,
         ("zh", true) => PRO_NAME_ZH,
-        _ => name(pro),
+        (_, false) => NAME,
+        (_, true) => PRO_NAME,
     }
-}
-
-/// [`NAME`] or [`PRO_NAME`].
-pub fn name(pro: bool) -> &'static str {
-    if pro { PRO_NAME } else { NAME }
 }
 
 /// The name with a version, as recorded in a file's or a recipe's `software` field:
@@ -59,8 +56,6 @@ mod tests {
     #[test]
     fn names_agree() {
         assert!(PRO_NAME.starts_with(NAME) && PRO_NAME.ends_with(" Pro"));
-        assert_eq!(name(false), NAME);
-        assert_eq!(name(true), PRO_NAME);
         assert_eq!(with_version("1.2.3"), format!("{NAME} 1.2.3"));
         assert!(PRO_NAME_ZH.starts_with(NAME_ZH) && PRO_NAME_ZH.ends_with(" Pro"));
     }

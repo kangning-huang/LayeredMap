@@ -1,8 +1,8 @@
 # Accounts and the Ask proxy: design (WP7.3, WP7.4, WP7.6)
 
 The plan is `docs/lm/accounts.md` (owner decisions of 2026-10-19). This page is how it is built:
-endpoints, tokens, the redirect, offline, sign out and delete, regions, and how the Ask box moves
-from the key in the test build to the proxy. Code: `crates/lm-account` (the app's side),
+endpoints, tokens, the redirect, offline, sign out and delete, regions, the Ask box's route, and
+the entitlement that unlocks Pro in the one app. Code: `crates/lm-account` (the app's side),
 `crates/lm-ask/src/proxy.rs` (the Ask box's transport), `crates/lm-ui/src/account_ui.rs`
 (Settings › Account and the sign-in prompt), `services/ask-proxy` (the server, international).
 
@@ -38,7 +38,7 @@ design and ships in the app's config. Row-level security is what protects data.
 | Refresh | `POST {SUPABASE_URL}/auth/v1/token?grant_type=refresh_token` `{"refresh_token"}` | Same answer; the refresh token is replaced (rotation) |
 | Sign out | `POST {SUPABASE_URL}/auth/v1/logout?scope=local` with `Authorization: Bearer <access>` | Revokes this device's refresh token |
 | Ask | `POST {SUPABASE_URL}/functions/v1/ask` with `Authorization: Bearer <access>`; body = the chat-completions body `lm-ask` builds today | Answers OpenRouter's answer (JSON, or SSE when the body asks `stream: true`); errors are JSON `{"error": {"code", "message"}}` |
-| Account status | `GET {SUPABASE_URL}/functions/v1/account` | `{"pro", "plan", "today": {"requests", "tokens"}, "limits": {...}}` |
+| Account status | `GET {SUPABASE_URL}/functions/v1/account` | `{"pro", "plan", "today": {"requests", "tokens"}, "limits": {...}, "month_limits": {...}}`; 404 `no_profile` when the account has no profile row (read as not Pro). The app's entitlement check (see Entitlement) |
 | Delete account | `DELETE {SUPABASE_URL}/functions/v1/account` | The function deletes the Auth user with the service-role key; `profiles` and `usage_daily` rows go with it (`on delete cascade`) |
 
 ## Tokens
@@ -150,8 +150,12 @@ Read in this order, first found wins per region:
 
 1. `LM_ACCOUNT_CONFIG=<path>` (development);
 2. `account.json` in the app's resources (`Contents/Resources/account.json`, `Resources\account.json`
-   beside the exe), written by the bundle script / installer from the owner's local copy;
-3. nothing: accounts are off, and the Ask box behaves as today.
+   beside the exe), written by the bundle script / installer: from `LM_ACCOUNT_CONFIG` (a path),
+   `LM_ACCOUNT_CONFIG_JSON` (the file's text; CI passes the repository variable of that name), or
+   on a Mac the owner's copy in `~/Library/Application Support/LayeredMap/account.json`. The
+   scripts warn when there is none;
+3. nothing: nobody can sign in, so Pro can't be unlocked and its features stay hidden
+   (`Access::Unavailable`); the Free app works as always.
 
 `packaging/lm/account.example.json` holds placeholders only. The real file holds nothing secret
 (the URL and anon key are public by design) but stays out of git so test projects don't leak
@@ -183,10 +187,14 @@ Ask box already says it can't reach the assistant offline.
 
 | Situation | Route |
 |---|---|
-| `LM_ASK_ROUTE=direct` and a developer key is present (keychain / `OPENROUTER_API_KEY` / `assistant.dat`) | **Direct** to OpenRouter (development only) |
-| An account config with a proxy URL for the region | **Proxy**: needs a signed-in account; signed out, the Ask box shows "Sign in to use NimbleMap Pro" with a Sign in… button that opens Settings › Account |
-| No account config, a key present (today's Pro test builds) | **Direct** (unchanged behaviour) |
+| `LM_ASK_ROUTE=direct` and a developer key is present (keychain / `OPENROUTER_API_KEY`) | **Direct** to OpenRouter (development only) |
+| An account config with a proxy URL for the region | **Proxy**: needs a signed-in account with Pro (see Entitlement); signed out, the Ask box shows "Sign in to use NimbleMap Pro" with a Sign In… button that opens Settings › Account |
+| No account config, a developer key present (a developer's machine, with `LM_DEV_PRO=1`) | **Direct** |
 | Neither | Unavailable ("The assistant isn't set up in this build") |
+
+No build carries an OpenRouter key: the bundled test-build key (`assistant.dat`, its scrambling
+pad and the packaging steps that wrote it) was removed when Free and Pro became one app
+(decisions.md, 2026-10-19).
 
 `LM_ASK_ROUTE=proxy` forces the proxy even when a key is present (to test the proxy from a build
 that still has a key). The body the Ask box sends is the one `lm-ask` builds today, byte for byte
@@ -196,14 +204,43 @@ never feature values, except the few `resolve_feature` matches (`lm-ask/src/cont
 `resolve.rs`). The proxy forwards only allow-listed keys and stores no request or answer, only
 per-user daily counts.
 
-**When the test-build key goes.** After (1) the owner's Supabase project is live, (2) the `ask`
-function is deployed with the OpenRouter key as its secret and a Pro build signed in and asked
-through it, and (3) one shared Pro build has run through the proxy for a week: remove
-`bundled_key`, the `PAD`, `internal_build`'s use of it, the `assistant.dat` steps in
-`packaging/lm/bundle-macos.sh` and `packaging/lm/windows/build-installer.ps1` (`LM_OPENROUTER_KEY`),
-and the "Direct" fallback for builds without an account config. The developer path
-(`LM_ASK_ROUTE=direct` with the keychain key) stays for prompt work and the evaluation harness.
-The cost caption (internal builds only) then shows for `LM_DEV=1` only.
+## Entitlement: what signing in unlocks
+
+Free and Pro are one app (owner, 2026-10-19). Pro's features (the Ask box and its microphone, the
+analysis actions on cards, the built-in world layers) unlock when the person is signed in to an
+account whose `profiles.pro` is true. Pro is free with an account for now, so every new account
+has it (`pro default true`).
+
+- **The model** (`crates/lm-account/src/entitlement.rs`): `Entitlement { pro, plan, expires_at,
+  checked_at }`, and `entitlement::access()`, the one answer to "is Pro unlocked now":
+
+  | `Access` | When | The interface |
+  |---|---|---|
+  | `Unlocked` | Signed in, the last answer said `pro` (and `expires_at`, if any, is ahead) | Everything works; the PRO badge shows |
+  | `Developer` | `LM_DEV_PRO=1` in the environment | As Unlocked; for development, never in a release and never shown as a setting |
+  | `SignedOut` | An account config, nobody signed in | The Ask box shows "Sign in to use NimbleMap Pro" with Sign In…; analysis actions show with a lock and "Sign in to use analysis tools" |
+  | `Checking` | Signed in, no answer yet | "Checking your account…" |
+  | `NotPro` | Signed in, the answer said not Pro (or the plan ended) | "NimbleMap Pro isn't on for this account." with Settings… |
+  | `Unavailable` | No account config (an open-source build) and no override | Pro's features stay hidden; the Free app as it always was |
+
+- **The check** is `GET …/account` with the access token (`Account::refresh_entitlement`): once at
+  launch, after signing in, every 6 hours, and a retry after 60 s when it failed. 404 counts as not
+  Pro; 401 as signed out. An Ask answer also updates it at once: an answer means Pro is on, a 403
+  `not_pro` refusal that it is off (`note_ask_answer`).
+- **Kept with the session**: the entitlement is stored in the keychain record (optional keys in
+  record v1) and survives a token refresh, so the app starts unlocked offline for someone who was
+  unlocked last time.
+- **Where it is enforced.** The Ask box is enforced on the server: the `ask` function checks the
+  token and `pro` for every request, whatever the app shows. The local Pro features (analysis
+  actions, the built-in layers, voice input) run on the person's own computer and are locked in the
+  interface only; that is a deliberate trade-off for an open-source app, not a security boundary.
+- **A later subscription or in-app purchase** feeds the same `Entitlement` (`plan`, `expires_at`;
+  `app-store.md`), so the interface needs no change.
+- **Moving from the separate Pro test app.** The keychain item `app.layeredmap.pro.account` keeps
+  its name, so Pro testers stay signed in. The old Pro app's window and settings
+  (`~/Library/Application Support/app.layeredmap.pro`, eframe storage) aren't migrated; they go
+  with that app. `~/Library/Application Support/LayeredMap` (autosave, question log,
+  `account.json`) and the logs were already shared.
 
 ## The server (international)
 

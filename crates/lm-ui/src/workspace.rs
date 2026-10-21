@@ -148,6 +148,9 @@ pub struct Workspace {
     fit_batches: Vec<(u64, Option<Extent>)>,
     /// Where to fly after this frame (the first extent of a batch on an empty map).
     pub fit: Option<Extent>,
+    /// Where an Ask answer wants the map (its area with room, or its features), until the Ask
+    /// box has laid the answer out and the map can fly beside it.
+    pub answer_fit: Option<Extent>,
     /// A notice to show ("Zoom to new data", errors), taken by the shell.
     pub notice: Option<String>,
     /// Extent of the newest layers when the map wasn't empty, for "Zoom to new data".
@@ -1120,8 +1123,8 @@ impl Workspace {
         }
         // An action's preview.
         if let Some(change) = self.preview_change() {
-            view.edit_map(move |m: &mut Map| m.layers.retain(|l| l.id != analysis::PREVIEW_MAP_ID));
-            if let Some((a, b)) = change {
+            view.edit_map(move |m: &mut Map| m.layers.retain(|l| analysis::preview_part(l.id).is_none()));
+            for (a, b) in change {
                 view.add_layer_pair(a, b);
             }
             self.order_key.clear();
@@ -1132,7 +1135,15 @@ impl Workspace {
             .layers
             .iter()
             .rev()
-            .filter_map(|l| self.synced.iter().find(|s| s.id == l.id).map(|s| (s.map_id, l.visible, l.style.clone(), l.profile.kind)))
+            .filter_map(|l| {
+                let s = self.synced.iter().find(|s| s.id == l.id)?;
+                let mut style = l.style.clone();
+                // An empty Ask answer: the layer it searched stays as faint context.
+                if self.preview_faint(l.id) {
+                    style.opacity *= 0.35;
+                }
+                Some((s.map_id, l.visible, style, l.profile.kind))
+            })
             .collect();
         // What each map layer takes from derived state and the selection.
         let extras: Vec<(u32, String, Vec<usize>)> = self
@@ -1141,7 +1152,10 @@ impl Workspace {
             .iter()
             .filter_map(|l| {
                 let s = self.synced.iter().find(|s| s.id == l.id)?;
-                let key = self.derived.get(&l.id).map(|d| d.key.clone()).unwrap_or_default();
+                let mut key = self.derived.get(&l.id).map(|d| d.key.clone()).unwrap_or_default();
+                if self.preview_mask(l.id).is_some() {
+                    key.push_str(&format!("|preview {}", self.analysis.preview_generation));
+                }
                 Some((s.map_id, key, self.highlighted(l.id)))
             })
             .collect();
@@ -1164,7 +1178,8 @@ impl Workspace {
                     Some((
                         s.map_id,
                         d.and_then(|d| d.symbols.clone()),
-                        d.and_then(|d| d.mask.clone()),
+                        // An Ask preview shows the rows its plan's filter keeps.
+                        self.preview_mask(l.id).or_else(|| d.and_then(|d| d.mask.clone())),
                         self.highlighted(l.id),
                         l.style.labels.clone(),
                     ))
@@ -1172,12 +1187,12 @@ impl Workspace {
                 .collect();
             view.edit_map(move |m: &mut Map| {
                 let mut compare = None;
-                let mut preview = None;
+                let mut preview = Vec::new();
                 let mut ours: Vec<lm_mapview::map::Layer> = Vec::new();
                 let mut others = Vec::new();
                 for l in m.layers.drain(..) {
-                    if l.id == analysis::PREVIEW_MAP_ID {
-                        preview = Some(l);
+                    if let Some(part) = analysis::preview_part(l.id) {
+                        preview.push((part, l));
                     } else if l.id == COMPARE_MAP_ID {
                         compare = Some(l);
                     } else if l.id >= MAP_ID_BASE {
@@ -1186,14 +1201,26 @@ impl Workspace {
                         others.push(l);
                     }
                 }
-                // An action's preview draws above everything (spec › Preview).
-                if let Some(mut p) = preview {
+                // An action's preview draws above everything (spec › Preview): an Ask answer's
+                // overlays on top, then the connectors, then the result layer.
+                preview.sort_by_key(|(part, _)| match part {
+                    analysis::PreviewPart::Overlay => 0,
+                    analysis::PreviewPart::Connector => 1,
+                    analysis::PreviewPart::Result | analysis::PreviewPart::Ranked => 2,
+                });
+                for (part, mut p) in preview {
                     let kind = match p.dataset.geometry_type {
                         lm_jobs::GeometryType::Point => LayerKind::Points,
                         lm_jobs::GeometryType::Polyline => LayerKind::Lines,
                         _ => LayerKind::Areas,
                     };
-                    apply_style(&mut p, &preview_style(kind), kind);
+                    let style = match part {
+                        analysis::PreviewPart::Result => preview_style(kind),
+                        analysis::PreviewPart::Overlay => overlay_style(kind),
+                        analysis::PreviewPart::Connector => connector_style(),
+                        analysis::PreviewPart::Ranked => ranked_style(kind),
+                    };
+                    apply_style(&mut p, &style, kind);
                     m.layers.push(p);
                 }
                 // The Compare view's converted points draw above everything.
@@ -1253,6 +1280,9 @@ impl Workspace {
         {
             rows.extend(extra.iter().filter(|r| !rows.contains(r)).copied().collect::<Vec<_>>());
         }
+        let mut seen: std::collections::HashSet<usize> = rows.iter().copied().collect();
+        let answer: Vec<usize> = self.answer_rows(id).filter(|r| seen.insert(*r)).collect();
+        rows.extend(answer);
         rows
     }
 
@@ -1477,8 +1507,51 @@ impl Workspace {
 /// An action's preview: the accent blue at low opacity with a strong outline, so it reads as
 /// "not yet part of the map".
 fn preview_style(kind: LayerKind) -> Style {
-    let mut s = Style::for_kind(kind, [0x25, 0x63, 0xEB, 0xFF], 0);
-    s.opacity = 0.45;
+    let accent = [0x25, 0x63, 0xEB, 0xFF];
+    let mut s = Style::for_kind(kind, accent, 0);
+    if kind == LayerKind::Areas {
+        // An area (a buffer, the counted area) is outlined in the accent over a light tint, so
+        // it reads as a boundary and what lies inside it stays visible.
+        s.fill = accent;
+        s.fill_opacity = 0.14;
+        s.stroke = accent;
+        s.stroke_width = 4.0;
+    } else {
+        s.opacity = 0.45;
+    }
+    s
+}
+
+/// An Ask answer's objects from a layer not on the map: in the accent, opaque, points larger (they
+/// are drawn highlighted too).
+fn overlay_style(kind: LayerKind) -> Style {
+    let accent = [0x25, 0x63, 0xEB, 0xFF];
+    let mut s = Style::for_kind(kind, accent, 0);
+    s.point_size = 8.0;
+    if kind == LayerKind::Areas {
+        s.fill_opacity = 0.14;
+        s.stroke = accent;
+    }
+    s
+}
+
+/// A ranking's top areas: a light accent fill and a thin outline (they may be large countries).
+fn ranked_style(kind: LayerKind) -> Style {
+    let accent = [0x25, 0x63, 0xEB, 0xFF];
+    let mut s = Style::for_kind(kind, accent, 0);
+    if kind == LayerKind::Areas {
+        s.fill = accent;
+        s.fill_opacity = 0.18;
+        s.stroke = accent;
+        s.stroke_width = 1.5;
+    }
+    s
+}
+
+/// The lines from objects to the nearest ones found: thin, in the accent.
+fn connector_style() -> Style {
+    let mut s = Style::for_kind(LayerKind::Lines, [0x25, 0x63, 0xEB, 0xFF], 0);
+    s.line_width = 2.0;
     s
 }
 
@@ -1555,7 +1628,7 @@ fn derive_saved(base: &ImportedLayer, saved: &lm_core::document::DocLayer) -> Re
 /// are left out, and nothing is highlighted as selected.
 pub fn map_for_export(map: &Map) -> Map {
     let mut m = map.clone();
-    m.layers.retain(|l| l.id != analysis::PREVIEW_MAP_ID && l.id != COMPARE_MAP_ID);
+    m.layers.retain(|l| analysis::preview_part(l.id).is_none() && l.id != COMPARE_MAP_ID);
     for l in &mut m.layers {
         l.selection.clear();
     }
@@ -1604,7 +1677,13 @@ fn row_symbols(c: &lm_jobs::inspect::RowClasses, s: &Style, kind: LayerKind) -> 
                     f[3] = (f32::from(f[3]) * s.fill_opacity.clamp(0.0, 1.0)).round() as u8;
                     (f, lm_core::document::darker(*color))
                 }
-                LayerKind::Lines => (*color, *color),
+                // A colour per category or value keeps the layer's line transparency, so lines
+                // that pile up (storm tracks open faint) still show where they are densest.
+                LayerKind::Lines => {
+                    let mut c = *color;
+                    c[3] = ((u16::from(c[3]) * u16::from(s.stroke[3]) + 127) / 255) as u8;
+                    (c, c)
+                }
                 _ => (*color, s.stroke),
             };
             let (size, stroke_width) = match kind {
@@ -2181,5 +2260,34 @@ mod grid_tests {
         assert_eq!(w2.shown_time(id), 1);
         // ta at 500 hPa in July 2023 (xarray: expected_slices.csv).
         assert!((mean(&w2, id) - 256.5).abs() < 1e-4, "{}", mean(&w2, id));
+    }
+}
+
+#[cfg(test)]
+mod row_symbol_tests {
+    use super::*;
+
+    fn classes() -> lm_jobs::inspect::RowClasses {
+        lm_jobs::inspect::RowClasses {
+            index: vec![0, 1],
+            combos: vec![([0, 114, 178, 255], 0.0), ([230, 159, 0, 255], 0.0)],
+            legend: Default::default(),
+            scale: None,
+        }
+    }
+
+    /// Storm tracks open faint (`stroke[3]` well under 255); colouring them by basin or season
+    /// keeps that, so overlaps still build up into density.
+    #[test]
+    fn coloured_lines_keep_the_layers_line_transparency() {
+        let mut s = Style::for_kind(LayerKind::Lines, [0, 114, 178, 255], 4_999);
+        s.stroke[3] = 51; // 20 %
+        let r = row_symbols(&classes(), &s, LayerKind::Lines);
+        let a: Vec<u8> = r.symbols.iter().map(|sym| sym.stroke.a()).collect();
+        assert_eq!(a, vec![51, 51]);
+        // Fully opaque lines stay fully opaque.
+        s.stroke[3] = 255;
+        let r = row_symbols(&classes(), &s, LayerKind::Lines);
+        assert!(r.symbols.iter().all(|sym| sym.stroke.a() == 255));
     }
 }

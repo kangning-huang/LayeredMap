@@ -448,6 +448,7 @@ inside the app.
   tokens, cost, latency, provider), `summary.csv`, `summary.md` and `spend.json`.
 - `docs/lm/img/llm-eval-pareto.png`: the chart above, made by `report.py`.
 - `tools/lm/llm_eval/v2/`: harness v2, its 97 cases, results (`results/<run>/<model>.jsonl`, `summary.{md,csv}`, `spend.json`) and README.
+- `tools/lm/llm_eval/v3/`: harness v3 (end to end), its 166 cases with ground truth, scored results (`results/scored/`, `summary.{md,csv}`, `failures.csv`, `spend.json`; raw results outside the repo in `/Volumes/LaCie/lm-eval-data/results-v3`) and README; the headless Ask box is `crates/lm-ui/examples/ask_eval.rs`.
 
 ## TypeSafe Jev (2026-10-17, owner's request)
 
@@ -474,3 +475,251 @@ Caveats:
 - One run each.
 - Jev's decisions used the plan models' action descriptions as option criteria. Better-tuned criteria might lift its first-action score.
 - The router's choice may change as TypeSafe updates it.
+
+## Harness v3 (end-to-end), 2026-10-20
+
+v1 and v2 compared the model's tool calls with an expected plan. They never ran a plan, checked a
+number or looked at the map. That's how two bugs got through:
+- "Category 5 storms within 100 km of Tokyo" had the right plan, but the preview highlighted all
+  228 filtered tracks instead of the 7 it counted;
+- a later step guessed a made field's name ("km to nearest buffer").
+
+v3 runs every request through **the app's own Ask box, headless**:
+- `crates/lm-ui/examples/ask_eval.rs`, an example binary that isn't shipped, uses `Workspace::open`,
+  `ask_inputs`, `lm_ask::ask` (the real prompt, tools, map context, built-in layers, checks,
+  repairs and `plan_exec`) and `Workspace::preview_plan`;
+- it runs on real files and reads what the preview puts on the map (`Workspace::preview_shown`,
+  the only line added to the app).
+
+Ground truth comes independently from GeoPandas/Shapely/pyproj. Details are in
+`tools/lm/llm_eval/v3/README.md`.
+
+**Benchmark: 166 cases.**
+- **Files:** the five launch-film files (IBTrACS storms .shp, USGS M6+ quakes .gpkg, GDO heat-wave
+  NetCDF 2022 and 2023, ETOPO GeoTIFF, NCEI volcanoes .csv) and four Data-page datasets (USGS
+  month CSV, SPC tornado shapefile with 73,458 tracks, OurAirports, GeoNuclearData). All are kept
+  under `/Volumes/LaCie/lm-eval-data` (README there), with the app's built-in world layers.
+- **Question types:** 45 within N km of a place; 15 per country or state; 12 in one area; 4 at sea
+  or outside; 14 nearest; 10 cities near something; 6 joins; 5 rankings after a buffer and count;
+  10 raster values at points; 7 time slices; 17 chains that use made fields; 21 vague or
+  unanswerable.
+- **Languages:** 51 Chinese (31%), 88 English, and 27 in Spanish, Japanese, French, German,
+  Dutch, Italian, Korean, Portuguese and Russian.
+- **Hard cases:** 8 zero-result cases (for example w02, "Category 5 within 100 km of New York" =
+  0), and names that repeat (London, Naples, Santiago, Los Angeles, Portland, Springfield).
+- **Boundary tolerance:** 2 km either side of a distance limit. Objects in that band may be in or
+  out.
+- **Joins:** follow the app's 25 km nearest-area rule; the strictly-inside reading is also accepted.
+
+**Scored per case:**
+- honest;
+- plan valid (the app's checks accept it; repairs are counted);
+- executes;
+- answer correct (the last card, filter, layer or field: count range, object set, value, top-k
+  or name);
+- preview correct (the highlighted objects on a layer that is on the map, plus the drawn layer's
+  objects or selection, equal the expected set; for per-area answers, the drawn layer is the
+  result).
+
+Area drawn and view framing are reported separately. Every failure gets one class. The gold plan's
+own run separates app faults from model faults.
+
+### Headline (post-fix: phase-4 with askfix, 7b0a2f0 / a0cfd7e)
+
+| Run | End to end | Honest | Plan valid (1st try) | Executes | Answer | Preview | Frames | Median / p90 s | US$/case |
+|---|---|---|---|---|---|---|---|---|---|
+| Gold plans (mock) | 87% | 100% | 100% | 100% | **100%** | 84% | 38% | – | – |
+| **Claude Haiku 5.5** (app default) | **75%** | 98% | 99% (72%) | 99% | 81% | 73% | 29% | 3.1 / 6.3 | 0.0010 |
+| Claude Haiku 5.5, repeat | 73% | 95% | 96% (76%) | 96% | 81% | 76% | 32% | 3.0 / 6.0 | 0.0010 |
+| GLM 5.3 Flash (fallback) | 58% | 95% | 74% (62%) | 74% | 59% | 69% | 22% | 6.2 / 17.9 | 0.0016 |
+| Claude Sonnet 5.5 (reference, `tool_choice: auto`) | 80% | 99% | 100% (99%) | 100% | 96% | 79% | 37% | 5.4 / 9.3 | 0.0152 |
+| Haiku without system rule 19 (ablation) | 69% | 95% | 97% (72%) | 97% | 77% | 70% | 31% | 3.0 / 5.5 | 0.0010 |
+
+All percentages are of the 166 cases, except the plan, executes, answer and preview columns, which
+are of the cases where a plan is the right answer. The gold plans answer 166 of 166 correctly
+after the ground-truth fixes listed below, so the executor's numbers agree with GeoPandas
+everywhere. Their remaining 16% preview failures are app bugs.
+
+**Failures by layer** (the first layer that failed):
+
+| Run | Model plan | Checker | Executor | Preview-UI | Prompt-tool gap | Ground-truth ambiguity |
+|---|---|---|---|---|---|---|
+| Gold plans | 0 | 0 | 0 | 21 | 0 | 0 |
+| Haiku | 27 | 0 | 0 | 14 | 1 | 0 |
+| Haiku, repeat | 28 | 0 | 0 | 12 | 4 | 0 |
+| GLM | 57 | 0 | 0 | 12 | 1 | 0 |
+| Sonnet | 5 | 0 | 0 | 26 | 2 | 0 |
+
+**Variance:** the two Haiku runs agree on 154 of 166 cases. 12 cases flip, mostly nearest,
+time-slice and in-one-area questions.
+
+**Worst question types** (end to end, Haiku / Sonnet):
+- cities near something: 2/10 and 1/10;
+- nearest: 3/14 and 4/14;
+- outside (at sea): 2/4 and 1/4;
+- in one area: 5/12 and 11/12;
+- raster at points: 6/10 and 7/10.
+
+The first two are mostly preview bugs (the answers are right; see below). Haiku's own mistakes:
+- counting with `count_in` into a buffer when the request asks which objects;
+- running `nearest_distance` the wrong way round (volcanoes to cities for "the volcano nearest
+  Mexico City");
+- filtering by the file's `country` field instead of the borders (accepted only where the case
+  allows it);
+- using World elevation when the user's own grid was asked for.
+
+**Rule 19 ("#k" names a made field), new in askfix:**
+- with rule 19, Haiku names made fields as "#k" in 10 and 6 plans (two runs); without it, never;
+- chains with made fields pass end to end 27/30 and 26/30 with the rule, 25/30 without;
+- overall: 75% and 73% with the rule, 69% without;
+- first-try validity doesn't change.
+
+The executor's own name resolution ("km to nearest …") works either way: there were no "no field"
+errors in the ablation. Sonnet uses "#k" in 40 plans.
+
+### Pre-fix (d7c92d2) vs post-fix, with no paid calls
+
+These are the same plans run through the pre-fix binary: the gold plans, and every model's final
+plans replayed.
+
+| Plans | Pre-fix: e2e / executes / answer / preview | Post-fix: e2e / executes / answer / preview |
+|---|---|---|
+| Gold | 57% / 100% / 100% / **45%** | 87% / 100% / 100% / **84%** |
+| Haiku | 45% / 89% / 69% / 38% | 75% / 99% / 81% / 73% |
+| GLM | 33% / 57% / 45% / 33% | 58% / 74% / 59% / 69% |
+| Sonnet | 30% / 71% / 67% / 22% | 80% / 100% / 96% / 79% |
+
+What askfix resolved:
+- **The preview showed the filter, not the answer.** Pre-fix, every buffer-then-count or
+  what's-inside plan highlighted the last filter's rows (all 228 Category 5 tracks for w01) or
+  nothing. Within-N-km cases went from 2/45 to 40/45 end to end with the gold plans; in-one-area
+  cases went from 0/12 to 12/12.
+- **"#k" field references.** Pre-fix, these failed at run time: 14 to 43 cases per model in the
+  replays. That is why the post-fix plans execute so much less often on the pre-fix code.
+- **Framing the result.** Pre-fix, the view never moved. Post-fix, it frames local answers: 38%
+  of gold cases. Answers spanning an ocean are left unframed on purpose (`LOCAL_SPAN_DEG`).
+
+### App bugs found (not fixed here; repro = a case ID whose gold plan shows it)
+
+All but #4 are still present after askfix. Repro with
+`run_v3.py --mode mock --only <id>` and the results file.
+
+1. **An empty answer highlights the filter.** When a step finds nothing, `plan_answer` returns
+   None and the preview falls back to the last filter's rows. "Category 5 within 100 km of New
+   York" = 0 lights up all 228 Category 5 tracks. Repro: **w02** (also w12, w24, w30, w40).
+2. **Answers in built-in layers are never shown.** Answers in World cities and other built-in
+   layers go to `highlight` on a layer that isn't on the map, so nothing is drawn: "which cities
+   are within 50 km of Vesuvius" shows only the buffer. Repro: **x01** (also x02, x03, x10, and
+   all of Sonnet's x05–x09).
+3. **Nearest shows the wrong object.** `nearest_distance` reports no matched feature: the nearest
+   volcano or plant isn't highlighted, and the highlight goes to the filtered city in World cities
+   (invisible). Repro: **n01** (n02–n08, n13, n14).
+4. **The preview highlighted the filter, not the matched features.** This was the owner's report.
+   Repro: **w01** on the pre-fix code (228 highlighted, 7 counted). Fixed by askfix.
+5. **A filter before remove_inside highlights the whole filter.** "Magnitude 8+ quakes at sea"
+   highlights all 100 M8+ quakes over the 73 at sea. Repro: **o01**.
+6. **count_in's field isn't named as the tool says.** The tool description promises the field
+   "<points layer, lowercase>" ('Schools' → 'schools'). The app names it from a noun of the layer
+   name, or the kind's noun when the name isn't one: storms and tornadoes get "lines", the USGS
+   CSV gets "points", NCEI_volcano_locations gets "ncei volcano locations". Likewise,
+   `nearest_distance` to World cities makes "km to nearest world city". "#k" now avoids guessing,
+   but the description is still wrong. Repro: **c06** (field "lines").
+7. **nearest_other contradicts its tool description.** It measures to every object of the layer,
+   hidden ones too (owner's rule, 2026-10-17). The tool description says "only the shown objects
+   count as others", so a plan that trusts it answers 0. Repro: **k13**: Haiku (both runs) and Sonnet
+   planned it and got 0; GLM asked.
+8. **A forced tool choice locks out other models.** The app always sends `tool_choice:
+   "required"`, and every provider of Claude Sonnet 5.5 refuses it with HTTP 400 ("tool_choice:
+   type tool and any are not supported"). All 166 requests failed
+   (raw results: `lm-eval-data/results-v3/failed-runs/paid-ref-forced-tool-choice`). Haiku and GLM accept it. Switching the
+   app's model would break the Ask box.
+9. **GLM sends steps with no arguments.** In 30 of 166 cases, GLM sent submit_plan steps with
+   only `"action"`. The repair message ("step 1: missing layer") didn't help in two rounds. The
+   step schema has no per-action required fields. Repro: **c05** (GLM run).
+10. **No tool picks a NetCDF date.** Plans run on the date the map shows (1 June), so
+    "Barcelona on 16 August 2022" can't be answered. The models refused correctly, but this is a
+    gap for the launch film's own question. Repro: **t02**.
+
+### Fixes, 2026-10-21 (branch harnessfix)
+
+Bugs 1–3 and 5–9 above are fixed (decisions.md, 2026-10-21); #10 is in the backlog. Each fix has a
+test named after its case: w02, x01, n01, o01, c05, k13, sonnet_400; n04 for rankings. Three
+harness changes go with them: the preview reports every highlight, the overlays drawn from built-in
+layers and what is shown only as context (the object measured from); k13 is now a plan (7), since
+nearest_other measures among the shown objects; and nearest previews accept any of the near-ties,
+with "nearest city to X" expecting the city, now that built-in answers are drawn.
+
+| Plans | Before (phase-4, c3b6d98): e2e / answer / preview | After: e2e / answer / preview |
+|---|---|---|
+| Gold (mock) | 84% / 99% / 81% | **100% / 100% / 100%** |
+| Haiku 5.5, recorded plans (paid-main) replayed | 73% / 81% / 69% | 81% / 82% / 80% |
+| GLM 5.3 Flash, recorded plans replayed | 56% / 59% / 66% | 64% / 60% / 80% |
+| **Haiku 5.5, new paid run** | – | 79% (81% replayed on the final build) |
+| **GLM 5.3 Flash, new paid run** | – | 76% (80% replayed on the final build) |
+
+"Before" is the same cases (k13 and the nearest specs as now) scored on the phase-4 runs. One
+change to the build came after the paid runs: a ranking reports its top object (n01/n04 with the
+models' own plans). That is why the last two rows are also given replayed through the final
+build. GLM's new run was served by Wafer for all 290 calls; it sent no step without arguments
+(before: 37 cases), and plans are valid first try in 79% of cases (was 62%).
+
+Still failing (final build, replayed): Haiku 32 cases (25 model plan, 6 preview with the model's
+own plan, 1 prompt-tool gap: t03, no date tool); GLM 34. The models' plan faults are mostly
+nearest (measuring the wrong way round), raster at points (World elevation for the user's grid),
+in one area (counting into every country, then filtering the counts) and cities near something.
+
+Spend for this round: US$0.38 (Haiku 0.171, GLM 0.204) plus a US$0.005 provider probe; the ledger
+total is US$3.69 of US$10.00.
+
+### Prompt and tool improvements suggested
+
+- **Preview:** highlight the matched features of the user's own layer, and show an empty answer
+  as empty. Draw built-in layers' answers as a preview layer, for example the matched cities.
+  Have `nearest_distance` report the nearest object as matched, so its feature is highlighted.
+- **Tool descriptions:** state count_in's actual field name, or say "use #k". Correct
+  nearest_other's description.
+- **Model choice:** send `tool_choice: "auto"` (or fall back to it on HTTP 400) so another model
+  can be used.
+- **submit_plan schema:** give each step's required inputs per action (for example with `oneOf`),
+  or have the repair message spell out the missing arguments.
+- **Rules to add:**
+  - "Which objects …" asks for the objects (`whats_inside` or `keep_inside`), not a count;
+  - "the X nearest to Y" measures from Y to X;
+  - "inside <country>" means the borders, unless the user names a field;
+  - "the elevation grid" means the user's own raster when one is open.
+- **A date tool:** add a `time` input to `add_raster_values` and `summarize_*` for grids.
+
+### Spend
+
+The total was **US$3.31** of the US$10.00 cap, enforced by the ledger before every request
+(`tools/lm/llm_eval/v3/results/spend.json`):
+
+| Run | US$ |
+|---|---|
+| Haiku | 0.16 |
+| GLM | 0.26 |
+| Haiku repeat | 0.17 |
+| Rule-19 ablation | 0.17 |
+| Sonnet reference | 2.51 |
+| Smoke tests and a provider probe | 0.04 |
+
+The first Sonnet attempt cost nothing: every request was refused (bug 8).
+
+### Caveats (v3)
+
+- **Cases written by one agent.** The ground-truth fixes made after the first gold run were all
+  ground-truth errors, not app changes:
+  - zero-length tornado tracks were left out by edge clipping;
+  - plants without coordinates were counted as "outside";
+  - the app's 25 km join rule was missing;
+  - k13 became a tool-gap case.
+- **"Preview correct" checks highlighted sets.** It doesn't check pixels. Framing is only the
+  extent the Ask box is asked to fly to; the shell's layout of it isn't run.
+- **The Sonnet reference isn't exactly the app.** It ran with `tool_choice: "auto"`; every other
+  run sent the app's request body unchanged.
+- **Replays on the pre-fix code favour post-fix behaviour.** The replayed plans were written
+  against the post-fix prompt, which includes rule 19.
+- **A snapshot that failed, then passed.** On the branch merged with a0cfd7e, `cargo xtask ci`
+  failed twice on the `pro_ask_answer_preview` snapshot: the map was framed differently. It
+  passed when run alone, and CI passes on cefcc32. The runs used the a0cfd7e app code; bc3b439
+  (merged since) changes only the card text, not execution or numbers.

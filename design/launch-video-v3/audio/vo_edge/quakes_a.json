@@ -1,0 +1,42 @@
+{
+ "voice": "en-US-AndrewNeural",
+ "rate": "+4%",
+ "text": "Earthquakes of magnitude 6 and up, since 1900.",
+ "words": [
+  {
+   "text": "Earthquakes",
+   "offset": 0.096166,
+   "duration": 0.45675
+  },
+  {
+   "text": "of",
+   "offset": 0.564916,
+   "duration": 0.072125
+  },
+  {
+   "text": "magnitude",
+   "offset": 0.649041,
+   "duration": 0.600958
+  },
+  {
+   "text": "6",
+   "offset": 1.262,
+   "duration": 0.432708
+  },
+  {
+   "text": "and",
+   "offset": 1.923083,
+   "duration": 0.180291
+  },
+  {
+   "text": "up",
+   "offset": 2.115375,
+   "duration": 0.240375
+  },
+  {
+   "text": "since 1900",
+   "offset": 2.64425,
+   "duration": 0.973541
+  }
+ ]
+}

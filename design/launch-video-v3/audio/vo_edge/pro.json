@@ -1,0 +1,67 @@
+{
+ "voice": "en-US-AndrewNeural",
+ "rate": "+4%",
+ "text": "Sign in for Pro, and ask your map questions in plain words.",
+ "words": [
+  {
+   "text": "Sign",
+   "offset": 0.108166,
+   "duration": 0.252416
+  },
+  {
+   "text": "in",
+   "offset": 0.372583,
+   "duration": 0.084125
+  },
+  {
+   "text": "for",
+   "offset": 0.46875,
+   "duration": 0.132208
+  },
+  {
+   "text": "Pro",
+   "offset": 0.613,
+   "duration": 0.348541
+  },
+  {
+   "text": "and",
+   "offset": 1.262,
+   "duration": 0.108166
+  },
+  {
+   "text": "ask",
+   "offset": 1.382208,
+   "duration": 0.240375
+  },
+  {
+   "text": "your",
+   "offset": 1.634625,
+   "duration": 0.108166
+  },
+  {
+   "text": "map",
+   "offset": 1.754791,
+   "duration": 0.240375
+  },
+  {
+   "text": "questions",
+   "offset": 2.007208,
+   "duration": 0.432708
+  },
+  {
+   "text": "in",
+   "offset": 2.451916,
+   "duration": 0.072125
+  },
+  {
+   "text": "plain",
+   "offset": 2.536041,
+   "duration": 0.276458
+  },
+  {
+   "text": "words",
+   "offset": 2.8245,
+   "duration": 0.432708
+  }
+ ]
+}

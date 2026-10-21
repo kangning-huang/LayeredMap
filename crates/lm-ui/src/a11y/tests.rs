@@ -210,7 +210,7 @@ fn screens() -> Vec<(&'static str, Box<dyn Fn() -> H>)> {
             "Pro, Ask box and time slider",
             Box::new(|| {
                 let mut h = phase3(&["R8/r8_classic.nc"], WORLD, |s| {
-                    s.pro = true;
+                    s.account = crate::account_ui::test_ui(true, lm_account::Region::International);
                     let id = s.ws.doc.layers[0].id;
                     s.ws.select_layer(id);
                 });
@@ -287,7 +287,6 @@ fn screens() -> Vec<(&'static str, Box<dyn Fn() -> H>)> {
             "Settings › Account, signed out",
             Box::new(|| {
                 let mut h = harness_phase(3, false, WORLD, |s| {
-                    s.pro = true;
                     s.account = crate::account_ui::test_ui(false, lm_account::Region::International);
                     s.account.open = true;
                 });
@@ -299,7 +298,6 @@ fn screens() -> Vec<(&'static str, Box<dyn Fn() -> H>)> {
             "Settings › Account, signed in",
             Box::new(|| {
                 let mut h = harness_phase(3, false, WORLD, |s| {
-                    s.pro = true;
                     s.account = crate::account_ui::test_ui(true, lm_account::Region::International);
                     s.account.open = true;
                 });
@@ -311,7 +309,6 @@ fn screens() -> Vec<(&'static str, Box<dyn Fn() -> H>)> {
             "Settings › Account, the email's code",
             Box::new(|| {
                 let mut h = harness_phase(3, false, WORLD, |s| {
-                    s.pro = true;
                     s.account = crate::account_ui::test_ui(false, lm_account::Region::International);
                     s.account.open = true;
                     let mut ec = crate::account_ui::EmailCode::new("kim@example.com".into(), lm_account::Region::International);
@@ -326,7 +323,6 @@ fn screens() -> Vec<(&'static str, Box<dyn Fn() -> H>)> {
             "Pro, sign-in prompt",
             Box::new(|| {
                 phase3(&["V1/districts.geojson"], SHANGHAI, |s| {
-                    s.pro = true;
                     s.account = crate::account_ui::test_ui(false, lm_account::Region::International);
                 })
             }),

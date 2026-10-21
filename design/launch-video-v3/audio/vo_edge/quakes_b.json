@@ -1,0 +1,27 @@
+{
+ "voice": "en-US-AndrewNeural",
+ "rate": "+4%",
+ "text": "Tokyo. Tohoku, magnitude 9.1.",
+ "words": [
+  {
+   "text": "Tokyo",
+   "offset": 0.096166,
+   "duration": 0.432708
+  },
+  {
+   "text": "Tohoku",
+   "offset": 0.9375,
+   "duration": 0.492791
+  },
+  {
+   "text": "magnitude",
+   "offset": 1.73075,
+   "duration": 0.552875
+  },
+  {
+   "text": "9.1",
+   "offset": 2.367791,
+   "duration": 0.8173329
+  }
+ ]
+}

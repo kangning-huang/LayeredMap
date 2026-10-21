@@ -1,0 +1,7 @@
+# Colour storms by max wind, then the map image sheet (needs LM_DEV=1: export is Phase 5)
+example storms
+160,22,3.1
+card style_by_value max_wind_kt
+160,22,3.1
+export
+160,22,3.1

@@ -14,6 +14,7 @@
 pub mod browser;
 pub mod code;
 pub mod config;
+pub mod entitlement;
 pub mod http;
 pub mod pkce;
 pub mod redirect;
@@ -22,10 +23,14 @@ pub mod session;
 pub mod store;
 pub mod url;
 
+// Help › Send Feedback…: not the account, but the same service and gated client.
+pub mod feedback;
+
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
 pub use config::{Config, Provider, Region, RegionConfig};
+pub use entitlement::{Access, Entitlement};
 pub use route::AskRoute;
 pub use session::{Session, User};
 
@@ -141,7 +146,8 @@ fn reason(body: &str) -> String {
         .collect()
 }
 
-fn now() -> i64 {
+/// Unix seconds now.
+pub fn now() -> i64 {
     web_time::SystemTime::now().duration_since(web_time::UNIX_EPOCH).map_or(0, |d| d.as_secs() as i64)
 }
 
@@ -193,6 +199,9 @@ pub struct Account {
     session: Mutex<Option<Session>>,
     /// Who is signed in, for the interface: never held across a network request.
     shown: Mutex<Option<(User, Region)>>,
+    /// The session's entitlement, for the interface (read every frame): never held across a
+    /// network request.
+    pro: Mutex<Option<Entitlement>>,
     /// The sign-in waiting for its link. Held while a link's code or a typed code is exchanged.
     /// Lock order: `pending`, then `session`/`shown`.
     pending: Mutex<Option<Pending>>,
@@ -209,6 +218,7 @@ impl Account {
             store,
             session: Mutex::new(None),
             shown: Mutex::new(None),
+            pro: Mutex::new(None),
             pending: Mutex::new(None),
             next_id: AtomicU64::new(1),
             clock: now,
@@ -253,6 +263,9 @@ impl Account {
     fn set(&self, s: Option<Session>) {
         if let Ok(mut g) = self.shown.lock() {
             *g = s.as_ref().map(|s| (s.user.clone(), s.region));
+        }
+        if let Ok(mut g) = self.pro.lock() {
+            *g = s.as_ref().and_then(|s| s.entitlement.clone());
         }
         if let Ok(mut g) = self.session.lock() {
             *g = s;
@@ -412,12 +425,14 @@ impl Account {
             return Ok(t.to_string());
         }
         let region = s.region;
+        let entitlement = s.entitlement.clone();
         let rc = self.region_config(region)?;
         let body = serde_json::json!({"refresh_token": s.refresh});
         let r = self.post(rc, &format!("{}/auth/v1/token?grant_type=refresh_token", rc.auth_url), &body)?;
         match r.status {
             200 => {
-                let fresh = Session::from_token_response(&r.body, region, now).map_err(|e| AccountError::Server(200, e))?;
+                let mut fresh = Session::from_token_response(&r.body, region, now).map_err(|e| AccountError::Server(200, e))?;
+                fresh.entitlement = entitlement;
                 // The refresh token was replaced: keep the new one before anything else can fail.
                 if let Err(e) = self.store.save(&fresh.to_record()) {
                     log::warn!("account: the refreshed session couldn't be stored: {e}");
@@ -436,10 +451,120 @@ impl Account {
                 if let Ok(mut g) = self.shown.lock() {
                     *g = None;
                 }
+                if let Ok(mut g) = self.pro.lock() {
+                    *g = None;
+                }
                 let _ = self.store.delete();
                 Err(AccountError::SignedOut)
             }
             s => Err(AccountError::Server(s, reason(&r.body))),
+        }
+    }
+
+    /// Whether feedback (Help › Send Feedback…) goes with this account: someone is signed in to
+    /// the service feedback is sent to (`Config::feedback`, the international one). A mainland
+    /// China session is another service, whose tokens the feedback function can't check.
+    pub fn feedback_signed_in(&self) -> bool {
+        let Some((_, region)) = self.user() else { return false };
+        match (self.config.region(region), self.config.feedback()) {
+            (Some(mine), Some(feedback)) => mine.auth_url == feedback.auth_url,
+            _ => false,
+        }
+    }
+
+    /// The access token sent with feedback (`Authorization: Bearer …`), so the feedback function
+    /// can keep who sent it privately (docs/lm/feedback.md); refreshed first like Ask's. `None`
+    /// when nobody is signed in to the feedback service or a token can't be had (offline, a
+    /// refused refresh): the message then goes without one, as anyone's would.
+    pub fn feedback_token(&self) -> Option<String> {
+        if !self.feedback_signed_in() {
+            return None;
+        }
+        match self.access_token() {
+            Ok(t) => Some(t),
+            Err(e) => {
+                log::info!("feedback: sent without the account: {e}");
+                None
+            }
+        }
+    }
+
+    /// What the server last said about Pro for the signed-in account (`None`: nobody is signed in,
+    /// or no answer yet).
+    pub fn entitlement(&self) -> Option<Entitlement> {
+        self.pro.lock().ok().and_then(|g| g.clone())
+    }
+
+    /// Time to ask the server about Pro again: no answer yet, or the last one is old
+    /// ([`Entitlement::due`]).
+    pub fn entitlement_due(&self) -> bool {
+        self.entitlement().is_none_or(|e| e.due((self.clock)()))
+    }
+
+    /// Whether Pro is unlocked now, and why not (`entitlement::access`): `developer` is the
+    /// override ([`entitlement::developer_override`]).
+    pub fn access(&self, developer: bool) -> Access {
+        let signed_in = self.user().is_some();
+        entitlement::access(developer, self.config.any(), signed_in, self.entitlement().as_ref(), (self.clock)())
+    }
+
+    /// Asks the account function (`GET …/account`) whether this account has Pro, and keeps the
+    /// answer with the session. A missing profile (404 `no_profile`) counts as no Pro.
+    pub fn refresh_entitlement(&self) -> Result<Entitlement, AccountError> {
+        let (_, region) = self.user().ok_or(AccountError::SignedOut)?;
+        let rc = self.region_config(region)?;
+        if lm_net::offline() {
+            return Err(AccountError::Offline);
+        }
+        let token = self.access_token()?;
+        let headers = [("apikey", rc.anon_key.clone()), ("Authorization", format!("Bearer {token}"))];
+        let r = self.http.send("GET", &rc.account_url(), &headers, None)?;
+        let now = (self.clock)();
+        let e = match r.status {
+            200 => Entitlement::from_account_answer(&r.body, now).map_err(|e| AccountError::Server(200, e))?,
+            404 => Entitlement { pro: false, plan: None, expires_at: None, checked_at: now },
+            401 => return Err(AccountError::SignedOut),
+            s => return Err(AccountError::Server(s, reason(&r.body))),
+        };
+        self.keep_entitlement(e.clone());
+        Ok(e)
+    }
+
+    /// What an answer from the Ask service says about Pro: an answer means it is on, a `not_pro`
+    /// refusal that it isn't. Kept at once, so the interface locks or unlocks without waiting for
+    /// the next check.
+    pub fn note_ask_answer(&self, pro: bool) {
+        if self.user().is_none() {
+            return;
+        }
+        let known = self.entitlement();
+        if known.as_ref().is_some_and(|k| k.pro == pro && !k.due((self.clock)())) {
+            return;
+        }
+        self.keep_entitlement(Entitlement::from_ask(pro, known.as_ref(), (self.clock)()));
+    }
+
+    /// Keeps an entitlement with the session: in the stored record, then for the interface.
+    fn keep_entitlement(&self, e: Entitlement) {
+        let record = match self.session.lock() {
+            Ok(mut g) => match g.as_mut() {
+                Some(s) => {
+                    s.entitlement = Some(e.clone());
+                    Some(s.to_record())
+                }
+                // Signed out meanwhile: nothing to keep.
+                None => return,
+            },
+            Err(_) => None,
+        };
+        if let Some(rec) = record
+            && let Err(err) = self.store.save(&rec)
+        {
+            log::warn!("account: the entitlement couldn't be stored: {err}");
+        }
+        log::info!("account: Pro is {} for this account", if e.pro { "on" } else { "off" });
+        if let Ok(mut g) = self.pro.lock() {
+            *g = Some(e);
         }
     }
 
@@ -546,6 +671,7 @@ mod tests {
             region: Region::International,
             access: Some(("tok".into(), expires)),
             refresh: "r".into(),
+            entitlement: None,
         });
         a
     }
@@ -568,6 +694,36 @@ mod tests {
     }
 
     #[test]
+    fn feedback_carries_the_token_only_when_signed_in_to_its_service() {
+        let a = signed_in(Arc::new(store::MemoryStore::default()), 1_000 + 3_600);
+        assert!(a.feedback_signed_in());
+        assert_eq!(a.feedback_token().as_deref(), Some("tok"));
+        // A token that can't be refreshed (no network here): sent without one.
+        let stale = signed_in(Arc::new(store::MemoryStore::default()), 1_000 + 60);
+        assert_eq!(stale.feedback_token(), None);
+        // Signed out: nothing.
+        let none = Account::new(a.config().clone(), Arc::new(NoNetwork), Arc::new(store::MemoryStore::default()));
+        assert!(!none.feedback_signed_in());
+        assert_eq!(none.feedback_token(), None);
+        // A mainland China session belongs to another service: its token isn't sent.
+        let both = Config::parse(
+            r#"{"international": {"auth_url": "https://a.example", "anon_key": "k", "proxy_url": "https://a.example/f"},
+                "china": {"auth_url": "https://cn.example", "anon_key": "c", "proxy_url": "https://cn.example/f"}}"#,
+        )
+        .unwrap_or_default();
+        let cn = Account::new(both, Arc::new(NoNetwork), Arc::new(store::MemoryStore::default())).with_clock(|| 1_000);
+        cn.adopt(Session {
+            user: User { id: "u".into(), provider: "phone".into(), email: None },
+            region: Region::China,
+            access: Some(("cn-tok".into(), 1_000 + 3_600)),
+            refresh: "r".into(),
+            entitlement: None,
+        });
+        assert!(!cn.feedback_signed_in());
+        assert_eq!(cn.feedback_token(), None);
+    }
+
+    #[test]
     fn restore_reads_the_stored_record_and_sign_out_clears_it() {
         let store = Arc::new(store::MemoryStore::default());
         let a = signed_in(store.clone(), 0);
@@ -585,6 +741,39 @@ mod tests {
         // A broken record restores nothing.
         store::SecretStore::save(store.as_ref(), "00ff").unwrap();
         assert!(b.restore().is_none());
+    }
+
+    /// Signed in, Pro is locked until the server says so; an Ask answer unlocks it, a `not_pro`
+    /// refusal locks it, and the answer is kept in the stored record (an offline launch knows).
+    #[test]
+    fn the_entitlement_unlocks_pro_and_is_stored() {
+        let store = Arc::new(store::MemoryStore::default());
+        let a = signed_in(store.clone(), 1_000 + 3_600);
+        assert_eq!(a.access(false), Access::Checking);
+        assert_eq!(a.access(true), Access::Developer);
+        a.note_ask_answer(true);
+        assert_eq!(a.access(false), Access::Unlocked);
+        let rec = store::SecretStore::load(store.as_ref()).unwrap().unwrap();
+        assert_eq!(Session::from_record(&rec).and_then(|s| s.entitlement).map(|e| e.pro), Some(true));
+        // Restored on another launch (no network): unlocked from the stored answer.
+        let config = a.config().clone();
+        let b = Account::new(config, Arc::new(NoNetwork), store.clone()).with_clock(|| 1_000);
+        b.restore();
+        assert_eq!(b.access(false), Access::Unlocked);
+        // A refresh keeps it; the check itself fails here without a network and changes nothing.
+        assert!(b.refresh_entitlement().is_err());
+        assert_eq!(b.access(false), Access::Unlocked);
+        b.note_ask_answer(false);
+        assert_eq!(b.access(false), Access::NotPro);
+        // Signed out: the entitlement goes with the session.
+        b.sign_out().unwrap();
+        assert_eq!(b.access(false), Access::SignedOut);
+        assert_eq!(b.entitlement(), None);
+        b.note_ask_answer(true);
+        assert_eq!(b.access(false), Access::SignedOut);
+        // A build without accounts: nothing to unlock with.
+        let none = Account::new(Config::default(), Arc::new(NoNetwork), Arc::new(store::MemoryStore::default()));
+        assert_eq!(none.access(false), Access::Unavailable);
     }
 
     #[test]

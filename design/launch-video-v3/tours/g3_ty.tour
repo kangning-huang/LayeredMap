@@ -1,0 +1,21 @@
+# v3.3 film 1: the storm shapefile (file argument). World view; zoom in over the Atlantic and pan
+# (real flights); the place search's landing for "New York"; Find in the layer: "Sandy" (the
+# layer's real find field: both storms named Sandy selected and listed); Sandy (2012) clicked;
+# a regional view around New York with its card
+esc
+150,15,2.3
+layer 99
+-80,24,4.6
+-62,33,4.6
+-74.00597,40.71427,10.055
+layer 99
+layer 0
+find Sandy
+layer 99
+layer 99
+layer 99
+-76.6,39.95,9
+click -76.6,39.95
+-75,39.5,6.4
+layer 99
+layer 99

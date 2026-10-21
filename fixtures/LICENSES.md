@@ -45,6 +45,7 @@
 | J6 | synthetic, hand-made (`tools/lm/reference_tests/make_p2_fixtures.py`) | CC0-1.0 | made for this project |
 | N14 | synthetic, hand-made and seeded (`tools/lm/reference_tests/make_p2_fixtures.py`) | CC0-1.0 | made for this project; synthetic places around Shanghai |
 | N15 | synthetic, hand-made (`tools/lm/reference_tests/make_p2_fixtures.py`) | CC0-1.0 | made for this project |
+| A1 | synthetic, hand-made | CC0-1.0 | made for this project |
 | K1 | owner-supplied | owner-supplied | |
 | D1–D4 | TBD | TBD — license to verify | |
 | B1–B20 | owner-supplied | owner-supplied | |

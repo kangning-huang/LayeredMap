@@ -1,9 +1,10 @@
 # The Ask proxy and accounts service (international)
 
 A Supabase project directory: the database migration (`profiles`, `usage_daily`, row-level
-security, the sign-up trigger, the allowance functions) and two Edge Functions, `ask` (the Ask
-box's model calls, with the OpenRouter key) and `account` (status and Delete account). Design:
-`docs/lm/accounts-design.md`.
+security, the sign-up trigger, the allowance functions) and three Edge Functions, `ask` (the Ask
+box's model calls, with the OpenRouter key), `account` (status and Delete account) and `feedback`
+(Help › Send Feedback…, posted as a GitHub Discussion; see [Feedback](#feedback) below). Design:
+`docs/lm/accounts-design.md`, `docs/lm/feedback.md`.
 
 No user data, keys or project ids are kept in this repository. `.env.example` lists the secrets
 by name only.
@@ -45,6 +46,7 @@ not for deploying.
    ```sh
    supabase functions deploy ask
    supabase functions deploy account
+   supabase functions deploy feedback   # see Feedback below for its token
    ```
 5. **Auth settings** (Dashboard › Authentication):
    - URL Configuration › Redirect URLs: add `http://127.0.0.1:*/**` (the app's loopback
@@ -104,10 +106,83 @@ not for deploying.
    then ask a question. `supabase functions logs ask` shows one line per call (user id, status,
    tokens), never what was asked.
 
+## Feedback
+
+`feedback` takes a message from the app, signed in or not, and posts it as a discussion on
+`kangning-huang/NimbleMap` through GitHub's GraphQL API (`createDiscussion`). The app needs no
+GitHub account and no access to GitHub. Design and privacy: `docs/lm/feedback.md`.
+
+A signed-in user's app adds its access token (`Authorization: Bearer …`). The function verifies it
+like `ask` (`auth.getClaims`) and keeps the account id in the private `feedback_senders` table
+beside the discussion's address; the post says only "From a signed-in user", never the id. A token
+that doesn't verify is treated as anonymous (logged `auth=invalid`, without the token) and the
+message is still posted. Limits are the same either way.
+
+| Form's type | Category (default id) | Title |
+|---|---|---|
+| Idea or suggestion | Ideas (`DIC_kwDOVO_7YM4DJIF5`) | as typed, or the first line |
+| Problem or bug | Q&A (`DIC_kwDOVO_7YM4DJIF4`), so an answer can be marked | `[Problem] …` |
+| Other | General (`DIC_kwDOVO_7YM4DJIF3`) | as typed, or the first line |
+
+Function env (all optional except the token; the defaults are the ids above):
+
+| Name | Default | What |
+|---|---|---|
+| `GITHUB_FEEDBACK_TOKEN` | (required) | fine-grained token, this repository only, Discussions read and write |
+| `FEEDBACK_HASH_KEY` | the service role key | key of the hashes the limits are counted under |
+| `FEEDBACK_REPOSITORY_ID` | `R_kgDOVO_7YA` | the repository's node id |
+| `FEEDBACK_CATEGORY_IDEA` / `_PROBLEM` / `_OTHER` | Ideas / Q&A / General | category node ids |
+| `FEEDBACK_DISCUSSIONS_URL` | `https://github.com/kangning-huang/NimbleMap/discussions` | answered to a honeypot hit |
+| `FEEDBACK_DEVICE_DAILY` | 5 | messages per install per UTC day |
+| `FEEDBACK_IP_DAILY` | 20 | messages per network address per UTC day |
+| `FEEDBACK_GLOBAL_DAILY` | 200 | messages from everyone per UTC day |
+
+Set up (owner):
+
+1. **The token.** GitHub › Settings › Developer settings › Personal access tokens ›
+   Fine-grained tokens › Generate new token: resource owner `kangning-huang`, expiry a year,
+   Repository access › Only select repositories › `kangning-huang/NimbleMap`; Permissions ›
+   Repository permissions › **Discussions: Read and write** (Metadata: Read-only is added by
+   GitHub itself); nothing else.
+2. **Store it** (from this folder, linked to the project):
+   ```sh
+   supabase secrets set GITHUB_FEEDBACK_TOKEN=<the token>
+   supabase secrets set FEEDBACK_HASH_KEY=$(openssl rand -hex 32)   # optional, recommended
+   ```
+3. **Push the tables and deploy**:
+   ```sh
+   supabase db push                       # 20261020000000_feedback.sql, 20261020120000_feedback_senders.sql
+   supabase functions deploy feedback     # verify_jwt = false comes from config.toml
+   ```
+4. **Try it** without posting: `curl -s -X POST https://<ref>.supabase.co/functions/v1/feedback
+   -H 'Content-Type: application/json' -d '{"kind":"other"}'` answers `invalid`. A real test
+   posts a real discussion: delete it afterwards.
+
+Reading reply addresses: Table Editor › `feedback_contacts` (or SQL `select * from
+public.feedback_contacts order by created_at desc;`); delete a row once the conversation is over.
+
+Looking up who sent a discussion (signed-in senders only), in Dashboard › SQL Editor:
+
+```sql
+select s.discussion_url, s.user_id, u.email, s.created_at
+  from public.feedback_senders s
+  join auth.users u on u.id = s.user_id
+ where s.discussion_url = 'https://github.com/kangning-huang/NimbleMap/discussions/42';
+```
+
+No row: the sender wasn't signed in (or the token didn't verify). `supabase functions logs
+feedback` shows one line per message (kind, status, whether an address was kept, `auth=user`,
+`none` or `invalid`, whether a sender row was kept), never the text, the address, a hash, a token
+or an id.
+
 ## Housekeeping
 
 - Usage older than 90 days isn't needed: schedule
   `delete from public.usage_daily where day < current_date - 90;` daily (Database › Cron).
+- Feedback counters older than a week aren't needed:
+  `delete from public.feedback_rate where day < current_date - 7;` daily (Database › Cron).
+- Feedback senders: at most a year,
+  `delete from public.feedback_senders where created_at < now() - interval '1 year';`.
 - To give or take away Pro by hand: `update public.profiles set pro = false where id = '<uuid>';`
   in the SQL editor (service role).
 - A rotated OpenRouter key: `supabase secrets set OPENROUTER_API_KEY=…`; functions pick it up on

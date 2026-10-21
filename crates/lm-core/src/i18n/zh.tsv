@@ -667,6 +667,43 @@ Full Screen	全屏
 Window	窗口
 Help	帮助
 Export Diagnostics…	导出诊断信息…
+Send Feedback…	发送反馈…
+Send Feedback	发送反馈
+Tell us what would make {app} better, or what went wrong.	告诉我们怎样让{app}更好用，或者遇到了什么问题。
+Idea	想法
+Problem	问题
+Other	其他
+Message	内容
+What would you like {app} to do?	您希望{app}能做什么？
+What happened, and what did you expect?	发生了什么？您原本期望怎样？
+What's on your mind?	想说点什么？
+{n} of {max} characters	{n} / {max} 个字符
+Title (optional)	标题（可选）
+A short summary	简短的摘要
+Email (optional)	电子邮件（可选）
+Only used to reply to you. Never shown publicly.	仅用于回复您，绝不公开显示。
+Include app version and macOS version	附带应用版本和 macOS 版本
+Include app version and Windows version	附带应用版本和 Windows 版本
+Your feedback will be posted publicly on GitHub Discussions, without your email.	您的反馈将公开发布在 GitHub Discussions 上，不含您的电子邮件。
+Sent with your account so we can follow up. Your account isn't shown publicly.	将随您的账户一起发送，以便我们跟进。您的账户不会公开显示。
+Send	发送
+Sending…	正在发送…
+Thank you! Your feedback is posted.	谢谢！您的反馈已发布。
+It's public on GitHub Discussions, where you can follow replies.	反馈已在 GitHub Discussions 公开，您可以在那里查看回复。
+View on GitHub	在 GitHub 上查看
+Write a few words about your idea or problem.	请简单写几句您的想法或遇到的问题。
+The message is {n} characters long. Shorten it to {max} or fewer.	内容共 {n} 个字符，请缩短到 {max} 个以内。
+Shorten the title to {max} characters or fewer.	请将标题缩短到 {max} 个字符以内。
+Include at most {max} links.	最多包含 {max} 个链接。
+Check the email address, or leave it empty.	请检查电子邮件地址，或留空。
+Feedback can't be sent from this build. You can post on GitHub Discussions yourself: {url}	此版本无法发送反馈。您可以直接在 GitHub Discussions 发帖：{url}
+{app} is working offline. Turn off View › Work Offline, then press Send again.	{app}正在离线工作。请关闭“视图 › 离线工作”，然后再次点击“发送”。
+You've sent a lot of feedback today. Please try again tomorrow.	您今天已发送了很多反馈，请明天再试。
+The message is too long. Shorten it, then press Send again.	内容太长。请缩短后再次点击“发送”。
+The feedback service didn't accept the message: {reason}	反馈服务未接受这条内容：{reason}
+Your feedback couldn't be posted just now. Your text is still here: try again in a few minutes.	暂时无法发布您的反馈。您写的内容仍保留在这里，请几分钟后再试。
+Couldn't reach the feedback service. Check your internet connection, then press Send again.	无法连接反馈服务。请检查网络连接，然后再次点击“发送”。
+The feedback service answered {status}. Try again in a few minutes.	反馈服务返回了 {status}。请几分钟后再试。
 About {app}	关于{app}
 Quit {app}	退出{app}
 Undo ({key})	撤销（{key}）
@@ -791,3 +828,9 @@ Couldn't reach the assistant service: {error}	无法连接助手服务：{error}
 The assistant service's answer was cut off: {error}	助手服务的回复被截断了：{error}
 The assistant service answered {status} with something unreadable.	助手服务返回了 {status}，内容无法读取。
 {app} is working offline, so the assistant can't be reached. Turn off View › Work Offline to ask.	{app}正在离线工作，无法连接助手。请关闭“视图 › 离线工作”后再提问。
+Signing in unlocks the Ask box, analysis tools, the built-in world layers and voice input.	登录后即可使用提问框、分析工具、内置世界图层和语音输入。
+Checking your account…	正在检查账户…
+Sign in to use analysis tools	登录后即可使用分析工具
+{action} (locked)	{action}（已锁定）
+Settings › Account shows who is signed in and what the account includes.	在“设置 › 账户”中可以查看登录的是谁，以及账户包含哪些功能。
+Nothing matches, so nothing is highlighted on the map.	没有符合条件的对象，因此地图上没有高亮显示。

@@ -1,0 +1,62 @@
+{
+ "voice": "en-US-AndrewNeural",
+ "rate": "+4%",
+ "text": "You found the data online. Now, how do you open it?",
+ "words": [
+  {
+   "text": "You",
+   "offset": 0.108166,
+   "duration": 0.084125
+  },
+  {
+   "text": "found",
+   "offset": 0.204333,
+   "duration": 0.192291
+  },
+  {
+   "text": "the",
+   "offset": 0.408666,
+   "duration": 0.072125
+  },
+  {
+   "text": "data",
+   "offset": 0.492791,
+   "duration": 0.276458
+  },
+  {
+   "text": "online",
+   "offset": 0.78125,
+   "duration": 0.46875
+  },
+  {
+   "text": "Now",
+   "offset": 1.646625,
+   "duration": 0.16825
+  },
+  {
+   "text": "how",
+   "offset": 1.838958,
+   "duration": 0.084125
+  },
+  {
+   "text": "do",
+   "offset": 1.935083,
+   "duration": 0.060083
+  },
+  {
+   "text": "you",
+   "offset": 2.007208,
+   "duration": 0.132208
+  },
+  {
+   "text": "open",
+   "offset": 2.151458,
+   "duration": 0.276458
+  },
+  {
+   "text": "it",
+   "offset": 2.439916,
+   "duration": 0.16825
+  }
+ ]
+}

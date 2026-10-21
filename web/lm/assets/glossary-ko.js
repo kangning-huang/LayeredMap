@@ -94,7 +94,7 @@ window.LM_GLOSSARY_L10N = {
       w: "NimbleMap Pro: 질문 상자의 모든 답은 단계가 나열된 결과 카드, 지도 미리 보기, 그리고 <span class=\"ui\">Keep</span>(유지) 또는 <span class=\"ui\">Discard</span>(버리기)와 함께 나옵니다." },
     geojson: { t: "GeoJSON, GeoPackage, Shapefile", alt: [".geojson", ".gpkg", ".shp", "shp 파일", "셰이프파일", "파일 형식", "KML", "GPX"],
       d: "벡터 데이터에 흔히 쓰는 파일입니다. GeoJSON은 텍스트 파일 하나이고, GeoPackage(.gpkg)는 레이어 여러 개를 담을 수 있는 데이터베이스 파일 하나입니다. Shapefile은 이름이 같은 여러 파일(.shp, .dbf, .shx, .prj)이 한 묶음을 이룹니다.",
-      w: "도구 모음의 <span class=\"ui\">Open</span>(열기, ⌘O), 또는 파일을 창으로 끌어다 놓기(<span class=\"ui\">Drop to add to the map</span>, 놓으면 지도에 추가됩니다). <span class=\"ui\">Details</span>(세부 정보) › <span class=\"ui\">Format</span>(형식)에 형식이 나옵니다." },
+      w: "도구 모음의 <span class=\"ui\">Open</span>(열기, ⌘O), 또는 파일을 NimbleMap으로 끌어다 놓기(<span class=\"ui\">Drop to add to the map</span>, 놓으면 지도에 추가됩니다). <span class=\"ui\">Details</span>(세부 정보) › <span class=\"ui\">Format</span>(형식)에 형식이 나옵니다." },
     geotiff: { t: "GeoTIFF", alt: [".tif", ".tiff", "DEM", "수치표고모델", "고도", "위성 영상"],
       d: "지구 위 어디에 놓이는지도 알고 있는 이미지 파일입니다. 고도 모델과 위성 영상은 GeoTIFF로 제공되는 경우가 많습니다.",
       w: "<span class=\"ui\">World basics</span>(세계 기본 지도) 예제의 고도 레이어가 GeoTIFF입니다." },

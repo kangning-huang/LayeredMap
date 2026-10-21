@@ -1,9 +1,8 @@
-//! The assistant service for the test build: OpenRouter's chat completions, with the key from the
-//! macOS keychain (service `openrouter`, account `layeredmap`; on Windows and elsewhere the
-//! `OPENROUTER_API_KEY` environment variable, as Credential Manager would need unsafe Win32 calls
-//! for a developer-only path). The key is read when a request is sent and never logged or written
-//! to a file. (The release talks to NimbleMap's own assistant
-//! service instead, WP7.3.)
+//! The developer route to the assistant: OpenRouter's chat completions, with the developer's key
+//! from the macOS keychain (service `openrouter`, account `layeredmap`; on Windows and elsewhere
+//! the `OPENROUTER_API_KEY` environment variable, as Credential Manager would need unsafe Win32
+//! calls for a developer-only path). The key is read when a request is sent and never logged or
+//! written to a file. The app itself talks to NimbleMap's Ask service (`crate::proxy`, WP7.3).
 
 use std::time::Duration;
 
@@ -58,33 +57,12 @@ impl crate::session::Transport for OpenRouter {
     }
 }
 
-/// The key: the one built into a Pro test bundle (`Contents/Resources/assistant.dat`, written by
-/// `packaging/lm/bundle-macos.sh` from the builder's keychain; `Resources\assistant.dat` beside
-/// the exe on Windows), else this Mac's keychain (`OPENROUTER_API_KEY` on Windows).
+/// The developer's key: this Mac's keychain (`OPENROUTER_API_KEY` on Windows and elsewhere). It
+/// is used only on the developer route (`LM_ASK_ROUTE=direct`, or a run without an account
+/// config): no build carries a key; the app asks NimbleMap's Ask service with the account's token
+/// (docs/lm/accounts-design.md › The Ask box: which route).
 pub fn read_key() -> Option<String> {
-    bundled_key().or_else(keychain_key)
-}
-
-/// An internal test build: one with the owner's key built in (the release has none and talks to
-/// NimbleMap's assistant service). Such builds show each request's cost; the release never does.
-pub fn internal_build() -> bool {
-    bundled_key().is_some()
-}
-
-/// Scrambled so it isn't plain text in the bundle; not a secret store (see the bundle script).
-// The old name is part of the scrambling key shared with the bundle scripts: not display text,
-// so the rename (docs/lm/naming.md) leaves it as it is.
-const PAD: &[u8] = b"LayeredMap Pro test build: not a secret store.";
-
-fn bundled_key() -> Option<String> {
-    decode(&std::fs::read_to_string(lm_core::platform::current_resources_dir()?.join("assistant.dat")).ok()?)
-}
-
-fn decode(hex: &str) -> Option<String> {
-    let hex = hex.trim();
-    let bytes: Vec<u8> = (0..hex.len() / 2).filter_map(|i| u8::from_str_radix(hex.get(2 * i..2 * i + 2)?, 16).ok()).collect();
-    let key: Vec<u8> = bytes.iter().enumerate().map(|(i, b)| b ^ PAD[i % PAD.len()]).collect();
-    String::from_utf8(key).ok().filter(|k| k.starts_with("sk-or-"))
+    keychain_key()
 }
 
 #[cfg(target_os = "macos")]
@@ -116,14 +94,5 @@ mod tests {
         lm_net::set_offline(false);
         assert_eq!(r.unwrap_err(), super::OFFLINE);
         assert_eq!(lm_net::counts().allowed_total(), before.allowed_total());
-    }
-
-    #[test]
-    fn a_built_in_key_unscrambles() {
-        // As packaging/lm/bundle-macos.sh writes it: key bytes XOR the pad, as hex.
-        let key = "sk-or-v1-0123456789abcdef";
-        let hex: String = key.bytes().enumerate().map(|(i, b)| format!("{:02x}", b ^ super::PAD[i % super::PAD.len()])).collect();
-        assert_eq!(super::decode(&hex).as_deref(), Some(key));
-        assert_eq!(super::decode("zz"), None);
     }
 }

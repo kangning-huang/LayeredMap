@@ -349,6 +349,7 @@ impl eframe::App for App {
 /// `card ID [FIELD]` runs a card's display action (`filter strength`, `style_by_value`, …) on the
 /// selected layer (`card apply_filter` presses the filter's Apply); `time N` shows the n-th time step;
 /// `export` or `export-image` opens the map image sheet; `package` opens the map package dialog;
+/// `feedback` opens Help › Send Feedback… (nothing is sent without pressing Send);
 /// `theme light|dark|system` sets the appearance and `language CODE|auto` the interface language
 /// (for screenshots; tour runs never save prefs).
 #[derive(Clone, Debug, PartialEq)]
@@ -408,6 +409,7 @@ impl Step {
             "undo" => Step::Other(Command::Undo),
             "export-image" => Step::Other(Command::ExportMapImage),
             "package" => Step::Other(Command::ExportPackage),
+            "feedback" => Step::Other(Command::ShowFeedback),
             "redo" => Step::Other(Command::Redo),
             "language" if rest.trim() == lm_core::i18n::AUTO || lm_core::i18n::Lang::from_code(rest).is_some() => {
                 Step::Other(Command::SetLanguage(rest.trim().to_string()))
@@ -470,8 +472,10 @@ fn main() -> eframe::Result {
     });
     let flags = Flags::from_env(std::env::var("LM_PHASE").ok().as_deref());
     let developer = cfg!(debug_assertions) || std::env::var_os("LM_DEV").is_some();
-    let pro = is_pro();
-    let app_name = lm_core::brand::name(pro);
+    // One app (owner, 2026-10-19): Pro unlocks with a signed-in account that has it
+    // (docs/lm/accounts-design.md › Entitlement); `LM_DEV_PRO=1` is the developer override.
+    let dev_pro = lm_ui::dev_pro_override();
+    let app_name = lm_core::brand::NAME;
     // Crash logs and the log file stay on this computer (~/Library/Logs/LayeredMap,
     // %LOCALAPPDATA%\LayeredMap\Logs).
     diagnostics::install_logger();
@@ -479,7 +483,9 @@ fn main() -> eframe::Result {
     let mut options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_title(app_name)
-            .with_app_id(if pro { "app.layeredmap.pro" } else { "app.layeredmap.desktop" })
+            // The bundle identifier, and the folder egui keeps the window and settings in: the
+            // Free app's, so its users' settings carry over.
+            .with_app_id("app.layeredmap.desktop")
             .with_inner_size([1280.0, 800.0])
             // Windows: low enough for a 1366×768 laptop at 125 % (1093×614 points less the taskbar
             // and title bar), the smallest screen in the course's likely machines.
@@ -513,9 +519,14 @@ fn main() -> eframe::Result {
             let mut shell = Shell::new(&cc.egui_ctx, flags, prefs, system);
             shell.set_system_languages(system_languages());
             shell.developer = developer;
-            shell.pro = pro;
-            // Pro's account (WP7.4): only with an account config; otherwise the Ask box works as before.
-            if pro && !ephemeral {
+            shell.dev_pro = dev_pro;
+            if dev_pro {
+                log::info!("LM_DEV_PRO=1: Pro unlocked by the developer override");
+            }
+            // The account (WP7.4) and with it Pro: only with an account config; without one Pro's
+            // features stay hidden (open-source builds). Tours start it too, so screenshots show
+            // the app as it is (locked signed out, unlocked signed in); they never sign in.
+            if !ephemeral || !tour.is_empty() {
                 shell.start_account();
             }
             shell.set_library_catalog(lm_ui::library::catalog_url(std::env::var("LM_LIBRARY_URL").ok().as_deref(), developer));
@@ -524,7 +535,7 @@ fn main() -> eframe::Result {
                 shell.set_question_log(question_log_path());
                 shell.start_autosave(&autosave_dir());
                 // The update feed (off unless built with LM_UPDATE_FEED_URL), on its own thread.
-                lm_ui::update::start(&cc.egui_ctx, pro);
+                lm_ui::update::start(&cc.egui_ctx);
             }
             // Files passed on the command line (and Open With: through macOS, or Explorer starting
             // `layeredmap.exe "<file>"` on Windows) are opened.

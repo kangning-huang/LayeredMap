@@ -25,7 +25,7 @@ impl Os {
     };
 }
 
-/// The bundled resources folder (examples, reference layers, the tier file) for an executable.
+/// The bundled resources folder (examples, help, reference layers, the account config) for an executable.
 /// macOS: `<App>.app/Contents/Resources` for `Contents/MacOS/layeredmap`. Windows: `Resources`
 /// beside `layeredmap.exe`, as the installer lays it out (`packaging/lm/windows`). Linux and the
 /// rest: `Resources` beside `layeredmap` too, as the tarball lays it out (`packaging/lm/linux`).

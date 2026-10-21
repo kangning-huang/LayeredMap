@@ -47,3 +47,9 @@ verify_jwt = false
 
 [functions.account]
 verify_jwt = false
+
+# In-app feedback needs no sign-in (docs/lm/feedback.md): the app sends the publishable key, plus
+# the access token when signed in, which the function checks itself (auth.getClaims); it holds
+# abuse back with its own limits.
+[functions.feedback]
+verify_jwt = false

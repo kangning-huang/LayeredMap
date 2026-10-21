@@ -148,6 +148,23 @@ fn longitudes_past_180_are_shown_as_minus_180_to_180() {
     assert_eq!((e.min_x, e.max_x), (-180.0, 168.75));
 }
 
+/// A click in a world copy (the zoomed-out map repeats the world) reads the cell drawn there,
+/// and the column straddling 180° answers on both sides of it.
+#[test]
+fn values_are_read_in_every_world_copy_and_across_180() {
+    let (_, r) = shown("r8_lon360.nc", "pr", 0, 0);
+    let at = |lon: f64| crate::inspect::raster_value_at(&r, 0, lon, 10.0).unwrap_or_else(|| panic!("{lon} is outside"));
+    for lon in [-150.0, -30.0, 0.0, 90.0, 160.0] {
+        for k in [-2.0, -1.0, 1.0, 2.0] {
+            assert_eq!(at(lon + k * 360.0), at(lon), "{lon} + {k} worlds");
+        }
+    }
+    assert_eq!(at(175.0), at(-175.0), "the first column straddles 180°");
+    assert_eq!(at(535.0), at(-175.0));
+    assert_eq!(crate::inspect::wrap_lon(190.0), -170.0);
+    assert_eq!(crate::inspect::wrap_lon(-540.0), -180.0);
+}
+
 #[test]
 fn curvilinear_grids_are_refused_plainly() {
     let e = import_path(&r8("r8_curvilinear.nc"), &Ctx::detached(Ticket::default())).err().unwrap();

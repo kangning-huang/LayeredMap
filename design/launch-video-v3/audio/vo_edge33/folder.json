@@ -1,0 +1,107 @@
+{
+ "voice": "en-US-AndrewNeural",
+ "rate": "+4%",
+ "text": "Shapefiles. GeoPackages. NetCDF. GeoTIFFs. You found great map data online, in file types your Mac can't show as a map.",
+ "words": [
+  {
+   "text": "Shapefiles",
+   "offset": 0.084125,
+   "duration": 0.649041
+  },
+  {
+   "text": "GeoPackages",
+   "offset": 1.129791,
+   "duration": 0.901458
+  },
+  {
+   "text": "NetCDF",
+   "offset": 2.427875,
+   "duration": 0.76925
+  },
+  {
+   "text": "GeoTIFFs",
+   "offset": 3.59375,
+   "duration": 0.841333
+  },
+  {
+   "text": "You",
+   "offset": 4.83175,
+   "duration": 0.108166
+  },
+  {
+   "text": "found",
+   "offset": 4.951916,
+   "duration": 0.288458
+  },
+  {
+   "text": "great",
+   "offset": 5.252416,
+   "duration": 0.3125
+  },
+  {
+   "text": "map",
+   "offset": 5.576916,
+   "duration": 0.276458
+  },
+  {
+   "text": "data",
+   "offset": 5.865375,
+   "duration": 0.264416
+  },
+  {
+   "text": "online",
+   "offset": 6.141833,
+   "duration": 0.492791
+  },
+  {
+   "text": "in",
+   "offset": 6.983166,
+   "duration": 0.060083
+  },
+  {
+   "text": "file",
+   "offset": 7.055291,
+   "duration": 0.264416
+  },
+  {
+   "text": "types",
+   "offset": 7.33175,
+   "duration": 0.264416
+  },
+  {
+   "text": "your",
+   "offset": 7.608166,
+   "duration": 0.096166
+  },
+  {
+   "text": "Mac",
+   "offset": 7.716333,
+   "duration": 0.264416
+  },
+  {
+   "text": "can't",
+   "offset": 7.992791,
+   "duration": 0.228375
+  },
+  {
+   "text": "show",
+   "offset": 8.233166,
+   "duration": 0.276458
+  },
+  {
+   "text": "as",
+   "offset": 8.521625,
+   "duration": 0.108166
+  },
+  {
+   "text": "a",
+   "offset": 8.641833,
+   "duration": 0.0360409
+  },
+  {
+   "text": "map",
+   "offset": 8.689916,
+   "duration": 0.396625
+  }
+ ]
+}

@@ -1,0 +1,7 @@
+out/
+raw/
+cfr/
+cache/
+capture/wrec
+capture/winid
+__pycache__/

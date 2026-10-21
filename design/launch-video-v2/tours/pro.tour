@@ -1,0 +1,8 @@
+# NimbleMap Pro (LM_DEV_PRO=1; recorded with the old LM_TIER=pro build): world basics open, then one plain-words request (one paid call).
+# The Ask box only shows once a layer is open.
+example world
+layer 99
+ask Which capital city sits highest above sea level?
+layer 99
+layer 99
+layer 99

@@ -1,0 +1,62 @@
+{
+ "voice": "en-US-AndrewNeural",
+ "rate": "+4%",
+ "text": "Drag one into NimbleMap, and it's a map. Any of them.",
+ "words": [
+  {
+   "text": "Drag",
+   "offset": 0.096166,
+   "duration": 0.288458
+  },
+  {
+   "text": "one",
+   "offset": 0.396625,
+   "duration": 0.16825
+  },
+  {
+   "text": "into",
+   "offset": 0.576916,
+   "duration": 0.16825
+  },
+  {
+   "text": "NimbleMap",
+   "offset": 0.757208,
+   "duration": 0.625
+  },
+  {
+   "text": "and",
+   "offset": 1.658666,
+   "duration": 0.072125
+  },
+  {
+   "text": "it's",
+   "offset": 1.742791,
+   "duration": 0.108166
+  },
+  {
+   "text": "a",
+   "offset": 1.863,
+   "duration": 0.0360409
+  },
+  {
+   "text": "map",
+   "offset": 1.911041,
+   "duration": 0.432708
+  },
+  {
+   "text": "Any",
+   "offset": 2.740375,
+   "duration": 0.192291
+  },
+  {
+   "text": "of",
+   "offset": 2.944708,
+   "duration": 0.072125
+  },
+  {
+   "text": "them",
+   "offset": 3.028833,
+   "duration": 0.16825
+  }
+ ]
+}

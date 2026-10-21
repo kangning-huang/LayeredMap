@@ -1,0 +1,11 @@
+# v3.4 Pro (LM_TIER=pro; ONE paid ask call): the storm shapefile around Japan; a spatial question
+esc
+140.5,33.5,4.6
+layer 99
+layer 99
+layer 99
+ask How many Category 5 storms have passed within 100 km of Tokyo?
+layer 99
+layer 99
+layer 99
+layer 99

@@ -1,0 +1,67 @@
+{
+ "voice": "en-US-AndrewNeural",
+ "rate": "+4%",
+ "text": "Or ask which earthquakes were deeper than 300 kilometres. 655 of them.",
+ "words": [
+  {
+   "text": "Or",
+   "offset": 0.096166,
+   "duration": 0.16825
+  },
+  {
+   "text": "ask",
+   "offset": 0.276458,
+   "duration": 0.276458
+  },
+  {
+   "text": "which",
+   "offset": 0.564916,
+   "duration": 0.180291
+  },
+  {
+   "text": "earthquakes",
+   "offset": 0.757208,
+   "duration": 0.516833
+  },
+  {
+   "text": "were",
+   "offset": 1.286041,
+   "duration": 0.132208
+  },
+  {
+   "text": "deeper",
+   "offset": 1.430291,
+   "duration": 0.348541
+  },
+  {
+   "text": "than",
+   "offset": 1.790875,
+   "duration": 0.15625
+  },
+  {
+   "text": "300",
+   "offset": 1.959125,
+   "duration": 0.5769159
+  },
+  {
+   "text": "kilometres",
+   "offset": 2.548083,
+   "duration": 0.685083
+  },
+  {
+   "text": "655",
+   "offset": 3.641833,
+   "duration": 1.069708
+  },
+  {
+   "text": "of",
+   "offset": 4.723541,
+   "duration": 0.084125
+  },
+  {
+   "text": "them",
+   "offset": 4.819708,
+   "duration": 0.180291
+  }
+ ]
+}

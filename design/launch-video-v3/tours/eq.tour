@@ -1,0 +1,13 @@
+# Film 2 (earthquakes, dark): coloured by magnitude, Pacific view (the Ring of Fire); then the
+# Tohoku quake is clicked close up (as the site screenshot does) and the view returns with its card
+theme dark
+example earthquakes
+card style_by_value magnitude
+esc
+175,12,2.4
+layer 99
+142.373,38.297,10
+click 142.373,38.297
+175,12,2.4
+layer 99
+layer 99

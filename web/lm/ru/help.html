@@ -36,8 +36,9 @@
     <a class="brand" href="index.html"><img src="../assets/logo.svg" alt="" width="30" height="30">NimbleMap</a>
     <nav class="nav" aria-label="Разделы сайта">
       <a href="index.html">Главная</a>
+      <a href="index.html#examples">Примеры</a>
+      <a href="data.html">Данные</a>
       <a href="help.html" aria-current="page">Справка</a>
-      <a href="glossary.html">Словарь</a>
       <a href="download.html">Скачать</a>
       <details class="lang-menu">
         <summary aria-label="Язык: Русский" title="Язык"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.6 3.9 5.6 3.9 9s-1.3 6.4-3.9 9c-2.6-2.6-3.9-5.6-3.9-9S9.4 5.6 12 3z"/></svg><span>RU</span></summary>
@@ -99,9 +100,21 @@
       <li><strong>Отменить можно всё</strong>: любое изменение — цвет, фильтр или удаление слоя — это один шаг отмены (Undo). Сами файлы никогда не меняются.</li>
     </ul>
     <h3>Как открыть свои файлы</h3>
-    <p>Перетащите файлы в окно или нажмите <span class="ui">Open</span>. NimbleMap читает CSV и Excel (со столбцами широты и долготы), GeoJSON, Shapefile, GeoPackage, KML/KMZ, GPX, GeoTIFF и NetCDF. Если приложению пришлось что-то предположить, например какие столбцы содержат координаты, карточка сообщит об этом одной строкой, а рядом будет кнопка <span class="ui">Change</span> (Изменить). Точки, скопированные из карт Amap, Tencent или Baidu, можно перенести в координаты GPS; см. <a href="glossary.html#gcj02">GCJ-02</a>.</p>
+    <p>Перетащите файлы в NimbleMap или нажмите <span class="ui">Open</span>. NimbleMap читает CSV и Excel (со столбцами широты и долготы), GeoJSON, Shapefile, GeoPackage, KML/KMZ, GPX, GeoTIFF и NetCDF. Если приложению пришлось что-то предположить, например какие столбцы содержат координаты, карточка сообщит об этом одной строкой, а рядом будет кнопка <span class="ui">Change</span> (Изменить). Точки, скопированные из карт Amap, Tencent или Baidu, можно перенести в координаты GPS; см. <a href="glossary.html#gcj02">GCJ-02</a>.</p>
     <h3>Незнакомые слова?</h3>
     <p>В <a href="glossary.html">словаре</a> картографические термины объяснены простым языком и указано, где каждый из них встречается в приложении.</p>
+  </div>
+</section>
+
+<section id="feedback">
+  <div class="narrow">
+    <h2>Отзывы</h2>
+    <p>Отправить отзыв: <span class="ui">Справка › Отправить отзыв…</span> в приложении или <a href="https://github.com/kangning-huang/NimbleMap/discussions">GitHub Discussions</a>.</p>
+    <h3>Конфиденциальность</h3>
+    <p><strong>Отзывы из приложения.</strong> Когда вы выбираете <span class="ui">Справка › Отправить отзыв…</span>, NimbleMap отправляет написанное вами в нашу службу отзывов, которая публикует его на <a href="https://github.com/kangning-huang/NimbleMap/discussions">GitHub Discussions</a> (github.com/kangning-huang/NimbleMap/discussions), где любой может прочитать его и ответить. Публикация содержит ваше сообщение, заголовок, если вы его указали, тип отзыва и язык интерфейса. Номера версий приложения и macOS в неё попадают, только если вы оставите отмеченным пункт <span class="ui">Приложить версию приложения и macOS</span>. В ней никогда нет вашего адреса электронной почты, имени, учётной записи, карт или файлов. Учётная запись GitHub не нужна.</p>
+    <p>Если вы укажете адрес электронной почты, он хранится закрыто на нашем сервере рядом со ссылкой на вашу публикацию — только чтобы мы могли вам ответить. Он никогда не показывается публично. Мы удаляем его, когда переписка закончена, и не позже чем через год; напишите нам, если хотите удалить его раньше.</p>
+    <p>Если вы вошли в учётную запись, в публикации сказано только, что она от вошедшего пользователя, а наш сервер закрыто хранит идентификатор вашей учётной записи рядом со ссылкой на публикацию, чтобы мы могли ответить. Он никогда не показывается публично; мы удаляем его, когда переписка закончена, и не позже чем через год.</p>
+    <p>Для защиты от спама приложение отправляет случайный номер установки, созданный на вашем компьютере, а наш сервер видит ваш сетевой адрес. И то и другое хранится только в виде необратимых хешей с ключом для подсчёта и удаляется через неделю.</p>
   </div>
 </section>
 </main>
@@ -112,7 +125,7 @@
       <p><strong>Справка NimbleMap</strong> · Эти страницы входят в состав приложения (Help › NimbleMap Help — Справка › Справка NimbleMap) и работают офлайн.</p>
       <p>На снимках экрана картографические данные © участники OpenStreetMap (ODbL) через Protomaps, Natural Earth (общественное достояние) и снимки NASA Blue Marble (NASA Earth Observatory, GIBS). Источники данных примеров указаны на каждой странице.</p>
     </div>
-    <div><a href="help.html">Справка</a> · <a href="glossary.html">Словарь</a><p class="foot-langs"><a href="../help.html" hreflang="en" lang="en">English</a> · <a href="../zh/help.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="../de/help.html" hreflang="de" lang="de">Deutsch</a> · <a href="../es/help.html" hreflang="es" lang="es">Español</a> · <a href="../fr/help.html" hreflang="fr" lang="fr">Français</a> · <a href="../it/help.html" hreflang="it" lang="it">Italiano</a> · <a href="../nl/help.html" hreflang="nl" lang="nl">Nederlands</a> · <a href="../pt-br/help.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ja/help.html" hreflang="ja" lang="ja">日本語</a> · <a href="../ko/help.html" hreflang="ko" lang="ko">한국어</a></p></div>
+    <div class="foot-nav"><p class="foot-links"><a href="help.html">Справка</a> · <a href="glossary.html">Словарь</a> · <a href="data.html">Данные</a> · <a href="pro.html">Pro</a> · <a href="https://github.com/kangning-huang/NimbleMap/blob/main/CHANGELOG.md">История изменений</a></p><p class="foot-note">NimbleMap — независимый проект, не связанный с Apple, Esri или проектом QGIS.</p><p class="foot-langs"><a href="../help.html" hreflang="en" lang="en">English</a> · <a href="../zh/help.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="../de/help.html" hreflang="de" lang="de">Deutsch</a> · <a href="../es/help.html" hreflang="es" lang="es">Español</a> · <a href="../fr/help.html" hreflang="fr" lang="fr">Français</a> · <a href="../it/help.html" hreflang="it" lang="it">Italiano</a> · <a href="../nl/help.html" hreflang="nl" lang="nl">Nederlands</a> · <a href="../pt-br/help.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ja/help.html" hreflang="ja" lang="ja">日本語</a> · <a href="../ko/help.html" hreflang="ko" lang="ko">한국어</a></p></div>
   </div>
 </footer>
 </body>
