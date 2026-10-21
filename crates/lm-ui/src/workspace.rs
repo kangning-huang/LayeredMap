@@ -1123,8 +1123,8 @@ impl Workspace {
         }
         // An action's preview.
         if let Some(change) = self.preview_change() {
-            view.edit_map(move |m: &mut Map| m.layers.retain(|l| l.id != analysis::PREVIEW_MAP_ID));
-            if let Some((a, b)) = change {
+            view.edit_map(move |m: &mut Map| m.layers.retain(|l| analysis::preview_part(l.id).is_none()));
+            for (a, b) in change {
                 view.add_layer_pair(a, b);
             }
             self.order_key.clear();
@@ -1135,7 +1135,15 @@ impl Workspace {
             .layers
             .iter()
             .rev()
-            .filter_map(|l| self.synced.iter().find(|s| s.id == l.id).map(|s| (s.map_id, l.visible, l.style.clone(), l.profile.kind)))
+            .filter_map(|l| {
+                let s = self.synced.iter().find(|s| s.id == l.id)?;
+                let mut style = l.style.clone();
+                // An empty Ask answer: the layer it searched stays as faint context.
+                if self.preview_faint(l.id) {
+                    style.opacity *= 0.35;
+                }
+                Some((s.map_id, l.visible, style, l.profile.kind))
+            })
             .collect();
         // What each map layer takes from derived state and the selection.
         let extras: Vec<(u32, String, Vec<usize>)> = self
@@ -1179,12 +1187,12 @@ impl Workspace {
                 .collect();
             view.edit_map(move |m: &mut Map| {
                 let mut compare = None;
-                let mut preview = None;
+                let mut preview = Vec::new();
                 let mut ours: Vec<lm_mapview::map::Layer> = Vec::new();
                 let mut others = Vec::new();
                 for l in m.layers.drain(..) {
-                    if l.id == analysis::PREVIEW_MAP_ID {
-                        preview = Some(l);
+                    if let Some(part) = analysis::preview_part(l.id) {
+                        preview.push((part, l));
                     } else if l.id == COMPARE_MAP_ID {
                         compare = Some(l);
                     } else if l.id >= MAP_ID_BASE {
@@ -1193,14 +1201,25 @@ impl Workspace {
                         others.push(l);
                     }
                 }
-                // An action's preview draws above everything (spec › Preview).
-                if let Some(mut p) = preview {
+                // An action's preview draws above everything (spec › Preview): an Ask answer's
+                // overlays on top, then the connectors, then the result layer.
+                preview.sort_by_key(|(part, _)| match part {
+                    analysis::PreviewPart::Overlay => 0,
+                    analysis::PreviewPart::Connector => 1,
+                    analysis::PreviewPart::Result => 2,
+                });
+                for (part, mut p) in preview {
                     let kind = match p.dataset.geometry_type {
                         lm_jobs::GeometryType::Point => LayerKind::Points,
                         lm_jobs::GeometryType::Polyline => LayerKind::Lines,
                         _ => LayerKind::Areas,
                     };
-                    apply_style(&mut p, &preview_style(kind), kind);
+                    let style = match part {
+                        analysis::PreviewPart::Result => preview_style(kind),
+                        analysis::PreviewPart::Overlay => overlay_style(kind),
+                        analysis::PreviewPart::Connector => connector_style(),
+                    };
+                    apply_style(&mut p, &style, kind);
                     m.layers.push(p);
                 }
                 // The Compare view's converted points draw above everything.
@@ -1260,6 +1279,9 @@ impl Workspace {
         {
             rows.extend(extra.iter().filter(|r| !rows.contains(r)).copied().collect::<Vec<_>>());
         }
+        let mut seen: std::collections::HashSet<usize> = rows.iter().copied().collect();
+        let answer: Vec<usize> = self.answer_rows(id).filter(|r| seen.insert(*r)).collect();
+        rows.extend(answer);
         rows
     }
 
@@ -1499,6 +1521,26 @@ fn preview_style(kind: LayerKind) -> Style {
     s
 }
 
+/// An Ask answer's objects from a layer not on the map: in the accent, opaque, points larger (they
+/// are drawn highlighted too).
+fn overlay_style(kind: LayerKind) -> Style {
+    let accent = [0x25, 0x63, 0xEB, 0xFF];
+    let mut s = Style::for_kind(kind, accent, 0);
+    s.point_size = 8.0;
+    if kind == LayerKind::Areas {
+        s.fill_opacity = 0.14;
+        s.stroke = accent;
+    }
+    s
+}
+
+/// The lines from objects to the nearest ones found: thin, in the accent.
+fn connector_style() -> Style {
+    let mut s = Style::for_kind(LayerKind::Lines, [0x25, 0x63, 0xEB, 0xFF], 0);
+    s.line_width = 2.0;
+    s
+}
+
 /// The Compare view's converted points: vermillion (Okabe–Ito), larger, with a white edge.
 fn compare_style() -> Style {
     let mut s = Style::for_kind(LayerKind::Points, [0xD5, 0x5E, 0x00, 0xFF], 0);
@@ -1572,7 +1614,7 @@ fn derive_saved(base: &ImportedLayer, saved: &lm_core::document::DocLayer) -> Re
 /// are left out, and nothing is highlighted as selected.
 pub fn map_for_export(map: &Map) -> Map {
     let mut m = map.clone();
-    m.layers.retain(|l| l.id != analysis::PREVIEW_MAP_ID && l.id != COMPARE_MAP_ID);
+    m.layers.retain(|l| analysis::preview_part(l.id).is_none() && l.id != COMPARE_MAP_ID);
     for l in &mut m.layers {
         l.selection.clear();
     }

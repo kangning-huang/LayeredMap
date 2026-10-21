@@ -211,12 +211,21 @@ def visible(r: dict, universe: set[str]) -> tuple[set[str], dict]:
     p = r.get("preview") or {}
     out: set[str] = set()
     info = {"highlight_on_map": None, "highlight_n": None, "drawn": None, "drawn_n": None}
-    h = p.get("highlight")
-    if h:
-        info["highlight_on_map"] = h.get("on_map")
-        info["highlight_n"] = h.get("count")
+    # Every highlight on a layer on the map (an answer may span layers: the nearest volcano and
+    # the city measured from); older results have only "highlight".
+    hs = p.get("highlights")
+    if hs is None:
+        hs = [p["highlight"]] if p.get("highlight") else []
+    if hs:
+        info["highlight_on_map"] = any(h.get("on_map") for h in hs)
+        info["highlight_n"] = sum(h.get("count") or 0 for h in hs)
+    for h in hs:
         if h.get("on_map") and h.get("keys"):
             out |= set(h["keys"])
+    # The answer's objects drawn as overlays (from built-in layers that aren't on the map): they
+    # are on the map, highlighted.
+    for o in p.get("overlays") or []:
+        out |= {k for k in (o.get("keys") or []) if not str(k).startswith("row:")}
     d = p.get("layer")
     if d:
         info["drawn"] = d.get("name")
@@ -248,7 +257,8 @@ def check_preview(case: dict, r: dict) -> dict:
         strict = set(spec["strict"])
         if vis and _parts(vis) < _parts(universe):
             strict, universe = _cut(strict, _parts(vis)), _cut(universe, _parts(vis))
-        res["preview_ok"] = strict <= vis <= universe
+        # "any" (nearest): one of the near-ties is enough, and nothing outside them.
+        res["preview_ok"] = (bool(vis & universe) and vis <= universe) if spec.get("any") else (strict <= vis <= universe)
     elif spec["type"] == "layer":
         d = p.get("layer") or {}
         made = [o for o in r.get("outcomes") or [] if o.get("kind") == "new_layer" and o.get("color_by")]

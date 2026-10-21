@@ -918,6 +918,15 @@ fn ask_answer(code: &'static str) -> Harness<'static, Option<Shell>> {
         let outcomes = lm_jobs::plan_exec::execute(&mut layers, &steps, 0, &lm_jobs::jobs::Control::none()).unwrap();
         crate::ask::show_plan(s, request, lm_ask::PlanResult { steps, layers, outcomes, notes: Vec::new() });
     }
+    // The map flies to the answer once the Ask box has laid it out: wait for that (under load it
+    // can take more frames than `settle` waits), then let the map draw there.
+    for _ in 0..600 {
+        h.step();
+        if h.state().as_ref().is_some_and(|s| s.ws.answer_fit.is_none()) {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
     settle(&mut h);
     h
 }

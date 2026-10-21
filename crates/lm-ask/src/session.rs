@@ -208,6 +208,93 @@ fn now() -> i64 {
     std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_secs() as i64)
 }
 
+/// OpenRouter providers left out of every request. InferenceNet (GLM 5.3 Flash) writes only a
+/// schema's required properties, so every `submit_plan` step came back as `{"action": …}` alone
+/// (harness v3, 100 of 100 of its plans; probed 2026-10-21). The Ask proxy adds the same list.
+pub const PROVIDERS_IGNORED: &[&str] = &["InferenceNet"];
+
+/// The reminder after a reply without a tool call (only when the tool choice is "auto").
+const REMIND: &str =
+    "Answer with a tool call: submit_plan with the whole plan (ask_user or cannot_do as its only step when you must ask or can't answer).";
+
+/// Models whose providers refused a forced tool choice in this run of the app.
+static FORCED_REFUSED: std::sync::Mutex<Vec<String>> = std::sync::Mutex::new(Vec::new());
+
+fn forced_refused(model: &str) -> bool {
+    FORCED_REFUSED.lock().map(|m| m.iter().any(|x| x == model)).unwrap_or(false)
+}
+
+fn note_forced_refused(model: &str) {
+    if let Ok(mut m) = FORCED_REFUSED.lock()
+        && !m.iter().any(|x| x == model)
+    {
+        m.push(model.to_string());
+    }
+}
+
+fn with_choice(body: &Json, choice: &str) -> Json {
+    let mut b = body.clone();
+    b["tool_choice"] = json!(choice);
+    b
+}
+
+/// The arguments each action needs ("a"/"b" are calculate_field's first and second).
+fn required_args(action: &str) -> &'static [&'static str] {
+    match action {
+        "filter" => &["layer", "conditions"],
+        "count_in" => &["points", "areas"],
+        "count_here" => &["points", "area"],
+        "which_container" => &["point", "areas"],
+        "whats_inside" | "summarize_data_here" => &["area", "layer"],
+        "buffer" => &["distance"],
+        "measure_area" => &["area"],
+        "measure_length" => &["line"],
+        "summarize_each" => &["raster", "areas"],
+        "summarize_here" => &["raster", "area"],
+        "summarize_drawn" | "find_where" => &["raster"],
+        "add_raster_values" => &["raster", "points"],
+        "rank_by_value" | "color_by" => &["layer", "field"],
+        "calculate_field" => &["layer", "a", "op", "b"],
+        "keep_inside" | "remove_inside" | "join_by_location" => &["layer", "areas"],
+        "nearest_distance" => &["layer", "other"],
+        "match_table" => &["layer", "table"],
+        "split_parts" | "nearest_other" | "add_measurements" | "view_data" | "zoom_to" => &["layer"],
+        "ask_user" => &["question"],
+        "cannot_do" => &["reason"],
+        _ => &[],
+    }
+}
+
+/// Steps that leave out arguments their action needs, named exactly ("step 1 (filter) needs layer
+/// and conditions"). A buffer needs a layer or an object as well as its distance.
+pub fn missing_args(steps: &[Step]) -> Vec<String> {
+    let mut out = Vec::new();
+    for (i, s) in steps.iter().enumerate() {
+        let has = |k: &str| s.args.get(k).is_some_and(|v| !v.is_null() && v.as_str() != Some(""));
+        let mut missing: Vec<String> = required_args(&s.name)
+            .iter()
+            .filter(|k| !has(k))
+            .map(|k| match *k {
+                "a" => "first".to_string(),
+                "b" => "second".to_string(),
+                k => k.to_string(),
+            })
+            .collect();
+        if s.name == "buffer" && !has("layer") && !has("object") {
+            missing.push("layer (or object)".into());
+        }
+        if !missing.is_empty() {
+            let words = match missing.as_slice() {
+                [one] => one.clone(),
+                [rest @ .., last] => format!("{} and {last}", rest.join(", ")),
+                [] => String::new(),
+            };
+            out.push(format!("step {} ({}) needs {words}; send every argument of every step", i + 1, s.name));
+        }
+    }
+    out
+}
+
 /// Runs one request to an answer.
 pub fn ask(t: &dyn Transport, req: &Request, ctl: &lm_jobs::jobs::Control) -> Turn {
     let tool_list = tools::tools(&req.layers, &req.builtin());
@@ -227,6 +314,10 @@ pub fn ask(t: &dyn Transport, req: &Request, ctl: &lm_jobs::jobs::Control) -> Tu
     let mut usage = Usage::default();
     let mut repairs = 0;
     let mut answer: Option<Result<Answer, String>> = None;
+    // A forced tool choice where the model's providers accept it; "auto" (with one reminder when
+    // no tool call comes back) where they refuse it.
+    let mut choice = if forced_refused(&req.model) { "auto" } else { "required" };
+    let mut reminded = false;
     for _ in 0..MAX_TURNS {
         if ctl.is_cancelled() {
             answer = Some(Err("Cancelled.".into()));
@@ -238,13 +329,27 @@ pub fn ask(t: &dyn Transport, req: &Request, ctl: &lm_jobs::jobs::Control) -> Tu
             "model": req.model,
             "messages": all,
             "tools": tool_list,
-            "tool_choice": "required",
+            "tool_choice": choice,
             "temperature": 0,
             "max_tokens": 2500,
             "usage": {"include": true},
+            "provider": {"ignore": PROVIDERS_IGNORED},
         });
         let reply = match t.complete(&body) {
             Ok(r) => r,
+            // Some providers refuse a forced tool choice with HTTP 400 (every provider of Claude
+            // Sonnet 5.5): ask again with "auto", and remember it for this model.
+            Err(e) if choice == "required" && e.contains("400") => {
+                choice = "auto";
+                note_forced_refused(&req.model);
+                match t.complete(&with_choice(&body, choice)) {
+                    Ok(r) => r,
+                    Err(e) => {
+                        answer = Some(Err(e));
+                        break;
+                    }
+                }
+            }
             Err(e) => {
                 answer = Some(Err(e));
                 break;
@@ -266,6 +371,13 @@ pub fn ask(t: &dyn Transport, req: &Request, ctl: &lm_jobs::jobs::Control) -> Tu
         let msg = reply["choices"][0]["message"].clone();
         let calls = msg.get("tool_calls").and_then(Json::as_array).cloned().unwrap_or_default();
         let text = msg.get("content").and_then(Json::as_str).unwrap_or("").trim().to_string();
+        // With "auto" a model may answer in words: remind it once that the answer is a tool call.
+        if calls.is_empty() && choice == "auto" && !reminded {
+            reminded = true;
+            messages.push(json!({"role": "assistant", "content": msg.get("content").cloned().unwrap_or(Json::Null)}));
+            messages.push(json!({"role": "user", "content": REMIND}));
+            continue;
+        }
         if calls.is_empty() {
             answer = Some(Ok(if text.contains('?') || text.contains('？') {
                 Answer::Question { text, choices: Vec::new() }
@@ -352,6 +464,10 @@ fn judge(steps: &[Step], req: &Request, current: &[(String, Vec<String>)], repai
         } else {
             Answer::CannotDo(a["reason"].as_str().unwrap_or("").to_string())
         }));
+    }
+    let missing = missing_args(steps);
+    if !missing.is_empty() && repairs < MAX_REPAIRS {
+        return Judged::Repair(missing);
     }
     let notes = lint(steps, current);
     if !notes.is_empty() && repairs < MAX_REPAIRS {

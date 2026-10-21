@@ -134,8 +134,7 @@ fn count_in_over_one_area_reports_the_counted_features_as_the_answer() {
     let mut layers = tokyo_map();
     let out = execute(&mut layers, &tokyo_steps(), 0, &Control::none()).unwrap();
     assert!(matches!(&out[0], StepOutcome::Filtered { shown: 4, of: 5, .. }));
-    let Some((name, rows)) = out[2].matched() else { panic!("{:?}", out[2]) };
-    assert_eq!((name.as_str(), rows.as_slice()), ("Storms", &[0, 3][..]));
+    assert_eq!(out[2].matched(), Some(vec![("Storms".to_string(), vec![0, 3])]));
     assert_eq!(out[2].made_fields(), vec!["storms".to_string()]);
     // One area: the answer is a number with what was counted where, and being outside the one
     // area is no notice.
@@ -162,11 +161,11 @@ fn whats_inside_and_join_by_location_report_their_features() {
     let mut plan = tokyo_steps();
     plan[2] = steps(json!([{"name": "whats_inside", "args": {"area": {"layer": "#2"}, "layer": "Storms"}}])).remove(0);
     let out = execute(&mut layers, &plan, 0, &Control::none()).unwrap();
-    assert_eq!(out[2].matched().map(|(l, r)| (l.as_str(), r.clone())), Some(("Storms", vec![0, 3])));
+    assert_eq!(out[2].matched(), Some(vec![("Storms".to_string(), vec![0, 3])]));
     let mut layers = tokyo_map();
     plan[2] = steps(json!([{"name": "join_by_location", "args": {"layer": "Cities", "areas": "#2"}}])).remove(0);
     let out = execute(&mut layers, &plan, 0, &Control::none()).unwrap();
-    assert_eq!(out[2].matched().map(|(l, r)| (l.as_str(), r.clone())), Some(("Cities", vec![0])));
+    assert_eq!(out[2].matched(), Some(vec![("Cities".to_string(), vec![0])]));
 }
 
 /// Fields a step made can be named reliably by later steps: "#k" is step k's first made field,
@@ -235,12 +234,84 @@ fn an_area_made_by_a_buffer_is_described_as_the_buffer_whatever_it_is_called() {
             assert!(!card.summary.contains("in Tokyo") && !card.summary.contains("inside Tokyo"), "{}", card.summary);
         }
     }
-    // One area per object keeps each place's name with the distance.
+    // One area per object keeps each place's name, and the distance in its own field.
     let mut plan = tokyo_steps();
     plan[1].args["merge"] = json!(false);
     plan.truncate(2);
     let mut layers = tokyo_map();
     execute(&mut layers, &plan, 0, &Control::none()).unwrap();
     let LayerData::Vector(ds) = &layers[2].data else { panic!() };
-    assert_eq!(ds.features[0].attrs[0].to_string(), "Tokyo (within 100 km)");
+    assert_eq!(ds.features[0].attrs[0].to_string(), "Tokyo");
+    assert_eq!(ds.value(0, ds.field_index("within").unwrap()).to_string(), "100 km");
+}
+
+/// Harness v3 bug 3 (n01, "Which volcano is closest to Tokyo?"): nearest_distance from one object
+/// reports the nearest object it found and the object it measured from, with a line between.
+#[test]
+fn n01_nearest_distance_reports_the_nearest_object_and_the_source() {
+    let mut layers = tokyo_map();
+    let plan = steps(json!([
+        {"name": "filter", "args": {"layer": "Cities", "conditions": [{"field": "name", "op": "is", "value": "Tokyo"}]}},
+        {"name": "nearest_distance", "args": {"layer": "Cities", "other": "Storms"}}
+    ]));
+    let out = execute(&mut layers, &plan, 0, &Control::none()).unwrap();
+    // Weak (row 2) passes about 5 km from Tokyo: the nearest storm.
+    assert_eq!(out[1].matched(), Some(vec![("Storms".to_string(), vec![2]), ("Cities".to_string(), vec![0])]));
+    let StepOutcome::NewFields { connectors, .. } = &out[1] else { panic!() };
+    assert_eq!(connectors.len(), 1);
+    assert_eq!(connectors[0][0], (139.69, 35.69));
+    // Measured from many objects, the distances are a ranking, not an answer set.
+    let mut layers = tokyo_map();
+    let out = execute(
+        &mut layers,
+        &steps(json!([{"name": "nearest_distance", "args": {"layer": "Storms", "other": "Cities"}}])),
+        0,
+        &Control::none(),
+    )
+    .unwrap();
+    assert!(out[0].matched().is_some(), "5 storms is still a few");
+}
+
+/// Harness v3 bug 7 (k13): nearest_other measures to the other objects the filter shows, as its
+/// tool description says; with one object shown, to every other object of the layer.
+#[test]
+fn k13_nearest_other_measures_to_the_shown_objects() {
+    let km = |filter: serde_json::Value| {
+        let mut layers = tokyo_map();
+        let mut plan = Vec::new();
+        if !filter.is_null() {
+            plan.push(Step { name: "filter".into(), args: json!({"layer": "Storms", "conditions": [filter]}) });
+        }
+        plan.push(Step { name: "nearest_other".into(), args: json!({"layer": "Storms"}) });
+        execute(&mut layers, &plan, 0, &Control::none()).unwrap();
+        let LayerData::Vector(ds) = &layers[0].data else { panic!() };
+        let k = ds.field_index("km to nearest other storm").unwrap();
+        let n = ds.field_index("nearest other storm").unwrap();
+        (ds.features[3].attrs[k].as_f64(), ds.features[3].attrs[n].to_string())
+    };
+    // All five shown: Near (row 3) crosses Abby and Weak (a tie goes to the lower row).
+    assert_eq!(km(serde_json::Value::Null), (Some(0.0), "Abby".to_string()));
+    // Near, Far and Wide shown: Near's nearest other is one of them, not the hidden Abby.
+    let (d, name) = km(json!({"field": "name", "op": "any_of", "values": ["Near", "Far", "Wide"]}));
+    assert!(d.is_some_and(|d| d > 50.0) && name == "Wide", "{d:?} {name}");
+    // One shown: measured to every other storm.
+    let (d, name) = km(json!({"field": "name", "op": "is", "value": "Near"}));
+    assert_eq!((d, name.as_str()), (Some(0.0), "Abby"));
+}
+
+/// Harness v3 n01/n04 with the model's plan (measure from every volcano, then rank by the
+/// distance): a ranking's answer is its top object, so the preview has something to show.
+#[test]
+fn n04_a_ranking_reports_its_top_object() {
+    let mut layers = tokyo_map();
+    let plan = steps(json!([
+        {"name": "nearest_distance", "args": {"layer": "Storms", "other": "Cities"}},
+        {"name": "rank_by_value", "args": {"layer": "Storms", "field": "#1", "order": "lowest"}}
+    ]));
+    let out = execute(&mut layers, &plan, 0, &Control::none()).unwrap();
+    // Weak passes closest to Tokyo (about 5 km).
+    let m = out[1].matched().unwrap();
+    assert_eq!(m.len(), 1);
+    assert_eq!(m[0].0, "Storms");
+    assert_eq!(m[0].1, vec![2]);
 }

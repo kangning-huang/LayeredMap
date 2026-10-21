@@ -78,10 +78,10 @@ function appBody(extra: Record<string, unknown> = {}) {
   };
 }
 
-test("the app's body passes unchanged, apart from the forced usage flag", () => {
+test("the app's body passes unchanged, apart from the forced usage flag and the left-out providers", () => {
   const r = shapeRequest(JSON.stringify(appBody()), DEFAULT_SHAPE);
   assert.ok(r.ok);
-  assert.deepEqual(r.body, appBody());
+  assert.deepEqual(r.body, { ...appBody(), provider: { ignore: ["InferenceNet"] } });
   assert.equal(r.stream, false);
 });
 
@@ -102,7 +102,9 @@ test("keys the app doesn't use are dropped, max_tokens and temperature are clamp
     DEFAULT_SHAPE,
   );
   assert.ok(r.ok);
-  for (const k of ["provider", "plugins", "models", "transforms"]) assert.equal(k in r.body, false, k);
+  for (const k of ["plugins", "models", "transforms"]) assert.equal(k in r.body, false, k);
+  // The client's routing is replaced by the proxy's own.
+  assert.deepEqual(r.body.provider, { ignore: ["InferenceNet"] });
   assert.equal(r.body.max_tokens, DEFAULT_SHAPE.maxTokens);
   assert.equal(r.body.temperature, 2);
   assert.deepEqual(r.body.usage, { include: true });
@@ -226,7 +228,7 @@ test("a signed-in Pro user's request is forwarded and its tokens recorded", asyn
   assert.equal(r.status, 200);
   const answer = (await r.json()) as { choices: { message: { content: string } }[] };
   assert.equal(answer.choices[0].message.content, "ok");
-  assert.deepEqual(seen.upstream, [appBody()]);
+  assert.deepEqual(seen.upstream, [{ ...appBody(), provider: { ignore: ["InferenceNet"] } }]);
   assert.deepEqual(seen.recorded, [{ prompt: 7, completion: 3 }]);
   // The log names the user and the counts, never what was asked.
   assert.ok(seen.logs.every((l) => !l.includes("river")));
