@@ -111,7 +111,10 @@ impl Default for Search {
 }
 
 fn row(p: &lm_core::places::Place) -> Row {
-    let title = if !p.zh.is_empty() && p.zh != p.name { format!("{} {}", p.name, p.zh) } else { p.name.clone() };
+    // In the (simplified) Chinese interface the Chinese name is shown in simplified characters,
+    // also for the places GeoNames names in traditional ones (紐約 → 纽约).
+    let zh = if lm_core::i18n::current().code() == "zh" { lm_core::zh_fold::to_simplified(&p.zh) } else { p.zh.clone() };
+    let title = if !zh.is_empty() && zh != p.name { format!("{} {}", p.name, zh) } else { p.name.clone() };
     let detail = match (p.region.is_empty(), p.country.is_empty()) {
         (false, false) if p.region != p.name => format!("{}, {}", p.region, p.country),
         (_, false) => p.country.clone(),
