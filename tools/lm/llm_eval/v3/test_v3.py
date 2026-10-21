@@ -137,6 +137,28 @@ def test_set_tolerance_and_builtin_highlight_is_not_visible():
     assert not S.score(case, result(outs3))["answer_ok"]
 
 
+def test_overlays_and_every_highlight_are_visible_context_is_not():
+    # 2026-10-21: built-in answers are drawn as overlays (x01); an answer may light several layers;
+    # the object measured from (nearest) is context and doesn't count as the answer.
+    case = dict(CASE, expect=dict(CASE["expect"], answer={"type": "set", "strict": ["a"], "edge": []}, preview={"type": "set", "strict": ["a"], "edge": []}))
+    outs = [card({"List": {"heading": "", "items": ["A"]}}, {"layer": "World cities", "rows": [0], "keys": ["a"]})]
+    drawn = {"highlight": {"on_map": False, "count": 1, "keys": ["a"]}, "highlights": [{"on_map": False, "count": 1, "keys": ["a"]}],
+             "overlays": [{"name": "World cities", "keys": ["a"], "count": 1}], "context": [{"on_map": True, "keys": ["z"]}]}
+    assert S.score(case, result(outs, drawn))["preview_ok"]
+    two = {"highlights": [{"on_map": True, "keys": ["a"]}, {"on_map": True, "keys": ["b"]}]}
+    assert S.score(case, result(outs, two))["preview_ok"] is False
+
+
+def test_nearest_preview_takes_any_near_tie():
+    case = dict(CASE, qtype="nearest", expect=dict(CASE["expect"], area=False, answer={"type": "name", "accept": ["A", "B"]},
+                                                    preview={"type": "set", "strict": ["a"], "edge": ["b"], "any": True}))
+    nf = {"kind": "new_fields", "fields": ["nearest x"], "layer_rows": {"keys": ["src"], "shown": 1, "values": [{"nearest x": "B"}]}}
+    lit = lambda keys: {"highlights": [{"on_map": True, "keys": keys}]}  # noqa: E731
+    assert S.score(case, result([nf], lit(["b"])))["preview_ok"]
+    assert S.score(case, result([nf], lit(["b", "c"])))["preview_ok"] is False
+    assert S.score(case, result([nf], lit([])))["preview_ok"] is False
+
+
 def test_top_name_value():
     rank = card({"Ranking": {"rows": [{"label": "Chile", "value": 51, "row": 2}, {"label": "Japan", "value": 40, "row": 9}], "unit": "n"}}, row_keys=["Chile|CHL", "Japan|JPN"])
     v = S.view(result([rank]))

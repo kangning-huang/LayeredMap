@@ -1,5 +1,5 @@
 {
- "spent_usd": 3.305268,
+ "spent_usd": 3.685443,
  "cap_usd": 10.0,
  "runs": {
   "paid-smoke": 0.006564,
@@ -7,6 +7,8 @@
   "paid-repeat2": 0.165394,
   "paid-norule19": 0.168862,
   "paid-ref": 2.514781,
-  "probe": 0.029506
+  "probe": 0.029506,
+  "probe-glm-provider": 0.004852,
+  "paid-harnessfix": 0.375323
  }
 }

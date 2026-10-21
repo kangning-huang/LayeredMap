@@ -284,7 +284,10 @@ fn card_json(card: &lm_core::recipe::ResultCard, layer: Option<&PlanLayer>, keys
 
 fn outcome(o: &StepOutcome, layers: &[PlanLayer], keys: &[Vec<String>]) -> Json {
     // The features the step found as its answer (what the preview highlights).
-    let matched = o.matched().map(|(l, rows)| rows_by_name(layers, l, rows, keys));
+    // The step's answer set (its own first; nearest_distance adds the objects measured from).
+    let sets = o.matched();
+    let matched = sets.as_ref().and_then(|s| s.first()).map(|(l, rows)| rows_by_name(layers, l, rows, keys));
+    let matched_all: Option<Vec<Json>> = sets.map(|s| s.iter().map(|(l, rows)| rows_by_name(layers, l, rows, keys)).collect());
     match o {
         // The keys are those of the rows the layer shows after the whole plan (the same as this
         // step's when no later step filters it again).
@@ -306,6 +309,7 @@ fn outcome(o: &StepOutcome, layers: &[PlanLayer], keys: &[Vec<String>]) -> Json 
             json!({
                 "kind": "new_layer",
                 "matched": matched,
+                "matched_all": matched_all,
                 "name": name,
                 "alias": alias,
                 "color_by": color_by,
@@ -316,6 +320,7 @@ fn outcome(o: &StepOutcome, layers: &[PlanLayer], keys: &[Vec<String>]) -> Json 
         StepOutcome::NewFields { layer, fields, card, .. } => json!({
             "kind": "new_fields",
             "matched": matched,
+            "matched_all": matched_all,
             "layer": layer,
             "fields": fields,
             "card": card_json(card, None, keys),
@@ -338,8 +343,8 @@ fn outcome(o: &StepOutcome, layers: &[PlanLayer], keys: &[Vec<String>]) -> Json 
 /// What the preview shows: the layer drawn over the map, the highlighted rows (and whether their
 /// layer is on the map: built-in layers never are), and where the view is asked to go.
 fn preview(ws: &Workspace, layers: &[PlanLayer], keys: &[Vec<String>]) -> Json {
-    let (layer, highlight) = ws.preview_shown();
-    let drawn = layer.map(|l| {
+    let shown = ws.preview_shown();
+    let drawn = |l: &lm_mapview::map::Layer| {
         let ds = &l.dataset;
         let rows: Vec<usize> = (0..ds.features.len()).collect();
         let e = ds.extent();
@@ -350,8 +355,8 @@ fn preview(ws: &Workspace, layers: &[PlanLayer], keys: &[Vec<String>]) -> Json {
             "selected": (!l.selection.is_empty()).then(|| row_keys(ds, &l.selection, keys)),
             "extent": [e.min_x, e.min_y, e.max_x, e.max_y],
         })
-    });
-    let lit = highlight.map(|(id, rows)| {
+    };
+    let lit = |(id, rows): &(lm_core::model::LayerId, Vec<usize>)| {
         let doc = ws.doc.layer(*id);
         let name = doc.map(|l| l.display_name.clone()).or_else(|| layers.iter().find(|l| l.layer.id == *id).map(|l| l.name.clone()));
         let ds = layers.iter().find(|l| l.layer.id == *id).and_then(vector);
@@ -372,10 +377,21 @@ fn preview(ws: &Workspace, layers: &[PlanLayer], keys: &[Vec<String>]) -> Json {
             "keys": ds.map(|ds| row_keys(ds, rows, keys)),
             "extent": e.map(|e| [e.min_x, e.min_y, e.max_x, e.max_y]),
         })
-    });
+    };
+    let highlights: Vec<Json> = shown.highlights.iter().map(|h| lit(h)).collect();
     json!({
-        "layer": drawn,
-        "highlight": lit,
+        "layer": shown.layer.map(drawn),
+        // The first highlight (as before), and every one: an answer may span layers.
+        "highlight": highlights.first().cloned(),
+        "highlights": highlights,
+        // An answer's objects drawn over the map from layers that aren't on it (built-in World
+        // layers), all highlighted, and the connector lines.
+        "overlays": shown.overlays.iter().map(|l| drawn(l)).collect::<Vec<_>>(),
+        // Shown with the answer as context (the object measured from, connector lines).
+        "context": shown.context.iter().map(|h| lit(h)).collect::<Vec<_>>(),
+        "context_overlays": shown.context_overlays.iter().map(|l| drawn(l)).collect::<Vec<_>>(),
+        "empty": shown.empty,
+        "faint": shown.faint.iter().filter_map(|id| ws.doc.layer(*id).map(|l| l.display_name.clone())).collect::<Vec<_>>(),
         // Where the Ask box asks the map to fly (the shell frames it beside the answer).
         "fit": ws.answer_fit.or(ws.fit).map(|e| [e.min_x, e.min_y, e.max_x, e.max_y]),
     })

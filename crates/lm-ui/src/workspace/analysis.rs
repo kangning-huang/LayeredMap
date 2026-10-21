@@ -16,6 +16,35 @@ use super::{MAP_ID_BASE, Workspace, map_layer};
 /// The map id of an action's preview layer.
 pub(super) const PREVIEW_MAP_ID: u32 = MAP_ID_BASE - 2;
 
+/// The map ids of an Ask answer's overlays: the answer's objects from a layer that isn't on the
+/// map (a built-in World layer, or a step's layer other than the one previewed), drawn
+/// highlighted over everything, from `OVERLAY_MAP_ID` down.
+const OVERLAY_MAP_ID: u32 = MAP_ID_BASE - 3;
+const MAX_OVERLAYS: u32 = 10;
+/// The map id of the lines from an object to the nearest one found (`nearest_distance`).
+pub(super) const CONNECTOR_MAP_ID: u32 = OVERLAY_MAP_ID - MAX_OVERLAYS;
+
+/// What a preview map id draws.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum PreviewPart {
+    /// The result layer (the area, the counted areas…), striped/outlined.
+    Result,
+    /// An answer's objects from a layer not on the map, highlighted.
+    Overlay,
+    /// Lines from objects to the nearest ones found.
+    Connector,
+}
+
+/// Which preview part a map id is, if it is one.
+pub(super) fn preview_part(id: u32) -> Option<PreviewPart> {
+    match id {
+        PREVIEW_MAP_ID => Some(PreviewPart::Result),
+        CONNECTOR_MAP_ID => Some(PreviewPart::Connector),
+        _ if (CONNECTOR_MAP_ID + 1..=OVERLAY_MAP_ID).contains(&id) => Some(PreviewPart::Overlay),
+        _ => None,
+    }
+}
+
 /// What the slot delivers.
 pub type RunOutcome = Result<Arc<ActionResult>, ActionError>;
 
@@ -23,7 +52,9 @@ pub type RunOutcome = Result<Arc<ActionResult>, ActionError>;
 /// discarded. Never saved.
 pub(super) struct Preview {
     pub generation: u64,
-    pub map_pair: Option<(lm_mapview::map::Layer, lm_mapview::map::Layer)>,
+    /// The map layers to hand the map, once: the result layer (`PREVIEW_MAP_ID`), then an Ask
+    /// answer's overlays and connectors.
+    pub pairs: Option<Vec<(lm_mapview::map::Layer, lm_mapview::map::Layer)>>,
 }
 
 /// The analysis side of the workspace: the pool (made on first use), the slot, the preview.
@@ -41,6 +72,35 @@ pub struct Analysis {
     /// While an Ask plan is previewed: the rows each layer it filters will show once kept
     /// (drawn in place of the layer's own filter), so the preview is what Keep gives.
     pub(super) preview_masks: Vec<(LayerId, Arc<Vec<bool>>)>,
+    /// While an Ask plan is previewed: the answer's objects in layers on the map, highlighted.
+    pub(super) answer_highlights: Vec<(LayerId, Vec<usize>)>,
+    /// Objects shown with the answer as context (the city `nearest_distance` measured from),
+    /// highlighted too.
+    pub(super) context_highlights: Vec<(LayerId, Vec<usize>)>,
+    /// The overlay map ids that are context, not answer (and the connectors).
+    pub(super) context_overlays: Vec<u32>,
+    /// Layers drawn faintly as context while the answer is empty (the layer the plan filtered).
+    pub(super) preview_faint: Vec<LayerId>,
+    /// The previewed plan's answer found nothing (the Ask box says so; nothing is highlighted).
+    pub(super) answer_empty: bool,
+}
+
+/// What a preview puts on the map, for the evaluation harness ([`Workspace::preview_shown`]).
+pub struct PreviewShown<'a> {
+    /// The result layer drawn over the map (with its highlighted rows in `selection`).
+    pub layer: Option<&'a lm_mapview::map::Layer>,
+    /// Rows highlighted in layers on the map (the composer's, then an Ask answer's).
+    pub highlights: Vec<&'a (LayerId, Vec<usize>)>,
+    /// An answer's objects drawn as overlays (all highlighted).
+    pub overlays: Vec<&'a lm_mapview::map::Layer>,
+    /// What is shown with the answer as context: highlighted rows in layers on the map, and
+    /// overlays (the object measured from, the connector lines).
+    pub context: Vec<&'a (LayerId, Vec<usize>)>,
+    pub context_overlays: Vec<&'a lm_mapview::map::Layer>,
+    /// The answer found nothing.
+    pub empty: bool,
+    /// Layers drawn faintly as context.
+    pub faint: &'a [LayerId],
 }
 
 /// The most rows an Ask preview highlights (and Keep selects); a larger answer stays a filter.
@@ -117,12 +177,26 @@ impl Workspace {
 
     /// [`Self::set_preview`] with `selected` rows of the preview layer drawn highlighted.
     fn set_preview_selected(&mut self, layer: Option<&ImportedLayer>, generation: u64, selected: Vec<usize>) {
-        self.analysis.preview = layer.map(|l| {
+        self.set_preview_parts(layer, generation, selected, Vec::new());
+    }
+
+    /// The preview: the result layer (with `selected` rows highlighted) and `extra` map layers
+    /// (overlays and connectors, already given their ids). None of either: no preview.
+    fn set_preview_parts(
+        &mut self,
+        layer: Option<&ImportedLayer>,
+        generation: u64,
+        selected: Vec<usize>,
+        extra: Vec<lm_mapview::map::Layer>,
+    ) {
+        let mut pairs = Vec::new();
+        if let Some(l) = layer {
             let mut a = map_layer(PREVIEW_MAP_ID, l);
             a.selection = selected;
-            let b = a.clone();
-            Preview { generation, map_pair: Some((a, b)) }
-        });
+            pairs.push((a.clone(), a));
+        }
+        pairs.extend(extra.into_iter().map(|a| (a.clone(), a)));
+        self.analysis.preview = (!pairs.is_empty()).then_some(Preview { generation, pairs: Some(pairs) });
     }
 
     /// The rows an Ask preview shows in a layer in place of its own filter's.
@@ -137,9 +211,39 @@ impl Workspace {
     /// What the preview puts on the map, read by the evaluation harness
     /// (`tools/lm/llm_eval/v3`, `examples/ask_eval.rs`): the layer drawn over the map (until the
     /// map takes it) and the rows highlighted in a layer. Changes nothing.
-    pub fn preview_shown(&self) -> (Option<&lm_mapview::map::Layer>, Option<&(LayerId, Vec<usize>)>) {
-        let layer = self.analysis.preview.as_ref().and_then(|p| p.map_pair.as_ref()).map(|(l, _)| l);
-        (layer, self.analysis.highlight.as_ref())
+    pub fn preview_shown(&self) -> PreviewShown<'_> {
+        let pairs: Vec<&lm_mapview::map::Layer> =
+            self.analysis.preview.as_ref().and_then(|p| p.pairs.as_ref()).into_iter().flatten().map(|(l, _)| l).collect();
+        let ctx = &self.analysis.context_overlays;
+        PreviewShown {
+            layer: pairs.iter().copied().find(|l| l.id == PREVIEW_MAP_ID),
+            highlights: self.analysis.highlight.iter().chain(self.analysis.answer_highlights.iter()).collect(),
+            overlays: pairs.iter().copied().filter(|l| l.id != PREVIEW_MAP_ID && !ctx.contains(&l.id)).collect(),
+            context: self.analysis.context_highlights.iter().collect(),
+            context_overlays: pairs.into_iter().filter(|l| ctx.contains(&l.id)).collect(),
+            empty: self.analysis.answer_empty,
+            faint: &self.analysis.preview_faint,
+        }
+    }
+
+    /// Whether the previewed Ask answer found nothing.
+    pub fn answer_empty(&self) -> bool {
+        self.analysis.answer_empty
+    }
+
+    /// Whether a layer is drawn faintly as context for an empty Ask answer.
+    pub(super) fn preview_faint(&self, id: LayerId) -> bool {
+        self.analysis.preview_faint.contains(&id)
+    }
+
+    /// Rows an Ask answer highlights in a layer on the map.
+    pub(super) fn answer_rows(&self, id: LayerId) -> impl Iterator<Item = usize> + '_ {
+        self.analysis
+            .answer_highlights
+            .iter()
+            .chain(self.analysis.context_highlights.iter())
+            .filter(move |(l, _)| *l == id)
+            .flat_map(|(_, r)| r.iter().copied())
     }
 
     /// Keeps a result: its layer or fields, its style and its record, as one undo step labelled
@@ -226,14 +330,14 @@ impl Workspace {
         self.analysis.highlight = h;
     }
 
-    /// Takes the preview map layer for the map (once), or says it should go.
-    pub(super) fn preview_change(&mut self) -> Option<Option<(lm_mapview::map::Layer, lm_mapview::map::Layer)>> {
+    /// Takes the preview's map layers for the map (once), or says they should go (empty).
+    pub(super) fn preview_change(&mut self) -> Option<Vec<(lm_mapview::map::Layer, lm_mapview::map::Layer)>> {
         let want = self.analysis.preview.as_ref().map(|p| p.generation);
-        if want == self.analysis.preview_synced && self.analysis.preview.as_ref().is_none_or(|p| p.map_pair.is_none()) {
+        if want == self.analysis.preview_synced && self.analysis.preview.as_ref().is_none_or(|p| p.pairs.is_none()) {
             return None;
         }
         self.analysis.preview_synced = want;
-        Some(self.analysis.preview.as_mut().and_then(|p| p.map_pair.take()))
+        Some(self.analysis.preview.as_mut().and_then(|p| p.pairs.take()).unwrap_or_default())
     }
 }
 
@@ -267,14 +371,23 @@ impl Workspace {
 
     /// Shows a plan's preview as Keep would leave the map: its last new layer over the map
     /// (an area outlined), each layer it filters showing only the rows the filter keeps, and the
-    /// features that answer the question highlighted: what "what's inside" found, what
-    /// `count_in` counted in a few areas, what `join_by_location` matched to them. A plan
-    /// without such an answer highlights the rows its last filter leaves. When the answer is
-    /// local the map frames it: the area with room around it, else the answer's features.
+    /// answer: the final step's result set (what "what's inside" found, what `count_in` counted
+    /// or `join_by_location` matched in a few areas, the nearest objects `nearest_distance`
+    /// found and the objects measured from, what `keep_inside`/`remove_inside` kept, the rows a
+    /// final filter leaves). Answer objects in a layer on the map are highlighted there; those in
+    /// a layer that isn't (a built-in World layer) are drawn as a highlighted overlay. An answer
+    /// of nothing highlights nothing, draws the filtered layer faintly and says so. When the
+    /// answer is local the map frames it: the area searched with room around it, else the
+    /// answer's objects.
     pub fn preview_plan(&mut self, p: Option<&lm_ask::PlanResult>) {
+        self.analysis.highlight = None;
+        self.analysis.answer_highlights.clear();
+        self.analysis.context_highlights.clear();
+        self.analysis.context_overlays.clear();
+        self.analysis.preview_faint.clear();
+        self.analysis.answer_empty = false;
         let Some(p) = p else {
             self.set_preview(None, 0);
-            self.analysis.highlight = None;
             self.analysis.preview_masks.clear();
             self.answer_fit = None;
             return;
@@ -307,24 +420,57 @@ impl Workspace {
                 Some((l.layer.id, Arc::new(mask)))
             })
             .collect();
-        let answer = plan_answer(p);
+        let found = plan_answer(p);
         let mut preview_rows = Vec::new();
-        self.analysis.highlight = None;
-        match answer {
-            Some((l, rows)) if l.alias.is_none() => self.analysis.highlight = Some((l.layer.id, rows.to_vec())),
-            Some((l, rows)) if last_new.is_some_and(|n| n.alias == l.alias) => preview_rows = rows.to_vec(),
-            Some(_) => {}
-            None => {
-                self.analysis.highlight = p
-                    .layers
-                    .iter()
-                    .rev()
-                    .filter(|l| l.alias.is_none())
-                    .find_map(|l| l.rows.as_ref().filter(|r| r.len() <= MAX_HIGHLIGHT).map(|r| (l.layer.id, r.clone())));
+        let mut extra = Vec::new();
+        match &found {
+            Found::Sets(sets, _) => {
+                let mut overlay_id = OVERLAY_MAP_ID;
+                // The first set is the answer; later ones (the objects measured from) are context.
+                for (k, (l, rows)) in sets.iter().enumerate() {
+                    let context = k > 0;
+                    if l.alias.is_none() && self.doc.layer(l.layer.id).is_some() {
+                        let to = if context { &mut self.analysis.context_highlights } else { &mut self.analysis.answer_highlights };
+                        to.push((l.layer.id, rows.clone()));
+                    } else if last_new.is_some_and(|n| n.alias.is_some() && n.alias == l.alias) {
+                        preview_rows = rows.clone();
+                    } else if overlay_id > CONNECTOR_MAP_ID
+                        && let Some(sub) = subset_layer(l, rows)
+                    {
+                        let mut a = map_layer(overlay_id, &sub);
+                        a.selection = (0..a.dataset.features.len()).collect();
+                        extra.push(a);
+                        if context {
+                            self.analysis.context_overlays.push(overlay_id);
+                        }
+                        overlay_id -= 1;
+                    }
+                }
+                let lines = p.outcomes.iter().rev().find_map(|o| match o {
+                    lm_jobs::plan_exec::StepOutcome::NewFields { connectors, matched: Some(_), .. } if !connectors.is_empty() => {
+                        Some(connectors)
+                    }
+                    _ => None,
+                });
+                if let Some(lines) = lines {
+                    extra.push(connector_layer(lines));
+                    self.analysis.context_overlays.push(CONNECTOR_MAP_ID);
+                }
             }
+            Found::Empty => {
+                // Nothing found: nothing lit, the filtered layers faint behind the area searched.
+                self.analysis.answer_empty = true;
+                self.analysis.preview_faint = self.analysis.preview_masks.iter().map(|(id, _)| *id).collect();
+            }
+            Found::None => {}
         }
-        self.set_preview_selected(last_imported.as_ref(), generation, preview_rows);
-        self.answer_fit = answer.and_then(|(l, rows)| answer_frame(last_new, l, rows));
+        self.set_preview_parts(last_imported.as_ref(), generation, preview_rows, extra);
+        self.answer_fit = match &found {
+            Found::Sets(_, true) => None,
+            Found::Sets(sets, false) => answer_frame(last_new, sets),
+            Found::Empty => answer_frame(last_new, &[]),
+            Found::None => None,
+        };
     }
 
     /// Keeps a plan as one undo step labelled `label`: fields added to open layers, their new
@@ -426,6 +572,27 @@ impl Workspace {
             }
             ops.extend(tx_ops);
         }
+        // An answer in a layer that isn't on the map (a built-in World layer) is kept as a layer
+        // of its own: the objects the preview drew, named after the step that found them.
+        let mut answer_layers: Vec<(String, LayerId, usize)> = Vec::new();
+        if let Found::Sets(sets, _) = plan_answer(p) {
+            // The answer's own set only; context (the object measured from) isn't kept.
+            for (l, rows) in sets.iter().take(1) {
+                if l.alias.is_some() || self.doc.layer(l.layer.id).is_some() {
+                    continue;
+                }
+                let Some(sub) = subset_layer(l, rows) else { continue };
+                let name = answer_title(p, &l.name).unwrap_or_else(|| sub.name.clone());
+                let tx = self.doc.add_layer_tx(sub.profile.clone());
+                let mut tx_ops = tx.ops;
+                if let Some(Op::AddLayer { layer: dl, .. }) = tx_ops.first_mut() {
+                    dl.display_name = name.clone();
+                    answer_layers.push((l.name.clone(), dl.id, rows.len()));
+                    new_data.push((dl.id.0 as usize, Arc::new(ImportedLayer { name, ..sub })));
+                }
+                ops.extend(tx_ops);
+            }
+        }
         let id_of = |name: &str| ids.iter().find(|(n, _)| n.eq_ignore_ascii_case(name)).map(|(_, id)| *id);
         let first_id = self.doc.next_result_id.max(1);
         let mut k = 0;
@@ -462,9 +629,16 @@ impl Workspace {
             last = Some(id);
         }
         // What the preview highlighted stays highlighted, as the selection: the answer's
-        // features in their (now filtered) layer. Otherwise the newest layer is selected.
-        let answer = plan_answer(p).and_then(|(l, rows)| id_of(l.alias.as_deref().unwrap_or(&l.name)).map(|id| (id, rows.to_vec())));
-        match (answer, last) {
+        // features in their (now filtered) layer, or every object of the layer kept from a
+        // built-in layer's answer. Otherwise the newest layer is selected.
+        let answer = match plan_answer(p) {
+            Found::Sets(sets, false) => sets.iter().find_map(|(l, rows)| match answer_layers.iter().find(|(name, ..)| *name == l.name) {
+                Some((_, id, n)) => Some((*id, (0..*n).collect::<Vec<usize>>())),
+                None => id_of(l.alias.as_deref().unwrap_or(&l.name)).map(|id| (id, rows.clone())),
+            }),
+            _ => None,
+        };
+        match (answer.filter(|(_, rows)| !rows.is_empty()), last) {
             (Some((id, rows)), _) => {
                 self.selection = lm_core::selection::SelectionContext {
                     active_layer: Some(id),
@@ -480,27 +654,108 @@ impl Workspace {
     }
 }
 
-/// The features that answer a plan (the last step that found some), with the plan layer they
-/// are rows of; None when there are none, or more than a highlight shows.
-fn plan_answer(p: &lm_ask::PlanResult) -> Option<(&lm_jobs::plan_exec::PlanLayer, &[usize])> {
-    let (name, rows) = p.outcomes.iter().rev().find_map(|o| o.matched())?;
-    if rows.is_empty() || rows.len() > MAX_HIGHLIGHT {
-        return None;
+/// A plan's answer, as the preview shows it.
+enum Found<'a> {
+    /// The answer's objects: (plan layer, rows), the answer's own set first. `filter`: they are
+    /// just what a final filter leaves (lit as before, not framed, and Keep selects the layer).
+    Sets(Vec<(&'a lm_jobs::plan_exec::PlanLayer, Vec<usize>)>, bool),
+    /// The answer is that nothing matched (0 within 100 km of New York).
+    Empty,
+    /// No set of objects answers this plan (a ranking, a summary, a value).
+    None,
+}
+
+/// The objects that answer a plan: the final step's result set (skipping display steps).
+/// What a step found (`matched`, a card's highlight), what keep_inside/remove_inside kept, or the
+/// rows a filter leaves. A later step that makes no such set (a ranking, a buffer) leaves the
+/// answer to the steps before it. Sets larger than a highlight can show are left out.
+fn plan_answer(p: &lm_ask::PlanResult) -> Found<'_> {
+    use lm_jobs::plan_exec::StepOutcome;
+    let layer = |name: &str| {
+        let n = name.trim();
+        p.layers.iter().rfind(|l| l.alias.as_deref() == Some(n)).or_else(|| p.layers.iter().rfind(|l| l.name.eq_ignore_ascii_case(n)))
+    };
+    let resolve = |sets: Vec<(String, Vec<usize>)>| -> Found<'_> {
+        if sets.iter().all(|(_, rows)| rows.is_empty()) {
+            return Found::Empty;
+        }
+        let found: Vec<_> = sets
+            .into_iter()
+            .filter(|(_, rows)| !rows.is_empty() && rows.len() <= MAX_HIGHLIGHT)
+            .filter_map(|(name, rows)| layer(&name).map(|l| (l, rows)))
+            .collect();
+        if found.is_empty() { Found::None } else { Found::Sets(found, false) }
+    };
+    for o in p.outcomes.iter().rev() {
+        match o {
+            StepOutcome::Display => continue,
+            StepOutcome::Asked(_) | StepOutcome::Refused(_) => return Found::None,
+            StepOutcome::Filtered { layer: name, shown, .. } => {
+                let Some(l) = layer(name) else { return Found::None };
+                return match &l.rows {
+                    Some(_) if *shown == 0 => Found::Empty,
+                    Some(rows) if rows.len() <= MAX_HIGHLIGHT => Found::Sets(vec![(l, rows.clone())], true),
+                    _ => Found::None,
+                };
+            }
+            StepOutcome::NewLayer { alias, recipe, .. } if matches!(recipe.action.as_str(), "keep_inside" | "remove_inside") => {
+                let Some(l) = layer(alias) else { return Found::None };
+                let LayerData::Vector(ds) = &l.data else { return Found::None };
+                return resolve(vec![(alias.clone(), (0..ds.features.len()).collect())]);
+            }
+            o => match o.matched() {
+                Some(sets) => return resolve(sets),
+                None => continue,
+            },
+        }
     }
-    let n = name.trim();
-    let l =
-        p.layers.iter().rfind(|l| l.alias.as_deref() == Some(n)).or_else(|| p.layers.iter().rfind(|l| l.name.eq_ignore_ascii_case(n)))?;
-    Some((l, rows.as_slice()))
+    Found::None
+}
+
+/// The title of the step whose answer is in `layer` (for a kept built-in answer's layer name).
+fn answer_title(p: &lm_ask::PlanResult, layer: &str) -> Option<String> {
+    use lm_jobs::plan_exec::StepOutcome;
+    p.outcomes.iter().rev().find_map(|o| match o {
+        StepOutcome::Card { card, highlight: Some((l, _)), .. } if l == layer => Some(card.title.clone()),
+        StepOutcome::NewLayer { card, .. } | StepOutcome::NewFields { card, .. }
+            if o.matched().is_some_and(|sets| sets.first().is_some_and(|(l, _)| l == layer)) =>
+        {
+            Some(card.title.clone())
+        }
+        _ => None,
+    })
+}
+
+/// A layer of `rows` of a plan layer (an answer from a layer that isn't on the map).
+fn subset_layer(l: &lm_jobs::plan_exec::PlanLayer, rows: &[usize]) -> Option<ImportedLayer> {
+    let LayerData::Vector(ds) = &l.data else { return None };
+    let mut sub = lm_jobs::import::Dataset::new(l.name.clone(), ds.geometry_type, ds.fields.clone());
+    for r in rows {
+        sub.features.push(ds.features.get(*r)?.clone());
+    }
+    Some(lm_jobs::import::derived_layer(&l.name, "Result", sub))
+}
+
+/// The connector lines (`nearest_distance`) as a map layer.
+fn connector_layer(lines: &[[(f64, f64); 2]]) -> lm_mapview::map::Layer {
+    let mut ds = lm_jobs::import::Dataset::new("Nearest", lm_jobs::GeometryType::Polyline, Vec::new());
+    for [a, b] in lines {
+        ds.push_next(
+            Some(lm_jobs::import::Geometry::Line(vec![vec![lm_jobs::import::Coord::new(a.0, a.1), lm_jobs::import::Coord::new(b.0, b.1)]])),
+            Vec::new(),
+        );
+    }
+    map_layer(CONNECTOR_MAP_ID, &lm_jobs::import::derived_layer("Nearest", "Result", ds))
 }
 
 /// Where the map goes for an answer: the plan's last new layer when it is an area of at most a
-/// few objects (the buffer or the counted area), with [`AREA_ROOM`] around it; otherwise the
-/// answer's features with a tenth of their size around them. None when that isn't local
-/// ([`LOCAL_SPAN_DEG`]).
+/// few objects (the area searched: a buffer, the counted area), with [`AREA_ROOM`] around it;
+/// otherwise the answer's objects with a tenth of their size around them. None when that isn't
+/// local ([`LOCAL_SPAN_DEG`]), or when there is no area and no object (an empty answer with
+/// nothing searched).
 fn answer_frame(
     last_new: Option<&lm_jobs::plan_exec::PlanLayer>,
-    answer: &lm_jobs::plan_exec::PlanLayer,
-    rows: &[usize],
+    sets: &[(&lm_jobs::plan_exec::PlanLayer, Vec<usize>)],
 ) -> Option<lm_core::model::Extent> {
     let union = |ds: &lm_jobs::import::Dataset, rows: &mut dyn Iterator<Item = usize>| {
         rows.filter_map(|r| lm_jobs::inspect::row_extent(ds, r)).reduce(|a, e| lm_core::model::Extent {
@@ -517,8 +772,19 @@ fn answer_frame(
     let (e, room) = match area {
         Some(e) => (e, AREA_ROOM),
         None => {
-            let LayerData::Vector(ds) = &answer.data else { return None };
-            (union(ds, &mut rows.iter().copied())?, 0.1)
+            let e = sets
+                .iter()
+                .filter_map(|(l, rows)| match &l.data {
+                    LayerData::Vector(ds) => union(ds, &mut rows.iter().copied()),
+                    LayerData::Raster(_) => None,
+                })
+                .reduce(|a, e| lm_core::model::Extent {
+                    min_x: a.min_x.min(e.min_x),
+                    min_y: a.min_y.min(e.min_y),
+                    max_x: a.max_x.max(e.max_x),
+                    max_y: a.max_y.max(e.max_y),
+                })?;
+            (e, 0.1)
         }
     };
     let (w, h) = (e.max_x - e.min_x, e.max_y - e.min_y);
@@ -587,11 +853,15 @@ pub(crate) mod ask_preview_tests {
             let (mut w, storms) = workspace();
             let p = plan_on(&w, tokyo_steps(last));
             w.preview_plan(Some(&p));
-            assert_eq!(w.analysis.highlight, Some((storms, vec![0, 3])), "{last}: the 2 tracks that answer, not the 4 category-5 ones");
+            assert_eq!(
+                w.analysis.answer_highlights,
+                vec![(storms, vec![0, 3])],
+                "{last}: the 2 tracks that answer, not the 4 category-5 ones"
+            );
             // The source layer shows what its filter will keep; the area is the preview layer.
             let mask = w.preview_mask(storms).unwrap();
             assert_eq!(mask.as_slice(), &[true, true, false, true, true]);
-            let shown = w.analysis.preview.as_ref().and_then(|p| p.map_pair.as_ref()).map(|(a, _)| a.dataset.geometry_type);
+            let shown = w.preview_shown().layer.map(|a| a.dataset.geometry_type);
             assert_eq!(shown, Some(lm_jobs::GeometryType::Polygon), "{last}");
             // The view frames the 100 km area with room around it, not the whole Pacific.
             let e = w.answer_fit.unwrap();
@@ -613,7 +883,7 @@ pub(crate) mod ask_preview_tests {
         assert_eq!(w.doc.layers.len(), 4);
         assert_eq!(w.selection.active_layer, Some(storms));
         assert_eq!(w.selection.rows_in(storms), vec![0, 3]);
-        assert!(w.analysis.highlight.is_none() && w.analysis.preview.is_none() && w.analysis.preview_masks.is_empty());
+        assert!(w.analysis.answer_highlights.is_empty() && w.analysis.preview.is_none() && w.analysis.preview_masks.is_empty());
         assert_eq!(w.doc.results.len(), 2, "the buffer's and the count's records");
         // One undo step takes it all back.
         w.undo();
@@ -624,7 +894,7 @@ pub(crate) mod ask_preview_tests {
         let p = plan_on(&w, tokyo_steps("whats_inside"));
         w.preview_plan(Some(&p));
         w.preview_plan(None);
-        assert!(w.analysis.highlight.is_none() && w.analysis.preview.is_none() && w.preview_mask(storms).is_none());
+        assert!(w.analysis.answer_highlights.is_empty() && w.analysis.preview.is_none() && w.preview_mask(storms).is_none());
         assert_eq!((w.doc.layers.len(), w.doc.results.len()), (2, 0));
     }
 
@@ -634,9 +904,152 @@ pub(crate) mod ask_preview_tests {
         let steps = tokyo_steps("count_in").into_iter().take(1).collect();
         let p = plan_on(&w, steps);
         w.preview_plan(Some(&p));
-        assert_eq!(w.analysis.highlight, Some((storms, vec![0, 1, 3, 4])));
-        assert!(w.answer_fit.is_none(), "no answer to frame");
+        assert_eq!(w.analysis.answer_highlights, vec![(storms, vec![0, 1, 3, 4])]);
+        assert!(w.answer_fit.is_none(), "a plain filter isn't framed");
         assert!(w.keep_plan("Ask: Category 5".into(), &p));
-        assert_eq!(w.selection.rows_in(storms), Vec::<usize>::new());
+        assert_eq!(w.selection.rows_in(storms), Vec::<usize>::new(), "Keep applies the filter; nothing more to select");
+    }
+
+    /// A map of the storms only, with fixtures/A1's cities as a built-in layer the plan can use
+    /// ("World cities", not on the map), as the Ask box gives the plan its reference layers.
+    fn storms_and_builtin_cities() -> (Workspace, LayerId, Vec<lm_jobs::plan_exec::PlanLayer>) {
+        let mut w = Workspace::default();
+        let mut ls = tokyo_layers();
+        let cities = ls.remove(1);
+        assert!(w.add_imported(ls, 1));
+        let storms = w.doc.layers[0].id;
+        let (mut layers, _) = w.ask_inputs();
+        let style = lm_core::document::Style::for_profile(&cities.profile, [0, 0, 0, 255]);
+        layers.push(lm_jobs::plan_exec::PlanLayer {
+            name: "World cities".into(),
+            alias: None,
+            layer: lm_core::document::DocLayer::new(LayerId(9_000_001), "World cities".into(), cities.profile.clone(), style),
+            data: cities.data.clone(),
+            rows: None,
+            path: None,
+        });
+        (w, storms, layers)
+    }
+
+    fn run(mut layers: Vec<lm_jobs::plan_exec::PlanLayer>, steps: serde_json::Value) -> lm_ask::PlanResult {
+        let steps: Vec<Step> = serde_json::from_value(steps).unwrap();
+        let outcomes = execute(&mut layers, &steps, 0, &lm_jobs::jobs::Control::none()).unwrap();
+        lm_ask::PlanResult { steps, layers, outcomes, notes: Vec::new() }
+    }
+
+    /// Harness v3 bug 1 (w02, "Category 5 within 100 km of New York" = 0): an empty answer lights
+    /// nothing (not the filter), says so, draws the filtered layer faintly and frames the area
+    /// searched.
+    #[test]
+    fn w02_an_empty_answer_highlights_nothing_and_frames_the_area_searched() {
+        let (mut w, storms) = workspace();
+        let p = plan_on(
+            &w,
+            serde_json::from_value(serde_json::json!([
+                {"name": "filter", "args": {"layer": "Storms", "conditions": [{"field": "strength", "op": "is", "value": "Category 5"}]}},
+                {"name": "buffer", "args": {"object": {"layer": "Cities", "field": "name", "value": "Tokyo"}, "distance": "5 km"}},
+                {"name": "count_here", "args": {"points": "Storms", "area": {"layer": "#2"}}}
+            ]))
+            .unwrap(),
+        );
+        w.preview_plan(Some(&p));
+        let shown = w.preview_shown();
+        assert!(shown.empty && shown.highlights.is_empty() && shown.overlays.is_empty());
+        assert_eq!(shown.faint, &[storms][..], "the filtered storms stay as faint context");
+        assert!(shown.layer.is_some_and(|l| l.name.starts_with("Within 5 km")), "the area searched is drawn");
+        assert!(w.highlighted(storms).is_empty());
+        let e = w.answer_fit.unwrap();
+        assert!(e.min_x < 139.69 && e.max_x > 139.69 && e.max_x - e.min_x < 1.0, "{e:?}");
+        // Count in it, the same.
+        let p = plan_on(
+            &w,
+            serde_json::from_value(serde_json::json!([
+                {"name": "filter", "args": {"layer": "Storms", "conditions": [{"field": "strength", "op": "is", "value": "Category 5"}]}},
+                {"name": "buffer", "args": {"object": {"layer": "Cities", "field": "name", "value": "Tokyo"}, "distance": "5 km"}},
+                {"name": "count_in", "args": {"points": "Storms", "areas": "#2"}}
+            ]))
+            .unwrap(),
+        );
+        w.preview_plan(Some(&p));
+        assert!(w.answer_empty() && w.analysis.answer_highlights.is_empty());
+        w.preview_plan(None);
+        assert!(!w.answer_empty() && w.preview_shown().faint.is_empty());
+    }
+
+    /// Harness v3 bug 2 (x01, "Which cities are within 50 km of Vesuvius?"): the answer's objects
+    /// in a built-in layer that isn't on the map are drawn as a highlighted overlay and framed;
+    /// Keep adds them as a layer of their own and selects it.
+    #[test]
+    fn x01_an_answer_in_a_builtin_layer_is_drawn_framed_and_kept_as_a_layer() {
+        let (mut w, _, layers) = storms_and_builtin_cities();
+        let p = run(
+            layers,
+            serde_json::json!([
+                {"name": "buffer", "args": {"object": {"layer": "Storms", "field": "name", "value": "Weak"}, "distance": "50 km"}},
+                {"name": "whats_inside", "args": {"area": {"layer": "#1"}, "layer": "World cities"}}
+            ]),
+        );
+        w.preview_plan(Some(&p));
+        let shown = w.preview_shown();
+        assert!(shown.highlights.is_empty(), "nothing is lit on a layer the map doesn't have");
+        assert_eq!(shown.overlays.len(), 1);
+        let o = shown.overlays[0];
+        assert_eq!((o.dataset.features.len(), o.selection.clone()), (1, vec![0]), "Tokyo, drawn and highlighted");
+        assert!(w.answer_fit.is_some());
+        let before = w.doc.layers.len();
+        assert!(w.keep_plan("Ask: cities near Weak".into(), &p));
+        assert_eq!(w.doc.layers.len(), before + 2, "the buffer and the cities found");
+        let kept = w.doc.layers.iter().find(|l| l.display_name == "World cities within 50 km of Weak").unwrap();
+        assert_eq!(w.selection.active_layer, Some(kept.id));
+        assert_eq!(w.selection.rows_in(kept.id), vec![0]);
+    }
+
+    /// Harness v3 bug 3 (n01, "Which volcano is closest to Tokyo?"): the nearest object found is
+    /// highlighted, the object measured from (Tokyo, in a built-in layer) is drawn, and a line
+    /// joins them.
+    #[test]
+    fn n01_nearest_highlights_the_nearest_and_the_source_with_a_connector() {
+        let (mut w, storms, layers) = storms_and_builtin_cities();
+        let p = run(
+            layers,
+            serde_json::json!([
+                {"name": "filter", "args": {"layer": "World cities", "conditions": [{"field": "name", "op": "is", "value": "Tokyo"}]}},
+                {"name": "nearest_distance", "args": {"layer": "World cities", "other": "Storms"}}
+            ]),
+        );
+        w.preview_plan(Some(&p));
+        let shown = w.preview_shown();
+        assert_eq!(shown.highlights, vec![&(storms, vec![2])], "Weak, the nearest storm");
+        assert!(shown.overlays.is_empty(), "the answer is on the map");
+        let ids: Vec<u32> = shown.context_overlays.iter().map(|l| l.id).collect();
+        assert_eq!(ids, vec![OVERLAY_MAP_ID, CONNECTOR_MAP_ID], "Tokyo drawn as context, and the line to Weak");
+        assert_eq!(shown.context_overlays[0].selection, vec![0]);
+        assert_eq!(shown.context_overlays[1].dataset.features.len(), 1);
+        assert!(w.answer_fit.is_some());
+    }
+
+    /// Harness v3 bug 5 (o01, "Magnitude 8+ quakes at sea"): after a filter, remove_inside's
+    /// survivors are the answer: the preview highlights them, not the filter's rows.
+    #[test]
+    fn o01_a_filter_then_remove_inside_highlights_the_survivors() {
+        let (mut w, storms) = workspace();
+        for action in ["remove_inside", "keep_inside"] {
+            let p = plan_on(
+                &w,
+                serde_json::from_value(serde_json::json!([
+                    {"name": "buffer", "args": {"object": {"layer": "Cities", "field": "name", "value": "Tokyo"}, "distance": "100 km"}},
+                    {"name": "filter", "args": {"layer": "Storms", "conditions": [{"field": "strength", "op": "is", "value": "Category 5"}]}},
+                    {"name": action, "args": {"layer": "Storms", "areas": "#1"}}
+                ]))
+                .unwrap(),
+            );
+            w.preview_plan(Some(&p));
+            let shown = w.preview_shown();
+            assert!(shown.highlights.is_empty(), "{action}: not the filter's 4 storms");
+            let l = shown.layer.unwrap();
+            assert!(!l.dataset.features.is_empty());
+            assert_eq!(l.selection, (0..l.dataset.features.len()).collect::<Vec<_>>(), "{action}: every survivor lit");
+            assert!(w.highlighted(storms).is_empty());
+        }
     }
 }

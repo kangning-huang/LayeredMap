@@ -193,7 +193,10 @@ pub struct ActionResult {
     /// 100 km of Tokyo"): the things `count_in` counted, or the features `join_by_location`
     /// matched, when the areas in scope are at most [`ANSWER_AREAS`]. The assistant's preview
     /// highlights them and Keep selects them; None for everything else.
-    pub matched: Option<(LayerId, Vec<usize>)>,
+    pub matched: Option<Vec<(LayerId, Vec<usize>)>>,
+    /// Lines to draw with the answer, longitude/latitude: from each object `nearest_distance`
+    /// measured from to its nearest object (only with `matched`).
+    pub connectors: Vec<[(f64, f64); 2]>,
 }
 
 /// The most areas a `count_in` or `join_by_location` may have in scope for its counted or
@@ -600,7 +603,7 @@ fn count_in(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
             let values: Vec<Option<f64>> = r.counts.iter().map(|c| Some(*c as f64)).collect();
             // One area: "Storms within 100 km of Tokyo", not "… in each area of Within 100 km…".
             let title = match area_rows.as_slice() {
-                [_] => format!("{} {}", capitalized(&things), area_phrase(&areas_in.title(&areas, 0))),
+                [_] => format!("{} {}", capitalized(&things), area_phrase(&area_label(areas_in, &areas, 0))),
                 _ => format!("{} in {each}", capitalized(&things)),
             };
             (title, values, count_field.clone(), things.clone(), things.clone())
@@ -695,7 +698,7 @@ fn count_in(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
     let (answer, summary) = match (one_area, value_field, r.counts.first()) {
         (true, None, Some(&n)) => {
             let unit = if n == 1 { pts_in.singular_noun() } else { things.clone() };
-            let caption = one_area_caption(pts_in, &areas_in.title(&areas, 0));
+            let caption = one_area_caption(pts_in, &area_label(areas_in, &areas, 0));
             (Answer::Number { value: n as f64, unit, detail: caption.clone() }, format!("{} · {caption}", pts_in.things(n)))
         }
         _ => (Answer::Ranking { rows: ranking(rows), unit }, summary),
@@ -711,7 +714,8 @@ fn count_in(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
         output: ActionOutput::NewLayer { layer: layer_from(&title, "Result", out), color_by: Some(color_by) },
         highlight: None,
         matched: (area_rows.len() <= ANSWER_AREAS)
-            .then(|| (pts_in.layer.id, r.matched.iter().filter_map(|i| pt_rows.get(*i).copied()).collect())),
+            .then(|| vec![(pts_in.layer.id, r.matched.iter().filter_map(|i| pt_rows.get(*i).copied()).collect())]),
+        connectors: Vec::new(),
     })
 }
 
@@ -760,7 +764,21 @@ fn one_area(i: &PlanInput) -> Result<(Geometry, String), ActionError> {
         return Err(ActionError::Input("Choose an area: this works inside areas, not points or lines.".into()));
     }
     let full = i.vector()?;
-    Ok((g, i.title(full, rows[0])))
+    Ok((g, area_label(i, full, rows[0])))
+}
+
+/// The field a buffer's areas carry with the distance they reach ("100 km").
+pub const BUFFER_WITHIN: &str = "within";
+
+/// An area's name for a card: its title, or for a buffer's area "Within 100 km of Tokyo" (from
+/// its "within" field), so it is never described as the place itself.
+fn area_label(i: &PlanInput, ds: &Dataset, row: usize) -> String {
+    let title = i.title(ds, row);
+    let within = ds.field_index(BUFFER_WITHIN).map(|k| ds.value(row, k).to_string()).filter(|w| !w.is_empty() && w != "<Null>");
+    match within {
+        Some(w) if !title.starts_with("Within ") => format!("Within {w} of {title}"),
+        _ => title,
+    }
 }
 
 fn count_here(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
@@ -793,6 +811,7 @@ fn count_here(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
         output: ActionOutput::Card,
         highlight: Some((pts_in.layer.id, inside.rows.iter().map(|r| pt_rows[*r]).collect())),
         matched: None,
+        connectors: Vec::new(),
     })
 }
 
@@ -831,6 +850,7 @@ fn which_container(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionErr
         output: ActionOutput::Card,
         highlight: Some((areas_in.layer.id, found.iter().map(|i| area_rows[*i]).collect())),
         matched: None,
+        connectors: Vec::new(),
     })
 }
 
@@ -862,6 +882,7 @@ fn whats_inside(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError>
         output: ActionOutput::Card,
         highlight: Some((layer_in.layer.id, r.rows.iter().map(|i| rows[*i]).collect())),
         matched: None,
+        connectors: Vec::new(),
     })
 }
 
@@ -894,7 +915,14 @@ fn buffer_action(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError
     let out = buffer::buffer_layer(&geoms, &buffer::BufferOptions { distance_m: m, merge }, ctl)?;
     let subject = if rows.len() == 1 { input.title(input.vector()?, rows[0]) } else { input.plural_noun() };
     let title = format!("Within {words} of {subject}");
-    let mut layer = Dataset::new(title.clone(), rustgis_engine::data::GeometryType::Polygon, vec![Field::new("name", FieldType::Text)]);
+    // Each area keeps its place's name and says how far it reaches ("within": "100 km"), so a
+    // count, a list or a "how many here" in it reads "within 100 km of Tokyo" whatever the area
+    // is called ([`area_label`]).
+    let mut layer = Dataset::new(
+        title.clone(),
+        rustgis_engine::data::GeometryType::Polygon,
+        vec![Field::new("name", FieldType::Text), Field::new(BUFFER_WITHIN, FieldType::Text)],
+    );
     let mut total_m2 = 0.0;
     match out {
         buffer::BufferOutput::Merged(g) => {
@@ -902,7 +930,7 @@ fn buffer_action(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError
                 if let geodesic::Measure::Area(a) = geodesic::measure(&g) {
                     total_m2 = a.area_m2;
                 }
-                layer.push_next(Some(g), vec![Value::Text(title.clone())]);
+                layer.push_next(Some(g), vec![Value::Text(title.clone()), Value::Text(words.clone())]);
             }
         }
         buffer::BufferOutput::PerFeature(gs) => {
@@ -912,10 +940,7 @@ fn buffer_action(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError
                     if let geodesic::Measure::Area(a) = geodesic::measure(&g) {
                         total_m2 += a.area_m2;
                     }
-                    // Each area says what it is: "Tokyo (within 100 km)", never just "Tokyo",
-                    // so a count or a list in it reads "within 100 km of Tokyo".
-                    let name = format!("{} (within {words})", input.title(full, rows[i]));
-                    layer.push_next(Some(g), vec![Value::Text(name)]);
+                    layer.push_next(Some(g), vec![Value::Text(input.title(full, rows[i])), Value::Text(words.clone())]);
                 }
             }
         }
@@ -952,6 +977,7 @@ fn buffer_action(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError
         output: ActionOutput::NewLayer { layer: layer_from(&title, "Result", layer), color_by: None },
         highlight: None,
         matched: None,
+        connectors: Vec::new(),
     })
 }
 
@@ -1001,6 +1027,7 @@ fn measure(plan: &Plan) -> Result<ActionResult, ActionError> {
         output: ActionOutput::Card,
         highlight: None,
         matched: None,
+        connectors: Vec::new(),
     })
 }
 
@@ -1200,6 +1227,7 @@ fn summarize_each(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionErro
         output: ActionOutput::NewLayer { layer: layer_from(&title, "Result", out), color_by },
         highlight: None,
         matched: None,
+        connectors: Vec::new(),
     })
 }
 
@@ -1262,6 +1290,7 @@ fn summarize_one(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError
         output: ActionOutput::Card,
         highlight: None,
         matched: None,
+        connectors: Vec::new(),
     })
 }
 
@@ -1325,6 +1354,7 @@ fn add_raster_values(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionE
         output: ActionOutput::NewFields { layer: pts_in.layer.id, data: Arc::new(out), fields: vec![field] },
         highlight: None,
         matched: None,
+        connectors: Vec::new(),
     })
 }
 
@@ -1360,6 +1390,13 @@ fn rank_by_value(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError
         }
         _ => "No values to rank".into(),
     };
+    // The answer to "which one": the first object and any with exactly its value (at most a few),
+    // highlighted while the card is shown (harness v3: "the volcano nearest Mexico City" ranked
+    // by distance highlighted nothing).
+    let top: Vec<usize> = match ranked.first().and_then(|r| r.value) {
+        Some(v) => ranked.iter().take_while(|r| r.value == Some(v)).take(ANSWER_AREAS).map(|r| r.row).collect(),
+        None => Vec::new(),
+    };
     let mut notices = Vec::new();
     let blank = ranked.len() - with;
     if blank > 0 {
@@ -1377,8 +1414,9 @@ fn rank_by_value(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError
         },
         recipe: recipe(plan, &title, &inputs, "", Vec::new(), Vec::new()),
         output: ActionOutput::Card,
-        highlight: None,
+        highlight: (!top.is_empty()).then_some((input.layer.id, top)),
         matched: None,
+        connectors: Vec::new(),
     })
 }
 
@@ -1483,6 +1521,7 @@ fn calculate_field(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionErr
         output: ActionOutput::NewFields { layer: input.layer.id, data: Arc::new(out), fields: vec![name] },
         highlight: None,
         matched: None,
+        connectors: Vec::new(),
     })
 }
 
@@ -1535,6 +1574,7 @@ fn split_parts(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> 
         output: ActionOutput::NewLayer { layer: layer_from(&title, "Result", out), color_by: None },
         highlight: None,
         matched: None,
+        connectors: Vec::new(),
     })
 }
 
@@ -1653,6 +1693,7 @@ fn find_where(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
         output: ActionOutput::NewLayer { layer: layer_from(&title, "Result", layer), color_by: None },
         highlight: None,
         matched: None,
+        connectors: Vec::new(),
     })
 }
 
@@ -1708,6 +1749,7 @@ fn clip_action(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> 
         output: ActionOutput::NewLayer { layer: layer_from(&title, "Result", out), color_by: None },
         highlight: None,
         matched: None,
+        connectors: Vec::new(),
     })
 }
 
@@ -1725,6 +1767,19 @@ fn label_points(ds: &Dataset) -> Dataset {
 
 pub fn label_point(g: &Geometry) -> Option<Coord> {
     lm_analysis::measure::label_point(g)
+}
+
+/// The vertex of `g` closest to `p` in longitude and latitude (for a connector line to draw, not
+/// a measure).
+fn closest_vertex(g: &Geometry, p: Coord) -> Option<Coord> {
+    let d = |c: &Coord| (c.x - p.x).powi(2) + (c.y - p.y).powi(2);
+    let best = |it: &mut dyn Iterator<Item = Coord>| it.min_by(|a, b| d(a).total_cmp(&d(b)));
+    match g {
+        Geometry::Point(c) => Some(*c),
+        Geometry::MultiPoint(v) => best(&mut v.iter().copied()),
+        Geometry::Line(parts) => best(&mut parts.iter().flatten().copied()),
+        Geometry::Polygon(polys) => best(&mut polys.iter().flatten().flatten().copied()),
+    }
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -1766,13 +1821,20 @@ fn nearest_action(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionErro
     let same = plan.action == "nearest_other";
     let layer_in = plan.input(0)?;
     let (ds, rows) = layer_in.scoped()?;
-    // "Nearest other" measures to every object of the layer, even when a filter shows only some
-    // (owner's decision, 2026-10-17); each object skips only itself.
-    let (targets_in, res, target_rows) = if same {
+    // "Nearest other" measures to the other objects the user sees: the ones the filter shows
+    // (harness v3, k13, 2026-10-21; it measured to hidden ones too before). With one object
+    // shown ("the hospital nearest this one") every other object of the layer counts. Each object
+    // skips only itself.
+    let all_others = rows.len() <= 1;
+    let (targets_in, res, target_rows) = if same && all_others {
         let whole = layer_in.vector()?;
         let skip: Vec<Option<usize>> = rows.iter().map(|r| Some(*r)).collect();
         let res = lm_analysis::nearest::nearest_distance_skipping(&ds, whole, &skip, ctl)?;
         (layer_in, res, (0..whole.features.len()).collect::<Vec<usize>>())
+    } else if same {
+        let skip: Vec<Option<usize>> = (0..rows.len()).map(Some).collect();
+        let res = lm_analysis::nearest::nearest_distance_skipping(&ds, &ds, &skip, ctl)?;
+        (layer_in, res, rows.clone())
     } else {
         let t = plan.input(1)?;
         let (targets, trows) = t.scoped()?;
@@ -1815,6 +1877,31 @@ fn nearest_action(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionErro
     if !res.without_geometry.is_empty() {
         notices.push(format!("{} have no location and get no distance.", layer_in.things(res.without_geometry.len() as u64)));
     }
+    // The answer for a few objects ("the volcano nearest Tokyo"): the nearest objects found and
+    // the objects measured from, with a line between each pair.
+    let (matched, connectors) = if rows.len() <= ANSWER_AREAS {
+        let mut found: Vec<usize> = res.nearest.iter().flatten().filter_map(|n| target_rows.get(n.target_row).copied()).collect();
+        found.sort_unstable();
+        found.dedup();
+        let mut lines = Vec::new();
+        for (i, n) in res.nearest.iter().enumerate() {
+            let (Some(n), Some(f)) = (n, ds.features.get(i)) else { continue };
+            let from = f.geometry.as_ref().and_then(label_point);
+            let target = target_rows.get(n.target_row).and_then(|r| tfull.features.get(*r)).and_then(|t| t.geometry.as_ref());
+            if let (Some(a), Some(g)) = (from, target)
+                && let Some(b) = closest_vertex(g, a)
+            {
+                lines.push([(a.x, a.y), (b.x, b.y)]);
+            }
+        }
+        let mut sets = vec![(targets_in.layer.id, found)];
+        if !same {
+            sets.push((layer_in.layer.id, rows.clone()));
+        }
+        (Some(sets), lines)
+    } else {
+        (None, Vec::new())
+    };
     let title = format!("Distance from each {} to the {other_words}", layer_in.singular_noun());
     let inputs: Vec<&PlanInput> = if same { vec![layer_in] } else { vec![layer_in, targets_in] };
     Ok(ActionResult {
@@ -1836,7 +1923,8 @@ fn nearest_action(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionErro
         ),
         output: ActionOutput::NewFields { layer: layer_in.layer.id, data: Arc::new(out), fields },
         highlight: None,
-        matched: None,
+        matched,
+        connectors,
     })
 }
 
@@ -1944,11 +2032,12 @@ fn join_action(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> 
         output: ActionOutput::NewFields { layer: layer_in.layer.id, data: Arc::new(out), fields },
         highlight: None,
         matched: (area_count <= ANSWER_AREAS).then(|| {
-            (
+            vec![(
                 layer_in.layer.id,
                 res.area_of.iter().enumerate().filter(|(_, a)| a.is_some()).filter_map(|(i, _)| rows.get(i).copied()).collect(),
-            )
+            )]
         }),
+        connectors: Vec::new(),
     })
 }
 
@@ -2020,6 +2109,7 @@ fn measure_fields(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionErro
         output: ActionOutput::NewFields { layer: input.layer.id, data: Arc::new(out), fields },
         highlight: None,
         matched: None,
+        connectors: Vec::new(),
     })
 }
 
@@ -2097,6 +2187,7 @@ fn match_table(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> 
         output: ActionOutput::NewFields { layer: layer_in.layer.id, data: Arc::new(joined.data), fields: joined.new_fields },
         highlight: None,
         matched: None,
+        connectors: Vec::new(),
     })
 }
 

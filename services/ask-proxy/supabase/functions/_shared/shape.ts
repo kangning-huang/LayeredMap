@@ -39,6 +39,14 @@ export type Shaped =
 
 const ROLES = new Set(["system", "user", "assistant", "tool"]);
 
+/**
+ * OpenRouter providers the proxy always leaves out (the app sends the same list on its direct
+ * route, crates/lm-ask session.rs `PROVIDERS_IGNORED`). InferenceNet writes only a schema's
+ * required properties, so the plan's steps came back without their arguments (GLM 5.3 Flash,
+ * docs/lm/llm-eval.md › Harness v3, bug 9). The client's own routing is still dropped.
+ */
+export const PROVIDERS_IGNORED = ["InferenceNet"];
+
 function refuse(status: number, code: string, message: string): Shaped {
   return { ok: false, status, code, message };
 }
@@ -97,5 +105,6 @@ export function shapeRequest(raw: string, opts: ShapeOptions): Shaped {
   if (stream) body.stream = true;
   // The proxy counts tokens from the answer, so it always asks for them.
   body.usage = { include: true };
+  body.provider = { ignore: [...PROVIDERS_IGNORED] };
   return { ok: true, body, stream };
 }

@@ -67,15 +67,18 @@ pub enum StepOutcome {
         card: Box<ResultCard>,
         recipe: Box<Recipe>,
         color_by: Option<String>,
-        matched: Option<(String, Vec<usize>)>,
+        matched: Option<Vec<(String, Vec<usize>)>>,
     },
-    /// `matched`: the features `join_by_location` matched to a few areas.
+    /// `matched`: the features `join_by_location` matched to a few areas, or the nearest objects
+    /// `nearest_distance` found for a few objects and those objects; `connectors` the lines
+    /// between them (longitude/latitude).
     NewFields {
         layer: String,
         fields: Vec<String>,
         card: Box<ResultCard>,
         recipe: Box<Recipe>,
-        matched: Option<(String, Vec<usize>)>,
+        matched: Option<Vec<(String, Vec<usize>)>>,
+        connectors: Vec<[(f64, f64); 2]>,
     },
     Card {
         card: Box<ResultCard>,
@@ -90,10 +93,13 @@ impl StepOutcome {
     /// The features this step found as its answer, by layer name and rows: what "what's
     /// inside", "how many here" and "which area" select, the things `count_in` counted in a few
     /// areas, or the features `join_by_location` matched to them.
-    pub fn matched(&self) -> Option<&(String, Vec<usize>)> {
+    ///
+    /// Several sets when the answer spans layers (the nearest volcano and the city measured from);
+    /// the first is the answer's own. `Some` with empty rows is an answer of nothing.
+    pub fn matched(&self) -> Option<Vec<(String, Vec<usize>)>> {
         match self {
-            StepOutcome::Card { highlight, .. } => highlight.as_ref(),
-            StepOutcome::NewLayer { matched, .. } | StepOutcome::NewFields { matched, .. } => matched.as_ref(),
+            StepOutcome::Card { highlight, .. } => highlight.clone().map(|h| vec![h]),
+            StepOutcome::NewLayer { matched, .. } | StepOutcome::NewFields { matched, .. } => matched.clone(),
             _ => None,
         }
     }
@@ -366,7 +372,8 @@ fn run_step(
             let recipe = Box::new(r.recipe);
             let name_of =
                 |id: lm_core::model::LayerId, layers: &[PlanLayer]| layers.iter().find(|l| l.layer.id == id).map(|l| l.name.clone());
-            let matched = r.matched.and_then(|(id, rows)| name_of(id, layers).map(|l| (l, rows)));
+            let matched = r.matched.map(|sets| sets.into_iter().filter_map(|(id, rows)| name_of(id, layers).map(|l| (l, rows))).collect());
+            let connectors = r.connectors;
             match r.output {
                 ActionOutput::NewLayer { layer, color_by } => {
                     let name = layer.name.clone();
@@ -385,7 +392,7 @@ fn run_step(
                 ActionOutput::NewFields { layer, data, fields } => {
                     let li = layers.iter().position(|l| l.layer.id == layer).ok_or_else(|| err(n, "the layer went away"))?;
                     layers[li].data = LayerData::Vector(data);
-                    StepOutcome::NewFields { layer: layers[li].name.clone(), fields, card: Box::new(r.card), recipe, matched }
+                    StepOutcome::NewFields { layer: layers[li].name.clone(), fields, card: Box::new(r.card), recipe, matched, connectors }
                 }
                 ActionOutput::Card => {
                     let hl = r.highlight.and_then(|(id, rows)| name_of(id, layers).map(|l| (l, rows)));

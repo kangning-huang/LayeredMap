@@ -614,6 +614,14 @@ fn answer_panel(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, width: f32, ma
                     if plan.layers.iter().any(|l| l.alias.is_some()) {
                         ui.label(RichText::new(tl!("Preview on the map — not saved")).size(CAPTION).color(t.text_secondary));
                     }
+                    // An answer of nothing: nothing is lit, and the map says why.
+                    if shell.ws.answer_empty() {
+                        ui.label(
+                            RichText::new(tl!("Nothing matches, so nothing is highlighted on the map."))
+                                .size(CAPTION)
+                                .color(t.text_secondary),
+                        );
+                    }
                     for n in &plan.notes {
                         ui.label(RichText::new(n).size(CAPTION).color(t.warning));
                     }

@@ -358,7 +358,10 @@ def nearest_case(cid, map_name, src, text, lang, diff, name, country=None, mask=
     else:
         answer = {"type": "value", "value": round(km, 2), "tol": max(1.0, km * 0.01)}
     tie = " (near tie)" if km2 - km < 2 else ""
-    add(cid, map_name, text, lang, "nearest", diff, steps, answer, set_spec(src, [row], [i for i in ties if i != row]),
+    # Preview: any of the near-ties highlighted (the app shows the one it found), nothing else; the
+    # city measured from is shown as context (2026-10-21).
+    preview = {**set_spec(src, [row], [i for i in ties if i != row]), "any": True}
+    add(cid, map_name, text, lang, "nearest", diff, steps, answer, preview,
         notes=(notes + f" GT nearest: {answer.get('accept', '')} row {row}, {km:.1f} km{tie}.").strip())
 
 
@@ -381,10 +384,14 @@ def nearest_city_to(cid, map_name, src, text, lang, diff, field, value, notes=""
     c = gt.load("cities")
     crow, km, km2 = gt.nearest_point(p.x, p.y, c)
     d_all = gt.geod_km(p.x, p.y, c.geometry.x.to_numpy(), c.geometry.y.to_numpy())
-    accept = sorted({str(c["name"].iloc[int(i)]) for i in np.nonzero(d_all <= km + gt.TOL_KM)[0]})
+    near = [int(i) for i in np.nonzero(d_all <= km + gt.TOL_KM)[0]]
+    accept = sorted({str(c["name"].iloc[i]) for i in near})
     steps = [filt(L[src], cond(field, "is", value)), step("nearest_distance", layer=L[src], other=B["cities"])]
     tie = " (near tie)" if km2 - km < 2 else ""
-    add(cid, map_name, text, lang, "nearest", diff, steps, {"type": "name", "accept": accept}, set_spec(src, [int(rows[0])]),
+    # Preview: the nearest city, drawn from World cities (2026-10-21: built-in answers are drawn);
+    # the volcano measured from is context.
+    preview = {**set_spec("cities", [int(crow)], [i for i in near if i != int(crow)]), "any": True}
+    add(cid, map_name, text, lang, "nearest", diff, steps, {"type": "name", "accept": accept}, preview,
         notes=(notes + f" GT nearest city {c['name'].iloc[crow]} at {km:.1f} km{tie}.").strip())
 
 
@@ -777,11 +784,11 @@ def isolated_quakes(cid, map_name, text, lang, diff, mag, km, notes=""):
     q = L["quakes"]
     steps = [filt(q, cond("magnitude", "at_least", mag)), step("nearest_other", layer=q),
              filt(q, cond("magnitude", "at_least", mag), cond("km to nearest other earthquake", "above", km))]
-    add(cid, map_name, text, lang, "chain", diff, refuse("nearest_other measures to every quake, also the hidden ones."), None, None, kind="cannot_do", accept=["ask_user"],
-        notes=(notes + f" GT {len(strict)} (+{len(edge)}) among the M{mag}+ quakes. No tool answers it: nearest_other measures to every object of the layer, even hidden"
-               " ones (owner's rule), though its tool description says only shown objects count. A plan that trusts the description answers 0.").strip(),
-        tags=["derived", "tool_gap"])
-    CASES[-1]["expect"]["trap_plan"] = steps
+    # nearest_other measures among the objects the filter shows (2026-10-21, harness v3 bug 7;
+    # it measured to hidden ones too before, and this case was a tool gap).
+    add(cid, map_name, text, lang, "chain", diff, steps, count_spec(len(strict), len(strict) + len(edge)), set_spec("quakes", strict, edge),
+        notes=(notes + f" GT {len(strict)} (+{len(edge)}) among the M{mag}+ quakes: nearest_other measures among the shown (filtered) quakes.").strip(),
+        tags=["derived"])
 
 
 isolated_quakes("k13", "quakes", "Among the magnitude 8+ quakes, how many are more than 1000 km from any other magnitude 8+ quake?", "en", "hard", 8, 1000)

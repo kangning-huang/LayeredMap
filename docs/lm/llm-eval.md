@@ -640,6 +640,37 @@ All but #4 are still present after askfix. Repro with
     "Barcelona on 16 August 2022" can't be answered. The models refused correctly, but this is a
     gap for the launch film's own question. Repro: **t02**.
 
+### Fixes, 2026-10-21 (branch harnessfix)
+
+Bugs 1–3 and 5–9 above are fixed (decisions.md, 2026-10-21); #10 is in the backlog. Each fix has a
+test named after its case: w02, x01, n01, o01, c05, k13, sonnet_400; n04 for rankings. Three
+harness changes go with them: the preview reports every highlight, the overlays drawn from built-in
+layers and what is shown only as context (the object measured from); k13 is now a plan (7), since
+nearest_other measures among the shown objects; and nearest previews accept any of the near-ties,
+with "nearest city to X" expecting the city, now that built-in answers are drawn.
+
+| Plans | Before (phase-4, c3b6d98): e2e / answer / preview | After: e2e / answer / preview |
+|---|---|---|
+| Gold (mock) | 84% / 99% / 81% | **100% / 100% / 100%** |
+| Haiku 5.5, recorded plans (paid-main) replayed | 73% / 81% / 69% | 81% / 82% / 80% |
+| GLM 5.3 Flash, recorded plans replayed | 56% / 59% / 66% | 64% / 60% / 80% |
+| **Haiku 5.5, new paid run** | – | 79% (81% replayed on the final build) |
+| **GLM 5.3 Flash, new paid run** | – | 76% (80% replayed on the final build) |
+
+"Before" is the same cases (k13 and the nearest specs as now) scored on the phase-4 runs. One
+change to the build came after the paid runs: a ranking reports its top object (n01/n04 with the
+models' own plans). That is why the last two rows are also given replayed through the final
+build. GLM's new run was served by Wafer for all 290 calls; it sent no step without arguments
+(before: 37 cases), and plans are valid first try in 79% of cases (was 62%).
+
+Still failing (final build, replayed): Haiku 32 cases (25 model plan, 6 preview with the model's
+own plan, 1 prompt-tool gap: t03, no date tool); GLM 34. The models' plan faults are mostly
+nearest (measuring the wrong way round), raster at points (World elevation for the user's grid),
+in one area (counting into every country, then filtering the counts) and cities near something.
+
+Spend for this round: US$0.38 (Haiku 0.171, GLM 0.204) plus a US$0.005 provider probe; the ledger
+total is US$3.69 of US$10.00.
+
 ### Prompt and tool improvements suggested
 
 - **Preview:** highlight the matched features of the user's own layer, and show an empty answer

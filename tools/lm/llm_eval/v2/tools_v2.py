@@ -74,7 +74,9 @@ DESCRIPTIONS = {
     "count_in": (
         "Count points in each area of an area layer, or take a statistic of a numeric point field per area "
         "(stat sum|mean|median|min|max with field, e.g. total students per district: stat 'sum', field 'students'). "
-        "New layer: the areas with field '<points layer, lowercase>' (Schools: 'schools') and, with a statistic, "
+        "New layer: the areas with a count field named after the counted layer: its name in lower case when the name is "
+        "one to three plain words (Schools: 'schools'; World cities: 'world cities'), otherwise 'points', 'lines' or 'areas' "
+        "(storm_tracks_1980-2026: 'lines'); later steps can always name it '#k'. With a statistic, the field is "
         "'<stat> <field>' ('sum students', 'mean students', 'median students', 'minimum students', 'maximum students'). "
         "It counts any layer's objects: areas (islands, lakes) count by a point inside each; lines (storm tracks, rivers, roads) "
         "count once in every area they cross or touch. "
@@ -117,13 +119,16 @@ DESCRIPTIONS = {
     "remove_inside": "Remove the part of a layer inside an area layer's (shown) areas (erase; 'away from', 'outside'). New layer with the same fields.",
     "nearest_distance": (
         "Add to each object of a layer the geodesic distance in km to the nearest (shown) object of another layer (other), and that "
-        "object's name. Adds fields 'km to nearest <other, singular>' and 'nearest <other, singular>' (other Rivers: 'km to nearest river'). "
+        "object's name. Adds fields 'km to nearest <other>' and 'nearest <other>', <other> being the other layer's name in the singular "
+        "and lower case when it is one to three plain words (Rivers: 'km to nearest river'; World cities: 'km to nearest world city'), "
+        "otherwise 'point', 'line' or 'area'; later steps can name the distance '#k'. "
         "Changes the layer; no new layer."
     ),
     "nearest_other": (
         "Add to each object the distance in km to the nearest other object of the same layer (isolation), and its name: fields "
-        "'km to nearest other <layer, singular>' ('km to nearest other hospital'). Only the shown objects count as others, so run it "
-        "before filtering that layer. Changes the layer; no new layer."
+        "'km to nearest other <layer, singular>' ('km to nearest other hospital'). Only the objects the layer shows count as others: "
+        "filter first to measure among some of them (the M8+ quakes among themselves); with one object shown, every other object "
+        "counts. Changes the layer; no new layer."
     ),
     "join_by_location": (
         "Add to each object of a layer the fields of the area it lies in (spatial join; lines and areas use a point on them): layer, "
