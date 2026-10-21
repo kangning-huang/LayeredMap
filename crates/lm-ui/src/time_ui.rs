@@ -170,11 +170,32 @@ pub fn controls(shell: &mut Shell, ui: &mut Ui, width: f32) {
             let date = g.date_label(time);
             let p = ui.painter();
             p.text(pos2(r.left(), r.top() + 1.0), Align2::LEFT_TOP, &date, theme::semibold(BODY), t.text_primary);
-            let caption = i18n::fmt(
-                "{layer} · {step} of {steps}",
-                &[("layer", &short(&l.display_name, 14)), ("step", &i18n::count(time as u64 + 1)), ("steps", &i18n::count(steps as u64))],
+            // The layer's name is shortened until the caption fits the column ("第 77 步，共 92 步"
+            // is longer than "77 of 92"), and the caption is clipped to the column regardless.
+            let caption = |n: usize| {
+                i18n::fmt(
+                    "{layer} · {step} of {steps}",
+                    &[
+                        ("layer", &short(&l.display_name, n)),
+                        ("step", &i18n::count(time as u64 + 1)),
+                        ("steps", &i18n::count(steps as u64)),
+                    ],
+                )
+            };
+            let width_of = |s: &str| p.layout_no_wrap(s.to_string(), theme::regular(CAPTION), t.text_secondary).size().x;
+            let mut n = 14;
+            let mut text = caption(n);
+            while n > 2 && width_of(&text) > label_w {
+                n -= 1;
+                text = caption(n);
+            }
+            ui.painter_at(r.expand2(vec2(0.0, 2.0))).text(
+                pos2(r.left(), r.bottom() - 1.0),
+                Align2::LEFT_BOTTOM,
+                text,
+                theme::regular(CAPTION),
+                t.text_secondary,
             );
-            p.text(pos2(r.left(), r.bottom() - 1.0), Align2::LEFT_BOTTOM, caption, theme::regular(CAPTION), t.text_secondary);
         });
     });
 }

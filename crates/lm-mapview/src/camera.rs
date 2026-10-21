@@ -85,7 +85,8 @@ pub fn ease_in_out_cubic(t: f64) -> f64 {
 pub enum Animation {
     /// A zoom step about a screen point (wheel notch, double-click, buttons, keys): 250 ms.
     Zoom { from: f64, to: f64, start: f64, anchor: (f64, f64) },
-    /// A flight to a place: 600–900 ms by distance, zooming out on the way when it is far.
+    /// A flight to a place: 600–900 ms by distance, along van Wijk & Nuij's smooth zoom/pan path
+    /// (zooming out on the way only as far as the distance asks for).
     Fly { from: Camera, to: Camera, start: f64, duration: f64 },
 }
 
@@ -113,20 +114,54 @@ pub fn step(anim: &Animation, cam: Camera, t: f64, w: f64, h: f64) -> (Camera, b
         }
         Animation::Fly { from, to, start, duration } => {
             let s = ((t - start) / duration).clamp(0.0, 1.0);
-            let e = ease_in_out_cubic(s);
-            // Zoom (in log space) with an arc: out by up to two levels at the middle for a long
-            // flight, so the destination comes into view before diving in.
-            let (z0, z1) = (zoom_of(from.res), zoom_of(to.res));
-            let dist_px = (to.center.x - from.center.x).hypot(to.center.y - from.center.y) / from.res.max(to.res);
-            let bump = if dist_px > w.max(h) { (dist_px / w.max(1.0)).log2().clamp(0.0, 2.0) } else { 0.0 };
-            let z = z0 + (z1 - z0) * e - bump * (std::f64::consts::PI * e).sin();
-            let c = Camera {
-                center: Coord::new(from.center.x + (to.center.x - from.center.x) * e, from.center.y + (to.center.y - from.center.y) * e),
-                res: res_of(z),
-            };
-            (c, s >= 1.0)
+            if s >= 1.0 {
+                return (to, true);
+            }
+            // Eased along the path's perceived length: the zoom changes at a steady perceived
+            // rate in the middle of the flight, and the pan and zoom arrive together.
+            (smooth_path(from, to, w, ease_in_out_cubic(s)), false)
         }
     }
+}
+
+/// How much a flight between distant places zooms out on the way (Mapbox's flyTo uses the same).
+pub const FLY_RHO: f64 = 1.42;
+
+/// The camera a fraction `p` (0–1) of the way along van Wijk & Nuij's optimal smooth zoom-and-pan
+/// path from `a` to `b`, for a view `w` points wide ("Smooth and efficient zooming and panning",
+/// 2003): the path that keeps the perceived motion steady, zooming out first only when the two
+/// views are far apart. `p` is a fraction of the path's perceived length.
+pub fn smooth_path(a: Camera, b: Camera, w: f64, p: f64) -> Camera {
+    let p = p.clamp(0.0, 1.0);
+    let w = w.max(1.0);
+    let (w0, w1) = (a.res * w, b.res * w);
+    let (dx, dy) = (b.center.x - a.center.x, b.center.y - a.center.y);
+    let u1 = dx.hypot(dy);
+    let linear = |p: f64| Camera {
+        center: Coord::new(a.center.x + dx * p, a.center.y + dy * p),
+        res: (a.res.ln() + (b.res.ln() - a.res.ln()) * p).exp(),
+    };
+    if !(u1.is_finite() && w0 > 0.0 && w1 > 0.0) || u1 < 1e-9 * w0.max(w1) {
+        // No pan: a zoom at a steady rate (log-resolution linear in p).
+        return linear(p);
+    }
+    let r2 = FLY_RHO * FLY_RHO;
+    let b0 = (w1 * w1 - w0 * w0 + r2 * r2 * u1 * u1) / (2.0 * w0 * r2 * u1);
+    let b1 = (w1 * w1 - w0 * w0 - r2 * r2 * u1 * u1) / (2.0 * w1 * r2 * u1);
+    // r = ln(-b + sqrt(b² + 1)) = -asinh(b), without the cancellation for large b.
+    let (r0, r1) = (-b0.asinh(), -b1.asinh());
+    let total = (r1 - r0) / FLY_RHO;
+    if !total.is_finite() {
+        return linear(p);
+    }
+    let s = p * total;
+    let u = w0 / r2 * (r0.cosh() * (FLY_RHO * s + r0).tanh() - r0.sinh());
+    let width = w0 * r0.cosh() / (FLY_RHO * s + r0).cosh();
+    let f = u / u1;
+    if !(f.is_finite() && width.is_finite() && width > 0.0) {
+        return linear(p);
+    }
+    Camera { center: Coord::new(a.center.x + dx * f, a.center.y + dy * f), res: width / w }
 }
 
 /// The map's centre in longitude/latitude.
@@ -213,6 +248,61 @@ mod tests {
             assert!(done);
             assert!((c.center.x - to.center.x).abs() < 1e-6 && (zoom_of(c.res) - z).abs() < 1e-9);
         }
+    }
+
+    fn cam(lon: f64, lat: f64, z: f64) -> Camera {
+        Camera { center: lonlat_to_merc(Coord::new(lon, lat)), res: res_of(z) }
+    }
+
+    #[test]
+    fn the_smooth_path_starts_and_ends_on_its_views() {
+        let (a, b) = (cam(-62.0, 33.0, 4.6), cam(-73.5, 40.2, 6.5));
+        let s = smooth_path(a, b, 1280.0, 0.0);
+        assert!((s.center.x - a.center.x).abs() < 1e-6 && (s.res / a.res - 1.0).abs() < 1e-9);
+        let e = smooth_path(a, b, 1280.0, 1.0);
+        assert!((e.center.x - b.center.x).abs() < 1e-3 && (e.center.y - b.center.y).abs() < 1e-3);
+        assert!((zoom_of(e.res) - 6.5).abs() < 1e-9);
+    }
+
+    /// Shanghai to Lisbon at the same zoom: the path zooms out on the way and back in.
+    #[test]
+    fn a_far_flight_zooms_out_on_the_way() {
+        let (a, b) = (cam(121.47, 31.23, 11.0), cam(-9.14, 38.72, 11.0));
+        let mid = smooth_path(a, b, 1280.0, 0.5);
+        assert!(zoom_of(mid.res) < 5.0, "middle at z{}", zoom_of(mid.res));
+    }
+
+    /// A short hop that zooms in (the search landing on a region): the zoom only ever goes in,
+    /// and the content never jumps between steps.
+    #[test]
+    fn a_landing_zooms_in_steadily_without_jumps() {
+        let (a, b) = (cam(-62.0, 33.0, 4.6), cam(-73.5, 40.2, 6.5));
+        let (w, h) = (1280.0, 800.0);
+        let n = 120;
+        let mut prev = a;
+        let mut steps = Vec::new();
+        for i in 1..=n {
+            let c = smooth_path(a, b, w, f64::from(i) / f64::from(n));
+            assert!(zoom_of(c.res) >= zoom_of(prev.res) - 1e-9, "zoomed back out at step {i}");
+            // How far the screen's centre point moves between steps, in points.
+            let (sx, sy) = c.to_screen(prev.to_map(w / 2.0, h / 2.0, w, h), w, h);
+            steps.push((sx - w / 2.0).hypot(sy - h / 2.0) + (c.res / prev.res).ln().abs() * w);
+            prev = c;
+        }
+        let mean = steps.iter().sum::<f64>() / f64::from(n);
+        let max = steps.iter().copied().fold(0.0, f64::max);
+        assert!(max < 2.0 * mean, "uneven path: largest step {max:.1}, mean {mean:.1}");
+    }
+
+    #[test]
+    fn a_flight_eases_in_and_out() {
+        let (from, dest) = (cam(121.47, 31.23, 11.0), Coord::new(-9.14, 38.72));
+        let a = fly(from, dest, 11.0, 0.0, 1280.0);
+        let Animation::Fly { duration, .. } = a else { panic!() };
+        let at = |t: f64| step(&a, from, t, 1280.0, 800.0).0;
+        let early = (at(duration * 0.02).center.x - from.center.x).abs();
+        let middle = (at(duration * 0.52).center.x - at(duration * 0.50).center.x).abs();
+        assert!(early < middle, "starts gently ({early}) and is fastest mid-flight ({middle})");
     }
 
     #[test]

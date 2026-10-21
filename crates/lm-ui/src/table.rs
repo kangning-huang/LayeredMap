@@ -359,18 +359,18 @@ pub fn drawer(shell: &mut Shell, ui: &mut Ui, map: egui::Rect, left: f32, right:
                     // ⌘T is waiting to put the keyboard on that row: egui applies scroll on the
                     // next frame, and until then the selected row is not among the drawn ones.
                     let bring_into_view = shell.table.focus || selected != shell.table.scrolled_for;
-                    if selected != shell.table.scrolled_for {
+                    let pos = selected.first().and_then(|s| rows.iter().position(|r| r == s));
+                    // While the rows are still being built (the table just opened), the selected row
+                    // isn't among them yet: try again next frame rather than marking it scrolled to,
+                    // or a row far down stays out of view.
+                    if selected != shell.table.scrolled_for && (pos.is_some() || !shell.table.busy()) {
                         shell.table.scrolled_for = selected.clone();
                     }
                     // show_rows uses ROW_H + item_spacing.y; match that or the selected row stays off-screen.
                     let row_step = ROW_H + ui.spacing().item_spacing.y;
-                    let scroll = if bring_into_view {
-                        match selected.first().and_then(|s| rows.iter().position(|r| r == s)) {
-                            Some(pos) => scroll.animated(false).vertical_scroll_offset((pos as f32 * row_step - row_step * 3.0).max(0.0)),
-                            None => scroll,
-                        }
-                    } else {
-                        scroll
+                    let scroll = match pos.filter(|_| bring_into_view) {
+                        Some(pos) => scroll.animated(false).vertical_scroll_offset((pos as f32 * row_step - row_step * 3.0).max(0.0)),
+                        None => scroll,
                     };
                     scroll.show_rows(ui, ROW_H, rows.len(), |ui, range| {
                         let first = range.start;

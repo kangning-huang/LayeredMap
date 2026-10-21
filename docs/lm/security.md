@@ -27,6 +27,7 @@ Every network request in NimbleMap asks `lm_net::allowed(purpose)` right before 
 | Pro's assistant (OpenRouter directly in test builds, or the Ask proxy) | `lm-ask` `openrouter`, `proxy` | Assistant |
 | Pro's account: sign-in, refresh, sign-out, delete (docs/lm/accounts-design.md) | `lm-account` `http` (`GatedHttp`) | Account |
 | Update feed | `lm-ui` `update`, through `lm_net::get_text` | UpdateCheck |
+| Update Now's disk image (only when the user presses it; docs/lm/update-feed.md) | `lm-ui` `update::fetch`, through `lm_net::download` | UpdateDownload |
 | Data library (WP5.4, not on this branch yet) | must use `lm_net::get_text` or ask `allowed(Purpose::Library)` | Library |
 
 Not network: place search reads the bundled GeoNames index. Dictation uses Apple's recognizer

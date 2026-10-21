@@ -152,6 +152,9 @@ impl eframe::App for App {
                         Step::Fly(..) => 6.0,
                         // The assistant answers in a few seconds; give it time before the next step.
                         Step::Other(Command::Ask(_)) => 15.0,
+                        Step::Other(Command::CheckForUpdates) => 5.0,
+                        // Update Now closes the window itself once the new version is staged.
+                        Step::Other(Command::UpdateNow) => 120.0,
                         _ => 2.5,
                     };
                     self.shell.command(ctx, step.command());
@@ -309,6 +312,9 @@ impl eframe::App for App {
 
     fn on_exit(&mut self) {
         self.shell.shutdown();
+        // A downloaded, verified update is swapped in now that the state is saved, and opened when
+        // the user pressed Update Now or Restart Now (docs/lm/update-feed.md › Installing).
+        lm_ui::update::finish_at_exit(self.shell.take_staged_update());
     }
 
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
@@ -350,6 +356,8 @@ impl eframe::App for App {
 /// selected layer (`card apply_filter` presses the filter's Apply); `time N` shows the n-th time step;
 /// `export` or `export-image` opens the map image sheet; `package` opens the map package dialog;
 /// `feedback` opens Help › Send Feedback… (nothing is sent without pressing Send);
+/// `check-updates` runs NimbleMap › Check for Updates… and `update-now` presses the notice's
+/// Update Now (the update dry run, docs/lm/update-feed.md; the window closes once it is staged);
 /// `theme light|dark|system` sets the appearance and `language CODE|auto` the interface language
 /// (for screenshots; tour runs never save prefs).
 #[derive(Clone, Debug, PartialEq)]
@@ -410,6 +418,8 @@ impl Step {
             "export-image" => Step::Other(Command::ExportMapImage),
             "package" => Step::Other(Command::ExportPackage),
             "feedback" => Step::Other(Command::ShowFeedback),
+            "check-updates" => Step::Other(Command::CheckForUpdates),
+            "update-now" => Step::Other(Command::UpdateNow),
             "redo" => Step::Other(Command::Redo),
             "language" if rest.trim() == lm_core::i18n::AUTO || lm_core::i18n::Lang::from_code(rest).is_some() => {
                 Step::Other(Command::SetLanguage(rest.trim().to_string()))
@@ -466,6 +476,8 @@ fn main() -> eframe::Result {
     // %LOCALAPPDATA%\LayeredMap\Logs).
     diagnostics::install_logger();
     diagnostics::install_panic_hook(app_name);
+    // After an update: the previous version, moved aside at its quit, is removed now.
+    lm_ui::update::after_launch();
     let mut options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_title(app_name)
@@ -520,8 +532,9 @@ fn main() -> eframe::Result {
             if !ephemeral {
                 shell.set_question_log(question_log_path());
                 shell.start_autosave(&autosave_dir());
-                // The update feed (off unless built with LM_UPDATE_FEED_URL), on its own thread.
-                lm_ui::update::start(&cc.egui_ctx);
+                // The update feed (off unless built with LM_UPDATE_FEED_URL, as releases are), on
+                // its own thread.
+                shell.start_update_check(&cc.egui_ctx);
             }
             // Files passed on the command line (and Open With: through macOS, or Explorer starting
             // `layeredmap.exe "<file>"` on Windows) are opened.
@@ -550,6 +563,7 @@ fn main() -> eframe::Result {
                 shell.export_shown(),
                 shell.library_available(),
                 shell.account_available(),
+                lm_ui::update::available(),
                 shell.language(),
                 &cc.egui_ctx,
                 hwnd,

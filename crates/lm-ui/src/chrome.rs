@@ -581,6 +581,7 @@ pub fn credits(shell: &mut Shell, ctx: &egui::Context) {
                 (tn!("Map data"), tn!("© OpenStreetMap contributors (ODbL), through the Protomaps basemap")),
                 (tn!("Offline basemap"), tn!("Natural Earth (public domain)")),
                 (tn!("Place search"), tn!("GeoNames (geonames.org), CC BY 4.0")),
+                (tn!("Chinese place names"), tn!("OpenCC (Apache-2.0)")),
                 (tn!("Fonts"), tn!("Inter and Noto Sans SC (SIL Open Font License 1.1)")),
                 (tn!("Icons"), tn!("Phosphor Icons (MIT)")),
                 (tn!("Engine"), tn!("RustGIS (Apache-2.0)")),
