@@ -79,8 +79,10 @@ Findings from the check:
 - GitHub raw serves `text/plain`, and some CSVs may show as text in a browser; the page's tip says
   to press ⌘S.
 
-The card pictures are hand-drawn theme illustrations, not data previews: `web/lm/img/data/*.svg`,
-written by `tools/lm/site/data_art.py` (320×180, 2–3 KB each, own light and dark palette).
+The card pictures are explanatory illustrations in the manner of journal figures (cut-away block
+diagrams, sections, globes), not data previews: `web/lm/img/data/*.svg`, written by
+`tools/lm/site/data_art.py` from the shared kit in `tools/lm/site/dsart/` (320×180, about 7–48 KB
+each, no text). Each is a light plate; `data.css` dims it in dark mode.
 
 ## Map data you already have (intro section, not counted)
 
