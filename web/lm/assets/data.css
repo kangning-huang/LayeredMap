@@ -40,12 +40,15 @@ section.ds-section { padding: 52px 0; }
 .ds-why { margin: 0 0 16px; color: var(--ink-2); font-size: 15.5px; flex: 1; overflow-wrap: break-word; }
 .ds-why code, .claims code { overflow-wrap: anywhere; }
 /* The card's illustration: full-bleed across the top, like the home page's step pictures. Each SVG
-   carries its own light and dark palette. */
+   is a self-contained light plate (an <img> can't read the theme); in dark mode it is dimmed here,
+   so it follows the theme button as well as the system setting. */
 .ds-art {
   display: block; width: calc(100% + 40px); max-width: none; height: auto; aspect-ratio: 16 / 9;
   margin: -20px -20px 16px; border-bottom: 1px solid var(--rule);
   border-radius: calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0 0; background: var(--paper-2);
 }
+:root[data-theme="dark"] .ds-art { filter: brightness(.8) contrast(1.04); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .ds-art { filter: brightness(.8) contrast(1.04); } }
 /* Why a card has no one-click file, and what to click on the source's page. */
 .ds-how { margin: -6px 0 14px; font-size: 13.5px; line-height: 1.5; color: var(--ink-3); overflow-wrap: break-word; }
 .ds-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }

@@ -27,9 +27,9 @@
 <meta property="og:image" content="../img/open-storms.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
-<link rel="stylesheet" href="../assets/site.css">
-<link rel="stylesheet" href="../assets/data.css">
-<script src="../assets/site.js"></script>
+<link rel="stylesheet" href="../assets/site.css?v=072">
+<link rel="stylesheet" href="../assets/data.css?v=3">
+<script src="../assets/site.js?v=072"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -91,7 +91,31 @@
       <p class="dl-fine">무료 · 약 109MB · macOS 13 이상 · Apple 실리콘 · 오프라인에서도 작동</p>
       <p class="dl-fine"><a href="download.html#get">처음 열 때 macOS가 허용을 요청합니다: 여는 방법</a></p>
     </div>
-    <div class="hero-shot hero-film">
+    <div class="hero-shot showcase drop-scene" data-rotate="3500">
+      <figure class="frame stage">
+        <img class="slide is-on" src="../img/open-storms.jpg" alt="IBTrACS_storm_tracks_1980-2026.shp 파일을 연 NimbleMap. 아시아와 태평양 위의 폭풍 경로 4,999개가 최대 풍속에 따라 색칠되어 있고, 레이어 카드에 파일 이름과 범례가 나와 있습니다." width="1600" height="996">
+        <img class="slide" src="../img/open-earthquakes.jpg" alt="usgs_earthquakes_M6plus_1900-2026.gpkg를 연 NimbleMap. 태평양을 둘러싼 지진 14,537건이 규모에 따라 색칠되어 있습니다." width="1600" height="996" loading="lazy" aria-hidden="true">
+        <img class="slide" src="../img/open-heatwave.jpg" alt="GDO_heatwave_intensity_JJA_2023.nc를 2023년 7월 16일로 연 NimbleMap. 세 대륙에 걸친 폭염 강도가 붉은색으로 표시되고, 지도 아래에 시간 슬라이더가 있습니다." width="1600" height="996" loading="lazy" aria-hidden="true">
+        <img class="slide" src="../img/open-relief.jpg" alt="ETOPO_2022_relief_30min.tif를 연 NimbleMap. 지구 전체의 육지와 해저 고도가 색상 램프로 표시되어 있습니다." width="1600" height="996" loading="lazy" aria-hidden="true">
+        <img class="slide" src="../img/open-volcanoes.jpg" alt="NCEI_volcano_locations.csv를 연 NimbleMap. 환태평양 조산대를 따라 화산 1,609곳이 점으로 표시되고 고도에 따라 색칠되어 있습니다." width="1600" height="996" loading="lazy" aria-hidden="true">
+      </figure>
+      <svg class="drop-arrow" viewBox="0 0 110 70" aria-hidden="true"><path d="M6 64C26 30 56 14 98 10"/><path class="head" d="M88 3l11 7-10 8"/></svg>
+      <div class="files" role="group" aria-label="내려받은 지도 파일이 든 폴더: 하나를 고르면 NimbleMap에서 열린 모습을 볼 수 있습니다">
+        <p class="files-head"><svg class="folder" viewBox="0 0 20 20" aria-hidden="true"><path d="M2 5.5A1.5 1.5 0 0 1 3.5 4h4l1.6 1.8h7.4A1.5 1.5 0 0 1 18 7.3v7.2a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 2 14.5z"/></svg><span>지도 데이터</span><button type="button" class="pause" aria-label="슬라이드쇼 일시 정지" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><rect class="bars" x="4" y="3" width="2.6" height="10" rx="1"/><rect class="bars" x="9.4" y="3" width="2.6" height="10" rx="1"/><path class="play" d="M5 3.2v9.6a.6.6 0 0 0 .9.5l7.4-4.8a.6.6 0 0 0 0-1L5.9 2.7a.6.6 0 0 0-.9.5z"/></svg></button></p>
+        <button type="button" class="kind file" data-i="0" data-caption="IBTrACS_storm_tracks_1980-2026.shp: 폭풍 경로 4,999개, 최대 풍속별 색칠" aria-pressed="true"><span class="ext">SHP</span><span class="fname">IBTrACS_storm_tracks_1980-2026.shp</span><span class="fsize">5.3 MB</span><svg class="grab" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5l10 7.2-4.4.7 2.6 5.3-2.2 1-2.5-5.3L5 14.6z"/></svg></button>
+        <button type="button" class="kind file" data-i="1" data-caption="usgs_earthquakes_M6plus_1900-2026.gpkg: 대지진 14,537건, 규모별 색칠" aria-pressed="false"><span class="ext">GPKG</span><span class="fname">usgs_earthquakes_M6plus_1900-2026.gpkg</span><span class="fsize">2.2 MB</span><svg class="grab" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5l10 7.2-4.4.7 2.6 5.3-2.2 1-2.5-5.3L5 14.6z"/></svg></button>
+        <button type="button" class="kind file" data-i="2" data-caption="GDO_heatwave_intensity_JJA_2023.nc: 일별 폭염 격자, 시간 슬라이더 포함" aria-pressed="false"><span class="ext">NC</span><span class="fname">GDO_heatwave_intensity_JJA_2023.nc</span><span class="fsize">12.6 MB</span><svg class="grab" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5l10 7.2-4.4.7 2.6 5.3-2.2 1-2.5-5.3L5 14.6z"/></svg></button>
+        <button type="button" class="kind file" data-i="3" data-caption="ETOPO_2022_relief_30min.tif: 지구 전체의 육지와 해저 고도" aria-pressed="false"><span class="ext">TIF</span><span class="fname">ETOPO_2022_relief_30min.tif</span><span class="fsize">375 KB</span><svg class="grab" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5l10 7.2-4.4.7 2.6 5.3-2.2 1-2.5-5.3L5 14.6z"/></svg></button>
+        <button type="button" class="kind file" data-i="4" data-caption="NCEI_volcano_locations.csv: 화산 1,609곳, 고도별 색칠" aria-pressed="false"><span class="ext">CSV</span><span class="fname">NCEI_volcano_locations.csv</span><span class="fsize">106 KB</span><svg class="grab" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5l10 7.2-4.4.7 2.6 5.3-2.2 1-2.5-5.3L5 14.6z"/></svg></button>
+      </div>
+      <p class="kind-caption">IBTrACS_storm_tracks_1980-2026.shp: 폭풍 경로 4,999개, 최대 풍속별 색칠</p>
+    </div>
+  </div>
+</section>
+
+<section class="film-band" id="film">
+  <div class="wrap">
+    <div class="hero-film">
       <figure class="frame film">
         <video class="film-loop" autoplay muted loop playsinline preload="metadata" poster="../img/hero-poster.jpg" width="1280" height="720" aria-label="NimbleMap을 보여 주는 78초 영상: 지도 파일을 끌어다 열고, 약 5,000개의 폭풍 경로를 검색하고, 지진을 클릭하고, 여름 폭염을 하루씩 재생하고, Pro로 질문에 답합니다."><source src="../video/hero-loop.mp4" type="video/mp4"></video>
         <img class="film-still" src="../img/hero-poster.jpg" alt="NimbleMap을 보여 주는 78초 영상: 지도 파일을 끌어다 열고, 약 5,000개의 폭풍 경로를 검색하고, 지진을 클릭하고, 여름 폭염을 하루씩 재생하고, Pro로 질문에 답합니다." width="1280" height="720" loading="lazy">
@@ -99,6 +123,43 @@
       </figure>
       <p class="film-caption">78초로 보는 NimbleMap: 파일을 끌어다 놓고, 살펴보고, 질문하세요.</p>
     </div>
+  </div>
+</section>
+
+<section id="data">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">무료 데이터</p>
+      <h2>데이터는 어디서 구하나요?</h2>
+      <p class="lede">실시간 지진부터 로마 가도까지, 직접 고른 공개 데이터셋. 대부분 클릭 한 번이면 내려받을 수 있습니다.</p>
+    </div>
+    <div class="ds-grid ds-teaser">
+        <article class="ds">
+          <img class="ds-art" src="../img/data/earthquakes.svg?v=3" alt="" width="320" height="180" loading="lazy" decoding="async">
+          <h3>실시간 지진</h3>
+          <p class="ds-src">USGS Earthquake Hazards Program</p>
+          <div class="ds-actions"><a class="ds-get" href="https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.csv" download aria-label="CSV 다운로드 · 2 MB"><svg class="dl-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v8m0 0L4.8 6.8M8 10l3.2-3.2M3 13h10"/></svg><span>CSV · 2 MB</span></a><a class="ds-more" href="https://earthquake.usgs.gov/earthquakes/feed/v1.0/csv.php" rel="noopener" target="_blank">출처 페이지<span aria-hidden="true"> ↗</span></a></div>
+        </article>
+        <article class="ds">
+          <img class="ds-art" src="../img/data/tornadoes.svg?v=3" alt="" width="320" height="180" loading="lazy" decoding="async">
+          <h3>1950년 이후 미국의 모든 토네이도</h3>
+          <p class="ds-src">NOAA Storm Prediction Center</p>
+          <div class="ds-actions"><a class="ds-get" href="https://www.spc.noaa.gov/gis/svrgis/zipped/1950-2025-torn-aspath.zip" download aria-label="Shapefile (zip) 다운로드 · 5 MB"><svg class="dl-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v8m0 0L4.8 6.8M8 10l3.2-3.2M3 13h10"/></svg><span>Shapefile · 5 MB</span></a><a class="ds-more" href="https://www.spc.noaa.gov/gis/svrgis/" rel="noopener" target="_blank">출처 페이지<span aria-hidden="true"> ↗</span></a></div>
+        </article>
+        <article class="ds">
+          <img class="ds-art" src="../img/data/precipitation.svg?v=3" alt="" width="320" height="180" loading="lazy" decoding="async">
+          <h3>1979년 이후 전 세계의 비와 눈</h3>
+          <p class="ds-src">GPCP v2.3, via NOAA PSL</p>
+          <div class="ds-actions"><a class="ds-get" href="https://downloads.psl.noaa.gov/Datasets/gpcp/precip.mon.mean.nc" download aria-label="NetCDF 다운로드 · 20 MB"><svg class="dl-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v8m0 0L4.8 6.8M8 10l3.2-3.2M3 13h10"/></svg><span>NetCDF · 20 MB</span></a><a class="ds-more" href="https://psl.noaa.gov/data/gridded/data.gpcp.html" rel="noopener" target="_blank">출처 페이지<span aria-hidden="true"> ↗</span></a></div>
+        </article>
+        <article class="ds">
+          <img class="ds-art" src="../img/data/roman-roads.svg?v=3" alt="" width="320" height="180" loading="lazy" decoding="async">
+          <h3>로마 제국의 도로</h3>
+          <p class="ds-src">Itiner-e, de Soto et al. 2025 (Zenodo)</p>
+          <div class="ds-actions"><a class="ds-get" href="https://zenodo.org/records/17122148/files/itinere_roads.gpkg?download=1" download aria-label="GeoPackage 다운로드 · 34 MB"><svg class="dl-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v8m0 0L4.8 6.8M8 10l3.2-3.2M3 13h10"/></svg><span>GeoPackage · 34 MB</span></a><a class="ds-more" href="https://zenodo.org/records/17122148" rel="noopener" target="_blank">출처 페이지<span aria-hidden="true"> ↗</span></a></div>
+        </article>
+    </div>
+    <p class="more-link"><a class="btn btn-quiet" href="data.html">데이터셋 34개 모두 보기 →</a></p>
   </div>
 </section>
 
@@ -121,43 +182,6 @@
       <li><p class="exts"><span>.nc</span></p><h3>NetCDF</h3><p>기후·날씨 격자를 시간 슬라이더로 재생합니다.</p></li>
     </ul>
     <p class="formats-note">Shapefile, GeoPackage, NetCDF 파일은 더블클릭하면 NimbleMap에서 열립니다. 다른 파일은 더블클릭하면 다른 앱에서 열리므로, NimbleMap으로 끌어다 놓거나 오른쪽 클릭 › 다음으로 열기 › NimbleMap을 고르세요.</p>
-  </div>
-</section>
-
-<section id="data">
-  <div class="wrap">
-    <div class="section-head">
-      <p class="eyebrow">무료 데이터</p>
-      <h2>데이터는 어디서 구하나요?</h2>
-      <p class="lede">실시간 지진부터 로마 가도까지, 직접 고른 공개 데이터셋. 대부분 클릭 한 번이면 내려받을 수 있습니다.</p>
-    </div>
-    <div class="ds-grid ds-teaser">
-        <article class="ds">
-          <img class="ds-art" src="../img/data/earthquakes.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
-          <h3>실시간 지진</h3>
-          <p class="ds-src">USGS Earthquake Hazards Program</p>
-          <div class="ds-actions"><a class="ds-get" href="https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.csv" download>CSV 다운로드 · 2 MB</a><a class="ds-more" href="https://earthquake.usgs.gov/earthquakes/feed/v1.0/csv.php" rel="noopener" target="_blank">출처 페이지<span aria-hidden="true"> ↗</span></a></div>
-        </article>
-        <article class="ds">
-          <img class="ds-art" src="../img/data/tornadoes.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
-          <h3>1950년 이후 미국의 모든 토네이도</h3>
-          <p class="ds-src">NOAA Storm Prediction Center</p>
-          <div class="ds-actions"><a class="ds-get" href="https://www.spc.noaa.gov/gis/svrgis/zipped/1950-2025-torn-aspath.zip" download>Shapefile (zip) 다운로드 · 5 MB</a><a class="ds-more" href="https://www.spc.noaa.gov/gis/svrgis/" rel="noopener" target="_blank">출처 페이지<span aria-hidden="true"> ↗</span></a></div>
-        </article>
-        <article class="ds">
-          <img class="ds-art" src="../img/data/precipitation.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
-          <h3>1979년 이후 전 세계의 비와 눈</h3>
-          <p class="ds-src">GPCP v2.3, via NOAA PSL</p>
-          <div class="ds-actions"><a class="ds-get" href="https://downloads.psl.noaa.gov/Datasets/gpcp/precip.mon.mean.nc" download>NetCDF 다운로드 · 20 MB</a><a class="ds-more" href="https://psl.noaa.gov/data/gridded/data.gpcp.html" rel="noopener" target="_blank">출처 페이지<span aria-hidden="true"> ↗</span></a></div>
-        </article>
-        <article class="ds">
-          <img class="ds-art" src="../img/data/roman-roads.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
-          <h3>로마 제국의 도로</h3>
-          <p class="ds-src">Itiner-e, de Soto et al. 2025 (Zenodo)</p>
-          <div class="ds-actions"><a class="ds-get" href="https://zenodo.org/records/17122148/files/itinere_roads.gpkg?download=1" download>GeoPackage 다운로드 · 34 MB</a><a class="ds-more" href="https://zenodo.org/records/17122148" rel="noopener" target="_blank">출처 페이지<span aria-hidden="true"> ↗</span></a></div>
-        </article>
-    </div>
-    <p class="more-link"><a class="btn btn-quiet" href="data.html">데이터셋 34개 모두 보기 →</a></p>
   </div>
 </section>
 

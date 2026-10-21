@@ -735,7 +735,7 @@ def end_card(im, t):
     py = 836 + (1 - a2) * 10
     d.rounded_rectangle([OW / 2 - tw / 2 - 32, py - 35, OW / 2 + tw / 2 + 32, py + 35], 35, fill=ACCENT + (int(255 * a2),))
     d.text((OW / 2, py + 1), txt, font=f, fill=(255, 255, 255, int(255 * a2)), anchor='mm')
-    d.text((OW / 2, 940 + (1 - a3) * 8), 'kangning‐huang.github.io/NimbleMap', font=font(FONT_REG, 38),
+    d.text((OW / 2, 940 + (1 - a3) * 8), 'nimblemap.com', font=font(FONT_REG, 38),
            fill=(55, 60, 72, int(255 * a3)), anchor='mm')
     im.alpha_composite(ov)
 

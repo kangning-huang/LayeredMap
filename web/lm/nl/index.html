@@ -27,9 +27,9 @@
 <meta property="og:image" content="../img/open-storms.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
-<link rel="stylesheet" href="../assets/site.css">
-<link rel="stylesheet" href="../assets/data.css">
-<script src="../assets/site.js"></script>
+<link rel="stylesheet" href="../assets/site.css?v=072">
+<link rel="stylesheet" href="../assets/data.css?v=3">
+<script src="../assets/site.js?v=072"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -91,7 +91,31 @@
       <p class="dl-fine">Gratis · ongeveer 109 MB · macOS 13 of nieuwer · Apple silicon · werkt offline</p>
       <p class="dl-fine"><a href="download.html#get">De eerste keer vraagt macOS om toestemming — zo opent u de app</a></p>
     </div>
-    <div class="hero-shot hero-film">
+    <div class="hero-shot showcase drop-scene" data-rotate="3500">
+      <figure class="frame stage">
+        <img class="slide is-on" src="../img/open-storms.jpg" alt="NimbleMap met het bestand IBTrACS_storm_tracks_1980-2026.shp geopend: 4.999 stormbanen boven Azië en de Grote Oceaan, gekleurd naar hoogste windsnelheid, met de infokaart van de kaartlaag die de bestandsnaam en de legenda toont." width="1600" height="996">
+        <img class="slide" src="../img/open-earthquakes.jpg" alt="NimbleMap met usgs_earthquakes_M6plus_1900-2026.gpkg geopend: 14.537 aardbevingen in een ring rond de Grote Oceaan, gekleurd naar magnitude." width="1600" height="996" loading="lazy" aria-hidden="true">
+        <img class="slide" src="../img/open-heatwave.jpg" alt="NimbleMap met GDO_heatwave_intensity_JJA_2023.nc geopend op 16 juli 2023: hittegolfintensiteit in roodtinten boven drie continenten en de tijdbalk onder de kaart." width="1600" height="996" loading="lazy" aria-hidden="true">
+        <img class="slide" src="../img/open-relief.jpg" alt="NimbleMap met ETOPO_2022_relief_30min.tif geopend: hoogte van land en zeebodem van de hele planeet in een kleurverloop." width="1600" height="996" loading="lazy" aria-hidden="true">
+        <img class="slide" src="../img/open-volcanoes.jpg" alt="NimbleMap met NCEI_volcano_locations.csv geopend: 1.609 vulkanen als punten rond de Pacifische Ring van Vuur, gekleurd naar hoogte." width="1600" height="996" loading="lazy" aria-hidden="true">
+      </figure>
+      <svg class="drop-arrow" viewBox="0 0 110 70" aria-hidden="true"><path d="M6 64C26 30 56 14 98 10"/><path class="head" d="M88 3l11 7-10 8"/></svg>
+      <div class="files" role="group" aria-label="Een map met gedownloade kaartbestanden: kies er een om het geopend in NimbleMap te zien">
+        <p class="files-head"><svg class="folder" viewBox="0 0 20 20" aria-hidden="true"><path d="M2 5.5A1.5 1.5 0 0 1 3.5 4h4l1.6 1.8h7.4A1.5 1.5 0 0 1 18 7.3v7.2a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 2 14.5z"/></svg><span>kaartgegevens</span><button type="button" class="pause" aria-label="Diavoorstelling pauzeren" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><rect class="bars" x="4" y="3" width="2.6" height="10" rx="1"/><rect class="bars" x="9.4" y="3" width="2.6" height="10" rx="1"/><path class="play" d="M5 3.2v9.6a.6.6 0 0 0 .9.5l7.4-4.8a.6.6 0 0 0 0-1L5.9 2.7a.6.6 0 0 0-.9.5z"/></svg></button></p>
+        <button type="button" class="kind file" data-i="0" data-caption="IBTrACS_storm_tracks_1980-2026.shp: 4.999 stormbanen, gekleurd naar hoogste windsnelheid" aria-pressed="true"><span class="ext">SHP</span><span class="fname">IBTrACS_storm_tracks_1980-2026.shp</span><span class="fsize">5,3 MB</span><svg class="grab" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5l10 7.2-4.4.7 2.6 5.3-2.2 1-2.5-5.3L5 14.6z"/></svg></button>
+        <button type="button" class="kind file" data-i="1" data-caption="usgs_earthquakes_M6plus_1900-2026.gpkg: 14.537 zware aardbevingen, gekleurd naar magnitude" aria-pressed="false"><span class="ext">GPKG</span><span class="fname">usgs_earthquakes_M6plus_1900-2026.gpkg</span><span class="fsize">2,2 MB</span><svg class="grab" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5l10 7.2-4.4.7 2.6 5.3-2.2 1-2.5-5.3L5 14.6z"/></svg></button>
+        <button type="button" class="kind file" data-i="2" data-caption="GDO_heatwave_intensity_JJA_2023.nc: hittegolfroosters per dag, met een tijdbalk" aria-pressed="false"><span class="ext">NC</span><span class="fname">GDO_heatwave_intensity_JJA_2023.nc</span><span class="fsize">12,6 MB</span><svg class="grab" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5l10 7.2-4.4.7 2.6 5.3-2.2 1-2.5-5.3L5 14.6z"/></svg></button>
+        <button type="button" class="kind file" data-i="3" data-caption="ETOPO_2022_relief_30min.tif: hoogte van land en zeebodem van de hele planeet" aria-pressed="false"><span class="ext">TIF</span><span class="fname">ETOPO_2022_relief_30min.tif</span><span class="fsize">375 KB</span><svg class="grab" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5l10 7.2-4.4.7 2.6 5.3-2.2 1-2.5-5.3L5 14.6z"/></svg></button>
+        <button type="button" class="kind file" data-i="4" data-caption="NCEI_volcano_locations.csv: 1.609 vulkanen, gekleurd naar hoogte" aria-pressed="false"><span class="ext">CSV</span><span class="fname">NCEI_volcano_locations.csv</span><span class="fsize">106 KB</span><svg class="grab" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5l10 7.2-4.4.7 2.6 5.3-2.2 1-2.5-5.3L5 14.6z"/></svg></button>
+      </div>
+      <p class="kind-caption">IBTrACS_storm_tracks_1980-2026.shp: 4.999 stormbanen, gekleurd naar hoogste windsnelheid</p>
+    </div>
+  </div>
+</section>
+
+<section class="film-band" id="film">
+  <div class="wrap">
+    <div class="hero-film">
       <figure class="frame film">
         <video class="film-loop" autoplay muted loop playsinline preload="metadata" poster="../img/hero-poster.jpg" width="1280" height="720" aria-label="Een film van 78 seconden over NimbleMap: kaartbestanden worden erin gesleept en geopend, bijna 5.000 stormbanen doorzocht, een aardbeving aangeklikt, een zomerse hittegolf dag voor dag afgespeeld en een vraag beantwoord met Pro."><source src="../video/hero-loop.mp4" type="video/mp4"></video>
         <img class="film-still" src="../img/hero-poster.jpg" alt="Een film van 78 seconden over NimbleMap: kaartbestanden worden erin gesleept en geopend, bijna 5.000 stormbanen doorzocht, een aardbeving aangeklikt, een zomerse hittegolf dag voor dag afgespeeld en een vraag beantwoord met Pro." width="1280" height="720" loading="lazy">
@@ -99,6 +123,43 @@
       </figure>
       <p class="film-caption">NimbleMap in 78 seconden: sleep een bestand erin, verken het en stel er een vraag over.</p>
     </div>
+  </div>
+</section>
+
+<section id="data">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Gratis gegevens</p>
+      <h2>Waar vind ik kaartgegevens?</h2>
+      <p class="lede">Zorgvuldig gekozen openbare datasets, van actuele aardbevingen tot Romeinse wegen. De meeste downloadt u met één klik.</p>
+    </div>
+    <div class="ds-grid ds-teaser">
+        <article class="ds">
+          <img class="ds-art" src="../img/data/earthquakes.svg?v=3" alt="" width="320" height="180" loading="lazy" decoding="async">
+          <h3>Aardbevingen, live</h3>
+          <p class="ds-src">USGS Earthquake Hazards Program</p>
+          <div class="ds-actions"><a class="ds-get" href="https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.csv" download aria-label="CSV downloaden · 2 MB"><svg class="dl-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v8m0 0L4.8 6.8M8 10l3.2-3.2M3 13h10"/></svg><span>CSV · 2 MB</span></a><a class="ds-more" href="https://earthquake.usgs.gov/earthquakes/feed/v1.0/csv.php" rel="noopener" target="_blank">Bronpagina<span aria-hidden="true"> ↗</span></a></div>
+        </article>
+        <article class="ds">
+          <img class="ds-art" src="../img/data/tornadoes.svg?v=3" alt="" width="320" height="180" loading="lazy" decoding="async">
+          <h3>Elke Amerikaanse tornado sinds 1950</h3>
+          <p class="ds-src">NOAA Storm Prediction Center</p>
+          <div class="ds-actions"><a class="ds-get" href="https://www.spc.noaa.gov/gis/svrgis/zipped/1950-2025-torn-aspath.zip" download aria-label="Shapefile (zip) downloaden · 5 MB"><svg class="dl-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v8m0 0L4.8 6.8M8 10l3.2-3.2M3 13h10"/></svg><span>Shapefile · 5 MB</span></a><a class="ds-more" href="https://www.spc.noaa.gov/gis/svrgis/" rel="noopener" target="_blank">Bronpagina<span aria-hidden="true"> ↗</span></a></div>
+        </article>
+        <article class="ds">
+          <img class="ds-art" src="../img/data/precipitation.svg?v=3" alt="" width="320" height="180" loading="lazy" decoding="async">
+          <h3>Regen en sneeuw overal sinds 1979</h3>
+          <p class="ds-src">GPCP v2.3, via NOAA PSL</p>
+          <div class="ds-actions"><a class="ds-get" href="https://downloads.psl.noaa.gov/Datasets/gpcp/precip.mon.mean.nc" download aria-label="NetCDF downloaden · 20 MB"><svg class="dl-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v8m0 0L4.8 6.8M8 10l3.2-3.2M3 13h10"/></svg><span>NetCDF · 20 MB</span></a><a class="ds-more" href="https://psl.noaa.gov/data/gridded/data.gpcp.html" rel="noopener" target="_blank">Bronpagina<span aria-hidden="true"> ↗</span></a></div>
+        </article>
+        <article class="ds">
+          <img class="ds-art" src="../img/data/roman-roads.svg?v=3" alt="" width="320" height="180" loading="lazy" decoding="async">
+          <h3>Wegen van het Romeinse Rijk</h3>
+          <p class="ds-src">Itiner-e, de Soto et al. 2025 (Zenodo)</p>
+          <div class="ds-actions"><a class="ds-get" href="https://zenodo.org/records/17122148/files/itinere_roads.gpkg?download=1" download aria-label="GeoPackage downloaden · 34 MB"><svg class="dl-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v8m0 0L4.8 6.8M8 10l3.2-3.2M3 13h10"/></svg><span>GeoPackage · 34 MB</span></a><a class="ds-more" href="https://zenodo.org/records/17122148" rel="noopener" target="_blank">Bronpagina<span aria-hidden="true"> ↗</span></a></div>
+        </article>
+    </div>
+    <p class="more-link"><a class="btn btn-quiet" href="data.html">Bekijk alle 34 datasets →</a></p>
   </div>
 </section>
 
@@ -121,43 +182,6 @@
       <li><p class="exts"><span>.nc</span></p><h3>NetCDF</h3><p>Klimaat- en weerroosters, afgespeeld met een tijdbalk.</p></li>
     </ul>
     <p class="formats-note">Een dubbelklik opent Shapefiles, GeoPackages en NetCDF-bestanden in NimbleMap. Andere bestanden openen bij een dubbelklik in andere apps; sleep ze dus naar NimbleMap, of kies rechtsklik › Open met › NimbleMap.</p>
-  </div>
-</section>
-
-<section id="data">
-  <div class="wrap">
-    <div class="section-head">
-      <p class="eyebrow">Gratis gegevens</p>
-      <h2>Waar vind ik kaartgegevens?</h2>
-      <p class="lede">Zorgvuldig gekozen openbare datasets, van actuele aardbevingen tot Romeinse wegen. De meeste downloadt u met één klik.</p>
-    </div>
-    <div class="ds-grid ds-teaser">
-        <article class="ds">
-          <img class="ds-art" src="../img/data/earthquakes.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
-          <h3>Aardbevingen, live</h3>
-          <p class="ds-src">USGS Earthquake Hazards Program</p>
-          <div class="ds-actions"><a class="ds-get" href="https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.csv" download>CSV downloaden · 2 MB</a><a class="ds-more" href="https://earthquake.usgs.gov/earthquakes/feed/v1.0/csv.php" rel="noopener" target="_blank">Bronpagina<span aria-hidden="true"> ↗</span></a></div>
-        </article>
-        <article class="ds">
-          <img class="ds-art" src="../img/data/tornadoes.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
-          <h3>Elke Amerikaanse tornado sinds 1950</h3>
-          <p class="ds-src">NOAA Storm Prediction Center</p>
-          <div class="ds-actions"><a class="ds-get" href="https://www.spc.noaa.gov/gis/svrgis/zipped/1950-2025-torn-aspath.zip" download>Shapefile (zip) downloaden · 5 MB</a><a class="ds-more" href="https://www.spc.noaa.gov/gis/svrgis/" rel="noopener" target="_blank">Bronpagina<span aria-hidden="true"> ↗</span></a></div>
-        </article>
-        <article class="ds">
-          <img class="ds-art" src="../img/data/precipitation.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
-          <h3>Regen en sneeuw overal sinds 1979</h3>
-          <p class="ds-src">GPCP v2.3, via NOAA PSL</p>
-          <div class="ds-actions"><a class="ds-get" href="https://downloads.psl.noaa.gov/Datasets/gpcp/precip.mon.mean.nc" download>NetCDF downloaden · 20 MB</a><a class="ds-more" href="https://psl.noaa.gov/data/gridded/data.gpcp.html" rel="noopener" target="_blank">Bronpagina<span aria-hidden="true"> ↗</span></a></div>
-        </article>
-        <article class="ds">
-          <img class="ds-art" src="../img/data/roman-roads.svg" alt="" width="320" height="180" loading="lazy" decoding="async">
-          <h3>Wegen van het Romeinse Rijk</h3>
-          <p class="ds-src">Itiner-e, de Soto et al. 2025 (Zenodo)</p>
-          <div class="ds-actions"><a class="ds-get" href="https://zenodo.org/records/17122148/files/itinere_roads.gpkg?download=1" download>GeoPackage downloaden · 34 MB</a><a class="ds-more" href="https://zenodo.org/records/17122148" rel="noopener" target="_blank">Bronpagina<span aria-hidden="true"> ↗</span></a></div>
-        </article>
-    </div>
-    <p class="more-link"><a class="btn btn-quiet" href="data.html">Bekijk alle 34 datasets →</a></p>
   </div>
 </section>
 

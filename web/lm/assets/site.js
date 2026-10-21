@@ -61,8 +61,9 @@
     });
   });
 
-  // Hero film: muted and looping, with a pause button. With Reduce Motion it never plays (the
-  // still shows instead, site.css), and it pauses while the tab is hidden.
+  // The film under the hero: muted and looping, with a pause button. It plays while it is on screen
+  // and pauses when scrolled away or when the tab is hidden. With Reduce Motion it never plays
+  // (the still shows instead, site.css).
   document.addEventListener("DOMContentLoaded", function () {
     var film = document.querySelector(".hero-film video");
     if (!film) { return; }
@@ -80,17 +81,28 @@
       film.pause();
       return;
     }
+    var seen = !("IntersectionObserver" in window);
+    function update() {
+      if (stopped || !seen || document.hidden) { film.pause(); return; }
+      var p = film.play(); if (p && p.catch) { p.catch(function () {}); }
+    }
     label();
+    if (!seen) {
+      film.removeAttribute("autoplay");
+      film.pause();
+      new IntersectionObserver(function (entries) {
+        seen = entries[0].isIntersecting;
+        update();
+      }, { threshold: 0.4 }).observe(film);
+    }
     if (button) {
       button.addEventListener("click", function () {
         stopped = !stopped;
-        if (stopped) { film.pause(); } else { var p = film.play(); if (p && p.catch) { p.catch(function () {}); } }
+        update();
         label();
       });
     }
-    document.addEventListener("visibilitychange", function () {
-      if (document.hidden) { film.pause(); } else if (!stopped) { var p = film.play(); if (p && p.catch) { p.catch(function () {}); } }
-    });
+    document.addEventListener("visibilitychange", update);
   });
 
   // Hero showcase: one shot per kind of map data. It moves on every few seconds until the reader

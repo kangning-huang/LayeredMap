@@ -24,7 +24,7 @@ touches no upstream file or workflow.
 
 | English | 中文 | What |
 |---|---|---|
-| `index.html` | `zh/index.html` | Landing: “Found map data online? Drag it into NimbleMap.” The launch film (v3.6 web loop, `video/hero-loop.mp4`, 3.1 MB, muted and looping with a pause button; its end card `img/hero-poster.jpg` as poster and as the still under Reduce Motion; not bundled in the app), what it opens, a Data page teaser, four “once it’s open” screenshots, a slim Pro band, the built-in examples as practice, sharing, a final download button |
+| `index.html` | `zh/index.html` | Landing: “Found map data online? Drag it into NimbleMap.” The launch film (v3.7 web loop, `video/hero-loop.mp4`, 3.1 MB, muted and looping with a pause button; its end card `img/hero-poster.jpg` as poster and as the still under Reduce Motion; not bundled in the app), what it opens, a Data page teaser, four “once it’s open” screenshots, a slim Pro band, the built-in examples as practice, sharing, a final download button |
 | `download.html` | `zh/download.html` | For people who already have a GIS file: what it opens, why layers line up, the download buttons, why NimbleMap differs from a typical GIS (for people who know GIS), NimbleMap or QGIS, and a FAQ in the words people search with |
 | `pro.html` | `zh/pro.html` | Free vs Pro: what Pro adds (free with an account, unlocked by signing in inside the app, coming in the next version); the other languages' footers link the English page |
 | `help.html` | `zh/help.html` | Help start page (what Help › NimbleMap Help opens): the workflows and the window in one minute |

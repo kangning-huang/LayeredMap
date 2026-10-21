@@ -660,6 +660,12 @@ section.pro-band { padding: 26px 0; background: var(--paper-2); background: colo
 @media (max-width: 560px) { .ds-grid.ds-teaser { grid-template-columns: 1fr; } }
 .ds-teaser .ds-more { display: none; }
 .ds-teaser .ds h3 { font-size: 1.1rem; }
+/* Teaser cards: the download button sits at the foot of every card, on one line (format and size;
+   the full "Download … · size" wording is its accessible name), so the four line up. */
+.ds-teaser .ds-src { flex: 1; }
+.ds-teaser .ds-actions { margin-top: 4px; }
+.ds-teaser .ds-get { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; font-size: 14px; padding: 6px 11px; }
+.ds-teaser .dl-ico { width: 14px; height: 14px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .more-link { margin: 26px 0 0; }
 
 /* ---- Home: once it's open (four shots) ---- */
@@ -677,7 +683,7 @@ section.pro-band { padding: 26px 0; background: var(--paper-2); background: colo
 .features.mini .ex-link { margin-top: 10px; font-weight: 600; font-size: 15px; }
 .features.mini .coords { margin-top: 10px; }
 
-/* ---- Home: the hero film (launch video v3.6 web loop: muted, looping, with a pause button) ----
+/* ---- Home: the launch film (web loop: muted, looping, with a pause button) ----
    Under Reduce Motion the still (the film's end card) shows instead and the video never plays. */
 .hero-film .frame { transform: none; position: relative; }
 .hero-film video, .hero-film .film-still { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; background: var(--paper-2); }
@@ -693,6 +699,10 @@ section.pro-band { padding: 26px 0; background: var(--paper-2); background: colo
 .film-pause .play, .film-pause[aria-pressed="true"] .bars { display: none; }
 .film-pause[aria-pressed="true"] .play { display: inline; }
 .film-caption { margin: 10px 2px 0; font-size: 14px; color: var(--ink-3); }
+/* The film has its own band right under the hero: wide, centred, starting as it scrolls into view. */
+section.film-band { padding: 0 0 56px; }
+.film-band .hero-film { max-width: 1040px; margin: 0 auto; }
+.film-band .film-caption { text-align: center; }
 @media (prefers-reduced-motion: reduce) {
   .hero-film video, .js .film-pause { display: none; }
   .hero-film .film-still { display: block; }
