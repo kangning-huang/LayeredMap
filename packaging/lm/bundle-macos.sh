@@ -304,7 +304,9 @@ if [[ -n "${LM_SIGN_IDENTITY:-}" ]]; then
   codesign --force --options runtime --timestamp "${ent[@]}" --sign "$LM_SIGN_IDENTITY" "$app"
   codesign --verify --strict --verbose=2 "$app"
   # The hardened runtime (WP5.7), which notarization requires: the signature must carry it.
-  if ! codesign --display --verbose=2 "$app" 2>&1 | grep -q 'flags=.*runtime'; then
+  # Captured first: with pipefail, grep -q exiting on its match would make codesign fail on SIGPIPE.
+  signature="$(codesign --display --verbose=2 "$app" 2>&1)"
+  if ! grep -q 'flags=.*runtime' <<< "$signature"; then
     echo "bundle-macos: $app is signed without the hardened runtime" >&2
     exit 1
   fi
