@@ -27,15 +27,15 @@
 <meta property="og:image" content="../img/walls-compare.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
-<link rel="stylesheet" href="../assets/site.css?v=072">
-<script src="../assets/site.js?v=072"></script>
+<link rel="stylesheet" href="../assets/site.css?v=074">
+<script src="../assets/site.js?v=074"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
   "name": "NimbleMap",
   "inLanguage": "ru",
-  "operatingSystem": "macOS 13 или новее (Apple silicon)",
+  "operatingSystem": "macOS 13+ (Apple silicon), Windows 10 1809+ / Windows 11 (x64)",
   "applicationCategory": "UtilitiesApplication",
   "description": "Картографическое приложение для Mac: открывает перетащенные в него файлы Shapefile, GeoJSON, CSV, GeoTIFF, GeoPackage, Excel, KML, GPX и NetCDF. Файлы не покидают компьютер.",
   "isAccessibleForFree": true,
@@ -78,14 +78,15 @@
 <section class="hero contours">
   <div class="wrap hero-grid">
     <div>
-      <p class="eyebrow">Бесплатно для Mac</p>
+      <p class="eyebrow">Бесплатно для Mac и Windows</p>
       <h1>Открывайте файлы с картами на Mac. Всё встаёт на свои места.</h1>
       <p class="lede">Перетащите Shapefile, GeoJSON, CSV с широтой и долготой или GeoTIFF в NimbleMap — и данные уже на карте. Добавьте ещё один файл, и он ляжет точно на своё место. Не нужно ни выбирать систему координат, ни создавать проект.</p>
       <div class="actions">
         <a class="btn btn-primary" href="#get">Скачать для Mac</a>
+        <a class="btn btn-quiet" href="#windows">Скачать для Windows</a>
         <a class="btn btn-quiet" href="#formats">Какие файлы открывает</a>
       </div>
-      <p class="coords" style="margin-top:28px">Бесплатно · около 70 МБ · macOS 13 или новее, Apple silicon</p>
+      <p class="coords" style="margin-top:28px"><strong>Mac:</strong> Бесплатно · около 70 МБ · macOS 13 или новее, Apple silicon</p>
     </div>
     <div class="hero-shot">
       <figure class="frame"><img src="../img/walls-compare.jpg" alt="Два обнесённых стенами города 1866 года рядом друг с другом в NimbleMap, нарисованные поверх карты точно на своих местах." width="1600" height="996"></figure>
@@ -133,9 +134,16 @@
     <div class="section-head">
       <p class="eyebrow">Скачать</p>
       <h2>Скачайте NimbleMap</h2>
-      <p class="lede">Для Mac с Apple silicon, macOS 13 или новее. Версия для Windows уже в работе.</p>
+      <p class="lede">Для Mac (Apple silicon, macOS 13+) и Windows 10/11 (x64).</p>
     </div>
     <div class="downloads">
+      <div class="dl" id="windows">
+        <h3>Windows 10 / 11 · x64</h3>
+        <p>0.7.1 preview · Windows 10 1809+</p>
+        <a class="btn btn-primary btn-windows" href="https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.1/NimbleMap-windows-x64-setup.exe" download>Скачать для Windows</a>
+        <p class="dl-note"><a href="https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.1/NimbleMap-windows-x64-setup.exe.sha256">SHA-256</a></p>
+        <p class="dl-note" style="margin-top:12px">Предварительная версия без подписи: Windows SmartScreen может показать предупреждение.</p>
+      </div>
       <div class="dl">
         <h3>NimbleMap для Mac</h3>
         <p>Бесплатно · предварительная версия 0.7.2</p>
@@ -237,7 +245,7 @@
       <p>В бесплатной версии — нет: всё читается и рисуется на вашем Mac, и приложение работает офлайн. Когда вы в сети, скачиваются фрагменты подложки, но ваши данные никуда не отправляются. В Pro поле Ask отправляет помощнику названия слоёв, названия полей и охват, чтобы он понял вопрос, — но никогда не сами значения.</p>
 
       <h3>Есть ли версия для Windows?</h3>
-      <p>Она уже в работе. Пока NimbleMap работает на Mac с Apple silicon и macOS 13 или новее.</p>
+      <p>Для Mac (Apple silicon, macOS 13+) и Windows 10/11 (x64). <a href="#windows">Скачать для Windows</a></p>
     </div>
   </div>
 </section>

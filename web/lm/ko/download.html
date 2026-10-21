@@ -27,15 +27,15 @@
 <meta property="og:image" content="../img/walls-compare.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
-<link rel="stylesheet" href="../assets/site.css?v=072">
-<script src="../assets/site.js?v=072"></script>
+<link rel="stylesheet" href="../assets/site.css?v=074">
+<script src="../assets/site.js?v=074"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
   "name": "NimbleMap",
   "inLanguage": "ko",
-  "operatingSystem": "macOS 13 이상(Apple 실리콘)",
+  "operatingSystem": "macOS 13+ (Apple silicon), Windows 10 1809+ / Windows 11 (x64)",
   "applicationCategory": "UtilitiesApplication",
   "description": "끌어다 놓은 Shapefile, GeoJSON, CSV, GeoTIFF, GeoPackage, Excel, KML, GPX, NetCDF 파일을 바로 여는 Mac 지도 앱입니다. 파일은 컴퓨터 밖으로 나가지 않습니다.",
   "isAccessibleForFree": true,
@@ -78,14 +78,15 @@
 <section class="hero contours">
   <div class="wrap hero-grid">
     <div>
-      <p class="eyebrow">Mac용 무료 앱</p>
+      <p class="eyebrow">Mac 및 Windows용 무료 앱</p>
       <h1>Mac에서 지도 파일을 여세요. 알아서 제자리에 겹쳐집니다.</h1>
       <p class="lede">Shapefile, GeoJSON, 위도와 경도가 든 CSV, GeoTIFF를 NimbleMap으로 끌어다 놓으면 바로 지도 위에 나타납니다. 파일을 하나 더 열면 올바른 위치에 겹쳐 쌓입니다. 좌표계를 설정할 필요도, 프로젝트를 만들 필요도 없습니다.</p>
       <div class="actions">
         <a class="btn btn-primary" href="#get">Mac용 다운로드</a>
+        <a class="btn btn-quiet" href="#windows">Windows용 다운로드</a>
         <a class="btn btn-quiet" href="#formats">열 수 있는 파일</a>
       </div>
-      <p class="coords" style="margin-top:28px">무료 · 약 70MB · macOS 13 이상, Apple 실리콘</p>
+      <p class="coords" style="margin-top:28px"><strong>Mac:</strong> 무료 · 약 70MB · macOS 13 이상, Apple 실리콘</p>
     </div>
     <div class="hero-shot">
       <figure class="frame"><img src="../img/walls-compare.jpg" alt="NimbleMap에서 1866년의 성곽 도시 두 곳을 나란히 비교하는 화면. 두 도시가 지도 위 올바른 위치에 그려져 있습니다." width="1600" height="996"></figure>
@@ -133,9 +134,16 @@
     <div class="section-head">
       <p class="eyebrow">다운로드</p>
       <h2>NimbleMap 받기</h2>
-      <p class="lede">Apple 실리콘 Mac, macOS 13 이상용입니다. Windows 버전도 준비 중입니다.</p>
+      <p class="lede">Mac(Apple Silicon, macOS 13 이상) 및 Windows 10/11(x64)을 지원합니다.</p>
     </div>
     <div class="downloads">
+      <div class="dl" id="windows">
+        <h3>Windows 10 / 11 · x64</h3>
+        <p>0.7.1 preview · Windows 10 1809+</p>
+        <a class="btn btn-primary btn-windows" href="https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.1/NimbleMap-windows-x64-setup.exe" download>Windows용 다운로드</a>
+        <p class="dl-note"><a href="https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.1/NimbleMap-windows-x64-setup.exe.sha256">SHA-256</a></p>
+        <p class="dl-note" style="margin-top:12px">서명되지 않은 미리 보기 버전으로 Windows SmartScreen 경고가 표시될 수 있습니다.</p>
+      </div>
       <div class="dl">
         <h3>Mac용 NimbleMap</h3>
         <p>무료 · 미리보기 버전 0.7.2</p>
@@ -237,7 +245,7 @@
       <p>무료 앱에서는 업로드되지 않습니다. 모든 데이터는 Mac에서 읽고 그리며, 오프라인에서도 작동합니다. 온라인 상태일 때 배경 지도 타일을 내려받지만, 내 데이터는 절대 전송되지 않습니다. Pro의 질문 상자는 질문을 이해할 수 있도록 레이어 이름, 필드 이름, 범위를 어시스턴트에 보내지만, 값은 절대 보내지 않습니다.</p>
 
       <h3>Windows 버전도 있나요?</h3>
-      <p>준비 중입니다. 지금은 macOS 13 이상의 Apple 실리콘 Mac에서 실행됩니다.</p>
+      <p>Mac(Apple Silicon, macOS 13 이상) 및 Windows 10/11(x64)을 지원합니다. <a href="#windows">Windows용 다운로드</a></p>
     </div>
   </div>
 </section>

@@ -27,15 +27,15 @@
 <meta property="og:image" content="../img/walls-compare.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
-<link rel="stylesheet" href="../assets/site.css?v=072">
-<script src="../assets/site.js?v=072"></script>
+<link rel="stylesheet" href="../assets/site.css?v=074">
+<script src="../assets/site.js?v=074"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
   "name": "NimbleMap",
   "inLanguage": "it",
-  "operatingSystem": "macOS 13 o successivo (Apple silicon)",
+  "operatingSystem": "macOS 13+ (Apple silicon), Windows 10 1809+ / Windows 11 (x64)",
   "applicationCategory": "UtilitiesApplication",
   "description": "Un'app di mappe per Mac che apre i file Shapefile, GeoJSON, CSV, GeoTIFF, GeoPackage, Excel, KML, GPX e NetCDF trascinati al suo interno. I file non lasciano mai il computer.",
   "isAccessibleForFree": true,
@@ -78,14 +78,15 @@
 <section class="hero contours">
   <div class="wrap hero-grid">
     <div>
-      <p class="eyebrow">Gratis per Mac</p>
+      <p class="eyebrow">Gratis per Mac e Windows</p>
       <h1>Apri i tuoi file di mappa su Mac. Si allineano da soli.</h1>
       <p class="lede">Trascina uno Shapefile, un GeoJSON, un CSV con latitudine e longitudine o un GeoTIFF in NimbleMap, ed eccolo su una mappa. Aggiungine un altro e si sovrappone nel punto giusto. Nessun sistema di coordinate da impostare, nessun progetto da creare.</p>
       <div class="actions">
         <a class="btn btn-primary" href="#get">Scarica per Mac</a>
+        <a class="btn btn-quiet" href="#windows">Scarica per Windows</a>
         <a class="btn btn-quiet" href="#formats">Cosa apre</a>
       </div>
-      <p class="coords" style="margin-top:28px">Gratis · circa 70 MB · macOS 13 o successivo, Apple silicon</p>
+      <p class="coords" style="margin-top:28px"><strong>Mac:</strong> Gratis · circa 70 MB · macOS 13 o successivo, Apple silicon</p>
     </div>
     <div class="hero-shot">
       <figure class="frame"><img src="../img/walls-compare.jpg" alt="Due città murate del 1866 confrontate fianco a fianco in NimbleMap, disegnate sulla mappa nel punto giusto." width="1600" height="996"></figure>
@@ -133,9 +134,16 @@
     <div class="section-head">
       <p class="eyebrow">Download</p>
       <h2>Scarica NimbleMap</h2>
-      <p class="lede">Per Mac con Apple silicon, macOS 13 o successivo. Una versione per Windows è in arrivo.</p>
+      <p class="lede">Disponibile per Mac (Apple silicon, macOS 13+) e Windows 10/11 (x64).</p>
     </div>
     <div class="downloads">
+      <div class="dl" id="windows">
+        <h3>Windows 10 / 11 · x64</h3>
+        <p>0.7.1 preview · Windows 10 1809+</p>
+        <a class="btn btn-primary btn-windows" href="https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.1/NimbleMap-windows-x64-setup.exe" download>Scarica per Windows</a>
+        <p class="dl-note"><a href="https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.1/NimbleMap-windows-x64-setup.exe.sha256">SHA-256</a></p>
+        <p class="dl-note" style="margin-top:12px">Anteprima non firmata: Windows SmartScreen potrebbe mostrare un avviso.</p>
+      </div>
       <div class="dl">
         <h3>NimbleMap per Mac</h3>
         <p>Gratis · anteprima 0.7.2</p>
@@ -237,7 +245,7 @@
       <p>Non nell'app gratuita: tutto viene letto e disegnato sul tuo Mac, e funziona offline. Le tessere della mappa di base vengono scaricate quando sei online, ma i tuoi dati non vengono mai inviati. In Pro, la casella Chiedi invia all'assistente i nomi dei layer, i nomi dei campi e le estensioni, così può capire la domanda, ma mai i valori.</p>
 
       <h3>C'è una versione per Windows?</h3>
-      <p>È in arrivo. Per ora NimbleMap funziona sui Mac con Apple silicon e macOS 13 o successivo.</p>
+      <p>Disponibile per Mac (Apple silicon, macOS 13+) e Windows 10/11 (x64). <a href="#windows">Scarica per Windows</a></p>
     </div>
   </div>
 </section>

@@ -27,15 +27,15 @@
 <meta property="og:image" content="../img/walls-compare.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
-<link rel="stylesheet" href="../assets/site.css?v=072">
-<script src="../assets/site.js?v=072"></script>
+<link rel="stylesheet" href="../assets/site.css?v=074">
+<script src="../assets/site.js?v=074"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
   "name": "NimbleMap",
   "inLanguage": "ja",
-  "operatingSystem": "macOS 13 以降（Apple シリコン）",
+  "operatingSystem": "macOS 13+ (Apple silicon), Windows 10 1809+ / Windows 11 (x64)",
   "applicationCategory": "UtilitiesApplication",
   "description": "Shapefile、GeoJSON、CSV、GeoTIFF、GeoPackage、Excel、KML、GPX、NetCDF のファイルをドラッグするだけで開ける Mac の地図アプリ。ファイルがコンピューターの外に出ることはありません。",
   "isAccessibleForFree": true,
@@ -78,14 +78,15 @@
 <section class="hero contours">
   <div class="wrap hero-grid">
     <div>
-      <p class="eyebrow">Mac 用・無料</p>
+      <p class="eyebrow">Mac・Windows 向け無料アプリ</p>
       <h1>地図ファイルを Mac で開く。ぴたりと重なる。</h1>
       <p class="lede">Shapefile、GeoJSON、緯度・経度の列がある CSV、GeoTIFF を NimbleMap にドラッグすれば、もう地図の上です。別のファイルを足しても、正しい位置に重なります。座標系の設定も、プロジェクトの作成もいりません。</p>
       <div class="actions">
         <a class="btn btn-primary" href="#get">Mac 版をダウンロード</a>
+        <a class="btn btn-quiet" href="#windows">Windows 版をダウンロード</a>
         <a class="btn btn-quiet" href="#formats">開けるファイル</a>
       </div>
-      <p class="coords" style="margin-top:28px">無料 · 約 70 MB · macOS 13 以降、Apple シリコン</p>
+      <p class="coords" style="margin-top:28px"><strong>Mac:</strong> 無料 · 約 70 MB · macOS 13 以降、Apple シリコン</p>
     </div>
     <div class="hero-shot">
       <figure class="frame"><img src="../img/walls-compare.jpg" alt="NimbleMap で 1866年の城郭都市 2 つを並べて比較しているところ。地図上の正しい位置に描かれています。" width="1600" height="996"></figure>
@@ -133,9 +134,16 @@
     <div class="section-head">
       <p class="eyebrow">ダウンロード</p>
       <h2>NimbleMap を入手</h2>
-      <p class="lede">Apple シリコン搭載の Mac、macOS 13 以降に対応。Windows 版も準備中です。</p>
+      <p class="lede">Mac（Apple シリコン、macOS 13 以降）と Windows 10/11（x64）に対応。</p>
     </div>
     <div class="downloads">
+      <div class="dl" id="windows">
+        <h3>Windows 10 / 11 · x64</h3>
+        <p>0.7.1 preview · Windows 10 1809+</p>
+        <a class="btn btn-primary btn-windows" href="https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.1/NimbleMap-windows-x64-setup.exe" download>Windows 版をダウンロード</a>
+        <p class="dl-note"><a href="https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.1/NimbleMap-windows-x64-setup.exe.sha256">SHA-256</a></p>
+        <p class="dl-note" style="margin-top:12px">署名のないプレビュー版です。Windows SmartScreen が警告を表示する場合があります。</p>
+      </div>
       <div class="dl">
         <h3>NimbleMap for Mac</h3>
         <p>無料 · プレビュー版 0.7.2</p>
@@ -237,7 +245,7 @@
       <p>無料版ではありません。すべて Mac の中で読み込み・描画され、オフラインでも動作します。オンライン時には背景地図のタイルをダウンロードしますが、あなたのデータが送信されることはありません。Pro の質問ボックスでは、質問を理解するためにレイヤー名、フィールド名、範囲をアシスタントに送りますが、値そのものは決して送りません。</p>
 
       <h3>Windows 版はありますか？</h3>
-      <p>準備中です。現在、NimbleMap は Apple シリコン搭載で macOS 13 以降の Mac で動作します。</p>
+      <p>Mac（Apple シリコン、macOS 13 以降）と Windows 10/11（x64）に対応。 <a href="#windows">Windows 版をダウンロード</a></p>
     </div>
   </div>
 </section>

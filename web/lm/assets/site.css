@@ -512,13 +512,13 @@ html.js .share { display: flex; }
 /* ==== Landing page for the map-curious (2026-10-19): hero download, built-in map cards, ====
    ==== "bring your own", principles with real screenshots, share, Pro band, final CTA, footer links ==== */
 .dl-fine { margin: 6px 0 0; font-size: 13.5px; line-height: 1.5; color: var(--ink-3); }
-.hero .actions + .dl-fine, .hero .actions + .mac-only + .dl-fine { margin-top: 16px; }
+.hero .actions + .dl-fine, .hero .actions + .desktop-platforms + .dl-fine { margin-top: 16px; }
 .dl-fine a { color: var(--ink-2); }
-.mac-only {
+.desktop-platforms {
   margin: 14px 0 0; padding: 8px 12px; border-radius: 8px; font-size: 14.5px; line-height: 1.5;
   color: var(--ink); background: var(--paper-2); border-left: 3px solid var(--seal); max-width: 34em;
 }
-.mac-only[hidden] { display: none; }
+.desktop-platforms[hidden] { display: none; }
 
 /* Built-in maps: three large cards, a real screenshot over one surprising fact and its source. */
 .features { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
@@ -569,8 +569,8 @@ section.pro-band { padding: 26px 0; background: var(--paper-2); background: colo
 .final-cta .cta-icon { width: 96px; height: 96px; margin: 0 auto 20px; }
 .final-cta h2 { margin-bottom: 22px; }
 .final-cta .cta-actions, .final-cta .share { justify-content: center; }
-.final-cta .mac-only { margin-inline: auto; text-align: left; }
-.final-cta .cta-actions + .dl-fine, .final-cta .cta-actions + .mac-only + .dl-fine { margin-top: 14px; }
+.final-cta .desktop-platforms { margin-inline: auto; text-align: left; }
+.final-cta .cta-actions + .dl-fine, .final-cta .cta-actions + .desktop-platforms + .dl-fine { margin-top: 14px; }
 .final-cta .share { margin-top: 30px; }
 .built-on { margin: 22px 0 0; color: var(--ink-3); font-size: 15px; }
 
