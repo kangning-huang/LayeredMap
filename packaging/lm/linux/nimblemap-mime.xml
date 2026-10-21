@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- NimbleMap's own project type, the counterpart of the .lmap type on macOS and Windows
+     (docs/lm/format-v1.md). Install it for the current user with xdg-mime (README.md). -->
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-layeredmap-project">
+    <comment>NimbleMap map</comment>
+    <comment xml:lang="zh_CN">凌波微图地图</comment>
+    <!-- The type the file names inside itself, and the one the Windows installer registers. -->
+    <alias type="application/vnd.layeredmap.map+zip"/>
+    <sub-class-of type="application/zip"/>
+    <icon name="nimblemap"/>
+    <!-- A .lmap is a ZIP whose first, stored entry is `mimetype`: its name at byte 30, the type at 38. -->
+    <magic priority="70">
+      <match type="string" offset="30" value="mimetypeapplication/vnd.layeredmap.map+zip"/>
+    </magic>
+    <glob pattern="*.lmap"/>
+  </mime-type>
+</mime-info>
