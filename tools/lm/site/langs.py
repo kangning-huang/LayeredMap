@@ -102,7 +102,7 @@ CHANGELOG = "https://github.com/kangning-huang/NimbleMap/blob/main/CHANGELOG.md"
 DMG_NAME = "NimbleMap-macos-arm64.dmg"
 DMG_GITHUB = f"https://github.com/kangning-huang/NimbleMap/releases/latest/download/{DMG_NAME}"
 GITCODE = "https://gitcode.com/KN-Huang/NimbleMap"
-DMG_GITCODE = f"{GITCODE}/releases/download/v0.7.1/{DMG_NAME}"
+DMG_GITCODE = f"{GITCODE}/releases/download/v0.7.2/{DMG_NAME}"
 DMG = {"zh": DMG_GITCODE}  # every other language: DMG_GITHUB
 # The download page's second card offers the other host: GitCode everywhere, GitHub on Chinese
 # pages. Its links carry data-dl="alt" (the DMG) and data-dl="alt-releases" (the releases page).
