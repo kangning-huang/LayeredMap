@@ -27,9 +27,9 @@
 <meta property="og:image" content="../img/open-storms.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
-<link rel="stylesheet" href="../assets/site.css?v=071">
+<link rel="stylesheet" href="../assets/site.css?v=072">
 <link rel="stylesheet" href="../assets/data.css?v=3">
-<script src="../assets/site.js?v=071"></script>
+<script src="../assets/site.js?v=072"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -91,7 +91,31 @@
       <p class="dl-fine">Gratuit · environ 109 Mo · macOS 13 ou version ultérieure · puce Apple · fonctionne hors ligne</p>
       <p class="dl-fine"><a href="download.html#get">Au premier lancement, macOS vous demande de l’autoriser : comment l’ouvrir</a></p>
     </div>
-    <div class="hero-shot hero-film">
+    <div class="hero-shot showcase drop-scene" data-rotate="3500">
+      <figure class="frame stage">
+        <img class="slide is-on" src="../img/open-storms.jpg" alt="NimbleMap avec le fichier IBTrACS_storm_tracks_1980-2026.shp ouvert : 4 999 trajectoires de tempêtes sur l’Asie et le Pacifique, colorées selon le vent maximal, et la fiche de la couche qui indique le nom du fichier et la légende." width="1600" height="996">
+        <img class="slide" src="../img/open-earthquakes.jpg" alt="NimbleMap avec usgs_earthquakes_M6plus_1900-2026.gpkg ouvert : 14 537 séismes formant un anneau autour du Pacifique, colorés selon la magnitude." width="1600" height="996" loading="lazy" aria-hidden="true">
+        <img class="slide" src="../img/open-heatwave.jpg" alt="NimbleMap avec GDO_heatwave_intensity_JJA_2023.nc ouvert au 16 juillet 2023 : l’intensité des vagues de chaleur en rouges sur trois continents, et le curseur temporel sous la carte." width="1600" height="996" loading="lazy" aria-hidden="true">
+        <img class="slide" src="../img/open-relief.jpg" alt="NimbleMap avec ETOPO_2022_relief_30min.tif ouvert : l’altitude des terres et des fonds marins de toute la planète en dégradé de couleurs." width="1600" height="996" loading="lazy" aria-hidden="true">
+        <img class="slide" src="../img/open-volcanoes.jpg" alt="NimbleMap avec NCEI_volcano_locations.csv ouvert : 1 609 volcans en points autour de la ceinture de feu du Pacifique, colorés selon l’altitude." width="1600" height="996" loading="lazy" aria-hidden="true">
+      </figure>
+      <svg class="drop-arrow" viewBox="0 0 110 70" aria-hidden="true"><path d="M6 64C26 30 56 14 98 10"/><path class="head" d="M88 3l11 7-10 8"/></svg>
+      <div class="files" role="group" aria-label="Un dossier de fichiers cartographiques téléchargés : choisissez-en un pour le voir ouvert dans NimbleMap">
+        <p class="files-head"><svg class="folder" viewBox="0 0 20 20" aria-hidden="true"><path d="M2 5.5A1.5 1.5 0 0 1 3.5 4h4l1.6 1.8h7.4A1.5 1.5 0 0 1 18 7.3v7.2a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 2 14.5z"/></svg><span>données cartographiques</span><button type="button" class="pause" aria-label="Mettre le diaporama en pause" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><rect class="bars" x="4" y="3" width="2.6" height="10" rx="1"/><rect class="bars" x="9.4" y="3" width="2.6" height="10" rx="1"/><path class="play" d="M5 3.2v9.6a.6.6 0 0 0 .9.5l7.4-4.8a.6.6 0 0 0 0-1L5.9 2.7a.6.6 0 0 0-.9.5z"/></svg></button></p>
+        <button type="button" class="kind file" data-i="0" data-caption="IBTrACS_storm_tracks_1980-2026.shp : 4 999 trajectoires de tempêtes, colorées selon le vent maximal" aria-pressed="true"><span class="ext">SHP</span><span class="fname">IBTrACS_storm_tracks_1980-2026.shp</span><span class="fsize">5,3 Mo</span><svg class="grab" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5l10 7.2-4.4.7 2.6 5.3-2.2 1-2.5-5.3L5 14.6z"/></svg></button>
+        <button type="button" class="kind file" data-i="1" data-caption="usgs_earthquakes_M6plus_1900-2026.gpkg : 14 537 grands séismes, colorés selon la magnitude" aria-pressed="false"><span class="ext">GPKG</span><span class="fname">usgs_earthquakes_M6plus_1900-2026.gpkg</span><span class="fsize">2,2 Mo</span><svg class="grab" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5l10 7.2-4.4.7 2.6 5.3-2.2 1-2.5-5.3L5 14.6z"/></svg></button>
+        <button type="button" class="kind file" data-i="2" data-caption="GDO_heatwave_intensity_JJA_2023.nc : grilles quotidiennes de vagues de chaleur, avec un curseur temporel" aria-pressed="false"><span class="ext">NC</span><span class="fname">GDO_heatwave_intensity_JJA_2023.nc</span><span class="fsize">12,6 Mo</span><svg class="grab" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5l10 7.2-4.4.7 2.6 5.3-2.2 1-2.5-5.3L5 14.6z"/></svg></button>
+        <button type="button" class="kind file" data-i="3" data-caption="ETOPO_2022_relief_30min.tif : altitude des terres et des fonds marins de toute la planète" aria-pressed="false"><span class="ext">TIF</span><span class="fname">ETOPO_2022_relief_30min.tif</span><span class="fsize">375 Ko</span><svg class="grab" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5l10 7.2-4.4.7 2.6 5.3-2.2 1-2.5-5.3L5 14.6z"/></svg></button>
+        <button type="button" class="kind file" data-i="4" data-caption="NCEI_volcano_locations.csv : 1 609 volcans, colorés selon l’altitude" aria-pressed="false"><span class="ext">CSV</span><span class="fname">NCEI_volcano_locations.csv</span><span class="fsize">106 Ko</span><svg class="grab" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5l10 7.2-4.4.7 2.6 5.3-2.2 1-2.5-5.3L5 14.6z"/></svg></button>
+      </div>
+      <p class="kind-caption">IBTrACS_storm_tracks_1980-2026.shp : 4 999 trajectoires de tempêtes, colorées selon le vent maximal</p>
+    </div>
+  </div>
+</section>
+
+<section class="film-band" id="film">
+  <div class="wrap">
+    <div class="hero-film">
       <figure class="frame film">
         <video class="film-loop" autoplay muted loop playsinline preload="metadata" poster="../img/hero-poster.jpg" width="1280" height="720" aria-label="Un film de 78 secondes sur NimbleMap : des fichiers de carte glissés et ouverts, près de 5 000 trajectoires de tempêtes parcourues, un séisme cliqué, une canicule d’été rejouée jour après jour et une question résolue avec Pro."><source src="../video/hero-loop.mp4" type="video/mp4"></video>
         <img class="film-still" src="../img/hero-poster.jpg" alt="Un film de 78 secondes sur NimbleMap : des fichiers de carte glissés et ouverts, près de 5 000 trajectoires de tempêtes parcourues, un séisme cliqué, une canicule d’été rejouée jour après jour et une question résolue avec Pro." width="1280" height="720" loading="lazy">
@@ -99,6 +123,43 @@
       </figure>
       <p class="film-caption">NimbleMap en 78 secondes : glissez un fichier, explorez-le, posez-lui une question.</p>
     </div>
+  </div>
+</section>
+
+<section id="data">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Données gratuites</p>
+      <h2>Où trouver des données cartographiques ?</h2>
+      <p class="lede">Des jeux de données publics triés sur le volet, des séismes en direct aux voies romaines. La plupart se téléchargent en un clic.</p>
+    </div>
+    <div class="ds-grid ds-teaser">
+        <article class="ds">
+          <img class="ds-art" src="../img/data/earthquakes.svg?v=3" alt="" width="320" height="180" loading="lazy" decoding="async">
+          <h3>Séismes en direct</h3>
+          <p class="ds-src">USGS Earthquake Hazards Program</p>
+          <div class="ds-actions"><a class="ds-get" href="https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.csv" download aria-label="Télécharger CSV · 2 Mo"><svg class="dl-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v8m0 0L4.8 6.8M8 10l3.2-3.2M3 13h10"/></svg><span>CSV · 2 Mo</span></a><a class="ds-more" href="https://earthquake.usgs.gov/earthquakes/feed/v1.0/csv.php" rel="noopener" target="_blank">Page de la source<span aria-hidden="true"> ↗</span></a></div>
+        </article>
+        <article class="ds">
+          <img class="ds-art" src="../img/data/tornadoes.svg?v=3" alt="" width="320" height="180" loading="lazy" decoding="async">
+          <h3>Toutes les tornades aux États-Unis depuis 1950</h3>
+          <p class="ds-src">NOAA Storm Prediction Center</p>
+          <div class="ds-actions"><a class="ds-get" href="https://www.spc.noaa.gov/gis/svrgis/zipped/1950-2025-torn-aspath.zip" download aria-label="Télécharger Shapefile (zip) · 5 Mo"><svg class="dl-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v8m0 0L4.8 6.8M8 10l3.2-3.2M3 13h10"/></svg><span>Shapefile · 5 Mo</span></a><a class="ds-more" href="https://www.spc.noaa.gov/gis/svrgis/" rel="noopener" target="_blank">Page de la source<span aria-hidden="true"> ↗</span></a></div>
+        </article>
+        <article class="ds">
+          <img class="ds-art" src="../img/data/precipitation.svg?v=3" alt="" width="320" height="180" loading="lazy" decoding="async">
+          <h3>Pluie et neige partout depuis 1979</h3>
+          <p class="ds-src">GPCP v2.3, via NOAA PSL</p>
+          <div class="ds-actions"><a class="ds-get" href="https://downloads.psl.noaa.gov/Datasets/gpcp/precip.mon.mean.nc" download aria-label="Télécharger NetCDF · 20 Mo"><svg class="dl-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v8m0 0L4.8 6.8M8 10l3.2-3.2M3 13h10"/></svg><span>NetCDF · 20 Mo</span></a><a class="ds-more" href="https://psl.noaa.gov/data/gridded/data.gpcp.html" rel="noopener" target="_blank">Page de la source<span aria-hidden="true"> ↗</span></a></div>
+        </article>
+        <article class="ds">
+          <img class="ds-art" src="../img/data/roman-roads.svg?v=3" alt="" width="320" height="180" loading="lazy" decoding="async">
+          <h3>Les routes de l’Empire romain</h3>
+          <p class="ds-src">Itiner-e, de Soto et al. 2025 (Zenodo)</p>
+          <div class="ds-actions"><a class="ds-get" href="https://zenodo.org/records/17122148/files/itinere_roads.gpkg?download=1" download aria-label="Télécharger GeoPackage · 34 Mo"><svg class="dl-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v8m0 0L4.8 6.8M8 10l3.2-3.2M3 13h10"/></svg><span>GeoPackage · 34 Mo</span></a><a class="ds-more" href="https://zenodo.org/records/17122148" rel="noopener" target="_blank">Page de la source<span aria-hidden="true"> ↗</span></a></div>
+        </article>
+    </div>
+    <p class="more-link"><a class="btn btn-quiet" href="data.html">Voir les 34 jeux de données →</a></p>
   </div>
 </section>
 
@@ -121,43 +182,6 @@
       <li><p class="exts"><span>.nc</span></p><h3>NetCDF</h3><p>Grilles climatiques et météo, à lire avec un curseur temporel.</p></li>
     </ul>
     <p class="formats-note">Un double-clic ouvre les Shapefiles, GeoPackages et fichiers NetCDF dans NimbleMap. Les autres fichiers s’ouvrent dans d’autres apps quand vous double-cliquez dessus : glissez-les donc dans NimbleMap, ou faites clic droit › Ouvrir avec › NimbleMap.</p>
-  </div>
-</section>
-
-<section id="data">
-  <div class="wrap">
-    <div class="section-head">
-      <p class="eyebrow">Données gratuites</p>
-      <h2>Où trouver des données cartographiques ?</h2>
-      <p class="lede">Des jeux de données publics triés sur le volet, des séismes en direct aux voies romaines. La plupart se téléchargent en un clic.</p>
-    </div>
-    <div class="ds-grid ds-teaser">
-        <article class="ds">
-          <img class="ds-art" src="../img/data/earthquakes.svg?v=3" alt="" width="320" height="180" loading="lazy" decoding="async">
-          <h3>Séismes en direct</h3>
-          <p class="ds-src">USGS Earthquake Hazards Program</p>
-          <div class="ds-actions"><a class="ds-get" href="https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.csv" download>Télécharger CSV · 2 Mo</a><a class="ds-more" href="https://earthquake.usgs.gov/earthquakes/feed/v1.0/csv.php" rel="noopener" target="_blank">Page de la source<span aria-hidden="true"> ↗</span></a></div>
-        </article>
-        <article class="ds">
-          <img class="ds-art" src="../img/data/tornadoes.svg?v=3" alt="" width="320" height="180" loading="lazy" decoding="async">
-          <h3>Toutes les tornades aux États-Unis depuis 1950</h3>
-          <p class="ds-src">NOAA Storm Prediction Center</p>
-          <div class="ds-actions"><a class="ds-get" href="https://www.spc.noaa.gov/gis/svrgis/zipped/1950-2025-torn-aspath.zip" download>Télécharger Shapefile (zip) · 5 Mo</a><a class="ds-more" href="https://www.spc.noaa.gov/gis/svrgis/" rel="noopener" target="_blank">Page de la source<span aria-hidden="true"> ↗</span></a></div>
-        </article>
-        <article class="ds">
-          <img class="ds-art" src="../img/data/precipitation.svg?v=3" alt="" width="320" height="180" loading="lazy" decoding="async">
-          <h3>Pluie et neige partout depuis 1979</h3>
-          <p class="ds-src">GPCP v2.3, via NOAA PSL</p>
-          <div class="ds-actions"><a class="ds-get" href="https://downloads.psl.noaa.gov/Datasets/gpcp/precip.mon.mean.nc" download>Télécharger NetCDF · 20 Mo</a><a class="ds-more" href="https://psl.noaa.gov/data/gridded/data.gpcp.html" rel="noopener" target="_blank">Page de la source<span aria-hidden="true"> ↗</span></a></div>
-        </article>
-        <article class="ds">
-          <img class="ds-art" src="../img/data/roman-roads.svg?v=3" alt="" width="320" height="180" loading="lazy" decoding="async">
-          <h3>Les routes de l’Empire romain</h3>
-          <p class="ds-src">Itiner-e, de Soto et al. 2025 (Zenodo)</p>
-          <div class="ds-actions"><a class="ds-get" href="https://zenodo.org/records/17122148/files/itinere_roads.gpkg?download=1" download>Télécharger GeoPackage · 34 Mo</a><a class="ds-more" href="https://zenodo.org/records/17122148" rel="noopener" target="_blank">Page de la source<span aria-hidden="true"> ↗</span></a></div>
-        </article>
-    </div>
-    <p class="more-link"><a class="btn btn-quiet" href="data.html">Voir les 34 jeux de données →</a></p>
   </div>
 </section>
 
