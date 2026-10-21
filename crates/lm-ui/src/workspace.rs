@@ -1206,7 +1206,7 @@ impl Workspace {
                 preview.sort_by_key(|(part, _)| match part {
                     analysis::PreviewPart::Overlay => 0,
                     analysis::PreviewPart::Connector => 1,
-                    analysis::PreviewPart::Result => 2,
+                    analysis::PreviewPart::Result | analysis::PreviewPart::Ranked => 2,
                 });
                 for (part, mut p) in preview {
                     let kind = match p.dataset.geometry_type {
@@ -1218,6 +1218,7 @@ impl Workspace {
                         analysis::PreviewPart::Result => preview_style(kind),
                         analysis::PreviewPart::Overlay => overlay_style(kind),
                         analysis::PreviewPart::Connector => connector_style(),
+                        analysis::PreviewPart::Ranked => ranked_style(kind),
                     };
                     apply_style(&mut p, &style, kind);
                     m.layers.push(p);
@@ -1530,6 +1531,19 @@ fn overlay_style(kind: LayerKind) -> Style {
     if kind == LayerKind::Areas {
         s.fill_opacity = 0.14;
         s.stroke = accent;
+    }
+    s
+}
+
+/// A ranking's top areas: a light accent fill and a thin outline (they may be large countries).
+fn ranked_style(kind: LayerKind) -> Style {
+    let accent = [0x25, 0x63, 0xEB, 0xFF];
+    let mut s = Style::for_kind(kind, accent, 0);
+    if kind == LayerKind::Areas {
+        s.fill = accent;
+        s.fill_opacity = 0.18;
+        s.stroke = accent;
+        s.stroke_width = 1.5;
     }
     s
 }

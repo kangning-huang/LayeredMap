@@ -4,29 +4,29 @@ Layers (panel/toolbar)	图层	面板名与工具栏按钮；网站注 “Layers�
 Basemap	底图	网站术语表一致；背景地图
 Satellite	卫星图	底图选项；网站注 “卫星图”
 Offline	离线	底图选项（不用联网的轮廓图）；网站以描述注释，界面用短词
-Offline basemap	离线底图	
+Offline basemap	离线底图
 Light	浅色	底图选项与外观菜单
 Dark	深色	底图选项与外观菜单
-Auto	自动	
+Auto	自动
 Background strength	底图浓淡	网站未注释；日常说法
 Style	样式	标签页；网站术语表 “样式（符号化）”
 Style…	样式…	图层右键菜单
 Share	分享	工具栏按钮
-Examples	示例	
-Try an example	试试示例	
+Examples	示例
+Try an example	试试示例
 Open	打开	工具栏按钮
 Open file…	打开文件…	网站注 “打开文件”
 Keep	保留	结果卡片
-Keep result	保留结果	
+Keep result	保留结果
 Discard	放弃	结果卡片
-Undo	撤销	
-Redo	重做	
-Save	保存	
-Save…	保存…	
-Save As…	另存为…	
-Don't Save	不保存	
-Cancel	取消	
-Close	关闭	
+Undo	撤销
+Redo	重做
+Save	保存
+Save…	保存…
+Save As…	另存为…
+Don't Save	不保存
+Cancel	取消
+Close	关闭
 Feature	要素	网站术语表；界面里一般称 “对象”
 object(s)	对象	“这里有 4 个对象”
 point / points	点	卡片名词；“{n} 个点”
@@ -35,98 +35,98 @@ area / areas	面	“{n} 个面”（GIS 的面/多边形）
 cell / cells	格子	栅格像元，日常说法；术语表 “像元”
 row / rows	行	表格的一行
 Record(s)	记录	“{n} 条记录”
-Raster	栅格	
+Raster	栅格
 Grid	格网	数据库里的类型
-Table	表格	
+Table	表格
 Attribute table	属性表	界面写作 “数据表”/“表格”
-Field / Fields	字段	
-Value / Values	数值	
-Filter	筛选	
+Field / Fields	字段
+Value / Values	数值
+Filter	筛选
 Filtered:	已筛选：	图层上的筛选标记
-+ Add filter	+ 添加筛选	
++ Add filter	+ 添加筛选
 Apply	应用	筛选句子
-Clear	清除	
+Clear	清除
 Join	连接	表连接
 joined	已连接	“已连接 · 177 个中匹配 172 个”
-Show joined fields	显示连接的字段	
-Unjoin	取消连接	
-Legend	图例	
+Show joined fields	显示连接的字段
+Unjoin	取消连接
+Legend	图例
 Color	颜色	样式标签页
 Color by a value	按数值上色	卡片操作
-Palette	配色	
+Palette	配色
 Range	取值范围	样式标签页（网站注 “取值范围”）
 Size	尺寸	导出图片的尺寸（网站导出处注 “尺寸”）
-Same size	同样大小	
-Labels	标注	
-Opacity	不透明度	
-Outline	轮廓	
-Width	宽度	
-Smooth	平滑	
-Groups	分组	
+Same size	同样大小
+Labels	标注
+Opacity	不透明度
+Outline	轮廓
+Width	宽度
+Smooth	平滑
+Groups	分组
 Overview	概览	图层标签页
 Details	详情	图层标签页
-Coordinate system	坐标系	
+Coordinate system	坐标系
 Extent	范围	术语表 “范围（外包框）”
-Format	格式	
-Assumptions	假设	
+Format	格式
+Assumptions	假设
 Change	更改	假设后的链接
 Compare	对比	假设后的链接
-Compare on the map first	先在地图上对比	
-Compare by	比较依据	
+Compare on the map first	先在地图上对比
+Compare by	比较依据
 Compare with other [layer]	与其他 [layer] 比较	网站注 “与其他……比较”
-Time step	时间步	
-Previous step (←)	上一步（←）	
-Next step (→)	下一步（→）	
-Play	播放	
-Pause	暂停	
+Time step	时间步
+Previous step (←)	上一步（←）
+Next step (→)	下一步（→）
+Play	播放
+Pause	暂停
 Variable shown	显示的变量	网站未注释
-Level shown	显示的层	
-No value	没有数值	
+Level shown	显示的层
+No value	没有数值
 No data	无数据	术语表 “无数据（NoData）”
-This cell has no data.	该格子无数据。	
-View data	查看数据	
-View in table	在表格中查看	
-Zoom to layer	缩放到图层	
-Zoom to All Data	缩放到全部数据	
-Zoom in / Zoom In	放大	
-Zoom out / Zoom Out	缩小	
-Rename	重命名	
-Remove from map	从地图移除	
-Metric Units	公制	
-Imperial Units	英制	
-Work Offline	离线工作	
-Working offline: online backgrounds are off	正在离线工作：在线底图已关闭	
-Search places or your data	搜索地名或你的数据	
-Your data	你的数据	
+This cell has no data.	该格子无数据。
+View data	查看数据
+View in table	在表格中查看
+Zoom to layer	缩放到图层
+Zoom to All Data	缩放到全部数据
+Zoom in / Zoom In	放大
+Zoom out / Zoom Out	缩小
+Rename	重命名
+Remove from map	从地图移除
+Metric Units	公制
+Imperial Units	英制
+Work Offline	离线工作
+Working offline: online backgrounds are off	正在离线工作：在线底图已关闭
+Search places or your data	搜索地名或你的数据
+Your data	你的数据
 Ask about your layers	询问你的图层	Pro 提问框
 Map image…	地图图片…	分享菜单
 Data…	数据…	分享菜单
-Export map image	导出地图图片	
-Slide 16:9	幻灯片 16:9	
-Report A4	A4 报告	
-Square	方形	
-Title	标题	
-Caption	说明	
-North arrow	指北针	
-Scale bar	比例尺	
-Lat/lon labels	经纬度标注	
-Grid lines	经纬网	
-Fit to data	适应数据	
-Current view	当前视图	
+Export map image	导出地图图片
+Slide 16:9	幻灯片 16:9
+Report A4	A4 报告
+Square	方形
+Title	标题
+Caption	说明
+North arrow	指北针
+Scale bar	比例尺
+Lat/lon labels	经纬度标注
+Grid lines	经纬网
+Fit to data	适应数据
+Current view	当前视图
 Show	显示	导出 “显示：适应数据/当前视图” 与筛选句 “显示 … 中 …” 共用一个键；网站在导出处注 “范围”
-Drop to add to the map	松开即可添加到地图	
-Map package	地图包	
+Drop to add to the map	松开即可添加到地图
+Map package	地图包
 Data library	数据库	课程数据集库
-Credits	数据来源	
+Credits	数据来源
 Insight	对比信息	术语表 “对比信息”
 Recipe	步骤说明	术语表 “步骤说明（配方）”
 Show an area within a distance	显示一定距离内的区域	术语表：缓冲区
-Show an area within a distance of each	显示每个对象周边一定距离内的范围	
+Show an area within a distance of each	显示每个对象周边一定距离内的范围
 Keep the part of [layer] inside [other]	保留 [layer] 在 [other] 以内的部分	术语表：裁剪
-Show only values above…	只显示高于……的值	
-Show where values are like this	显示数值相近的地方	
-Change colors and range	更改颜色和范围	
-Measure length	测量长度	
+Show only values above…	只显示高于……的值
+Show where values are like this	显示数值相近的地方
+Change colors and range	更改颜色和范围
+Measure length	测量长度
 World basics	世界基础数据	示例
 Heatwaves, summer 2023	2023 年夏季热浪	示例
 Typhoons and hurricanes	台风与飓风	示例

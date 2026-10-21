@@ -88,30 +88,16 @@
         <a class="btn btn-quiet" href="#data">데이터는 어디서 구하나요?</a>
       </div>
       <p class="mac-only" hidden>NimbleMap은 Apple 실리콘이 탑재된 Mac이 필요합니다. Windows 버전도 준비 중입니다.</p>
-      <p class="dl-fine">무료 · 약 74MB · macOS 13 이상 · Apple 실리콘 · 오프라인에서도 작동</p>
+      <p class="dl-fine">무료 · 약 109MB · macOS 13 이상 · Apple 실리콘 · 오프라인에서도 작동</p>
       <p class="dl-fine"><a href="download.html#get">처음 열 때 macOS가 허용을 요청합니다: 여는 방법</a></p>
     </div>
-    <div class="hero-shot showcase drop-scene" data-rotate="3500">
-      <!-- Hero video hook: for the launch-video web loop, put
-             <video class="slide is-on" autoplay muted loop playsinline poster="../img/open-storms.jpg" width="1600" height="996"><source src="video/hero-loop.mp4" type="video/mp4"></video>
-           in place of the <img> slides in .stage (and drop the file list, or keep it as a legend). -->
-      <figure class="frame stage">
-        <img class="slide is-on" src="../img/open-storms.jpg" alt="IBTrACS_storm_tracks_1980-2026.shp 파일을 연 NimbleMap. 아시아와 태평양 위의 폭풍 경로 4,999개가 최대 풍속에 따라 색칠되어 있고, 레이어 카드에 파일 이름과 범례가 나와 있습니다." width="1600" height="996">
-        <img class="slide" src="../img/open-earthquakes.jpg" alt="usgs_earthquakes_M6plus_1900-2026.gpkg를 연 NimbleMap. 태평양을 둘러싼 지진 14,537건이 규모에 따라 색칠되어 있습니다." width="1600" height="996" loading="lazy" aria-hidden="true">
-        <img class="slide" src="../img/open-heatwave.jpg" alt="GDO_heatwave_intensity_JJA_2023.nc를 2023년 7월 16일로 연 NimbleMap. 세 대륙에 걸친 폭염 강도가 붉은색으로 표시되고, 지도 아래에 시간 슬라이더가 있습니다." width="1600" height="996" loading="lazy" aria-hidden="true">
-        <img class="slide" src="../img/open-relief.jpg" alt="ETOPO_2022_relief_30min.tif를 연 NimbleMap. 지구 전체의 육지와 해저 고도가 색상 램프로 표시되어 있습니다." width="1600" height="996" loading="lazy" aria-hidden="true">
-        <img class="slide" src="../img/open-volcanoes.jpg" alt="NCEI_volcano_locations.csv를 연 NimbleMap. 환태평양 조산대를 따라 화산 1,609곳이 점으로 표시되고 고도에 따라 색칠되어 있습니다." width="1600" height="996" loading="lazy" aria-hidden="true">
+    <div class="hero-shot hero-film">
+      <figure class="frame film">
+        <video class="film-loop" autoplay muted loop playsinline preload="metadata" poster="../img/hero-poster.jpg" width="1280" height="720" aria-label="NimbleMap을 보여 주는 78초 영상: 지도 파일을 끌어다 열고, 약 5,000개의 폭풍 경로를 검색하고, 지진을 클릭하고, 여름 폭염을 하루씩 재생하고, Pro로 질문에 답합니다."><source src="../video/hero-loop.mp4" type="video/mp4"></video>
+        <img class="film-still" src="../img/hero-poster.jpg" alt="NimbleMap을 보여 주는 78초 영상: 지도 파일을 끌어다 열고, 약 5,000개의 폭풍 경로를 검색하고, 지진을 클릭하고, 여름 폭염을 하루씩 재생하고, Pro로 질문에 답합니다." width="1280" height="720" loading="lazy">
+        <button type="button" class="film-pause" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><rect class="bars" x="4" y="3" width="2.6" height="10" rx="1"/><rect class="bars" x="9.4" y="3" width="2.6" height="10" rx="1"/><path class="play" d="M5 3.2v9.6a.6.6 0 0 0 .9.5l7.4-4.8a.6.6 0 0 0 0-1L5.9 2.7a.6.6 0 0 0-.9.5z"/></svg></button>
       </figure>
-      <svg class="drop-arrow" viewBox="0 0 110 70" aria-hidden="true"><path d="M6 64C26 30 56 14 98 10"/><path class="head" d="M88 3l11 7-10 8"/></svg>
-      <div class="files" role="group" aria-label="내려받은 지도 파일이 든 폴더: 하나를 고르면 NimbleMap에서 열린 모습을 볼 수 있습니다">
-        <p class="files-head"><svg class="folder" viewBox="0 0 20 20" aria-hidden="true"><path d="M2 5.5A1.5 1.5 0 0 1 3.5 4h4l1.6 1.8h7.4A1.5 1.5 0 0 1 18 7.3v7.2a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 2 14.5z"/></svg><span>지도 데이터</span><button type="button" class="pause" aria-label="슬라이드쇼 일시 정지" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><rect class="bars" x="4" y="3" width="2.6" height="10" rx="1"/><rect class="bars" x="9.4" y="3" width="2.6" height="10" rx="1"/><path class="play" d="M5 3.2v9.6a.6.6 0 0 0 .9.5l7.4-4.8a.6.6 0 0 0 0-1L5.9 2.7a.6.6 0 0 0-.9.5z"/></svg></button></p>
-        <button type="button" class="kind file" data-i="0" data-caption="IBTrACS_storm_tracks_1980-2026.shp: 폭풍 경로 4,999개, 최대 풍속별 색칠" aria-pressed="true"><span class="ext">SHP</span><span class="fname">IBTrACS_storm_tracks_1980-2026.shp</span><span class="fsize">5.3 MB</span><svg class="grab" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5l10 7.2-4.4.7 2.6 5.3-2.2 1-2.5-5.3L5 14.6z"/></svg></button>
-        <button type="button" class="kind file" data-i="1" data-caption="usgs_earthquakes_M6plus_1900-2026.gpkg: 대지진 14,537건, 규모별 색칠" aria-pressed="false"><span class="ext">GPKG</span><span class="fname">usgs_earthquakes_M6plus_1900-2026.gpkg</span><span class="fsize">2.2 MB</span><svg class="grab" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5l10 7.2-4.4.7 2.6 5.3-2.2 1-2.5-5.3L5 14.6z"/></svg></button>
-        <button type="button" class="kind file" data-i="2" data-caption="GDO_heatwave_intensity_JJA_2023.nc: 일별 폭염 격자, 시간 슬라이더 포함" aria-pressed="false"><span class="ext">NC</span><span class="fname">GDO_heatwave_intensity_JJA_2023.nc</span><span class="fsize">12.6 MB</span><svg class="grab" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5l10 7.2-4.4.7 2.6 5.3-2.2 1-2.5-5.3L5 14.6z"/></svg></button>
-        <button type="button" class="kind file" data-i="3" data-caption="ETOPO_2022_relief_30min.tif: 지구 전체의 육지와 해저 고도" aria-pressed="false"><span class="ext">TIF</span><span class="fname">ETOPO_2022_relief_30min.tif</span><span class="fsize">375 KB</span><svg class="grab" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5l10 7.2-4.4.7 2.6 5.3-2.2 1-2.5-5.3L5 14.6z"/></svg></button>
-        <button type="button" class="kind file" data-i="4" data-caption="NCEI_volcano_locations.csv: 화산 1,609곳, 고도별 색칠" aria-pressed="false"><span class="ext">CSV</span><span class="fname">NCEI_volcano_locations.csv</span><span class="fsize">106 KB</span><svg class="grab" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5l10 7.2-4.4.7 2.6 5.3-2.2 1-2.5-5.3L5 14.6z"/></svg></button>
-      </div>
-      <p class="kind-caption">IBTrACS_storm_tracks_1980-2026.shp: 폭풍 경로 4,999개, 최대 풍속별 색칠</p>
+      <p class="film-caption">78초로 보는 NimbleMap: 파일을 끌어다 놓고, 살펴보고, 질문하세요.</p>
     </div>
   </div>
 </section>
@@ -274,7 +260,7 @@
       <a class="btn btn-primary btn-get" href="https://github.com/kangning-huang/NimbleMap/releases/latest/download/NimbleMap-macos-arm64.dmg" download>Mac용 무료 다운로드</a>
     </div>
     <p class="mac-only" hidden>NimbleMap은 Apple 실리콘이 탑재된 Mac이 필요합니다. Windows 버전도 준비 중입니다.</p>
-    <p class="dl-fine">무료 · 약 74MB · macOS 13 이상 · Apple 실리콘 · 오프라인에서도 작동</p>
+    <p class="dl-fine">무료 · 약 109MB · macOS 13 이상 · Apple 실리콘 · 오프라인에서도 작동</p>
     <p class="dl-fine"><a href="download.html#get">처음 열 때 macOS가 허용을 요청합니다: 여는 방법</a></p>
     <div class="share" role="group" aria-label="공유"><span class="share-label">공유</span><a class="share-btn" data-net="x" href="#" target="_blank" rel="noopener" aria-label="공유: X">X</a><a class="share-btn" data-net="facebook" href="#" target="_blank" rel="noopener" aria-label="공유: Facebook">Facebook</a><a class="share-btn" data-net="reddit" href="#" target="_blank" rel="noopener" aria-label="공유: Reddit">Reddit</a><a class="share-btn" data-net="linkedin" href="#" target="_blank" rel="noopener" aria-label="공유: LinkedIn">LinkedIn</a></div>
     <p class="built-on">NimbleMap은 <a href="https://github.com/opengeos/RustGIS">RustGIS</a>를 기반으로 만들어졌습니다.</p>

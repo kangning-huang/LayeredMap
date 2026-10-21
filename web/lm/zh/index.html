@@ -89,30 +89,16 @@
         <a class="btn btn-quiet" href="#data">去哪里找数据</a>
       </div>
       <p class="mac-only" hidden>凌波微图需要搭载 Apple 芯片的 Mac。Windows 版正在制作中。</p>
-      <p class="dl-fine">免费 · 约 74 MB · macOS 13 及以上 · Apple 芯片 · 断网可用</p>
+      <p class="dl-fine">免费 · 约 109 MB · macOS 13 及以上 · Apple 芯片 · 断网可用</p>
       <p class="dl-fine"><a href="download.html#get">首次打开时 macOS 会请你确认：看看怎么打开</a></p>
     </div>
-    <div class="hero-shot showcase drop-scene" data-rotate="3500">
-      <!-- Hero video hook: for the launch-video web loop, put
-             <video class="slide is-on" autoplay muted loop playsinline poster="../img/open-storms.jpg" width="1600" height="996"><source src="video/hero-loop.mp4" type="video/mp4"></video>
-           in place of the <img> slides in .stage (and drop the file list, or keep it as a legend). -->
-      <figure class="frame stage">
-        <img class="slide is-on" src="../img/open-storms.jpg" alt="凌波微图打开了文件 IBTrACS_storm_tracks_1980-2026.shp：亚洲和太平洋上空的 4999 条风暴路径，按最大风速着色，图层卡片上列出了文件名和图例。" width="1600" height="996">
-        <img class="slide" src="../img/open-earthquakes.jpg" alt="凌波微图打开了 usgs_earthquakes_M6plus_1900-2026.gpkg：环太平洋的 14537 次地震，按震级着色。" width="1600" height="996" loading="lazy" aria-hidden="true">
-        <img class="slide" src="../img/open-heatwave.jpg" alt="凌波微图打开了 GDO_heatwave_intensity_JJA_2023.nc，停在 2023 年 7 月 16 日：三个大洲上的热浪强度以红色显示，地图下方是时间滑块。" width="1600" height="996" loading="lazy" aria-hidden="true">
-        <img class="slide" src="../img/open-relief.jpg" alt="凌波微图打开了 ETOPO_2022_relief_30min.tif：用渐变色显示全球陆地和海底的高程。" width="1600" height="996" loading="lazy" aria-hidden="true">
-        <img class="slide" src="../img/open-volcanoes.jpg" alt="凌波微图打开了 NCEI_volcano_locations.csv：环太平洋火山带周围的 1609 座火山显示为点，按海拔着色。" width="1600" height="996" loading="lazy" aria-hidden="true">
+    <div class="hero-shot hero-film">
+      <figure class="frame film">
+        <video class="film-loop" autoplay muted loop playsinline preload="metadata" poster="../img/hero-poster.jpg" width="1280" height="720" aria-label="78 秒的凌波微图短片：把地图文件拖进来打开，在近 5000 条台风路径中搜索，点开一次地震，逐日播放夏季热浪，再用 Pro 回答一个问题。"><source src="../video/hero-loop.mp4" type="video/mp4"></video>
+        <img class="film-still" src="../img/hero-poster.jpg" alt="78 秒的凌波微图短片：把地图文件拖进来打开，在近 5000 条台风路径中搜索，点开一次地震，逐日播放夏季热浪，再用 Pro 回答一个问题。" width="1280" height="720" loading="lazy">
+        <button type="button" class="film-pause" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><rect class="bars" x="4" y="3" width="2.6" height="10" rx="1"/><rect class="bars" x="9.4" y="3" width="2.6" height="10" rx="1"/><path class="play" d="M5 3.2v9.6a.6.6 0 0 0 .9.5l7.4-4.8a.6.6 0 0 0 0-1L5.9 2.7a.6.6 0 0 0-.9.5z"/></svg></button>
       </figure>
-      <svg class="drop-arrow" viewBox="0 0 110 70" aria-hidden="true"><path d="M6 64C26 30 56 14 98 10"/><path class="head" d="M88 3l11 7-10 8"/></svg>
-      <div class="files" role="group" aria-label="一个装满下载来的地图文件的文件夹：选一个，看看它在凌波微图里打开的样子">
-        <p class="files-head"><svg class="folder" viewBox="0 0 20 20" aria-hidden="true"><path d="M2 5.5A1.5 1.5 0 0 1 3.5 4h4l1.6 1.8h7.4A1.5 1.5 0 0 1 18 7.3v7.2a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 2 14.5z"/></svg><span>地图数据</span><button type="button" class="pause" aria-label="暂停轮播" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><rect class="bars" x="4" y="3" width="2.6" height="10" rx="1"/><rect class="bars" x="9.4" y="3" width="2.6" height="10" rx="1"/><path class="play" d="M5 3.2v9.6a.6.6 0 0 0 .9.5l7.4-4.8a.6.6 0 0 0 0-1L5.9 2.7a.6.6 0 0 0-.9.5z"/></svg></button></p>
-        <button type="button" class="kind file" data-i="0" data-caption="IBTrACS_storm_tracks_1980-2026.shp：4999 条风暴路径，按最大风速着色" aria-pressed="true"><span class="ext">SHP</span><span class="fname">IBTrACS_storm_tracks_1980-2026.shp</span><span class="fsize">5.3 MB</span><svg class="grab" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5l10 7.2-4.4.7 2.6 5.3-2.2 1-2.5-5.3L5 14.6z"/></svg></button>
-        <button type="button" class="kind file" data-i="1" data-caption="usgs_earthquakes_M6plus_1900-2026.gpkg：14537 次大地震，按震级着色" aria-pressed="false"><span class="ext">GPKG</span><span class="fname">usgs_earthquakes_M6plus_1900-2026.gpkg</span><span class="fsize">2.2 MB</span><svg class="grab" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5l10 7.2-4.4.7 2.6 5.3-2.2 1-2.5-5.3L5 14.6z"/></svg></button>
-        <button type="button" class="kind file" data-i="2" data-caption="GDO_heatwave_intensity_JJA_2023.nc：逐日热浪网格，带时间滑块" aria-pressed="false"><span class="ext">NC</span><span class="fname">GDO_heatwave_intensity_JJA_2023.nc</span><span class="fsize">12.6 MB</span><svg class="grab" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5l10 7.2-4.4.7 2.6 5.3-2.2 1-2.5-5.3L5 14.6z"/></svg></button>
-        <button type="button" class="kind file" data-i="3" data-caption="ETOPO_2022_relief_30min.tif：全球陆地和海底的高程" aria-pressed="false"><span class="ext">TIF</span><span class="fname">ETOPO_2022_relief_30min.tif</span><span class="fsize">375 KB</span><svg class="grab" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5l10 7.2-4.4.7 2.6 5.3-2.2 1-2.5-5.3L5 14.6z"/></svg></button>
-        <button type="button" class="kind file" data-i="4" data-caption="NCEI_volcano_locations.csv：1609 座火山，按海拔着色" aria-pressed="false"><span class="ext">CSV</span><span class="fname">NCEI_volcano_locations.csv</span><span class="fsize">106 KB</span><svg class="grab" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5l10 7.2-4.4.7 2.6 5.3-2.2 1-2.5-5.3L5 14.6z"/></svg></button>
-      </div>
-      <p class="kind-caption">IBTrACS_storm_tracks_1980-2026.shp：4999 条风暴路径，按最大风速着色</p>
+      <p class="film-caption">78 秒看懂凌波微图：拖入文件，探索数据，向它提问。</p>
     </div>
   </div>
 </section>
@@ -275,7 +261,7 @@
       <a class="btn btn-primary btn-get" href="https://gitcode.com/KN-Huang/NimbleMap/releases/download/v0.7.1/NimbleMap-macos-arm64.dmg" download>免费下载 Mac 版</a>
     </div>
     <p class="mac-only" hidden>凌波微图需要搭载 Apple 芯片的 Mac。Windows 版正在制作中。</p>
-    <p class="dl-fine">免费 · 约 74 MB · macOS 13 及以上 · Apple 芯片 · 断网可用</p>
+    <p class="dl-fine">免费 · 约 109 MB · macOS 13 及以上 · Apple 芯片 · 断网可用</p>
     <p class="dl-fine"><a href="download.html#get">首次打开时 macOS 会请你确认：看看怎么打开</a></p>
     <div class="share" role="group" aria-label="分享"><span class="share-label">分享</span><a class="share-btn" data-net="x" href="#" target="_blank" rel="noopener" aria-label="分享: X">X</a><a class="share-btn" data-net="facebook" href="#" target="_blank" rel="noopener" aria-label="分享: Facebook">Facebook</a><a class="share-btn" data-net="reddit" href="#" target="_blank" rel="noopener" aria-label="分享: Reddit">Reddit</a><a class="share-btn" data-net="linkedin" href="#" target="_blank" rel="noopener" aria-label="分享: LinkedIn">LinkedIn</a></div>
     <p class="built-on">凌波微图基于 <a href="https://github.com/opengeos/RustGIS">RustGIS</a> 构建。</p>

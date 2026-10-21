@@ -6,6 +6,7 @@
 #   PAID=1 tools/lm/site/retake_screenshots.sh pro-ask        # shots that spend an Ask call
 #   NOBUILD=1 …                                               # skip the cargo build
 #   OPEN_FILES=<folder> …                                     # also the home page's open-* shots
+#   LM_APP=<…>/NimbleMap.app/Contents/MacOS/layeredmap NOBUILD=1 …   # shoot a packaged build
 #
 # Each shot launches the app with a `--tour` script (apps/layeredmap/src/main.rs › Step), finds the
 # window that process opens (by its PID, so other NimbleMap windows on screen are ignored), captures
@@ -44,12 +45,12 @@ areas-countries    | -    | 26 | -                | theme light;basemap light;ca
 heatwave-slider    | -    | 27 | -                | theme light;basemap light;example heatwaves;time 45;-20,20,2.4;-20,20,2.4;-20,20,2.4 |
 heatwave-click     | -    | 30 | -                | theme light;basemap light;example heatwaves;time 45;20,44,4.3;click 0.5,35.8;20,44,4.3;20,44,4.3 |
 heatwave-export    | -    | 26 | -                | theme light;basemap light;example heatwaves;time 45;-20,20,2.4;export;-20,20,2.4;-20,20,2.4 |
-walls-satellite    | -    | 30 | -                | theme light;basemap satellite;example walls;116.4,39.9,9.3;click 116.39,39.93;116.4,39.9,9.3;116.4,39.9,9.3 |
+walls-satellite    | -    | 30 | -                | theme light;basemap satellite;example walls;116.4,39.9,9.3;click 116.39,39.93;116.4,39.9,9.3;116.4,39.9,9.3;116.4,39.9,9.3;116.4,39.9,9.3 |
 walls-compare      | -    | 32 | -                | theme light;basemap light;example walls;116.4,39.9,9.3;click 116.39,39.93;card compare_peers area_km2;116.4,39.9,9.3;116.4,39.9,9.3 |
 walls-region       | -    | 28 | -                | theme light;basemap satellite;example walls;preset 1;116.2,37.6,6.4;116.2,37.6,6.4;116.2,37.6,6.4 |
 walls-filter       | -    | 36 | -                | theme light;basemap light;example walls;116.4,39.9,9.3;click 116.39,39.93;102,27,4.1;card filter type;102,27,4.1;102,27,4.1 |
 typhoons-pro       | pro  | 33 | -                | theme light;basemap light;example storms;preset 1;153.65,6.2,9;click 153.65,6.2;132.8,13.1,4.2;132.8,13.1,4.2;132.8,13.1,4.2 |
-pro-ask            | paid | 48 | -                | theme light;basemap light;100,30,2.5;ask Which country has the most cities?;100,30,2.5;100,30,2.5;100,30,2.5;100,30,2.5;100,30,2.5 | assets/examples/cities.geojson
+pro-ask            | paid | 48 | -                | theme light;basemap light;esc;60,30,2.0;ask Which country has the most cities?;60,30,2.0;60,30,2.0;60,30,2.0;60,30,2.0;60,30,2.0 | assets/examples/cities.geojson
 open-storms        | files | 30 | -               | theme light;basemap light;tab 0;tab 0;card style_by_value max_wind_k;tab 0;150,22,3.2;tab 0;150,22,3.2;150,22,3.2;150,22,3.2;150,22,3.2 | @IBTrACS_storm_tracks_1980-2026.shp
 _open-search       | files | 29 | -               | theme light;basemap light;tab 0;tab 0;card style_by_value max_wind_k;find Haiyan;tab 0;150,22,3.2;tab 0;150,22,3.2;150,22,3.2;150,22,3.2;150,22,3.2 | @IBTrACS_storm_tracks_1980-2026.shp
 _open-zoom         | files | 36 | -               | theme light;basemap light;tab 0;tab 0;card style_by_value max_wind_k;tab 0;124,16,4.6;esc;esc;124,16,4.6;124,16,4.6;124,16,4.6;124,16,4.6;124,16,4.6 | @IBTrACS_storm_tracks_1980-2026.shp
@@ -70,14 +71,14 @@ step-try    | typhoons-filter    | 340,496,1140,996  | -
 open-search | _open-search       | 700,100,1600,662  | 800x500
 open-zoom   | _open-zoom         | 345,100,1545,850  | 800x500
 open-click  | _open-click        | 600,110,1600,735  | 800x500
-open-time   | open-heatwave      | 210,420,1130,995  | 800x500
+open-time   | open-heatwave      | 336,330,1176,855  | 800x500
 EOF
 )
 
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
 IMG="$ROOT/web/lm/img"
 TARGET=${CARGO_TARGET_DIR:-/Volumes/LaCie/cargo-target/layeredmap}
-APP="$TARGET/release/layeredmap"
+APP=${LM_APP:-"$TARGET/release/layeredmap"}  # LM_APP: e.g. a bundle's Contents/MacOS/layeredmap
 WORK=$(mktemp -d "${TMPDIR:-/tmp}/lm-retake.XXXXXX")
 PY=(~/miniforge3/bin/mamba run -n lm-logo python -I "$ROOT/tools/lm/site/retake_screenshots.py")
 # Light window chrome (title bar) even when macOS is in Dark mode: a per-process Cocoa default.

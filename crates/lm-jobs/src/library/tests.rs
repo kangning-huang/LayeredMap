@@ -31,7 +31,8 @@ fn sha(bytes: &[u8]) -> String {
 }
 
 fn file_url(p: &Path) -> String {
-    format!("file://{}", p.display())
+    // Forward slashes so resolve/local_path behave the same on Windows and Unix.
+    format!("file://{}", p.to_string_lossy().replace('\\', "/"))
 }
 
 fn wake() -> Wake {
@@ -70,7 +71,7 @@ fn files_in(dir: &Path) -> Vec<String> {
             if e.path().is_dir() {
                 stack.push(e.path());
             } else {
-                out.push(e.path().strip_prefix(dir).unwrap().display().to_string());
+                out.push(e.path().strip_prefix(dir).unwrap().to_string_lossy().replace('\\', "/"));
             }
         }
     }
@@ -182,6 +183,9 @@ fn relative_urls_resolve_against_files_too() {
     assert_eq!(resolve("/repo/fixtures/library/catalog.json", "thumbs/a.png"), "/repo/fixtures/library/thumbs/a.png");
     assert_eq!(resolve("https://h.cn/a/b.json", "https://other.org/c"), "https://other.org/c");
     assert_eq!(resolve("https://h.cn", "c.json"), "https://h.cn/c.json");
+    // Windows file:// bases use backslashes; relative names must still join under the catalog folder.
+    assert_eq!(resolve(r"file://C:\Users\me\library\catalog.json", "a.csv"), "file://C:/Users/me/library/a.csv");
+    assert_eq!(resolve(r"file://D:\data\library\catalog.json", r"..\assets\x.tif"), "file://D:/data/assets/x.tif");
     assert_eq!(local_path("file:///Users/me/My%20Data/a.json"), Some(PathBuf::from("/Users/me/My Data/a.json")));
     assert_eq!(local_path("file://localhost/tmp/a.json"), Some(PathBuf::from("/tmp/a.json")));
     assert_eq!(local_path("https://h.cn/a.json"), None);

@@ -2,187 +2,187 @@ English	Español	Nota
 Layer	Capa	QGIS: capa
 Layers (panel)	Capas	panel Capas; QGIS: Panel de capas
 Basemap	Mapa base	QGIS: mapa base
-Satellite	Satélite	
-Offline	Sin conexión	
-Light	Claro	
-Dark	Oscuro	
-Auto	Automático	
-Background strength	Intensidad del fondo	
+Satellite	Satélite
+Offline	Sin conexión
+Light	Claro
+Dark	Oscuro
+Auto	Automático
+Background strength	Intensidad del fondo
 Attribute table	Tabla de atributos	QGIS: tabla de atributos
-Table	Tabla	
+Table	Tabla
 Field	Campo	QGIS: campo
 Feature	Elemento	everyday word; QGIS: objeto espacial / entidad
-Record	Registro	
-Point	Punto	
-Line	Línea	
+Record	Registro
+Point	Punto
+Line	Línea
 Area (polygon)	Área (polígono)	everyday "área"; QGIS: polígono
 Raster	Ráster	QGIS: ráster
 Grid	Cuadrícula	everyday; QGIS also "malla"/"rejilla"
 Cell	Celda	QGIS: celda / píxel
 Vector data	Datos vectoriales	QGIS: vectorial
 Coordinate system (CRS)	Sistema de coordenadas (SRC)	QGIS: Sistema de Referencia de Coordenadas (SRC)
-Projection	Proyección	
-Legend	Leyenda	
+Projection	Proyección
+Legend	Leyenda
 Scale bar	Barra de escala	QGIS: barra de escala
-Title	Título	
-Credits	Créditos	
+Title	Título
+Credits	Créditos
 Filter	Filtrar	button; noun: filtro
-+ Filter	+ Filtro	
-Filtered:	Filtrado:	
++ Filter	+ Filtro
+Filtered:	Filtrado:
 Style	Estilo	QGIS: simbología / estilo
-Style…	Estilo…	
-Colour by value	Colorear por valor	
+Style…	Estilo…
+Colour by value	Colorear por valor
 Color by a value	Colorear por valor	app label (US spelling)
-Color	Color	
-Palette	Paleta	
-Range	Rango	
-Label	Etiqueta	
-Labels	Etiquetas	
+Color	Color
+Palette	Paleta
+Range	Rango
+Label	Etiqueta
+Labels	Etiquetas
 Join	Unión	QGIS: unión
 Buffer	Área de influencia	QGIS: área de influencia (buffer)
 Show an area within a distance	Mostrar el área hasta una distancia	everyday wording for buffer
-Show an area within a distance of each	Mostrar el área hasta una distancia de cada uno	
-Overview	Resumen	
-Details	Detalles	
+Show an area within a distance of each	Mostrar el área hasta una distancia de cada uno
+Overview	Resumen
+Details	Detalles
 Card	Ficha	everyday word for the info card (not "tarjeta")
-Examples	Ejemplos	
-Open	Abrir	
-Open file…	Abrir archivo…	
-Share	Compartir	
-Map image…	Imagen del mapa…	
-Data…	Datos…	
-Export	Exportar	
-Undo	Deshacer	
-Search places or your data	Buscar lugares o tus datos	
-Zoom in	Acercar	
-Zoom out	Alejar	
+Examples	Ejemplos
+Open	Abrir
+Open file…	Abrir archivo…
+Share	Compartir
+Map image…	Imagen del mapa…
+Data…	Datos…
+Export	Exportar
+Undo	Deshacer
+Search places or your data	Buscar lugares o tus datos
+Zoom in	Acercar
+Zoom out	Alejar
 Zoom to layer	Zoom a la capa	QGIS: Zoom a la capa
-Zoom to All Data	Zoom a todos los datos	
-Rename	Cambiar nombre	
-Remove from map	Quitar del mapa	
+Zoom to All Data	Zoom a todos los datos
+Rename	Cambiar nombre
+Remove from map	Quitar del mapa
 Time slider	Barra de tiempo	everyday; QGIS: controlador temporal
-Play	Reproducir	
-Previous step (←)	Paso anterior (←)	
-Next step (→)	Paso siguiente (→)	
+Play	Reproducir
+Previous step (←)	Paso anterior (←)
+Next step (→)	Paso siguiente (→)
 No data	Sin datos	QGIS: sin datos (NoData)
-No value	Sin valor	
-This cell has no data.	Esta celda no tiene datos.	
-Median	Mediana	
+No value	Sin valor
+This cell has no data.	Esta celda no tiene datos.
+Median	Mediana
 Rank	Posición	everyday; also "clasificación"
-Selected	Seleccionado	
-Keep	Conservar	
-Discard	Descartar	
-Ask	Preguntar	
-Ask about your layers	Pregunta sobre tus capas	
-Pro	Pro	
-Free	Gratis	
-Help	Ayuda	
-Glossary	Glosario	
-Download	Descargar	
-Home	Inicio	
-Toolbar	Barra de herramientas	
+Selected	Seleccionado
+Keep	Conservar
+Discard	Descartar
+Ask	Preguntar
+Ask about your layers	Pregunta sobre tus capas
+Pro	Pro
+Free	Gratis
+Help	Ayuda
+Glossary	Glosario
+Download	Descargar
+Home	Inicio
+Toolbar	Barra de herramientas
 Typhoons and hurricanes	Tifones y huracanes	example name
 Heatwaves, summer 2023	Olas de calor, verano de 2023	example name
 Walled cities of China, 1866	Ciudades amuralladas de China, 1866	example name
 World basics	Lo básico del mundo	example name
-4,999 lines	4999 líneas	
-1,251 points	1251 puntos	
+4,999 lines	4999 líneas
+1,251 points	1251 puntos
 4,999 lines · storm tracks.gpkg	4999 líneas · storm tracks.gpkg	file name not translated
 1,789 areas · walled cities 1866.geojson	1789 áreas · walled cities 1866.geojson	file name not translated
-By basin	Por cuenca	
+By basin	Por cuenca
 Heat	Calor	palette name
-Groups	Grupos	
+Groups	Grupos
 Smooth	Continuo	continuous colour ramp
-4 objects here	4 objetos aquí	
+4 objects here	4 objetos aquí
 Haiyan · storms	Haiyan · storms	data value, not translated
-Your data	Tus datos	
+Your data	Tus datos
 Find in storms	Buscar en storms	layer name not translated
 Find in walled cities 1866	Buscar en walled cities 1866	layer name not translated
-higher than 99% of 4,547 storms with values	mayor que el 99 % de las 4547 tormentas con valor	
-higher than 99% of 1,789 areas	mayor que el 99 % de las 1789 áreas	
-View in table	Ver en la tabla	
-View data	Ver datos	
+higher than 99% of 4,547 storms with values	mayor que el 99 % de las 4547 tormentas con valor
+higher than 99% of 1,789 areas	mayor que el 99 % de las 1789 áreas
+View in table	Ver en la tabla
+View data	Ver datos
 Show storms where strength is any of Category 5	Mostrar las tormentas cuya intensidad sea Category 5	value not translated; generic: Mostrar [capa] donde [campo] es uno de [valores]
 Show areas where type is any of Provincial Capital	Mostrar las áreas cuyo tipo sea Provincial Capital	value not translated
-228 match	228 coincidencias	
-19 match	19 coincidencias	
-Apply	Aplicar	
-Clear	Quitar	
-Showing 228 of 4,999	Mostrando 228 de 4999	
-tied 2nd highest of 228 filtered	2.º más alto (empatado) de los 228 filtrados	
-Measure length	Medir longitud	
-Heat-wave intensity (°C)	Intensidad de la ola de calor (°C)	
-Heat-wave intensity (°C), 16 Jul 2023	Intensidad de la ola de calor (°C), 16 jul 2023	
-Time: 1 Jun 2023 to 31 Aug 2023 (92 steps)	Tiempo: del 1 jun 2023 al 31 ago 2023 (92 pasos)	
-Treated as measured values (averaged, not summed)	Tratados como valores medidos (se promedian, no se suman)	
-Change	Cambiar	
-46 of 92	46 de 92	
-lower than 58% of this layer’s cells (estimated from a sample)	menor que el 58 % de las celdas de esta capa (estimado a partir de una muestra)	
-Show only values above…	Mostrar solo valores por encima de…	
-Change colors and range	Cambiar colores y rango	
-Show where values are like this	Mostrar dónde hay valores como este	
-Size	Tamaño	
-Slide 16:9	Diapositiva 16:9	
-Report A4	Informe A4	
-Square	Cuadrado	
-Show	Mostrar	
-Fit to data	Ajustar a los datos	
-Current view	Vista actual	
+228 match	228 coincidencias
+19 match	19 coincidencias
+Apply	Aplicar
+Clear	Quitar
+Showing 228 of 4,999	Mostrando 228 de 4999
+tied 2nd highest of 228 filtered	2.º más alto (empatado) de los 228 filtrados
+Measure length	Medir longitud
+Heat-wave intensity (°C)	Intensidad de la ola de calor (°C)
+Heat-wave intensity (°C), 16 Jul 2023	Intensidad de la ola de calor (°C), 16 jul 2023
+Time: 1 Jun 2023 to 31 Aug 2023 (92 steps)	Tiempo: del 1 jun 2023 al 31 ago 2023 (92 pasos)
+Treated as measured values (averaged, not summed)	Tratados como valores medidos (se promedian, no se suman)
+Change	Cambiar
+46 of 92	46 de 92
+lower than 58% of this layer’s cells (estimated from a sample)	menor que el 58 % de las celdas de esta capa (estimado a partir de una muestra)
+Show only values above…	Mostrar solo valores por encima de…
+Change colors and range	Cambiar colores y rango
+Show where values are like this	Mostrar dónde hay valores como este
+Size	Tamaño
+Slide 16:9	Diapositiva 16:9
+Report A4	Informe A4
+Square	Cuadrado
+Show	Mostrar
+Fit to data	Ajustar a los datos
+Current view	Vista actual
 North arrow	Flecha de norte	QGIS: flecha de norte
-Lat/lon labels	Etiquetas de lat./lon.	
-Grid lines	Líneas de cuadrícula	
+Lat/lon labels	Etiquetas de lat./lon.
+Grid lines	Líneas de cuadrícula
 Caption	Pie de imagen	not "leyenda" (that is Legend)
-Save…	Guardar…	
-Save	Guardar	
-If these came from a Chinese map app (Amap, Tencent or Baidu), they may sit a few hundred meters off.	Si proceden de una app de mapas china (Amap, Tencent o Baidu), pueden estar desplazados unos cientos de metros.	
-Compare	Comparar	
+Save…	Guardar…
+Save	Guardar
+If these came from a Chinese map app (Amap, Tencent or Baidu), they may sit a few hundred meters off.	Si proceden de una app de mapas china (Amap, Tencent o Baidu), pueden estar desplazados unos cientos de metros.
+Compare	Comparar
 Compare with other walled cities 1866	Comparar con otros elementos de walled cities 1866	layer name not translated
-Compare with other [layer]	Comparar con otros elementos de [capa]	
-1,789 areas, highest first	1789 áreas, de mayor a menor	
-Compare by	Comparar por	
-Back	Atrás	
-Opacity	Opacidad	
-Outline	Contorno	
+Compare with other [layer]	Comparar con otros elementos de [capa]
+1,789 areas, highest first	1789 áreas, de mayor a menor
+Compare by	Comparar por
+Back	Atrás
+Opacity	Opacidad
+Outline	Contorno
 Width	Grosor	line width; QGIS: ancho de trazo
-Values	Valores	
-Fields	Campos	
+Values	Valores
+Fields	Campos
 Value	Valor	field kind
 Category	Categoría	field kind
 Name	Nombre	field kind
 Date	Fecha	field kind
-joined · 172 of 177 matched	unida · 172 de 177 coinciden	
-Show joined fields	Mostrar campos unidos	
-Unjoin	Deshacer unión	
-Coordinate system	Sistema de coordenadas	
-Assumptions	Supuestos	
-Located using longitude and latitude as GPS coordinates (WGS 84)	Ubicado con la longitud y la latitud como coordenadas GPS (WGS 84)	
-Amap/Tencent coordinates (GCJ-02): convert	Coordenadas de Amap/Tencent (GCJ-02): convertir	
-GPS coordinates (WGS 84): keep where they are	Coordenadas GPS (WGS 84): dejar donde están	
-Compare on the map first	Comparar antes en el mapa	
+joined · 172 of 177 matched	unida · 172 de 177 coinciden
+Show joined fields	Mostrar campos unidos
+Unjoin	Deshacer unión
+Coordinate system	Sistema de coordenadas
+Assumptions	Supuestos
+Located using longitude and latitude as GPS coordinates (WGS 84)	Ubicado con la longitud y la latitud como coordenadas GPS (WGS 84)
+Amap/Tencent coordinates (GCJ-02): convert	Coordenadas de Amap/Tencent (GCJ-02): convertir
+GPS coordinates (WGS 84): keep where they are	Coordenadas GPS (WGS 84): dejar donde están
+Compare on the map first	Comparar antes en el mapa
 Extent	Extensión	QGIS: extensión
-Metric Units	Unidades métricas	
-Imperial Units	Unidades imperiales	
-area · 23.4 km²	área · 23.4 km²	
-Keep the part of [layer] inside [other]	Conservar la parte de [capa] dentro de [otra]	
-Variable shown	Variable mostrada	
-Level shown	Nivel mostrado	
-Drop to add to the map	Suelta para añadir al mapa	
-Format	Formato	
-Work Offline	Trabajar sin conexión	
-Working offline: online backgrounds are off	Trabajando sin conexión: los fondos en línea están desactivados	
+Metric Units	Unidades métricas
+Imperial Units	Unidades imperiales
+area · 23.4 km²	área · 23.4 km²
+Keep the part of [layer] inside [other]	Conservar la parte de [capa] dentro de [otra]
+Variable shown	Variable mostrada
+Level shown	Nivel mostrado
+Drop to add to the map	Suelta para añadir al mapa
+Format	Formato
+Work Offline	Trabajar sin conexión
+Working offline: online backgrounds are off	Trabajando sin conexión: los fondos en línea están desactivados
 Insight line	Línea de contexto	glossary term
 Assumption	Supuesto	glossary term
 Recipe	Receta	glossary term
 Time step	Paso de tiempo	glossary term
-Resolution (cell size)	Resolución (tamaño de celda)	
-Geodesic	Geodésico	
+Resolution (cell size)	Resolución (tamaño de celda)
+Geodesic	Geodésico
 Clip	Recortar	QGIS: cortar
-Map image (export)	Imagen del mapa (exportar)	
+Map image (export)	Imagen del mapa (exportar)
 Ask box (Pro)	Cuadro de preguntas (Pro)	feature name; the field reads "Ask about your layers"
-Variable	Variable	
-Attribute	Atributo	
+Variable	Variable
+Attribute	Atributo
 Layers	Capas	toolbar button and panel name
-File (menu)	Archivo	
-View (menu)	Ver	
+File (menu)	Archivo
+View (menu)	Ver
 Open Example	Abrir ejemplo	File menu item
 Help › NimbleMap Help	Ayuda › Ayuda de NimbleMap	menu path

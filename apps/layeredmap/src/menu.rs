@@ -7,8 +7,11 @@
 //! The menus are in the interface language (WP5.5). muda can't re-title a whole bar in place, so
 //! when the language changes the bar is built again and put back ([`MenuBar::relabel`]).
 
+#[cfg(any(target_os = "macos", windows))]
 use muda::accelerator::{Accelerator, Code, Modifiers};
-use muda::{AboutMetadata, CheckMenuItem, Menu, MenuEvent, MenuItem, PredefinedMenuItem, Submenu};
+#[cfg(any(target_os = "macos", windows))]
+use muda::{AboutMetadata, MenuItem, PredefinedMenuItem, Submenu};
+use muda::{CheckMenuItem, Menu, MenuEvent};
 
 use lm_core::i18n::{self, Lang};
 #[cfg(any(target_os = "macos", windows))]
@@ -46,15 +49,21 @@ pub struct MenuBar {
 /// Which optional items the bar shows.
 #[derive(Clone, Copy)]
 struct Options {
+    #[allow(dead_code)] // read when building the bar on macOS/Windows
     developer: bool,
+    #[allow(dead_code)]
     export: bool,
+    #[allow(dead_code)]
     library: bool,
+    #[allow(dead_code)]
     settings: bool,
 }
 
 /// ⌘ on macOS, Ctrl on Windows.
+#[cfg(any(target_os = "macos", windows))]
 const CMD: Modifiers = if cfg!(target_os = "macos") { Modifiers::META } else { Modifiers::CONTROL };
 
+#[cfg(any(target_os = "macos", windows))]
 fn cmd(key: Code) -> Option<Accelerator> {
     Some(Accelerator::new(CMD, key))
 }

@@ -1,5 +1,9 @@
 # Packaging
 
+NimbleMap's own packaging is in `lm/`: `bundle-macos.sh` and `build-dmg.sh` (macOS),
+`windows/build-installer.ps1` (Windows, `docs/lm/windows.md`) and `linux/build-tarball.sh` (a
+portable Linux tarball, best effort, `docs/lm/linux.md`). Everything else here is RustGIS's.
+
 `package.sh` builds the release files for one platform (see its header); the Release workflow
 runs it on every platform and attaches the files to the GitHub Release. `downloads/` is the
 [downloads.rustgis.app](https://downloads.rustgis.app) site.

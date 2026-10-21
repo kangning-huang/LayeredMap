@@ -23,6 +23,9 @@ const OVERLAY_MAP_ID: u32 = MAP_ID_BASE - 3;
 const MAX_OVERLAYS: u32 = 10;
 /// The map id of the lines from an object to the nearest one found (`nearest_distance`).
 pub(super) const CONNECTOR_MAP_ID: u32 = OVERLAY_MAP_ID - MAX_OVERLAYS;
+/// The map id of a ranking's top areas, drawn in place of the result layer when the ranking
+/// covers more areas than an answer shows (the other areas aren't drawn).
+pub(super) const RANKED_MAP_ID: u32 = CONNECTOR_MAP_ID - 1;
 
 /// What a preview map id draws.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -33,6 +36,8 @@ pub(super) enum PreviewPart {
     Overlay,
     /// Lines from objects to the nearest ones found.
     Connector,
+    /// A ranking's top areas (the result layer cut to them): a light fill and outline.
+    Ranked,
 }
 
 /// Which preview part a map id is, if it is one.
@@ -40,6 +45,7 @@ pub(super) fn preview_part(id: u32) -> Option<PreviewPart> {
     match id {
         PREVIEW_MAP_ID => Some(PreviewPart::Result),
         CONNECTOR_MAP_ID => Some(PreviewPart::Connector),
+        RANKED_MAP_ID => Some(PreviewPart::Ranked),
         _ if (CONNECTOR_MAP_ID + 1..=OVERLAY_MAP_ID).contains(&id) => Some(PreviewPart::Overlay),
         _ => None,
     }
@@ -216,9 +222,9 @@ impl Workspace {
             self.analysis.preview.as_ref().and_then(|p| p.pairs.as_ref()).into_iter().flatten().map(|(l, _)| l).collect();
         let ctx = &self.analysis.context_overlays;
         PreviewShown {
-            layer: pairs.iter().copied().find(|l| l.id == PREVIEW_MAP_ID),
+            layer: pairs.iter().copied().find(|l| l.id == PREVIEW_MAP_ID || l.id == RANKED_MAP_ID),
             highlights: self.analysis.highlight.iter().chain(self.analysis.answer_highlights.iter()).collect(),
-            overlays: pairs.iter().copied().filter(|l| l.id != PREVIEW_MAP_ID && !ctx.contains(&l.id)).collect(),
+            overlays: pairs.iter().copied().filter(|l| l.id != PREVIEW_MAP_ID && l.id != RANKED_MAP_ID && !ctx.contains(&l.id)).collect(),
             context: self.analysis.context_highlights.iter().collect(),
             context_overlays: pairs.into_iter().filter(|l| ctx.contains(&l.id)).collect(),
             empty: self.analysis.answer_empty,
@@ -463,6 +469,19 @@ impl Workspace {
                 self.analysis.preview_faint = self.analysis.preview_masks.iter().map(|(id, _)| *id).collect();
             }
             Found::None => {}
+        }
+        // A ranking of more areas than an answer shows (every country by its cities): only the
+        // top ones the card lists are drawn, lightly; framed when they fit, else the view stays.
+        if let Some((l, top)) = ranked_top(p, last_new)
+            && let Some(sub) = subset_layer(l, &top)
+        {
+            let mut a = map_layer(RANKED_MAP_ID, &sub);
+            a.name = l.name.clone();
+            extra.retain(|x| x.id != RANKED_MAP_ID);
+            extra.push(a);
+            self.set_preview_parts(None, generation, Vec::new(), extra);
+            self.answer_fit = answer_frame(None, &[(l, top)]);
+            return;
         }
         self.set_preview_parts(last_imported.as_ref(), generation, preview_rows, extra);
         self.answer_fit = match &found {
@@ -710,6 +729,27 @@ fn plan_answer(p: &lm_ask::PlanResult) -> Found<'_> {
         }
     }
     Found::None
+}
+
+/// A final ranking of the plan's last new layer when that layer has more objects than an answer
+/// shows: the layer and the rows of the top ones the card lists (at most `ANSWER_AREAS`).
+fn ranked_top<'a>(
+    p: &'a lm_ask::PlanResult,
+    last_new: Option<&'a lm_jobs::plan_exec::PlanLayer>,
+) -> Option<(&'a lm_jobs::plan_exec::PlanLayer, Vec<usize>)> {
+    use lm_jobs::plan_exec::StepOutcome;
+    let l = last_new?;
+    let LayerData::Vector(ds) = &l.data else { return None };
+    if ds.features.len() <= lm_jobs::actions::ANSWER_AREAS {
+        return None;
+    }
+    let StepOutcome::Card { card, recipe, .. } = p.outcomes.iter().rev().find(|o| !matches!(o, StepOutcome::Display))? else { return None };
+    if recipe.action != "rank_by_value" || recipe.inputs.first().is_none_or(|i| i.name != l.name && i.name != l.layer.display_name) {
+        return None;
+    }
+    let lm_core::recipe::Answer::Ranking { rows, .. } = &card.answer else { return None };
+    let top: Vec<usize> = rows.iter().filter(|r| r.value.is_some()).take(lm_jobs::actions::ANSWER_AREAS).map(|r| r.row).collect();
+    (!top.is_empty()).then_some((l, top))
 }
 
 /// The title of the step whose answer is in `layer` (for a kept built-in answer's layer name).
@@ -1051,5 +1091,53 @@ pub(crate) mod ask_preview_tests {
             assert_eq!(l.selection, (0..l.dataset.features.len()).collect::<Vec<_>>(), "{action}: every survivor lit");
             assert!(w.highlighted(storms).is_empty());
         }
+    }
+
+    /// The release screenshot pro-ask ("Which country has the most cities?": count_in per area,
+    /// then rank_by_value), on fixtures V1 + T1 (schools in 17 districts): only the top 5 areas
+    /// the card lists are drawn, lightly and without the thick highlight, and framed; the counts
+    /// step gets no card of its own, while a lone final count_in keeps its card.
+    #[test]
+    fn pro_ask_which_country_has_the_most_cities_draws_the_top_5_only() {
+        let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../fixtures");
+        let ctx = lm_jobs::import::Ctx::detached(Default::default());
+        let mut w = Workspace::default();
+        for (f, name) in [("V1/districts.geojson", "Districts"), ("T1/schools.csv", "Schools")] {
+            let mut l = lm_jobs::import::import_path(&dir.join(f), &ctx).unwrap().remove(0);
+            l.name = name.into();
+            assert!(w.add_imported(vec![l], 1));
+        }
+        let ranked = plan_on(
+            &w,
+            serde_json::from_value(serde_json::json!([
+                {"name": "count_in", "args": {"points": "Schools", "areas": "Districts"}},
+                {"name": "rank_by_value", "args": {"layer": "#1", "field": "schools"}}
+            ]))
+            .unwrap(),
+        );
+        w.preview_plan(Some(&ranked));
+        let shown = w.preview_shown();
+        let l = shown.layer.unwrap();
+        assert_eq!(l.id, RANKED_MAP_ID);
+        assert_eq!(l.dataset.features.len(), 5, "the top 5 of 17 districts");
+        assert!(l.selection.is_empty(), "a light fill and outline, not the thick highlight");
+        assert!(shown.highlights.is_empty());
+        assert!(w.answer_fit.is_some(), "Shanghai's top 5 fit, so they are framed");
+        let cards = crate::ask::answer_cards(&ranked);
+        assert_eq!(cards.len(), 1, "only the ranking: {:?}", cards.iter().map(|c| &c.0.title).collect::<Vec<_>>());
+        assert!(cards[0].0.title.contains("ranked"));
+        // A lone final count_in keeps its card and draws its areas as before.
+        let counted = plan_on(
+            &w,
+            serde_json::from_value(serde_json::json!([{"name": "count_in", "args": {"points": "Schools", "areas": "Districts"}}])).unwrap(),
+        );
+        assert_eq!(crate::ask::answer_cards(&counted).len(), 1);
+        w.preview_plan(Some(&counted));
+        assert_eq!(w.preview_shown().layer.map(|l| (l.id, l.dataset.features.len())), Some((PREVIEW_MAP_ID, 17)));
+        // Without the final ranking, the counts are drawn whole.
+        let mut ranked = ranked;
+        ranked.outcomes.truncate(1);
+        w.preview_plan(Some(&ranked));
+        assert_eq!(w.preview_shown().layer.map(|l| l.id), Some(PREVIEW_MAP_ID));
     }
 }
