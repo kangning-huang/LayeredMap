@@ -599,6 +599,15 @@ class Page:
 
     # ---- insets
     @contextmanager
+    def clipped(self, d):
+        """Draw inside an arbitrary path (no background, no frame)."""
+        cid = self.uid("k")
+        self.defs.append(f'<clipPath id="{cid}"><path d="{d}"/></clipPath>')
+        self._add("g+", f'<g clip-path="url(#{cid})">')
+        yield
+        self._add("g-", "</g>")
+
+    @contextmanager
     def inset_circle(self, cx, cy, r, ring=0.8, bg=True):
         cid = self.uid("k")
         self.defs.append(f'<clipPath id="{cid}"><path d="{circ(cx, cy, r)}"/></clipPath>')
