@@ -461,6 +461,34 @@ impl Account {
         }
     }
 
+    /// Whether feedback (Help › Send Feedback…) goes with this account: someone is signed in to
+    /// the service feedback is sent to (`Config::feedback`, the international one). A mainland
+    /// China session is another service, whose tokens the feedback function can't check.
+    pub fn feedback_signed_in(&self) -> bool {
+        let Some((_, region)) = self.user() else { return false };
+        match (self.config.region(region), self.config.feedback()) {
+            (Some(mine), Some(feedback)) => mine.auth_url == feedback.auth_url,
+            _ => false,
+        }
+    }
+
+    /// The access token sent with feedback (`Authorization: Bearer …`), so the feedback function
+    /// can keep who sent it privately (docs/lm/feedback.md); refreshed first like Ask's. `None`
+    /// when nobody is signed in to the feedback service or a token can't be had (offline, a
+    /// refused refresh): the message then goes without one, as anyone's would.
+    pub fn feedback_token(&self) -> Option<String> {
+        if !self.feedback_signed_in() {
+            return None;
+        }
+        match self.access_token() {
+            Ok(t) => Some(t),
+            Err(e) => {
+                log::info!("feedback: sent without the account: {e}");
+                None
+            }
+        }
+    }
+
     /// What the server last said about Pro for the signed-in account (`None`: nobody is signed in,
     /// or no answer yet).
     pub fn entitlement(&self) -> Option<Entitlement> {
@@ -663,6 +691,36 @@ mod tests {
         let a = signed_in(Arc::new(store::MemoryStore::default()), 1_000 + 60);
         assert!(matches!(a.access_token(), Err(AccountError::Network(_))));
         assert!(a.user().is_some());
+    }
+
+    #[test]
+    fn feedback_carries_the_token_only_when_signed_in_to_its_service() {
+        let a = signed_in(Arc::new(store::MemoryStore::default()), 1_000 + 3_600);
+        assert!(a.feedback_signed_in());
+        assert_eq!(a.feedback_token().as_deref(), Some("tok"));
+        // A token that can't be refreshed (no network here): sent without one.
+        let stale = signed_in(Arc::new(store::MemoryStore::default()), 1_000 + 60);
+        assert_eq!(stale.feedback_token(), None);
+        // Signed out: nothing.
+        let none = Account::new(a.config().clone(), Arc::new(NoNetwork), Arc::new(store::MemoryStore::default()));
+        assert!(!none.feedback_signed_in());
+        assert_eq!(none.feedback_token(), None);
+        // A mainland China session belongs to another service: its token isn't sent.
+        let both = Config::parse(
+            r#"{"international": {"auth_url": "https://a.example", "anon_key": "k", "proxy_url": "https://a.example/f"},
+                "china": {"auth_url": "https://cn.example", "anon_key": "c", "proxy_url": "https://cn.example/f"}}"#,
+        )
+        .unwrap_or_default();
+        let cn = Account::new(both, Arc::new(NoNetwork), Arc::new(store::MemoryStore::default())).with_clock(|| 1_000);
+        cn.adopt(Session {
+            user: User { id: "u".into(), provider: "phone".into(), email: None },
+            region: Region::China,
+            access: Some(("cn-tok".into(), 1_000 + 3_600)),
+            refresh: "r".into(),
+            entitlement: None,
+        });
+        assert!(!cn.feedback_signed_in());
+        assert_eq!(cn.feedback_token(), None);
     }
 
     #[test]

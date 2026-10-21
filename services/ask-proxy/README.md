@@ -108,9 +108,15 @@ not for deploying.
 
 ## Feedback
 
-`feedback` takes a message from the app without a sign-in and posts it as a discussion on
+`feedback` takes a message from the app, signed in or not, and posts it as a discussion on
 `kangning-huang/NimbleMap` through GitHub's GraphQL API (`createDiscussion`). The app needs no
 GitHub account and no access to GitHub. Design and privacy: `docs/lm/feedback.md`.
+
+A signed-in user's app adds its access token (`Authorization: Bearer …`). The function verifies it
+like `ask` (`auth.getClaims`) and keeps the account id in the private `feedback_senders` table
+beside the discussion's address; the post says only "From a signed-in user", never the id. A token
+that doesn't verify is treated as anonymous (logged `auth=invalid`, without the token) and the
+message is still posted. Limits are the same either way.
 
 | Form's type | Category (default id) | Title |
 |---|---|---|
@@ -145,7 +151,7 @@ Set up (owner):
    ```
 3. **Push the tables and deploy**:
    ```sh
-   supabase db push                       # 20261020000000_feedback.sql
+   supabase db push                       # 20261020000000_feedback.sql, 20261020120000_feedback_senders.sql
    supabase functions deploy feedback     # verify_jwt = false comes from config.toml
    ```
 4. **Try it** without posting: `curl -s -X POST https://<ref>.supabase.co/functions/v1/feedback
@@ -154,8 +160,20 @@ Set up (owner):
 
 Reading reply addresses: Table Editor › `feedback_contacts` (or SQL `select * from
 public.feedback_contacts order by created_at desc;`); delete a row once the conversation is over.
-`supabase functions logs feedback` shows one line per message (kind, status, whether an address
-was kept), never the text, the address or a hash.
+
+Looking up who sent a discussion (signed-in senders only), in Dashboard › SQL Editor:
+
+```sql
+select s.discussion_url, s.user_id, u.email, s.created_at
+  from public.feedback_senders s
+  join auth.users u on u.id = s.user_id
+ where s.discussion_url = 'https://github.com/kangning-huang/NimbleMap/discussions/42';
+```
+
+No row: the sender wasn't signed in (or the token didn't verify). `supabase functions logs
+feedback` shows one line per message (kind, status, whether an address was kept, `auth=user`,
+`none` or `invalid`, whether a sender row was kept), never the text, the address, a hash, a token
+or an id.
 
 ## Housekeeping
 
@@ -163,6 +181,8 @@ was kept), never the text, the address or a hash.
   `delete from public.usage_daily where day < current_date - 90;` daily (Database › Cron).
 - Feedback counters older than a week aren't needed:
   `delete from public.feedback_rate where day < current_date - 7;` daily (Database › Cron).
+- Feedback senders: at most a year,
+  `delete from public.feedback_senders where created_at < now() - interval '1 year';`.
 - To give or take away Pro by hand: `update public.profiles set pro = false where id = '<uuid>';`
   in the SQL editor (service role).
 - A rotated OpenRouter key: `supabase secrets set OPENROUTER_API_KEY=…`; functions pick it up on

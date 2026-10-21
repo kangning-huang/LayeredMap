@@ -3,12 +3,18 @@
 Owner decision, 2026-10-20: people send feedback from the app, and it appears as a GitHub
 Discussion on the public repository `kangning-huang/NimbleMap`. The app posts it through a
 NimbleMap server function, so nobody needs a GitHub account and it works where GitHub is hard to
-reach (mainland China). Anyone may send; there is no sign-in, and spam is held back with limits.
+reach (mainland China). Anyone may send, signed in or not, and spam is held back with limits.
+
+Owner decision, 2026-10-20 (later the same day): a message from a signed-in user carries that
+user's account id, **privately**. The app sends the session's access token; the server verifies it
+and keeps the id in a private table beside the discussion. The public post says only "From a
+signed-in user" (see [Signed-in senders](#signed-in-senders)).
 
 Code: the sheet `crates/lm-ui/src/feedback_ui.rs`; the request, checks and install id
 `crates/lm-account/src/feedback.rs`; the server function `services/ask-proxy/supabase/functions/feedback/`
 with its logic in `_shared/feedback.ts`; the tables in
-`services/ask-proxy/supabase/migrations/20261020000000_feedback.sql`. Setup and deploy:
+`services/ask-proxy/supabase/migrations/20261020000000_feedback.sql` and
+`20261020120000_feedback_senders.sql`. Setup and deploy:
 `services/ask-proxy/README.md` › Feedback.
 
 ## The sheet
@@ -20,6 +26,8 @@ Help › Send Feedback… (both macOS and Windows) opens a sheet over the map:
   "Only used to reply to you. Never shown publicly.";
 - **Include app version and macOS version** (Windows: "… and Windows version"), on by default;
 - "Your feedback will be posted publicly on GitHub Discussions, without your email.";
+- signed in (to the international service), under it: "Sent with your account so we can follow
+  up. Your account isn't shown publicly.";
 - **Cancel** and **Send**. Send shows "Sending…" with a spinner and locks the form; success shows
   the discussion's address with **View on GitHub** (opens the browser) and **Done**; a failure
   keeps the text and says what to do (wait until tomorrow, check the connection, turn off Work
@@ -47,7 +55,8 @@ account. Help is where Mac apps put it.
 | Reply email | only when typed | **never** | `feedback_contacts`, with the discussion's address |
 | Install id (random UUID) | yes | never | only as a keyed hash in `feedback_rate`, for a week |
 | Network address | (seen by the server) | never | only as a keyed hash in `feedback_rate`, for a week |
-| Account, maps, files | never | never | never |
+| Account id | the session's access token, only when signed in | **never** (only "From a signed-in user") | `feedback_senders`, with the discussion's address, when the token verifies |
+| Email of the account, maps, files | never | never | never |
 
 - **Install id:** a random UUID made on first send and kept in the support folder
   (`~/Library/Application Support/LayeredMap/feedback-install-id`; `%APPDATA%\LayeredMap\` on
@@ -58,8 +67,8 @@ account. Help is where Mac apps put it.
 - **Reply emails:** row level security on, no policies, nothing granted to `anon` or
   `authenticated`: only the service role (the function and the dashboard) reads them. Delete a row
   once the conversation is over; at most a year (`README.md` › Housekeeping).
-- **Logs:** one line per message: kind, status, whether an email was kept. Never the text, an
-  address or a hash.
+- **Logs:** one line per message: kind, status, whether an email was kept, `auth=user|none|invalid`
+  and whether a sender row was kept. Never the text, an address, a hash, a token or an id.
 
 ## What the discussion looks like
 
@@ -76,15 +85,63 @@ characters. The body:
 
 ---
 
-App: 0.7.3 · macOS 14.5 · de
+NimbleMap 0.7.3 · macOS 14.5 · de
 
 Sent from the NimbleMap app
 ```
+
+From a signed-in sender (verified token), one more line, and nothing else:
+
+```markdown
+…
+
+Sent from the NimbleMap app
+
+From a signed-in user
+```
+
+The details line is the app's version as "NimbleMap 0.7.3", the system as the app sends it
+(`About::current`: "macOS 14.5" from `sw_vers -productVersion`, "Windows" on Windows), and the
+interface language; the versions only when the box is ticked. A bare system version (an older
+build, or a hand-made request: "26.6") is labelled when posted, "macOS 26.6", or "Windows
+10.0.26100" for a Windows build number (four or more digits in the third part); a version that
+already names its system is left as it is, so nothing is labelled twice.
 
 The user's text can't ping, link or embed: every line is quoted; `\ ` * _ [ ] < > ! # | ~ &` are
 backslash-escaped (no images, links, HTML, entities, headings or tables); a zero-width space
 follows every `@` and every `#` before a digit (no mentions, no issue cross-references). Control
 characters and bidirectional overrides are stripped. Bare URLs still show as text links.
+
+## Signed-in senders
+
+- **App** (`lm_account::Account::feedback_token`, `feedback::send`): when someone is signed in to
+  the service feedback goes to (the international one), the request adds
+  `Authorization: Bearer <access token>`, refreshed first as for Ask. Signed out, or a token that
+  can't be had (offline, a refused refresh), and the message goes without it, as anyone's. A
+  mainland China session is another service, so its feedback goes without the account. The body
+  never carries an id: the server wouldn't trust one.
+- **Server** (`feedbackSender` in `_shared/feedback.ts`): the token is checked with
+  `auth.getClaims` (the project's signing keys, as Ask does) and the claims must be a signed-in
+  user's, unexpired (`_shared/auth.ts`). Verified: `sub` goes into `feedback_senders` after the
+  discussion is created, the same way as a reply email, and the post gets "From a signed-in user".
+  Anything else (expired, forged, an anon key, a verifier failure) doesn't stop the message: it is
+  posted as anonymous and logged `auth=invalid`, never the token.
+- **Limits:** the same as anyone's (per install, per address, overall); signing in doesn't raise
+  them.
+- **The table:** `feedback_senders (discussion_url text primary key, user_id uuid not null
+  references auth.users on delete cascade, created_at timestamptz default now())`, row level
+  security on, no policies, nothing granted to `anon` or `authenticated`. Deleting an account
+  deletes its rows. Delete rows once a conversation is over; at most a year.
+- **Looking up a sender** (owner; Supabase Dashboard › SQL Editor, which runs as the service role):
+
+  ```sql
+  select s.discussion_url, s.user_id, u.email, s.created_at
+    from public.feedback_senders s
+    join auth.users u on u.id = s.user_id
+   where s.discussion_url = 'https://github.com/kangning-huang/NimbleMap/discussions/42';
+  ```
+
+  Leave out the `where` line (and add `order by s.created_at desc`) to list them all.
 
 ## Abuse controls
 

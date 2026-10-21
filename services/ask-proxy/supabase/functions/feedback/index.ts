@@ -1,5 +1,6 @@
-// In-app feedback (Supabase Edge Function `feedback`): Help › Send Feedback… posts here without
-// signing in; the message becomes a GitHub Discussion (docs/lm/feedback.md).
+// In-app feedback (Supabase Edge Function `feedback`): Help › Send Feedback… posts here, signed in
+// or not; the message becomes a GitHub Discussion (docs/lm/feedback.md). A signed-in sender's token
+// is verified like Ask's (auth.getClaims) and the account id kept in `feedback_senders`, never posted.
 // Secrets: GITHUB_FEEDBACK_TOKEN (fine-grained, this repository only, Discussions read and write);
 // optional FEEDBACK_HASH_KEY (the key of the install-id and address hashes; the service role key
 // when unset), FEEDBACK_REPOSITORY_ID, FEEDBACK_CATEGORY_IDEA, FEEDBACK_CATEGORY_PROBLEM,
@@ -54,6 +55,14 @@ Deno.serve((req) => {
       }),
     saveContact: async (url, email) => {
       const { error } = await admin.from("feedback_contacts").insert({ discussion_url: url, email });
+      return !error;
+    },
+    verify: async (jwt) => {
+      const { data, error } = await admin.auth.getClaims(jwt);
+      return error || !data ? null : data.claims;
+    },
+    saveSender: async (url, userId) => {
+      const { error } = await admin.from("feedback_senders").insert({ discussion_url: url, user_id: userId });
       return !error;
     },
     options,
