@@ -84,7 +84,7 @@ impl Provider {
             Provider::Apple => lm_core::tn!("Continue with Apple"),
             Provider::Google => lm_core::tn!("Continue with Google"),
             Provider::X => lm_core::tn!("Continue with X"),
-            Provider::Email => lm_core::tn!("Email me a sign-in code"),
+            Provider::Email => lm_core::tn!("Email me a sign-in link"),
             Provider::WeChat => lm_core::tn!("Continue with WeChat"),
             Provider::Alipay => lm_core::tn!("Continue with Alipay"),
             Provider::Phone => lm_core::tn!("Text me a code"),

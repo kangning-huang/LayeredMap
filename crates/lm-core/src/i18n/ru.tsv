@@ -760,8 +760,6 @@ Signing out…	Выход…
 Deleting your account…	Удаление учётной записи…
 Email address	Адрес электронной почты
 Verify	Подтвердить
-The link has stopped working on this Mac; the code still works for an hour.	Ссылка больше не работает на этом Mac; код действует ещё час.
-The link has stopped working on this computer; the code still works for an hour.	Ссылка больше не работает на этом компьютере; код действует ещё час.
 Send a New Email	Отправить новое письмо
 Use a Different Email	Другой адрес почты
 Asking about your layers needs a free account. Your maps and files stay on this computer.	Чтобы задавать вопросы о слоях, нужна бесплатная учётная запись. Ваши карты и файлы остаются на этом компьютере.
@@ -774,9 +772,6 @@ Delete your {app} account? {pro} stops working on every computer you use. Your m
 Sign in to use {pro}	Войдите, чтобы пользоваться {pro}
 {pro} is free while it's new. Your account only says who you are: your maps and files never leave this computer.	Пока {pro} новый, он бесплатен. Учётная запись лишь подтверждает, кто вы: ваши карты и файлы никогда не покидают этот компьютер.
 Sending an email to {address}…	Отправка письма на {address}…
-We sent an email to {address}. Enter the {n}-digit code in it.	Мы отправили письмо на {address}. Введите код из {n} цифр, указанный в нём.
-We sent an email to {address}. Click the link in it on this Mac, or enter the {n}-digit code.	Мы отправили письмо на {address}. Нажмите ссылку в нём на этом Mac или введите код из {n} цифр.
-We sent an email to {address}. Click the link in it on this computer, or enter the {n}-digit code.	Мы отправили письмо на {address}. Нажмите ссылку в нём на этом компьютере или введите код из {n} цифр.
 {n}-digit code	Код из {n} цифр
 Sign in to use {pro} (Settings › Account).	Войдите, чтобы пользоваться {pro} (Настройки › Учётная запись).
 Settings…	Настройки…
@@ -785,7 +780,6 @@ Mainland China	Материковый Китай
 Continue with Apple	Продолжить с Apple
 Continue with Google	Продолжить с Google
 Continue with X	Продолжить с X
-Email me a sign-in code	Прислать код для входа на почту
 Continue with WeChat	Продолжить с WeChat
 Continue with Alipay	Продолжить с Alipay
 Text me a code	Прислать код в SMS
@@ -829,7 +823,6 @@ Couldn't reach the assistant service: {error}	Не удалось связать
 The assistant service's answer was cut off: {error}	Ответ службы помощника оборвался: {error}
 The assistant service answered {status} with something unreadable.	Служба помощника ответила {status}, но ответ не удалось прочитать.
 {app} is working offline, so the assistant can't be reached. Turn off View › Work Offline to ask.	{app} работает офлайн, поэтому помощник недоступен. Чтобы задать вопрос, отключите Вид › Работать офлайн.
-Signing in unlocks the Ask box, analysis tools, the built-in world layers and voice input.	После входа становятся доступны поле вопросов, инструменты анализа, встроенные слои мира и голосовой ввод.
 Checking your account…	Проверяем учётную запись…
 Settings › Account shows who is signed in and what the account includes.	В разделе «Настройки › Учётная запись» видно, кто вошёл и что входит в учётную запись.
 Nothing matches, so nothing is highlighted on the map.	Совпадений нет, поэтому на карте ничего не выделено.
@@ -854,3 +847,14 @@ You're up to date: {app} {version} is the newest version.	У вас послед
 {app} {version} is ready	Версия {app} {version} готова
 {done} MB	{done} МБ
 {done} of {total} MB	{done} из {total} МБ
+Email me a sign-in link	Прислать ссылку для входа на почту
+Signing in unlocks the Ask box, voice input and the built-in world layers. The analysis tools are free without an account.	После входа становятся доступны поле вопросов, голосовой ввод и встроенные слои мира. Инструменты анализа бесплатны и без аккаунта.
+We'll email you a link from Supabase Auth, the service that runs {app} accounts. Open it on this Mac.	Мы пришлём ссылку от Supabase Auth — сервиса, на котором работают аккаунты {app}. Откройте её на этом Mac.
+We'll email you a link from Supabase Auth, the service that runs {app} accounts. Open it on this computer.	Мы пришлём ссылку от Supabase Auth — сервиса, на котором работают аккаунты {app}. Откройте её на этом компьютере.
+We sent an email to {address} from Supabase Auth.	Мы отправили письмо от Supabase Auth на {address}.
+We sent an email to {address} from Supabase Auth. Click the link in it on this Mac to finish signing in.	Мы отправили письмо от Supabase Auth на {address}. Нажмите ссылку в нём на этом Mac, чтобы завершить вход.
+We sent an email to {address} from Supabase Auth. Click the link in it on this computer to finish signing in.	Мы отправили письмо от Supabase Auth на {address}. Нажмите ссылку в нём на этом компьютере, чтобы завершить вход.
+Its subject is “Confirm your email address” the first time, or “Your sign-in link” after that. If it isn't in your inbox, check your spam or junk folder.	Тема письма — «Confirm your email address» в первый раз и «Your sign-in link» потом. Если его нет во входящих, проверьте папку «Спам».
+If the email shows a {n}-digit code, you can type it here instead.	Если в письме есть код из {n} цифр, его можно ввести здесь.
+The link has stopped working on this Mac. Send a new email, or type the code if the email has one.	Ссылка больше не работает на этом Mac. Отправьте новое письмо или введите код, если он есть в письме.
+The link has stopped working on this computer. Send a new email, or type the code if the email has one.	Ссылка больше не работает на этом компьютере. Отправьте новое письмо или введите код, если он есть в письме.

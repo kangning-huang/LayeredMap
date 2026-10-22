@@ -760,8 +760,6 @@ Signing out…	Uscita in corso…
 Deleting your account…	Eliminazione dell'account in corso…
 Email address	Indirizzo email
 Verify	Verifica
-The link has stopped working on this Mac; the code still works for an hour.	Il link non funziona più su questo Mac; il codice resta valido per un'ora.
-The link has stopped working on this computer; the code still works for an hour.	Il link non funziona più su questo computer; il codice resta valido per un'ora.
 Send a New Email	Invia una nuova email
 Use a Different Email	Usa un'altra email
 Asking about your layers needs a free account. Your maps and files stay on this computer.	Per fare domande sui tuoi layer serve un account gratuito. Le tue mappe e i tuoi file restano su questo computer.
@@ -774,9 +772,6 @@ Delete your {app} account? {pro} stops working on every computer you use. Your m
 Sign in to use {pro}	Accedi per usare {pro}
 {pro} is free while it's new. Your account only says who you are: your maps and files never leave this computer.	{pro} è gratuito finché è una novità. Il tuo account dice solo chi sei: le tue mappe e i tuoi file non lasciano mai questo computer.
 Sending an email to {address}…	Invio di un'email a {address}…
-We sent an email to {address}. Enter the {n}-digit code in it.	Abbiamo inviato un'email a {address}. Inserisci il codice di {n} cifre che contiene.
-We sent an email to {address}. Click the link in it on this Mac, or enter the {n}-digit code.	Abbiamo inviato un'email a {address}. Fai clic sul link che contiene su questo Mac o inserisci il codice di {n} cifre.
-We sent an email to {address}. Click the link in it on this computer, or enter the {n}-digit code.	Abbiamo inviato un'email a {address}. Fai clic sul link che contiene su questo computer o inserisci il codice di {n} cifre.
 {n}-digit code	Codice di {n} cifre
 Sign in to use {pro} (Settings › Account).	Accedi per usare {pro} (Impostazioni › Account).
 Settings…	Impostazioni…
@@ -785,7 +780,6 @@ Mainland China	Cina continentale
 Continue with Apple	Continua con Apple
 Continue with Google	Continua con Google
 Continue with X	Continua con X
-Email me a sign-in code	Inviami un codice di accesso via email
 Continue with WeChat	Continua con WeChat
 Continue with Alipay	Continua con Alipay
 Text me a code	Inviami un codice via SMS
@@ -829,7 +823,6 @@ Couldn't reach the assistant service: {error}	Impossibile raggiungere il servizi
 The assistant service's answer was cut off: {error}	La risposta del servizio dell'assistente si è interrotta: {error}
 The assistant service answered {status} with something unreadable.	Il servizio dell'assistente ha risposto {status} con qualcosa di illeggibile.
 {app} is working offline, so the assistant can't be reached. Turn off View › Work Offline to ask.	{app} sta lavorando offline, quindi l'assistente non è raggiungibile. Disattiva Vista › Lavora offline per fare domande.
-Signing in unlocks the Ask box, analysis tools, the built-in world layers and voice input.	Con l’accesso si sbloccano la casella delle domande, gli strumenti di analisi, i layer del mondo integrati e l’input vocale.
 Checking your account…	Verifica dell’account…
 Settings › Account shows who is signed in and what the account includes.	In Impostazioni › Account vedi chi ha effettuato l’accesso e cosa include l’account.
 Nothing matches, so nothing is highlighted on the map.	Nessuna corrispondenza: sulla mappa non è evidenziato nulla.
@@ -854,3 +847,14 @@ You're up to date: {app} {version} is the newest version.	Hai la versione più r
 {app} {version} is ready	{app} {version} è pronto
 {done} MB	{done} MB
 {done} of {total} MB	{done} di {total} MB
+Email me a sign-in link	Inviami un link di accesso via email
+Signing in unlocks the Ask box, voice input and the built-in world layers. The analysis tools are free without an account.	Con l’accesso si sbloccano la casella delle domande, l’input vocale e i layer del mondo integrati. Gli strumenti di analisi sono gratuiti anche senza account.
+We'll email you a link from Supabase Auth, the service that runs {app} accounts. Open it on this Mac.	Riceverai un link da Supabase Auth, il servizio che gestisce gli account di {app}. Aprilo su questo Mac.
+We'll email you a link from Supabase Auth, the service that runs {app} accounts. Open it on this computer.	Riceverai un link da Supabase Auth, il servizio che gestisce gli account di {app}. Aprilo su questo computer.
+We sent an email to {address} from Supabase Auth.	Abbiamo inviato un'email di Supabase Auth a {address}.
+We sent an email to {address} from Supabase Auth. Click the link in it on this Mac to finish signing in.	Abbiamo inviato un'email di Supabase Auth a {address}. Fai clic sul link che contiene su questo Mac per completare l'accesso.
+We sent an email to {address} from Supabase Auth. Click the link in it on this computer to finish signing in.	Abbiamo inviato un'email di Supabase Auth a {address}. Fai clic sul link che contiene su questo computer per completare l'accesso.
+Its subject is “Confirm your email address” the first time, or “Your sign-in link” after that. If it isn't in your inbox, check your spam or junk folder.	L'oggetto è “Confirm your email address” la prima volta, poi “Your sign-in link”. Se non è nella posta in arrivo, controlla la cartella spam o posta indesiderata.
+If the email shows a {n}-digit code, you can type it here instead.	Se l'email mostra un codice di {n} cifre, puoi anche inserirlo qui.
+The link has stopped working on this Mac. Send a new email, or type the code if the email has one.	Il link non funziona più su questo Mac. Invia una nuova email, oppure inserisci il codice se l'email ne contiene uno.
+The link has stopped working on this computer. Send a new email, or type the code if the email has one.	Il link non funziona più su questo computer. Invia una nuova email, oppure inserisci il codice se l'email ne contiene uno.
