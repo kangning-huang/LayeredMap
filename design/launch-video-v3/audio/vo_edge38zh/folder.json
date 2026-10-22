@@ -1,0 +1,57 @@
+{
+ "voice": "zh-CN-YunxiNeural",
+ "rate": "+6%",
+ "text": "网上找到的地图数据，电脑根本打不开。",
+ "words": [
+  {
+   "text": "网上",
+   "offset": 0.097166,
+   "duration": 0.41275
+  },
+  {
+   "text": "找到",
+   "offset": 0.521708,
+   "duration": 0.271208
+  },
+  {
+   "text": "的",
+   "offset": 0.792916,
+   "duration": 0.106125
+  },
+  {
+   "text": "地图",
+   "offset": 0.922625,
+   "duration": 0.247625
+  },
+  {
+   "text": "数据",
+   "offset": 1.182083,
+   "duration": 0.4835
+  },
+  {
+   "text": "电脑",
+   "offset": 1.960375,
+   "duration": 0.342
+  },
+  {
+   "text": "根本",
+   "offset": 2.325958,
+   "duration": 0.294791
+  },
+  {
+   "text": "打",
+   "offset": 2.632541,
+   "duration": 0.1415
+  },
+  {
+   "text": "不",
+   "offset": 2.774041,
+   "duration": 0.082541
+  },
+  {
+   "text": "开",
+   "offset": 2.856583,
+   "duration": 0.271208
+  }
+ ]
+}

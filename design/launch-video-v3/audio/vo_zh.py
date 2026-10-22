@@ -18,11 +18,16 @@ import edge_tts
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(HERE), 'edit'))
-import edl36 as N  # noqa: E402
+import importlib  # noqa: E402
+# v3.8: LM_SYNTH_EDL=edl38 VO_SCRIPT=narration38zh.txt VO_OUT=vo_edge38zh VO_ONLY=folder (only the new
+# first line is read; the others are v3.7-zh's files, copied)
+N = importlib.import_module(os.environ.get('LM_SYNTH_EDL', 'edl36'))
 
 VOICE = 'zh-CN-YunxiNeural'
 BASE, MAX_RATE, STEP = 6, 15, 2
-OUT = os.path.join(HERE, 'vo_edge37zh')
+OUT = os.path.join(HERE, os.environ.get('VO_OUT', 'vo_edge37zh'))
+SCRIPT = os.environ.get('VO_SCRIPT', 'narration37zh.txt')
+ONLY = set(os.environ.get('VO_ONLY', '').split(',')) - {''}
 # Where each line's beat ends (s): the next line's start, or the picture beat's end when that
 # comes first (the drop at 39.87, the Pro window at 50.0, the end of the Pro section at 68.8).
 BEAT_END = {'folder': 9.85, 'open': 14.70, 'storms_a': 19.60, 'storms_b': 23.20, 'storms_c': 27.95,
@@ -31,7 +36,7 @@ BEAT_END = {'folder': 9.85, 'open': 14.70, 'storms_a': 19.60, 'storms_b': 23.20,
 
 
 def lines():
-    for line in open(os.path.join(HERE, 'narration37zh.txt'), encoding='utf-8'):
+    for line in open(os.path.join(HERE, SCRIPT), encoding='utf-8'):
         if line.startswith('#') or '|' not in line:
             continue
         vid, _, cap = [p.strip() for p in line.split('|')]
@@ -54,6 +59,8 @@ async def main():
     starts = dict(N.VO)
     rates, report = {}, []
     for vid, text in lines():
+        if ONLY and vid not in ONLY:
+            continue
         t0, end = starts[vid], BEAT_END[vid]
         rate = BASE
         while True:
@@ -72,8 +79,9 @@ async def main():
                 f'{speech:4.2f} s)  {"ok" if fits else "DOES NOT FIT"}  {text}')
         report.append(line)
         print(line, flush=True)
-    json.dump(rates, open(os.path.join(OUT, 'rates.json'), 'w'), indent=1)
-    open(os.path.join(OUT, 'fit.txt'), 'w', encoding='utf-8').write('\n'.join(report) + '\n')
+    sfx = '-' + '-'.join(sorted(ONLY)) if ONLY else ''
+    json.dump(rates, open(os.path.join(OUT, f'rates{sfx}.json'), 'w'), indent=1)
+    open(os.path.join(OUT, f'fit{sfx}.txt'), 'w', encoding='utf-8').write('\n'.join(report) + '\n')
 
 
 asyncio.run(main())

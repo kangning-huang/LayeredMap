@@ -472,12 +472,30 @@ if TRIM:
         return _render_full(TR.old_time(t))
 
 
+# v3.8 (LM_FILM_V38=1, en or zh): the fast opening (edit/edl38.py): a cold open on the storm map,
+# a dissolve into one quick folder beat, then v3.7 from 9.9 s on, SHIFT earlier
+V38 = os.environ.get('LM_FILM_V38') == '1'
+if V38:
+    import edl38 as V8
+    _render_v37 = render
+
+    def render(t):  # noqa: F811
+        w = V8.mix(t)
+        if w <= 0:
+            return _render_v37(V8.cold_time(t))
+        if w >= 1:
+            return _render_v37(V8.old_time(t))
+        a = _render_v37(V8.cold_time(t)).astype(np.float32)
+        b = _render_v37(V8.folder_time(t)).astype(np.float32)
+        return np.clip(a + (b - a) * w + 0.5, 0, 255).astype(np.uint8)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('out')
     ap.add_argument('--fps', type=int, default=N.FPS)
     ap.add_argument('--from', dest='t0', type=float, default=0.0)
-    ap.add_argument('--to', dest='t1', type=float, default=TR.DUR if TRIM else N.DUR)
+    ap.add_argument('--to', dest='t1', type=float, default=V8.DUR if V38 else TR.DUR if TRIM else N.DUR)
     ap.add_argument('--stills', default='')
     a = ap.parse_args()
     if a.stills:

@@ -401,3 +401,22 @@ python path/tilecheck.py _zh ty eq hw pro     # the map matches the English rend
   - Re-mastered to −14 LUFS.
   - Narration spans and captions shift 4.05 s.
 - **Result:** "拖进凌波微图…" starts at 5.90 s, after a 0.67 s pause.
+
+## v3.8 / v3.8-zh: the fast opening
+
+`./build.sh 6 3.8` and `./build.sh 6 3.8-zh`, using the v3.7 / v3.7-zh renders as they are (no new map shots, no paid calls).
+- **Why:** v3.7's first map appeared at 10.5 s, after 9.9 s on the folder. On nimblemap.com the film plays muted, on autoplay, with no subtitles. Platform guidance puts the hook at 1–3 s and the point by 5–6 s. The research and the options considered are in the build folder's `NimbleMap-launch-v3.8-notes.md`.
+- **Picture (`edit/edl38.py`, `LM_FILM_V38=1` in compose37):**
+  - 0–2.0 s: cold open on the storm film's world view (v3.7 15.95–17.35 s at 0.7×), all 4,999 tracks and their caption.
+  - 1.8–2.0 s: a dissolve into the folder.
+  - 2.0–3.6 s: the folder (v3.7 7.5–9.9 s at 1.5×): the file-type strip, then the GeoTIFF row selected.
+  - From 3.6 s on: v3.7, 6.3 s earlier.
+- **Narration:**
+  - Only the first line is new: `audio/narration38.txt` ("Found map data online that your computer can't open?") and `narration38zh.txt` (网上找到的地图数据，电脑根本打不开。).
+  - It is read at 0.30 s by the same voices and rates: `VO_ONLY=folder` with `voice_edge.py` / `vo_zh.py`.
+  - The other voice files are copies of `vo_edge34` / `vo_edge37zh`.
+- **Sound:**
+  - `audio/synth36.py` with `LM_SYNTH_EDL=edl38` makes v3.7's full-length mix with the new first line at 6.6 s on v3.7's clock, plus one soft whoosh under the dissolve (added last, so every other sound draws the same noise).
+  - `audio/trim38.py` cuts the first 6.3 s (the folder's held pad, before the first downbeat), fades in over 0.25 s and re-masters to −14 LUFS.
+  - The captions shift with the narration.
+- **Subtitles:** both languages get a `-1080p-subtitled.mp4`. `path/subs.py <srt> <ass> en` uses Inter SemiBold 44 px.

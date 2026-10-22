@@ -1,0 +1,42 @@
+{
+ "voice": "zh-CN-YunxiNeural",
+ "rate": "+6%",
+ "text": "1900年以来，六级以上的地震。",
+ "words": [
+  {
+   "text": "1900",
+   "offset": 0.097166,
+   "duration": 0.660375
+  },
+  {
+   "text": "年",
+   "offset": 0.757541,
+   "duration": 0.1415
+  },
+  {
+   "text": "以来",
+   "offset": 0.910833,
+   "duration": 0.41275
+  },
+  {
+   "text": "六级",
+   "offset": 1.524041,
+   "duration": 0.436333
+  },
+  {
+   "text": "以上",
+   "offset": 1.972166,
+   "duration": 0.353791
+  },
+  {
+   "text": "的",
+   "offset": 2.325958,
+   "duration": 0.058958
+  },
+  {
+   "text": "地震",
+   "offset": 2.396708,
+   "duration": 0.330208
+  }
+ ]
+}

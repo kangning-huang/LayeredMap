@@ -1,0 +1,107 @@
+{
+ "voice": "en-US-AndrewNeural",
+ "rate": "+4%",
+ "text": "NimbleMap draws 100 kilometres around Tokyo and counts the storm tracks that cross it: seven storms that reached Category 5.",
+ "words": [
+  {
+   "text": "NimbleMap",
+   "offset": 0.096166,
+   "duration": 0.613
+  },
+  {
+   "text": "draws",
+   "offset": 0.79325,
+   "duration": 0.3005
+  },
+  {
+   "text": "100",
+   "offset": 1.10575,
+   "duration": 0.5769159
+  },
+  {
+   "text": "kilometres",
+   "offset": 1.694708,
+   "duration": 0.540875
+  },
+  {
+   "text": "around",
+   "offset": 2.247583,
+   "duration": 0.3125
+  },
+  {
+   "text": "Tokyo",
+   "offset": 2.572125,
+   "duration": 0.516833
+  },
+  {
+   "text": "and",
+   "offset": 3.365375,
+   "duration": 0.084125
+  },
+  {
+   "text": "counts",
+   "offset": 3.461541,
+   "duration": 0.288458
+  },
+  {
+   "text": "the",
+   "offset": 3.762,
+   "duration": 0.084125
+  },
+  {
+   "text": "storm",
+   "offset": 3.858166,
+   "duration": 0.360583
+  },
+  {
+   "text": "tracks",
+   "offset": 4.23075,
+   "duration": 0.384625
+  },
+  {
+   "text": "that",
+   "offset": 4.627416,
+   "duration": 0.120208
+  },
+  {
+   "text": "cross",
+   "offset": 4.759625,
+   "duration": 0.360583
+  },
+  {
+   "text": "it",
+   "offset": 5.132208,
+   "duration": 0.132208
+  },
+  {
+   "text": "seven",
+   "offset": 5.709125,
+   "duration": 0.3125
+  },
+  {
+   "text": "storms",
+   "offset": 6.033666,
+   "duration": 0.396625
+  },
+  {
+   "text": "that",
+   "offset": 6.442291,
+   "duration": 0.204333
+  },
+  {
+   "text": "reached",
+   "offset": 6.658666,
+   "duration": 0.252416
+  },
+  {
+   "text": "Category",
+   "offset": 6.923083,
+   "duration": 0.504791
+  },
+  {
+   "text": "5",
+   "offset": 7.439916,
+   "duration": 0.384625
+  }
+ ]
+}
