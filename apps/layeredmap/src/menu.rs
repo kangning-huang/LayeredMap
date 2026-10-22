@@ -149,6 +149,12 @@ impl MenuBar {
             version: Some(env!("CARGO_PKG_VERSION").into()),
             comments: Some(tl!("A map-first GIS. Built on RustGIS.").into()),
             license: Some("Apache-2.0".into()),
+            // The developer (owner's request). macOS shows only the copyright from here; its
+            // panel takes the credits with the links from the bundle's Credits.rtf
+            // (packaging/lm/bundle-macos.sh). Windows lists the author and website as text.
+            copyright: Some("© 2026 Kangning Huang".into()),
+            authors: Some(vec!["Kangning Huang, Assistant Professor of Environmental Studies, NYU Shanghai".into()]),
+            website: Some("https://kangning-huang.com/".into()),
             ..Default::default()
         };
         #[cfg(target_os = "macos")]
