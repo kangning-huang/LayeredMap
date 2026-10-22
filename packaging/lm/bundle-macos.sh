@@ -130,6 +130,7 @@ cat > "$app/Contents/Info.plist" <<PLIST
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>${version}</string>
   <key>CFBundleVersion</key><string>${build}</string>
+  <key>NSHumanReadableCopyright</key><string>© 2026 Kangning Huang</string>
   <key>LSMinimumSystemVersion</key><string>13.0</string>
   <key>NSHighResolutionCapable</key><true/>
   <key>NSMicrophoneUsageDescription</key><string>${name} listens when you click the microphone in the Ask box, to turn your request into text.</string>
@@ -279,6 +280,42 @@ CFBundleName = "${name_zh}";
 CFBundleDisplayName = "${name_zh}";
 STRINGS
 plutil -lint "$app/Contents/Resources/zh-Hans.lproj/InfoPlist.strings" >/dev/null
+
+# The About panel's credits (owner: "introduce myself, the developer, with my personal website").
+# muda passes no Credits option (AboutMetadata.credits would be plain text, without links), so
+# AppKit reads Credits.rtf from Resources, links working. Like the bundle name above, it follows
+# the system's language: the English copy in Resources, one per *.lproj. RTF with no colour table,
+# so the text takes the panel's own colour in Dark Mode (Credits.html would come out black).
+# $1 is "Made by " in that language; rtf_text escapes what isn't ASCII (\uN, the signed UTF-16
+# code, then a space that RTF drops; every character here is in the BMP).
+rtf_text() { perl -CSA -e 'for (split //, $ARGV[0]) { my $c = ord($_); print $c < 128 ? $_ : sprintf("\\u%d ", $c > 32767 ? $c - 65536 : $c) }' "$1"; }
+credits_rtf() {
+  cat <<RTF
+{\\rtf1\\ansi\\ansicpg1252\\uc0
+{\\fonttbl\\f0\\fnil\\fcharset0 .AppleSystemUIFont;}
+\\pard\\qc\\f0\\fs22 $(rtf_text "$1")Kangning Huang\\
+{\\field{\\*\\fldinst{HYPERLINK "https://kangning-huang.com/"}}{\\fldrslt kangning-huang.com}}\\
+\\
+{\\field{\\*\\fldinst{HYPERLINK "https://nimblemap.com/"}}{\\fldrslt nimblemap.com}}}
+RTF
+}
+credits_rtf "Made by " > "$app/Contents/Resources/Credits.rtf"
+# lproj|"Made by"| (the last bar keeps a trailing space). The name and the addresses stay as they are.
+while IFS='|' read -r lproj made_by _; do
+  mkdir -p "$app/Contents/Resources/$lproj.lproj"
+  credits_rtf "$made_by" > "$app/Contents/Resources/$lproj.lproj/Credits.rtf"
+done <<'CREDITS'
+zh-Hans|开发者：|
+de|Entwickelt von |
+es|Desarrollado por |
+fr|Développé par |
+it|Sviluppato da |
+nl|Ontwikkeld door |
+pt-BR|Desenvolvido por |
+ru|Разработчик: |
+ja|開発者：|
+ko|개발자: |
+CREDITS
 
 # On an exFAT or FAT drive macOS keeps extended attributes in AppleDouble `._*` files, which
 # codesign rejects as unsigned subcomponents: drop them and the attributes before signing.
