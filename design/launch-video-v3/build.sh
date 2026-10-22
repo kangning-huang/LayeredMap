@@ -1,7 +1,7 @@
 #!/bin/bash
 # Render the v3 launch film ("one take") or v3.1 (the folder of files) from the window recordings
 # in raw/ (see README.md).
-#   ./build.sh [parallel jobs, default 6] [cut: 3 (default) | 3.1 … 3.6 | 3.7 | 3.7-zh | 3.7.1-zh | 3.8 | 3.8-zh]
+#   ./build.sh [parallel jobs, default 6] [cut: 3 (default) | 3.1 … 3.6 | 3.7 | 3.7-zh | 3.7.1-zh | 3.8 | 3.8-zh | 3.8-zh-square]
 # v3.8 / v3.8-zh (the fast opening, edit/edl38.py) re-cut v3.7's renders; no new map shots
 # v3.7 first needs its map shots: path/render.sh ty eq hw pro ty_plate eq_plate
 set -euo pipefail
@@ -9,6 +9,36 @@ cd "$(dirname "$0")"
 PY="${PY:-$HOME/miniforge3/envs/lm-video/bin/python}"
 J="${1:-6}"
 CUT="${2:-3}"
+# 3.8-zh-square: the square (1080x1080) re-edit of v3.8-zh for WeChat Channels / RedNote. Needs
+# ./build.sh 6 3.8-zh first (it reuses that cut's sound, captions and voice timing).
+if [ "$CUT" = "3.8-zh-square" ]; then
+  FPS=30; SUF=v3.8-zh-square
+  DUR=$($PY -c "import sys; sys.path.insert(0,'edit'); import edl38 as e; print(e.DUR)")
+  mkdir -p out/sq
+  pids=()
+  for k in $(seq 0 $((J - 1))); do
+    a=$($PY -c "print(round($DUR*$k/$J*$FPS)/$FPS)"); b=$($PY -c "print(round($DUR*($k+1)/$J*$FPS)/$FPS)")
+    $PY edit/square38.py out/sq/s$k.mkv --from "$a" --to "$b" > out/sq/s$k.log 2>&1 & pids+=($!)
+  done
+  for p in "${pids[@]}"; do wait "$p"; done
+  : > out/sq/list.txt; for k in $(seq 0 $((J - 1))); do echo "file 's$k.mkv'" >> out/sq/list.txt; done
+  ffmpeg -v error -y -f concat -safe 0 -i out/sq/list.txt -c copy out/master-$SUF.mkv
+  $PY path/subs_square.py out/NimbleMap-launch-v3.8-zh-1080p.srt out/audio-v3.8-zh-vo.txt \
+    out/NimbleMap-launch-v3.8-zh-square-1080.srt out/sq/subs.ass > /dev/null
+  for v in clean subs; do
+    VF="scale=out_color_matrix=bt709"; OUT=out/NimbleMap-launch-v3.8-zh-square-1080-clean.mp4
+    [ $v = subs ] && VF="$VF,ass=out/sq/subs.ass:fontsdir=../../assets/fonts" && OUT=out/NimbleMap-launch-v3.8-zh-square-1080.mp4
+    ffmpeg -v error -y -i out/master-$SUF.mkv -i out/audio-v3.8-zh.wav -map 0:v -map 1:a \
+      -c:v libx264 -preset slow -crf 17 -maxrate 14M -bufsize 28M -pix_fmt yuv420p -profile:v high -level 4.1 -r $FPS \
+      -colorspace bt709 -color_primaries bt709 -color_trc bt709 -vf "$VF" \
+      -c:a aac -b:a 256k -ar 48000 -movflags +faststart -shortest $OUT
+  done
+  $PY edit/cover_square.py out
+  ffmpeg -v error -y -i out/NimbleMap-launch-v3.8-zh-square-1080.mp4 -vf "fps=1,scale=360:360,tile=6x13" -frames:v 1 out/contact-sheet-$SUF.png
+  find . -name '._*' -delete 2>/dev/null || true
+  ls -la out/*square* out/*3x4*
+  exit 0
+fi
 if [ "$CUT" = "3.1" ]; then COMP=edit/compose31.py; EDL=edl31; SUF=v3.1; elif [ "$CUT" = "3.2" ]; then COMP=edit/compose32.py; EDL=edl32; SUF=v3.2; elif [ "$CUT" = "3.3" ]; then COMP=edit/compose33.py; EDL=edl33; SUF=v3.3; elif [ "$CUT" = "3.4" ]; then COMP=edit/compose34.py; EDL=edl34; SUF=v3.4; elif [ "$CUT" = "3.5" ]; then COMP=edit/compose35.py; EDL=edl35; SUF=v3.5; elif [ "$CUT" = "3.6" ]; then COMP=edit/compose36.py; EDL=edl36; SUF=v3.6; elif [ "$CUT" = "3.7" ]; then COMP=edit/compose37.py; EDL=edl36; SUF=v3.7; elif [ "$CUT" = "3.7-zh" ]; then COMP=edit/compose37.py; EDL=edl36; SUF=v3.7-zh; export LM_FILM_LANG=zh; elif [ "$CUT" = "3.7.1-zh" ]; then COMP=edit/compose37.py; EDL=edl371zh; SUF=v3.7.1-zh; export LM_FILM_LANG=zh LM_FILM_TRIM=1; elif [ "$CUT" = "3.8" ]; then COMP=edit/compose37.py; EDL=edl38; SUF=v3.8; export LM_FILM_V38=1; elif [ "$CUT" = "3.8-zh" ]; then COMP=edit/compose37.py; EDL=edl38; SUF=v3.8-zh; export LM_FILM_V38=1 LM_FILM_LANG=zh; else COMP=edit/compose.py; EDL=edl; SUF=v3; fi
 export LM_CUT=$CUT
 # v3.7 is v3.6's timeline (edl36) with the map shots rendered offline (path/render.sh)

@@ -420,3 +420,28 @@ python path/tilecheck.py _zh ty eq hw pro     # the map matches the English rend
   - `audio/trim38.py` cuts the first 6.3 s (the folder's held pad, before the first downbeat), fades in over 0.25 s and re-masters to −14 LUFS.
   - The captions shift with the narration.
 - **Subtitles:** both languages get a `-1080p-subtitled.mp4`. `path/subs.py <srt> <ass> en` uses Inter SemiBold 44 px.
+
+---
+
+# v3.8-zh square (1080×1080, WeChat Channels / RedNote)
+
+Build: `./build.sh 6 3.8-zh-square`, after `./build.sh 6 3.8-zh` (the square cut reuses that cut's
+sound `out/audio-v3.8-zh.wav`, its SRT and `out/audio-v3.8-zh-vo.txt`). About 3.5 min.
+
+- **Not a crop of the 1080p master.** `edit/square38.py` runs v3.8-zh's own compositor (compose37,
+  `LM_FILM_V38=1 LM_FILM_LANG=zh`) with one extra screen-space zoom after the table camera
+  (`cam_matrix` is wrapped). `KEYS` gives, per moment, the centre and side (in 16:9 master pixels)
+  of the square that carries the action, interpolated with PCHIP in x, y and log side. Windows are
+  drawn from their 2× renders straight at the square's scale, so pushes (side < 1080) stay sharp, and
+  where the action is wider than the frame (the gathered films at the end, side 1650) the square
+  pulls out over the table instead of letterboxing.
+- **Overlays re-laid out.** The 16:9 caption pills, big numbers and end card are recorded instead of
+  drawn, then drawn for the square: pills top left at y 100 (below the top 8%), the big number at
+  230 px with its line split in two, and a square end card (探索地球的真实数据 / Mac 和 Windows 免费 /
+  nimblemap.com) under the app's own end pill.
+- **Subtitles** (`path/subs_square.py`): the same cue times, re-broken to ≤ 16 characters a line,
+  two lines at most; the two longest lines are split into two cues at a word boundary from the voice
+  JSON. Noto Sans SC Medium (ASS size 76) on a translucent dark box, one box per line, the lowest
+  ending 158 px above the bottom (clear of the bottom 12% the apps cover).
+- **Covers** (`edit/cover_square.py`): 1080×1080 and 1080×1440 (3:4), the film's first shot with the title.
+- Same clock and sound as v3.8-zh: the decoded audio is bit-identical, 72.53 s.
