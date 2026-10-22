@@ -54,6 +54,9 @@ pub enum Provider {
     Apple,
     Google,
     X,
+    GitHub,
+    /// LinkedIn's OpenID Connect sign-in (Supabase provider `linkedin_oidc`).
+    LinkedIn,
     /// A sign-in link by email.
     Email,
     WeChat,
@@ -70,6 +73,8 @@ impl Provider {
             "apple" => Provider::Apple,
             "google" => Provider::Google,
             "x" | "twitter" => Provider::X,
+            "github" => Provider::GitHub,
+            "linkedin_oidc" | "linkedin" => Provider::LinkedIn,
             "email" => Provider::Email,
             "wechat" => Provider::WeChat,
             "alipay" => Provider::Alipay,
@@ -84,6 +89,8 @@ impl Provider {
             Provider::Apple => lm_core::tn!("Continue with Apple"),
             Provider::Google => lm_core::tn!("Continue with Google"),
             Provider::X => lm_core::tn!("Continue with X"),
+            Provider::GitHub => lm_core::tn!("Continue with GitHub"),
+            Provider::LinkedIn => lm_core::tn!("Continue with LinkedIn"),
             Provider::Email => lm_core::tn!("Email me a sign-in code"),
             Provider::WeChat => lm_core::tn!("Continue with WeChat"),
             Provider::Alipay => lm_core::tn!("Continue with Alipay"),
@@ -94,7 +101,7 @@ impl Provider {
     /// The providers a region offers when its config doesn't list them (accounts.md › Two regions).
     pub fn defaults(region: Region) -> &'static [Provider] {
         match region {
-            Region::International => &[Provider::Apple, Provider::Google, Provider::X, Provider::Email],
+            Region::International => &[Provider::Apple, Provider::Google, Provider::GitHub, Provider::LinkedIn, Provider::X, Provider::Email],
             Region::China => &[Provider::WeChat, Provider::Alipay, Provider::Phone, Provider::Apple],
         }
     }
@@ -164,6 +171,8 @@ fn default_id(p: Provider) -> &'static str {
         Provider::Apple => "apple",
         Provider::Google => "google",
         Provider::X => "x",
+        Provider::GitHub => "github",
+        Provider::LinkedIn => "linkedin_oidc",
         Provider::Email => "email",
         Provider::WeChat => "wechat",
         Provider::Alipay => "alipay",
