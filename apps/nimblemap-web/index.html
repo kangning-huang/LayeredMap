@@ -79,6 +79,7 @@
       var MAC = "https://github.com/kangning-huang/NimbleMap/releases/latest/download/NimbleMap-macos-arm64.dmg";
       var MAC_ZH = "https://gitcode.com/KN-Huang/NimbleMap/releases/download/v0.7.4/NimbleMap-macos-arm64.dmg";
       var WIN = "https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.1/NimbleMap-windows-x64-setup.exe";
+      var WIN_ZH = "https://gitcode.com/KN-Huang/NimbleMap/releases/download/v0.7.1/NimbleMap-windows-x64-setup.exe";
       var PAGE = "https://nimblemap.com/download.html", PAGE_ZH = "https://nimblemap.com/zh/download.html";
       var KEY = "lm.web.banner", VERSION = "__JS__", WEEK = 7 * 24 * 3600 * 1000;
       var el = document.getElementById("nimblemap_banner"), root = document.documentElement;
@@ -115,7 +116,7 @@
         document.getElementById("nimblemap_banner_text").textContent = s[0];
         var a = document.getElementById("nimblemap_banner_dl");
         a.textContent = s[1];
-        a.href = o === "mac" ? (zh ? MAC_ZH : MAC) : o === "win" ? WIN : (zh ? PAGE_ZH : PAGE);
+        a.href = o === "mac" ? (zh ? MAC_ZH : MAC) : o === "win" ? (zh ? WIN_ZH : WIN) : (zh ? PAGE_ZH : PAGE);
         if (o === "other") a.target = "_blank"; else a.removeAttribute("target");
         var x = el.querySelector("button");
         x.setAttribute("aria-label", s[2]); x.title = s[2];
