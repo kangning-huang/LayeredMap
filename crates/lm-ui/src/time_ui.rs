@@ -88,11 +88,12 @@ pub fn bar(shell: &mut Shell, ui: &mut Ui, map: Rect) {
     let (left, right) = shell.panel_insets();
     let x0 = map.left() + left + theme::PANEL_MARGIN;
     let x1 = map.right() - right - theme::PANEL_MARGIN;
-    let width = (x1 - x0).min(MAX_WIDTH);
+    let (centre, width) = crate::ask::beside_controls(x0, x1, MAX_WIDTH);
     if width < 240.0 {
         return;
     }
-    let bottom = pos2((x0 + x1) / 2.0, map.bottom() - 34.0);
+    // Above the open table, never over its rows.
+    let bottom = pos2(centre, crate::table::above(shell, map).bottom() - 34.0);
     egui::Area::new(egui::Id::new("lm-time")).order(egui::Order::Foreground).pivot(Align2::CENTER_BOTTOM).fixed_pos(bottom).show(
         ui.ctx(),
         |ui| {

@@ -24,6 +24,8 @@ use crate::theme::{self, BODY, CAPTION, PANEL_MARGIN, Theme};
 
 /// Drawer height (px).
 pub const DRAWER_HEIGHT: f32 = 300.0;
+/// The drawer's height on a short map (it never takes more than half of it otherwise).
+const MIN_DRAWER_HEIGHT: f32 = 180.0;
 const ROW_H: f32 = 26.0;
 const COL_W: f32 = 140.0;
 
@@ -193,6 +195,36 @@ impl TableView {
     }
 }
 
+/// Where the drawer goes in `map`, between side panels `left` and `right` points wide: along the
+/// bottom, at most half the map's height so the map and the floating controls keep room above it.
+/// None when the map is too narrow for it.
+fn drawer_rect(map: egui::Rect, left: f32, right: f32) -> Option<egui::Rect> {
+    let height = DRAWER_HEIGHT.min((map.height() * 0.5).max(MIN_DRAWER_HEIGHT));
+    let rect = egui::Rect::from_min_max(
+        egui::pos2(map.left() + left + PANEL_MARGIN, map.bottom() - height - PANEL_MARGIN),
+        egui::pos2(map.right() - right - PANEL_MARGIN, map.bottom() - PANEL_MARGIN),
+    );
+    (rect.width() >= 240.0).then_some(rect)
+}
+
+/// The drawer's rect this frame, when the table is open.
+pub fn rect(shell: &Shell, map: egui::Rect) -> Option<egui::Rect> {
+    let id = shell.table_for?;
+    shell.ws.doc.layer(id)?;
+    let (left, right) = shell.panel_insets();
+    drawer_rect(map, left, right)
+}
+
+/// The part of `map` above the open drawer (all of it when the table is closed). Whatever floats
+/// at the foot of the map (the Ask box, the time slider, the map controls, the scale bar, the
+/// update notice) stands on this rect's bottom edge, so nothing covers the table's rows.
+pub fn above(shell: &Shell, map: egui::Rect) -> egui::Rect {
+    match rect(shell, map) {
+        Some(r) => egui::Rect::from_min_max(map.min, egui::pos2(map.max.x, r.top().max(map.top()))),
+        None => map,
+    }
+}
+
 /// The drawer along the bottom of the map, between the shelf and the inspector.
 pub fn drawer(shell: &mut Shell, ui: &mut Ui, map: egui::Rect, left: f32, right: f32) {
     let Some(id) = shell.table_for else { return };
@@ -205,13 +237,7 @@ pub fn drawer(shell: &mut Shell, ui: &mut Ui, map: egui::Rect, left: f32, right:
         shell.table_for = None;
         return;
     };
-    let rect = egui::Rect::from_min_max(
-        egui::pos2(map.left() + left + PANEL_MARGIN, map.bottom() - DRAWER_HEIGHT - PANEL_MARGIN),
-        egui::pos2(map.right() - right - PANEL_MARGIN, map.bottom() - PANEL_MARGIN),
-    );
-    if rect.width() < 240.0 {
-        return;
-    }
+    let Some(rect) = drawer_rect(map, left, right) else { return };
     // The row order for the current filter, sort and search.
     let mask = shell.ws.derived(id).and_then(|d| d.mask.clone());
     let key = format!(
@@ -529,7 +555,7 @@ pub fn drawer(shell: &mut Shell, ui: &mut Ui, map: egui::Rect, left: f32, right:
 }
 
 /// A row's widget id, the same wherever it scrolls.
-fn row_id(layer: LayerId, row: usize) -> egui::Id {
+pub(crate) fn row_id(layer: LayerId, row: usize) -> egui::Id {
     egui::Id::new(("lm-table-row", layer.0, row))
 }
 

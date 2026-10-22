@@ -1907,6 +1907,66 @@ mod account {
         h.run_steps(5);
         assert!(h.state().as_ref().is_some_and(|s| s.account.open));
     }
+
+    /// The table open with the last row selected, the Ask box (`pro`) or the sign-in prompt in
+    /// its place: the box stands above the table, so no row is hidden. Returns the harness.
+    fn table_and_ask(size: egui::Vec2, ppp: f32, pro: bool) -> Harness<'static, Option<Shell>> {
+        let mut h = phase3_sized(size, ppp, &["V1/districts.geojson"], SHANGHAI, move |s| {
+            s.account = crate::account_ui::test_ui(pro, Region::International);
+            let id = s.ws.doc.layers[0].id;
+            let last = crate::inspect::dataset(s, id).map_or(0, |d| d.features.len() - 1);
+            s.ws.selection = lm_core::selection::SelectionContext::object(lm_core::selection::FeatureRef { layer: id, row: last });
+            s.table_for = Some(id);
+        });
+        settle(&mut h);
+        h.run_steps(5);
+        use egui_kittest::kittest::Queryable as _;
+        if pro {
+            assert!(h.query_by_label("Ask about your layers").is_some(), "the Ask field shows");
+        } else {
+            assert!(h.query_by_label("Sign In…").is_some(), "the sign-in prompt shows");
+        }
+        let (id, last) = h.state().as_ref().map(|s| (s.ws.doc.layers[0].id, s.ws.selection.rows_in(s.ws.doc.layers[0].id)[0])).unwrap();
+        let area = |name: &str| h.ctx.memory(|m| m.area_rect(egui::Id::new(name)));
+        let table = area("lm-table").expect("the table shows");
+        let ask = area("lm-ask").expect("the Ask box shows");
+        assert!(!ask.intersects(table), "the Ask box {ask:?} stays off the table {table:?}");
+        assert!(ask.bottom() <= table.top(), "the Ask box {ask:?} stands above the table {table:?}");
+        // The selected row is scrolled into the table's view and nothing covers it.
+        let row = h.ctx.read_response(crate::table::row_id(id, last)).expect("the selected row is drawn").rect;
+        // (Rows scroll sideways under the table's clip, so only their height is compared.)
+        assert!(row.top() >= table.top() && row.bottom() <= table.bottom(), "row {row:?} in the table's view {table:?}");
+        assert!(row.bottom() <= table.bottom() && row.top() > ask.bottom(), "row {row:?} clear of the Ask box {ask:?}");
+        // The map controls stand above the table too, and the Ask box beside them.
+        for label in ["Zoom in", "Zoom out", "Basemap"] {
+            let r = h.get_by_label(label).rect();
+            assert!(!r.intersects(table), "{label} {r:?} stays off the table {table:?}");
+            assert!(!r.intersects(ask), "{label} {r:?} stays clear of the Ask box {ask:?}");
+        }
+        h
+    }
+
+    /// Signed out: the sign-in prompt sits above the open table, not over its rows.
+    #[test]
+    #[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+    fn table_with_sign_in_prompt() {
+        table_and_ask(SIZE, 1.0, false).snapshot("table_with_sign_in_prompt");
+    }
+
+    /// With Pro: the Ask field sits above the open table.
+    #[test]
+    #[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+    fn table_with_ask_field() {
+        table_and_ask(SIZE, 1.0, true).snapshot("table_with_ask_field");
+    }
+
+    /// A small screen (1366×768 at 125 %, less the taskbar): the table takes at most half the map
+    /// and the prompt still fits above it.
+    #[test]
+    #[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
+    fn table_with_sign_in_prompt_small_screen() {
+        table_and_ask(egui::vec2(1093.0, 560.0), 1.25, false).snapshot("table_with_sign_in_prompt_small");
+    }
 }
 
 /// WP5.7: the update notice in its states (docs/lm/update-feed.md). The offer has Update Now
