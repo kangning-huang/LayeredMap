@@ -847,14 +847,12 @@ You're up to date: {app} {version} is the newest version.	最新の状態です�
 {app} {version} is ready	{app} {version} の準備ができました
 {done} MB	{done} MB
 {done} of {total} MB	{done} / {total} MB
-Email me a sign-in link	サインインリンクをメールで受け取る
 Signing in unlocks the Ask box, voice input and the built-in world layers. The analysis tools are free without an account.	サインインすると、質問ボックス、音声入力、組み込みの世界レイヤーが使えるようになります。分析ツールはアカウントなしで無料で使えます。
-We'll email you a link from Supabase Auth, the service that runs {app} accounts. Open it on this Mac.	{app} のアカウントを運営するサービス Supabase Auth からリンクをメールでお送りします。この Mac で開いてください。
-We'll email you a link from Supabase Auth, the service that runs {app} accounts. Open it on this computer.	{app} のアカウントを運営するサービス Supabase Auth からリンクをメールでお送りします。このコンピューターで開いてください。
-We sent an email to {address} from Supabase Auth.	Supabase Auth から {address} にメールを送信しました。
-We sent an email to {address} from Supabase Auth. Click the link in it on this Mac to finish signing in.	Supabase Auth から {address} にメールを送信しました。この Mac でメール内のリンクをクリックすると、サインインが完了します。
-We sent an email to {address} from Supabase Auth. Click the link in it on this computer to finish signing in.	Supabase Auth から {address} にメールを送信しました。このコンピューターでメール内のリンクをクリックすると、サインインが完了します。
-Its subject is “Confirm your email address” the first time, or “Your sign-in link” after that. If it isn't in your inbox, check your spam or junk folder.	件名は、初回は「Confirm your email address」、2 回目以降は「Your sign-in link」です。受信トレイにない場合は、迷惑メールフォルダを確認してください。
-If the email shows a {n}-digit code, you can type it here instead.	メールに {n} 桁のコードが記載されている場合は、代わりにここに入力することもできます。
-The link has stopped working on this Mac. Send a new email, or type the code if the email has one.	この Mac ではリンクが使えなくなりました。メールを再送信するか、メールにコードがあればそれを入力してください。
-The link has stopped working on this computer. Send a new email, or type the code if the email has one.	このコンピューターではリンクが使えなくなりました。メールを再送信するか、メールにコードがあればそれを入力してください。
+Email me a sign-in code	サインインコードをメールで受け取る
+We'll email you a {n}-digit code from {sender}.	{sender} から {n} 桁のコードをメールでお送りします。
+We sent a code to {address}. Type it below.	{address} にコードを送信しました。下に入力してください。
+We sent a code to {address}. Type it below, or click the link in the same email on this Mac.	{address} にコードを送信しました。下に入力するか、この Mac で同じメール内のリンクをクリックしてください。
+We sent a code to {address}. Type it below, or click the link in the same email on this computer.	{address} にコードを送信しました。下に入力するか、このコンピューターで同じメール内のリンクをクリックしてください。
+The email comes from {sender}, subject “{subject}”. If it isn't in your inbox, check your spam or junk folder.	メールの差出人は {sender}、件名は「{subject}」です。受信トレイにない場合は、迷惑メールフォルダを確認してください。
+The link has stopped working on this Mac. Type the code from the email, or send a new one.	この Mac ではリンクが使えなくなりました。メールのコードを入力するか、メールを再送信してください。
+The link has stopped working on this computer. Type the code from the email, or send a new one.	このコンピューターではリンクが使えなくなりました。メールのコードを入力するか、メールを再送信してください。

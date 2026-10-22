@@ -847,14 +847,12 @@ You're up to date: {app} {version} is the newest version.	Vous êtes à jour : 
 {app} {version} is ready	{app} {version} est prêt
 {done} MB	{done} Mo
 {done} of {total} MB	{done} sur {total} Mo
-Email me a sign-in link	Recevoir un lien de connexion par e-mail
 Signing in unlocks the Ask box, voice input and the built-in world layers. The analysis tools are free without an account.	La connexion débloque la zone de questions, la saisie vocale et les couches mondiales intégrées. Les outils d’analyse sont gratuits, sans compte.
-We'll email you a link from Supabase Auth, the service that runs {app} accounts. Open it on this Mac.	Vous recevrez un lien envoyé par Supabase Auth, le service qui gère les comptes {app}. Ouvrez-le sur ce Mac.
-We'll email you a link from Supabase Auth, the service that runs {app} accounts. Open it on this computer.	Vous recevrez un lien envoyé par Supabase Auth, le service qui gère les comptes {app}. Ouvrez-le sur cet ordinateur.
-We sent an email to {address} from Supabase Auth.	Nous avons envoyé un e-mail de Supabase Auth à {address}.
-We sent an email to {address} from Supabase Auth. Click the link in it on this Mac to finish signing in.	Nous avons envoyé un e-mail de Supabase Auth à {address}. Cliquez sur le lien qu’il contient sur ce Mac pour terminer la connexion.
-We sent an email to {address} from Supabase Auth. Click the link in it on this computer to finish signing in.	Nous avons envoyé un e-mail de Supabase Auth à {address}. Cliquez sur le lien qu’il contient sur cet ordinateur pour terminer la connexion.
-Its subject is “Confirm your email address” the first time, or “Your sign-in link” after that. If it isn't in your inbox, check your spam or junk folder.	Son objet est « Confirm your email address » la première fois, puis « Your sign-in link ». S’il n’est pas dans votre boîte de réception, regardez dans les courriers indésirables.
-If the email shows a {n}-digit code, you can type it here instead.	Si l’e-mail contient un code à {n} chiffres, vous pouvez aussi le saisir ici.
-The link has stopped working on this Mac. Send a new email, or type the code if the email has one.	Le lien ne fonctionne plus sur ce Mac. Envoyez un nouvel e-mail, ou saisissez le code si l’e-mail en contient un.
-The link has stopped working on this computer. Send a new email, or type the code if the email has one.	Le lien ne fonctionne plus sur cet ordinateur. Envoyez un nouvel e-mail, ou saisissez le code si l’e-mail en contient un.
+Email me a sign-in code	Recevoir un code de connexion par e-mail
+We'll email you a {n}-digit code from {sender}.	Vous recevrez un code à {n} chiffres par e-mail de {sender}.
+We sent a code to {address}. Type it below.	Nous avons envoyé un code à {address}. Saisissez-le ci-dessous.
+We sent a code to {address}. Type it below, or click the link in the same email on this Mac.	Nous avons envoyé un code à {address}. Saisissez-le ci-dessous, ou cliquez sur le lien du même e-mail sur ce Mac.
+We sent a code to {address}. Type it below, or click the link in the same email on this computer.	Nous avons envoyé un code à {address}. Saisissez-le ci-dessous, ou cliquez sur le lien du même e-mail sur cet ordinateur.
+The email comes from {sender}, subject “{subject}”. If it isn't in your inbox, check your spam or junk folder.	L’e-mail vient de {sender}, avec l’objet « {subject} ». S’il n’est pas dans votre boîte de réception, regardez dans les courriers indésirables.
+The link has stopped working on this Mac. Type the code from the email, or send a new one.	Le lien ne fonctionne plus sur ce Mac. Saisissez le code de l’e-mail, ou demandez-en un nouveau.
+The link has stopped working on this computer. Type the code from the email, or send a new one.	Le lien ne fonctionne plus sur cet ordinateur. Saisissez le code de l’e-mail, ou demandez-en un nouveau.

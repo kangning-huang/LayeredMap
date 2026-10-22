@@ -847,14 +847,12 @@ You're up to date: {app} {version} is the newest version.	최신 버전입니다
 {app} {version} is ready	{app} {version} 준비 완료
 {done} MB	{done}MB
 {done} of {total} MB	{done}/{total}MB
-Email me a sign-in link	로그인 링크를 이메일로 받기
 Signing in unlocks the Ask box, voice input and the built-in world layers. The analysis tools are free without an account.	로그인하면 질문 상자, 음성 입력, 내장 세계 레이어를 쓸 수 있습니다. 분석 도구는 계정 없이도 무료입니다.
-We'll email you a link from Supabase Auth, the service that runs {app} accounts. Open it on this Mac.	{app} 계정을 운영하는 서비스인 Supabase Auth에서 링크를 이메일로 보내 드립니다. 이 Mac에서 여세요.
-We'll email you a link from Supabase Auth, the service that runs {app} accounts. Open it on this computer.	{app} 계정을 운영하는 서비스인 Supabase Auth에서 링크를 이메일로 보내 드립니다. 이 컴퓨터에서 여세요.
-We sent an email to {address} from Supabase Auth.	Supabase Auth에서 {address}(으)로 이메일을 보냈습니다.
-We sent an email to {address} from Supabase Auth. Click the link in it on this Mac to finish signing in.	Supabase Auth에서 {address}(으)로 이메일을 보냈습니다. 이 Mac에서 이메일의 링크를 클릭하면 로그인이 완료됩니다.
-We sent an email to {address} from Supabase Auth. Click the link in it on this computer to finish signing in.	Supabase Auth에서 {address}(으)로 이메일을 보냈습니다. 이 컴퓨터에서 이메일의 링크를 클릭하면 로그인이 완료됩니다.
-Its subject is “Confirm your email address” the first time, or “Your sign-in link” after that. If it isn't in your inbox, check your spam or junk folder.	제목은 처음에는 “Confirm your email address”, 그다음부터는 “Your sign-in link”입니다. 받은편지함에 없으면 스팸함을 확인하세요.
-If the email shows a {n}-digit code, you can type it here instead.	이메일에 {n}자리 코드가 있으면 여기에 대신 입력해도 됩니다.
-The link has stopped working on this Mac. Send a new email, or type the code if the email has one.	이 Mac에서는 링크가 더 이상 작동하지 않습니다. 새 이메일을 보내거나, 이메일에 코드가 있으면 입력하세요.
-The link has stopped working on this computer. Send a new email, or type the code if the email has one.	이 컴퓨터에서는 링크가 더 이상 작동하지 않습니다. 새 이메일을 보내거나, 이메일에 코드가 있으면 입력하세요.
+Email me a sign-in code	로그인 코드를 이메일로 받기
+We'll email you a {n}-digit code from {sender}.	{sender}에서 {n}자리 코드를 이메일로 보내 드립니다.
+We sent a code to {address}. Type it below.	{address}(으)로 코드를 보냈습니다. 아래에 입력하세요.
+We sent a code to {address}. Type it below, or click the link in the same email on this Mac.	{address}(으)로 코드를 보냈습니다. 아래에 입력하거나, 이 Mac에서 같은 이메일의 링크를 클릭하세요.
+We sent a code to {address}. Type it below, or click the link in the same email on this computer.	{address}(으)로 코드를 보냈습니다. 아래에 입력하거나, 이 컴퓨터에서 같은 이메일의 링크를 클릭하세요.
+The email comes from {sender}, subject “{subject}”. If it isn't in your inbox, check your spam or junk folder.	보낸 사람은 {sender}, 제목은 “{subject}”입니다. 받은편지함에 없으면 스팸함을 확인하세요.
+The link has stopped working on this Mac. Type the code from the email, or send a new one.	이 Mac에서는 링크가 더 이상 작동하지 않습니다. 이메일의 코드를 입력하거나 새 이메일을 보내세요.
+The link has stopped working on this computer. Type the code from the email, or send a new one.	이 컴퓨터에서는 링크가 더 이상 작동하지 않습니다. 이메일의 코드를 입력하거나 새 이메일을 보내세요.

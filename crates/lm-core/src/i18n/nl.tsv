@@ -847,14 +847,12 @@ You're up to date: {app} {version} is the newest version.	U bent up-to-date: {ap
 {app} {version} is ready	{app} {version} is klaar
 {done} MB	{done} MB
 {done} of {total} MB	{done} van {total} MB
-Email me a sign-in link	Stuur mij een inloglink per e-mail
 Signing in unlocks the Ask box, voice input and the built-in world layers. The analysis tools are free without an account.	Inloggen ontgrendelt het vraagvak, spraakinvoer en de ingebouwde wereldlagen. De analysehulpmiddelen zijn gratis, ook zonder account.
-We'll email you a link from Supabase Auth, the service that runs {app} accounts. Open it on this Mac.	U ontvangt een link van Supabase Auth, de dienst achter de accounts van {app}. Open die op deze Mac.
-We'll email you a link from Supabase Auth, the service that runs {app} accounts. Open it on this computer.	U ontvangt een link van Supabase Auth, de dienst achter de accounts van {app}. Open die op deze computer.
-We sent an email to {address} from Supabase Auth.	We hebben een e-mail van Supabase Auth gestuurd naar {address}.
-We sent an email to {address} from Supabase Auth. Click the link in it on this Mac to finish signing in.	We hebben een e-mail van Supabase Auth gestuurd naar {address}. Klik op deze Mac op de link erin om het inloggen af te ronden.
-We sent an email to {address} from Supabase Auth. Click the link in it on this computer to finish signing in.	We hebben een e-mail van Supabase Auth gestuurd naar {address}. Klik op deze computer op de link erin om het inloggen af te ronden.
-Its subject is “Confirm your email address” the first time, or “Your sign-in link” after that. If it isn't in your inbox, check your spam or junk folder.	Het onderwerp is de eerste keer ‘Confirm your email address’, daarna ‘Your sign-in link’. Staat hij niet in uw inbox, kijk dan in de map met spam of ongewenste e-mail.
-If the email shows a {n}-digit code, you can type it here instead.	Staat er een code van {n} cijfers in de e-mail, dan kunt u die ook hier invoeren.
-The link has stopped working on this Mac. Send a new email, or type the code if the email has one.	De link werkt niet meer op deze Mac. Stuur een nieuwe e-mail, of voer de code in als de e-mail er een bevat.
-The link has stopped working on this computer. Send a new email, or type the code if the email has one.	De link werkt niet meer op deze computer. Stuur een nieuwe e-mail, of voer de code in als de e-mail er een bevat.
+Email me a sign-in code	Stuur mij een inlogcode per e-mail
+We'll email you a {n}-digit code from {sender}.	U ontvangt een code van {n} cijfers per e-mail van {sender}.
+We sent a code to {address}. Type it below.	We hebben een code gestuurd naar {address}. Voer die hieronder in.
+We sent a code to {address}. Type it below, or click the link in the same email on this Mac.	We hebben een code gestuurd naar {address}. Voer die hieronder in, of klik op deze Mac op de link in dezelfde e-mail.
+We sent a code to {address}. Type it below, or click the link in the same email on this computer.	We hebben een code gestuurd naar {address}. Voer die hieronder in, of klik op deze computer op de link in dezelfde e-mail.
+The email comes from {sender}, subject “{subject}”. If it isn't in your inbox, check your spam or junk folder.	De e-mail komt van {sender}, met als onderwerp ‘{subject}’. Staat hij niet in uw inbox, kijk dan in de map met spam of ongewenste e-mail.
+The link has stopped working on this Mac. Type the code from the email, or send a new one.	De link werkt niet meer op deze Mac. Voer de code uit de e-mail in, of vraag een nieuwe aan.
+The link has stopped working on this computer. Type the code from the email, or send a new one.	De link werkt niet meer op deze computer. Voer de code uit de e-mail in, of vraag een nieuwe aan.

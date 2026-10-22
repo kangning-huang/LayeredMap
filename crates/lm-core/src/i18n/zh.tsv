@@ -847,14 +847,12 @@ You're up to date: {app} {version} is the newest version.	已是最新版本：{
 {app} {version} is ready	{app} {version} 已准备就绪
 {done} MB	{done} MB
 {done} of {total} MB	{done} / {total} MB
-Email me a sign-in link	通过邮件发送登录链接
 Signing in unlocks the Ask box, voice input and the built-in world layers. The analysis tools are free without an account.	登录后即可使用提问框、语音输入和内置世界图层。分析工具无需账户，免费使用。
-We'll email you a link from Supabase Auth, the service that runs {app} accounts. Open it on this Mac.	我们会通过 Supabase Auth（{app} 账户所用的服务）给你发送一封带链接的邮件。请在这台 Mac 上打开链接。
-We'll email you a link from Supabase Auth, the service that runs {app} accounts. Open it on this computer.	我们会通过 Supabase Auth（{app} 账户所用的服务）给你发送一封带链接的邮件。请在这台电脑上打开链接。
-We sent an email to {address} from Supabase Auth.	我们已通过 Supabase Auth 向 {address} 发送了一封邮件。
-We sent an email to {address} from Supabase Auth. Click the link in it on this Mac to finish signing in.	我们已通过 Supabase Auth 向 {address} 发送了一封邮件。请在这台 Mac 上点击邮件中的链接完成登录。
-We sent an email to {address} from Supabase Auth. Click the link in it on this computer to finish signing in.	我们已通过 Supabase Auth 向 {address} 发送了一封邮件。请在这台电脑上点击邮件中的链接完成登录。
-Its subject is “Confirm your email address” the first time, or “Your sign-in link” after that. If it isn't in your inbox, check your spam or junk folder.	首次登录时邮件主题为“Confirm your email address”，之后为“Your sign-in link”。如果收件箱里没有，请查看垃圾邮件文件夹。
-If the email shows a {n}-digit code, you can type it here instead.	如果邮件中有 {n} 位验证码，也可以在这里输入。
-The link has stopped working on this Mac. Send a new email, or type the code if the email has one.	链接在这台 Mac 上已失效。请重新发送邮件；如果邮件中有验证码，也可以输入验证码。
-The link has stopped working on this computer. Send a new email, or type the code if the email has one.	链接在这台电脑上已失效。请重新发送邮件；如果邮件中有验证码，也可以输入验证码。
+Email me a sign-in code	通过邮件发送登录验证码
+We'll email you a {n}-digit code from {sender}.	我们会通过邮件给你发送一个来自 {sender} 的 {n} 位验证码。
+We sent a code to {address}. Type it below.	我们已向 {address} 发送了验证码。请在下方输入。
+We sent a code to {address}. Type it below, or click the link in the same email on this Mac.	我们已向 {address} 发送了验证码。请在下方输入，或在这台 Mac 上点击同一封邮件中的链接。
+We sent a code to {address}. Type it below, or click the link in the same email on this computer.	我们已向 {address} 发送了验证码。请在下方输入，或在这台电脑上点击同一封邮件中的链接。
+The email comes from {sender}, subject “{subject}”. If it isn't in your inbox, check your spam or junk folder.	邮件发件人为 {sender}，主题为“{subject}”。如果收件箱里没有，请查看垃圾邮件文件夹。
+The link has stopped working on this Mac. Type the code from the email, or send a new one.	链接在这台 Mac 上已失效。请输入邮件中的验证码，或重新发送邮件。
+The link has stopped working on this computer. Type the code from the email, or send a new one.	链接在这台电脑上已失效。请输入邮件中的验证码，或重新发送邮件。

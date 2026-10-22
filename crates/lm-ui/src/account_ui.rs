@@ -24,6 +24,12 @@ use crate::theme::{self, BODY, CAPTION, HEADLINE, TITLE};
 const WIDTH: f32 = 420.0;
 const BUTTON_W: f32 = 280.0;
 
+/// The sign-in email's sender name and subject, as the project's SMTP settings and templates set
+/// them (services/ask-proxy/supabase/config.toml, docs/lm/email-signin.md). The email is in
+/// English whatever the interface language, so these aren't translated.
+const EMAIL_SENDER: &str = lm_core::brand::NAME;
+const EMAIL_SUBJECT: &str = "Your NimbleMap sign-in code";
+
 /// The account and the pane's state.
 pub struct AccountUi {
     pub(crate) account: Option<Arc<Account>>,
@@ -47,7 +53,7 @@ pub struct AccountUi {
     last_check: Option<std::time::Instant>,
 }
 
-/// The waiting state after "Email me a sign-in link".
+/// The code-entry state after "Email me a sign-in code".
 #[derive(Clone, Debug)]
 pub(crate) struct EmailCode {
     pub(crate) address: String,
@@ -672,20 +678,10 @@ fn sign_in_buttons(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, offline: bo
         if (ui.add_enabled(!offline && ready, b).clicked() || (enter && ready)) && !offline {
             out = Some(Pane::Start(Doing::EmailLink(shell.account.email.trim().to_string())));
         }
-        // The project's emails come from Supabase's own mailer (docs/lm/email-signin.md): say
-        // who sends it, so nobody takes it for someone else's.
+        // Say what arrives, so the email is expected (docs/lm/email-signin.md).
         ui.add_space(4.0);
-        let line = if cfg!(target_os = "macos") {
-            i18n::fmt(
-                "We'll email you a link from Supabase Auth, the service that runs {app} accounts. Open it on this Mac.",
-                &[("app", lm_core::brand::shown(false))],
-            )
-        } else {
-            i18n::fmt(
-                "We'll email you a link from Supabase Auth, the service that runs {app} accounts. Open it on this computer.",
-                &[("app", lm_core::brand::shown(false))],
-            )
-        };
+        let n = lm_account::code::LEN.to_string();
+        let line = i18n::fmt("We'll email you a {n}-digit code from {sender}.", &[("n", n.as_str()), ("sender", EMAIL_SENDER)]);
         ui.add(egui::Label::new(RichText::new(line).size(CAPTION).color(t.text_secondary)).wrap());
     }
     if offline {
@@ -695,10 +691,9 @@ fn sign_in_buttons(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, offline: bo
     out
 }
 
-/// "We sent an email…": who sends it and its subject (Supabase's built-in emails, which name
-/// neither the app nor a code: docs/lm/email-signin.md), then the code field with Verify, Send a
-/// New Email and Use a Different Email, for an email that does carry the 6-digit code. The link in
-/// the email still works on this computer meanwhile.
+/// "We sent a code…": the 6-digit code field with Verify, Send a New Email and Use a Different
+/// Email, and who sends the email and its subject. The link in the same email still works on this
+/// computer meanwhile.
 fn code_entry(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, offline: bool) -> Option<Pane> {
     let checking = shell.account.verifying.is_some();
     let ec = shell.account.email_code.as_mut()?;
@@ -707,19 +702,19 @@ fn code_entry(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, offline: bool) -
     let n = lm_account::code::LEN.to_string();
     let args = [("address", ec.address.as_str()), ("n", n.as_str())];
     let said = if ec.link_expired {
-        i18n::fmt("We sent an email to {address} from Supabase Auth.", &args)
+        i18n::fmt("We sent a code to {address}. Type it below.", &args)
     } else if mac {
-        i18n::fmt("We sent an email to {address} from Supabase Auth. Click the link in it on this Mac to finish signing in.", &args)
+        i18n::fmt("We sent a code to {address}. Type it below, or click the link in the same email on this Mac.", &args)
     } else {
-        i18n::fmt("We sent an email to {address} from Supabase Auth. Click the link in it on this computer to finish signing in.", &args)
+        i18n::fmt("We sent a code to {address}. Type it below, or click the link in the same email on this computer.", &args)
     };
     ui.label(RichText::new(said).size(BODY));
     ui.add_space(4.0);
-    // The subjects are Supabase's default ones, in English whatever the interface language.
-    let subjects = tl!(
-        "Its subject is “Confirm your email address” the first time, or “Your sign-in link” after that. If it isn't in your inbox, check your spam or junk folder."
+    let from = i18n::fmt(
+        "The email comes from {sender}, subject “{subject}”. If it isn't in your inbox, check your spam or junk folder.",
+        &[("sender", EMAIL_SENDER), ("subject", EMAIL_SUBJECT)],
     );
-    ui.label(RichText::new(subjects).size(CAPTION).color(t.text_secondary));
+    ui.label(RichText::new(from).size(CAPTION).color(t.text_secondary));
     ui.add_space(10.0);
     let label = i18n::fmt("{n}-digit code", &args);
     ui.horizontal(|ui| {
@@ -760,14 +755,10 @@ fn code_entry(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, offline: bool) -
     } else if ec.link_expired {
         ui.add_space(4.0);
         let line = if mac {
-            tl!("The link has stopped working on this Mac. Send a new email, or type the code if the email has one.")
+            tl!("The link has stopped working on this Mac. Type the code from the email, or send a new one.")
         } else {
-            tl!("The link has stopped working on this computer. Send a new email, or type the code if the email has one.")
+            tl!("The link has stopped working on this computer. Type the code from the email, or send a new one.")
         };
-        ui.label(RichText::new(line).size(CAPTION).color(t.text_secondary));
-    } else {
-        ui.add_space(4.0);
-        let line = i18n::fmt("If the email shows a {n}-digit code, you can type it here instead.", &args);
         ui.label(RichText::new(line).size(CAPTION).color(t.text_secondary));
     }
     ui.add_space(10.0);

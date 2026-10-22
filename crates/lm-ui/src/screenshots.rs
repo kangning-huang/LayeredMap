@@ -1766,7 +1766,7 @@ mod account {
     fn account_signed_out() {
         let mut h = settings(false, Region::International, |_| {});
         use egui_kittest::kittest::Queryable as _;
-        for b in ["Continue with Apple", "Continue with Google", "Continue with X", "Email me a sign-in link"] {
+        for b in ["Continue with Apple", "Continue with Google", "Continue with X", "Email me a sign-in code"] {
             assert!(h.query_by_label(b).is_some(), "{b}");
         }
         h.snapshot("account_signed_out");
@@ -1798,14 +1798,15 @@ mod account {
         s.account.email_code = Some(crate::account_ui::EmailCode::new("kim@example.com".into(), Region::International));
     }
 
-    /// After "Email me a sign-in link": who sends the email and its subject, the link on this Mac, or a code typed.
+    /// After "Email me a sign-in code": the 6-digit code is typed, or the link works on this Mac.
     #[test]
     #[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
     fn account_email_code() {
         let mut h = settings(false, Region::International, email_sent);
         use egui_kittest::kittest::Queryable as _;
         assert!(
-            h.query_by_label_contains("We sent an email to kim@example.com from Supabase Auth. Click the link in it on this Mac").is_some()
+            h.query_by_label_contains("We sent a code to kim@example.com. Type it below, or click the link in the same email on this Mac")
+                .is_some()
         );
         for b in ["6-digit code", "Verify", "Send a New Email", "Use a Different Email"] {
             assert!(h.query_by_label(b).is_some(), "{b}");

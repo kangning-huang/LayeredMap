@@ -847,14 +847,12 @@ You're up to date: {app} {version} is the newest version.	У вас послед
 {app} {version} is ready	Версия {app} {version} готова
 {done} MB	{done} МБ
 {done} of {total} MB	{done} из {total} МБ
-Email me a sign-in link	Прислать ссылку для входа на почту
 Signing in unlocks the Ask box, voice input and the built-in world layers. The analysis tools are free without an account.	После входа становятся доступны поле вопросов, голосовой ввод и встроенные слои мира. Инструменты анализа бесплатны и без аккаунта.
-We'll email you a link from Supabase Auth, the service that runs {app} accounts. Open it on this Mac.	Мы пришлём ссылку от Supabase Auth — сервиса, на котором работают аккаунты {app}. Откройте её на этом Mac.
-We'll email you a link from Supabase Auth, the service that runs {app} accounts. Open it on this computer.	Мы пришлём ссылку от Supabase Auth — сервиса, на котором работают аккаунты {app}. Откройте её на этом компьютере.
-We sent an email to {address} from Supabase Auth.	Мы отправили письмо от Supabase Auth на {address}.
-We sent an email to {address} from Supabase Auth. Click the link in it on this Mac to finish signing in.	Мы отправили письмо от Supabase Auth на {address}. Нажмите ссылку в нём на этом Mac, чтобы завершить вход.
-We sent an email to {address} from Supabase Auth. Click the link in it on this computer to finish signing in.	Мы отправили письмо от Supabase Auth на {address}. Нажмите ссылку в нём на этом компьютере, чтобы завершить вход.
-Its subject is “Confirm your email address” the first time, or “Your sign-in link” after that. If it isn't in your inbox, check your spam or junk folder.	Тема письма — «Confirm your email address» в первый раз и «Your sign-in link» потом. Если его нет во входящих, проверьте папку «Спам».
-If the email shows a {n}-digit code, you can type it here instead.	Если в письме есть код из {n} цифр, его можно ввести здесь.
-The link has stopped working on this Mac. Send a new email, or type the code if the email has one.	Ссылка больше не работает на этом Mac. Отправьте новое письмо или введите код, если он есть в письме.
-The link has stopped working on this computer. Send a new email, or type the code if the email has one.	Ссылка больше не работает на этом компьютере. Отправьте новое письмо или введите код, если он есть в письме.
+Email me a sign-in code	Прислать код для входа на почту
+We'll email you a {n}-digit code from {sender}.	Мы пришлём письмо от {sender} с кодом из {n} цифр.
+We sent a code to {address}. Type it below.	Мы отправили код на {address}. Введите его ниже.
+We sent a code to {address}. Type it below, or click the link in the same email on this Mac.	Мы отправили код на {address}. Введите его ниже или нажмите ссылку в том же письме на этом Mac.
+We sent a code to {address}. Type it below, or click the link in the same email on this computer.	Мы отправили код на {address}. Введите его ниже или нажмите ссылку в том же письме на этом компьютере.
+The email comes from {sender}, subject “{subject}”. If it isn't in your inbox, check your spam or junk folder.	Письмо приходит от {sender}, тема — «{subject}». Если его нет во входящих, проверьте папку «Спам».
+The link has stopped working on this Mac. Type the code from the email, or send a new one.	Ссылка больше не работает на этом Mac. Введите код из письма или отправьте новое.
+The link has stopped working on this computer. Type the code from the email, or send a new one.	Ссылка больше не работает на этом компьютере. Введите код из письма или отправьте новое.
