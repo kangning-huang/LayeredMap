@@ -63,7 +63,7 @@ pub fn parse_gdal_metadata(xml: &str, bands: usize) -> Vec<BandMeta> {
 /// The GDAL metadata of a GeoTIFF's first image, if it has any.
 fn read_gdal_metadata(path: &Path, bands: usize) -> Vec<BandMeta> {
     let read = || -> Option<String> {
-        let f = std::fs::File::open(path).ok()?;
+        let f = crate::vfs::open(path).ok()?;
         let mut dec = tiff::decoder::Decoder::new(std::io::BufReader::new(f)).ok()?;
         dec.get_tag_ascii_string(tiff::tags::Tag::Unknown(42112)).ok()
     };
@@ -85,8 +85,8 @@ impl FormatAdapter for GeoTiff {
 
     fn open_metadata(&self, path: &Path, _ctx: &Ctx) -> Result<Metadata, ImportError> {
         let name = file_name(path);
-        let size = std::fs::metadata(path).map_err(|e| ImportError::read(&name, e))?.len();
-        let f = std::fs::File::open(path).map_err(|e| ImportError::read(&name, e))?;
+        let size = crate::vfs::metadata(path).map_err(|e| ImportError::read(&name, e))?.len();
+        let f = crate::vfs::open(path).map_err(|e| ImportError::read(&name, e))?;
         let mut dec = tiff::decoder::Decoder::new(std::io::BufReader::new(f)).map_err(|e| ImportError::read(&name, e))?;
         let (w, h) = dec.dimensions().map_err(|e| ImportError::read(&name, e))?;
         let (w, h) = (u64::from(w), u64::from(h));
@@ -109,7 +109,7 @@ impl FormatAdapter for GeoTiff {
             ctx.preparing();
         }
         ctx.ticket.set_total(meta.size);
-        let f = std::fs::File::open(path).map_err(|e| ImportError::read(&name, e))?;
+        let f = crate::vfs::open(path).map_err(|e| ImportError::read(&name, e))?;
         let reader = std::io::BufReader::with_capacity(1 << 20, Counting::new(f, ctx.ticket.clone()));
         let stem = path.file_stem().and_then(|s| s.to_str()).unwrap_or("raster").to_string();
         let mut r = rustgis_engine::data::raster::geotiff::read(reader, &stem).map_err(|e| ImportError::read(&name, e))?;

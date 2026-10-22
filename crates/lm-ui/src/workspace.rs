@@ -562,7 +562,7 @@ impl Workspace {
     fn spawn_job(&mut self, layer: Option<LayerId>, on_fail: Finish, work: impl FnOnce() -> Finish + Send + 'static) {
         let (tx, rx) = std::sync::mpsc::channel::<Finish>();
         let wake = self.wake.clone();
-        let spawned = std::thread::Builder::new().name("lm-work".into()).spawn(move || {
+        let spawned = lm_core::task::spawn("lm-work", move || {
             let f = std::panic::catch_unwind(std::panic::AssertUnwindSafe(work)).unwrap_or_else(|_| {
                 Box::new(move |w: &mut Workspace| {
                     w.notice = Some(tl!("That couldn't be done. Nothing was changed.").into());
@@ -607,7 +607,7 @@ impl Workspace {
         self.next_rev = self.next_rev.max(base_rev) + 1;
         let rev = self.next_rev;
         let (tx, rx) = std::sync::mpsc::channel();
-        let spawned = std::thread::Builder::new().name("lm-reread".into()).spawn(move || {
+        let spawned = lm_core::task::spawn("lm-reread", move || {
             // Off the interface thread: the message is translated where it is shown (`poll_pending`).
             let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(work)).unwrap_or_else(|_| Err(REREAD_FAILED.into()));
             let _ = tx.send(r);

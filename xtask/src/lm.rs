@@ -25,10 +25,15 @@ pub const ALLOWED: &[(&str, &[&str])] = &[
     ("lm-account", &["lm-core", "lm-net"]),
     ("lm-ui", &["lm-core", "lm-actions", "lm-jobs", "lm-doc", "lm-mapview", "lm-ask", "lm-account", "lm-net"]),
     ("layeredmap", &["lm-ui", "lm-core", "lm-net"]),
+    // The browser app (docs/lm/web-app.md): the jobs crate for its in-memory files, the tile
+    // crate for its fetcher.
+    ("nimblemap-web", &["lm-ui", "lm-core", "lm-jobs", "lm-net", "rustgis-tiles"]),
 ];
 
 /// The crates that may depend on egui (and its companions).
-const EGUI_OK: &[&str] = &["lm-mapview", "lm-ui", "layeredmap"];
+const EGUI_OK: &[&str] = &["lm-mapview", "lm-ui", "layeredmap", "nimblemap-web"];
+/// The apps (in `apps/`): the only crates that may use eframe and rfd.
+const APPS: &[&str] = &["layeredmap", "nimblemap-web"];
 const EGUI: &[&str] = &["egui", "egui_extras", "egui_kittest", "winit"];
 /// Only the app may use these.
 const APP_ONLY: &[&str] = &["eframe", "rfd"];
@@ -73,7 +78,7 @@ pub fn check(krate: &str, deps: &[String]) -> Vec<String> {
         if EGUI.contains(&d) && !EGUI_OK.contains(&krate) {
             errs.push(format!("{krate} depends on {d}: below lm-ui only lm-mapview may use egui"));
         }
-        if APP_ONLY.contains(&d) && krate != "layeredmap" {
+        if APP_ONLY.contains(&d) && !APPS.contains(&krate) {
             errs.push(format!("{krate} depends on {d}: only the app may"));
         }
         if krate == "lm-ui" && UI_NEVER.contains(&d) {
@@ -87,7 +92,7 @@ pub fn check(krate: &str, deps: &[String]) -> Vec<String> {
 pub fn layers(root: &std::path::Path) -> Result<(), String> {
     let mut manifests = BTreeMap::new();
     for (krate, _) in ALLOWED {
-        let dir = if *krate == "layeredmap" { root.join("apps").join(krate) } else { root.join("crates").join(krate) };
+        let dir = if APPS.contains(krate) { root.join("apps").join(krate) } else { root.join("crates").join(krate) };
         let text = std::fs::read_to_string(dir.join("Cargo.toml")).map_err(|e| format!("{}: {e}", dir.display()))?;
         manifests.insert(*krate, text);
     }

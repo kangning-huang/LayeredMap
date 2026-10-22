@@ -50,7 +50,7 @@ pub struct AccountUi {
     verifying: Option<Receiver<Result<User, AccountError>>>,
     /// The entitlement check in flight (`GET …/account`), and when the last one started.
     checking: Option<Receiver<Result<lm_account::Entitlement, AccountError>>>,
-    last_check: Option<std::time::Instant>,
+    last_check: Option<web_time::Instant>,
 }
 
 /// The code-entry state after "Email me a sign-in code".
@@ -317,7 +317,7 @@ fn check_entitlement(shell: &mut Shell, ctx: &egui::Context) {
     if !due {
         return;
     }
-    shell.account.last_check = Some(std::time::Instant::now());
+    shell.account.last_check = Some(web_time::Instant::now());
     let (tx, rx) = channel();
     let wake = ctx.clone();
     std::thread::spawn(move || {
@@ -410,7 +410,7 @@ pub(crate) fn poll(shell: &mut Shell, ctx: &egui::Context) {
             // The Ask box's sign-in message has done its job; the entitlement was just checked.
             shell.ask.clear_message();
             shell.account.email_code = None;
-            shell.account.last_check = Some(std::time::Instant::now());
+            shell.account.last_check = Some(web_time::Instant::now());
             None
         }
         (Doing::SignOut, Ok(_)) => Some((tn!("You're signed out.").into(), false)),
@@ -434,7 +434,7 @@ fn poll_code(shell: &mut Shell) {
             // was checked on the same thread.
             shell.account.email_code = None;
             shell.account.message = None;
-            shell.account.last_check = Some(std::time::Instant::now());
+            shell.account.last_check = Some(web_time::Instant::now());
             shell.ask.clear_message();
         }
         Err(AccountError::Cancelled) => {}

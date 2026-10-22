@@ -10,6 +10,8 @@ description = "NimbleMap: the map-first shell"
 workspace = true
 
 [dependencies]
+# std::time that also works in the browser (apps/nimblemap-web).
+web-time = { workspace = true }
 lm-core = { path = "../lm-core" }
 lm-actions = { path = "../lm-actions" }
 lm-jobs = { path = "../lm-jobs" }
@@ -42,3 +44,7 @@ wgpu = { version = "30", features = ["noop"] }
 # The system's preferred language on Windows, for the update notes (registry; safe API).
 [target.'cfg(windows)'.dependencies]
 winreg = "0.56"
+
+# The browser build (apps/nimblemap-web): ring's random numbers come from the browser's crypto.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+getrandom = { version = "0.2", features = ["js"] }

@@ -47,56 +47,82 @@ pub struct Worker {
     pub in_flight: bool,
     /// The render thread has stopped (it panicked); the view restarts it.
     pub dead: bool,
+    #[cfg(target_arch = "wasm32")]
+    local: Option<Local>,
+}
+
+/// Applies every waiting message and renders the newest view asked for. False when the UI side
+/// has gone (the render loop ends).
+fn step(map: &mut Map, first: Msg, req: &Receiver<Msg>, out: &Sender<Out>, ctx: &egui::Context) -> bool {
+    // Apply every message waiting; render only the newest view.
+    let mut render = None;
+    for msg in std::iter::once(first).chain(std::iter::from_fn(|| req.try_recv().ok())) {
+        match msg {
+            Msg::Edit(f) => f(map),
+            Msg::Render { seq, view, selection } => render = Some((seq, view, selection)),
+        }
+    }
+    let Some((seq, view, selection)) = render else { return true };
+    let t = web_time::Instant::now();
+    let Some(r) = rustgis_render::render_styled(map, &view, selection) else {
+        if out.send(Out::Nothing(seq)).is_err() {
+            return false;
+        }
+        ctx.request_repaint();
+        return true;
+    };
+    let frame = Frame {
+        seq,
+        camera: view.camera,
+        size: (view.width, view.height),
+        pixel_size: [r.pixmap.width() as usize, r.pixmap.height() as usize],
+        rgba: r.pixmap.data().to_vec(),
+        labels: r.labels,
+        attribution: r.attribution,
+        tile_errors: r.tile_errors,
+        tiles_pending: r.tiles_pending,
+        render_ms: t.elapsed().as_secs_f64() * 1000.0,
+    };
+    if out.send(Out::Frame(frame)).is_err() {
+        return false;
+    }
+    ctx.request_repaint();
+    true
+}
+
+/// The browser build has no threads: the map is kept here and drawn when the UI polls.
+#[cfg(target_arch = "wasm32")]
+struct Local {
+    map: Map,
+    req: Receiver<Msg>,
+    out: Sender<Out>,
+    ctx: egui::Context,
 }
 
 impl Worker {
     pub fn spawn(map: Map, ctx: egui::Context) -> Worker {
         let (tx, req) = channel::<Msg>();
         let (out, rx) = channel::<Out>();
-        let spawned = std::thread::Builder::new().name("lm-render".into()).spawn(move || {
-            let mut map = map;
-            while let Ok(first) = req.recv() {
-                // Apply every message waiting; render only the newest view.
-                let mut render = None;
-                for msg in std::iter::once(first).chain(std::iter::from_fn(|| req.try_recv().ok())) {
-                    match msg {
-                        Msg::Edit(f) => f(&mut map),
-                        Msg::Render { seq, view, selection } => render = Some((seq, view, selection)),
-                    }
-                }
-                let Some((seq, view, selection)) = render else { continue };
-                let t = web_time::Instant::now();
-                let Some(r) = rustgis_render::render_styled(&mut map, &view, selection) else {
-                    if out.send(Out::Nothing(seq)).is_err() {
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let spawned = std::thread::Builder::new().name("lm-render".into()).spawn(move || {
+                let mut map = map;
+                while let Ok(first) = req.recv() {
+                    if !step(&mut map, first, &req, &out, &ctx) {
                         return;
                     }
-                    ctx.request_repaint();
-                    continue;
-                };
-                {
-                    let frame = Frame {
-                        seq,
-                        camera: view.camera,
-                        size: (view.width, view.height),
-                        pixel_size: [r.pixmap.width() as usize, r.pixmap.height() as usize],
-                        rgba: r.pixmap.data().to_vec(),
-                        labels: r.labels,
-                        attribution: r.attribution,
-                        tile_errors: r.tile_errors,
-                        tiles_pending: r.tiles_pending,
-                        render_ms: t.elapsed().as_secs_f64() * 1000.0,
-                    };
-                    if out.send(Out::Frame(frame)).is_err() {
-                        return;
-                    }
-                    ctx.request_repaint();
                 }
+            });
+            if let Err(e) = spawned {
+                log::error!("could not start the map render thread: {e}");
             }
-        });
-        if let Err(e) = spawned {
-            log::error!("could not start the map render thread: {e}");
+            Worker { tx, rx, seq: 0, map_rev: 0, last: None, in_flight: false, dead: false }
         }
-        Worker { tx, rx, seq: 0, map_rev: 0, last: None, in_flight: false, dead: false }
+        #[cfg(target_arch = "wasm32")]
+        {
+            let local = Some(Local { map, req, out, ctx });
+            Worker { tx, rx, seq: 0, map_rev: 0, last: None, in_flight: false, dead: false, local }
+        }
     }
 
     /// Applies an edit to the worker's map (a basemap change, a new layer); the next render shows
@@ -128,6 +154,13 @@ impl Worker {
 
     /// The newest finished frame, if any arrived since the last poll.
     pub fn poll(&mut self) -> Option<Frame> {
+        #[cfg(target_arch = "wasm32")]
+        if let Some(l) = &mut self.local
+            && let Ok(first) = l.req.try_recv()
+            && !step(&mut l.map, first, &l.req, &l.out, &l.ctx)
+        {
+            self.local = None;
+        }
         let mut newest = None;
         loop {
             match self.rx.try_recv() {

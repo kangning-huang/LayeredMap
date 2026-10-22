@@ -1953,8 +1953,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ff2abc00be7fca6ebc474524697ae276ad847ad0a6b3faa4bcb027e9a4614ad0"
 dependencies = [
  "cfg-if",
+ "js-sys",
  "libc",
  "wasi",
+ "wasm-bindgen",
 ]
 
 [[package]]
@@ -2817,6 +2819,7 @@ dependencies = [
  "log",
  "serde_json",
  "ureq",
+ "web-time",
  "winreg",
 ]
 
@@ -2868,6 +2871,7 @@ dependencies = [
  "sha2 0.10.9",
  "tiff",
  "ureq",
+ "web-time",
 ]
 
 [[package]]
@@ -2938,6 +2942,7 @@ dependencies = [
  "egui-phosphor",
  "egui-wgpu",
  "egui_kittest",
+ "getrandom 0.2.17",
  "image",
  "lm-account",
  "lm-actions",
@@ -2950,6 +2955,7 @@ dependencies = [
  "log",
  "ring",
  "serde_json",
+ "web-time",
  "wgpu",
  "winreg",
 ]
@@ -3225,6 +3231,26 @@ dependencies = [
  "ndarray",
  "netcdf-core",
  "thiserror 2.0.21",
+]
+
+[[package]]
+name = "nimblemap-web"
+version = "0.7.4"
+dependencies = [
+ "eframe",
+ "egui",
+ "js-sys",
+ "lm-core",
+ "lm-jobs",
+ "lm-net",
+ "lm-ui",
+ "log",
+ "rfd",
+ "rustgis-tiles",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+ "web-time",
 ]
 
 [[package]]

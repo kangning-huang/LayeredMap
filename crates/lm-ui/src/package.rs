@@ -249,7 +249,7 @@ pub(crate) fn write_to(shell: &mut Shell, path: PathBuf, t: f64) {
     let (tx, rx) = std::sync::mpsc::channel();
     let target = path.clone();
     let wake = shell.ws.wake.clone();
-    let spawned = std::thread::Builder::new().name("lm-package".into()).spawn(move || {
+    let spawned = lm_core::task::spawn("lm-package", move || {
         let r = lm_doc::package::save_package(&inputs.doc, &inputs.owned, &inputs.opts, &target).map_err(|e| e.to_string());
         let _ = tx.send(r);
         if let Some(w) = wake {
