@@ -436,8 +436,32 @@ pub fn shows(shell: &Shell, map: egui::Rect) -> bool {
     let (left, right) = shell.panel_insets();
     let x0 = map.left() + left + theme::PANEL_MARGIN;
     let x1 = map.right() - right - theme::PANEL_MARGIN;
-    (x1 - x0).min(MAX_WIDTH) >= 240.0
+    // Above the open table, never over it: on a map too short for both, the table wins.
+    let room = crate::table::above(shell, map).bottom() - FOOT - map.top() - theme::PANEL_MARGIN;
+    (x1 - x0).min(MAX_WIDTH) >= 240.0 && room >= MIN_ROOM
 }
+
+/// Centre and width for a box at most `max` wide at the foot of the map between `x0` and `x1`
+/// (the side panels' edges): centred there, but moved left or narrowed to stay clear of the zoom
+/// and basemap buttons at `x1`'s end (chrome::controls), unless that leaves it too narrow.
+pub(crate) fn beside_controls(x0: f32, x1: f32, max: f32) -> (f32, f32) {
+    let width = (x1 - x0).min(max);
+    let right = x1 - theme::ICON_HIT - theme::PANEL_MARGIN;
+    let centre = (x0 + x1) / 2.0;
+    if centre + width / 2.0 <= right {
+        return (centre, width);
+    }
+    let fit = (right - x0).min(max);
+    if fit < 240.0 {
+        return (centre, width);
+    }
+    (right - fit / 2.0, fit)
+}
+
+/// How far the box's foot stands above the bottom of the free map (clear of the scale bar).
+const FOOT: f32 = 34.0;
+/// The height the box needs for its field or the signed-out prompt, with the time slider.
+const MIN_ROOM: f32 = 150.0;
 
 /// The box and what it shows, at the bottom of `map` between the side panels. The time slider
 /// (WP6.12), when a visible layer has time, sits between the answer and the field.
@@ -449,15 +473,18 @@ pub fn ask_box(shell: &mut Shell, ui: &mut Ui, map: egui::Rect) {
     let (left, right) = shell.panel_insets();
     let x0 = map.left() + left + theme::PANEL_MARGIN;
     let x1 = map.right() - right - theme::PANEL_MARGIN;
-    let width = (x1 - x0).min(MAX_WIDTH);
-    let bottom = egui::pos2((x0 + x1) / 2.0, map.bottom() - 34.0);
+    let (centre, width) = beside_controls(x0, x1, MAX_WIDTH);
+    // It stands on the open table's top edge rather than over its rows.
+    let free = crate::table::above(shell, map);
+    let bottom = egui::pos2(centre, free.bottom() - FOOT);
+    let answer_h = (map.height() * 0.55).min(bottom.y - map.top() - theme::PANEL_MARGIN - MIN_ROOM).max(80.0);
     let area_id = egui::Id::new("lm-ask");
     let shown =
         egui::Area::new(area_id).order(egui::Order::Foreground).pivot(Align2::CENTER_BOTTOM).fixed_pos(bottom).show(ui.ctx(), |ui| {
             ui.set_width(width);
             ui.vertical(|ui| {
                 if shell.ask.shown.is_some() || shell.ask.pending.is_some() {
-                    answer_panel(shell, ui, &t, width, map.height() * 0.55);
+                    answer_panel(shell, ui, &t, width, answer_h);
                     ui.add_space(8.0);
                 }
                 if crate::time_ui::time_layer(shell).is_some() {
@@ -488,20 +515,20 @@ pub fn ask_box(shell: &mut Shell, ui: &mut Ui, map: egui::Rect) {
     } else if before.is_some() && shell.ws.answer_fit.is_some() && shell.ask.pending.is_none() {
         // The answer is laid out: the map frames it in the free part beside or above it.
         if let Some(e) = shell.ws.answer_fit.take() {
-            frame_answer(shell, map, shown.response.rect, x0, x1, e);
+            frame_answer(shell, map, free.bottom(), shown.response.rect, x0, x1, e);
         }
     }
 }
 
 /// Flies the map so `e` lands in the largest free part of `map` around the Ask box `card`
-/// (above it, or beside it between the side panels at `x0`–`x1`).
-fn frame_answer(shell: &mut Shell, map: egui::Rect, card: egui::Rect, x0: f32, x1: f32, e: lm_core::model::Extent) {
+/// (above it, or beside it between the side panels at `x0`–`x1`), above `foot` (the open table's top).
+fn frame_answer(shell: &mut Shell, map: egui::Rect, foot: f32, card: egui::Rect, x0: f32, x1: f32, e: lm_core::model::Extent) {
     let gap = theme::PANEL_MARGIN;
     let top = map.top() + gap;
     let candidates = [
         egui::Rect::from_min_max(egui::pos2(x0, top), egui::pos2(x1, card.top() - gap)),
-        egui::Rect::from_min_max(egui::pos2(x0, top), egui::pos2(card.left() - gap, map.bottom() - gap)),
-        egui::Rect::from_min_max(egui::pos2(card.right() + gap, top), egui::pos2(x1, map.bottom() - gap)),
+        egui::Rect::from_min_max(egui::pos2(x0, top), egui::pos2(card.left() - gap, foot - gap)),
+        egui::Rect::from_min_max(egui::pos2(card.right() + gap, top), egui::pos2(x1, foot - gap)),
     ];
     let e = lm_mapview::Extent { min_x: e.min_x, min_y: e.min_y, max_x: e.max_x, max_y: e.max_y };
     // The part that shows the frame biggest (the smallest resolution); a sliver is no use.
@@ -509,7 +536,7 @@ fn frame_answer(shell: &mut Shell, map: egui::Rect, card: egui::Rect, x0: f32, x
         .into_iter()
         .filter(|r| r.width() >= 160.0 && r.height() >= 120.0)
         .min_by(|a, b| lm_mapview::fit_res(&e, a.width(), a.height()).total_cmp(&lm_mapview::fit_res(&e, b.width(), b.height())));
-    let free = best.unwrap_or(egui::Rect::from_min_max(egui::pos2(x0, map.top()), egui::pos2(x1, map.bottom())));
+    let free = best.unwrap_or(egui::Rect::from_min_max(egui::pos2(x0, map.top()), egui::pos2(x1, foot)));
     let local = free.translate(-map.min.to_vec2());
     shell.map_view_mut().zoom_to_extent_in(&e, map.size(), local);
 }

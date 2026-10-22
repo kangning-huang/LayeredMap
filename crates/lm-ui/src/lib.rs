@@ -1109,14 +1109,16 @@ impl Shell {
                 }
             }
         }
-        // The controls move left of the inspector when it is open (Layout).
+        // The controls move left of the inspector when it is open (Layout), and up above the
+        // table when it is open, so the scale bar, credits and update notice never cover its rows.
+        let above_table = table::above(self, map_rect);
         let overlay_rect = if self.ws.selected().is_some() {
             egui::Rect::from_min_max(
                 map_rect.min,
-                egui::pos2(map_rect.max.x - panels::INSPECTOR_WIDTH - theme::PANEL_MARGIN, map_rect.max.y),
+                egui::pos2(map_rect.max.x - panels::INSPECTOR_WIDTH - theme::PANEL_MARGIN, above_table.max.y),
             )
         } else {
-            map_rect
+            above_table
         };
         chrome::map_overlays(self, ui, overlay_rect, system);
         let notice_rect = if self.shelf_open && !(self.ws.doc.layers.is_empty() && self.ws.imports.is_empty()) {
