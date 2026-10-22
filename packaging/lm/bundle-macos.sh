@@ -286,7 +286,8 @@ plutil -lint "$app/Contents/Resources/zh-Hans.lproj/InfoPlist.strings" >/dev/nul
 # AppKit reads Credits.rtf from Resources, links working. Like the bundle name above, it follows
 # the system's language: the English copy in Resources, one per *.lproj. RTF with no colour table,
 # so the text takes the panel's own colour in Dark Mode (Credits.html would come out black).
-# $1 is "Made by " in that language; rtf_text escapes what isn't ASCII (\uN, the signed UTF-16
+# $1 is "Made by " in that language, $2 the role (owner: "an assistant professor of environmental
+# studies at New York University Shanghai"); rtf_text escapes what isn't ASCII (\uN, the signed UTF-16
 # code, then a space that RTF drops; every character here is in the BMP).
 rtf_text() { perl -CSA -e 'for (split //, $ARGV[0]) { my $c = ord($_); print $c < 128 ? $_ : sprintf("\\u%d ", $c > 32767 ? $c - 65536 : $c) }' "$1"; }
 credits_rtf() {
@@ -294,27 +295,28 @@ credits_rtf() {
 {\\rtf1\\ansi\\ansicpg1252\\uc0
 {\\fonttbl\\f0\\fnil\\fcharset0 .AppleSystemUIFont;}
 \\pard\\qc\\f0\\fs22 $(rtf_text "$1")Kangning Huang\\
+$(rtf_text "$2")\\
 {\\field{\\*\\fldinst{HYPERLINK "https://kangning-huang.com/"}}{\\fldrslt kangning-huang.com}}\\
 \\
 {\\field{\\*\\fldinst{HYPERLINK "https://nimblemap.com/"}}{\\fldrslt nimblemap.com}}}
 RTF
 }
-credits_rtf "Made by " > "$app/Contents/Resources/Credits.rtf"
-# lproj|"Made by"| (the last bar keeps a trailing space). The name and the addresses stay as they are.
-while IFS='|' read -r lproj made_by _; do
+credits_rtf "Made by " "Assistant Professor of Environmental Studies, NYU Shanghai" > "$app/Contents/Resources/Credits.rtf"
+# lproj|"Made by"|role| (the bar after "Made by" keeps its trailing space). The name and the addresses stay as they are.
+while IFS='|' read -r lproj made_by role _; do
   mkdir -p "$app/Contents/Resources/$lproj.lproj"
-  credits_rtf "$made_by" > "$app/Contents/Resources/$lproj.lproj/Credits.rtf"
+  credits_rtf "$made_by" "$role" > "$app/Contents/Resources/$lproj.lproj/Credits.rtf"
 done <<'CREDITS'
-zh-Hans|开发者：|
-de|Entwickelt von |
-es|Desarrollado por |
-fr|Développé par |
-it|Sviluppato da |
-nl|Ontwikkeld door |
-pt-BR|Desenvolvido por |
-ru|Разработчик: |
-ja|開発者：|
-ko|개발자: |
+zh-Hans|开发者：|上海纽约大学环境研究助理教授|
+de|Entwickelt von |Assistant Professor für Umweltstudien, NYU Shanghai|
+es|Desarrollado por |Profesor asistente de Estudios Ambientales, NYU Shanghai|
+fr|Développé par |Professeur assistant en études environnementales, NYU Shanghai|
+it|Sviluppato da |Assistant Professor di Studi ambientali, NYU Shanghai|
+nl|Ontwikkeld door |Universitair docent milieustudies, NYU Shanghai|
+pt-BR|Desenvolvido por |Professor assistente de Estudos Ambientais, NYU Shanghai|
+ru|Разработчик: |доцент (assistant professor) экологических исследований, NYU Shanghai|
+ja|開発者：|ニューヨーク大学上海校 環境学 助教|
+ko|개발자: |NYU 상하이 환경학 조교수|
 CREDITS
 
 # On an exFAT or FAT drive macOS keeps extended attributes in AppleDouble `._*` files, which

@@ -36,7 +36,7 @@ impl FormatAdapter for GeoJson {
     }
 
     fn open_metadata(&self, path: &Path, _ctx: &Ctx) -> Result<Metadata, ImportError> {
-        let m = std::fs::metadata(path).map_err(|e| ImportError::read(&file_name(path), e))?;
+        let m = crate::vfs::metadata(path).map_err(|e| ImportError::read(&file_name(path), e))?;
         if m.len() > GEOJSON_MAX_BYTES {
             return Err(ImportError::Refused(format!(
                 "{} is larger than 2 GB, the most {APP} reads as GeoJSON. Converting it to GeoPackage or FlatGeobuf makes it open quickly. Your file has not been changed.",
@@ -49,7 +49,7 @@ impl FormatAdapter for GeoJson {
     fn stream_features(&self, path: &Path, meta: &Metadata, ctx: &Ctx) -> Result<Vec<ImportedLayer>, ImportError> {
         let name = file_name(path);
         ctx.ticket.set_total(meta.size);
-        let file = std::fs::File::open(path).map_err(|e| ImportError::read(&name, e))?;
+        let file = crate::vfs::open(path).map_err(|e| ImportError::read(&name, e))?;
         let reader = std::io::BufReader::with_capacity(1 << 20, Counting::new(file, ctx.ticket.clone()));
         let stem = path.file_stem().and_then(|s| s.to_str()).unwrap_or("layer").to_string();
         let mut sink = Sink::new(stem);

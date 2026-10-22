@@ -465,7 +465,7 @@ fn read_header(file: NcFile, name: &str) -> Result<Opened, ImportError> {
 type FileKey = (PathBuf, u64, i64);
 
 fn file_key(path: &Path) -> FileKey {
-    let meta = std::fs::metadata(path).ok();
+    let meta = crate::vfs::metadata(path).ok();
     let mtime = meta
         .as_ref()
         .and_then(|m| m.modified().ok())
@@ -489,9 +489,13 @@ fn open(path: &Path) -> Result<Arc<Opened>, ImportError> {
         return Ok(o);
     }
     let name = file_name(path);
-    let storage = FileStorage::open(path).map_err(|e| ImportError::read(&name, e))?;
     let options = NcOpenOptions { chunk_cache_bytes: 32 << 20, ..NcOpenOptions::default() };
-    let file = NcFile::from_storage_with_options(Arc::new(storage), options).map_err(|e| ImportError::read(&name, e))?;
+    // A file held in memory (the browser build: dropped, picked or an example) is read from there.
+    let storage: netcdf_reader::DynStorage = match crate::vfs::shared(path) {
+        Some(bytes) => Arc::new(netcdf_reader::BytesStorage::new(bytes.to_vec())),
+        None => Arc::new(FileStorage::open(path).map_err(|e| ImportError::read(&name, e))?),
+    };
+    let file = NcFile::from_storage_with_options(storage, options).map_err(|e| ImportError::read(&name, e))?;
     let opened = Arc::new(read_header(file, &name)?);
     let mut cache = open_files().lock().unwrap_or_else(|e| e.into_inner());
     cache.retain(|(k, _)| k.0 != key.0);
@@ -909,7 +913,7 @@ impl FormatAdapter for NetCdf {
     }
 
     fn open_metadata(&self, path: &Path, _ctx: &Ctx) -> Result<Metadata, ImportError> {
-        let size = std::fs::metadata(path).map_err(|e| ImportError::read(&file_name(path), e))?.len();
+        let size = crate::vfs::metadata(path).map_err(|e| ImportError::read(&file_name(path), e))?.len();
         let o = open(path)?;
         let pixels = o.layouts.iter().find(|l| l.name == o.grid.variable).map(|l| (l.geom.width() as u64, l.geom.height() as u64));
         Ok(Metadata { size, pixels, ..Metadata::default() })

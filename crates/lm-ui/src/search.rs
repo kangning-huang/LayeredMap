@@ -6,8 +6,46 @@ use std::sync::mpsc::{Receiver, channel};
 
 use lm_core::places::{PlaceIndex, zoom_for_population};
 
-/// The bundled city index (GeoNames cities15000, CC BY 4.0).
+/// The bundled city index (GeoNames cities15000, CC BY 4.0). The browser build fetches it from
+/// the site instead ([`provide_cities`]): 3 MB less WebAssembly.
+#[cfg(not(target_arch = "wasm32"))]
 const CITIES: &str = include_str!("../../../assets/geonames/cities.tsv");
+
+#[cfg(target_arch = "wasm32")]
+static WEB_CITIES: std::sync::OnceLock<&'static str> = std::sync::OnceLock::new();
+
+/// The browser build: the city index, once the page has downloaded it.
+#[cfg(target_arch = "wasm32")]
+pub fn provide_cities(tsv: String) {
+    let _ = WEB_CITIES.set(Box::leak(tsv.into_boxed_str()));
+}
+
+/// The city index's text, when it is here.
+fn cities() -> Option<&'static str> {
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        Some(CITIES)
+    }
+    #[cfg(target_arch = "wasm32")]
+    {
+        WEB_CITIES.get().copied()
+    }
+}
+
+/// Starts parsing the city index in the background.
+fn start(tsv: &'static str) -> Option<Receiver<Result<PlaceIndex, String>>> {
+    let (tx, rx) = channel();
+    let spawned = lm_core::task::spawn("lm-places", move || {
+        let _ = tx.send(PlaceIndex::parse(tsv));
+    });
+    match spawned {
+        Ok(()) => Some(rx),
+        Err(e) => {
+            log::error!("could not start the place index: {e}");
+            None
+        }
+    }
+}
 /// Results shown at once.
 pub const LIMIT: usize = 8;
 
@@ -39,23 +77,27 @@ pub struct Search {
     pub selected: usize,
     pub open: bool,
     searched: String,
+    /// The index was asked for (it is parsed once, even if that fails).
+    started: bool,
 }
 
 impl Search {
     /// Starts parsing the city index on a background thread (about 34,000 rows).
     pub fn new() -> Search {
-        let (tx, rx) = channel();
-        let spawned = std::thread::Builder::new().name("lm-places".into()).spawn(move || {
-            let _ = tx.send(PlaceIndex::parse(CITIES));
-        });
-        if let Err(e) = spawned {
-            log::error!("could not start the place index: {e}");
-        }
-        Search { index: None, loading: Some(rx), query: String::new(), rows: Vec::new(), selected: 0, open: false, searched: String::new() }
+        let loading = cities().and_then(start);
+        let started = loading.is_some();
+        Search { index: None, loading, query: String::new(), rows: Vec::new(), selected: 0, open: false, searched: String::new(), started }
     }
 
     /// Takes the index once it has been parsed.
     fn poll(&mut self) {
+        // The browser build: the index arrived after the search box was made.
+        if !self.started
+            && let Some(tsv) = cities()
+        {
+            self.started = true;
+            self.loading = start(tsv);
+        }
         if let Some(rx) = &self.loading
             && let Ok(r) = rx.try_recv()
         {

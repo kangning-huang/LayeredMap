@@ -1,0 +1,15 @@
+{
+  "id": "./",
+  "name": "NimbleMap",
+  "short_name": "NimbleMap",
+  "description": "Open map data in your browser. Your files never leave your computer.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f1ea",
+  "theme_color": "#f4f1ea",
+  "icons": [
+    { "src": "icon-256.png", "sizes": "256x256", "type": "image/png", "purpose": "any" },
+    { "src": "logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

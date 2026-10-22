@@ -141,7 +141,10 @@ fn share_menu(shell: &mut Shell, resp: &egui::Response) {
         if ui.add_enabled(has_data, egui::Button::new(tl!("Data…"))).on_disabled_hover_text(tl!("Open a file first")).clicked() {
             shell.command(&ctx, crate::Command::ExportData);
         }
-        if ui.add_enabled(has_data, egui::Button::new(tl!("Map package…"))).on_disabled_hover_text(tl!("Open a file first")).clicked() {
+        // The browser build has no files to package (saving comes later).
+        if !cfg!(target_arch = "wasm32")
+            && ui.add_enabled(has_data, egui::Button::new(tl!("Map package…"))).on_disabled_hover_text(tl!("Open a file first")).clicked()
+        {
             shell.command(&ctx, crate::Command::ExportPackage);
         }
     });

@@ -101,7 +101,9 @@ impl Provider {
     /// The providers a region offers when its config doesn't list them (accounts.md › Two regions).
     pub fn defaults(region: Region) -> &'static [Provider] {
         match region {
-            Region::International => &[Provider::Apple, Provider::Google, Provider::GitHub, Provider::LinkedIn, Provider::X, Provider::Email],
+            Region::International => {
+                &[Provider::Apple, Provider::Google, Provider::GitHub, Provider::LinkedIn, Provider::X, Provider::Email]
+            }
             Region::China => &[Provider::WeChat, Provider::Alipay, Provider::Phone, Provider::Apple],
         }
     }

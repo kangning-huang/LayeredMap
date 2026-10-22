@@ -20,5 +20,6 @@ pub mod platform;
 pub mod question;
 pub mod recipe;
 pub mod selection;
+pub mod task;
 pub mod undo;
 pub mod zh_fold;

@@ -153,7 +153,7 @@ impl MenuBar {
             // panel takes the credits with the links from the bundle's Credits.rtf
             // (packaging/lm/bundle-macos.sh). Windows lists the author and website as text.
             copyright: Some("© 2026 Kangning Huang".into()),
-            authors: Some(vec!["Kangning Huang".into()]),
+            authors: Some(vec!["Kangning Huang, Assistant Professor of Environmental Studies, NYU Shanghai".into()]),
             website: Some("https://kangning-huang.com/".into()),
             ..Default::default()
         };

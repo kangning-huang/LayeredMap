@@ -15,6 +15,7 @@ pub mod jobs;
 pub mod join;
 pub mod library;
 pub mod plan_exec;
+pub mod vfs;
 
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{Receiver, channel};

@@ -54,7 +54,7 @@ impl FormatAdapter for Kml {
     }
 
     fn open_metadata(&self, path: &Path, _ctx: &Ctx) -> Result<Metadata, ImportError> {
-        let m = std::fs::metadata(path).map_err(|e| ImportError::read(&file_name(path), e))?;
+        let m = crate::vfs::metadata(path).map_err(|e| ImportError::read(&file_name(path), e))?;
         if m.len() > XML_MAX_BYTES {
             return Err(xmlfile::too_large(&file_name(path), "KML"));
         }
@@ -77,7 +77,7 @@ impl FormatAdapter for Kmz {
     }
 
     fn open_metadata(&self, path: &Path, _ctx: &Ctx) -> Result<Metadata, ImportError> {
-        let m = std::fs::metadata(path).map_err(|e| ImportError::read(&file_name(path), e))?;
+        let m = crate::vfs::metadata(path).map_err(|e| ImportError::read(&file_name(path), e))?;
         if m.len() > super::limits::ZIP_MAX_EXPANDED {
             return Err(ImportError::Refused(format!(
                 "{} is larger than 2 GB, the most {APP} reads as KMZ. Your file has not been changed.",
@@ -89,7 +89,7 @@ impl FormatAdapter for Kmz {
 
     fn stream_features(&self, path: &Path, _meta: &Metadata, ctx: &Ctx) -> Result<Vec<ImportedLayer>, ImportError> {
         let name = file_name(path);
-        let bytes = std::fs::read(path).map_err(|e| ImportError::read(&name, e))?;
+        let bytes = crate::vfs::read(path).map_err(|e| ImportError::read(&name, e))?;
         // The limits are checked from the central directory before anything is expanded.
         let entries = zip_entries(&bytes)?;
         check_zip(&entries)?;

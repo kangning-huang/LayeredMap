@@ -36,13 +36,13 @@ impl FormatAdapter for Delimited {
     }
 
     fn open_metadata(&self, path: &Path, _ctx: &Ctx) -> Result<Metadata, ImportError> {
-        let m = std::fs::metadata(path).map_err(|e| ImportError::read(&file_name(path), e))?;
+        let m = crate::vfs::metadata(path).map_err(|e| ImportError::read(&file_name(path), e))?;
         Ok(Metadata { size: m.len(), ..Metadata::default() })
     }
 
     fn stream_features(&self, path: &Path, meta: &Metadata, ctx: &Ctx) -> Result<Vec<ImportedLayer>, ImportError> {
         let name = file_name(path);
-        let open = || std::fs::File::open(path).map_err(|e| ImportError::read(&name, e));
+        let open = || crate::vfs::open(path).map_err(|e| ImportError::read(&name, e));
         let mut head = Vec::with_capacity(HEAD);
         open()?.take(HEAD as u64).read_to_end(&mut head).map_err(|e| ImportError::read(&name, e))?;
         let (mut encoding, bom) = detect_encoding(&head);
@@ -107,7 +107,7 @@ fn read_rows(
     ctx: &Ctx,
 ) -> Result<(Option<Vec<String>>, Vec<Vec<String>>), ImportError> {
     ctx.ticket.set_total(size);
-    let f = std::fs::File::open(path).map_err(|e| ImportError::read(name, e))?;
+    let f = crate::vfs::open(path).map_err(|e| ImportError::read(name, e))?;
     let mut file = Counting::new(std::io::BufReader::new(f), ctx.ticket.clone());
     let mut skip = vec![0u8; bom];
     file.read_exact(&mut skip).map_err(|e| ImportError::read(name, e))?;

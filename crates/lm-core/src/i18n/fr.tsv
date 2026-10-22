@@ -760,8 +760,6 @@ Signing out…	Déconnexion…
 Deleting your account…	Suppression de votre compte…
 Email address	Adresse e-mail
 Verify	Vérifier
-The link has stopped working on this Mac; the code still works for an hour.	Le lien ne fonctionne plus sur ce Mac ; le code reste valable pendant une heure.
-The link has stopped working on this computer; the code still works for an hour.	Le lien ne fonctionne plus sur cet ordinateur ; le code reste valable pendant une heure.
 Send a New Email	Envoyer un nouvel e-mail
 Use a Different Email	Utiliser une autre adresse e-mail
 Asking about your layers needs a free account. Your maps and files stay on this computer.	Interroger vos couches nécessite un compte gratuit. Vos cartes et vos fichiers restent sur cet ordinateur.
@@ -774,9 +772,6 @@ Delete your {app} account? {pro} stops working on every computer you use. Your m
 Sign in to use {pro}	Connectez-vous pour utiliser {pro}
 {pro} is free while it's new. Your account only says who you are: your maps and files never leave this computer.	{pro} est gratuit pendant son lancement. Votre compte sert seulement à vous identifier : vos cartes et vos fichiers ne quittent jamais cet ordinateur.
 Sending an email to {address}…	Envoi d’un e-mail à {address}…
-We sent an email to {address}. Enter the {n}-digit code in it.	Nous avons envoyé un e-mail à {address}. Saisissez le code à {n} chiffres qu’il contient.
-We sent an email to {address}. Click the link in it on this Mac, or enter the {n}-digit code.	Nous avons envoyé un e-mail à {address}. Cliquez sur le lien qu’il contient sur ce Mac, ou saisissez le code à {n} chiffres.
-We sent an email to {address}. Click the link in it on this computer, or enter the {n}-digit code.	Nous avons envoyé un e-mail à {address}. Cliquez sur le lien qu’il contient sur cet ordinateur, ou saisissez le code à {n} chiffres.
 {n}-digit code	Code à {n} chiffres
 Sign in to use {pro} (Settings › Account).	Connectez-vous pour utiliser {pro} (Réglages › Compte).
 Settings…	Réglages…
@@ -787,7 +782,6 @@ Continue with Google	Continuer avec Google
 Continue with GitHub	Continuer avec GitHub
 Continue with LinkedIn	Continuer avec LinkedIn
 Continue with X	Continuer avec X
-Email me a sign-in code	Recevoir un code de connexion par e-mail
 Continue with WeChat	Continuer avec WeChat
 Continue with Alipay	Continuer avec Alipay
 Text me a code	Recevoir un code par SMS
@@ -831,7 +825,6 @@ Couldn't reach the assistant service: {error}	Impossible de joindre le service d
 The assistant service's answer was cut off: {error}	La réponse du service de l’assistant a été tronquée : {error}
 The assistant service answered {status} with something unreadable.	Le service de l’assistant a répondu {status} avec un contenu illisible.
 {app} is working offline, so the assistant can't be reached. Turn off View › Work Offline to ask.	{app} est hors ligne et ne peut pas joindre l’assistant. Désactivez Présentation › Travailler hors ligne pour poser une question.
-Signing in unlocks the Ask box, analysis tools, the built-in world layers and voice input.	La connexion débloque la zone de questions, les outils d’analyse, les couches mondiales intégrées et la saisie vocale.
 Checking your account…	Vérification de votre compte…
 Settings › Account shows who is signed in and what the account includes.	Réglages › Compte indique qui est connecté et ce que comprend le compte.
 Nothing matches, so nothing is highlighted on the map.	Aucun résultat : rien n’est mis en évidence sur la carte.
@@ -856,3 +849,12 @@ You're up to date: {app} {version} is the newest version.	Vous êtes à jour : 
 {app} {version} is ready	{app} {version} est prêt
 {done} MB	{done} Mo
 {done} of {total} MB	{done} sur {total} Mo
+Signing in unlocks the Ask box, voice input and the built-in world layers. The analysis tools are free without an account.	La connexion débloque la zone de questions, la saisie vocale et les couches mondiales intégrées. Les outils d’analyse sont gratuits, sans compte.
+Email me a sign-in code	Recevoir un code de connexion par e-mail
+We'll email you a {n}-digit code from {sender}.	Vous recevrez un code à {n} chiffres par e-mail de {sender}.
+We sent a code to {address}. Type it below.	Nous avons envoyé un code à {address}. Saisissez-le ci-dessous.
+We sent a code to {address}. Type it below, or click the link in the same email on this Mac.	Nous avons envoyé un code à {address}. Saisissez-le ci-dessous, ou cliquez sur le lien du même e-mail sur ce Mac.
+We sent a code to {address}. Type it below, or click the link in the same email on this computer.	Nous avons envoyé un code à {address}. Saisissez-le ci-dessous, ou cliquez sur le lien du même e-mail sur cet ordinateur.
+The email comes from {sender}, subject “{subject}”. If it isn't in your inbox, check your spam or junk folder.	L’e-mail vient de {sender}, avec l’objet « {subject} ». S’il n’est pas dans votre boîte de réception, regardez dans les courriers indésirables.
+The link has stopped working on this Mac. Type the code from the email, or send a new one.	Le lien ne fonctionne plus sur ce Mac. Saisissez le code de l’e-mail, ou demandez-en un nouveau.
+The link has stopped working on this computer. Type the code from the email, or send a new one.	Le lien ne fonctionne plus sur cet ordinateur. Saisissez le code de l’e-mail, ou demandez-en un nouveau.

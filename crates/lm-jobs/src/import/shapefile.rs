@@ -95,7 +95,7 @@ const NOT_SHAPEFILE_ZIPS: &[&str] =
 fn sibling(path: &Path, ext: &str) -> Option<std::path::PathBuf> {
     let stem = path.file_stem()?.to_str()?.to_lowercase();
     let dir = path.parent().filter(|d| !d.as_os_str().is_empty()).unwrap_or(Path::new("."));
-    std::fs::read_dir(dir).ok()?.flatten().map(|e| e.path()).find(|p| {
+    crate::vfs::read_dir(dir).ok()?.into_iter().find(|p| {
         p.file_stem().and_then(|s| s.to_str()).is_some_and(|s| s.to_lowercase() == stem)
             && p.extension().and_then(|e| e.to_str()).is_some_and(|e| e.eq_ignore_ascii_case(ext))
     })
@@ -190,7 +190,7 @@ impl FormatAdapter for Shapefile {
     }
 
     fn open_metadata(&self, path: &Path, _ctx: &Ctx) -> Result<Metadata, ImportError> {
-        let m = std::fs::metadata(path).map_err(|e| ImportError::read(&file_name(path), e))?;
+        let m = crate::vfs::metadata(path).map_err(|e| ImportError::read(&file_name(path), e))?;
         Ok(Metadata { size: m.len(), ..Metadata::default() })
     }
 
@@ -198,11 +198,11 @@ impl FormatAdapter for Shapefile {
         let name = file_name(path);
         let read = |p: Option<std::path::PathBuf>| -> Result<Option<Vec<u8>>, ImportError> {
             match p {
-                Some(p) => std::fs::read(&p).map(Some).map_err(|e| ImportError::read(&name, e)),
+                Some(p) => crate::vfs::read(&p).map(Some).map_err(|e| ImportError::read(&name, e)),
                 None => Ok(None),
             }
         };
-        let shp = std::fs::read(path).map_err(|e| ImportError::read(&name, e))?;
+        let shp = crate::vfs::read(path).map_err(|e| ImportError::read(&name, e))?;
         ctx.ticket.check()?;
         let shx = read(sibling(path, "shx"))?;
         let dbf = read(sibling(path, "dbf"))?;
@@ -226,20 +226,20 @@ impl FormatAdapter for ZippedShapefile {
     }
 
     fn open_metadata(&self, path: &Path, _ctx: &Ctx) -> Result<Metadata, ImportError> {
-        let m = std::fs::metadata(path).map_err(|e| ImportError::read(&file_name(path), e))?;
+        let m = crate::vfs::metadata(path).map_err(|e| ImportError::read(&file_name(path), e))?;
         Ok(Metadata { size: m.len(), ..Metadata::default() })
     }
 
     fn stream_features(&self, path: &Path, _meta: &Metadata, ctx: &Ctx) -> Result<Vec<ImportedLayer>, ImportError> {
         let name = file_name(path);
         // The archive is read into memory to list and expand it: cap it first.
-        let size = std::fs::metadata(path).map_err(|e| ImportError::read(&name, e))?.len();
+        let size = crate::vfs::metadata(path).map_err(|e| ImportError::read(&name, e))?.len();
         if size > super::limits::ZIP_MAX_EXPANDED {
             return Err(ImportError::Refused(format!(
                 "{name} is larger than 2 GB, the most {APP} reads as a zipped Shapefile. Unzip it and open the .shp. Your file has not been changed."
             )));
         }
-        let bytes = std::fs::read(path).map_err(|e| ImportError::read(&name, e))?;
+        let bytes = crate::vfs::read(path).map_err(|e| ImportError::read(&name, e))?;
         // The limits are checked from the central directory before anything is expanded.
         let entries = zip_entries(&bytes)?;
         check_zip(&entries)?;

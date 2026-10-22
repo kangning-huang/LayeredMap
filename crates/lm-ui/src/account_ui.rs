@@ -24,6 +24,12 @@ use crate::theme::{self, BODY, CAPTION, HEADLINE, TITLE};
 const WIDTH: f32 = 420.0;
 const BUTTON_W: f32 = 280.0;
 
+/// The sign-in email's sender name and subject, as the project's SMTP settings and templates set
+/// them (services/ask-proxy/supabase/config.toml, docs/lm/email-signin.md). The email is in
+/// English whatever the interface language, so these aren't translated.
+const EMAIL_SENDER: &str = lm_core::brand::NAME;
+const EMAIL_SUBJECT: &str = "Your NimbleMap sign-in code";
+
 /// The account and the pane's state.
 pub struct AccountUi {
     pub(crate) account: Option<Arc<Account>>,
@@ -44,7 +50,7 @@ pub struct AccountUi {
     verifying: Option<Receiver<Result<User, AccountError>>>,
     /// The entitlement check in flight (`GET …/account`), and when the last one started.
     checking: Option<Receiver<Result<lm_account::Entitlement, AccountError>>>,
-    last_check: Option<std::time::Instant>,
+    last_check: Option<web_time::Instant>,
 }
 
 /// The code-entry state after "Email me a sign-in code".
@@ -311,7 +317,7 @@ fn check_entitlement(shell: &mut Shell, ctx: &egui::Context) {
     if !due {
         return;
     }
-    shell.account.last_check = Some(std::time::Instant::now());
+    shell.account.last_check = Some(web_time::Instant::now());
     let (tx, rx) = channel();
     let wake = ctx.clone();
     std::thread::spawn(move || {
@@ -404,7 +410,7 @@ pub(crate) fn poll(shell: &mut Shell, ctx: &egui::Context) {
             // The Ask box's sign-in message has done its job; the entitlement was just checked.
             shell.ask.clear_message();
             shell.account.email_code = None;
-            shell.account.last_check = Some(std::time::Instant::now());
+            shell.account.last_check = Some(web_time::Instant::now());
             None
         }
         (Doing::SignOut, Ok(_)) => Some((tn!("You're signed out.").into(), false)),
@@ -428,7 +434,7 @@ fn poll_code(shell: &mut Shell) {
             // was checked on the same thread.
             shell.account.email_code = None;
             shell.account.message = None;
-            shell.account.last_check = Some(std::time::Instant::now());
+            shell.account.last_check = Some(web_time::Instant::now());
             shell.ask.clear_message();
         }
         Err(AccountError::Cancelled) => {}
@@ -584,7 +590,7 @@ fn account_pane(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme) -> Option<Pane
             );
             ui.add_space(2.0);
             ui.label(
-                RichText::new(tl!("Signing in unlocks the Ask box, analysis tools, the built-in world layers and voice input."))
+                RichText::new(tl!("Signing in unlocks the Ask box, voice input and the built-in world layers. The analysis tools are free without an account."))
                     .size(CAPTION)
                     .color(t.text_secondary),
             );
@@ -672,6 +678,11 @@ fn sign_in_buttons(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, offline: bo
         if (ui.add_enabled(!offline && ready, b).clicked() || (enter && ready)) && !offline {
             out = Some(Pane::Start(Doing::EmailLink(shell.account.email.trim().to_string())));
         }
+        // Say what arrives, so the email is expected (docs/lm/email-signin.md).
+        ui.add_space(4.0);
+        let n = lm_account::code::LEN.to_string();
+        let line = i18n::fmt("We'll email you a {n}-digit code from {sender}.", &[("n", n.as_str()), ("sender", EMAIL_SENDER)]);
+        ui.add(egui::Label::new(RichText::new(line).size(CAPTION).color(t.text_secondary)).wrap());
     }
     if offline {
         ui.add_space(6.0);
@@ -680,8 +691,9 @@ fn sign_in_buttons(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, offline: bo
     out
 }
 
-/// "We sent an email…": the 6-digit code field with Verify, Send a New Email and Use a Different
-/// Email. The link in the email still works on this computer meanwhile.
+/// "We sent a code…": the 6-digit code field with Verify, Send a New Email and Use a Different
+/// Email, and who sends the email and its subject. The link in the same email still works on this
+/// computer meanwhile.
 fn code_entry(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, offline: bool) -> Option<Pane> {
     let checking = shell.account.verifying.is_some();
     let ec = shell.account.email_code.as_mut()?;
@@ -690,13 +702,19 @@ fn code_entry(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, offline: bool) -
     let n = lm_account::code::LEN.to_string();
     let args = [("address", ec.address.as_str()), ("n", n.as_str())];
     let said = if ec.link_expired {
-        i18n::fmt("We sent an email to {address}. Enter the {n}-digit code in it.", &args)
+        i18n::fmt("We sent a code to {address}. Type it below.", &args)
     } else if mac {
-        i18n::fmt("We sent an email to {address}. Click the link in it on this Mac, or enter the {n}-digit code.", &args)
+        i18n::fmt("We sent a code to {address}. Type it below, or click the link in the same email on this Mac.", &args)
     } else {
-        i18n::fmt("We sent an email to {address}. Click the link in it on this computer, or enter the {n}-digit code.", &args)
+        i18n::fmt("We sent a code to {address}. Type it below, or click the link in the same email on this computer.", &args)
     };
     ui.label(RichText::new(said).size(BODY));
+    ui.add_space(4.0);
+    let from = i18n::fmt(
+        "The email comes from {sender}, subject “{subject}”. If it isn't in your inbox, check your spam or junk folder.",
+        &[("sender", EMAIL_SENDER), ("subject", EMAIL_SUBJECT)],
+    );
+    ui.label(RichText::new(from).size(CAPTION).color(t.text_secondary));
     ui.add_space(10.0);
     let label = i18n::fmt("{n}-digit code", &args);
     ui.horizontal(|ui| {
@@ -737,9 +755,9 @@ fn code_entry(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, offline: bool) -
     } else if ec.link_expired {
         ui.add_space(4.0);
         let line = if mac {
-            tl!("The link has stopped working on this Mac; the code still works for an hour.")
+            tl!("The link has stopped working on this Mac. Type the code from the email, or send a new one.")
         } else {
-            tl!("The link has stopped working on this computer; the code still works for an hour.")
+            tl!("The link has stopped working on this computer. Type the code from the email, or send a new one.")
         };
         ui.label(RichText::new(line).size(CAPTION).color(t.text_secondary));
     }
