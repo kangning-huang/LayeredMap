@@ -28,56 +28,60 @@ def _street_map(pg: Page, x, y, w, h, seed, river=True):
 
 # ------------------------------------------------------------------ chain stores
 def chain_stores():
+    """A high street sketched from across the road: two chains (green and red signs) among
+    independent shops; the chains' branches, city by city, as two small map insets."""
     pg = Page(30)
-    gy = 140
-    pg.vignette(4, gy, 214, 166, C["greyl"], 0.55, 2.5, seed=1)
-    pg.ink(P([(4, gy), (214, gy)]) + P([(4, gy + 14), (214, gy + 14)]), 0.6)
-    # a row of shopfronts: two chains (green and red awnings) among independent shops
-    shops = [(8, 36, "g"), (46, 30, None), (78, 38, "r"), (118, 30, None), (150, 36, "g"), (188, 24, None)]
-    for x, w, brand in shops:
-        top = gy - 72 + (x % 7)
-        pg.wash(rect(x, top, w, gy - top), C["white"] if brand else C["ochrel"], 0.7, edge=0.5)
-        pg.ink(rect(x, top, w, gy - top), 0.55)
-        # upper-floor windows
-        for wx in (x + 4, x + w - 12):
-            pg.wash(rect(wx, top + 8, 8, 12), C["sky"], 0.6, edge=0)
-            pg.ink(rect(wx, top + 8, 8, 12) + P([(wx + 4, top + 8), (wx + 4, top + 20)]), 0.4)
-        # sign board (blank, a brand emblem only) and awning
+    gy = 146
+    # pavement, kerb and road
+    pg.vignette(4, gy, 226, 158, C["greyl"], 0.6, 2, seed=1)
+    pg.vignette(6, 160, 224, 174, C["payne"], 0.3, 2.5, seed=2)
+    pg.ink(P([(4, gy), (226, gy)]) + P([(4, 158), (226, 158)]), 0.7)
+    pg.ink("".join(f"M{x} 167h8" for x in range(14, 220, 22)), 0.8, C["white"], 0.9)
+    shops = [(6, 38, "g", 70), (46, 30, None, 82), (78, 40, "r", 66), (120, 30, None, 78), (152, 38, "g", 72),
+             (192, 34, None, 84)]
+    for x, w, brand, hh in shops:
+        top = gy - hh
+        pg.wash(rect(x, top, w, hh), C["white"] if brand else C["ochrel"], 0.75, edge=0.5)
+        pg.ink(rect(x, top, w, hh), 0.6)
+        # cornice and upper-floor windows
+        pg.ink(P([(x - 1.5, top + 3), (x + w + 1.5, top + 3)]), 0.9)
+        for wx in (x + 5, x + w - 13):
+            for wy in (top + 9, top + 24) if hh > 75 else (top + 10,):
+                pg.wash(rect(wx, wy, 8, 11), C["sky"], 0.7, edge=0)
+                pg.ink(rect(wx, wy, 8, 11) + P([(wx + 4, wy), (wx + 4, wy + 11)]) + P([(wx - 1, wy + 11), (wx + 9, wy + 11)]), 0.45)
         if brand:
             col = C["hooker"] if brand == "g" else C["red"]
-            pg.wash(rect(x + 2, gy - 44, w - 4, 7), col, 0.85)
-            pg.ink(rect(x + 2, gy - 44, w - 4, 7), 0.5)
+            pg.wash(rect(x + 2, gy - 44, w - 4, 8), col, 0.9)
+            pg.ink(rect(x + 2, gy - 44, w - 4, 8), 0.55)
             if brand == "g":
-                pg.raw(f'<circle cx="{x + w / 2}" cy="{gy - 40.5}" r="2.4" fill="{C["white"]}"/>')
+                pg.raw(f'<circle cx="{x + w / 2}" cy="{gy - 40}" r="2.6" fill="{C["white"]}"/>')
             else:
-                pg.raw(f'<path d="M{x + w / 2 - 3} {gy - 38}l3-5 3 5z" fill="{C["lemon"]}"/>')
-            aw = [(x, gy - 37), (x + w, gy - 37), (x + w + 3, gy - 29), (x - 3, gy - 29)]
-            pg.wash(P(aw, True), col, 0.6)
-            pg.ink(P(aw, True) + "".join(P([(x + i * w / 6, gy - 37), (x - 3 + i * (w + 6) / 6, gy - 29)]) for i in range(1, 6)),
-                   0.4)
+                pg.raw(f'<path d="M{x + w / 2 - 3.2} {gy - 37.5}l3.2-5 3.2 5z" fill="{C["lemon"]}"/>')
+            aw = [(x, gy - 36), (x + w, gy - 36), (x + w + 3, gy - 28), (x - 3, gy - 28)]
+            pg.wash(P(aw, True), col, 0.65)
+            pg.ink(P(aw, True) + "".join(P([(x + i * w / 6, gy - 36), (x - 3 + i * (w + 6) / 6, gy - 28)]) for i in range(1, 6)), 0.45)
         else:
-            pg.wash(rect(x + 2, gy - 42, w - 4, 6), C["umberl"], 0.7, edge=0)
-        # shop window and door
-        pg.wash(rect(x + 3, gy - 26, w - 15, 18), C["sky"], 0.5, edge=0)
-        pg.ink(rect(x + 3, gy - 26, w - 15, 18) + rect(x + w - 10, gy - 24, 7, 24), 0.45)
-    pg.person(70, gy + 8, 13)
-    pg.person(140, gy + 10, 12)
-    # the map: each chain's branches across a city
-    with pg.inset_box(230, 18, 82, 82):
-        _street_map(pg, 230, 18, 82, 82, 30)
-        rng = random.Random(3)
-        for c, n_, cx, cy, spread in ((C["hooker"], 14, 262, 52, 18), (C["red"], 9, 284, 70, 24)):
-            for _ in range(n_):
-                x, y = cx + rng.gauss(0, spread * 0.6), cy + rng.gauss(0, spread * 0.6)
-                x, y = min(max(x, 234), 308), min(max(y, 22), 96)
-                pg.raw(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="2" fill="{c}" stroke="{INK}" stroke-width=".4"/>')
-    pg.leader((26, gy - 40), (230, 50), bend=-0.12)
-    pg.leader((97, gy - 40), (230, 82), bend=-0.08)
-    # and the counts, compared: a quick bar for each chain
-    for i, (c, L) in enumerate(((C["hooker"], 70), (C["red"], 46))):
-        pg.wash(rect(236, 124 + i * 14, L, 7), c, 0.8)
-        pg.ink(rect(236, 124 + i * 14, L, 7), 0.5)
-    pg.ink(P([(236, 118), (236, 154)]), 0.5)
+            pg.wash(rect(x + 2, gy - 42, w - 4, 6), C["umberl"], 0.75, edge=0)
+            pg.ink(rect(x + 2, gy - 42, w - 4, 6), 0.4)
+        pg.wash(rect(x + 3, gy - 25, w - 15, 18), C["sky"], 0.55, edge=0)
+        pg.ink(rect(x + 3, gy - 25, w - 15, 18) + rect(x + w - 10, gy - 24, 7, 24), 0.5)
+    # street furniture and people, for scale
+    pg.ink(P([(116, gy + 6), (116, gy - 66)]) + S([(116, gy - 66), (118, gy - 70), (124, gy - 70)]), 0.9)
+    pg.wash(ell(125, gy - 68.5, 3, 1.6), C["lemon"], 0.9)
+    pg.person(64, gy + 8, 21)
+    pg.person(140, gy + 10, 20)
+    pg.person(176, gy + 9, 14)
+    # the same two chains, branch by branch, in two cities
+    for k, (cx, cy) in enumerate(((272, 46), (272, 124))):
+        with pg.inset_circle(cx, cy, 32):
+            _street_map(pg, cx - 32, cy - 32, 64, 64, 30 + k, river=(k == 0))
+            rng = random.Random(3 + k)
+            for c, n_, sp in ((C["hooker"], 9 if k == 0 else 5, 13), (C["red"], 5 if k == 0 else 9, 16)):
+                for _ in range(n_):
+                    x, y = cx + rng.gauss(0, sp), cy + rng.gauss(0, sp)
+                    pg.raw(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="2" fill="{c}" stroke="{INK}" stroke-width=".4"/>')
+    pg.leader((25, gy - 40), (241, 52), bend=-0.14)
+    pg.leader((98, gy - 40), (241, 116), bend=-0.08)
     return pg.svg()
 
 
@@ -202,56 +206,88 @@ def city_extract():
 
 # ------------------------------------------------------------------ Geofabrik country extract
 def country_extract():
+    """A German river-valley landscape: a village with its church, an autobahn on the hillside, a
+    railway along the river. The download splits a country into exactly these layers (roads,
+    railways, buildings, places of worship), drawn as four small cards beside a Germany outline."""
     pg = Page(33)
-    m = Equi(5.5, 15.5, 47, 55.2, 30, 20, 104)
+    # far hills with vineyards, a castle on the ridge
+    far = [(4, 70), (34, 56), (66, 62), (96, 48), (130, 58), (168, 50), (206, 62)]
+    pg.wash(S(far + [(206, 96), (4, 96)], True), C["sapl"], 0.55, edge=0)
+    pg.ink(S(far), 0.6, INK2)
+    pg.ink("".join(P([(x, 70 - (x % 9)), (x + 6, 86 - (x % 9))]) for x in range(20, 80, 6)), 0.3, C["hooker"], 0.8)
+    kx, ky = 96, 52
+    pg.wash(rect(kx - 4, ky - 12, 8, 12) + rect(kx + 4, ky - 6, 10, 6), C["greyl"], 0.9)
+    pg.ink(rect(kx - 4, ky - 12, 8, 12) + rect(kx + 4, ky - 6, 10, 6) + P([(kx - 5, ky - 12), (kx, ky - 17), (kx + 5, ky - 12)]), 0.55)
+    # river in the valley floor
+    river = [(4, 132), (60, 126), (120, 134), (180, 128), (214, 132)]
+    pg.wash(S(river + [(214, 140), (180, 137), (120, 143), (60, 135), (4, 141)], True), C["cerul"], 0.65, edge=0)
+    pg.ink(S(river), 0.5, INK2)
+    pg.vignette(4, 92, 214, 128, C["sapl"], 0.45, 3, seed=4)
+    pg.vignette(4, 141, 214, 172, C["sapl"], 0.55, 3, seed=5)
+    # autobahn across the hillside, with a bridge pier pair
+    road = [(4, 104), (70, 98), (140, 106), (214, 100)]
+    pg.ink(S(road), 3.2, C["greyl"], 0.95)
+    pg.ink(S([(x, y - 1.6) for x, y in road]) + S([(x, y + 1.6) for x, y in road]), 0.5)
+    pg.ink(S(road), 0.4, C["white"], 0.9, "2 2")
+    # railway along the river, with a short train
+    rail = [(4, 150), (80, 146), (150, 152), (214, 148)]
+    pg.ink(S(rail), 1.2, INK)
+    pg.ink(S([(x, y + 1.2) for x, y in rail]), 0.5)
+    def rail_y(x):
+        for (x0, y0), (x1, y1) in zip(rail, rail[1:]):
+            if x0 <= x <= x1:
+                return y0 + (y1 - y0) * (x - x0) / (x1 - x0)
+        return rail[-1][1]
+    pg.ink("".join(P([(x, rail_y(x) - 1.2), (x, rail_y(x) + 2.4)]) for x in range(8, 212, 5)), 0.35)
+    for i in range(3):
+        x = 120 + i * 17
+        y = rail_y(x + 7.5) - 0.4
+        pg.wash(rect(x, y - 7, 15, 6.4), C["red"] if i == 0 else C["white"], 0.85)
+        pg.ink(rect(x, y - 7, 15, 6.4) + rect(x + 3, y - 5.6, 9, 2), 0.5)
+    # village: half-timbered houses and the church spire
+    vx, vy = 24, 121
+    for i, (x, w, h) in enumerate(((vx, 12, 8), (vx + 14, 11, 9), (vx + 27, 13, 8), (vx + 52, 12, 9), (vx + 66, 11, 8))):
+        roof = [(x - 1, vy - h), (x + w / 2, vy - h - 7), (x + w + 1, vy - h)]
+        pg.paper(rect(x, vy - h, w, h) + P(roof, True))
+        pg.wash(rect(x, vy - h, w, h), C["white"], 0.9, edge=0.4)
+        pg.wash(P(roof, True), C["bsienna"], 0.8, edge=0)
+        pg.ink(rect(x, vy - h, w, h) + P(roof) + P([(x, vy - h), (x + w, vy)]) + P([(x + w / 2, vy - h), (x + w / 2, vy)]), 0.45)
+    cx = vx + 45
+    pg.paper(rect(cx - 4, vy - 22, 8, 22) + P([(cx - 4.5, vy - 22), (cx, vy - 38), (cx + 4.5, vy - 22)], True))
+    pg.wash(rect(cx - 4, vy - 22, 8, 22), C["white"], 0.9, edge=0.4)
+    pg.wash(P([(cx - 4.5, vy - 22), (cx, vy - 38), (cx + 4.5, vy - 22)], True), C["teal"], 0.8, edge=0)
+    pg.ink(rect(cx - 4, vy - 22, 8, 22) + P([(cx - 4.5, vy - 22), (cx, vy - 38), (cx + 4.5, vy - 22)]) +
+           P([(cx, vy - 38), (cx, vy - 42)]) + P([(cx - 1.5, vy - 40.5), (cx + 1.5, vy - 40.5)]) +
+           f"M{cx - 1.6} {vy - 12}v-3a1.6 1.6 0 0 1 3.2 0v3", 0.55)
+    # Germany, and the free download split into four layers
+    m = Equi(5.5, 15.5, 47, 55.2, 232, 10, 42)
     land = m.land(tol=0.8, only={"DEU"})
-    pg.land(land, C["sapl"], 0.65)
-    pg.ink(land, 0.75)
-    rng = random.Random(33)
-    # roads, railways, towns drawn on the map
-    towns = [(13.4, 52.5), (10.0, 53.55), (11.6, 48.15), (6.95, 50.94), (8.68, 50.11), (9.18, 48.78), (6.78, 51.23),
-             (12.37, 51.34), (13.74, 51.05), (8.8, 53.08), (9.73, 52.37), (11.08, 49.45), (8.4, 49.0), (7.1, 50.73)]
-    tp = [m(*t) for t in towns]
-    roads = ""
-    for a, b in ((0, 1), (1, 9), (9, 10), (10, 0), (10, 4), (4, 5), (5, 2), (2, 11), (11, 7), (7, 0), (3, 6), (3, 13),
-                 (13, 4), (6, 10), (7, 8), (8, 12), (12, 5), (11, 4)):
-        pa, pb = tp[a], tp[b]
-        mid = lerp2(pa, pb, 0.5)
-        roads += S([pa, (mid[0] + rng.uniform(-3, 3), mid[1] + rng.uniform(-3, 3)), pb])
-    pg.ink(roads, 0.8, C["ochre"], 0.9)
-    rails = ""
-    for a, b in ((0, 7), (1, 3), (3, 4), (4, 2), (0, 12)):
-        pa, pb = tp[a], tp[b]
-        rails += S([pa, lerp2(pa, pb, 0.5), pb])
-    pg.ink(rails, 0.6, INK, 0.85)
-    pg.ink(rails, 0.6, C["white"], 0.9, "1.6 1.6")
-    for x, y in tp:
-        pg.raw(f'<rect x="{x - 1.5:.1f}" y="{y - 1.5:.1f}" width="3" height="3" fill="{C["crimson"]}" stroke="{INK}" stroke-width=".4"/>')
-    # the free download splits it into layers: roads, railways, buildings, places of worship
-    boxes = [(176, 16), (246, 16), (176, 96), (246, 96)]
-    for k, (bx, by) in enumerate(boxes):
-        with pg.inset_box(bx, by, 64, 64):
-            pg.wash(rect(bx, by, 64, 64), C["white"], 0.5, edge=0)
+    pg.land(land, C["sapl"], 0.8)
+    pg.ink(land, 0.6)
+    pg.arrow([(258, 62), (251, 70)], RED_PENCIL, 0.9, 2.4, smooth=False)
+    pg.arrow([(262, 62), (290, 70)], RED_PENCIL, 0.9, 2.4, smooth=False)
+    cards = [(232, 72), (276, 72), (232, 122), (276, 122)]
+    for k, (bx, by) in enumerate(cards):
+        with pg.inset_box(bx, by, 38, 40):
+            pg.wash(rect(bx, by, 38, 40), C["white"], 0.5, edge=0)
             if k == 0:
-                pg.ink(S([(bx, by + 50), (bx + 30, by + 30), (bx + 64, by + 22)]) + S([(bx + 12, by), (bx + 26, by + 34), (bx + 20, by + 64)]) +
-                       S([(bx + 40, by + 64), (bx + 44, by + 30), (bx + 60, by)]), 1.3, C["ochre"])
-                pg.ink(S([(bx, by + 14), (bx + 30, by + 20), (bx + 64, by + 44)]), 0.6, C["ochre"])
+                pg.ink(S([(bx, by + 30), (bx + 20, by + 18), (bx + 38, by + 14)]) + S([(bx + 8, by), (bx + 16, by + 20), (bx + 12, by + 40)]),
+                       1.2, C["ochre"])
             elif k == 1:
-                tr = S([(bx, by + 44), (bx + 30, by + 30), (bx + 64, by + 26)]) + S([(bx + 24, by), (bx + 30, by + 30), (bx + 40, by + 64)])
+                tr = S([(bx, by + 28), (bx + 20, by + 20), (bx + 38, by + 16)])
                 pg.ink(tr, 1.2, INK)
-                pg.ink(tr, 1.0, C["white"], 1.0, "2.4 2.4")
+                pg.ink(tr, 1.0, C["white"], 1.0, "2.2 2.2")
             elif k == 2:
-                for i in range(18):
-                    x, y = bx + 6 + (i % 6) * 9.6 + rng.uniform(-1, 1), by + 8 + (i // 6) * 17 + rng.uniform(-2, 2)
-                    w, h = rng.uniform(4, 7), rng.uniform(4, 9)
-                    pg.wash(rect(x, y, w, h), C["slate"], 0.75, edge=0.5)
+                rng = random.Random(7)
+                for i in range(9):
+                    x, y = bx + 4 + (i % 3) * 11 + rng.uniform(-1, 1), by + 5 + (i // 3) * 11 + rng.uniform(-1, 1)
+                    pg.wash(rect(x, y, rng.uniform(5, 7), rng.uniform(4, 7)), C["slate"], 0.8, edge=0.5)
             else:
-                for x, y in ((bx + 16, by + 24), (bx + 44, by + 18), (bx + 32, by + 48), (bx + 52, by + 50)):
-                    # a small church: nave and a spire
-                    pg.wash(rect(x - 4, y - 4, 10, 6) + f"M{x - 4} {y - 4}l2-6 2 6z", C["crimson"], 0.75)
-                    pg.ink(rect(x - 4, y - 4, 10, 6) + f"M{x - 4} {y - 4}l2-6 2 6z", 0.5)
-    pg.leader(tp[5], (176, 48), bend=-0.1)
-    pg.leader(tp[0], (246, 30), bend=-0.15)
+                for x, y in ((bx + 12, by + 18), (bx + 26, by + 30)):
+                    pg.wash(rect(x - 4, y - 4, 9, 6) + f"M{x - 4} {y - 4}l2-6 2 6z", C["crimson"], 0.8)
+                    pg.ink(rect(x - 4, y - 4, 9, 6) + f"M{x - 4} {y - 4}l2-6 2 6z", 0.5)
+    pg.leader((cx, vy - 30), (276, 132), bend=0.1)
+    pg.leader((60, 100), (232, 86), bend=-0.04)
     return pg.svg()
 
 

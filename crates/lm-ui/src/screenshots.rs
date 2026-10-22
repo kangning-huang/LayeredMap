@@ -852,13 +852,12 @@ fn phase4_summarize_in_a_drawn_area() {
     assert!(matches!(r.card.answer, lm_core::recipe::Answer::Number { value, .. } if value.is_finite()), "{:?}", r.card.answer);
 }
 
-/// Signed in to an account with Pro (the one app's unlocked state, no override): the toolbar
-/// shows the PRO badge, and a layer's panel offers the analysis actions as working buttons.
-/// Signed out, the same actions show locked, with a line saying how to unlock them; clicking one
-/// opens Settings › Account. A build that can't sign in shows none of them.
+/// Analysis is free: a layer's panel offers the analysis actions as working buttons whether
+/// signed out, signed in with Pro (the toolbar's PRO badge), or in a build that can't sign in.
+/// Signed out, clicking one opens the composer, not Settings › Account; nothing is locked.
 #[test]
 #[cfg_attr(not(target_os = "macos"), ignore = "approved images are from macOS")]
-fn pro_offers_analysis_actions() {
+fn analysis_actions_are_free() {
     use egui_kittest::kittest::Queryable as _;
     // One harness per case, so their snapshot results are merged into one (egui_kittest).
     let mut results = egui_kittest::SnapshotResults::new();
@@ -876,20 +875,18 @@ fn pro_offers_analysis_actions() {
         settle(&mut h);
         let working = h.query_by_label("Count cities in each country").is_some();
         let locked = h.query_by_label("Count cities in each country (locked)").is_some();
-        let line = h.query_by_label_contains("Sign in to use analysis tools").is_some();
+        assert!(working && !locked, "{account:?}: working analysis buttons, none locked");
         match account {
-            None => assert!(!working && !locked && !line, "no account config: no analysis actions"),
+            None => {}
             Some(false) => {
-                assert!(locked && !working && line, "signed out: locked, with the way to unlock");
-                h.snapshot("locked_layer_panel");
-                // A locked action opens Settings › Account instead of the composer.
-                h.get_by_label("Count cities in each country (locked)").click();
+                h.snapshot("free_layer_panel");
+                // Signed out, an analysis action opens its composer.
+                h.get_by_label("Count cities in each country").click();
                 h.run_steps(5);
                 let s = h.state().as_ref().unwrap();
-                assert!(s.account.open && s.composer.is_none());
+                assert!(!s.account.open && s.composer.as_ref().is_some_and(|c| c.action == "count_in"));
             }
             Some(true) => {
-                assert!(working && !locked && !line, "Pro unlocked: working buttons");
                 assert!(h.state().as_ref().is_some_and(|s| s.pro() && s.pro_access() == lm_account::Access::Unlocked));
                 h.snapshot("pro_layer_panel");
             }

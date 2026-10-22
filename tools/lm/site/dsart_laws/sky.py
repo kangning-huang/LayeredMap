@@ -209,21 +209,37 @@ def night_lights():
         pg.ink(P([(266, 46), (252, 74)]) + P([(270, 46), (284, 74)]), 0.4, C["lemon"], 0.9, "1.4 1.4")
         pg.raw("".join(f'<circle cx="{x}" cy="{y}" r=".8" fill="{C["lemon"]}"/>' for x, y in
                        ((258, 66), (264, 70), (270, 68), (276, 66), (262, 62), (274, 71))))
-    # one city, close up from above: a bright core, lit radial highways and a ring road, dimmer streets
-    with pg.inset_box(234, 96, 78, 66):
-        cx, cy = 272, 128
-        pg.wash(rect(234, 96, 78, 66), C["night"], 0.82, edge=0)
+    # one coast, sketched from a hill at night: dark sea, a glowing city on the shore, its lights
+    # thinning inland along a road, reflections on the water
+    bx, by, bw, bh = 234, 96, 78, 66
+    with pg.inset_box(bx, by, bw, bh):
+        hz = by + 20
+        pg.wash(rect(bx, by, bw, hz - by + 1), C["night"], 0.8, edge=0)              # sky
+        pg.raw("".join(f'<circle cx="{x}" cy="{y}" r=".45" fill="{C["white"]}"/>' for x, y in
+                       ((240, 101), (251, 99), (262, 104), (279, 100), (296, 103), (306, 99), (288, 107))))
+        pg.raw(f'<path d="M300 104a3.4 3.4 0 1 0 0 .1z" fill="{C["white"]}" fill-opacity=".9"/>')
+        coast = [(bx, hz + 22), (250, hz + 16), (262, hz + 6), (276, hz + 2), (bx + bw, hz)]
+        sea = [(bx, hz), (bx + bw, hz)] + coast[::-1]
+        land = coast + [(bx + bw, by + bh), (bx, by + bh)]
+        pg.wash(P([(bx, hz), (bx + bw, hz), (bx + bw, by + bh), (bx, by + bh)], True), C["night"], 0.55, edge=0)
+        pg.wash(S(sea, True, 0.2), C["night"], 0.55, edge=0)                       # sea darker than land
+        pg.wash(S(land, True, 0.2), C["umber"], 0.45, edge=0)
+        pg.ink(S(coast), 0.5, C["sky"], 0.6)
+        pg.ink(P([(bx, hz), (bx + bw, hz)]), 0.4, C["sky"], 0.5)
+        # the city's glow on the shore, then lights along the coast road and inland
+        pg.wash(ell(270, hz + 9, 16, 6), C["orange"], 0.75, edge=0)
+        pg.wash(ell(270, hz + 9, 7, 3), C["lemon"], 0.9, edge=0)
         rng = random.Random(9)
-        d = ""
-        for k in range(26):
-            a = rng.uniform(0, 2 * math.pi)
-            r0, r1 = rng.uniform(4, 14), rng.uniform(16, 34)
-            d += P([(cx + math.cos(a) * r0, cy + math.sin(a) * r0 * 0.8), (cx + math.cos(a + .2) * r1, cy + math.sin(a + .2) * r1 * 0.8)])
-        pg.ink(d, 0.5, C["ochre"], 0.6, "0.8 1.3")
-        hw = "".join(S([(cx, cy), (cx + math.cos(a) * 22, cy + math.sin(a) * 16 + 2), (cx + math.cos(a + .1) * 50, cy + math.sin(a + .1) * 40)])
-                     for a in (0.3, 1.5, 2.5, 3.6, 4.9))
-        pg.ink(hw + S(ell_pts(cx, cy, 20, 15, 20), True), 1.0, C["lemon"], 0.85)
-        pg.wash(ell(cx, cy, 9, 7), C["orange"], 0.7, edge=0)
-        pg.raw(f'<path d="{ell(cx, cy, 4.4, 3.4)}" fill="{C["lemon"]}"/>')
+        core = [(270 + rng.gauss(0, 6), hz + 9 + rng.gauss(0, 2.2)) for _ in range(40)]
+        road = [lerp2((262, hz + 13), (bx + 6, by + bh - 4), t) for t in [i / 14 for i in range(15)]]
+        road += [lerp2((282, hz + 10), (bx + bw - 4, by + bh - 8), t) for t in [i / 9 for i in range(10)]]
+        towns = [(250, hz + 30), (300, hz + 30), (288, hz + 40)]
+        pg.dots(core, 0.55, C["lemon"], layer="r")
+        pg.dots(road, 0.45, C["ochre"], layer="r")
+        for tx, ty in towns:
+            pg.wash(circ(tx, ty, 3.4), C["orange"], 0.6, edge=0)
+            pg.dots([(tx + rng.gauss(0, 1.3), ty + rng.gauss(0, 0.8)) for _ in range(6)], 0.45, C["lemon"], layer="r")
+        # reflections: short vertical streaks in the sea below the city
+        pg.ink("".join(P([(x, hz + 2.5), (x + .3, hz + 6)]) for x in (264, 268, 272, 276)), 0.6, C["lemon"], 0.7, "1 .8")
     pg.leader((128, 64), (240, 108), dot_a=True, bend=0.1)
     return pg.svg()

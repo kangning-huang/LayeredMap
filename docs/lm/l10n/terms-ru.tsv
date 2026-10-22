@@ -107,7 +107,7 @@ Metric Units	Метрические единицы
 Lat/lon labels	Подписи широты и долготы
 Level shown	Показанный уровень
 Variable shown	Показанная переменная
-Measure length	Измерить длину	Pro
+Measure length	Измерить длину	card button
 Name	Название	тип поля
 Next step (→)	Следующий шаг (→)
 Previous step (←)	Предыдущий шаг (←)
@@ -164,7 +164,7 @@ This cell has no data.	В этой ячейке нет данных.
 Heat-wave intensity (°C)	Интенсивность волны жары (°C)
 Show storms where strength is any of Category 5	Показать штормы, где strength — любое из: Category 5	значения данных не переводятся
 Show areas where type is any of Provincial Capital	Показать области, где type — любое из: Provincial Capital
-Keep the part of [layer] inside [other]	Оставить часть [слой] внутри [другой слой]	Pro, рецепт
+Keep the part of [layer] inside [other]	Оставить часть [слой] внутри [другой слой]	рецепт
 joined · 172 of 177 matched	соединено · совпало 172 из 177
 Insight line	Строка-сравнение	бытовое; объясняет место объекта среди остальных
 Recipe	Рецепт	запись о том, как получен результат (Pro)

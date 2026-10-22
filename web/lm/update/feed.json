@@ -1,21 +1,21 @@
 {
   "download": {
-    "free": "https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.1/NimbleMap-macos-arm64.dmg",
-    "gitcode": "https://gitcode.com/KN-Huang/NimbleMap/releases/download/v0.7.1/NimbleMap-macos-arm64.dmg",
-    "pro": "https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.1/NimbleMap-macos-arm64.dmg"
+    "free": "https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.3/NimbleMap-macos-arm64.dmg",
+    "gitcode": "https://gitcode.com/KN-Huang/NimbleMap/releases/download/v0.7.3/NimbleMap-macos-arm64.dmg",
+    "pro": "https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.3/NimbleMap-macos-arm64.dmg"
   },
   "format": 1,
   "minimum_macos": "13.0",
   "notes": {
-    "en": "One app: Pro unlocks when you sign in. Share, Send Feedback.",
-    "zh": "一个应用：登录即可解锁 Pro。分享、发送反馈。"
+    "en": "Analysis is free: the analysis buttons on layer cards work without signing in. NimbleMap Pro is now the Ask box only (free with an account).",
+    "zh": "分析工具改为免费：图层卡片上的分析按钮无需登录即可使用。凌波微图 Pro 现在只包括提问助手（注册账号即可免费使用）。"
   },
   "page": "https://nimblemap.com/download.html",
   "released": "2026-10-21",
   "sha256": {
-    "free": "053ac3d7965cd2cff0a1b85044cd926e40b552ae0e437526d223849ecf6a3c05",
-    "pro": "053ac3d7965cd2cff0a1b85044cd926e40b552ae0e437526d223849ecf6a3c05"
+    "free": "e0c429a66d928e7a9696502fdb68764efa895ba043b20094d4a84ed334439337",
+    "pro": "e0c429a66d928e7a9696502fdb68764efa895ba043b20094d4a84ed334439337"
   },
-  "signature": "WtQGJD4y0ZOONn1oXWlVb69HTdFYmg3LY+IVsjSmgjWap1joHl96bZkFDsR6NWQdDLqF2F6XpJNBzianzjmeCQ==",
-  "version": "0.7.1"
+  "signature": "6YZIeuyqCDpqNUgVejNngqg7IaSxRnofsgegRSi02YVyA+L/9UdvtZf/fm9/mzngG9BASOHtKUQpDiuIETfeDg==",
+  "version": "0.7.3"
 }

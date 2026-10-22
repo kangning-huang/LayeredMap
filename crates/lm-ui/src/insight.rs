@@ -2,9 +2,8 @@
 //!
 //! Insight rows use only attributes the layer already has; ranks come from indexes built in the
 //! background (`lm_jobs::inspect::LayerIndex`), so a card appears at once. Suggested actions come
-//! from the action registry (`lm-actions`). Analysis actions are a Pro feature: with Pro unlocked
-//! they open the composer; locked, they show with a lock and a line saying how to unlock them;
-//! in a build that can't sign in, only display-only actions show (Product tiers).
+//! from the action registry (`lm-actions`). Analysis actions open the composer; they are free in
+//! every build, without an account. Only the Ask box is Pro (Product tiers).
 
 use egui::{RichText, Ui, vec2};
 
@@ -52,14 +51,8 @@ pub fn context(shell: &Shell) -> Context {
 /// Up to three suggested actions as full-width buttons, then More actions…, always last.
 pub fn actions(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer, row: Option<usize>) {
     let ctx = context(shell);
-    // Analysis actions show where Pro can be unlocked (working or locked) and on the developer
-    // surface; otherwise display actions only.
-    let opts = if shell.analysis_offered() {
-        Options::developer(crate::analysis::DEV_PHASE.max(shell.flags.phase()))
-    } else {
-        Options::free(shell.flags.phase())
-    };
-    let s = lm_actions::suggest(&ctx, opts);
+    // Display and analysis actions alike: basic spatial analysis is free (only the Ask box is Pro).
+    let s = lm_actions::suggest(&ctx, Options::developer(crate::analysis::DEV_PHASE.max(shell.flags.phase())));
     // When the row's own actions are all for later phases, the first display actions under More
     // take their place, so a card never has an empty action area.
     let mut top: Vec<Suggested> = s.top.clone();
@@ -72,31 +65,18 @@ pub fn actions(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer, row: Opt
         return;
     }
     ui.add_space(10.0);
-    let unlocked = shell.analysis_unlocked();
-    let is_locked = |a: &Suggested| !unlocked && is_analysis(&a.action_id);
     let mut run: Option<Suggested> = None;
     for a in &top {
-        // Each suggestion shows what it will do (crate::illustrations); a locked one, a lock.
-        if crate::illustrations::button_locked(ui, t, &a.action_id, &humanize(&a.label), is_locked(a)).clicked() {
+        // Each suggestion shows what it will do (crate::illustrations).
+        if crate::illustrations::button(ui, t, &a.action_id, &humanize(&a.label)).clicked() {
             run = Some(a.clone());
         }
         ui.add_space(2.0);
     }
     if !more.is_empty() {
-        let any_locked = more.iter().any(is_locked);
-        let title = if any_locked {
-            format!("{} {}", egui_phosphor::regular::LOCK_SIMPLE, tl!("More actions…"))
-        } else {
-            tl!("More actions…").to_string()
-        };
-        let r = ui.menu_button(RichText::new(title).color(t.accent), |ui| {
+        let r = ui.menu_button(RichText::new(tl!("More actions…")).color(t.accent), |ui| {
             for a in &more {
-                let label = if is_locked(a) { format!("{} {}", egui_phosphor::regular::LOCK_SIMPLE, a.label) } else { a.label.clone() };
-                let b = ui.button(label);
-                if is_locked(a) {
-                    crate::a11y::button(&b, locked_name(&a.label));
-                }
-                if b.clicked() {
+                if ui.button(&a.label).clicked() {
                     run = Some(a.clone());
                     ui.close();
                 }
@@ -104,18 +84,13 @@ pub fn actions(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer, row: Opt
         });
         crate::a11y::button(&r.response, tl!("More actions…"));
     }
-    // Locked analysis actions: how to unlock them, in one line.
-    if top.iter().chain(more.iter()).any(is_locked) {
-        crate::account_ui::locked_line(shell, ui, t);
-    }
     if let Some(a) = run {
-        // Matching a table is Free (WP3.11): the column picker, in either tier.
+        // Matching a table: the column picker (WP3.11).
         if a.action_id == "match_table" {
             crate::join_ui::open_picker(shell, l.id);
             return;
         }
         if is_analysis(&a.action_id) {
-            // Locked, this opens Settings › Account instead (analysis::open).
             crate::analysis::open(shell, l.id, row, &a);
         } else {
             perform(shell, l.id, row, &a);
@@ -123,15 +98,10 @@ pub fn actions(shell: &mut Shell, ui: &mut Ui, t: &Theme, l: &DocLayer, row: Opt
     }
 }
 
-/// An analysis action (one of Phase 4's certified algorithms): a Pro feature. Matching a table
-/// to places (`match_table`, WP3.11) has an algorithm too but is Free, so it never locks.
+/// An analysis action (one of Phase 4's certified algorithms): it opens the composer. Matching a
+/// table to places (`match_table`, WP3.11) has an algorithm too but opens its column picker.
 fn is_analysis(action_id: &str) -> bool {
     action_id != "match_table" && lm_actions::registry().action(action_id).is_some_and(|s| s.algorithm.is_some())
-}
-
-/// A locked action's spoken name: "Count cities in each country (locked)".
-pub(crate) fn locked_name(label: &str) -> String {
-    lm_core::i18n::fmt("{action} (locked)", &[("action", &humanize(label))])
 }
 
 /// Labels read as words: layer names in snake_case ("populated_places") get spaces.

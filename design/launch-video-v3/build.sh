@@ -1,15 +1,18 @@
 #!/bin/bash
 # Render the v3 launch film ("one take") or v3.1 (the folder of files) from the window recordings
 # in raw/ (see README.md).
-#   ./build.sh [parallel jobs, default 6] [cut: 3 (default) | 3.1]
+#   ./build.sh [parallel jobs, default 6] [cut: 3 (default) | 3.1 … 3.6 | 3.7]
+# v3.7 first needs its map shots: path/render.sh ty eq hw pro ty_plate eq_plate
 set -euo pipefail
 cd "$(dirname "$0")"
 PY="${PY:-$HOME/miniforge3/envs/lm-video/bin/python}"
 J="${1:-6}"
 CUT="${2:-3}"
-if [ "$CUT" = "3.1" ]; then COMP=edit/compose31.py; EDL=edl31; SUF=v3.1; elif [ "$CUT" = "3.2" ]; then COMP=edit/compose32.py; EDL=edl32; SUF=v3.2; elif [ "$CUT" = "3.3" ]; then COMP=edit/compose33.py; EDL=edl33; SUF=v3.3; elif [ "$CUT" = "3.4" ]; then COMP=edit/compose34.py; EDL=edl34; SUF=v3.4; elif [ "$CUT" = "3.5" ]; then COMP=edit/compose35.py; EDL=edl35; SUF=v3.5; elif [ "$CUT" = "3.6" ]; then COMP=edit/compose36.py; EDL=edl36; SUF=v3.6; else COMP=edit/compose.py; EDL=edl; SUF=v3; fi
+if [ "$CUT" = "3.1" ]; then COMP=edit/compose31.py; EDL=edl31; SUF=v3.1; elif [ "$CUT" = "3.2" ]; then COMP=edit/compose32.py; EDL=edl32; SUF=v3.2; elif [ "$CUT" = "3.3" ]; then COMP=edit/compose33.py; EDL=edl33; SUF=v3.3; elif [ "$CUT" = "3.4" ]; then COMP=edit/compose34.py; EDL=edl34; SUF=v3.4; elif [ "$CUT" = "3.5" ]; then COMP=edit/compose35.py; EDL=edl35; SUF=v3.5; elif [ "$CUT" = "3.6" ]; then COMP=edit/compose36.py; EDL=edl36; SUF=v3.6; elif [ "$CUT" = "3.7" ]; then COMP=edit/compose37.py; EDL=edl36; SUF=v3.7; else COMP=edit/compose.py; EDL=edl; SUF=v3; fi
 export LM_CUT=$CUT
-PT=30.5; [ "$CUT" = "3.2" ] && PT=44.0; [ "$CUT" = "3.3" ] && PT=68.0; [ "$CUT" = "3.4" ] && PT=74.0; [ "$CUT" = "3.5" ] && PT=78.3; [ "$CUT" = "3.6" ] && PT=78.3
+# v3.7 is v3.6's timeline (edl36) with the map shots rendered offline (path/render.sh)
+[ "$CUT" = "3.7" ] && export LM_CUT=3.6
+PT=30.5; [ "$CUT" = "3.2" ] && PT=44.0; [ "$CUT" = "3.3" ] && PT=68.0; [ "$CUT" = "3.4" ] && PT=74.0; [ "$CUT" = "3.5" ] && PT=78.3; [ "$CUT" = "3.6" ] && PT=78.3; [ "$CUT" = "3.7" ] && PT=78.3
 FPS=30
 mkdir -p out/seg cfr
 # constant-frame-rate copies (ScreenCaptureKit writes frames only on change; exact seeks need CFR)
@@ -32,10 +35,10 @@ for p in "${pids[@]}"; do wait "$p"; done
 for k in $(seq 0 $((J - 1))); do echo "file 's$k.mkv'" >> out/seg/list.txt; done
 ffmpeg -v error -y -f concat -safe 0 -i out/seg/list.txt -c copy out/master-$SUF.mkv
 # sound (v3.2: narration + ducked music, and the music alone; captions)
-if [ "$CUT" = "3.2" ] || [ "$CUT" = "3.3" ] || [ "$CUT" = "3.4" ] || [ "$CUT" = "3.5" ] || [ "$CUT" = "3.6" ]; then
+if [ "$CUT" = "3.2" ] || [ "$CUT" = "3.3" ] || [ "$CUT" = "3.4" ] || [ "$CUT" = "3.5" ] || [ "$CUT" = "3.6" ] || [ "$CUT" = "3.7" ]; then
   # narration: edge-tts (en-US-AndrewNeural, +4%), rendered only when missing; VO_ENGINE=say (v3.2)
   # uses macOS say instead
-  if [ "$CUT" = "3.6" ]; then export VO_SCRIPT=narration34.txt VO_OUT=vo_edge34; SYN=audio/synth36.py
+  if [ "$CUT" = "3.6" ] || [ "$CUT" = "3.7" ]; then export VO_SCRIPT=narration34.txt VO_OUT=vo_edge34; SYN=audio/synth36.py
   elif [ "$CUT" = "3.5" ]; then export VO_SCRIPT=narration34.txt VO_OUT=vo_edge34; SYN=audio/synth35.py
   elif [ "$CUT" = "3.4" ]; then export VO_SCRIPT=narration34.txt VO_OUT=vo_edge34; SYN=audio/synth34.py
   elif [ "$CUT" = "3.3" ]; then export VO_SCRIPT=narration33.txt VO_OUT=vo_edge33; SYN=audio/synth33.py

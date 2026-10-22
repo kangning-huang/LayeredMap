@@ -27,15 +27,15 @@
 <meta property="og:image" content="../img/walls-compare.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
-<link rel="stylesheet" href="../assets/site.css?v=072">
-<script src="../assets/site.js?v=072"></script>
+<link rel="stylesheet" href="../assets/site.css?v=074">
+<script src="../assets/site.js?v=074"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
   "name": "NimbleMap",
   "inLanguage": "nl",
-  "operatingSystem": "macOS 13 of nieuwer (Apple silicon)",
+  "operatingSystem": "macOS 13+ (Apple silicon), Windows 10 1809+ / Windows 11 (x64)",
   "applicationCategory": "UtilitiesApplication",
   "description": "Een kaartapp voor de Mac die Shapefile-, GeoJSON-, CSV-, GeoTIFF-, GeoPackage-, Excel-, KML-, GPX- en NetCDF-bestanden opent die u erin sleept. Bestanden verlaten de computer nooit.",
   "isAccessibleForFree": true,
@@ -78,14 +78,15 @@
 <section class="hero contours">
   <div class="wrap hero-grid">
     <div>
-      <p class="eyebrow">Gratis voor de Mac</p>
+      <p class="eyebrow">Gratis voor Mac en Windows</p>
       <h1>Open uw kaartbestanden op een Mac. Ze vallen gewoon op hun plek.</h1>
       <p class="lede">Sleep een Shapefile, een GeoJSON, een CSV met breedte- en lengtegraad of een GeoTIFF naar NimbleMap, en het staat op een kaart. Voeg er nog een toe en die komt op de juiste plek erbovenop. Er is geen coördinatenstelsel om in te stellen en geen project om aan te maken.</p>
       <div class="actions">
         <a class="btn btn-primary" href="#get">Downloaden voor Mac</a>
+        <a class="btn btn-quiet" href="#windows">Downloaden voor Windows</a>
         <a class="btn btn-quiet" href="#formats">Wat het opent</a>
       </div>
-      <p class="coords" style="margin-top:28px">Gratis · ongeveer 70 MB · macOS 13 of nieuwer, Apple silicon</p>
+      <p class="coords" style="margin-top:28px"><strong>Mac:</strong> Gratis · ongeveer 70 MB · macOS 13 of nieuwer, Apple silicon</p>
     </div>
     <div class="hero-shot">
       <figure class="frame"><img src="../img/walls-compare.jpg" alt="Twee ommuurde steden uit 1866 naast elkaar vergeleken in NimbleMap, op de juiste plek over de kaart getekend." width="1600" height="996"></figure>
@@ -133,20 +134,27 @@
     <div class="section-head">
       <p class="eyebrow">Downloaden</p>
       <h2>NimbleMap downloaden</h2>
-      <p class="lede">Voor Macs met Apple silicon, macOS 13 of nieuwer. Er komt een versie voor Windows aan.</p>
+      <p class="lede">Beschikbaar voor Mac (Apple silicon, macOS 13+) en Windows 10/11 (x64).</p>
     </div>
     <div class="downloads">
+      <div class="dl" id="windows">
+        <h3>Windows 10 / 11 · x64</h3>
+        <p>0.7.1 preview · Windows 10 1809+</p>
+        <a class="btn btn-primary btn-windows" href="https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.1/NimbleMap-windows-x64-setup.exe" download>Downloaden voor Windows</a>
+        <p class="dl-note"><a href="https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.1/NimbleMap-windows-x64-setup.exe.sha256">SHA-256</a></p>
+        <p class="dl-note" style="margin-top:12px">Niet-ondertekende preview: Windows SmartScreen kan een waarschuwing tonen.</p>
+      </div>
       <div class="dl">
         <h3>NimbleMap voor Mac</h3>
-        <p>Gratis · previewversie 0.7.1</p>
+        <p>Gratis · previewversie 0.7.3</p>
         <a class="btn btn-primary" href="https://github.com/kangning-huang/NimbleMap/releases/latest/download/NimbleMap-macos-arm64.dmg" download>Downloaden</a>
-        <p class="dl-note" style="margin-top:12px">Nog niet genotariseerd, dus macOS blokkeert de app de eerste keer: open Systeeminstellingen › Privacy en beveiliging en klik op ‘Open toch’ (eenmalig).</p>
-        <p class="dl-pro">De Pro-functies (het vraagvak en de analyseacties) worden ontgrendeld zodra u zich in de app aanmeldt, gratis met een account. <a href="pro.html">Wat Pro toevoegt</a></p>
+        <p class="dl-note" style="margin-top:12px">Ondertekend met een Developer ID en notarieel bekrachtigd door Apple. De eerste keer dat u de app opent, vraagt macOS of u een van internet gedownloade app wilt openen: klik op Open.</p>
+        <p class="dl-pro">De analysehulpmiddelen zijn gratis, zonder aanmelden. Pro, het vraagvak voor vragen in gewone woorden, wordt ontgrendeld zodra u zich in de app aanmeldt, gratis met een account. <a href="pro.html">Wat Pro toevoegt</a></p>
       </div>
       <div class="dl">
         <h3>Spiegelserver voor het Chinese vasteland</h3>
         <p>Dezelfde app, via GitCode, voor downloads in het Chinese vasteland. Identiek bestand (zelfde SHA-256).</p>
-        <a class="btn btn-quiet" href="https://gitcode.com/KN-Huang/NimbleMap/releases/download/v0.7.1/NimbleMap-macos-arm64.dmg" data-dl="alt" download>Downloaden</a>
+        <a class="btn btn-quiet" href="https://gitcode.com/KN-Huang/NimbleMap/releases/download/v0.7.3/NimbleMap-macos-arm64.dmg" data-dl="alt" download>Downloaden</a>
         <p class="dl-note" style="margin-top:12px"><a href="https://gitcode.com/KN-Huang/NimbleMap/releases" data-dl="alt-releases">Alle versies op GitCode</a></p>
       </div>
     </div>
@@ -196,6 +204,7 @@
           <li>Controleren of twee kaartlagen samenvallen</li>
           <li>Kleuren, filteren en labelen op een waarde</li>
           <li>Een spreadsheet op naam aan plaatsen koppelen</li>
+          <li>Een snelle analyse starten vanaf een infokaart: een gebied binnen een afstand, punten tellen in elk gebied, het deel van een kaartlaag binnen een andere</li>
           <li>Een kant-en-klare kaartafbeelding exporteren voor een dia of rapport</li>
         </ul>
       </div>
@@ -204,7 +213,7 @@
         <ul>
           <li>Vormen of attributen bewerken</li>
           <li>Een gescande kaart georefereren</li>
-          <li>Clippen, samenvoegen (dissolve) of andere geoprocessing-tools draaien</li>
+          <li>Samenvoegen (dissolve), geoprocessing-tools tot modellen koppelen of geavanceerde analyses draaien</li>
           <li>Zelf een kaartprojectie kiezen of definiëren</li>
           <li>Een afdruklay-out van meerdere pagina's maken of plug-ins gebruiken</li>
         </ul>
@@ -234,10 +243,10 @@
       <p>Nee. Bestanden openen zonder instellingen, en als de app iets moet raden, zoals welke kolommen de coördinaten bevatten, vertelt hij dat in één regel en kunt u het wijzigen. De <a href="glossary.html">woordenlijst</a> legt kaartwoorden uit in gewone taal.</p>
 
       <h3>Worden mijn bestanden ergens naartoe geüpload?</h3>
-      <p>Niet in de gratis app: alles wordt op uw Mac gelezen en getekend, en het werkt offline. Tegels van de achtergrondkaart worden gedownload als u online bent, maar uw gegevens worden nooit verstuurd. In Pro stuurt het vraagvak de assistent de namen van uw kaartlagen, de veldnamen en het bereik, zodat hij de vraag begrijpt, maar nooit de waarden.</p>
+      <p>Niet in de gratis app: alles wordt op uw Mac gelezen, geanalyseerd en getekend, en het werkt offline. Tegels van de achtergrondkaart worden gedownload als u online bent, maar uw gegevens worden nooit verstuurd. In Pro stuurt het vraagvak de assistent de namen van uw kaartlagen, de veldnamen en het bereik, zodat hij de vraag begrijpt, maar nooit de waarden.</p>
 
       <h3>Is er een versie voor Windows?</h3>
-      <p>Die komt eraan. Voorlopig draait NimbleMap op Macs met Apple silicon en macOS 13 of nieuwer.</p>
+      <p>Beschikbaar voor Mac (Apple silicon, macOS 13+) en Windows 10/11 (x64). <a href="#windows">Downloaden voor Windows</a></p>
     </div>
   </div>
 </section>

@@ -27,8 +27,8 @@
 <meta property="og:image" content="../img/walls-compare.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
-<link rel="stylesheet" href="../assets/site.css?v=072">
-<script src="../assets/site.js?v=072"></script>
+<link rel="stylesheet" href="../assets/site.css?v=074">
+<script src="../assets/site.js?v=074"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -36,7 +36,7 @@
   "name": "凌波微图",
   "alternateName": "NimbleMap",
   "inLanguage": "zh-Hans",
-  "operatingSystem": "macOS 13 或更高版本（Apple 芯片）",
+  "operatingSystem": "macOS 13+ (Apple silicon), Windows 10 1809+ / Windows 11 (x64)",
   "applicationCategory": "UtilitiesApplication",
   "description": "一款 Mac 地图应用，把 Shapefile、GeoJSON、CSV、GeoTIFF、GeoPackage、Excel、KML、GPX 和 NetCDF 文件拖进来即可打开，文件不离开电脑。",
   "isAccessibleForFree": true,
@@ -79,14 +79,15 @@
 <section class="hero contours">
   <div class="wrap hero-grid">
     <div>
-      <p class="eyebrow">Mac 免费版</p>
+      <p class="eyebrow">Mac 和 Windows 免费使用</p>
       <h1>在 Mac 上打开地图文件，<br>图层自己就对齐了。</h1>
       <p class="lede">把一个 Shapefile、GeoJSON、带经纬度的 CSV 或 GeoTIFF 拖进凌波微图，它就出现在地图上。再加一个，它会叠在正确的位置。不用设置坐标系，也不用新建项目。</p>
       <div class="actions">
         <a class="btn btn-primary" href="#get">下载 Mac 版</a>
+        <a class="btn btn-quiet" href="#windows">下载 Windows 版</a>
         <a class="btn btn-quiet" href="#formats">支持哪些格式</a>
       </div>
-      <p class="coords" style="margin-top:28px">免费 · 约 70 MB · macOS 13 或更高版本，Apple 芯片</p>
+      <p class="coords" style="margin-top:28px"><strong>Mac:</strong> 免费 · 约 70 MB · macOS 13 或更高版本，Apple 芯片</p>
     </div>
     <div class="hero-shot">
       <figure class="frame"><img src="../img/walls-compare.jpg" alt="在凌波微图里并排比较两座 1866 年的城池，它们都画在地图上的正确位置。" width="1600" height="996"></figure>
@@ -134,16 +135,23 @@
     <div class="section-head">
       <p class="eyebrow">下载</p>
       <h2>获取凌波微图（NimbleMap）</h2>
-      <p class="lede">适用于搭载 Apple 芯片、macOS 13 或更高版本的 Mac。Windows 版正在制作中。</p>
+      <p class="lede">支持 Mac（Apple 芯片，macOS 13 或更高版本）和 Windows 10/11（x64）。</p>
     </div>
     <div class="downloads">
+      <div class="dl" id="windows">
+        <h3>Windows 10 / 11 · x64</h3>
+        <p>0.7.1 preview · Windows 10 1809+</p>
+        <a class="btn btn-primary btn-windows" href="https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.1/NimbleMap-windows-x64-setup.exe" download>下载 Windows 版</a>
+        <p class="dl-note"><a href="https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.1/NimbleMap-windows-x64-setup.exe.sha256">SHA-256</a></p>
+        <p class="dl-note" style="margin-top:12px">此预览版尚未签名，Windows SmartScreen 可能显示警告。</p>
+      </div>
       <div class="dl">
         <h3>凌波微图 Mac 版</h3>
-        <p>免费 · 0.7.1 预览版</p>
-        <a class="btn btn-primary" href="https://gitcode.com/KN-Huang/NimbleMap/releases/download/v0.7.1/NimbleMap-macos-arm64.dmg" download>下载</a>
-        <p class="dl-note" style="margin-top:12px">从 GitCode 下载：这是为中国大陆准备的镜像，文件与 GitHub 上发布的完全相同（SHA-256 一致，可下载<a href="https://gitcode.com/KN-Huang/NimbleMap/releases/download/v0.7.1/NimbleMap-macos-arm64.dmg.sha256">校验值文件</a>核对）。</p>
-        <p class="dl-note">尚未经过 Apple 公证，第一次打开时 macOS 会拦截：打开“系统设置”›“隐私与安全性”，点按“仍要打开”（只需一次）。</p>
-        <p class="dl-pro">Pro 功能（提问框和分析操作）在应用内登录后即可解锁，注册账户即可免费使用。<a href="pro.html">Pro 多了什么</a></p>
+        <p>免费 · 0.7.3 预览版</p>
+        <a class="btn btn-primary" href="https://gitcode.com/KN-Huang/NimbleMap/releases/download/v0.7.3/NimbleMap-macos-arm64.dmg" download>下载</a>
+        <p class="dl-note" style="margin-top:12px">从 GitCode 下载：这是为中国大陆准备的镜像，文件与 GitHub 上发布的完全相同（SHA-256 一致，可下载<a href="https://gitcode.com/KN-Huang/NimbleMap/releases/download/v0.7.3/NimbleMap-macos-arm64.dmg.sha256">校验值文件</a>核对）。</p>
+        <p class="dl-note">已使用开发者 ID 签名并通过 Apple 公证。第一次打开时，macOS 会询问是否打开从互联网下载的应用：点按“打开”即可。</p>
+        <p class="dl-pro">分析工具免费使用，无需登录。Pro 版即用大白话提问的提问框，在应用内登录后即可解锁，注册账户即可免费使用。<a href="pro.html">Pro 多了什么</a></p>
       </div>
       <div class="dl">
         <h3>从 GitHub 下载</h3>
@@ -198,6 +206,7 @@
           <li>确认两个图层对得上</li>
           <li>按数值着色、筛选、加标注</li>
           <li>按名称把表格连接到地点上</li>
+          <li>在卡片上做简单分析：一定距离内的范围、统计每个区域里的点、保留一个图层落在另一个图层里的部分</li>
           <li>导出一张完整的地图，放进幻灯片或报告</li>
         </ul>
       </div>
@@ -206,7 +215,7 @@
         <ul>
           <li>编辑图形或属性</li>
           <li>给扫描的地图配准</li>
-          <li>裁剪、融合等地理处理工具</li>
+          <li>融合、把地理处理工具串成模型，或做更复杂的分析</li>
           <li>自己选择或定义投影</li>
           <li>多页打印排版或使用插件</li>
         </ul>
@@ -239,10 +248,10 @@
       <p>不需要。打开文件不用任何设置；应用需要猜测时（比如哪两列是坐标），会用一句话告诉你，并让你修改。<a href="glossary.html">术语表</a>用大白话解释地图术语。</p>
 
       <h3>我的文件会被上传吗？</h3>
-      <p>免费版不会：所有文件都在你的 Mac 上读取和绘制，断网也能用。联网时会下载底图瓦片，但你的数据从不发送出去。Pro 版的提问框会把图层名、字段名和范围发给助手，以便理解你的问题，但从不发送具体数值。</p>
+      <p>免费版不会：所有文件都在你的 Mac 上读取、分析和绘制，断网也能用。联网时会下载底图瓦片，但你的数据从不发送出去。Pro 版的提问框会把图层名、字段名和范围发给助手，以便理解你的问题，但从不发送具体数值。</p>
 
       <h3>有 Windows 版吗？</h3>
-      <p>正在制作中。目前凌波微图支持搭载 Apple 芯片、macOS 13 或更高版本的 Mac。</p>
+      <p>支持 Mac（Apple 芯片，macOS 13 或更高版本）和 Windows 10/11（x64）。 <a href="#windows">下载 Windows 版</a></p>
     </div>
   </div>
 </section>

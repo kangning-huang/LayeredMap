@@ -301,3 +301,54 @@ The real model call recorded for v3.5 produced this three-step plan (filter Cate
 buffer around Tokyo, one area per city → count lines), but its reply wasn't saved; the file is
 that plan rebuilt from the recorded frames. The app computes the answer (7) live from the IBTrACS
 file. Seven of the eight approved paid calls were used across the video's versions.
+
+---
+
+# v3.7: one continuous camera per shot, rendered offline (78.8 s)
+
+v3.6's cut, timing, narration, captions and music, with every map shot re-made the way Google Earth Studio / After Effects map sequences are made: one continuous keyframed camera path per shot, rendered offline frame by frame by the app itself, so every frame is fully loaded and the timing no longer depends on how fast tiles arrive. Build:
+
+```bash
+cd design/launch-video-v3
+path/render.sh ty eq hw pro ty_plate eq_plate   # the app renders the map shots (about 12 min, 4 in parallel)
+./build.sh 6 3.7                                # composite, sound, encodes (about 5 min)
+python path/evidence.py <v3.6 1080p.mp4> out/NimbleMap-launch-v3.7-1080p.mp4 <dir>   # plots, side-by-side
+```
+
+## The renderer (`crates/lm-ui/examples/film_render.rs`; developer tool, not part of the app)
+
+- The real NimbleMap interface (`lm_ui::Shell`), offscreen through egui_kittest's wgpu harness, at the capture's size: 1409 × 845 pt at 2× (2818 × 1690 px, the window less its title bar).
+- egui's clock is set to each frame's film time. App animations (label fades, the inspector, the toast) therefore run on film time, and the clock is held still while the frame loads.
+- The camera is set exactly for every frame. A search's own fly-to is replaced by the film's path in the same frame (`MapView::set_camera` ends any app animation).
+- `MapView::set_frame_by_frame` (off in the app) swaps finished map renders in at once instead of crossfading them.
+- A frame is saved only when all of these hold:
+  - `MapView::settled()`: the shown render is of exactly this camera and size, no tile was missing (no lower-zoom stand-ins), and no newer render is on the way;
+  - there are no tile errors and the daily basemap archive has been found (the pinned Protomaps build has expired; until the lookup ends the map shows the offline outline);
+  - nothing is loading, no Ask answer is pending (`Shell::ask_pending`) and no workspace job (Find index, card statistics) is running (`Workspace::jobs_running`).
+- Events are the app's own:
+  - typing into the search bar, the layer's Find field and the Ask box, plus Enter;
+  - a `--tour`-style `click lon,lat` on the map, and `click_at` on a point of the window (the overlap chooser's row, a Find result row);
+  - `layer N`, `time N` and the card actions.
+
+## The paths (`path/camera.py`, `path/shots.py`)
+
+- **Flights** (each search's landing, Find's zoom to both storms, Pro's zoom to its answer): van Wijk & Nuij's optimal smooth zoom/pan, ρ = 1.42 as in Mapbox's flyTo, eased along the path's perceived length.
+- **Local moves** (the opening zoom and pan): the two views' similarity, interpolated about its fixed point, with log-resolution linear in the eased progress, so zoom changes at a perceptually constant rate and nothing swoops. Consecutive moves overlap, so the camera never stops between them.
+- **Drift:** every shot drifts in by 0.015 zoom levels/s (about 1 %/s; 0.009 in Pro). The map never fully stops.
+- **Motion blur:** frames where the map moves more than about a point within a 180° shutter are rendered as 2–8 sub-frames across the shutter and averaged in linear light (`path/blend.py`).
+- **The searches land directly on the regional view.** New York goes to −73.5, 40.2, z6.5, Tokyo to 140.6, 36.4, z6.4 and Barcelona to 5.5, 41.6, z5.5. There is no city-zoom landing and no pull-back. The place is the search's own first result, chosen by Enter in the real field; the bar then reads "New York City", "Tokyo" or "Barcelona".
+
+## The shots, as the app now does them
+
+| Film time (s) | Shot | What happens in the app |
+|---|---|---|
+| 14.4–28.6 | `ty` (storm shapefile) | Tracks drawn in over the empty map (`ty_plate`). Zoom to −80, 24, z4.6 and pan to −62, 33 (overlapping). "New York" typed in the search bar (the results list shows "Your data" storm names while "N…" is typed, then New York City first). Enter at 20.90 and a flight to the New York region. `layer 0` opens the panel. "Sandy" typed into Find: "2 found" (for about 0.2 s while "S", "Sa" are typed, Find highlights the many matching tracks, as the app does). The Find field's own zoom to both storms is replaced by a flight to 43.48, 14.83, z2.01. The second result row (Sandy 2012) is clicked and opens its card ("‹ All 2 found", 100, higher than 75 % of 4,547, Category 3), then a flight in to −74.5, 39.8, z6.4 |
+| 28.8–40.3 | `eq` (earthquake GeoPackage) | The Ring of Fire drawn in over `eq_plate`. "Tokyo" typed, Enter at 32.60, a flight to 140.6, 36.4, z6.4. A click on Tohoku's dot opens the app's overlap chooser ("4 objects here"; at this zoom the 2011 quake and three aftershocks are under the pointer). Its first row, "2011 Great Tohoku Earthquake, Japan", is clicked: the card shows 9.10, higher than 99 % of 14,537 |
+| 39.9–50.4 | `hw` (heatwave NetCDF) | The slider steps 1 Jun → 16 Aug 2022 (`time 0…76`, one step per frame by v3.3's schedule). "Barcelona" typed, Enter at 44.40, a flight to the Barcelona region. The cell clicked: 36.10 °C, higher than 98 % |
+| 49.9–69.6 | `pro` (storm shapefile, `LM_TIER=pro LM_DEV_PRO=1 LM_ASK_FIXTURE=tours/tokyo_plan_real.json`, no paid call) | The question typed into the Ask box, Enter at 59.00. The replayed plan computes 7 lines within 100 km of Tokyo. The app's zoom to its answer (135.054, 29.125, z5.451) is replaced by a flight |
+
+The compositor (`edit/compose37.py`) is v3.6's, with these changes:
+- the windows show the renders;
+- the drawn-in typing is gone;
+- ripples follow their places through the moving camera;
+- the table camera is a monotone cubic through its keys (continuous speed; the whips are kept), instead of easing to a stop at each key.

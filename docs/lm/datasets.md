@@ -79,10 +79,13 @@ Findings from the check:
 - GitHub raw serves `text/plain`, and some CSVs may show as text in a browser; the page's tip says
   to press ⌘S.
 
-The card pictures are explanatory illustrations in the manner of journal figures (cut-away block
-diagrams, sections, globes), not data previews: `web/lm/img/data/*.svg`, written by
-`tools/lm/site/data_art.py` from the shared kit in `tools/lm/site/dsart/` (320×180, about 7–48 KB
-each, no text). Each is a light plate; `data.css` dims it in dark mode.
+The card pictures are field-journal pages in the manner of John Muir Laws's nature journaling (pen
+and watercolour, a main sketch with zoomed insets, leader lines, arrows and scale bars), not data
+previews: `web/lm/img/data-laws/*.svg`, written by `tools/lm/site/data_art_laws.py` from the kit in
+`tools/lm/site/dsart_laws/` (320×180, about 11–52 KB each, no words, letters or digits, since the page
+is in 11 languages). Each is a light page; `data.css` dims it in dark mode. The earlier set of
+journal-figure plates (cut-away block diagrams, sections, globes) is kept as an alternative:
+`web/lm/img/data/*.svg`, from `tools/lm/site/data_art.py` and `tools/lm/site/dsart/`.
 
 ## Map data you already have (intro section, not counted)
 

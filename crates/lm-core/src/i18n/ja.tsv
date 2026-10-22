@@ -43,7 +43,6 @@ Add a layer of areas to answer this.	答えるには面のレイヤーを追加�
 Add a layer of cells to answer this.	答えるにはセルのレイヤーを追加してください。
 Add a layer of points or lines or areas to answer this.	答えるには点・線・面のいずれかのレイヤーを追加してください。
 Analysis	分析
-Developer surface · assistant action	開発者向け · アシスタントのアクション
 Choose a layer	レイヤーを選択
 With	相手
 Distance	距離
@@ -832,8 +831,6 @@ The assistant service answered {status} with something unreadable.	アシスタ�
 {app} is working offline, so the assistant can't be reached. Turn off View › Work Offline to ask.	{app} はオフラインで作業中のため、アシスタントに接続できません。質問するには、表示 › オフラインで作業 をオフにしてください。
 Signing in unlocks the Ask box, analysis tools, the built-in world layers and voice input.	サインインすると、質問ボックス、分析ツール、組み込みの世界レイヤー、音声入力が使えるようになります。
 Checking your account…	アカウントを確認しています…
-Sign in to use analysis tools	分析ツールを使うにはサインインしてください
-{action} (locked)	{action}（ロック中）
 Settings › Account shows who is signed in and what the account includes.	設定 › アカウントで、サインインしている人とアカウントの内容を確認できます。
 Nothing matches, so nothing is highlighted on the map.	該当するものがないため、地図上では何も強調表示されていません。
 # Updates: Check for Updates…, Update Now (WP5.7, docs/lm/update-feed.md)

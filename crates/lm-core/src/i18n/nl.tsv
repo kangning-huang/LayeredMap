@@ -43,7 +43,6 @@ Add a layer of areas to answer this.	Voeg een kaartlaag met vlakken toe om dit t
 Add a layer of cells to answer this.	Voeg een kaartlaag met cellen toe om dit te beantwoorden.
 Add a layer of points or lines or areas to answer this.	Voeg een kaartlaag met punten, lijnen of vlakken toe om dit te beantwoorden.
 Analysis	Analyse
-Developer surface · assistant action	Ontwikkelaarsweergave · assistentactie
 Choose a layer	Kies een kaartlaag
 With	Met
 Distance	Afstand
@@ -832,8 +831,6 @@ The assistant service answered {status} with something unreadable.	De assistentd
 {app} is working offline, so the assistant can't be reached. Turn off View › Work Offline to ask.	{app} werkt offline en kan de assistent dus niet bereiken. Zet Weergave › Offline werken uit om een vraag te stellen.
 Signing in unlocks the Ask box, analysis tools, the built-in world layers and voice input.	Inloggen ontgrendelt het vraagvak, de analysehulpmiddelen, de ingebouwde wereldlagen en spraakinvoer.
 Checking your account…	Uw account wordt gecontroleerd…
-Sign in to use analysis tools	Log in om de analysehulpmiddelen te gebruiken
-{action} (locked)	{action} (vergrendeld)
 Settings › Account shows who is signed in and what the account includes.	In Instellingen › Account ziet u wie er is ingelogd en wat het account omvat.
 Nothing matches, so nothing is highlighted on the map.	Niets komt overeen, dus er is niets gemarkeerd op de kaart.
 # Updates: Check for Updates…, Update Now (WP5.7, docs/lm/update-feed.md)

@@ -422,20 +422,10 @@ impl Shell {
         self.account.access(self.dev_pro)
     }
 
-    /// Pro is unlocked: the Ask box, analysis actions, the built-in world layers and voice input work.
+    /// Pro is unlocked: the Ask box, with its built-in world layers and voice input, works. Analysis
+    /// actions are free and never ask for it.
     pub fn pro(&self) -> bool {
         self.pro_access().unlocked()
-    }
-
-    /// Whether the cards offer analysis actions (working, or locked with a way to unlock them):
-    /// when Pro can be unlocked in this build, and on the developer surface.
-    pub fn analysis_offered(&self) -> bool {
-        self.developer || self.pro_access().visible()
-    }
-
-    /// Whether analysis actions run: Pro unlocked, or the developer surface.
-    pub fn analysis_unlocked(&self) -> bool {
-        self.developer || self.pro()
     }
 
     /// Whether export (Share, File › Export…) is offered (WP5.3; see [`export::shown`]).
@@ -464,6 +454,12 @@ impl Shell {
     /// A fixture is being loaded.
     pub fn is_loading(&self) -> bool {
         self.loading.is_some()
+    }
+
+    /// A request sent from the Ask box is still being answered (scripted renders wait for it, so
+    /// the answer lands on the same frame every time).
+    pub fn ask_pending(&self) -> bool {
+        self.ask.busy()
     }
 
     pub fn map_view(&self) -> &MapView {

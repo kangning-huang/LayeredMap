@@ -27,15 +27,15 @@
 <meta property="og:image" content="../img/walls-compare.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
-<link rel="stylesheet" href="../assets/site.css?v=072">
-<script src="../assets/site.js?v=072"></script>
+<link rel="stylesheet" href="../assets/site.css?v=074">
+<script src="../assets/site.js?v=074"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
   "name": "NimbleMap",
   "inLanguage": "pt-BR",
-  "operatingSystem": "macOS 13 ou posterior (Apple silicon)",
+  "operatingSystem": "macOS 13+ (Apple silicon), Windows 10 1809+ / Windows 11 (x64)",
   "applicationCategory": "UtilitiesApplication",
   "description": "Um app de mapas para Mac que abre arquivos Shapefile, GeoJSON, CSV, GeoTIFF, GeoPackage, Excel, KML, GPX e NetCDF arrastados para ele. Os arquivos nunca saem do computador.",
   "isAccessibleForFree": true,
@@ -78,14 +78,15 @@
 <section class="hero contours">
   <div class="wrap hero-grid">
     <div>
-      <p class="eyebrow">Grátis para Mac</p>
+      <p class="eyebrow">Grátis para Mac e Windows</p>
       <h1>Abra seus arquivos de mapa no Mac. Eles simplesmente se alinham.</h1>
       <p class="lede">Arraste um Shapefile, um GeoJSON, um CSV com latitude e longitude ou um GeoTIFF para o NimbleMap, e ele aparece no mapa. Adicione outro e ele se encaixa no lugar certo. Não há sistema de coordenadas para configurar nem projeto para criar.</p>
       <div class="actions">
         <a class="btn btn-primary" href="#get">Baixar para Mac</a>
+        <a class="btn btn-quiet" href="#windows">Baixar para Windows</a>
         <a class="btn btn-quiet" href="#formats">O que ele abre</a>
       </div>
-      <p class="coords" style="margin-top:28px">Grátis · cerca de 70 MB · macOS 13 ou posterior, Apple silicon</p>
+      <p class="coords" style="margin-top:28px"><strong>Mac:</strong> Grátis · cerca de 70 MB · macOS 13 ou posterior, Apple silicon</p>
     </div>
     <div class="hero-shot">
       <figure class="frame"><img src="../img/walls-compare.jpg" alt="Duas cidades muradas de 1866 comparadas lado a lado no NimbleMap, desenhadas sobre o mapa no lugar certo." width="1600" height="996"></figure>
@@ -133,20 +134,27 @@
     <div class="section-head">
       <p class="eyebrow">Download</p>
       <h2>Baixe o NimbleMap</h2>
-      <p class="lede">Para Macs com Apple silicon, macOS 13 ou posterior. Uma versão para Windows está a caminho.</p>
+      <p class="lede">Disponível para Mac (Apple silicon, macOS 13+) e Windows 10/11 (x64).</p>
     </div>
     <div class="downloads">
+      <div class="dl" id="windows">
+        <h3>Windows 10 / 11 · x64</h3>
+        <p>0.7.1 preview · Windows 10 1809+</p>
+        <a class="btn btn-primary btn-windows" href="https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.1/NimbleMap-windows-x64-setup.exe" download>Baixar para Windows</a>
+        <p class="dl-note"><a href="https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.1/NimbleMap-windows-x64-setup.exe.sha256">SHA-256</a></p>
+        <p class="dl-note" style="margin-top:12px">Prévia sem assinatura: o Windows SmartScreen pode exibir um aviso.</p>
+      </div>
       <div class="dl">
         <h3>NimbleMap para Mac</h3>
-        <p>Grátis · prévia da versão 0.7.1</p>
+        <p>Grátis · prévia da versão 0.7.3</p>
         <a class="btn btn-primary" href="https://github.com/kangning-huang/NimbleMap/releases/latest/download/NimbleMap-macos-arm64.dmg" download>Baixar</a>
-        <p class="dl-note" style="margin-top:12px">Ainda não autenticado pela Apple, então o macOS o bloqueia na primeira vez: abra Ajustes do Sistema › Privacidade e Segurança e clique em “Abrir Mesmo Assim” (só uma vez).</p>
-        <p class="dl-pro">Os recursos Pro (a caixa de perguntas e as ações de análise) são liberados quando você entra na sua conta dentro do app, de graça com uma conta. <a href="pro.html">O que o Pro acrescenta</a></p>
+        <p class="dl-note" style="margin-top:12px">Assinado com um Developer ID e autenticado pela Apple. Na primeira vez que você abrir, o macOS pergunta se quer abrir um app baixado da internet: clique em Abrir.</p>
+        <p class="dl-pro">As ferramentas de análise são grátis, sem precisar entrar na conta. O Pro, a caixa de perguntas para perguntar em palavras simples, é liberado quando você entra na sua conta dentro do app, de graça com uma conta. <a href="pro.html">O que o Pro acrescenta</a></p>
       </div>
       <div class="dl">
         <h3>Espelho para a China continental</h3>
         <p>O mesmo app, pelo GitCode, para downloads na China continental. Arquivo idêntico (mesmo SHA-256).</p>
-        <a class="btn btn-quiet" href="https://gitcode.com/KN-Huang/NimbleMap/releases/download/v0.7.1/NimbleMap-macos-arm64.dmg" data-dl="alt" download>Baixar</a>
+        <a class="btn btn-quiet" href="https://gitcode.com/KN-Huang/NimbleMap/releases/download/v0.7.3/NimbleMap-macos-arm64.dmg" data-dl="alt" download>Baixar</a>
         <p class="dl-note" style="margin-top:12px"><a href="https://gitcode.com/KN-Huang/NimbleMap/releases" data-dl="alt-releases">Todas as versões no GitCode</a></p>
       </div>
     </div>
@@ -196,6 +204,7 @@
           <li>Conferir se duas camadas se alinham</li>
           <li>Colorir, filtrar e rotular por um valor</li>
           <li>Unir uma planilha a lugares pelo nome</li>
+          <li>Fazer uma análise rápida a partir de um cartão: uma área a uma distância, os pontos contados em cada área, a parte de uma camada dentro de outra</li>
           <li>Exportar uma imagem do mapa pronta para um slide ou relatório</li>
         </ul>
       </div>
@@ -204,7 +213,7 @@
         <ul>
           <li>Editar formas ou atributos</li>
           <li>Georreferenciar um mapa escaneado</li>
-          <li>Recortar, dissolver ou usar outras ferramentas de geoprocessamento</li>
+          <li>Dissolver, encadear ferramentas de geoprocessamento em modelos ou fazer análises avançadas</li>
           <li>Escolher ou definir você mesmo uma projeção cartográfica</li>
           <li>Montar um layout de impressão com várias páginas ou usar complementos</li>
         </ul>
@@ -234,10 +243,10 @@
       <p>Não. Os arquivos abrem sem configurações, e quando o app precisa adivinhar algo, como quais colunas guardam as coordenadas, ele diz isso em uma linha e deixa você mudar. O <a href="glossary.html">glossário</a> explica as palavras de mapa em linguagem simples.</p>
 
       <h3>Meus arquivos são enviados para algum lugar?</h3>
-      <p>No app gratuito, não: tudo é lido e desenhado no seu Mac, e ele funciona offline. Os blocos do mapa base são baixados quando você está on-line, mas seus dados nunca são enviados. No Pro, a caixa Ask envia ao assistente os nomes das camadas, os nomes dos campos e as extensões, para que ele entenda a pergunta, nunca os valores.</p>
+      <p>No app gratuito, não: tudo é lido, analisado e desenhado no seu Mac, e ele funciona offline. Os blocos do mapa base são baixados quando você está on-line, mas seus dados nunca são enviados. No Pro, a caixa Ask envia ao assistente os nomes das camadas, os nomes dos campos e as extensões, para que ele entenda a pergunta, nunca os valores.</p>
 
       <h3>Existe versão para Windows?</h3>
-      <p>Está a caminho. Por enquanto, o NimbleMap roda em Macs com Apple silicon e macOS 13 ou posterior.</p>
+      <p>Disponível para Mac (Apple silicon, macOS 13+) e Windows 10/11 (x64). <a href="#windows">Baixar para Windows</a></p>
     </div>
   </div>
 </section>

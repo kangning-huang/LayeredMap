@@ -46,7 +46,7 @@ Unjoin	조인 해제
 Show joined fields	조인된 필드 표시
 joined · N of M matched	조인됨 · M개 중 N개 일치
 Buffer	버퍼	QGIS term; app says 'Show an area within a distance'
-Show an area within a distance of each	각각 일정 거리 이내 영역 표시	Pro button (= buffer)
+Show an area within a distance of each	각각 일정 거리 이내 영역 표시	card button (= buffer)
 Show an area within a distance	일정 거리 이내 영역 표시
 Overview	개요	card tab
 Details	세부 정보	card tab
@@ -77,7 +77,7 @@ This cell has no data.	이 셀에는 데이터가 없습니다.
 Median	중앙값
 Rank	순위
 Selected	선택됨
-Keep	유지	Pro result: keep vs discard
+Keep	유지	result: keep vs discard
 Discard	버리기
 Ask	질문하기	Pro assistant
 Ask box	질문 상자
@@ -118,7 +118,7 @@ Lat/lon labels	위경도 라벨
 Level shown	표시할 층	depth/height level
 Variable shown	표시할 변수
 Variable	변수
-Measure length	길이 재기	Pro
+Measure length	길이 재기	card button
 Name	이름	field kind
 Value	값	field kind
 Values	값	overview section
@@ -163,7 +163,7 @@ GPS coordinates (WGS 84): keep where they are	GPS 좌표(WGS 84): 그대로 두�
 If these came from a Chinese map app (Amap, Tencent or Baidu), they may sit a few hundred meters off.	중국 지도 앱(Amap, Tencent, Baidu)에서 가져온 데이터라면 수백 미터 어긋나 있을 수 있습니다.
 Show storms where strength is any of Category 5	strength가 Category 5 중 하나인 storms 표시	filter sentence; data values stay
 Show areas where type is any of Provincial Capital	type이 Provincial Capital 중 하나인 면 표시	filter sentence
-Keep the part of [layer] inside [other]	[other] 안에 있는 [layer] 부분만 남기기	Pro recipe
+Keep the part of [layer] inside [other]	[other] 안에 있는 [layer] 부분만 남기기	recipe
 area · N km²	면적 · N km²
 Toolbar	도구 모음
 Insight line	비교 정보

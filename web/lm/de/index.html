@@ -27,16 +27,16 @@
 <meta property="og:image" content="../img/open-storms.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
-<link rel="stylesheet" href="../assets/site.css?v=072">
+<link rel="stylesheet" href="../assets/site.css?v=074">
 <link rel="stylesheet" href="../assets/data.css?v=3">
-<script src="../assets/site.js?v=072"></script>
+<script src="../assets/site.js?v=074"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
   "name": "NimbleMap",
   "inLanguage": "de",
-  "operatingSystem": "macOS 13 oder neuer (Apple Silicon)",
+  "operatingSystem": "macOS 13+ (Apple silicon), Windows 10 1809+ / Windows 11 (x64)",
   "applicationCategory": "UtilitiesApplication",
   "description": "Eine kostenlose Mac-App, die heruntergeladene Kartendaten in Sekunden als Karte öffnet: Shapefiles, GeoPackages, NetCDF, GeoTIFFs, GPX, KML und CSVs mit Koordinaten. Ohne GIS-Kenntnisse, ohne Einrichtung.",
   "isAccessibleForFree": true,
@@ -79,17 +79,17 @@
 <section class="hero contours drop-hero">
   <div class="wrap hero-grid">
     <div>
-      <p class="eyebrow">Kostenlos für den Mac</p>
+      <p class="eyebrow">Kostenlos für Mac und Windows</p>
       <h1>Kartendaten im Netz gefunden? Ziehen Sie sie in NimbleMap.</h1>
       <p class="lede">Shapefiles, GeoPackages, NetCDF, GeoTIFFs, GPX, KML, CSVs mit Koordinaten: die Dateien, die Sie bei der NASA, beim USGS oder im Open-Data-Portal Ihrer Stadt herunterladen. NimbleMap öffnet sie in Sekunden als Karte. Ohne GIS-Kenntnisse, ohne Einrichtung.</p>
       <p class="hero-how">Ziehen Sie die Datei in NimbleMap, oder doppelklicken Sie auf eine Shapefile-, GeoPackage- oder NetCDF-Datei, um sie sofort zu öffnen.</p>
       <div class="actions">
         <a class="btn btn-primary btn-get" href="https://github.com/kangning-huang/NimbleMap/releases/latest/download/NimbleMap-macos-arm64.dmg" download>Kostenlos für Mac herunterladen</a>
+        <a class="btn btn-quiet btn-windows" href="https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.1/NimbleMap-windows-x64-setup.exe" download>Für Windows herunterladen</a>
         <a class="btn btn-quiet" href="#data">Wo finde ich Kartendaten?</a>
       </div>
-      <p class="mac-only" hidden>NimbleMap braucht einen Mac mit Apple Silicon. Eine Windows-Version ist in Arbeit.</p>
-      <p class="dl-fine">Kostenlos · etwa 109 MB · macOS 13 oder neuer · Apple Silicon · funktioniert offline</p>
-      <p class="dl-fine"><a href="download.html#get">Beim ersten Start fragt macOS nach Ihrer Erlaubnis – so öffnen Sie die App</a></p>
+      <p class="desktop-platforms">Für Mac (Apple Silicon, macOS 13+) und Windows 10/11 (x64).</p>
+      <p class="dl-fine"><strong>Mac:</strong> Kostenlos · etwa 109 MB · macOS 13 oder neuer · Apple Silicon · funktioniert offline</p>
     </div>
     <div class="hero-shot showcase drop-scene" data-rotate="3500">
       <figure class="frame stage">
@@ -135,25 +135,25 @@
     </div>
     <div class="ds-grid ds-teaser">
         <article class="ds">
-          <img class="ds-art" src="../img/data/earthquakes.svg?v=3" alt="" width="320" height="180" loading="lazy" decoding="async">
+          <img class="ds-art" src="../img/data-laws/earthquakes.svg?v=4" alt="" width="320" height="180" loading="lazy" decoding="async">
           <h3>Erdbeben, live</h3>
           <p class="ds-src">USGS Earthquake Hazards Program</p>
           <div class="ds-actions"><a class="ds-get" href="https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.csv" download aria-label="CSV herunterladen · 2 MB"><svg class="dl-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v8m0 0L4.8 6.8M8 10l3.2-3.2M3 13h10"/></svg><span>CSV · 2 MB</span></a><a class="ds-more" href="https://earthquake.usgs.gov/earthquakes/feed/v1.0/csv.php" rel="noopener" target="_blank">Quellseite<span aria-hidden="true"> ↗</span></a></div>
         </article>
         <article class="ds">
-          <img class="ds-art" src="../img/data/tornadoes.svg?v=3" alt="" width="320" height="180" loading="lazy" decoding="async">
+          <img class="ds-art" src="../img/data-laws/tornadoes.svg?v=4" alt="" width="320" height="180" loading="lazy" decoding="async">
           <h3>Jeder Tornado in den USA seit 1950</h3>
           <p class="ds-src">NOAA Storm Prediction Center</p>
           <div class="ds-actions"><a class="ds-get" href="https://www.spc.noaa.gov/gis/svrgis/zipped/1950-2025-torn-aspath.zip" download aria-label="Shapefile (ZIP) herunterladen · 5 MB"><svg class="dl-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v8m0 0L4.8 6.8M8 10l3.2-3.2M3 13h10"/></svg><span>Shapefile · 5 MB</span></a><a class="ds-more" href="https://www.spc.noaa.gov/gis/svrgis/" rel="noopener" target="_blank">Quellseite<span aria-hidden="true"> ↗</span></a></div>
         </article>
         <article class="ds">
-          <img class="ds-art" src="../img/data/precipitation.svg?v=3" alt="" width="320" height="180" loading="lazy" decoding="async">
+          <img class="ds-art" src="../img/data-laws/precipitation.svg?v=4" alt="" width="320" height="180" loading="lazy" decoding="async">
           <h3>Regen und Schnee weltweit seit 1979</h3>
           <p class="ds-src">GPCP v2.3, über NOAA PSL</p>
           <div class="ds-actions"><a class="ds-get" href="https://downloads.psl.noaa.gov/Datasets/gpcp/precip.mon.mean.nc" download aria-label="NetCDF herunterladen · 20 MB"><svg class="dl-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v8m0 0L4.8 6.8M8 10l3.2-3.2M3 13h10"/></svg><span>NetCDF · 20 MB</span></a><a class="ds-more" href="https://psl.noaa.gov/data/gridded/data.gpcp.html" rel="noopener" target="_blank">Quellseite<span aria-hidden="true"> ↗</span></a></div>
         </article>
         <article class="ds">
-          <img class="ds-art" src="../img/data/roman-roads.svg?v=3" alt="" width="320" height="180" loading="lazy" decoding="async">
+          <img class="ds-art" src="../img/data-laws/roman-roads.svg?v=4" alt="" width="320" height="180" loading="lazy" decoding="async">
           <h3>Die Straßen des Römischen Reiches</h3>
           <p class="ds-src">Itiner-e, de Soto et al. 2025 (Zenodo)</p>
           <div class="ds-actions"><a class="ds-get" href="https://zenodo.org/records/17122148/files/itinere_roads.gpkg?download=1" download aria-label="GeoPackage herunterladen · 34 MB"><svg class="dl-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v8m0 0L4.8 6.8M8 10l3.2-3.2M3 13h10"/></svg><span>GeoPackage · 34 MB</span></a><a class="ds-more" href="https://zenodo.org/records/17122148" rel="noopener" target="_blank">Quellseite<span aria-hidden="true"> ↗</span></a></div>
@@ -282,10 +282,10 @@
     <h2>Echte Daten über die Erde entdecken.</h2>
     <div class="cta-actions">
       <a class="btn btn-primary btn-get" href="https://github.com/kangning-huang/NimbleMap/releases/latest/download/NimbleMap-macos-arm64.dmg" download>Kostenlos für Mac herunterladen</a>
+        <a class="btn btn-quiet btn-windows" href="https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.1/NimbleMap-windows-x64-setup.exe" download>Für Windows herunterladen</a>
     </div>
-    <p class="mac-only" hidden>NimbleMap braucht einen Mac mit Apple Silicon. Eine Windows-Version ist in Arbeit.</p>
-    <p class="dl-fine">Kostenlos · etwa 109 MB · macOS 13 oder neuer · Apple Silicon · funktioniert offline</p>
-    <p class="dl-fine"><a href="download.html#get">Beim ersten Start fragt macOS nach Ihrer Erlaubnis – so öffnen Sie die App</a></p>
+    <p class="desktop-platforms">Für Mac (Apple Silicon, macOS 13+) und Windows 10/11 (x64).</p>
+    <p class="dl-fine"><strong>Mac:</strong> Kostenlos · etwa 109 MB · macOS 13 oder neuer · Apple Silicon · funktioniert offline</p>
     <div class="share" role="group" aria-label="Teilen"><span class="share-label">Teilen</span><a class="share-btn" data-net="x" href="#" target="_blank" rel="noopener" aria-label="Teilen: X">X</a><a class="share-btn" data-net="facebook" href="#" target="_blank" rel="noopener" aria-label="Teilen: Facebook">Facebook</a><a class="share-btn" data-net="reddit" href="#" target="_blank" rel="noopener" aria-label="Teilen: Reddit">Reddit</a><a class="share-btn" data-net="linkedin" href="#" target="_blank" rel="noopener" aria-label="Teilen: LinkedIn">LinkedIn</a></div>
     <p class="built-on">NimbleMap basiert auf <a href="https://github.com/opengeos/RustGIS">RustGIS</a>.</p>
   </div>

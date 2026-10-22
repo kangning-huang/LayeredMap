@@ -170,19 +170,4 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 });
 
-// Download buttons link straight to the Mac app. On a phone, a tablet, Windows or Linux, show the
-// line under the button (.mac-only, in the page's language) saying it needs a Mac. Intel Macs
-// can't be told apart reliably, so they aren't singled out.
-document.addEventListener("DOMContentLoaded", function () {
-  var notes = document.querySelectorAll(".mac-only");
-  if (!notes.length) return;
-  var nav = window.navigator;
-  var uad = nav.userAgentData;
-  var platform = (uad && uad.platform) || nav.platform || "";
-  var ua = nav.userAgent || "";
-  var mobile = (uad && uad.mobile) || /iPhone|iPad|iPod|Android/i.test(ua);
-  var ipad = /Mac/i.test(platform) && nav.maxTouchPoints > 1;  // iPadOS says it is a Mac
-  var other = platform ? !/Mac/i.test(platform) : /Windows|Linux|CrOS|X11/i.test(ua);
-  if (!(mobile || ipad || other)) return;
-  for (var i = 0; i < notes.length; i++) notes[i].hidden = false;
-});
+// Mac and Windows downloads are both available; each button names its platform.

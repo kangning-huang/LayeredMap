@@ -132,6 +132,10 @@ pub struct MapView {
     rect: Option<Rect>,
     /// How selected features are drawn.
     selection: SelectionStyle,
+    /// Frame-by-frame rendering (the launch film's offline renderer, never the app): a finished
+    /// frame replaces the one on screen at once, with no crossfade, so a host that holds egui's
+    /// clock still can wait for the fully loaded frame of a camera ([`MapView::settled`]).
+    frame_by_frame: bool,
 }
 
 impl MapView {
@@ -168,6 +172,7 @@ impl MapView {
             restarts: 0,
             rect: None,
             selection: selection_style(false),
+            frame_by_frame: false,
         }
     }
 
@@ -350,6 +355,21 @@ impl MapView {
         self.tiles_pending || self.worker.in_flight
     }
 
+    /// Frame-by-frame rendering for an offline renderer (the launch film): new frames replace the
+    /// shown one at once instead of crossfading. Labels still fade on egui's clock.
+    pub fn set_frame_by_frame(&mut self, on: bool) {
+        self.frame_by_frame = on;
+    }
+
+    /// The frame on screen is the finished render of the current camera: drawn for exactly this
+    /// camera and size, with every tile it needed (no lower-zoom stand-ins), and no newer render
+    /// on the way. Before the map was first shown, false.
+    pub fn settled(&self) -> bool {
+        let (Some(c), Some(rect)) = (&self.current, self.rect) else { return false };
+        let size = (f64::from(rect.width()), f64::from(rect.height()));
+        !self.worker.in_flight && !self.tiles_pending && c.camera == self.camera && c.size == size && self.anim.is_none()
+    }
+
     pub fn last_render_ms(&self) -> f64 {
         self.last_render_ms
     }
@@ -415,7 +435,7 @@ impl MapView {
         self.worker.request(view, self.selection, rustgis_tiles::cache::generation());
         // While a crossfade runs, a newer frame waits for it to finish (at most 150 ms) unless the
         // camera is moving: swapping mid-fade would drop the half-faded frame and pop.
-        let fading = self.current.as_ref().is_some_and(|c| t - c.since < self.fade_s);
+        let fading = !self.frame_by_frame && self.current.as_ref().is_some_and(|c| t - c.since < self.fade_s);
         if (!fading || out.moving)
             && let Some(f) = self.worker.poll()
         {
@@ -423,8 +443,13 @@ impl MapView {
         }
         let labels_fading = self.labels.step(dt, self.fade_s);
 
+        if self.frame_by_frame
+            && let Some(p) = self.previous.take()
+        {
+            self.spare = Some(p.tex);
+        }
         self.paint(ui, rect, t, opts);
-        let fading = self.current.as_ref().is_some_and(|c| t - c.since < self.fade_s);
+        let fading = !self.frame_by_frame && self.current.as_ref().is_some_and(|c| t - c.since < self.fade_s);
         if out.moving || fading || labels_fading || self.anim.is_some() || self.velocity.length() > 0.0 || self.worker.in_flight {
             ui.ctx().request_repaint();
         }

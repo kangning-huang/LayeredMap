@@ -27,16 +27,16 @@
 <meta property="og:image" content="../img/open-storms.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
-<link rel="stylesheet" href="../assets/site.css?v=072">
+<link rel="stylesheet" href="../assets/site.css?v=074">
 <link rel="stylesheet" href="../assets/data.css?v=3">
-<script src="../assets/site.js?v=072"></script>
+<script src="../assets/site.js?v=074"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
   "name": "NimbleMap",
   "inLanguage": "ja",
-  "operatingSystem": "macOS 13 以降（Apple シリコン）",
+  "operatingSystem": "macOS 13+ (Apple silicon), Windows 10 1809+ / Windows 11 (x64)",
   "applicationCategory": "UtilitiesApplication",
   "description": "ダウンロードした地図データを数秒で地図として開ける無料の Mac アプリ。Shapefile、GeoPackage、NetCDF、GeoTIFF、GPX、KML、座標付きの CSV に対応。GIS の知識も設定も要りません。",
   "isAccessibleForFree": true,
@@ -79,17 +79,17 @@
 <section class="hero contours drop-hero">
   <div class="wrap hero-grid">
     <div>
-      <p class="eyebrow">Mac 用・無料</p>
+      <p class="eyebrow">Mac・Windows 向け無料アプリ</p>
       <h1>ネットで地図データを見つけたら、NimbleMap にドラッグ。</h1>
       <p class="lede">Shapefile、GeoPackage、NetCDF、GeoTIFF、GPX、KML、座標付きの CSV。NASA や USGS（米国地質調査所）、自治体のオープンデータポータルからダウンロードするファイルです。NimbleMap なら数秒で地図として開けます。GIS の知識も設定も要りません。</p>
       <p class="hero-how">ファイルを NimbleMap にドラッグするだけ。Shapefile、GeoPackage、NetCDF はダブルクリックでもすぐに開けます。</p>
       <div class="actions">
         <a class="btn btn-primary btn-get" href="https://github.com/kangning-huang/NimbleMap/releases/latest/download/NimbleMap-macos-arm64.dmg" download>Mac 版を無料でダウンロード</a>
+        <a class="btn btn-quiet btn-windows" href="https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.1/NimbleMap-windows-x64-setup.exe" download>Windows 版をダウンロード</a>
         <a class="btn btn-quiet" href="#data">データはどこで手に入る？</a>
       </div>
-      <p class="mac-only" hidden>NimbleMap には Apple シリコン搭載の Mac が必要です。Windows 版も準備中です。</p>
-      <p class="dl-fine">無料 · 約 109 MB · macOS 13 以降 · Apple シリコン · オフラインで動作</p>
-      <p class="dl-fine"><a href="download.html#get">初回は macOS が許可を求めます — 開き方はこちら</a></p>
+      <p class="desktop-platforms">Mac（Apple シリコン、macOS 13 以降）と Windows 10/11（x64）に対応。</p>
+      <p class="dl-fine"><strong>Mac:</strong> 無料 · 約 109 MB · macOS 13 以降 · Apple シリコン · オフラインで動作</p>
     </div>
     <div class="hero-shot showcase drop-scene" data-rotate="3500">
       <figure class="frame stage">
@@ -135,25 +135,25 @@
     </div>
     <div class="ds-grid ds-teaser">
         <article class="ds">
-          <img class="ds-art" src="../img/data/earthquakes.svg?v=3" alt="" width="320" height="180" loading="lazy" decoding="async">
+          <img class="ds-art" src="../img/data-laws/earthquakes.svg?v=4" alt="" width="320" height="180" loading="lazy" decoding="async">
           <h3>リアルタイムの地震</h3>
           <p class="ds-src">USGS Earthquake Hazards Program（米国地質調査所）</p>
           <div class="ds-actions"><a class="ds-get" href="https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.csv" download aria-label="CSV をダウンロード · 2 MB"><svg class="dl-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v8m0 0L4.8 6.8M8 10l3.2-3.2M3 13h10"/></svg><span>CSV · 2 MB</span></a><a class="ds-more" href="https://earthquake.usgs.gov/earthquakes/feed/v1.0/csv.php" rel="noopener" target="_blank">提供元のページ<span aria-hidden="true"> ↗</span></a></div>
         </article>
         <article class="ds">
-          <img class="ds-art" src="../img/data/tornadoes.svg?v=3" alt="" width="320" height="180" loading="lazy" decoding="async">
+          <img class="ds-art" src="../img/data-laws/tornadoes.svg?v=4" alt="" width="320" height="180" loading="lazy" decoding="async">
           <h3>1950年以降のアメリカのすべての竜巻</h3>
           <p class="ds-src">NOAA Storm Prediction Center（米国海洋大気庁 暴風予測センター）</p>
           <div class="ds-actions"><a class="ds-get" href="https://www.spc.noaa.gov/gis/svrgis/zipped/1950-2025-torn-aspath.zip" download aria-label="Shapefile（zip） をダウンロード · 5 MB"><svg class="dl-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v8m0 0L4.8 6.8M8 10l3.2-3.2M3 13h10"/></svg><span>Shapefile · 5 MB</span></a><a class="ds-more" href="https://www.spc.noaa.gov/gis/svrgis/" rel="noopener" target="_blank">提供元のページ<span aria-hidden="true"> ↗</span></a></div>
         </article>
         <article class="ds">
-          <img class="ds-art" src="../img/data/precipitation.svg?v=3" alt="" width="320" height="180" loading="lazy" decoding="async">
+          <img class="ds-art" src="../img/data-laws/precipitation.svg?v=4" alt="" width="320" height="180" loading="lazy" decoding="async">
           <h3>1979年以降の世界の雨と雪</h3>
           <p class="ds-src">GPCP v2.3（NOAA PSL 経由）</p>
           <div class="ds-actions"><a class="ds-get" href="https://downloads.psl.noaa.gov/Datasets/gpcp/precip.mon.mean.nc" download aria-label="NetCDF をダウンロード · 20 MB"><svg class="dl-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v8m0 0L4.8 6.8M8 10l3.2-3.2M3 13h10"/></svg><span>NetCDF · 20 MB</span></a><a class="ds-more" href="https://psl.noaa.gov/data/gridded/data.gpcp.html" rel="noopener" target="_blank">提供元のページ<span aria-hidden="true"> ↗</span></a></div>
         </article>
         <article class="ds">
-          <img class="ds-art" src="../img/data/roman-roads.svg?v=3" alt="" width="320" height="180" loading="lazy" decoding="async">
+          <img class="ds-art" src="../img/data-laws/roman-roads.svg?v=4" alt="" width="320" height="180" loading="lazy" decoding="async">
           <h3>ローマ帝国の道路網</h3>
           <p class="ds-src">Itiner-e, de Soto et al. 2025（Zenodo）</p>
           <div class="ds-actions"><a class="ds-get" href="https://zenodo.org/records/17122148/files/itinere_roads.gpkg?download=1" download aria-label="GeoPackage をダウンロード · 34 MB"><svg class="dl-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v8m0 0L4.8 6.8M8 10l3.2-3.2M3 13h10"/></svg><span>GeoPackage · 34 MB</span></a><a class="ds-more" href="https://zenodo.org/records/17122148" rel="noopener" target="_blank">提供元のページ<span aria-hidden="true"> ↗</span></a></div>
@@ -282,10 +282,10 @@
     <h2>地球の本物のデータを探検しよう。</h2>
     <div class="cta-actions">
       <a class="btn btn-primary btn-get" href="https://github.com/kangning-huang/NimbleMap/releases/latest/download/NimbleMap-macos-arm64.dmg" download>Mac 版を無料でダウンロード</a>
+        <a class="btn btn-quiet btn-windows" href="https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.1/NimbleMap-windows-x64-setup.exe" download>Windows 版をダウンロード</a>
     </div>
-    <p class="mac-only" hidden>NimbleMap には Apple シリコン搭載の Mac が必要です。Windows 版も準備中です。</p>
-    <p class="dl-fine">無料 · 約 109 MB · macOS 13 以降 · Apple シリコン · オフラインで動作</p>
-    <p class="dl-fine"><a href="download.html#get">初回は macOS が許可を求めます — 開き方はこちら</a></p>
+    <p class="desktop-platforms">Mac（Apple シリコン、macOS 13 以降）と Windows 10/11（x64）に対応。</p>
+    <p class="dl-fine"><strong>Mac:</strong> 無料 · 約 109 MB · macOS 13 以降 · Apple シリコン · オフラインで動作</p>
     <div class="share" role="group" aria-label="共有"><span class="share-label">共有</span><a class="share-btn" data-net="x" href="#" target="_blank" rel="noopener" aria-label="共有：X">X</a><a class="share-btn" data-net="facebook" href="#" target="_blank" rel="noopener" aria-label="共有：Facebook">Facebook</a><a class="share-btn" data-net="reddit" href="#" target="_blank" rel="noopener" aria-label="共有：Reddit">Reddit</a><a class="share-btn" data-net="linkedin" href="#" target="_blank" rel="noopener" aria-label="共有：LinkedIn">LinkedIn</a></div>
     <p class="built-on">NimbleMap は <a href="https://github.com/opengeos/RustGIS">RustGIS</a> をベースに作られています。</p>
   </div>

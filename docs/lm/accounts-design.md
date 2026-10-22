@@ -206,9 +206,10 @@ per-user daily counts.
 
 ## Entitlement: what signing in unlocks
 
-Free and Pro are one app (owner, 2026-10-19). Pro's features (the Ask box and its microphone, the
-analysis actions on cards, the built-in world layers) unlock when the person is signed in to an
-account whose `profiles.pro` is true. Pro is free with an account for now, so every new account
+Free and Pro are one app (owner, 2026-10-19). Pro's features (the Ask box and its microphone, and
+the built-in world layers the assistant uses) unlock when the person is signed in to an account
+whose `profiles.pro` is true. The analysis actions on cards (their composer, preview and Keep) are
+Free for everyone, signed in or not (owner, 2026-10-21; `decisions.md`). Pro is free with an account for now, so every new account
 has it (`pro default true`).
 
 - **The model** (`crates/lm-account/src/entitlement.rs`): `Entitlement { pro, plan, expires_at,
@@ -218,7 +219,7 @@ has it (`pro default true`).
   |---|---|---|
   | `Unlocked` | Signed in, the last answer said `pro` (and `expires_at`, if any, is ahead) | Everything works; the PRO badge shows |
   | `Developer` | `LM_DEV_PRO=1` in the environment | As Unlocked; for development, never in a release and never shown as a setting |
-  | `SignedOut` | An account config, nobody signed in | The Ask box shows "Sign in to use NimbleMap Pro" with Sign In…; analysis actions show with a lock and "Sign in to use analysis tools" |
+  | `SignedOut` | An account config, nobody signed in | The Ask box shows "Sign in to use NimbleMap Pro" with Sign In…; the analysis actions on cards work as in every state (Free) |
   | `Checking` | Signed in, no answer yet | "Checking your account…" |
   | `NotPro` | Signed in, the answer said not Pro (or the plan ended) | "NimbleMap Pro isn't on for this account." with Settings… |
   | `Unavailable` | No account config (an open-source build) and no override | Pro's features stay hidden; the Free app as it always was |
@@ -231,9 +232,9 @@ has it (`pro default true`).
   record v1) and survives a token refresh, so the app starts unlocked offline for someone who was
   unlocked last time.
 - **Where it is enforced.** The Ask box is enforced on the server: the `ask` function checks the
-  token and `pro` for every request, whatever the app shows. The local Pro features (analysis
-  actions, the built-in layers, voice input) run on the person's own computer and are locked in the
-  interface only; that is a deliberate trade-off for an open-source app, not a security boundary.
+  token and `pro` for every request, whatever the app shows. The local Pro features (the built-in
+  layers, voice input) run on the person's own computer and are locked in the interface only; that
+  is a deliberate trade-off for an open-source app, not a security boundary.
 - **A later subscription or in-app purchase** feeds the same `Entitlement` (`plan`, `expires_at`;
   `app-store.md`), so the interface needs no change.
 - **Moving from the separate Pro test app.** The keychain item `app.layeredmap.pro.account` keeps

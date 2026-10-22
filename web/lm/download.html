@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Open Shapefile, GeoJSON, CSV &amp; GeoTIFF on a Mac, free · NimbleMap</title>
-<meta name="description" content="A free Mac app that opens Shapefile, GeoPackage, NetCDF, GeoTIFF, GeoJSON and latitude/longitude CSV files as a map: drag them into NimbleMap. Layers line up without setting a coordinate system, and your files never leave your Mac.">
+<title>Open Shapefile, GeoJSON, CSV &amp; GeoTIFF on Mac or Windows · NimbleMap</title>
+<meta name="description" content="A free desktop app that opens Shapefile, GeoPackage, NetCDF, GeoTIFF, GeoJSON and latitude/longitude CSV files as a map: drag them into NimbleMap. Layers line up without setting a coordinate system, and your files never leave your computer.">
 <link rel="canonical" href="download.html">
 <link rel="alternate" hreflang="en" href="download.html">
 <link rel="alternate" hreflang="zh-Hans" href="zh/download.html">
@@ -21,23 +21,23 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="NimbleMap">
 <meta property="og:locale" content="en_US">
-<meta property="og:title" content="Open Shapefile, GeoJSON, CSV & GeoTIFF on a Mac, free">
-<meta property="og:description" content="Drag a map file into NimbleMap and it is on the map. Layers line up on their own, and your files never leave your Mac.">
+<meta property="og:title" content="Open Shapefile, GeoJSON, CSV & GeoTIFF on Mac or Windows, free">
+<meta property="og:description" content="Drag a map file into NimbleMap and it is on the map. Layers line up on their own, and your files never leave your computer.">
 <meta property="og:url" content="download.html">
 <meta property="og:image" content="img/walls-compare.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
-<link rel="stylesheet" href="assets/site.css?v=072">
-<script src="assets/site.js?v=072"></script>
+<link rel="stylesheet" href="assets/site.css?v=074">
+<script src="assets/site.js?v=074"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
   "name": "NimbleMap",
   "inLanguage": "en",
-  "operatingSystem": "macOS 13 or later (Apple silicon)",
+  "operatingSystem": "macOS 13+ (Apple silicon), Windows 10 1809+ / Windows 11 (x64)",
   "applicationCategory": "UtilitiesApplication",
-  "description": "A Mac map app that opens Shapefile, GeoJSON, CSV, GeoTIFF, GeoPackage, Excel, KML, GPX and NetCDF files dragged into it. Files never leave the computer.",
+  "description": "A desktop map app that opens Shapefile, GeoJSON, CSV, GeoTIFF, GeoPackage, Excel, KML, GPX and NetCDF files dragged into it. Files never leave the computer.",
   "isAccessibleForFree": true,
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
 }
@@ -78,14 +78,15 @@
 <section class="hero contours">
   <div class="wrap hero-grid">
     <div>
-      <p class="eyebrow">Free for Mac</p>
-      <h1>Open your map files on a Mac. They just line up.</h1>
+      <p class="eyebrow">Free for Mac and Windows</p>
+      <h1>Open your map files on Mac or Windows. They just line up.</h1>
       <p class="lede">Drag a Shapefile, a GeoJSON, a CSV with latitude and longitude, or a GeoTIFF into NimbleMap, and it is on a map. Add another and it stacks in the right place. There is no coordinate system to set and no project to create.</p>
       <div class="actions">
         <a class="btn btn-primary" href="#get">Download for Mac</a>
+        <a class="btn btn-quiet" href="#windows">Download for Windows</a>
         <a class="btn btn-quiet" href="#formats">What it opens</a>
       </div>
-      <p class="coords" style="margin-top:28px">Free · about 70 MB · macOS 13 or later, Apple silicon</p>
+      <p class="coords" style="margin-top:28px"><strong>Mac:</strong> Free · about 70 MB · macOS 13 or later, Apple silicon</p>
     </div>
     <div class="hero-shot">
       <figure class="frame"><img src="img/walls-compare.jpg" alt="Two walled cities of 1866 compared side by side in NimbleMap, drawn over the map in the right place." width="1600" height="996"></figure>
@@ -105,7 +106,7 @@
       <div><h3>Layers line up on their own</h3><p>A shapefile's <code>.prj</code> is read and its coordinates converted, so CSV points land on top of district boundaries instead of somewhere off the map. If a file's coordinate system can't be read, the app says so in one line.</p></div>
       <div><h3>CSV points in one drop</h3><p>Drag a spreadsheet with latitude and longitude columns into NimbleMap. The app finds the columns, puts every row on the map, and tells you which columns it picked so you can change them.</p></div>
       <div><h3>GeoTIFFs on a real map</h3><p>Preview shows a GeoTIFF as a flat picture. Here a satellite scene, a drone survey or an elevation model is placed where it belongs, under your other layers.</p></div>
-      <div><h3>Your files stay on your Mac</h3><p>Nothing is uploaded. The free app opens files locally and works offline, which matters for survey data, client files and anything sensitive.</p></div>
+      <div><h3>Your files stay on your computer</h3><p>Nothing is uploaded. The free app opens files locally and works offline, which matters for survey data, client files and anything sensitive.</p></div>
       <div><h3>China's map coordinates</h3><p>Points from Amap, Tencent or Baidu Maps use China's shifted GCJ-02 or BD-09 coordinates. When a layer in China looks like one of these, the app says so and converts it with one click, so it lines up with the basemap and your other data.</p></div>
     </div>
   </div>
@@ -133,20 +134,27 @@
     <div class="section-head">
       <p class="eyebrow">Download</p>
       <h2>Get NimbleMap</h2>
-      <p class="lede">For Macs with Apple silicon, macOS 13 or later. A Windows version is on the way.</p>
+      <p class="lede">Available for Mac (Apple silicon, macOS 13+) and Windows 10/11 (x64).</p>
     </div>
     <div class="downloads">
+      <div class="dl" id="windows">
+        <h3>Windows 10 / 11 · x64</h3>
+        <p>0.7.1 preview · Windows 10 1809+</p>
+        <a class="btn btn-primary btn-windows" href="https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.1/NimbleMap-windows-x64-setup.exe" download>Download for Windows</a>
+        <p class="dl-note"><a href="https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.1/NimbleMap-windows-x64-setup.exe.sha256">SHA-256</a></p>
+        <p class="dl-note" style="margin-top:12px">Unsigned preview: Windows SmartScreen may show a warning.</p>
+      </div>
       <div class="dl">
         <h3>NimbleMap for Mac</h3>
-        <p>Free · version 0.7.1 preview</p>
+        <p>Free · version 0.7.3 preview</p>
         <a class="btn btn-primary" href="https://github.com/kangning-huang/NimbleMap/releases/latest/download/NimbleMap-macos-arm64.dmg" download>Download</a>
-        <p class="dl-note" style="margin-top:12px">Not notarized yet, so macOS blocks it the first time: open System Settings › Privacy &amp; Security and click Open Anyway (once).</p>
-        <p class="dl-pro">Pro features (the Ask box and analysis actions) unlock when you sign in inside the app, free with an account. <a href="pro.html">What Pro adds</a></p>
+        <p class="dl-note" style="margin-top:12px">Signed with a Developer ID and notarized by Apple. The first time you open it, macOS asks whether to open an app downloaded from the internet: click Open.</p>
+        <p class="dl-pro">Analysis tools are free, with no sign-in. Pro, the Ask box for questions in plain words, unlocks when you sign in inside the app, free with an account. <a href="pro.html">What Pro adds</a></p>
       </div>
       <div class="dl">
         <h3>Mirror for mainland China</h3>
         <p>The same app, from GitCode, for downloads in mainland China. Identical file (same SHA-256).</p>
-        <a class="btn btn-quiet" href="https://gitcode.com/KN-Huang/NimbleMap/releases/download/v0.7.1/NimbleMap-macos-arm64.dmg" data-dl="alt" download>Download</a>
+        <a class="btn btn-quiet" href="https://gitcode.com/KN-Huang/NimbleMap/releases/download/v0.7.3/NimbleMap-macos-arm64.dmg" data-dl="alt" download>Download</a>
         <p class="dl-note" style="margin-top:12px"><a href="https://gitcode.com/KN-Huang/NimbleMap/releases" data-dl="alt-releases">All releases on GitCode</a></p>
       </div>
     </div>
@@ -196,6 +204,7 @@
           <li>Check that two layers line up</li>
           <li>Colour, filter and label by a value</li>
           <li>Join a spreadsheet to places by name</li>
+          <li>Run a quick analysis from a card: an area within a distance, points counted in each area, the part of a layer inside another</li>
           <li>Export a finished map image for a slide or report</li>
         </ul>
       </div>
@@ -204,7 +213,7 @@
         <ul>
           <li>Edit shapes or attributes</li>
           <li>Georeference a scanned map</li>
-          <li>Clip, dissolve, or run other geoprocessing tools</li>
+          <li>Dissolve, chain geoprocessing tools into models, or run advanced analysis</li>
           <li>Choose or define a map projection yourself</li>
           <li>Build a multi-page print layout or use plugins</li>
         </ul>
@@ -221,7 +230,7 @@
       <h2>Common questions</h2>
     </div>
     <div class="faq">
-      <h3>Is there free software to open a shapefile on a Mac?</h3>
+      <h3>Is there free software to open a shapefile on Mac or Windows?</h3>
       <p>Yes. NimbleMap is free. Double-click the <code>.shp</code> in Finder, or drag it or its .zip into NimbleMap. Keep the <code>.dbf</code>, <code>.shx</code> and <code>.prj</code> files next to it, since a shapefile is really a set of files.</p>
 
       <h3>Why don't my CSV points show up on top of my shapefile?</h3>
@@ -234,10 +243,10 @@
       <p>No. Files open without settings, and when the app has to guess something, such as which columns hold the coordinates, it tells you in one line and lets you change it. The <a href="glossary.html">glossary</a> explains map words in plain language.</p>
 
       <h3>Are my files uploaded anywhere?</h3>
-      <p>Not in the free app: everything is read and drawn on your Mac, and it works offline. Basemap tiles are downloaded when you're online, but your data is never sent. In Pro, the Ask box sends the assistant your layer names, field names and extents so it can understand the question, never the values.</p>
+      <p>Not in the free app: everything is read, analysed and drawn on your computer, and it works offline. Basemap tiles are downloaded when you're online, but your data is never sent. In Pro, the Ask box sends the assistant your layer names, field names and extents so it can understand the question, never the values.</p>
 
       <h3>Is there a Windows version?</h3>
-      <p>It is on the way. For now NimbleMap runs on Macs with Apple silicon and macOS 13 or later.</p>
+      <p>Available for Mac (Apple silicon, macOS 13+) and Windows 10/11 (x64). <a href="#windows">Download for Windows</a></p>
     </div>
   </div>
 </section>
