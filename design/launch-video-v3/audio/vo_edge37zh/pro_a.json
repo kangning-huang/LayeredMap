@@ -1,0 +1,42 @@
+{
+ "voice": "zh-CN-YunxiNeural",
+ "rate": "+6%",
+ "text": "注册登录用Pro，大白话问数据。",
+ "words": [
+  {
+   "text": "注册",
+   "offset": 0.097166,
+   "duration": 0.342
+  },
+  {
+   "text": "登录",
+   "offset": 0.450958,
+   "duration": 0.271208
+  },
+  {
+   "text": "用",
+   "offset": 0.733958,
+   "duration": 0.176875
+  },
+  {
+   "text": "Pro",
+   "offset": 0.910833,
+   "duration": 0.495291
+  },
+  {
+   "text": "大白话",
+   "offset": 1.677375,
+   "duration": 0.459875
+  },
+  {
+   "text": "问",
+   "offset": 2.13725,
+   "duration": 0.129708
+  },
+  {
+   "text": "数据",
+   "offset": 2.278791,
+   "duration": 0.389166
+  }
+ ]
+}

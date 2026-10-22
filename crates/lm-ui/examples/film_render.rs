@@ -11,7 +11,7 @@
 //!
 //! `shot.json` (written by design/launch-video-v3/path/):
 //! ```json
-//! { "size": [1409, 845], "ppp": 2.0, "theme": "light", "basemap": "auto", "dev_pro": false,
+//! { "size": [1409, 845], "ppp": 2.0, "theme": "light", "basemap": "auto", "dev_pro": false, "language": "zh",
 //!   "files": ["/path/storms.shp"],
 //!   "setup": ["esc", "card style_by_value magnitude"],
 //!   "frames": [ {"t": 0.0, "cam": [-62.0, 33.0, 4.6], "out": "000000.png"}, … ],
@@ -109,7 +109,15 @@ fn main() {
     let first_cam = frames.first().and_then(|f| cam3(&f["cam"])).unwrap_or((0.0, 20.0, 2.0));
 
     let pending = Arc::new(Mutex::new(Pending { cam: Some(first_cam), ..Pending::default() }));
-    let prefs = Prefs { theme: if dark { ThemePref::Dark } else { ThemePref::Light }, basemap, view: Some(first_cam), ..Prefs::default() };
+    // The interface language, as the screenshot tests set it ("zh", "de", …; English by default).
+    let language = shot["language"].as_str().unwrap_or("en").to_string();
+    let prefs = Prefs {
+        theme: if dark { ThemePref::Dark } else { ThemePref::Light },
+        basemap,
+        view: Some(first_cam),
+        language,
+        ..Prefs::default()
+    };
     let system = System { dark_mode: dark, reduce_motion: false };
     let flags = Flags::from_env(std::env::var("LM_PHASE").ok().as_deref());
     let p2 = pending.clone();
@@ -272,6 +280,10 @@ fn set_time(h: &mut Harness<'_, State>, t: f64) {
 /// Steps at a fixed clock until the map shows the finished render of the camera and nothing is
 /// loading, after at least `min` steps. Returns the steps taken.
 fn settle(h: &mut Harness<'_, State>, min: usize, max: usize, wait_layers: bool) -> usize {
+    // By the clock as well as by steps: a tile whose fetch failed is fetched again only after the
+    // tile cache's retry delay (a minute), so the wait must outlast it.
+    let started = std::time::Instant::now();
+    let patience = std::time::Duration::from_secs(180);
     let mut n = 0;
     let mut ok_in_a_row = 0;
     loop {
@@ -291,9 +303,9 @@ fn settle(h: &mut Harness<'_, State>, min: usize, max: usize, wait_layers: bool)
         if n >= min && ok_in_a_row >= 2 {
             return n;
         }
-        if n >= max {
+        if n >= max && started.elapsed() > patience {
             let why = h.state().shell.as_ref().map(|s| format!("{:?}", s.map_view().tile_errors())).unwrap_or_default();
-            eprintln!("warning: not settled after {n} steps {why}");
+            eprintln!("warning: not settled after {n} steps and {:.0} s {why}", started.elapsed().as_secs_f64());
             return n;
         }
         std::thread::sleep(std::time::Duration::from_millis(if ok { 0 } else { 3 }));

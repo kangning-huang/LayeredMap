@@ -164,7 +164,14 @@ pub fn submit(shell: &mut Shell, ctx: &egui::Context, text: String) {
                 Ok(f) => lm_ask::ask(&f as &dyn Transport, &req, &c),
                 Err(e) => Turn { answer: Err(e), messages: Vec::new(), usage: Usage::default() },
             },
-            Via::Direct(key) => lm_ask::ask(&lm_ask::openrouter::OpenRouter::new(key) as &dyn Transport, &req, &c),
+            Via::Direct(key) => {
+                let direct = lm_ask::openrouter::OpenRouter::new(key);
+                // `LM_ASK_RECORD=<file>` (developer): keep the replies, to replay them later.
+                match lm_ask::fixture::Recorder::path_from_env() {
+                    Some(path) => lm_ask::ask(&lm_ask::fixture::Recorder::new(&direct, path) as &dyn Transport, &req, &c),
+                    None => lm_ask::ask(&direct as &dyn Transport, &req, &c),
+                }
+            }
             // A fresh token first (refreshed when it is about to expire; the network gate decides).
             Via::Proxy { account, url, anon_key } => match account.access_token() {
                 Ok(token) => {

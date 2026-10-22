@@ -36,7 +36,26 @@ def L(lon, lat, z):
     return View.ll(lon, lat, z)
 
 
-def typing(text, times, field='search', enter=None, focus_at=None):
+# The Chinese film (v3.7-zh): the app in its Chinese interface, typing Chinese place names and the
+# Chinese question. A Chinese word is typed as a pinyin input method commits it: each character
+# lands on one of the English cut's key-click times (the sound bed is unchanged), the last on the
+# last click.
+ZH = {'New York': '纽约', 'Tokyo': '东京', 'Barcelona': '巴塞罗那',
+      N.ASK_TEXT4: '有多少场五级风暴经过东京100公里内？'}
+
+
+def words(text, times, lang):
+    """The text typed and its key times, in the film's language."""
+    if lang != 'zh' or text not in ZH:
+        return text, list(times)
+    zh = ZH[text]
+    n, m = len(zh), len(times)
+    idx = [round((i + 1) * m / n) - 1 for i in range(n)]
+    return zh, [times[i] for i in idx]
+
+
+def typing(text, times, field='search', enter=None, focus_at=None, lang='en'):
+    text, times = words(text, times, lang)
     ev = [{'t': (focus_at if focus_at is not None else times[0] - 0.3), 'focus': field}]
     ev += [{'t': t, 'text': ch} for ch, t in zip(text, times)]
     if enter is not None:
@@ -71,6 +90,7 @@ def hw_index(t):
 NY_REGION = L(-73.5 + 360, 40.2, 6.5)
 SANDY_REGION = L(-74.5 + 360, 39.8, 6.4)
 BOTH_SANDYS = L(43.4782 + 360, 14.8311, 2.014)      # where Find's "zoom to both" goes (app-camera)
+FIND_ROW = {'en': (1100, 280), 'zh': (1100, 280)}   # the second row of the Find results (points)
 T_FIND_ROW = 26.25                                  # Sandy (2012), the second row of "2 found"
 
 
@@ -87,11 +107,11 @@ def film1_chain():
     return c
 
 
-def shot_ty():
-    ev = typing(N.TYPE1[0], N.TYPE1[1], enter=N.T_ENTER1, focus_at=19.95)
+def shot_ty(lang='en'):
+    ev = typing(N.TYPE1[0], N.TYPE1[1], enter=N.T_ENTER1, focus_at=19.95, lang=lang)
     ev += [{'t': 22.75, 'step': 'layer 0'}]                      # the layer's panel, with Find
     ev += typing(N.TYPE_FIND[0], N.TYPE_FIND[1], field='find', focus_at=23.85)
-    ev += [{'t': T_FIND_ROW, 'click_at': [1100, 280]}]
+    ev += [{'t': T_FIND_ROW, 'click_at': list(FIND_ROW[lang])}]
     return dict(name='ty', chain=film1_chain(), t0=14.40, t1=28.60, files=[SHP], setup=['esc'], events=ev)
 
 
@@ -101,7 +121,7 @@ def shot_ty_ny():
                 events=typing(N.TYPE1[0], N.TYPE1[1], enter=N.T_ENTER1, focus_at=19.95))
 
 
-def shot_ty_plate():
+def shot_ty_plate(lang='en'):
     return dict(name='ty_plate', chain=Chain(0, L(150, 15, 2.3), drift=(0, 0, 0)), t0=15.0, t1=15.0, files=[])
 
 
@@ -119,19 +139,23 @@ def film2_chain():
     return c
 
 
-def shot_eq():
+CHOOSER_ROW = {'en': (950, 360), 'zh': (950, 360)}  # the chooser's first row in a probe at TOKYO_REGION
+
+
+def shot_eq(lang='en'):
     c = film2_chain()
     dot0 = screen_pt(TOKYO_REGION, *TOHOKU)
-    off = (950 - dot0[0], 360 - dot0[1])                         # the probe's row, relative to its dot
+    row = CHOOSER_ROW[lang]
+    off = (row[0] - dot0[0], row[1] - dot0[1])                   # the probe's row, relative to its dot
     dot = screen_pt(wrapped(c.at(T_DOT)), *TOHOKU)
-    ev = typing(N.TYPE2[0], N.TYPE2[1], enter=N.T_ENTER2, focus_at=31.95)
+    ev = typing(N.TYPE2[0], N.TYPE2[1], enter=N.T_ENTER2, focus_at=31.95, lang=lang)
     ev += [{'t': T_DOT, 'step': f'click {TOHOKU[0]},{TOHOKU[1]}'},
            {'t': T_ROW, 'click_at': [round(dot[0] + off[0], 1), round(dot[1] + off[1], 1)]}]
     return dict(name='eq', chain=c, t0=28.80, t1=40.30, files=[GPKG], setup=['card style_by_value magnitude', 'esc'],
                 events=ev)
 
 
-def shot_eq_plate():
+def shot_eq_plate(lang='en'):
     return dict(name='eq_plate', chain=Chain(0, L(175, 12, 2.4), drift=(0, 0, 0)), t0=15.0, t1=15.0, files=[])
 
 
@@ -147,14 +171,14 @@ def film3_chain():
     return c
 
 
-def shot_hw():
+def shot_hw(lang='en'):
     ev, last = [], 0
     for n in range(int(round(39.90 * FPS)), int(round(N.T_ENTER3 * FPS))):
         k = hw_index(n / FPS)
         if k != last:
             ev.append({'t': n / FPS - 1e-4, 'step': f'time {k}'})
             last = k
-    ev += typing(N.TYPE3[0], N.TYPE3[1], enter=N.T_ENTER3, focus_at=43.55)
+    ev += typing(N.TYPE3[0], N.TYPE3[1], enter=N.T_ENTER3, focus_at=43.55, lang=lang)
     ev += [{'t': T_CELL, 'step': f'click {BARCELONA[0]},{BARCELONA[1]}'}]
     return dict(name='hw', chain=film3_chain(), t0=39.90, t1=50.40, files=[NC], setup=['esc', 'time 0'], events=ev)
 
@@ -162,24 +186,65 @@ def shot_hw():
 # ---------------------------------------------------------------- Pro (the storm shapefile)
 PRO_START = L(143.5, 35.69, 6.3)
 PRO_ANSWER = L(135.0543, 29.1250, 5.451)            # where the app zooms to its answer (app-camera)
+# v3.7-zh: the real Chinese answer (tours/tokyo_plan_zh.json, four steps) frames itself here
+PRO_ANSWER_ZH = L(149.8239, 35.7476, 5.333)
+TOKYO = (139.69171, 35.6895)
 
 
-def pro_chain():
+def pro_chain(lang='en'):
     c = Chain(51.0, PRO_START, drift=(DRIFT * 0.6, 0, 0))
-    c.move(N.T_SEND + 0.05, N.T_SEND + 1.45, PRO_ANSWER, 'fly')
+    c.move(N.T_SEND + 0.05, N.T_SEND + 1.45, PRO_ANSWER_ZH if lang == 'zh' else PRO_ANSWER, 'fly')
     return c
 
 
-def shot_pro():
-    ev = typing(N.TYPE4[0], N.TYPE4[1], field='ask', enter=N.T_SEND, focus_at=N.PRO0 + 3.35)
-    return dict(name='pro', chain=pro_chain(), t0=49.90, t1=69.60, files=[SHP], setup=['esc'], events=ev,
+def shot_pro(lang='en'):
+    ev = typing(N.TYPE4[0], N.TYPE4[1], field='ask', enter=N.T_SEND, focus_at=N.PRO0 + 3.35, lang=lang)
+    return dict(name='pro', chain=pro_chain(lang), t0=49.90, t1=69.60, files=[SHP], setup=['esc'], events=ev,
                 dev_pro=True, env={'LM_TIER': 'pro', 'LM_DEV_PRO': '1',
                                    'LM_ASK_FIXTURE': os.path.join(ROOT, 'tours', 'tokyo_plan_real.json')})
 
 
 SHOTS = {'ny': shot_ty_ny, 'ty': shot_ty, 'ty_plate': shot_ty_plate, 'eq': shot_eq, 'eq_plate': shot_eq_plate,
          'hw': shot_hw, 'pro': shot_pro}
-CHAINS = {'ty': film1_chain, 'eq': film2_chain, 'hw': film3_chain, 'pro': pro_chain}
+
+
+# The Chinese Pro beat asks the model the Chinese question for real, once (the owner's last
+# approved paid call, made 2026-10-21). LM_FILM_PRO_MODE picks how pro_zh is rendered:
+#   replay   (default once the recording exists) - the recorded replies (tours/tokyo_plan_zh_replies.json)
+#            replayed: the model's real answer, no call;
+#   rehearse (default before it) - the English plan replayed (tours/tokyo_plan_real.json): layout only,
+#            never delivered, no call;
+#   paid     - one real call (LM_ASK_ROUTE=direct, the developer key from the keychain, read by the
+#            app), its replies recorded to render/pro_zh/tokyo_plan_zh_replies.json; refused while a
+#            recording exists.
+PRO_ZH_RECORDING = os.path.join(ROOT, 'tours', 'tokyo_plan_zh_replies.json')
+PRO_ZH_REPLIES = os.path.join(RENDER, 'pro_zh', 'tokyo_plan_zh_replies.json')
+
+
+def _zh(f):
+    def shot():
+        d = f('zh')
+        d['name'] += '_zh'
+        d['language'] = 'zh'
+        if 'env' in d:
+            recorded = os.path.exists(PRO_ZH_RECORDING) or os.path.exists(PRO_ZH_REPLIES)
+            mode = os.environ.get('LM_FILM_PRO_MODE', 'replay' if recorded else 'rehearse')
+            env = {'LM_TIER': 'pro', 'LM_DEV_PRO': '1'}
+            if mode == 'paid':
+                if recorded:
+                    raise SystemExit('the paid call was made and recorded: render with LM_FILM_PRO_MODE=replay')
+                env.update({'LM_ASK_ROUTE': 'direct', 'LM_ASK_RECORD': PRO_ZH_REPLIES})
+            elif mode == 'replay':
+                env['LM_ASK_FIXTURE'] = PRO_ZH_RECORDING if os.path.exists(PRO_ZH_RECORDING) else PRO_ZH_REPLIES
+            else:
+                env['LM_ASK_FIXTURE'] = os.path.join(ROOT, 'tours', 'tokyo_plan_real.json')
+            d['env'] = env
+        return d
+    return shot
+
+
+SHOTS.update({k + '_zh': _zh(SHOTS[k]) for k in ('ty', 'ty_plate', 'eq', 'eq_plate', 'hw', 'pro')})
+CHAINS = {'ty': film1_chain, 'eq': film2_chain, 'hw': film3_chain, 'pro': pro_chain, 'pro_zh': lambda: pro_chain('zh')}
 
 
 # ---------------------------------------------------------------- writing
@@ -204,6 +269,7 @@ def write(shot):
         with open(os.path.join(d, 'env'), 'w') as f:
             f.write('\n'.join(f'{k}={v}' for k, v in shot['env'].items()) + '\n')
     js = {'size': [1409, 845], 'ppp': 2.0, 'theme': shot.get('theme', 'light'), 'basemap': 'auto',
+          'language': shot.get('language', 'en'),
           'dev_pro': shot.get('dev_pro', False), 'files': shot['files'], 'setup': shot.get('setup', []),
           'frames': fr, 'events': shot.get('events', [])}
     with open(os.path.join(d, 'shot.json'), 'w') as f:

@@ -1,0 +1,67 @@
+{
+ "voice": "zh-CN-YunxiNeural",
+ "rate": "+6%",
+ "text": "问它：有多少场五级风暴经过东京100公里内？",
+ "words": [
+  {
+   "text": "问",
+   "offset": 0.097166,
+   "duration": 0.188666
+  },
+  {
+   "text": "它",
+   "offset": 0.285833,
+   "duration": 0.330208
+  },
+  {
+   "text": "有",
+   "offset": 0.993416,
+   "duration": 0.224041
+  },
+  {
+   "text": "多少",
+   "offset": 1.22925,
+   "duration": 0.318375
+  },
+  {
+   "text": "场",
+   "offset": 1.547625,
+   "duration": 0.235833
+  },
+  {
+   "text": "五",
+   "offset": 1.807083,
+   "duration": 0.129708
+  },
+  {
+   "text": "级",
+   "offset": 1.936791,
+   "duration": 0.117916
+  },
+  {
+   "text": "风暴",
+   "offset": 2.0665,
+   "duration": 0.41275
+  },
+  {
+   "text": "经过",
+   "offset": 2.573583,
+   "duration": 0.342
+  },
+  {
+   "text": "东京",
+   "offset": 2.927375,
+   "duration": 0.330208
+  },
+  {
+   "text": "100公里",
+   "offset": 3.281125,
+   "duration": 0.566041
+  },
+  {
+   "text": "内",
+   "offset": 3.847166,
+   "duration": 0.21225
+  }
+ ]
+}

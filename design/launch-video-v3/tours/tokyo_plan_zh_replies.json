@@ -1,0 +1,193 @@
+{
+  "replies": [
+    {
+      "choices": [
+        {
+          "finish_reason": "tool_calls",
+          "index": 0,
+          "logprobs": null,
+          "message": {
+            "content": null,
+            "reasoning": null,
+            "refusal": null,
+            "role": "assistant",
+            "tool_calls": [
+              {
+                "function": {
+                  "arguments": "{\"layer\": \"World cities\", \"text\": \"东京\"}",
+                  "name": "resolve_feature"
+                },
+                "id": "toolu_01WphJSSYdojzoEjo7q8FHEy",
+                "index": 0,
+                "type": "function"
+              },
+              {
+                "function": {
+                  "arguments": "{\"layer\": \"IBTrACS_storm_tracks_1980-2026\", \"text\": \"5\"}",
+                  "name": "resolve_feature"
+                },
+                "id": "toolu_01PtEk59pQXScgjnPYycm1HT",
+                "index": 1,
+                "type": "function"
+              }
+            ]
+          },
+          "native_finish_reason": "tool_use"
+        }
+      ],
+      "created": 1792567843,
+      "id": "gen-1792567843-Ky9uBxbQZE9zIlsClvJp",
+      "model": "anthropic/claude-haiku-5.5",
+      "object": "chat.completion",
+      "provider": "Claude Platform on AWS",
+      "service_tier": "default",
+      "system_fingerprint": null,
+      "usage": {
+        "completion_tokens": 152,
+        "completion_tokens_details": {
+          "audio_tokens": 0,
+          "image_tokens": 0,
+          "reasoning_tokens": 0
+        },
+        "cost": 0.0014911875,
+        "cost_details": {
+          "upstream_inference_completions_cost": 0.000076,
+          "upstream_inference_cost": 0.00150625,
+          "upstream_inference_prompt_cost": 0.00143025
+        },
+        "is_byok": false,
+        "prompt_tokens": 11871,
+        "prompt_tokens_details": {
+          "audio_tokens": 0,
+          "cache_write_tokens": 9726,
+          "cached_tokens": 0,
+          "video_tokens": 0
+        },
+        "total_tokens": 12023
+      }
+    },
+    {
+      "choices": [
+        {
+          "finish_reason": "tool_calls",
+          "index": 0,
+          "logprobs": null,
+          "message": {
+            "content": null,
+            "reasoning": null,
+            "refusal": null,
+            "role": "assistant",
+            "tool_calls": [
+              {
+                "function": {
+                  "arguments": "{\"layer\": \"IBTrACS_storm_tracks_1980-2026\", \"text\": \"Category 5\"}",
+                  "name": "resolve_feature"
+                },
+                "id": "toolu_01U1pnZuwP6keX4YtVTtSQea",
+                "index": 0,
+                "type": "function"
+              },
+              {
+                "function": {
+                  "arguments": "{\"layer\": \"World cities\", \"text\": \"Tokyo\"}",
+                  "name": "resolve_feature"
+                },
+                "id": "toolu_019WrHHjgVEXS2AGGHiem2Cs",
+                "index": 1,
+                "type": "function"
+              }
+            ]
+          },
+          "native_finish_reason": "tool_use"
+        }
+      ],
+      "created": 1792567845,
+      "id": "gen-1792567845-rL5IFfSONwbEpeiZU4Rg",
+      "model": "anthropic/claude-haiku-5.5",
+      "object": "chat.completion",
+      "provider": "Claude Platform on AWS",
+      "service_tier": "default",
+      "system_fingerprint": null,
+      "usage": {
+        "completion_tokens": 158,
+        "completion_tokens_details": {
+          "audio_tokens": 0,
+          "image_tokens": 0,
+          "reasoning_tokens": 0
+        },
+        "cost": 0.0004173444,
+        "cost_details": {
+          "upstream_inference_completions_cost": 0.000079,
+          "upstream_inference_cost": 0.00042156,
+          "upstream_inference_prompt_cost": 0.00034256
+        },
+        "is_byok": false,
+        "prompt_tokens": 12179,
+        "prompt_tokens_details": {
+          "audio_tokens": 0,
+          "cache_write_tokens": 0,
+          "cached_tokens": 9726,
+          "video_tokens": 0
+        },
+        "total_tokens": 12337
+      }
+    },
+    {
+      "choices": [
+        {
+          "finish_reason": "tool_calls",
+          "index": 0,
+          "logprobs": null,
+          "message": {
+            "content": null,
+            "reasoning": null,
+            "refusal": null,
+            "role": "assistant",
+            "tool_calls": [
+              {
+                "function": {
+                  "arguments": "{\"steps\": [{\"action\":\"filter\",\"layer\":\"IBTrACS_storm_tracks_1980-2026\",\"conditions\":[{\"field\":\"strength\",\"op\":\"is\",\"value\":\"Category 5\"}]},{\"action\":\"filter\",\"layer\":\"World cities\",\"conditions\":[{\"field\":\"name\",\"op\":\"is\",\"value\":\"Tokyo\"}]},{\"action\":\"buffer\",\"object\":{\"layer\":\"World cities\",\"field\":\"name\",\"value\":\"Tokyo\"},\"distance\":\"100 km\",\"merge\":false},{\"action\":\"count_in\",\"points\":\"IBTrACS_storm_tracks_1980-2026\",\"areas\":\"#3\"}]}",
+                  "name": "submit_plan"
+                },
+                "id": "toolu_01HrQHS2cCp7tghwrxZNyrVa",
+                "index": 0,
+                "type": "function"
+              }
+            ]
+          },
+          "native_finish_reason": "tool_use"
+        }
+      ],
+      "created": 1792567846,
+      "id": "gen-1792567846-v7NMSrM94w4ifHYEBU2C",
+      "model": "anthropic/claude-haiku-5.5",
+      "object": "chat.completion",
+      "provider": "Claude Platform on AWS",
+      "service_tier": "default",
+      "system_fingerprint": null,
+      "usage": {
+        "completion_tokens": 255,
+        "completion_tokens_details": {
+          "audio_tokens": 0,
+          "image_tokens": 0,
+          "reasoning_tokens": 0
+        },
+        "cost": 0.0004963464,
+        "cost_details": {
+          "upstream_inference_completions_cost": 0.0001275,
+          "upstream_inference_cost": 0.00050136,
+          "upstream_inference_prompt_cost": 0.00037386
+        },
+        "is_byok": false,
+        "prompt_tokens": 12492,
+        "prompt_tokens_details": {
+          "audio_tokens": 0,
+          "cache_write_tokens": 0,
+          "cached_tokens": 9726,
+          "video_tokens": 0
+        },
+        "total_tokens": 12747
+      }
+    }
+  ]
+}

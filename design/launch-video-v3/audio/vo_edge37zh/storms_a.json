@@ -1,0 +1,62 @@
+{
+ "voice": "zh-CN-YunxiNeural",
+ "rate": "+6%",
+ "text": "1980年以来近五千条气旋路径。随意缩放拖动。",
+ "words": [
+  {
+   "text": "1980",
+   "offset": 0.097166,
+   "duration": 0.55425
+  },
+  {
+   "text": "年",
+   "offset": 0.651416,
+   "duration": 0.106125
+  },
+  {
+   "text": "以来",
+   "offset": 0.769333,
+   "duration": 0.389166
+  },
+  {
+   "text": "近",
+   "offset": 1.252833,
+   "duration": 0.247625
+  },
+  {
+   "text": "五千",
+   "offset": 1.51225,
+   "duration": 0.353791
+  },
+  {
+   "text": "条",
+   "offset": 1.866041,
+   "duration": 0.188666
+  },
+  {
+   "text": "气旋",
+   "offset": 2.078291,
+   "duration": 0.342
+  },
+  {
+   "text": "路径",
+   "offset": 2.432083,
+   "duration": 0.365583
+  },
+  {
+   "text": "随意",
+   "offset": 3.33725,
+   "duration": 0.400958
+  },
+  {
+   "text": "缩放",
+   "offset": 3.75,
+   "duration": 0.259416
+  },
+  {
+   "text": "拖动",
+   "offset": 4.021208,
+   "duration": 0.436333
+  }
+ ]
+}
