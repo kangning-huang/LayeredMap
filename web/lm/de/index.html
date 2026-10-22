@@ -34,9 +34,9 @@
 <link rel="icon" href="../favicon.ico" sizes="any">
 <link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
-<link rel="stylesheet" href="../assets/site.css?v=074">
+<link rel="stylesheet" href="../assets/site.css?v=075">
 <link rel="stylesheet" href="../assets/data.css?v=3">
-<script src="../assets/site.js?v=074"></script>
+<script src="../assets/site.js?v=075"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -105,12 +105,11 @@
       <p class="lede">Shapefiles, GeoPackages, NetCDF, GeoTIFFs, GPX, KML, CSVs mit Koordinaten: die Dateien, die Sie bei der NASA, beim USGS oder im Open-Data-Portal Ihrer Stadt herunterladen. NimbleMap öffnet sie in Sekunden als Karte. Ohne GIS-Kenntnisse, ohne Einrichtung.</p>
       <p class="hero-how">Ziehen Sie die Datei in NimbleMap, oder doppelklicken Sie auf eine Shapefile-, GeoPackage- oder NetCDF-Datei, um sie sofort zu öffnen.</p>
       <div class="actions">
-        <a class="btn btn-primary btn-get" href="https://github.com/kangning-huang/NimbleMap/releases/latest/download/NimbleMap-macos-arm64.dmg" download>Kostenlos für Mac herunterladen</a>
-        <a class="btn btn-quiet btn-windows" href="https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.1/NimbleMap-windows-x64-setup.exe" download>Für Windows herunterladen</a>
-        <a class="btn btn-quiet" href="#data">Wo finde ich Kartendaten?</a>
+        <a class="btn btn-primary btn-get" href="https://github.com/kangning-huang/NimbleMap/releases/latest/download/NimbleMap-macos-arm64.dmg" download data-win-href="https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.1/NimbleMap-windows-x64-setup.exe">Herunterladen</a>
+        <a class="btn btn-quiet btn-web" href="https://nimblemap.app/?lang=de">Online testen</a>
+        <a class="btn btn-quiet" href="#data">Daten finden</a>
       </div>
-      <p class="desktop-platforms">Für Mac (Apple Silicon, macOS 13+) und Windows 10/11 (x64).</p>
-      <p class="dl-fine"><strong>Mac:</strong> Kostenlos · etwa 109 MB · macOS 13 oder neuer · Apple Silicon · funktioniert offline</p>
+      <p class="dl-fine">Für Mac (Apple Silicon, macOS 13+) und Windows 10/11 (x64). Die Browserversion braucht keine Installation; Ihre Dateien bleiben auf Ihrem Computer. <a class="dl-alt" href="https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.1/NimbleMap-windows-x64-setup.exe" download data-mac-href="https://github.com/kangning-huang/NimbleMap/releases/latest/download/NimbleMap-macos-arm64.dmg" data-mac-label="Download für Mac">Für Windows herunterladen</a></p>
     </div>
     <div class="hero-shot showcase drop-scene" data-rotate="3500">
       <figure class="frame stage">
@@ -302,11 +301,10 @@
     <img class="cta-icon" src="../img/icon-256.png" alt="" width="96" height="96">
     <h2>Echte Daten über die Erde entdecken.</h2>
     <div class="cta-actions">
-      <a class="btn btn-primary btn-get" href="https://github.com/kangning-huang/NimbleMap/releases/latest/download/NimbleMap-macos-arm64.dmg" download>Kostenlos für Mac herunterladen</a>
-        <a class="btn btn-quiet btn-windows" href="https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.1/NimbleMap-windows-x64-setup.exe" download>Für Windows herunterladen</a>
-    </div>
-    <p class="desktop-platforms">Für Mac (Apple Silicon, macOS 13+) und Windows 10/11 (x64).</p>
-    <p class="dl-fine"><strong>Mac:</strong> Kostenlos · etwa 109 MB · macOS 13 oder neuer · Apple Silicon · funktioniert offline</p>
+      <a class="btn btn-primary btn-get" href="https://github.com/kangning-huang/NimbleMap/releases/latest/download/NimbleMap-macos-arm64.dmg" download data-win-href="https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.1/NimbleMap-windows-x64-setup.exe">Herunterladen</a>
+        <a class="btn btn-quiet btn-web" href="https://nimblemap.app/?lang=de">Online testen</a>
+      </div>
+      <p class="dl-fine">Für Mac (Apple Silicon, macOS 13+) und Windows 10/11 (x64). Die Browserversion braucht keine Installation; Ihre Dateien bleiben auf Ihrem Computer. <a class="dl-alt" href="https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.1/NimbleMap-windows-x64-setup.exe" download data-mac-href="https://github.com/kangning-huang/NimbleMap/releases/latest/download/NimbleMap-macos-arm64.dmg" data-mac-label="Download für Mac">Für Windows herunterladen</a></p>
     <div class="share" role="group" aria-label="Teilen"><span class="share-label">Teilen</span><a class="share-btn" data-net="x" href="#" target="_blank" rel="noopener" aria-label="Teilen: X">X</a><a class="share-btn" data-net="facebook" href="#" target="_blank" rel="noopener" aria-label="Teilen: Facebook">Facebook</a><a class="share-btn" data-net="reddit" href="#" target="_blank" rel="noopener" aria-label="Teilen: Reddit">Reddit</a><a class="share-btn" data-net="linkedin" href="#" target="_blank" rel="noopener" aria-label="Teilen: LinkedIn">LinkedIn</a></div>
     <p class="built-on">NimbleMap basiert auf <a href="https://github.com/opengeos/RustGIS">RustGIS</a>.</p>
   </div>
@@ -319,7 +317,7 @@
       <p><strong>NimbleMap</strong> · eine Karten-App auf Basis von RustGIS.</p>
       <p>Die Bildschirmfotos zeigen Kartendaten © OpenStreetMap-Mitwirkende (ODbL) über Protomaps, Natural Earth (gemeinfrei) und NASA-Blue-Marble-Bilder (NASA Earth Observatory, GIBS). Beispieldaten: NOAA IBTrACS, Xue et al. 2021 (CC BY 4.0), Copernicus Global Drought Observatory / JRC (CC BY 4.0), USGS, NOAA ETOPO 2022, NOAA NCEI.</p>
     </div>
-    <div class="foot-nav"><p class="foot-links"><a href="help.html">Hilfe</a> · <a href="glossary.html">Glossar</a> · <a href="data.html">Daten</a> · <a href="pro.html">Pro</a> · <a href="https://github.com/kangning-huang/NimbleMap/blob/main/CHANGELOG.md">Änderungsprotokoll</a></p><p class="foot-note">NimbleMap ist ein unabhängiges Projekt und steht in keiner Verbindung zu Apple, Esri oder dem QGIS-Projekt.</p><p class="foot-langs"><a href="../index.html" hreflang="en" lang="en">English</a> · <a href="../zh/index.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="../es/index.html" hreflang="es" lang="es">Español</a> · <a href="../fr/index.html" hreflang="fr" lang="fr">Français</a> · <a href="../it/index.html" hreflang="it" lang="it">Italiano</a> · <a href="../nl/index.html" hreflang="nl" lang="nl">Nederlands</a> · <a href="../pt-br/index.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ru/index.html" hreflang="ru" lang="ru">Русский</a> · <a href="../ja/index.html" hreflang="ja" lang="ja">日本語</a> · <a href="../ko/index.html" hreflang="ko" lang="ko">한국어</a></p></div>
+    <div class="foot-nav"><p class="foot-links"><a href="help.html">Hilfe</a> · <a href="glossary.html">Glossar</a> · <a href="data.html">Daten</a> · <a href="pro.html">Pro</a> · <a href="https://github.com/kangning-huang/NimbleMap/blob/main/CHANGELOG.md">Änderungsprotokoll</a> · <a href="../about.html" hreflang="en">Über den Entwickler</a></p><p class="foot-note">NimbleMap ist ein unabhängiges Projekt und steht in keiner Verbindung zu Apple, Esri oder dem QGIS-Projekt.</p><p class="foot-langs"><a href="../index.html" hreflang="en" lang="en">English</a> · <a href="../zh/index.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="../es/index.html" hreflang="es" lang="es">Español</a> · <a href="../fr/index.html" hreflang="fr" lang="fr">Français</a> · <a href="../it/index.html" hreflang="it" lang="it">Italiano</a> · <a href="../nl/index.html" hreflang="nl" lang="nl">Nederlands</a> · <a href="../pt-br/index.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ru/index.html" hreflang="ru" lang="ru">Русский</a> · <a href="../ja/index.html" hreflang="ja" lang="ja">日本語</a> · <a href="../ko/index.html" hreflang="ko" lang="ko">한국어</a></p></div>
   </div>
 </footer>
 </body>

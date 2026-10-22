@@ -66,31 +66,32 @@ class Words:
     data: str
     changelog: str
     independent: str
+    about: str
 
 
 WORDS = {
     "": Words("Home", "Examples", "Help", "Glossary", "Download", "Pro", "Data", "Changelog",
-              "NimbleMap is an independent project, not affiliated with Apple, Esri or the QGIS project."),
+              "NimbleMap is an independent project, not affiliated with Apple, Esri or the QGIS project.", "About"),
     "zh": Words("首页", "示例", "帮助", "术语表", "下载", "Pro 版", "数据", "更新日志",
-                "凌波微图是独立项目，与苹果公司、Esri 及 QGIS 项目均无关联。"),
+                "凌波微图是独立项目，与苹果公司、Esri 及 QGIS 项目均无关联。", "关于作者"),
     "de": Words("Startseite", "Beispiele", "Hilfe", "Glossar", "Download", "Pro", "Daten", "Änderungsprotokoll",
-                "NimbleMap ist ein unabhängiges Projekt und steht in keiner Verbindung zu Apple, Esri oder dem QGIS-Projekt."),
+                "NimbleMap ist ein unabhängiges Projekt und steht in keiner Verbindung zu Apple, Esri oder dem QGIS-Projekt.", "Über den Entwickler"),
     "es": Words("Inicio", "Ejemplos", "Ayuda", "Glosario", "Descargar", "Pro", "Datos", "Registro de cambios",
-                "NimbleMap es un proyecto independiente, sin relación con Apple, Esri ni el proyecto QGIS."),
+                "NimbleMap es un proyecto independiente, sin relación con Apple, Esri ni el proyecto QGIS.", "Acerca de"),
     "fr": Words("Accueil", "Exemples", "Aide", "Glossaire", "Télécharger", "Pro", "Données", "Journal des modifications",
-                "NimbleMap est un projet indépendant, sans lien avec Apple, Esri ni le projet QGIS."),
+                "NimbleMap est un projet indépendant, sans lien avec Apple, Esri ni le projet QGIS.", "À propos"),
     "it": Words("Home", "Esempi", "Aiuto", "Glossario", "Scarica", "Pro", "Dati", "Registro delle modifiche",
-                "NimbleMap è un progetto indipendente, non affiliato ad Apple, Esri o al progetto QGIS."),
+                "NimbleMap è un progetto indipendente, non affiliato ad Apple, Esri o al progetto QGIS.", "Informazioni"),
     "nl": Words("Start", "Voorbeelden", "Help", "Woordenlijst", "Downloaden", "Pro", "Data", "Wijzigingslog",
-                "NimbleMap is een onafhankelijk project en is niet verbonden aan Apple, Esri of het QGIS-project."),
+                "NimbleMap is een onafhankelijk project en is niet verbonden aan Apple, Esri of het QGIS-project.", "Over"),
     "pt-br": Words("Início", "Exemplos", "Ajuda", "Glossário", "Baixar", "Pro", "Dados", "Registro de alterações",
-                   "O NimbleMap é um projeto independente, sem vínculo com a Apple, a Esri ou o projeto QGIS."),
+                   "O NimbleMap é um projeto independente, sem vínculo com a Apple, a Esri ou o projeto QGIS.", "Sobre"),
     "ru": Words("Главная", "Примеры", "Справка", "Словарь", "Скачать", "Pro", "Данные", "История изменений",
-                "NimbleMap — независимый проект, не связанный с Apple, Esri или проектом QGIS."),
+                "NimbleMap — независимый проект, не связанный с Apple, Esri или проектом QGIS.", "Об авторе"),
     "ja": Words("ホーム", "サンプル", "ヘルプ", "用語集", "ダウンロード", "Pro", "データ", "変更履歴",
-                "NimbleMap は独立したプロジェクトであり、Apple、Esri、QGIS プロジェクトとは関係ありません。"),
+                "NimbleMap は独立したプロジェクトであり、Apple、Esri、QGIS プロジェクトとは関係ありません。", "作者について"),
     "ko": Words("홈", "예제", "도움말", "용어집", "다운로드", "Pro", "데이터", "변경 내역",
-                "NimbleMap은 독립 프로젝트이며, Apple, Esri, QGIS 프로젝트와 관련이 없습니다."),
+                "NimbleMap은 독립 프로젝트이며, Apple, Esri, QGIS 프로젝트와 관련이 없습니다.", "만든 사람"),
 }
 
 CHANGELOG = "https://github.com/kangning-huang/NimbleMap/blob/main/CHANGELOG.md"
@@ -264,8 +265,11 @@ def foot_col(lang: Lang, name: str, site: Path) -> str:
     else:
         en = LANGS[0]
         data = f'<a href="{href(lang, en, "data.html")}" hreflang="{en.hreflang}">{w.data}</a>'
+    en = LANGS[0]
+    about = (f'<a href="about.html">{w.about}</a>' if lang is en
+             else f'<a href="{href(lang, en, "about.html")}" hreflang="{en.hreflang}">{w.about}</a>')
     links = " · ".join([f'<a href="help.html">{w.help}</a>', f'<a href="glossary.html">{w.glossary}</a>', data, pro,
-                        f'<a href="{CHANGELOG}">{w.changelog}</a>'])
+                        f'<a href="{CHANGELOG}">{w.changelog}</a>', about])
     return (f'<div class="foot-nav"><p class="foot-links">{links}</p>'
             f'<p class="foot-note">{w.independent}</p>{foot(lang, name, site)}</div>')
 

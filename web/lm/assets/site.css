@@ -707,3 +707,14 @@ section.film-band { padding: 0 0 56px; }
   .hero-film video, .js .film-pause { display: none; }
   .hero-film .film-still { display: block; }
 }
+
+/* ---- Home hero (2026-10-22): three compact buttons on one line (Mac, Windows, browser), one fine line ---- */
+.hero.drop-hero { padding: 56px 0 64px; }
+.hero .actions, .final-cta .cta-actions { gap: 8px; }
+.hero .actions .btn, .final-cta .cta-actions .btn { padding: 8px 14px; font-size: 15px; border-radius: 9px; white-space: nowrap; }
+.hero .actions + .dl-fine { margin-top: 12px; max-width: 38em; }
+/* The showcase reaches into the right margin, so it stands as tall as the text column beside it. */
+@media (min-width: 901px) { .drop-hero .hero-grid { gap: 40px; } }
+@media (min-width: 1260px) { .drop-hero .hero-shot { width: 110%; } }
+@media (min-width: 901px) and (max-width: 1180px) { .hero .actions .btn { font-size: 14px; padding: 7px 11px; } .hero .actions { gap: 6px; } }
+.about-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
