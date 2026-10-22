@@ -1,0 +1,42 @@
+{
+ "voice": "zh-CN-YunxiNeural",
+ "rate": "+6%",
+ "text": "打开2022年热浪，拖动时间轴，",
+ "words": [
+  {
+   "text": "打开",
+   "offset": 0.097166,
+   "duration": 0.353791
+  },
+  {
+   "text": "2022",
+   "offset": 0.474541,
+   "duration": 0.471666
+  },
+  {
+   "text": "年",
+   "offset": 0.946208,
+   "duration": 0.176875
+  },
+  {
+   "text": "热浪",
+   "offset": 1.134916,
+   "duration": 0.389166
+  },
+  {
+   "text": "拖动",
+   "offset": 1.748125,
+   "duration": 0.306583
+  },
+  {
+   "text": "时间",
+   "offset": 2.0665,
+   "duration": 0.306583
+  },
+  {
+   "text": "轴",
+   "offset": 2.373125,
+   "duration": 0.259416
+  }
+ ]
+}

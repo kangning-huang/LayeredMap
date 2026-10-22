@@ -1,0 +1,47 @@
+{
+ "voice": "en-US-AndrewNeural",
+ "rate": "+4%",
+ "text": "Summer 2022, day by day. Scrub through time,",
+ "words": [
+  {
+   "text": "Summer",
+   "offset": 0.096166,
+   "duration": 0.3005
+  },
+  {
+   "text": "2022",
+   "offset": 0.408666,
+   "duration": 0.877375
+  },
+  {
+   "text": "day",
+   "offset": 1.5505,
+   "duration": 0.132208
+  },
+  {
+   "text": "by",
+   "offset": 1.694708,
+   "duration": 0.16825
+  },
+  {
+   "text": "day",
+   "offset": 1.875,
+   "duration": 0.276458
+  },
+  {
+   "text": "Scrub",
+   "offset": 2.548083,
+   "duration": 0.336541
+  },
+  {
+   "text": "through",
+   "offset": 2.896625,
+   "duration": 0.15625
+  },
+  {
+   "text": "time",
+   "offset": 3.064916,
+   "duration": 0.396625
+  }
+ ]
+}

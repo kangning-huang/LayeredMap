@@ -1,0 +1,92 @@
+{
+ "voice": "zh-CN-YunxiNeural",
+ "rate": "+6%",
+ "text": "凌波微图在东京周围画出100公里范围，数出穿过它的风暴路径：共七条。",
+ "words": [
+  {
+   "text": "凌波",
+   "offset": 0.097166,
+   "duration": 0.342
+  },
+  {
+   "text": "微图",
+   "offset": 0.450958,
+   "duration": 0.507083
+  },
+  {
+   "text": "在",
+   "offset": 1.052375,
+   "duration": 0.188666
+  },
+  {
+   "text": "东京",
+   "offset": 1.252833,
+   "duration": 0.294791
+  },
+  {
+   "text": "周围",
+   "offset": 1.559416,
+   "duration": 0.424541
+  },
+  {
+   "text": "画出",
+   "offset": 2.090083,
+   "duration": 0.389166
+  },
+  {
+   "text": "100公里",
+   "offset": 2.502833,
+   "duration": 0.5306249
+  },
+  {
+   "text": "范围",
+   "offset": 3.045291,
+   "duration": 0.459916
+  },
+  {
+   "text": "数出",
+   "offset": 3.858958,
+   "duration": 0.459916
+  },
+  {
+   "text": "穿过",
+   "offset": 4.342458,
+   "duration": 0.259416
+  },
+  {
+   "text": "它",
+   "offset": 4.613666,
+   "duration": 0.117916
+  },
+  {
+   "text": "的",
+   "offset": 4.731583,
+   "duration": 0.094333
+  },
+  {
+   "text": "风暴",
+   "offset": 4.849541,
+   "duration": 0.283
+  },
+  {
+   "text": "路径",
+   "offset": 5.144333,
+   "duration": 0.365583
+  },
+  {
+   "text": "共",
+   "offset": 5.710375,
+   "duration": 0.200458
+  },
+  {
+   "text": "七",
+   "offset": 5.922625,
+   "duration": 0.259416
+  },
+  {
+   "text": "条",
+   "offset": 6.182083,
+   "duration": 0.283
+  }
+ ]
+}

@@ -1,0 +1,52 @@
+{
+ "voice": "en-US-AndrewNeural",
+ "rate": "+4%",
+ "text": "Found map data online that your computer can't open?",
+ "words": [
+  {
+   "text": "Found",
+   "offset": 0.15625,
+   "duration": 0.216333
+  },
+  {
+   "text": "map",
+   "offset": 0.384625,
+   "duration": 0.240375
+  },
+  {
+   "text": "data",
+   "offset": 0.637,
+   "duration": 0.336541
+  },
+  {
+   "text": "online",
+   "offset": 1.069708,
+   "duration": 0.46875
+  },
+  {
+   "text": "that",
+   "offset": 1.5505,
+   "duration": 0.120208
+  },
+  {
+   "text": "your",
+   "offset": 1.682708,
+   "duration": 0.096166
+  },
+  {
+   "text": "computer",
+   "offset": 1.790875,
+   "duration": 0.384625
+  },
+  {
+   "text": "can't",
+   "offset": 2.1875,
+   "duration": 0.204333
+  },
+  {
+   "text": "open",
+   "offset": 2.403833,
+   "duration": 0.288458
+  }
+ ]
+}

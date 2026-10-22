@@ -1,0 +1,97 @@
+{
+ "voice": "zh-CN-YunxiNeural",
+ "rate": "+6%",
+ "text": "飞到东京，点一下：2011年东日本大地震，9.1级，比99%的地震都强。",
+ "words": [
+  {
+   "text": "飞到",
+   "offset": 0.097166,
+   "duration": 0.306583
+  },
+  {
+   "text": "东京",
+   "offset": 0.415583,
+   "duration": 0.436333
+  },
+  {
+   "text": "点",
+   "offset": 1.028791,
+   "duration": 0.129708
+  },
+  {
+   "text": "一下",
+   "offset": 1.170291,
+   "duration": 0.365583
+  },
+  {
+   "text": "2011",
+   "offset": 1.913208,
+   "duration": 0.613208
+  },
+  {
+   "text": "年",
+   "offset": 2.526416,
+   "duration": 0.188666
+  },
+  {
+   "text": "东",
+   "offset": 2.715083,
+   "duration": 0.200458
+  },
+  {
+   "text": "日本",
+   "offset": 2.927375,
+   "duration": 0.247625
+  },
+  {
+   "text": "大",
+   "offset": 3.198583,
+   "duration": 0.165083
+  },
+  {
+   "text": "地震",
+   "offset": 3.363666,
+   "duration": 0.353791
+  },
+  {
+   "text": "9.1",
+   "offset": 3.906125,
+   "duration": 0.55425
+  },
+  {
+   "text": "级",
+   "offset": 4.460375,
+   "duration": 0.294791
+  },
+  {
+   "text": "比",
+   "offset": 5.061791,
+   "duration": 0.129708
+  },
+  {
+   "text": "99%",
+   "offset": 5.203291,
+   "duration": 0.7901249
+  },
+  {
+   "text": "的",
+   "offset": 5.993416,
+   "duration": 0.07075
+  },
+  {
+   "text": "地震",
+   "offset": 6.075958,
+   "duration": 0.271208
+  },
+  {
+   "text": "都",
+   "offset": 6.358958,
+   "duration": 0.165083
+  },
+  {
+   "text": "强",
+   "offset": 6.524041,
+   "duration": 0.342
+  }
+ ]
+}

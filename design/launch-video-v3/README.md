@@ -352,3 +352,71 @@ The compositor (`edit/compose37.py`) is v3.6's, with these changes:
 - the drawn-in typing is gone;
 - ripples follow their places through the moving camera;
 - the table camera is a monotone cubic through its keys (continuous speed; the whips are kept), instead of easing to a stop at each key.
+
+---
+
+# v3.7-zh: the Chinese version (78.8 s)
+
+The same camera paths, timing, music and structure as v3.7, with the app in its Chinese interface. Build:
+
+```bash
+LM_FILM_PRO_MODE=replay path/render.sh ty_zh eq_zh hw_zh pro_zh ty_plate_zh eq_plate_zh
+./build.sh 6 3.7-zh
+python path/tilecheck.py _zh ty eq hw pro     # the map matches the English render, frame by frame
+```
+
+- **Interface:** the renderer's shot script sets `"language": "zh"`, as the screenshot tests do (`Prefs.language`). Shots are `<name>_zh`; `edit/compose37.py` reads them with `LM_FILM_LANG=zh`.
+- **Searches:** 纽约, 东京, 巴塞罗那. Each character lands on one of the English cut's key-click times (as a pinyin input method commits it), so the sound bed is unchanged.
+  - 纽约 finds New York City only with branch **zh-search** (7b4fe8d, place search folds traditional and simplified Chinese; GeoNames names it 紐約). The film binary was built from smooth-camera plus zh-search, merged locally for the render only.
+  - Sandy stays Sandy.
+- **Pro:** the Chinese question typed into the Ask box. One real call (`LM_FILM_PRO_MODE=paid`: `LM_ASK_ROUTE=direct`, the developer key read by the app from the keychain), recorded by `LM_ASK_RECORD` into `tours/tokyo_plan_zh_replies.json`. The plan the model sent is in `tours/tokyo_plan_zh.json`:
+  - filter Category 5 (228 of 4,999);
+  - World cities where name is Tokyo (1 of 7,342);
+  - a 100 km buffer around Tokyo;
+  - count the lines in it: **7**.
+
+  Renders replay the recording (`LM_FILM_PRO_MODE=replay`). A second paid run is refused once the recording exists. The app frames this answer at 149.824, 35.748, z5.333 (`shots.PRO_ANSWER_ZH`), and the table camera's push onto the circle follows it there.
+- **Narration:** `audio/narration37zh.txt` (the owner's lines exactly as written) and `audio/vo_zh.py`, using edge-tts zh-CN-YunxiNeural at +6%. A line that overran its beat would be read faster in 2% steps up to +15%; none needed it (`audio/vo_edge37zh/fit.txt`). Mixed by `audio/synth36.py` with `VO_OUT=vo_edge37zh`, with the same music and ducking: −14.0 LUFS, true peak −1.2 dBTP.
+- **Overlays and subtitles:**
+  - Overlays are in Chinese (`compose37.ZH_TEXT`) in Noto Sans SC. The file-type strip and the Finder window stay as they are.
+  - The window titles read 凌波微图.
+  - The end pill writes 凌波微图 NimbleMap after the app's placeholder 搜索地名或你的数据, then 探索地球的真实数据 · Mac 版免费 · nimblemap.com/zh.
+  - `-1080p-subtitled.mp4` burns in the SRT (`path/subs.py`: an ASS script, Noto Sans SC Medium 46 px, bottom centre).
+- **Blank tiles:**
+  - A failed basemap fetch was cached as an empty tile in some Chinese frames, though the renderer had counted them as loaded.
+  - The renderer now waits past the tile cache's one-minute retry.
+  - `path/tilecheck.py` compares each language frame with the English one. Only the expected UI differences remain (the search lists, the Chinese answer card).
+
+## v3.7.1-zh: the folder pause shortened (74.77 s)
+
+`./build.sh 6 3.7.1-zh` (with the v3.7-zh renders in place).
+- **Why:** the Chinese folder line ends at 5.23 s, and the next line ("拖进凌波微图…") started at 9.95 s.
+- **Picture (`edit/edl371zh.py`, `LM_FILM_TRIM=1` in compose37):**
+  - v3.7-zh's 0–9.90 s plays uniformly in 0–5.85 s (1.69×): the slow push on the folder and the file-type strip.
+  - From 9.90 s on, the picture is v3.7-zh shifted 4.05 s earlier.
+  - The table camera is at rest at 9.90 s (between its 9.80 and 10.15 keys), so the change of speed doesn't show.
+  - The selection, the drag and the GeoTIFF/CSV/shapefile windows opening play at normal speed.
+- **Sound (`audio/trim.py`):**
+  - v3.7-zh's masters lose 5.85–9.90 s. The span sits inside the folder's held pad chord, before the first downbeat; a 0.4 s equal-power crossfade before 9.90 s keeps the next line's first word untouched.
+  - Re-mastered to −14 LUFS.
+  - Narration spans and captions shift 4.05 s.
+- **Result:** "拖进凌波微图…" starts at 5.90 s, after a 0.67 s pause.
+
+## v3.8 / v3.8-zh: the fast opening
+
+`./build.sh 6 3.8` and `./build.sh 6 3.8-zh`, using the v3.7 / v3.7-zh renders as they are (no new map shots, no paid calls).
+- **Why:** v3.7's first map appeared at 10.5 s, after 9.9 s on the folder. On nimblemap.com the film plays muted, on autoplay, with no subtitles. Platform guidance puts the hook at 1–3 s and the point by 5–6 s. The research and the options considered are in the build folder's `NimbleMap-launch-v3.8-notes.md`.
+- **Picture (`edit/edl38.py`, `LM_FILM_V38=1` in compose37):**
+  - 0–2.0 s: cold open on the storm film's world view (v3.7 15.95–17.35 s at 0.7×), all 4,999 tracks and their caption.
+  - 1.8–2.0 s: a dissolve into the folder.
+  - 2.0–3.6 s: the folder (v3.7 7.5–9.9 s at 1.5×): the file-type strip, then the GeoTIFF row selected.
+  - From 3.6 s on: v3.7, 6.3 s earlier.
+- **Narration:**
+  - Only the first line is new: `audio/narration38.txt` ("Found map data online that your computer can't open?") and `narration38zh.txt` (网上找到的地图数据，电脑根本打不开。).
+  - It is read at 0.30 s by the same voices and rates: `VO_ONLY=folder` with `voice_edge.py` / `vo_zh.py`.
+  - The other voice files are copies of `vo_edge34` / `vo_edge37zh`.
+- **Sound:**
+  - `audio/synth36.py` with `LM_SYNTH_EDL=edl38` makes v3.7's full-length mix with the new first line at 6.6 s on v3.7's clock, plus one soft whoosh under the dissolve (added last, so every other sound draws the same noise).
+  - `audio/trim38.py` cuts the first 6.3 s (the folder's held pad, before the first downbeat), fades in over 0.25 s and re-masters to −14 LUFS.
+  - The captions shift with the narration.
+- **Subtitles:** both languages get a `-1080p-subtitled.mp4`. `path/subs.py <srt> <ass> en` uses Inter SemiBold 44 px.

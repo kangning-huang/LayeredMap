@@ -1,0 +1,47 @@
+{
+ "voice": "zh-CN-YunxiNeural",
+ "rate": "+6%",
+ "text": "凌波微图。探索地球的真实数据。免费。",
+ "words": [
+  {
+   "text": "凌波",
+   "offset": 0.097166,
+   "duration": 0.400958
+  },
+  {
+   "text": "微图",
+   "offset": 0.509916,
+   "duration": 0.55425
+  },
+  {
+   "text": "探索",
+   "offset": 1.603791,
+   "duration": 0.389166
+  },
+  {
+   "text": "地球",
+   "offset": 2.0165,
+   "duration": 0.294791
+  },
+  {
+   "text": "的",
+   "offset": 2.311333,
+   "duration": 0.153291
+  },
+  {
+   "text": "真实",
+   "offset": 2.488208,
+   "duration": 0.365583
+  },
+  {
+   "text": "数据",
+   "offset": 2.865583,
+   "duration": 0.448125
+  },
+  {
+   "text": "免费",
+   "offset": 3.856125,
+   "duration": 0.625
+  }
+ ]
+}

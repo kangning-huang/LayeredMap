@@ -40,6 +40,10 @@ ramp, ease = C.ramp, C.ease
 FPS = 30
 RENDER = os.path.join(ROOT, 'render')
 TITLE = 64
+# v3.7-zh (LM_FILM_LANG=zh): the same cut on the Chinese renders (render/<shot>_zh), with the
+# overlays in Chinese (see the end of this file)
+ZH = os.environ.get('LM_FILM_LANG') == 'zh'
+SFX = '_zh' if ZH else ''
 
 
 # ---------------------------------------------------------------- the renders
@@ -52,7 +56,7 @@ class Renders:
         self.cap = cap
         self.range = {}
         for s in ('ty', 'eq', 'hw', 'pro', 'ty_plate', 'eq_plate'):
-            d = os.path.join(RENDER, s, 'frames')
+            d = os.path.join(RENDER, s + SFX, 'frames')
             ns = sorted(int(f[:5]) for f in os.listdir(d) if f.endswith('.png') and f[:5].isdigit()) if os.path.isdir(d) else []
             if ns:
                 self.range[s] = (ns[0], ns[-1])
@@ -64,7 +68,7 @@ class Renders:
         if k in self.lru:
             self.lru.move_to_end(k)
             return self.lru[k]
-        im = cv2.imread(os.path.join(RENDER, shot, 'frames', f'{n:05d}.png'), cv2.IMREAD_COLOR)[:, :, ::-1]
+        im = cv2.imread(os.path.join(RENDER, shot + SFX, 'frames', f'{n:05d}.png'), cv2.IMREAD_COLOR)[:, :, ::-1]
         im = np.ascontiguousarray(im)
         self.lru[k] = im
         if len(self.lru) > self.cap:
@@ -301,12 +305,197 @@ def render(t):
     return S.render(t)
 
 
+
+# ---------------------------------------------------------------- v3.7-zh: the overlays in Chinese
+if ZH:
+    from PIL import ImageDraw, ImageFilter
+
+    CJK_REG = os.path.join(C.REPO, 'assets/fonts/NotoSansSC-Regular.otf')
+    CJK_SEMI = os.path.join(C.REPO, 'assets/fonts/NotoSansSC-Medium.otf')
+    # v3.3's overlay strings (as compose33 passes them) -> the Chinese, matching the narration
+    ZH_TEXT = {
+        '4,999 storm tracks': '4,999 条气旋路径',
+        '14,537 earthquakes since 1900': '1900 年以来 14,537 次地震',
+        'M 9.1.': '9.1 级。',
+        'Tōhoku, 2011 · higher than 99% of 14,537 earthquakes': '2011 年东日本大地震 · 比 14,537 次地震中的 99% 都强',
+        'Heatwaves, summer 2023 · 92 daily steps': '2022 年夏季热浪 · 92 天逐日数据',
+        '36.50 °C': '36.10 °C',
+        'heat-wave intensity, Palermo, 25 Jul 2023 · higher than 93% of cells':
+            '巴塞罗那，2022 年 8 月 16 日 · 热浪强度高于 98% 的格点',
+        'Pro: ask in plain words': 'Pro：用大白话提问',
+    }
+    # (compose36 has already turned v3.3's Palermo/2023 strings into these)
+    ZH_TEXT.update({S.TEXT[k]: ZH_TEXT[k] for k in ('36.50 °C', 'Heatwaves, summer 2023 · 92 daily steps',
+                                                    'heat-wave intensity, Palermo, 25 Jul 2023 · higher than 93% of cells')
+                    if k in S.TEXT})
+    ZH_TEXT['heat-wave intensity, Barcelona, 16 Aug 2022 · higher than 98% of cells'] = \
+        ZH_TEXT['heat-wave intensity, Palermo, 25 Jul 2023 · higher than 93% of cells']
+
+    def _cjk(fn):
+        """Draw with Noto Sans SC (the repo's CJK font) in place of Inter, for Chinese text only;
+        the file-type strip and anything else in Latin keeps Inter."""
+        def wrapped(im, text, *a, **k):
+            zh = ZH_TEXT.get(text)
+            if zh is None:
+                return fn(im, text, *a, **k)
+            reg, semi = C.FONT_REG, C.FONT_SEMI
+            C.FONT_REG, C.FONT_SEMI = CJK_REG, CJK_SEMI
+            try:
+                return fn(im, zh, *a, **k)
+            finally:
+                C.FONT_REG, C.FONT_SEMI = reg, semi
+        return wrapped
+
+    # compose36's caption/big_words map v3.3's strings to the 2022 data first; the Chinese is
+    # keyed on v3.3's strings, so it wraps the originals underneath them
+    S._cap, S._big = _cjk(S._cap), _cjk(S._big)
+
+    _titlebar = C.titlebar
+
+    def titlebar(width, dark):
+        """The window frames' title: the app's Chinese name."""
+        key = ('zh', width, dark)
+        if key not in C.TITLES:
+            bar = np.array(_titlebar(width, dark))
+            h = C.edl.TITLE
+            # clear the centred English title and write the Chinese name there
+            row = bar[:, width // 2 - 260:width // 2 + 260]
+            row[4:h - 4] = bar[4:h - 4, width // 2 - 262:width // 2 - 261]
+            im = Image.fromarray(bar)
+            ImageDraw.Draw(im).text((width / 2, h / 2), '凌波微图', font=C.font(CJK_SEMI, 27),
+                                    fill=(220, 220, 226) if dark else (60, 60, 67), anchor='mm')
+            C.TITLES[key] = np.asarray(im)
+        return C.TITLES[key]
+
+    C.titlebar = titlebar
+
+    END_NAME = '凌波微图 NimbleMap'
+    END_HINT = '搜索地名或你的数据'          # the app's own Chinese placeholder (zh.tsv)
+
+    def end_bar(im, cam, t):
+        """v3's end pill (compose.end_bar), in Chinese: the app's placeholder, then the block
+        cursor writes 凌波微图 NimbleMap."""
+        edl = C.edl
+        ease_out, ramp, ease, blink = C.ease_out, C.ramp, C.ease, C.blink
+        a = C.smooth(ramp(t, 24.4, 25.3))
+        if a <= 0:
+            return
+        M = C.cam_matrix(cam)
+        k = cam[2] / C.ZE
+        cx, cy = C.apply(M, C.CE[0], C.CE[1] + 20 / C.ZE)
+        w, h = 860 * k, 108 * k
+        cy += (1 - ease_out(ramp(t, 24.4, 25.3))) * 30
+        ov = Image.new('RGBA', im.size, (0, 0, 0, 0))
+        sh = Image.new('L', im.size, 0)
+        ImageDraw.Draw(sh).rounded_rectangle([cx - w / 2, cy - h / 2 + 12 * k, cx + w / 2, cy + h / 2 + 12 * k], h / 2,
+                                             fill=int(70 * a))
+        sh = sh.filter(ImageFilter.GaussianBlur(22 * k))
+        ov.paste((20, 22, 30, 255), (0, 0), sh)
+        d = ImageDraw.Draw(ov)
+        d.rounded_rectangle([cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2], h / 2, fill=(255, 255, 255, int(255 * a)))
+        mx, my, r = cx - w / 2 + 62 * k, cy - 4 * k, 17 * k
+        grey = (110, 116, 126, int(255 * a))
+        d.ellipse([mx - r, my - r, mx + r, my + r], outline=grey, width=max(2, int(4.5 * k)))
+        d.line([mx + r * 0.72, my + r * 0.72, mx + r * 1.55, my + r * 1.55], fill=grey, width=max(2, int(5 * k)))
+        f = C.font(CJK_SEMI, 58 * k)
+        tx = cx - w / 2 + 112 * k
+        base = cy + 21 * k
+        tw = d.textlength(END_NAME, font=f)
+        pen = ease(ramp(t, edl.T_PEN[0], edl.T_PEN[1]))
+        frozen = edl.T_STOP <= t < edl.T_PEN[0]
+        if t < edl.T_PEN[0]:
+            d.text((tx + 44 * k, base), END_HINT, font=C.font(CJK_REG, 46 * k), fill=(120, 126, 136, int(255 * a)),
+                   anchor='ls')
+            cur_x = tx
+            on = 1.0 if frozen else blink(t, 25.3)
+        else:
+            layer = Image.new('L', im.size, 0)
+            ImageDraw.Draw(layer).text((tx, base), END_NAME, font=f, fill=255, anchor='ls')
+            clip = np.zeros((OH, OW), np.float32)
+            xe = tx + tw * pen
+            x0i, x1i = int(max(0, tx - 4)), int(min(OW, xe))
+            if x1i > x0i:
+                clip[:, x0i:x1i] = 1
+                e0 = int(max(x0i, xe - 10 * k))
+                clip[:, e0:x1i] = np.linspace(1, 0.2, x1i - e0)[None, :]
+            al = (np.asarray(layer).astype(np.float32) * clip * a).astype(np.uint8)
+            ink = Image.new('RGBA', im.size, C.INK + (255,))
+            ink.putalpha(Image.fromarray(al))
+            ov.alpha_composite(ink)
+            cur_x = xe + 6 * k
+            on = 1.0 if pen < 1 else blink(t, edl.T_PEN[1] + 0.2)
+        if on > 0:
+            d.rectangle([cur_x, base - 46 * k, cur_x + 30 * k, base + 10 * k], fill=C.INK + (int(235 * a * on),))
+        im.alpha_composite(ov)
+
+    C.end_bar = end_bar
+
+    def end_card(im, t):
+        edl = C.edl
+
+        def fade(t0, dur=0.45):
+            return C.smooth((t - t0) / dur)
+        a1, a2, a3 = fade(edl.T_END), fade(edl.T_END + 0.35), fade(edl.T_END + 0.7)
+        if a1 <= 0:
+            return
+        ov = Image.new('RGBA', im.size, (0, 0, 0, 0))
+        d = ImageDraw.Draw(ov)
+        d.text((OW / 2, 735 + (1 - a1) * 12), '探索地球的真实数据', font=C.font(CJK_REG, 52),
+               fill=(40, 44, 54, int(255 * a1)), anchor='mm')
+        f = C.font(CJK_SEMI, 38)
+        txt = 'Mac 版免费'
+        tw = d.textlength(txt, font=f)
+        py = 836 + (1 - a2) * 10
+        d.rounded_rectangle([OW / 2 - tw / 2 - 32, py - 35, OW / 2 + tw / 2 + 32, py + 35], 35,
+                            fill=C.ACCENT + (int(255 * a2),))
+        d.text((OW / 2, py + 1), txt, font=f, fill=(255, 255, 255, int(255 * a2)), anchor='mm')
+        d.text((OW / 2, 940 + (1 - a3) * 8), 'nimblemap.com/zh', font=C.font(C.FONT_REG, 38),
+               fill=(55, 60, 72, int(255 * a3)), anchor='mm')
+        im.alpha_composite(ov)
+
+    C.end_card = end_card
+
+    # The Chinese answer frames itself elsewhere (shots.PRO_ANSWER_ZH): the table camera's push
+    # onto the 100 km circle follows the circle there (window pixels at the push, P0 + 12.0).
+    _cx, _cy = window_px('pro_zh', *SH.TOKYO, S.P0 + 12.0)
+    _circ = (Q.TL4[0] + _cx, Q.TL4[1] + _cy)
+    S.PCAM = [(k[0], _circ[0] + (k[1] - S.CIRC[0]), _circ[1], *k[3:]) if k[2] == S.CIRC[1] and k[1] - S.CIRC[0] in (0, 20)
+              else k for k in S.PCAM]
+
+# v3.7.1-zh (LM_FILM_TRIM=1): v3.7-zh shortened by retiming its folder section (edit/edl371zh.py)
+TRIM = os.environ.get('LM_FILM_TRIM') == '1'
+if TRIM:
+    import edl371zh as TR
+    _render_full = render
+
+    def render(t):  # noqa: F811
+        return _render_full(TR.old_time(t))
+
+
+# v3.8 (LM_FILM_V38=1, en or zh): the fast opening (edit/edl38.py): a cold open on the storm map,
+# a dissolve into one quick folder beat, then v3.7 from 9.9 s on, SHIFT earlier
+V38 = os.environ.get('LM_FILM_V38') == '1'
+if V38:
+    import edl38 as V8
+    _render_v37 = render
+
+    def render(t):  # noqa: F811
+        w = V8.mix(t)
+        if w <= 0:
+            return _render_v37(V8.cold_time(t))
+        if w >= 1:
+            return _render_v37(V8.old_time(t))
+        a = _render_v37(V8.cold_time(t)).astype(np.float32)
+        b = _render_v37(V8.folder_time(t)).astype(np.float32)
+        return np.clip(a + (b - a) * w + 0.5, 0, 255).astype(np.uint8)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('out')
     ap.add_argument('--fps', type=int, default=N.FPS)
     ap.add_argument('--from', dest='t0', type=float, default=0.0)
-    ap.add_argument('--to', dest='t1', type=float, default=N.DUR)
+    ap.add_argument('--to', dest='t1', type=float, default=V8.DUR if V38 else TR.DUR if TRIM else N.DUR)
     ap.add_argument('--stills', default='')
     a = ap.parse_args()
     if a.stills:

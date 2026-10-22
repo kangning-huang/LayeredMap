@@ -1,0 +1,42 @@
+{
+ "voice": "zh-CN-YunxiNeural",
+ "rate": "+6%",
+ "text": "8月16日巴塞罗那：热浪强度超过大部分地方。",
+ "words": [
+  {
+   "text": "8月16日",
+   "offset": 0.097166,
+   "duration": 0.742959
+  },
+  {
+   "text": "巴塞罗那",
+   "offset": 0.863666,
+   "duration": 0.69575
+  },
+  {
+   "text": "热浪",
+   "offset": 1.936791,
+   "duration": 0.318416
+  },
+  {
+   "text": "强度",
+   "offset": 2.267,
+   "duration": 0.436333
+  },
+  {
+   "text": "超过",
+   "offset": 2.726875,
+   "duration": 0.330208
+  },
+  {
+   "text": "大部分",
+   "offset": 3.080666,
+   "duration": 0.353791
+  },
+  {
+   "text": "地方",
+   "offset": 3.446208,
+   "duration": 0.318416
+  }
+ ]
+}

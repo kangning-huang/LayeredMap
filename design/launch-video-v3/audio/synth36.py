@@ -33,10 +33,12 @@ from scipy.io import wavfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(HERE), 'edit'))
 CUT = '3.6'
-import edl36 as edl  # noqa: E402
+import importlib  # noqa: E402
+# v3.8: LM_SYNTH_EDL=edl38 (v3.7's beats, the new first line's place, DUR_SOUND = v3.7's length)
+edl = importlib.import_module(os.environ.get('LM_SYNTH_EDL', 'edl36'))
 
 SR = 48000
-DUR = edl.DUR
+DUR = getattr(edl, 'DUR_SOUND', edl.DUR)
 N = int(SR * DUR)
 BPM = 115.0
 B = 60.0 / BPM
@@ -354,6 +356,11 @@ send.add(shimmer(E.T_PEN[1] - T_HIT), T_HIT + 0.05, 0.25)
 sfx.add(bell(mtof(84), 2.5), E.T_END, 0.25)
 send.add(bell(mtof(84), 2.5), E.T_END, 0.2)
 
+# v3.8: a soft whoosh under the dissolve from the cold open into the folder (added last, so every
+# sound above draws the same noise as in v3.7)
+if getattr(E, 'T_COLD_CUT', None) is not None:
+    sfx.add(whoosh(0.45), E.T_COLD_CUT - 0.1, 0.4, pan=-0.3)
+
 # ---- narration
 from scipy.io import wavfile as _wf  # noqa: E402
 import subprocess as _sp  # noqa: E402
@@ -362,7 +369,7 @@ import subprocess as _sp  # noqa: E402
 # at the line's start time, and the caption span runs to the end of its last word.
 import json as _json  # noqa: E402
 ENGINE = os.environ.get('VO_ENGINE', 'edge')
-VO_DIR = os.path.join(HERE, E.VO_DIR)
+VO_DIR = os.path.join(HERE, os.environ.get('VO_OUT') or E.VO_DIR)   # v3.7-zh: vo_edge37zh
 vo = np.zeros(N)
 spans = []
 for vid, t0 in E.VO:

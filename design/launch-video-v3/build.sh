@@ -1,18 +1,23 @@
 #!/bin/bash
 # Render the v3 launch film ("one take") or v3.1 (the folder of files) from the window recordings
 # in raw/ (see README.md).
-#   ./build.sh [parallel jobs, default 6] [cut: 3 (default) | 3.1 … 3.6 | 3.7]
+#   ./build.sh [parallel jobs, default 6] [cut: 3 (default) | 3.1 … 3.6 | 3.7 | 3.7-zh | 3.7.1-zh | 3.8 | 3.8-zh]
+# v3.8 / v3.8-zh (the fast opening, edit/edl38.py) re-cut v3.7's renders; no new map shots
 # v3.7 first needs its map shots: path/render.sh ty eq hw pro ty_plate eq_plate
 set -euo pipefail
 cd "$(dirname "$0")"
 PY="${PY:-$HOME/miniforge3/envs/lm-video/bin/python}"
 J="${1:-6}"
 CUT="${2:-3}"
-if [ "$CUT" = "3.1" ]; then COMP=edit/compose31.py; EDL=edl31; SUF=v3.1; elif [ "$CUT" = "3.2" ]; then COMP=edit/compose32.py; EDL=edl32; SUF=v3.2; elif [ "$CUT" = "3.3" ]; then COMP=edit/compose33.py; EDL=edl33; SUF=v3.3; elif [ "$CUT" = "3.4" ]; then COMP=edit/compose34.py; EDL=edl34; SUF=v3.4; elif [ "$CUT" = "3.5" ]; then COMP=edit/compose35.py; EDL=edl35; SUF=v3.5; elif [ "$CUT" = "3.6" ]; then COMP=edit/compose36.py; EDL=edl36; SUF=v3.6; elif [ "$CUT" = "3.7" ]; then COMP=edit/compose37.py; EDL=edl36; SUF=v3.7; else COMP=edit/compose.py; EDL=edl; SUF=v3; fi
+if [ "$CUT" = "3.1" ]; then COMP=edit/compose31.py; EDL=edl31; SUF=v3.1; elif [ "$CUT" = "3.2" ]; then COMP=edit/compose32.py; EDL=edl32; SUF=v3.2; elif [ "$CUT" = "3.3" ]; then COMP=edit/compose33.py; EDL=edl33; SUF=v3.3; elif [ "$CUT" = "3.4" ]; then COMP=edit/compose34.py; EDL=edl34; SUF=v3.4; elif [ "$CUT" = "3.5" ]; then COMP=edit/compose35.py; EDL=edl35; SUF=v3.5; elif [ "$CUT" = "3.6" ]; then COMP=edit/compose36.py; EDL=edl36; SUF=v3.6; elif [ "$CUT" = "3.7" ]; then COMP=edit/compose37.py; EDL=edl36; SUF=v3.7; elif [ "$CUT" = "3.7-zh" ]; then COMP=edit/compose37.py; EDL=edl36; SUF=v3.7-zh; export LM_FILM_LANG=zh; elif [ "$CUT" = "3.7.1-zh" ]; then COMP=edit/compose37.py; EDL=edl371zh; SUF=v3.7.1-zh; export LM_FILM_LANG=zh LM_FILM_TRIM=1; elif [ "$CUT" = "3.8" ]; then COMP=edit/compose37.py; EDL=edl38; SUF=v3.8; export LM_FILM_V38=1; elif [ "$CUT" = "3.8-zh" ]; then COMP=edit/compose37.py; EDL=edl38; SUF=v3.8-zh; export LM_FILM_V38=1 LM_FILM_LANG=zh; else COMP=edit/compose.py; EDL=edl; SUF=v3; fi
 export LM_CUT=$CUT
 # v3.7 is v3.6's timeline (edl36) with the map shots rendered offline (path/render.sh)
 [ "$CUT" = "3.7" ] && export LM_CUT=3.6
-PT=30.5; [ "$CUT" = "3.2" ] && PT=44.0; [ "$CUT" = "3.3" ] && PT=68.0; [ "$CUT" = "3.4" ] && PT=74.0; [ "$CUT" = "3.5" ] && PT=78.3; [ "$CUT" = "3.6" ] && PT=78.3; [ "$CUT" = "3.7" ] && PT=78.3
+[ "$CUT" = "3.7-zh" ] && export LM_CUT=3.6
+[ "$CUT" = "3.7.1-zh" ] && export LM_CUT=3.6
+case "$CUT" in 3.8|3.8-zh) export LM_CUT=3.6 ;; esac
+V38=0; case "$CUT" in 3.8|3.8-zh) V38=1 ;; esac
+PT=30.5; [ "$CUT" = "3.2" ] && PT=44.0; [ "$CUT" = "3.3" ] && PT=68.0; [ "$CUT" = "3.4" ] && PT=74.0; [ "$CUT" = "3.5" ] && PT=78.3; [ "$CUT" = "3.6" ] && PT=78.3; [ "$CUT" = "3.7" ] && PT=78.3; [ "$CUT" = "3.7-zh" ] && PT=78.3; [ "$CUT" = "3.7.1-zh" ] && PT=74.25; [ "$V38" = 1 ] && PT=72.0
 FPS=30
 mkdir -p out/seg cfr
 # constant-frame-rate copies (ScreenCaptureKit writes frames only on change; exact seeks need CFR)
@@ -35,17 +40,29 @@ for p in "${pids[@]}"; do wait "$p"; done
 for k in $(seq 0 $((J - 1))); do echo "file 's$k.mkv'" >> out/seg/list.txt; done
 ffmpeg -v error -y -f concat -safe 0 -i out/seg/list.txt -c copy out/master-$SUF.mkv
 # sound (v3.2: narration + ducked music, and the music alone; captions)
-if [ "$CUT" = "3.2" ] || [ "$CUT" = "3.3" ] || [ "$CUT" = "3.4" ] || [ "$CUT" = "3.5" ] || [ "$CUT" = "3.6" ] || [ "$CUT" = "3.7" ]; then
+if [ "$CUT" = "3.2" ] || [ "$CUT" = "3.3" ] || [ "$CUT" = "3.4" ] || [ "$CUT" = "3.5" ] || [ "$CUT" = "3.6" ] || [ "$CUT" = "3.7" ] || [ "$CUT" = "3.7-zh" ] || [ "$CUT" = "3.7.1-zh" ] || [ "$V38" = 1 ]; then
   # narration: edge-tts (en-US-AndrewNeural, +4%), rendered only when missing; VO_ENGINE=say (v3.2)
   # uses macOS say instead
-  if [ "$CUT" = "3.6" ] || [ "$CUT" = "3.7" ]; then export VO_SCRIPT=narration34.txt VO_OUT=vo_edge34; SYN=audio/synth36.py
+  if [ "$CUT" = "3.8" ]; then export VO_SCRIPT=narration38.txt VO_OUT=vo_edge38; SYN=audio/synth36.py
+  elif [ "$CUT" = "3.8-zh" ]; then export VO_SCRIPT=narration38zh.txt VO_OUT=vo_edge38zh; SYN=audio/synth36.py
+  elif [ "$CUT" = "3.7-zh" ] || [ "$CUT" = "3.7.1-zh" ]; then export VO_SCRIPT=narration37zh.txt VO_OUT=vo_edge37zh; SYN=audio/synth36.py
+  elif [ "$CUT" = "3.6" ] || [ "$CUT" = "3.7" ]; then export VO_SCRIPT=narration34.txt VO_OUT=vo_edge34; SYN=audio/synth36.py
   elif [ "$CUT" = "3.5" ]; then export VO_SCRIPT=narration34.txt VO_OUT=vo_edge34; SYN=audio/synth35.py
   elif [ "$CUT" = "3.4" ]; then export VO_SCRIPT=narration34.txt VO_OUT=vo_edge34; SYN=audio/synth34.py
   elif [ "$CUT" = "3.3" ]; then export VO_SCRIPT=narration33.txt VO_OUT=vo_edge33; SYN=audio/synth33.py
   else export VO_SCRIPT=narration.txt VO_OUT=vo_edge; SYN=audio/synth32.py; fi
   if [ "${VO_ENGINE:-edge}" = say ]; then audio/voice.sh Samantha 158 > /dev/null
+  elif { [ "$CUT" = "3.7-zh" ] || [ "$CUT" = "3.7.1-zh" ]; } && ! ls audio/$VO_OUT/*.mp3 > /dev/null 2>&1; then "$HOME/miniforge3/bin/mamba" run -n lm-video python audio/vo_zh.py
   elif ! ls audio/$VO_OUT/*.mp3 > /dev/null 2>&1; then "$HOME/miniforge3/bin/mamba" run -n lm-video python audio/voice_edge.py > /dev/null; fi
-  $PY $SYN out/audio-$SUF.wav
+  if [ "$V38" = 1 ]; then
+    # v3.7's sound on edl38's narration (the new first line), its first SHIFT seconds cut (audio/trim38.py)
+    LM_SYNTH_EDL=edl38 $PY $SYN out/seg/full-$SUF.wav && $PY audio/trim38.py out/seg/full-$SUF.wav out/audio-$SUF.wav
+  elif [ "$CUT" = "3.7.1-zh" ]; then
+    # v3.7-zh's sound with the folder pause cut out (audio/trim.py, edit/edl371zh.py)
+    $PY $SYN out/seg/full-zh.wav && $PY audio/trim.py out/seg/full-zh.wav out/audio-$SUF.wav
+  else
+    $PY $SYN out/audio-$SUF.wav
+  fi
   $PY audio/srt.py out/audio-$SUF-vo.txt out/NimbleMap-launch-$SUF-1080p.srt > /dev/null
   ffmpeg -v error -y -i out/master-$SUF.mkv -i out/audio-$SUF-music-only.wav -map 0:v -map 1:a \
     -c:v libx264 -preset slow -crf 16 -pix_fmt yuv420p -profile:v high -r $FPS \
@@ -60,6 +77,17 @@ ffmpeg -v error -y -i out/master-$SUF.mkv -i out/audio-$SUF.wav -map 0:v -map 1:
   -c:v libx264 -preset slow -crf 16 -pix_fmt yuv420p -profile:v high -r $FPS \
   -colorspace bt709 -color_primaries bt709 -color_trc bt709 -vf "scale=out_color_matrix=bt709" \
   -c:a aac -b:a 256k -ar 48000 -movflags +faststart -shortest out/NimbleMap-launch-$SUF-1080p.mp4
+# v3.7-zh: the same, with the Chinese captions burned in (Noto Sans SC from assets/fonts)
+# v3.8: English too (Inter)
+if [ "$CUT" = "3.7-zh" ] || [ "$CUT" = "3.7.1-zh" ] || [ "$V38" = 1 ]; then
+  SUBLANG=zh; [ "$CUT" = "3.8" ] && SUBLANG=en
+  $PY path/subs.py out/NimbleMap-launch-$SUF-1080p.srt out/seg/subs-zh.ass $SUBLANG
+  ffmpeg -v error -y -i out/master-$SUF.mkv -i out/audio-$SUF.wav -map 0:v -map 1:a \
+    -c:v libx264 -preset slow -crf 16 -pix_fmt yuv420p -profile:v high -r $FPS \
+    -colorspace bt709 -color_primaries bt709 -color_trc bt709 \
+    -vf "scale=out_color_matrix=bt709,ass=out/seg/subs-zh.ass:fontsdir=../../assets/fonts" \
+    -c:a aac -b:a 256k -ar 48000 -movflags +faststart -shortest out/NimbleMap-launch-$SUF-1080p-subtitled.mp4
+fi
 # muted web loop: 1280x720, 30 fps, no audio, about 3 MB. Its last 0.5 s cross-fades into its own
 # first 0.5 s (end card -> the empty bar), so it loops without a jump; two-pass to a size budget.
 XF=0.5

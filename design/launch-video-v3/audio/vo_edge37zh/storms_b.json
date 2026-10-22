@@ -1,0 +1,27 @@
+{
+ "voice": "zh-CN-YunxiNeural",
+ "rate": "+6%",
+ "text": "搜索地点，比如纽约。",
+ "words": [
+  {
+   "text": "搜索",
+   "offset": 0.097166,
+   "duration": 0.389166
+  },
+  {
+   "text": "地点",
+   "offset": 0.498125,
+   "duration": 0.436333
+  },
+  {
+   "text": "比如",
+   "offset": 1.276416,
+   "duration": 0.247625
+  },
+  {
+   "text": "纽约",
+   "offset": 1.535833,
+   "duration": 0.495291
+  }
+ ]
+}

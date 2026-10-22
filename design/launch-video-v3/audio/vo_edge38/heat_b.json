@@ -1,0 +1,77 @@
+{
+ "voice": "en-US-AndrewNeural",
+ "rate": "+4%",
+ "text": "and find Barcelona on 16 August: a heatwave more intense than most of the map.",
+ "words": [
+  {
+   "text": "and",
+   "offset": 0.096166,
+   "duration": 0.084125
+  },
+  {
+   "text": "find",
+   "offset": 0.192291,
+   "duration": 0.3125
+  },
+  {
+   "text": "Barcelona",
+   "offset": 0.516833,
+   "duration": 0.685083
+  },
+  {
+   "text": "on",
+   "offset": 1.298083,
+   "duration": 0.16825
+  },
+  {
+   "text": "16 August",
+   "offset": 1.478375,
+   "duration": 0.961541
+  },
+  {
+   "text": "a",
+   "offset": 2.8245,
+   "duration": 0.0360409
+  },
+  {
+   "text": "heatwave",
+   "offset": 2.872583,
+   "duration": 0.46875
+  },
+  {
+   "text": "more",
+   "offset": 3.353375,
+   "duration": 0.240375
+  },
+  {
+   "text": "intense",
+   "offset": 3.60575,
+   "duration": 0.432708
+  },
+  {
+   "text": "than",
+   "offset": 4.0505,
+   "duration": 0.16825
+  },
+  {
+   "text": "most",
+   "offset": 4.23075,
+   "duration": 0.3005
+  },
+  {
+   "text": "of",
+   "offset": 4.54325,
+   "duration": 0.048083
+  },
+  {
+   "text": "the",
+   "offset": 4.603375,
+   "duration": 0.072125
+  },
+  {
+   "text": "map",
+   "offset": 4.6875,
+   "duration": 0.396625
+  }
+ ]
+}

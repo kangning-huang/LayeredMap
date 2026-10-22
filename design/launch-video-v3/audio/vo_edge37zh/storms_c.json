@@ -1,0 +1,77 @@
+{
+ "voice": "zh-CN-YunxiNeural",
+ "rate": "+6%",
+ "text": "也能搜你的数据：输入Sandy，两个同名风暴都找到。",
+ "words": [
+  {
+   "text": "也",
+   "offset": 0.097166,
+   "duration": 0.153291
+  },
+  {
+   "text": "能",
+   "offset": 0.250458,
+   "duration": 0.1415
+  },
+  {
+   "text": "搜",
+   "offset": 0.403791,
+   "duration": 0.165083
+  },
+  {
+   "text": "你",
+   "offset": 0.568875,
+   "duration": 0.082541
+  },
+  {
+   "text": "的",
+   "offset": 0.651416,
+   "duration": 0.07075
+  },
+  {
+   "text": "数据",
+   "offset": 0.733958,
+   "duration": 0.495291
+  },
+  {
+   "text": "输入",
+   "offset": 1.406125,
+   "duration": 0.400958
+  },
+  {
+   "text": "Sandy",
+   "offset": 1.830666,
+   "duration": 0.542458
+  },
+  {
+   "text": "两",
+   "offset": 2.644333,
+   "duration": 0.224041
+  },
+  {
+   "text": "个",
+   "offset": 2.868416,
+   "duration": 0.058958
+  },
+  {
+   "text": "同名",
+   "offset": 2.939166,
+   "duration": 0.224041
+  },
+  {
+   "text": "风暴",
+   "offset": 3.175,
+   "duration": 0.41275
+  },
+  {
+   "text": "都",
+   "offset": 3.611333,
+   "duration": 0.188666
+  },
+  {
+   "text": "找到",
+   "offset": 3.811791,
+   "duration": 0.377375
+  }
+ ]
+}

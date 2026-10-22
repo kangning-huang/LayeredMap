@@ -1,0 +1,77 @@
+{
+ "voice": "en-US-AndrewNeural",
+ "rate": "+4%",
+ "text": "Fly to Tokyo, click a dot: Tohoku, magnitude 9.1, stronger than 99% of them.",
+ "words": [
+  {
+   "text": "Fly",
+   "offset": 0.15625,
+   "duration": 0.180291
+  },
+  {
+   "text": "to",
+   "offset": 0.348541,
+   "duration": 0.072125
+  },
+  {
+   "text": "Tokyo",
+   "offset": 0.432708,
+   "duration": 0.540875
+  },
+  {
+   "text": "click",
+   "offset": 1.238,
+   "duration": 0.192291
+  },
+  {
+   "text": "a",
+   "offset": 1.442291,
+   "duration": 0.096166
+  },
+  {
+   "text": "dot",
+   "offset": 1.5505,
+   "duration": 0.3125
+  },
+  {
+   "text": "Tohoku",
+   "offset": 2.151458,
+   "duration": 0.613
+  },
+  {
+   "text": "magnitude",
+   "offset": 3.125,
+   "duration": 0.528833
+  },
+  {
+   "text": "9.1",
+   "offset": 3.665875,
+   "duration": 0.877374
+  },
+  {
+   "text": "stronger",
+   "offset": 4.84375,
+   "duration": 0.396625
+  },
+  {
+   "text": "than",
+   "offset": 5.252416,
+   "duration": 0.15625
+  },
+  {
+   "text": "99%",
+   "offset": 5.420666,
+   "duration": 0.9134589
+  },
+  {
+   "text": "of",
+   "offset": 6.346166,
+   "duration": 0.072125
+  },
+  {
+   "text": "them",
+   "offset": 6.430291,
+   "duration": 0.16825
+  }
+ ]
+}
