@@ -760,8 +760,6 @@ Signing out…	Uitloggen…
 Deleting your account…	Uw account verwijderen…
 Email address	E-mailadres
 Verify	Verifiëren
-The link has stopped working on this Mac; the code still works for an hour.	De link werkt niet meer op deze Mac; de code werkt nog een uur.
-The link has stopped working on this computer; the code still works for an hour.	De link werkt niet meer op deze computer; de code werkt nog een uur.
 Send a New Email	Nieuwe e-mail sturen
 Use a Different Email	Ander e-mailadres gebruiken
 Asking about your layers needs a free account. Your maps and files stay on this computer.	Voor vragen over uw lagen hebt u een gratis account nodig. Uw kaarten en bestanden blijven op deze computer.
@@ -774,9 +772,6 @@ Delete your {app} account? {pro} stops working on every computer you use. Your m
 Sign in to use {pro}	Log in om {pro} te gebruiken
 {pro} is free while it's new. Your account only says who you are: your maps and files never leave this computer.	{pro} is gratis zolang het nieuw is. Uw account zegt alleen wie u bent: uw kaarten en bestanden verlaten deze computer nooit.
 Sending an email to {address}…	E-mail sturen naar {address}…
-We sent an email to {address}. Enter the {n}-digit code in it.	We hebben een e-mail gestuurd naar {address}. Voer de code van {n} cijfers in die erin staat.
-We sent an email to {address}. Click the link in it on this Mac, or enter the {n}-digit code.	We hebben een e-mail gestuurd naar {address}. Klik op deze Mac op de link erin, of voer de code van {n} cijfers in.
-We sent an email to {address}. Click the link in it on this computer, or enter the {n}-digit code.	We hebben een e-mail gestuurd naar {address}. Klik op deze computer op de link erin, of voer de code van {n} cijfers in.
 {n}-digit code	Code van {n} cijfers
 Sign in to use {pro} (Settings › Account).	Log in om {pro} te gebruiken (Instellingen › Account).
 Settings…	Instellingen…
@@ -785,7 +780,6 @@ Mainland China	Chinees vasteland
 Continue with Apple	Doorgaan met Apple
 Continue with Google	Doorgaan met Google
 Continue with X	Doorgaan met X
-Email me a sign-in code	Stuur mij een inlogcode per e-mail
 Continue with WeChat	Doorgaan met WeChat
 Continue with Alipay	Doorgaan met Alipay
 Text me a code	Stuur mij een code per sms
@@ -829,7 +823,6 @@ Couldn't reach the assistant service: {error}	Kan de assistentdienst niet bereik
 The assistant service's answer was cut off: {error}	Het antwoord van de assistentdienst is afgebroken: {error}
 The assistant service answered {status} with something unreadable.	De assistentdienst antwoordde {status} met iets onleesbaars.
 {app} is working offline, so the assistant can't be reached. Turn off View › Work Offline to ask.	{app} werkt offline en kan de assistent dus niet bereiken. Zet Weergave › Offline werken uit om een vraag te stellen.
-Signing in unlocks the Ask box, analysis tools, the built-in world layers and voice input.	Inloggen ontgrendelt het vraagvak, de analysehulpmiddelen, de ingebouwde wereldlagen en spraakinvoer.
 Checking your account…	Uw account wordt gecontroleerd…
 Settings › Account shows who is signed in and what the account includes.	In Instellingen › Account ziet u wie er is ingelogd en wat het account omvat.
 Nothing matches, so nothing is highlighted on the map.	Niets komt overeen, dus er is niets gemarkeerd op de kaart.
@@ -854,3 +847,12 @@ You're up to date: {app} {version} is the newest version.	U bent up-to-date: {ap
 {app} {version} is ready	{app} {version} is klaar
 {done} MB	{done} MB
 {done} of {total} MB	{done} van {total} MB
+Signing in unlocks the Ask box, voice input and the built-in world layers. The analysis tools are free without an account.	Inloggen ontgrendelt het vraagvak, spraakinvoer en de ingebouwde wereldlagen. De analysehulpmiddelen zijn gratis, ook zonder account.
+Email me a sign-in code	Stuur mij een inlogcode per e-mail
+We'll email you a {n}-digit code from {sender}.	U ontvangt een code van {n} cijfers per e-mail van {sender}.
+We sent a code to {address}. Type it below.	We hebben een code gestuurd naar {address}. Voer die hieronder in.
+We sent a code to {address}. Type it below, or click the link in the same email on this Mac.	We hebben een code gestuurd naar {address}. Voer die hieronder in, of klik op deze Mac op de link in dezelfde e-mail.
+We sent a code to {address}. Type it below, or click the link in the same email on this computer.	We hebben een code gestuurd naar {address}. Voer die hieronder in, of klik op deze computer op de link in dezelfde e-mail.
+The email comes from {sender}, subject “{subject}”. If it isn't in your inbox, check your spam or junk folder.	De e-mail komt van {sender}, met als onderwerp ‘{subject}’. Staat hij niet in uw inbox, kijk dan in de map met spam of ongewenste e-mail.
+The link has stopped working on this Mac. Type the code from the email, or send a new one.	De link werkt niet meer op deze Mac. Voer de code uit de e-mail in, of vraag een nieuwe aan.
+The link has stopped working on this computer. Type the code from the email, or send a new one.	De link werkt niet meer op deze computer. Voer de code uit de e-mail in, of vraag een nieuwe aan.

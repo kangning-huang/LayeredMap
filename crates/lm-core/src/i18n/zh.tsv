@@ -760,8 +760,6 @@ Signing out…	正在退出登录…
 Deleting your account…	正在删除你的账户…
 Email address	电子邮件地址
 Verify	验证
-The link has stopped working on this Mac; the code still works for an hour.	链接在这台 Mac 上已失效；验证码在一小时内仍然有效。
-The link has stopped working on this computer; the code still works for an hour.	链接在这台电脑上已失效；验证码在一小时内仍然有效。
 Send a New Email	重新发送邮件
 Use a Different Email	使用其他邮箱
 Asking about your layers needs a free account. Your maps and files stay on this computer.	询问图层需要一个免费账户。你的地图和文件仍保留在这台电脑上。
@@ -774,9 +772,6 @@ Delete your {app} account? {pro} stops working on every computer you use. Your m
 Sign in to use {pro}	登录后即可使用{pro}
 {pro} is free while it's new. Your account only says who you are: your maps and files never leave this computer.	{pro}在推出初期免费。账户只用来确认你是谁：你的地图和文件从不离开这台电脑。
 Sending an email to {address}…	正在向 {address} 发送邮件…
-We sent an email to {address}. Enter the {n}-digit code in it.	我们已向 {address} 发送了一封邮件。请输入邮件中的 {n} 位验证码。
-We sent an email to {address}. Click the link in it on this Mac, or enter the {n}-digit code.	我们已向 {address} 发送了一封邮件。请在这台 Mac 上点击邮件中的链接，或输入 {n} 位验证码。
-We sent an email to {address}. Click the link in it on this computer, or enter the {n}-digit code.	我们已向 {address} 发送了一封邮件。请在这台电脑上点击邮件中的链接，或输入 {n} 位验证码。
 {n}-digit code	{n} 位验证码
 Sign in to use {pro} (Settings › Account).	登录后即可使用{pro}（设置 › 账户）。
 Settings…	设置…
@@ -785,7 +780,6 @@ Mainland China	中国大陆
 Continue with Apple	通过 Apple 继续
 Continue with Google	通过 Google 继续
 Continue with X	通过 X 继续
-Email me a sign-in code	通过邮件发送登录验证码
 Continue with WeChat	通过微信继续
 Continue with Alipay	通过支付宝继续
 Text me a code	通过短信发送验证码
@@ -829,7 +823,6 @@ Couldn't reach the assistant service: {error}	无法连接助手服务：{error}
 The assistant service's answer was cut off: {error}	助手服务的回复被截断了：{error}
 The assistant service answered {status} with something unreadable.	助手服务返回了 {status}，内容无法读取。
 {app} is working offline, so the assistant can't be reached. Turn off View › Work Offline to ask.	{app}正在离线工作，无法连接助手。请关闭“视图 › 离线工作”后再提问。
-Signing in unlocks the Ask box, analysis tools, the built-in world layers and voice input.	登录后即可使用提问框、分析工具、内置世界图层和语音输入。
 Checking your account…	正在检查账户…
 Settings › Account shows who is signed in and what the account includes.	在“设置 › 账户”中可以查看登录的是谁，以及账户包含哪些功能。
 Nothing matches, so nothing is highlighted on the map.	没有符合条件的对象，因此地图上没有高亮显示。
@@ -854,3 +847,12 @@ You're up to date: {app} {version} is the newest version.	已是最新版本：{
 {app} {version} is ready	{app} {version} 已准备就绪
 {done} MB	{done} MB
 {done} of {total} MB	{done} / {total} MB
+Signing in unlocks the Ask box, voice input and the built-in world layers. The analysis tools are free without an account.	登录后即可使用提问框、语音输入和内置世界图层。分析工具无需账户，免费使用。
+Email me a sign-in code	通过邮件发送登录验证码
+We'll email you a {n}-digit code from {sender}.	我们会通过邮件给你发送一个来自 {sender} 的 {n} 位验证码。
+We sent a code to {address}. Type it below.	我们已向 {address} 发送了验证码。请在下方输入。
+We sent a code to {address}. Type it below, or click the link in the same email on this Mac.	我们已向 {address} 发送了验证码。请在下方输入，或在这台 Mac 上点击同一封邮件中的链接。
+We sent a code to {address}. Type it below, or click the link in the same email on this computer.	我们已向 {address} 发送了验证码。请在下方输入，或在这台电脑上点击同一封邮件中的链接。
+The email comes from {sender}, subject “{subject}”. If it isn't in your inbox, check your spam or junk folder.	邮件发件人为 {sender}，主题为“{subject}”。如果收件箱里没有，请查看垃圾邮件文件夹。
+The link has stopped working on this Mac. Type the code from the email, or send a new one.	链接在这台 Mac 上已失效。请输入邮件中的验证码，或重新发送邮件。
+The link has stopped working on this computer. Type the code from the email, or send a new one.	链接在这台电脑上已失效。请输入邮件中的验证码，或重新发送邮件。

@@ -760,8 +760,6 @@ Signing out…	サインアウト中…
 Deleting your account…	アカウントを削除中…
 Email address	メールアドレス
 Verify	確認
-The link has stopped working on this Mac; the code still works for an hour.	この Mac ではリンクが使えなくなりました。コードは 1 時間有効です。
-The link has stopped working on this computer; the code still works for an hour.	このコンピューターではリンクが使えなくなりました。コードは 1 時間有効です。
 Send a New Email	メールを再送信
 Use a Different Email	別のメールアドレスを使う
 Asking about your layers needs a free account. Your maps and files stay on this computer.	レイヤーについて質問するには、無料のアカウントが必要です。地図とファイルはこのコンピューターに残ります。
@@ -774,9 +772,6 @@ Delete your {app} account? {pro} stops working on every computer you use. Your m
 Sign in to use {pro}	サインインして {pro} を使う
 {pro} is free while it's new. Your account only says who you are: your maps and files never leave this computer.	{pro} は提供開始記念で無料です。アカウントはあなたが誰かを示すだけで、地図やファイルがこのコンピューターの外に出ることはありません。
 Sending an email to {address}…	{address} にメールを送信中…
-We sent an email to {address}. Enter the {n}-digit code in it.	{address} にメールを送信しました。メールに記載された {n} 桁のコードを入力してください。
-We sent an email to {address}. Click the link in it on this Mac, or enter the {n}-digit code.	{address} にメールを送信しました。この Mac でメール内のリンクをクリックするか、{n} 桁のコードを入力してください。
-We sent an email to {address}. Click the link in it on this computer, or enter the {n}-digit code.	{address} にメールを送信しました。このコンピューターでメール内のリンクをクリックするか、{n} 桁のコードを入力してください。
 {n}-digit code	{n} 桁のコード
 Sign in to use {pro} (Settings › Account).	{pro} を使うにはサインインしてください（設定 › アカウント）。
 Settings…	設定…
@@ -785,7 +780,6 @@ Mainland China	中国本土
 Continue with Apple	Apple で続ける
 Continue with Google	Google で続ける
 Continue with X	X で続ける
-Email me a sign-in code	サインインコードをメールで受け取る
 Continue with WeChat	WeChat で続ける
 Continue with Alipay	Alipay で続ける
 Text me a code	SMS でコードを受け取る
@@ -829,7 +823,6 @@ Couldn't reach the assistant service: {error}	アシスタントサービスに�
 The assistant service's answer was cut off: {error}	アシスタントサービスの応答が途中で切れました：{error}
 The assistant service answered {status} with something unreadable.	アシスタントサービスの応答 {status} を読み取れませんでした。
 {app} is working offline, so the assistant can't be reached. Turn off View › Work Offline to ask.	{app} はオフラインで作業中のため、アシスタントに接続できません。質問するには、表示 › オフラインで作業 をオフにしてください。
-Signing in unlocks the Ask box, analysis tools, the built-in world layers and voice input.	サインインすると、質問ボックス、分析ツール、組み込みの世界レイヤー、音声入力が使えるようになります。
 Checking your account…	アカウントを確認しています…
 Settings › Account shows who is signed in and what the account includes.	設定 › アカウントで、サインインしている人とアカウントの内容を確認できます。
 Nothing matches, so nothing is highlighted on the map.	該当するものがないため、地図上では何も強調表示されていません。
@@ -854,3 +847,12 @@ You're up to date: {app} {version} is the newest version.	最新の状態です�
 {app} {version} is ready	{app} {version} の準備ができました
 {done} MB	{done} MB
 {done} of {total} MB	{done} / {total} MB
+Signing in unlocks the Ask box, voice input and the built-in world layers. The analysis tools are free without an account.	サインインすると、質問ボックス、音声入力、組み込みの世界レイヤーが使えるようになります。分析ツールはアカウントなしで無料で使えます。
+Email me a sign-in code	サインインコードをメールで受け取る
+We'll email you a {n}-digit code from {sender}.	{sender} から {n} 桁のコードをメールでお送りします。
+We sent a code to {address}. Type it below.	{address} にコードを送信しました。下に入力してください。
+We sent a code to {address}. Type it below, or click the link in the same email on this Mac.	{address} にコードを送信しました。下に入力するか、この Mac で同じメール内のリンクをクリックしてください。
+We sent a code to {address}. Type it below, or click the link in the same email on this computer.	{address} にコードを送信しました。下に入力するか、このコンピューターで同じメール内のリンクをクリックしてください。
+The email comes from {sender}, subject “{subject}”. If it isn't in your inbox, check your spam or junk folder.	メールの差出人は {sender}、件名は「{subject}」です。受信トレイにない場合は、迷惑メールフォルダを確認してください。
+The link has stopped working on this Mac. Type the code from the email, or send a new one.	この Mac ではリンクが使えなくなりました。メールのコードを入力するか、メールを再送信してください。
+The link has stopped working on this computer. Type the code from the email, or send a new one.	このコンピューターではリンクが使えなくなりました。メールのコードを入力するか、メールを再送信してください。

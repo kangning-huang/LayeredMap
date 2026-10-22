@@ -101,8 +101,10 @@ read anywhere (a phone included) and typed into the app for an hour.
 
 Email sign-in is passwordless (no passwords anywhere). `Account::begin` asks Supabase for the
 email (`create_user: true`: the first sign-in registers the account) and binds the loopback; the
-email carries both the link and a 6-digit code. Settings › Account then says "We sent an email to
-{address}. Click the link in it on this Mac, or enter the 6-digit code." with a code field
+email (from NimbleMap through Resend, subject "Your NimbleMap sign-in code": see
+`docs/lm/email-signin.md`) carries both the link and a 6-digit code. Settings › Account then says
+"We sent a code to {address}. Type it below, or click the link in the same email on this Mac.",
+who sends the email, its subject and the spam folder, with a code field
 (digits only; a pasted "123 456" or "123-456" is taken as 123456), Verify (Return), Send a New
 Email and Use a Different Email.
 
@@ -122,7 +124,7 @@ Email and Use a Different Email.
   wrong code leaves the link waiting. Send a New Email starts a new sign-in, which stops the older
   wait the same way.
 - After the link's 10 minutes the pane keeps the code field ("The link has stopped working on
-  this Mac; the code still works for an hour.").
+  this Mac. Type the code from the email, or send a new one.").
 
 The project side is in `services/ask-proxy/supabase/config.toml` (`[auth.email]`: `otp_length = 6`,
 `otp_expiry = 3600`, Confirm email on, one email a minute per address) and the two templates in
