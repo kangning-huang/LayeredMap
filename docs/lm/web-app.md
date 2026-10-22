@@ -34,6 +34,19 @@ otherwise). `?example=storms` opens an example (ids: `world`, `heatwaves`, `stor
 `earthquakes`, `volcanoes`, `airports`, `power`). `?view=lon,lat,zoom` sets the starting view.
 `?webgl` forces WebGL2 instead of WebGPU.
 
+**"Desktop is faster" banner.** `index.html` shows a thin strip above the canvas (the canvas starts
+below it, so it covers nothing): the browser version is slower than the desktop app, with a
+Download button and a close button. It is plain HTML/CSS/JS, so changing it needs no WebAssembly
+rebuild, only `build.sh` (or editing `index.html` in the dist). Details:
+- Download goes to the Mac `.dmg` on a Mac (GitCode's for Chinese), the Windows installer on
+  Windows, and the download page otherwise (iPad, phones, Linux). `window.__nimblemap_banner.os = "win"`
+  then `.render(true)` in the console simulates another OS.
+- Text in the 11 languages, picked like the app (`?lang=`, then `lm.language`, then the browser).
+  It follows `lm.theme` (or the system) for light/dark, and rechecks both every 1.5 s, so the
+  app's menu changes it too.
+- Closing it stores `lm.web.banner` = `{v: <js file name>, t}`. It comes back after 7 days or on the
+  next build.
+
 ## Architecture
 
 - **One shell, two hosts.** `apps/nimblemap-web` plays the role `apps/layeredmap` plays on the

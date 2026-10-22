@@ -25,13 +25,25 @@
     #nimblemap_loading .bar { width: 180px; height: 3px; border-radius: 2px; background: rgba(127, 127, 127, 0.25); overflow: hidden; }
     #nimblemap_loading .bar i { display: block; height: 100%; width: 0; background: #e4783d; transition: width 0.2s; }
     @keyframes pulse { 50% { transform: scale(0.94); opacity: 0.8; } }
-    #nimblemap_note { position: absolute; left: calc(12px + env(safe-area-inset-left, 0px)); bottom: calc(44px + env(safe-area-inset-bottom, 0px));
-      padding: 4px 8px 4px 10px; border-radius: 8px; max-width: 250px; line-height: 1.35; background: var(--pill); color: var(--pill-fg); z-index: 5;
-      font: 11px system-ui, -apple-system, "Segoe UI", sans-serif; white-space: normal; pointer-events: auto;
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12); display: flex; align-items: center; gap: 6px; transition: opacity 0.4s; }
-    #nimblemap_note button { all: unset; cursor: pointer; opacity: 0.6; padding: 0 2px; }
-    #nimblemap_note[hidden] { display: none; }
-    @media (max-width: 700px) { #nimblemap_note { display: none; } }
+    /* The "desktop is faster" strip: above the canvas, which starts below it (no overlap). */
+    :root { --banner-h: 0px; }
+    #nimblemap_canvas, #nimblemap_loading { top: calc(env(safe-area-inset-top, 0px) + var(--banner-h)); }
+    #nimblemap_canvas { height: calc(100% - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - var(--banner-h)); }
+    #nimblemap_banner { --b-bg: #ebe6db; --b-fg: #1f2937; --b-line: rgba(0, 0, 0, 0.08); --b-btn: #a9461a; --b-btn-fg: #ffffff; --b-x: #4b5563;
+      position: absolute; top: env(safe-area-inset-top, 0px); left: 0; right: 0; z-index: 5; box-sizing: border-box; min-height: 36px;
+      display: flex; align-items: center; justify-content: center; gap: 12px; padding: 4px calc(44px + env(safe-area-inset-right, 0px)) 4px calc(16px + env(safe-area-inset-left, 0px));
+      background: var(--b-bg); color: var(--b-fg); border-bottom: 1px solid var(--b-line);
+      font: 13px/1.35 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    #nimblemap_banner[data-theme="dark"] { --b-bg: #262b34; --b-fg: #e5e7eb; --b-line: rgba(255, 255, 255, 0.08); --b-btn: #f0965a; --b-btn-fg: #1a1d23; --b-x: #b8c0cc; }
+    #nimblemap_banner[hidden] { display: none; }
+    #nimblemap_banner a { flex: none; padding: 4px 12px; border-radius: 6px; background: var(--b-btn); color: var(--b-btn-fg);
+      font-weight: 600; text-decoration: none; white-space: nowrap; }
+    #nimblemap_banner a:hover { filter: brightness(1.08); }
+    #nimblemap_banner a:focus-visible, #nimblemap_banner button:focus-visible { outline: 2px solid var(--b-btn); outline-offset: 2px; }
+    #nimblemap_banner button { all: unset; position: absolute; right: calc(8px + env(safe-area-inset-right, 0px)); top: 50%; transform: translateY(-50%);
+      width: 28px; height: 28px; border-radius: 6px; display: grid; place-items: center; cursor: pointer; color: var(--b-x); font-size: 18px; line-height: 1; }
+    #nimblemap_banner button:hover { background: var(--b-line); }
+    @media (max-width: 700px) { #nimblemap_banner { font-size: 12px; justify-content: flex-start; } }
   </style>
 </head>
 <body>
@@ -42,10 +54,90 @@
     <div class="bar"><i id="nimblemap_progress"></i></div>
     <div style="font-size:12px;opacity:.75">Preview · runs entirely in your browser; your files never leave your computer</div>
   </div>
-  <div id="nimblemap_note" hidden>
-    <span>Preview · runs entirely in your browser; your files never leave your computer</span>
+  <div id="nimblemap_banner" role="region" aria-label="NimbleMap desktop" hidden>
+    <span id="nimblemap_banner_text">The browser version is slower than the desktop app. For smooth, fast maps, get NimbleMap for Mac or Windows.</span>
+    <a id="nimblemap_banner_dl" href="https://nimblemap.com/download.html" rel="noopener">Download</a>
     <button type="button" aria-label="Dismiss" title="Dismiss">&times;</button>
   </div>
+  <script>
+    // The "desktop is faster" strip. A classic script, so it runs before the app starts and the
+    // canvas has its final size from the first frame. Dismissed: hidden for 7 days or until a new build.
+    (function () {
+      var T = {
+        en: ["The browser version is slower than the desktop app. For smooth, fast maps, get NimbleMap for Mac or Windows.", "Download", "Dismiss"],
+        zh: ["网页版比桌面版慢。想要流畅、快速的地图体验，请下载 Mac 或 Windows 版 NimbleMap。", "下载", "关闭"],
+        de: ["Die Browserversion ist langsamer als die Desktop-App. Für flüssige, schnelle Karten laden Sie NimbleMap für Mac oder Windows herunter.", "Herunterladen", "Schließen"],
+        es: ["La versión web es más lenta que la app de escritorio. Para mapas fluidos y rápidos, descarga NimbleMap para Mac o Windows.", "Descargar", "Cerrar"],
+        fr: ["La version web est plus lente que l’application de bureau. Pour des cartes fluides et rapides, téléchargez NimbleMap pour Mac ou Windows.", "Télécharger", "Fermer"],
+        it: ["La versione web è più lenta dell’app desktop. Per mappe fluide e veloci, scarica NimbleMap per Mac o Windows.", "Scarica", "Chiudi"],
+        nl: ["De webversie is trager dan de desktop-app. Download NimbleMap voor Mac of Windows voor vloeiende, snelle kaarten.", "Downloaden", "Sluiten"],
+        pt: ["A versão web é mais lenta que o app para computador. Para mapas fluidos e rápidos, baixe o NimbleMap para Mac ou Windows.", "Baixar", "Fechar"],
+        ru: ["Веб-версия работает медленнее, чем приложение для компьютера. Для плавной и быстрой работы с картами скачайте NimbleMap для Mac или Windows.", "Скачать", "Закрыть"],
+        ja: ["ブラウザ版はデスクトップアプリより動作が遅くなります。快適で高速な地図には、Mac 版または Windows 版の NimbleMap をダウンロードしてください。", "ダウンロード", "閉じる"],
+        ko: ["브라우저 버전은 데스크톱 앱보다 느립니다. 부드럽고 빠른 지도를 원하시면 Mac 또는 Windows용 NimbleMap을 다운로드하세요.", "다운로드", "닫기"]
+      };
+      var MAC = "https://github.com/kangning-huang/NimbleMap/releases/latest/download/NimbleMap-macos-arm64.dmg";
+      var MAC_ZH = "https://gitcode.com/KN-Huang/NimbleMap/releases/download/v0.7.4/NimbleMap-macos-arm64.dmg";
+      var WIN = "https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.1/NimbleMap-windows-x64-setup.exe";
+      var PAGE = "https://nimblemap.com/download.html", PAGE_ZH = "https://nimblemap.com/zh/download.html";
+      var KEY = "lm.web.banner", VERSION = "__JS__", WEEK = 7 * 24 * 3600 * 1000;
+      var el = document.getElementById("nimblemap_banner"), root = document.documentElement;
+      function get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+      // The same choice as the app: ?lang=, then the saved language, then the browser's.
+      function lang() {
+        var q = null;
+        try { q = new URLSearchParams(location.search).get("lang"); } catch (e) {}
+        var tags = [q, get("lm.language")].concat(navigator.languages || [navigator.language]);
+        for (var i = 0; i < tags.length; i++) {
+          var c = String(tags[i] || "").toLowerCase().split(/[-_.@]/)[0];
+          if (T[c]) return c;
+        }
+        return "en";
+      }
+      function os() {
+        var uad = navigator.userAgentData, p = (uad && uad.platform) || navigator.platform || "", ua = navigator.userAgent || "";
+        if (/^mac|macos/i.test(p) || (!p && /Macintosh/.test(ua))) return navigator.maxTouchPoints > 1 ? "other" : "mac";
+        if (/^win/i.test(p) || /Windows NT/.test(ua)) return "win";
+        return "other";
+      }
+      function dark() {
+        var t = get("lm.theme");
+        if (t === "dark" || t === "light") return t === "dark";
+        return !!(window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
+      }
+      function fit() { root.style.setProperty("--banner-h", el.hidden ? "0px" : el.offsetHeight + "px"); }
+      var shown = "";
+      function render(force) {
+        var l = lang(), o = api.os || os(), d = dark(), key = l + o + d;
+        if (key === shown && !force) return;
+        shown = key;
+        var s = T[l], zh = l === "zh";
+        document.getElementById("nimblemap_banner_text").textContent = s[0];
+        var a = document.getElementById("nimblemap_banner_dl");
+        a.textContent = s[1];
+        a.href = o === "mac" ? (zh ? MAC_ZH : MAC) : o === "win" ? WIN : (zh ? PAGE_ZH : PAGE);
+        if (o === "other") a.target = "_blank"; else a.removeAttribute("target");
+        var x = el.querySelector("button");
+        x.setAttribute("aria-label", s[2]); x.title = s[2];
+        el.lang = l;
+        el.setAttribute("data-theme", d ? "dark" : "light");
+        fit();
+      }
+      var api = window.__nimblemap_banner = { os: null, render: render };
+      var off = null;
+      try { off = JSON.parse(get(KEY) || "null"); } catch (e) {}
+      if (off && off.v === VERSION && Date.now() - off.t < WEEK) return;
+      el.hidden = false;
+      render(true);
+      if (window.ResizeObserver) new ResizeObserver(fit).observe(el);
+      // The app's menu can change the language or appearance; follow it.
+      var timer = setInterval(function () { if (!el.hidden) render(false); }, 1500);
+      el.querySelector("button").onclick = function () {
+        el.hidden = true; fit(); clearInterval(timer);
+        try { localStorage.setItem(KEY, JSON.stringify({ v: VERSION, t: Date.now() })); } catch (e) {}
+      };
+    })();
+  </script>
   <script type="module">
     import init from "./__JS__";
     // Download the WebAssembly with a progress bar, then start the app.
@@ -71,13 +163,6 @@
       document.getElementById("nimblemap_loading").innerHTML =
         "<p>NimbleMap couldn't start: " + String(e).replace(/[<>&]/g, "") + "</p><p>It needs a recent Chrome, Edge, Firefox or Safari.</p>";
     });
-    const note = document.getElementById("nimblemap_note");
-    let dismissed = false;
-    try { dismissed = localStorage.getItem("lm.web.note") === "off"; } catch (e) {}
-    if (!dismissed) note.hidden = false;
-    // It steps aside after a while; the loading screen said it first.
-    setTimeout(() => { note.style.opacity = "0"; setTimeout(() => { note.hidden = true; }, 500); }, 30000);
-    note.querySelector("button").onclick = () => { note.hidden = true; try { localStorage.setItem("lm.web.note", "off"); } catch (e) {} };
   </script>
 </body>
 </html>
