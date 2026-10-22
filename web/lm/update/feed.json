@@ -1,21 +1,21 @@
 {
   "download": {
-    "free": "https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.3/NimbleMap-macos-arm64.dmg",
-    "gitcode": "https://gitcode.com/KN-Huang/NimbleMap/releases/download/v0.7.3/NimbleMap-macos-arm64.dmg",
-    "pro": "https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.3/NimbleMap-macos-arm64.dmg"
+    "free": "https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.4/NimbleMap-macos-arm64.dmg",
+    "gitcode": "https://gitcode.com/KN-Huang/NimbleMap/releases/download/v0.7.4/NimbleMap-macos-arm64.dmg",
+    "pro": "https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.4/NimbleMap-macos-arm64.dmg"
   },
   "format": 1,
   "minimum_macos": "13.0",
   "notes": {
-    "en": "Analysis is free: the analysis buttons on layer cards work without signing in. NimbleMap Pro is now the Ask box only (free with an account).",
-    "zh": "分析工具改为免费：图层卡片上的分析按钮无需登录即可使用。凌波微图 Pro 现在只包括提问助手（注册账号即可免费使用）。"
+    "en": "Sign in with Apple, Google, GitHub, LinkedIn or X. Sign-in emails now come from NimbleMap with a 6-digit code. The data table is never covered by the Ask box.",
+    "zh": "可用 Apple、Google、GitHub、LinkedIn 或 X 登录；登录邮件来自 NimbleMap，附 6 位验证码。打开数据表时，提问框不再遮挡表格。"
   },
   "page": "https://nimblemap.com/download.html",
-  "released": "2026-10-21",
+  "released": "2026-10-22",
   "sha256": {
-    "free": "e0c429a66d928e7a9696502fdb68764efa895ba043b20094d4a84ed334439337",
-    "pro": "e0c429a66d928e7a9696502fdb68764efa895ba043b20094d4a84ed334439337"
+    "free": "551f7d4210db57e881ae9d86961aee6b1dc843cde37b570888f476b4105a59e9",
+    "pro": "551f7d4210db57e881ae9d86961aee6b1dc843cde37b570888f476b4105a59e9"
   },
-  "signature": "6YZIeuyqCDpqNUgVejNngqg7IaSxRnofsgegRSi02YVyA+L/9UdvtZf/fm9/mzngG9BASOHtKUQpDiuIETfeDg==",
-  "version": "0.7.3"
+  "signature": "qVd3iZYNmCGY1+TnZlnlQ48vUzCV+FFj/YXeB1OkTR6FBm4osD3Gcw+iY9oAIfl7PW+4kPrf9xeXWeuYXaShBA==",
+  "version": "0.7.4"
 }
