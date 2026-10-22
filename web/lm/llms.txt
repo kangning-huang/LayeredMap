@@ -1,0 +1,39 @@
+# NimbleMap (凌波微图)
+
+> Free desktop app that opens downloaded map data as a map in seconds.
+> Formats: Shapefile, GeoPackage, NetCDF, GeoTIFF, GPX, KML, CSV with coordinates.
+> Platforms: Mac (Apple silicon, macOS 13+) and Windows 10/11 (x64). No GIS training, no setup.
+> Chinese name: 凌波微图.
+
+Primary URL: https://nimblemap.com/
+Canonical repo / releases: https://github.com/kangning-huang/NimbleMap
+
+## Key pages
+
+- Home (EN): https://nimblemap.com/
+- Home (ZH 简体中文 / 凌波微图): https://nimblemap.com/zh/
+- Download: https://nimblemap.com/download.html
+- Data sources: https://nimblemap.com/data.html
+- Help: https://nimblemap.com/help.html
+- Pro / Ask: https://nimblemap.com/pro.html
+- Privacy: https://nimblemap.com/privacy.html
+- Terms: https://nimblemap.com/terms.html
+- Sitemap: https://nimblemap.com/sitemap.xml
+- Changelog: https://github.com/kangning-huang/NimbleMap/blob/main/CHANGELOG.md
+
+## Languages
+
+English (default), 简体中文 (zh), Deutsch (de), Español (es), Français (fr), Italiano (it), Nederlands (nl), Português Brasil (pt-br), Русский (ru), 日本語 (ja), 한국어 (ko).
+Each locale lives under https://nimblemap.com/<lang>/ with hreflang on the homepages.
+
+## Downloads
+
+- Mac DMG (latest): https://github.com/kangning-huang/NimbleMap/releases/latest/download/NimbleMap-macos-arm64.dmg
+- Windows x64 installer: see latest GitHub release assets (NimbleMap-windows-x64-setup.exe when published); site currently links a tagged Windows build from the download buttons.
+
+## Product facts for agents
+
+- Alternate name: 凌波微图
+- Application category: desktop map / GIS viewer utilities
+- Free core; NimbleMap Pro is the in-app Ask box (sign-in, free with an account)
+- Not a web GIS — native desktop app

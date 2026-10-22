@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>凌波微图 NimbleMap：下载的地图数据，拖进来就能看</title>
-<meta name="description" content="一款免费的 Mac 应用，几秒钟就把你下载的地图数据变成地图：Shapefile、GeoPackage、NetCDF、GeoTIFF、GPX、KML，以及带坐标的 CSV。不用学 GIS，什么都不用设置。">
+<meta name="description" content="一款免费的桌面应用，几秒钟就把你下载的地图数据变成地图：Shapefile、GeoPackage、NetCDF、GeoTIFF、GPX、KML，以及带坐标的 CSV。支持 Mac 和 Windows。不用学 GIS，什么都不用设置。">
 <link rel="canonical" href="index.html">
 <link rel="alternate" hreflang="en" href="../index.html">
 <link rel="alternate" hreflang="zh-Hans" href="index.html">
@@ -22,11 +22,18 @@
 <meta property="og:site_name" content="凌波微图 NimbleMap">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:title" content="凌波微图 NimbleMap：在网上找到了地图数据？拖进凌波微图就能看。">
-<meta property="og:description" content="Shapefile、GeoPackage、NetCDF、GeoTIFF、GPX、KML、带坐标的 CSV：凌波微图几秒钟就把它们变成地图。Mac 版 · 免费。">
+<meta property="og:description" content="Shapefile、GeoPackage、NetCDF、GeoTIFF、GPX、KML、带坐标的 CSV：凌波微图几秒钟就把它们变成地图。Mac 和 Windows · 免费。">
 <meta property="og:url" content="index.html">
 <meta property="og:image" content="../img/open-storms.jpg">
+<meta property="og:image:width" content="1600">
+<meta property="og:image:height" content="996">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="凌波微图 NimbleMap：在网上找到了地图数据？拖进凌波微图就能看。">
+<meta name="twitter:description" content="Shapefile、GeoPackage、NetCDF、GeoTIFF、GPX、KML、带坐标的 CSV：凌波微图几秒钟就把它们变成地图。Mac 和 Windows · 免费。">
+<meta name="twitter:image" content="https://nimblemap.com/img/open-storms.jpg">
+<link rel="icon" href="../favicon.ico" sizes="any">
 <link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
 <link rel="stylesheet" href="../assets/site.css?v=074">
 <link rel="stylesheet" href="../assets/data.css?v=3">
 <script src="../assets/site.js?v=074"></script>
@@ -39,9 +46,22 @@
   "inLanguage": "zh-Hans",
   "operatingSystem": "macOS 13+ (Apple silicon), Windows 10 1809+ / Windows 11 (x64)",
   "applicationCategory": "UtilitiesApplication",
-  "description": "一款免费的 Mac 应用，几秒钟就把你下载的地图数据变成地图：Shapefile、GeoPackage、NetCDF、GeoTIFF、GPX、KML，以及带坐标的 CSV。不用学 GIS，什么都不用设置。",
+  "description": "一款免费的桌面应用，几秒钟就把你下载的地图数据变成地图：Shapefile、GeoPackage、NetCDF、GeoTIFF、GPX、KML，以及带坐标的 CSV。支持 Mac 和 Windows。不用学 GIS，什么都不用设置。",
   "isAccessibleForFree": true,
-  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "CNY" }
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "CNY"
+  },
+  "url": "https://nimblemap.com/zh/",
+  "image": "https://nimblemap.com/img/open-storms.jpg",
+  "softwareVersion": "0.7.4",
+  "downloadUrl": "https://github.com/kangning-huang/NimbleMap/releases/latest",
+  "publisher": {
+    "@type": "Person",
+    "name": "Kangning Huang",
+    "url": "https://kangning-huang.com/"
+  }
 }
 </script>
 </head>
@@ -85,7 +105,7 @@
       <p class="lede">Shapefile、GeoPackage、NetCDF、GeoTIFF、GPX、KML、带坐标的 CSV：就是你从 NASA、美国地质调查局（USGS）或城市开放数据平台下载的那些文件。凌波微图几秒钟就把它们变成地图。不用学 GIS，什么都不用设置。</p>
       <p class="hero-how">把文件拖进凌波微图；Shapefile、GeoPackage 和 NetCDF 文件也可以直接双击打开。</p>
       <div class="actions">
-        <a class="btn btn-primary btn-get" href="https://gitcode.com/KN-Huang/NimbleMap/releases/download/v0.7.3/NimbleMap-macos-arm64.dmg" download>免费下载 Mac 版</a>
+        <a class="btn btn-primary btn-get" href="https://gitcode.com/KN-Huang/NimbleMap/releases/download/v0.7.4/NimbleMap-macos-arm64.dmg" download>免费下载 Mac 版</a>
         <a class="btn btn-quiet btn-windows" href="https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.1/NimbleMap-windows-x64-setup.exe" download>下载 Windows 版</a>
         <a class="btn btn-quiet" href="#data">去哪里找数据</a>
       </div>
@@ -282,7 +302,7 @@
     <img class="cta-icon" src="../img/icon-256.png" alt="" width="96" height="96">
     <h2>探索地球的真实数据。</h2>
     <div class="cta-actions">
-      <a class="btn btn-primary btn-get" href="https://gitcode.com/KN-Huang/NimbleMap/releases/download/v0.7.3/NimbleMap-macos-arm64.dmg" download>免费下载 Mac 版</a>
+      <a class="btn btn-primary btn-get" href="https://gitcode.com/KN-Huang/NimbleMap/releases/download/v0.7.4/NimbleMap-macos-arm64.dmg" download>免费下载 Mac 版</a>
       <a class="btn btn-quiet btn-windows" href="https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.1/NimbleMap-windows-x64-setup.exe" download>下载 Windows 版</a>
     </div>
     <p class="desktop-platforms">支持 Mac（Apple 芯片，macOS 13 或更高版本）和 Windows 10/11（x64）。</p>
