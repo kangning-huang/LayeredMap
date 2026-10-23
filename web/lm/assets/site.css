@@ -491,7 +491,7 @@ code { font: .88em var(--mono); background: var(--paper-2); padding: 1px 5px; bo
   .nav .theme-btn { position: absolute; top: 8px; right: 0; }
   .nav .lang-menu summary { position: absolute; top: 8px; right: 36px; }
 }
-@media (max-width: 380px) {
+@media (max-width: 420px) {
   .nav > a { padding: 6px 4px; font-size: 13px; }
 }
 .foot-langs { margin: 10px 0 0; line-height: 1.9; }
@@ -718,3 +718,7 @@ section.film-band { padding: 0 0 56px; }
 @media (min-width: 1260px) { .drop-hero .hero-shot { width: 110%; } }
 @media (min-width: 901px) and (max-width: 1180px) { .hero .actions .btn { font-size: 14px; padding: 7px 11px; } .hero .actions { gap: 6px; } }
 .about-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+/* On a phone the brand already links home, so Home steps aside and About fits on the row. */
+@media (max-width: 640px) {
+  .nav > a[href="index.html"] { display: none; }
+}

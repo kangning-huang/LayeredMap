@@ -7,7 +7,7 @@ Every page carries the same language plumbing, and it must list every language t
 - the language menu in the header (a `<details>` list, so it works without JavaScript);
 - the list of languages in the footer;
 - the app's download links (the DMG: GitHub Releases, or the GitCode mirror on Chinese pages);
-- the site navigation in the header (Home, Examples, Data, Help, Download) and the footer's links
+- the site navigation in the header (Home, Examples, Data, Help, About, Download) and the footer's links
   (Help, Glossary, Pro, Changelog) with the line saying NimbleMap is an independent project.
 
 Translated pages are written by hand; this script rewrites only those parts, from LANGS and
@@ -75,7 +75,7 @@ WORDS = {
     "zh": Words("首页", "示例", "帮助", "术语表", "下载", "Pro 版", "数据", "更新日志",
                 "凌波微图是独立项目，与苹果公司、Esri 及 QGIS 项目均无关联。", "关于作者"),
     "de": Words("Startseite", "Beispiele", "Hilfe", "Glossar", "Download", "Pro", "Daten", "Änderungsprotokoll",
-                "NimbleMap ist ein unabhängiges Projekt und steht in keiner Verbindung zu Apple, Esri oder dem QGIS-Projekt.", "Über den Entwickler"),
+                "NimbleMap ist ein unabhängiges Projekt und steht in keiner Verbindung zu Apple, Esri oder dem QGIS-Projekt.", "Über mich"),
     "es": Words("Inicio", "Ejemplos", "Ayuda", "Glosario", "Descargar", "Pro", "Datos", "Registro de cambios",
                 "NimbleMap es un proyecto independiente, sin relación con Apple, Esri ni el proyecto QGIS.", "Acerca de"),
     "fr": Words("Accueil", "Exemples", "Aide", "Glossaire", "Télécharger", "Pro", "Données", "Journal des modifications",
@@ -240,15 +240,18 @@ def nav(lang: Lang, name: str) -> str:
     """The header's page links; the current section is marked (the workflows belong to Help)."""
     w = words(lang)
     here = {"index.html": "index.html", "data.html": "data.html", "help.html": "help.html",
-            "download.html": "download.html"}.get(name)
+            "download.html": "download.html", "about.html": "about.html"}.get(name)
     if name.startswith("workflow-"):
         here = "help.html"
+    en = LANGS[0]
+    about = "about.html" if lang is en else href(lang, en, "about.html")
     rows = [("index.html", w.home), ("index.html#examples", w.examples), ("data.html", w.data), ("help.html", w.help),
-            ("download.html", w.download)]
+            (about, w.about), ("download.html", w.download)]
     out = []
     for target, label in rows:
         current = ' aria-current="page"' if target == here else ""
-        out.append(f'      <a href="{target}"{current}>{label}</a>\n')
+        lang_attr = f' hreflang="{en.hreflang}"' if target == about and lang is not en else ""
+        out.append(f'      <a href="{target}"{lang_attr}{current}>{label}</a>\n')
     return "".join(out)
 
 
