@@ -8,6 +8,9 @@ goes through this script, which copies the site (minus its README) to an output 
 - writes sitemap.xml (every page, with its language alternates);
 - at a host root, also writes robots.txt (pointing at the sitemap) and the GitHub Pages `CNAME`
   file holding the host, so publishing the folder keeps the custom domain;
+- publishes relative links to a folder's index.html as the folder (`zh/index.html` -> `zh/`,
+  `index.html#examples` -> `./#examples`), the URL the canonical tags name; the source keeps
+  index.html so the pages still open from file:// and as the app's help;
 - drops the `<!-- TODO(owner): ... -->` notes, which are for us, not for visitors.
 
     python3 -I tools/lm/site/stamp.py /tmp/site-out                         # https://nimblemap.com/
@@ -42,6 +45,7 @@ ABSOLUTE = [
     re.compile(r'(<meta property="og:image" content=")([^"]*)(")'),
 ]
 TODO_NOTE = re.compile(r"[ \t]*<!-- TODO\(owner\):.*?-->\n?", re.S)
+INDEX_LINK = re.compile(r'(<a [^>]*?href=")((?:\.\./)*(?:[a-z-]+/)?)index\.html((?:#[^"]*)?")')
 ALTERNATE = re.compile(r'<link rel="alternate" hreflang="([^"]*)" href="([^"]*)">')
 
 
@@ -49,6 +53,11 @@ def page_url(origin: str, rel: str) -> str:
     """The public URL of a page: `index.html` is served as its folder."""
     url = f"{origin}/{rel}"
     return url[: -len("index.html")] if url.endswith("/index.html") else url
+
+
+def folder_links(text: str) -> str:
+    """Relative `<a href>`s to an index.html become the folder (`index.html` alone: `./`)."""
+    return INDEX_LINK.sub(lambda m: m.group(1) + (m.group(2) or "./") + m.group(3), text)
 
 
 def absolutize(text: str, base: str, origin: str) -> str:
@@ -76,7 +85,7 @@ def stamp(origin: str, out: Path, site: Path = SITE) -> list[str]:
     for page in sorted(out.rglob("*.html")):
         rel = page.relative_to(out).as_posix()
         base = f"{origin}/{rel}"
-        text = TODO_NOTE.sub("", absolutize(page.read_text(encoding="utf-8"), base, origin))
+        text = TODO_NOTE.sub("", folder_links(absolutize(page.read_text(encoding="utf-8"), base, origin)))
         page.write_text(text, encoding="utf-8")
         alternates = ALTERNATE.findall(text)
         entries.append((page_url(origin, rel), alternates))

@@ -271,8 +271,10 @@ def foot_col(lang: Lang, name: str, site: Path) -> str:
     en = LANGS[0]
     about = (f'<a href="about.html">{w.about}</a>' if lang is en
              else f'<a href="{href(lang, en, "about.html")}" hreflang="{en.hreflang}">{w.about}</a>')
+    up = "" if lang is en else "../"
+    legal = [f'<a href="{up}privacy.html">Privacy</a>', f'<a href="{up}terms.html">Terms</a>']
     links = " · ".join([f'<a href="help.html">{w.help}</a>', f'<a href="glossary.html">{w.glossary}</a>', data, pro,
-                        f'<a href="{CHANGELOG}">{w.changelog}</a>', about])
+                        f'<a href="{CHANGELOG}">{w.changelog}</a>', about, *legal])
     return (f'<div class="foot-nav"><p class="foot-links">{links}</p>'
             f'<p class="foot-note">{w.independent}</p>{foot(lang, name, site)}</div>')
 

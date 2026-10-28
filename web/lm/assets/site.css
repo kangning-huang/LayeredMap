@@ -419,6 +419,7 @@ code { font: .88em var(--mono); background: var(--paper-2); padding: 1px 5px; bo
 /* ---- Hero showcase: one large shot per kind of map data, rotating ---- */
 .showcase .frame { transform: none; }
 .showcase .stage { position: relative; aspect-ratio: 1600 / 996; }
+.showcase .stage > picture { position: absolute; inset: 0; display: block; margin: 0; }
 .showcase .slide { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .6s ease; }
 .showcase .slide.is-on { opacity: 1; }
 .showcase .kinds { display: none; gap: 6px; margin-top: 14px; flex-wrap: wrap; align-items: center; }

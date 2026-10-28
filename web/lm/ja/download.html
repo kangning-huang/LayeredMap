@@ -27,7 +27,7 @@
 <meta property="og:image" content="../img/walls-compare.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
-<link rel="stylesheet" href="../assets/site.css?v=076">
+<link rel="stylesheet" href="../assets/site.css?v=077">
 <script src="../assets/site.js?v=075"></script>
 <script type="application/ld+json">
 {
@@ -39,7 +39,19 @@
   "applicationCategory": "UtilitiesApplication",
   "description": "Shapefile、GeoJSON、CSV、GeoTIFF、GeoPackage、Excel、KML、GPX、NetCDF のファイルをドラッグするだけで開ける Mac の地図アプリ。ファイルがコンピューターの外に出ることはありません。",
   "isAccessibleForFree": true,
-  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "JPY" }
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "JPY"
+  },
+  "@id": "https://nimblemap.com/#app",
+  "sameAs": "https://github.com/kangning-huang/NimbleMap",
+  "author": {
+    "@id": "https://nimblemap.com/about.html#person"
+  },
+  "publisher": {
+    "@id": "https://nimblemap.com/about.html#person"
+  }
 }
 </script>
 </head>
@@ -244,7 +256,7 @@
       <p>いいえ。ファイルは設定なしで開けます。座標の入った列がどれかなど、アプリが何かを推測する必要があるときは、1 行でそれを伝え、変更できるようにします。地図の用語は<a href="glossary.html">用語集</a>でやさしく説明しています。</p>
 
       <h3>ファイルがどこかにアップロードされることはありますか？</h3>
-      <p>無料版ではありません。すべて Mac の中で読み込み・分析・描画され、オフラインでも動作します。オンライン時には背景地図のタイルをダウンロードしますが、あなたのデータが送信されることはありません。Pro の質問ボックスでは、質問を理解するためにレイヤー名、フィールド名、範囲をアシスタントに送りますが、値そのものは決して送りません。</p>
+      <p>無料版ではありません。すべてコンピューター上で読み込み・分析・描画され、オフラインでも動作します。オンライン時には背景地図のタイルを取得しますが、地図ファイルはアップロードされません。Pro の Ask は質問、レイヤー名・フィールド名、範囲、有効フィルター（値含む）、選択オブジェクトの関連値、質問で指名された最大5件を送ります。ファイル本体・形状・座標・パスは送りません。詳細は <a href="../privacy.html">Privacy</a>。</p>
 
       <h3>Windows 版はありますか？</h3>
       <p>Mac（Apple シリコン、macOS 13 以降）と Windows 10/11（x64）に対応。 <a href="#windows">Windows 版をダウンロード</a></p>
@@ -259,7 +271,7 @@
       <p><strong>NimbleMap</strong> · RustGIS をベースにした、地図が主役のアプリ。</p>
       <p>スクリーンショットの地図データ：© OpenStreetMap contributors（ODbL）／Protomaps、Natural Earth（パブリックドメイン）、NASA Blue Marble 画像（NASA Earth Observatory、GIBS）。サンプルデータ：Xue et al. 2021（CC BY 4.0）。</p>
     </div>
-    <div class="foot-nav"><p class="foot-links"><a href="help.html">ヘルプ</a> · <a href="glossary.html">用語集</a> · <a href="data.html">データ</a> · <a href="pro.html">Pro</a> · <a href="https://github.com/kangning-huang/NimbleMap/blob/main/CHANGELOG.md">変更履歴</a> · <a href="../about.html" hreflang="en">作者について</a></p><p class="foot-note">NimbleMap は独立したプロジェクトであり、Apple、Esri、QGIS プロジェクトとは関係ありません。</p><p class="foot-langs"><a href="../download.html" hreflang="en" lang="en">English</a> · <a href="../zh/download.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="../de/download.html" hreflang="de" lang="de">Deutsch</a> · <a href="../es/download.html" hreflang="es" lang="es">Español</a> · <a href="../fr/download.html" hreflang="fr" lang="fr">Français</a> · <a href="../it/download.html" hreflang="it" lang="it">Italiano</a> · <a href="../nl/download.html" hreflang="nl" lang="nl">Nederlands</a> · <a href="../pt-br/download.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ru/download.html" hreflang="ru" lang="ru">Русский</a> · <a href="../ko/download.html" hreflang="ko" lang="ko">한국어</a></p></div>
+    <div class="foot-nav"><p class="foot-links"><a href="help.html">ヘルプ</a> · <a href="glossary.html">用語集</a> · <a href="data.html">データ</a> · <a href="pro.html">Pro</a> · <a href="https://github.com/kangning-huang/NimbleMap/blob/main/CHANGELOG.md">変更履歴</a> · <a href="../about.html" hreflang="en">作者について</a> · <a href="../privacy.html">Privacy</a> · <a href="../terms.html">Terms</a></p><p class="foot-note">NimbleMap は独立したプロジェクトであり、Apple、Esri、QGIS プロジェクトとは関係ありません。</p><p class="foot-langs"><a href="../download.html" hreflang="en" lang="en">English</a> · <a href="../zh/download.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="../de/download.html" hreflang="de" lang="de">Deutsch</a> · <a href="../es/download.html" hreflang="es" lang="es">Español</a> · <a href="../fr/download.html" hreflang="fr" lang="fr">Français</a> · <a href="../it/download.html" hreflang="it" lang="it">Italiano</a> · <a href="../nl/download.html" hreflang="nl" lang="nl">Nederlands</a> · <a href="../pt-br/download.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ru/download.html" hreflang="ru" lang="ru">Русский</a> · <a href="../ko/download.html" hreflang="ko" lang="ko">한국어</a></p></div>
   </div>
 </footer>
 </body>

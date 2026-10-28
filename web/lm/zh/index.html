@@ -34,7 +34,7 @@
 <link rel="icon" href="../favicon.ico" sizes="any">
 <link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
-<link rel="stylesheet" href="../assets/site.css?v=076">
+<link rel="stylesheet" href="../assets/site.css?v=077">
 <link rel="stylesheet" href="../assets/data.css?v=3">
 <script src="../assets/site.js?v=075"></script>
 <script type="application/ld+json">
@@ -58,9 +58,12 @@
   "softwareVersion": "0.7.5",
   "downloadUrl": "https://github.com/kangning-huang/NimbleMap/releases/latest",
   "publisher": {
-    "@type": "Person",
-    "name": "Kangning Huang",
-    "url": "https://kangning-huang.com/"
+    "@id": "https://nimblemap.com/about.html#person"
+  },
+  "@id": "https://nimblemap.com/#app",
+  "sameAs": "https://github.com/kangning-huang/NimbleMap",
+  "author": {
+    "@id": "https://nimblemap.com/about.html#person"
   }
 }
 </script>
@@ -113,11 +116,11 @@
     </div>
     <div class="hero-shot showcase drop-scene" data-rotate="3500">
       <figure class="frame stage">
-        <img class="slide is-on" src="../img/open-storms.jpg" alt="凌波微图打开了文件 IBTrACS_storm_tracks_1980-2026.shp：亚洲和太平洋上空的 4999 条风暴路径，按最大风速着色，图层卡片上列出了文件名和图例。" width="1600" height="996">
-        <img class="slide" src="../img/open-earthquakes.jpg" alt="凌波微图打开了 usgs_earthquakes_M6plus_1900-2026.gpkg：环太平洋的 14537 次地震，按震级着色。" width="1600" height="996" loading="lazy" aria-hidden="true">
-        <img class="slide" src="../img/open-heatwave.jpg" alt="凌波微图打开了 GDO_heatwave_intensity_JJA_2023.nc，停在 2023 年 7 月 16 日：三个大洲上的热浪强度以红色显示，地图下方是时间滑块。" width="1600" height="996" loading="lazy" aria-hidden="true">
-        <img class="slide" src="../img/open-relief.jpg" alt="凌波微图打开了 ETOPO_2022_relief_30min.tif：用渐变色显示全球陆地和海底的高程。" width="1600" height="996" loading="lazy" aria-hidden="true">
-        <img class="slide" src="../img/open-volcanoes.jpg" alt="凌波微图打开了 NCEI_volcano_locations.csv：环太平洋火山带周围的 1609 座火山显示为点，按海拔着色。" width="1600" height="996" loading="lazy" aria-hidden="true">
+        <picture><source type="image/webp" srcset="../img/open-storms-800.webp 800w, ../img/open-storms.webp 1600w" sizes="(max-width: 800px) 100vw, 800px"><img class="slide is-on" src="../img/open-storms.jpg" alt="凌波微图打开了文件 IBTrACS_storm_tracks_1980-2026.shp：亚洲和太平洋上空的 4999 条风暴路径，按最大风速着色，图层卡片上列出了文件名和图例。" width="1600" height="996" fetchpriority="high" decoding="async"></picture>
+        <picture><source type="image/webp" srcset="../img/open-earthquakes-800.webp 800w, ../img/open-earthquakes.webp 1600w" sizes="(max-width: 800px) 100vw, 800px"><img class="slide" src="../img/open-earthquakes.jpg" alt="凌波微图打开了 usgs_earthquakes_M6plus_1900-2026.gpkg：环太平洋的 14537 次地震，按震级着色。" width="1600" height="996" loading="lazy" aria-hidden="true" decoding="async"></picture>
+        <picture><source type="image/webp" srcset="../img/open-heatwave-800.webp 800w, ../img/open-heatwave.webp 1600w" sizes="(max-width: 800px) 100vw, 800px"><img class="slide" src="../img/open-heatwave.jpg" alt="凌波微图打开了 GDO_heatwave_intensity_JJA_2023.nc，停在 2023 年 7 月 16 日：三个大洲上的热浪强度以红色显示，地图下方是时间滑块。" width="1600" height="996" loading="lazy" aria-hidden="true" decoding="async"></picture>
+        <picture><source type="image/webp" srcset="../img/open-relief-800.webp 800w, ../img/open-relief.webp 1600w" sizes="(max-width: 800px) 100vw, 800px"><img class="slide" src="../img/open-relief.jpg" alt="凌波微图打开了 ETOPO_2022_relief_30min.tif：用渐变色显示全球陆地和海底的高程。" width="1600" height="996" loading="lazy" aria-hidden="true" decoding="async"></picture>
+        <picture><source type="image/webp" srcset="../img/open-volcanoes-800.webp 800w, ../img/open-volcanoes.webp 1600w" sizes="(max-width: 800px) 100vw, 800px"><img class="slide" src="../img/open-volcanoes.jpg" alt="凌波微图打开了 NCEI_volcano_locations.csv：环太平洋火山带周围的 1609 座火山显示为点，按海拔着色。" width="1600" height="996" loading="lazy" aria-hidden="true" decoding="async"></picture>
       </figure>
       <svg class="drop-arrow" viewBox="0 0 110 70" aria-hidden="true"><path d="M6 64C26 30 56 14 98 10"/><path class="head" d="M88 3l11 7-10 8"/></svg>
       <div class="files" role="group" aria-label="一个装满下载来的地图文件的文件夹：选一个，看看它在凌波微图里打开的样子">
@@ -209,22 +212,22 @@
     </div>
     <div class="principle-shots four">
       <div class="principle">
-        <figure class="frame"><img src="../img/open-zoom.jpg" alt="放大后的南海和菲律宾一带，成千上万条风暴路径穿过，按最大风速着色。" loading="lazy" width="800" height="500"></figure>
+        <figure class="frame"><picture><source type="image/webp" srcset="../img/open-zoom-800.webp 800w, ../img/open-zoom.webp 1600w" sizes="(max-width: 800px) 100vw, 800px"><img src="../img/open-zoom.jpg" alt="放大后的南海和菲律宾一带，成千上万条风暴路径穿过，按最大风速着色。" width="800" height="500" loading="lazy" decoding="async"></picture></figure>
         <svg class="p-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21M10.5 7.5v6M7.5 10.5h6"/></svg><h3>缩放和平移</h3>
         <p>滚动、双指缩放、拖动，从整个地球一直看到一段海岸。</p>
       </div>
       <div class="principle">
-        <figure class="frame"><img src="../img/open-search.jpg" alt="图层卡片的搜索框里输入了“Haiyan”：找到 3 个，地图上三条名叫 Haiyan 的风暴路径加粗显示。" loading="lazy" width="800" height="500"></figure>
+        <figure class="frame"><picture><source type="image/webp" srcset="../img/open-search-800.webp 800w, ../img/open-search.webp 1600w" sizes="(max-width: 800px) 100vw, 800px"><img src="../img/open-search.jpg" alt="图层卡片的搜索框里输入了“Haiyan”：找到 3 个，地图上三条名叫 Haiyan 的风暴路径加粗显示。" width="800" height="500" loading="lazy" decoding="async"></picture></figure>
         <svg class="p-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 6h9M3.5 11h6M3.5 16h5"/><circle cx="15.5" cy="13.5" r="4"/><path d="m18.5 16.5 3 3"/></svg><h3>搜索地名或你的数据</h3>
         <p>输入城市名就飞过去，输入一个名字就在文件里找到它：比如这里，每一场叫 Haiyan（海燕）的风暴。</p>
       </div>
       <div class="principle">
-        <figure class="frame"><img src="../img/open-click.jpg" alt="对象卡片：2011 年日本东北大地震的 9.10 级震级高于 14537 次地震中的 99%。" loading="lazy" width="800" height="500"></figure>
+        <figure class="frame"><picture><source type="image/webp" srcset="../img/open-click-800.webp 800w, ../img/open-click.webp 1600w" sizes="(max-width: 800px) 100vw, 800px"><img src="../img/open-click.jpg" alt="对象卡片：2011 年日本东北大地震的 9.10 级震级高于 14537 次地震中的 99%。" width="800" height="500" loading="lazy" decoding="async"></picture></figure>
         <svg class="p-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v9a1.5 1.5 0 0 1-1.5 1.5H10l-4.2 3.6V16H5.5A1.5 1.5 0 0 1 4 14.5z"/><path d="M10.2 8.4a1.9 1.9 0 1 1 2.6 1.8c-.5.2-.8.6-.8 1.1v.4"/><circle cx="12" cy="13.6" r=".6" class="dot"/></svg><h3>点一下任何东西</h3>
         <p>看看它是什么、和同类比起来怎么样。2011 年日本东北大地震比 14537 次地震中的 99% 都强。</p>
       </div>
       <div class="principle">
-        <figure class="frame"><img src="../img/open-time.jpg" alt="2023 年 7 月 16 日美洲、非洲和欧洲的热浪强度，时间滑块停在第 46 步（共 92 步）。" loading="lazy" width="800" height="500"></figure>
+        <figure class="frame"><picture><source type="image/webp" srcset="../img/open-time-800.webp 800w, ../img/open-time.webp 1600w" sizes="(max-width: 800px) 100vw, 800px"><img src="../img/open-time.jpg" alt="2023 年 7 月 16 日美洲、非洲和欧洲的热浪强度，时间滑块停在第 46 步（共 92 步）。" width="800" height="500" loading="lazy" decoding="async"></picture></figure>
         <svg class="p-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M10 8.5v7l5.5-3.5z"/></svg><h3>播放时间</h3>
         <p>带时间步的文件会有一个滑块。点一下播放，看一整个夏天的热浪怎样移动。</p>
       </div>
@@ -248,7 +251,7 @@
     </div>
     <div class="features mini">
       <article class="example feature">
-        <figure class="frame"><img src="../img/typhoons-card.jpg" alt="凌波微图显示亚洲和太平洋上空的 4999 条台风路径；选中了台风“海燕”，卡片显示它 170 节的最大风速比有记录的 4547 场风暴中的 99% 都强。" loading="lazy" width="1600" height="996"></figure>
+        <figure class="frame"><picture><source type="image/webp" srcset="../img/typhoons-card-800.webp 800w, ../img/typhoons-card.webp 1600w" sizes="(max-width: 800px) 100vw, 800px"><img src="../img/typhoons-card.jpg" alt="凌波微图显示亚洲和太平洋上空的 4999 条台风路径；选中了台风“海燕”，卡片显示它 170 节的最大风速比有记录的 4547 场风暴中的 99% 都强。" width="1600" height="996" loading="lazy" decoding="async"></picture></figure>
         <div class="feature-body">
           <h3>台风与飓风</h3>
           <p>1980 年以来的 4999 条风暴路径。台风“海燕”170 节的最大风速，比 4547 场风暴中的 99% 都强。</p>
@@ -257,7 +260,7 @@
         </div>
       </article>
       <article class="example feature">
-        <figure class="frame"><img src="../img/walls-satellite.jpg" alt="1866 年北京的城墙叠在卫星影像上，卡片显示城内面积 35.3 平方公里，比 1789 座城池中的 99% 都大。" loading="lazy" width="1600" height="996"></figure>
+        <figure class="frame"><picture><source type="image/webp" srcset="../img/walls-satellite-800.webp 800w, ../img/walls-satellite.webp 1600w" sizes="(max-width: 800px) 100vw, 800px"><img src="../img/walls-satellite.jpg" alt="1866 年北京的城墙叠在卫星影像上，卡片显示城内面积 35.3 平方公里，比 1789 座城池中的 99% 都大。" width="1600" height="996" loading="lazy" decoding="async"></picture></figure>
         <div class="feature-body">
           <h3>1866 年的中国城墙</h3>
           <p>1789 座城池的城墙。北京城内面积 35.3&nbsp;平方公里，比其中 99% 的城池都大。</p>
@@ -308,7 +311,7 @@
       <p><strong>凌波微图 NimbleMap</strong> · 以地图为中心的应用，基于 <a href="https://github.com/opengeos/RustGIS">RustGIS</a>。</p>
       <p>截图中的地图数据：© OpenStreetMap 贡献者（ODbL），经 Protomaps 提供；Natural Earth（公有领域）；NASA “蓝色弹珠” 卫星影像（NASA Earth Observatory，GIBS）。示例数据：NOAA IBTrACS；Xue 等，2021（CC BY 4.0）；哥白尼全球干旱观测站 / JRC（CC BY 4.0）；美国地质调查局（USGS）；NOAA ETOPO 2022 与 NCEI 火山数据。</p>
     </div>
-    <div class="foot-nav"><p class="foot-links"><a href="help.html">帮助</a> · <a href="glossary.html">术语表</a> · <a href="data.html">数据</a> · <a href="pro.html">Pro 版</a> · <a href="https://github.com/kangning-huang/NimbleMap/blob/main/CHANGELOG.md">更新日志</a> · <a href="../about.html" hreflang="en">关于作者</a></p><p class="foot-note">凌波微图是独立项目，与苹果公司、Esri 及 QGIS 项目均无关联。</p><p class="foot-langs"><a href="../index.html" hreflang="en" lang="en">English</a> · <a href="../de/index.html" hreflang="de" lang="de">Deutsch</a> · <a href="../es/index.html" hreflang="es" lang="es">Español</a> · <a href="../fr/index.html" hreflang="fr" lang="fr">Français</a> · <a href="../it/index.html" hreflang="it" lang="it">Italiano</a> · <a href="../nl/index.html" hreflang="nl" lang="nl">Nederlands</a> · <a href="../pt-br/index.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ru/index.html" hreflang="ru" lang="ru">Русский</a> · <a href="../ja/index.html" hreflang="ja" lang="ja">日本語</a> · <a href="../ko/index.html" hreflang="ko" lang="ko">한국어</a></p></div>
+    <div class="foot-nav"><p class="foot-links"><a href="help.html">帮助</a> · <a href="glossary.html">术语表</a> · <a href="data.html">数据</a> · <a href="pro.html">Pro 版</a> · <a href="https://github.com/kangning-huang/NimbleMap/blob/main/CHANGELOG.md">更新日志</a> · <a href="../about.html" hreflang="en">关于作者</a> · <a href="../privacy.html">Privacy</a> · <a href="../terms.html">Terms</a></p><p class="foot-note">凌波微图是独立项目，与苹果公司、Esri 及 QGIS 项目均无关联。</p><p class="foot-langs"><a href="../index.html" hreflang="en" lang="en">English</a> · <a href="../de/index.html" hreflang="de" lang="de">Deutsch</a> · <a href="../es/index.html" hreflang="es" lang="es">Español</a> · <a href="../fr/index.html" hreflang="fr" lang="fr">Français</a> · <a href="../it/index.html" hreflang="it" lang="it">Italiano</a> · <a href="../nl/index.html" hreflang="nl" lang="nl">Nederlands</a> · <a href="../pt-br/index.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ru/index.html" hreflang="ru" lang="ru">Русский</a> · <a href="../ja/index.html" hreflang="ja" lang="ja">日本語</a> · <a href="../ko/index.html" hreflang="ko" lang="ko">한국어</a></p></div>
   </div>
 </footer>
 </body>

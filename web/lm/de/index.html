@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>NimbleMap: Kartendaten aus dem Netz einfach hineinziehen</title>
-<meta name="description" content="Eine kostenlose Desktop-App, die heruntergeladene Kartendaten in Sekunden als Karte öffnet: Shapefiles, GeoPackages, NetCDF, GeoTIFFs, GPX, KML und CSVs mit Koordinaten. Für Mac und Windows. Ohne GIS-Kenntnisse, ohne Einrichtung.">
+<meta name="description" content="Eine kostenlose Desktop-App, die heruntergeladene Kartendaten in Sekunden als Karte öffnet: Shapefiles, GeoPackages, NetCDF, GeoTIFFs, GPX…">
 <link rel="canonical" href="index.html">
 <link rel="alternate" hreflang="en" href="../index.html">
 <link rel="alternate" hreflang="zh-Hans" href="../zh/index.html">
@@ -34,7 +34,7 @@
 <link rel="icon" href="../favicon.ico" sizes="any">
 <link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
-<link rel="stylesheet" href="../assets/site.css?v=076">
+<link rel="stylesheet" href="../assets/site.css?v=077">
 <link rel="stylesheet" href="../assets/data.css?v=3">
 <script src="../assets/site.js?v=075"></script>
 <script type="application/ld+json">
@@ -57,11 +57,14 @@
   "softwareVersion": "0.7.5",
   "downloadUrl": "https://github.com/kangning-huang/NimbleMap/releases/latest",
   "publisher": {
-    "@type": "Person",
-    "name": "Kangning Huang",
-    "url": "https://kangning-huang.com/"
+    "@id": "https://nimblemap.com/about.html#person"
   },
-  "alternateName": "凌波微图"
+  "alternateName": "凌波微图",
+  "@id": "https://nimblemap.com/#app",
+  "sameAs": "https://github.com/kangning-huang/NimbleMap",
+  "author": {
+    "@id": "https://nimblemap.com/about.html#person"
+  }
 }
 </script>
 </head>
@@ -113,11 +116,11 @@
     </div>
     <div class="hero-shot showcase drop-scene" data-rotate="3500">
       <figure class="frame stage">
-        <img class="slide is-on" src="../img/open-storms.jpg" alt="NimbleMap mit geöffneter Datei IBTrACS_storm_tracks_1980-2026.shp: 4.999 Sturmbahnen über Asien und dem Pazifik, eingefärbt nach Spitzenwind, mit der Infokarte des Layers, die Dateinamen und Legende zeigt." width="1600" height="996">
-        <img class="slide" src="../img/open-earthquakes.jpg" alt="NimbleMap mit geöffneter Datei usgs_earthquakes_M6plus_1900-2026.gpkg: 14.537 Erdbeben rund um den Pazifik, eingefärbt nach Magnitude." width="1600" height="996" loading="lazy" aria-hidden="true">
-        <img class="slide" src="../img/open-heatwave.jpg" alt="NimbleMap mit geöffneter Datei GDO_heatwave_intensity_JJA_2023.nc am 16. Juli 2023: Hitzewellen-Intensität in Rottönen über drei Kontinenten, mit dem Zeitschieberegler unter der Karte." width="1600" height="996" loading="lazy" aria-hidden="true">
-        <img class="slide" src="../img/open-relief.jpg" alt="NimbleMap mit geöffneter Datei ETOPO_2022_relief_30min.tif: Höhen von Land und Meeresboden des ganzen Planeten in einem Farbverlauf." width="1600" height="996" loading="lazy" aria-hidden="true">
-        <img class="slide" src="../img/open-volcanoes.jpg" alt="NimbleMap mit geöffneter Datei NCEI_volcano_locations.csv: 1.609 Vulkane als Punkte rund um den Pazifischen Feuerring, eingefärbt nach Höhe." width="1600" height="996" loading="lazy" aria-hidden="true">
+        <picture><source type="image/webp" srcset="../img/open-storms-800.webp 800w, ../img/open-storms.webp 1600w" sizes="(max-width: 800px) 100vw, 800px"><img class="slide is-on" src="../img/open-storms.jpg" alt="NimbleMap mit geöffneter Datei IBTrACS_storm_tracks_1980-2026.shp: 4.999 Sturmbahnen über Asien und dem Pazifik, eingefärbt nach Spitzenwind, mit der Infokarte des Layers, die Dateinamen und Legende zeigt." width="1600" height="996" fetchpriority="high" decoding="async"></picture>
+        <picture><source type="image/webp" srcset="../img/open-earthquakes-800.webp 800w, ../img/open-earthquakes.webp 1600w" sizes="(max-width: 800px) 100vw, 800px"><img class="slide" src="../img/open-earthquakes.jpg" alt="NimbleMap mit geöffneter Datei usgs_earthquakes_M6plus_1900-2026.gpkg: 14.537 Erdbeben rund um den Pazifik, eingefärbt nach Magnitude." width="1600" height="996" loading="lazy" aria-hidden="true" decoding="async"></picture>
+        <picture><source type="image/webp" srcset="../img/open-heatwave-800.webp 800w, ../img/open-heatwave.webp 1600w" sizes="(max-width: 800px) 100vw, 800px"><img class="slide" src="../img/open-heatwave.jpg" alt="NimbleMap mit geöffneter Datei GDO_heatwave_intensity_JJA_2023.nc am 16. Juli 2023: Hitzewellen-Intensität in Rottönen über drei Kontinenten, mit dem Zeitschieberegler unter der Karte." width="1600" height="996" loading="lazy" aria-hidden="true" decoding="async"></picture>
+        <picture><source type="image/webp" srcset="../img/open-relief-800.webp 800w, ../img/open-relief.webp 1600w" sizes="(max-width: 800px) 100vw, 800px"><img class="slide" src="../img/open-relief.jpg" alt="NimbleMap mit geöffneter Datei ETOPO_2022_relief_30min.tif: Höhen von Land und Meeresboden des ganzen Planeten in einem Farbverlauf." width="1600" height="996" loading="lazy" aria-hidden="true" decoding="async"></picture>
+        <picture><source type="image/webp" srcset="../img/open-volcanoes-800.webp 800w, ../img/open-volcanoes.webp 1600w" sizes="(max-width: 800px) 100vw, 800px"><img class="slide" src="../img/open-volcanoes.jpg" alt="NimbleMap mit geöffneter Datei NCEI_volcano_locations.csv: 1.609 Vulkane als Punkte rund um den Pazifischen Feuerring, eingefärbt nach Höhe." width="1600" height="996" loading="lazy" aria-hidden="true" decoding="async"></picture>
       </figure>
       <svg class="drop-arrow" viewBox="0 0 110 70" aria-hidden="true"><path d="M6 64C26 30 56 14 98 10"/><path class="head" d="M88 3l11 7-10 8"/></svg>
       <div class="files" role="group" aria-label="Ein Ordner mit heruntergeladenen Kartendateien: Wählen Sie eine aus, um sie geöffnet in NimbleMap zu sehen">
@@ -209,22 +212,22 @@
     </div>
     <div class="principle-shots four">
       <div class="principle">
-        <figure class="frame"><img src="../img/open-zoom.jpg" alt="Tausende Sturmbahnen über dem Südchinesischen Meer und den Philippinen, herangezoomt, eingefärbt nach Spitzenwind." loading="lazy" width="800" height="500"></figure>
+        <figure class="frame"><picture><source type="image/webp" srcset="../img/open-zoom-800.webp 800w, ../img/open-zoom.webp 1600w" sizes="(max-width: 800px) 100vw, 800px"><img src="../img/open-zoom.jpg" alt="Tausende Sturmbahnen über dem Südchinesischen Meer und den Philippinen, herangezoomt, eingefärbt nach Spitzenwind." width="800" height="500" loading="lazy" decoding="async"></picture></figure>
         <svg class="p-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21M10.5 7.5v6M7.5 10.5h6"/></svg><h3>Zoomen und verschieben</h3>
         <p>Scrollen, mit zwei Fingern zoomen und ziehen – vom ganzen Planeten bis hinunter zu einer einzelnen Küste.</p>
       </div>
       <div class="principle">
-        <figure class="frame"><img src="../img/open-search.jpg" alt="Das Suchfeld der Infokarte des Layers mit der Eingabe „Haiyan“: 3 gefunden, und die drei Sturmbahnen namens Haiyan sind fett auf der Karte hervorgehoben." loading="lazy" width="800" height="500"></figure>
+        <figure class="frame"><picture><source type="image/webp" srcset="../img/open-search-800.webp 800w, ../img/open-search.webp 1600w" sizes="(max-width: 800px) 100vw, 800px"><img src="../img/open-search.jpg" alt="Das Suchfeld der Infokarte des Layers mit der Eingabe „Haiyan“: 3 gefunden, und die drei Sturmbahnen namens Haiyan sind fett auf der Karte hervorgehoben." width="800" height="500" loading="lazy" decoding="async"></picture></figure>
         <svg class="p-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 6h9M3.5 11h6M3.5 16h5"/><circle cx="15.5" cy="13.5" r="4"/><path d="m18.5 16.5 3 3"/></svg><h3>Orte oder Ihre Daten durchsuchen</h3>
         <p>Tippen Sie eine Stadt ein, um dorthin zu fliegen, oder einen Namen, um ihn in Ihrer Datei zu finden: hier jeden Sturm namens Haiyan.</p>
       </div>
       <div class="principle">
-        <figure class="frame"><img src="../img/open-click.jpg" alt="Eine Infokarte zu einem Objekt: Die Magnitude des Großen Tōhoku-Erdbebens von 2011, 9,10, ist höher als bei 99 % von 14.537 Erdbeben." loading="lazy" width="800" height="500"></figure>
+        <figure class="frame"><picture><source type="image/webp" srcset="../img/open-click-800.webp 800w, ../img/open-click.webp 1600w" sizes="(max-width: 800px) 100vw, 800px"><img src="../img/open-click.jpg" alt="Eine Infokarte zu einem Objekt: Die Magnitude des Großen Tōhoku-Erdbebens von 2011, 9,10, ist höher als bei 99 % von 14.537 Erdbeben." width="800" height="500" loading="lazy" decoding="async"></picture></figure>
         <svg class="p-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v9a1.5 1.5 0 0 1-1.5 1.5H10l-4.2 3.6V16H5.5A1.5 1.5 0 0 1 4 14.5z"/><path d="M10.2 8.4a1.9 1.9 0 1 1 2.6 1.8c-.5.2-.8.6-.8 1.1v.4"/><circle cx="12" cy="13.6" r=".6" class="dot"/></svg><h3>Klicken Sie auf irgendetwas</h3>
         <p>Sehen Sie, was es ist und wie es im Vergleich dasteht. Das Tōhoku-Erdbeben von 2011 war stärker als 99 % von 14.537.</p>
       </div>
       <div class="principle">
-        <figure class="frame"><img src="../img/open-time.jpg" alt="Hitzewellen-Intensität am 16. Juli 2023 über Amerika, Afrika und Europa, mit dem Zeitschieberegler bei Schritt 46 von 92." loading="lazy" width="800" height="500"></figure>
+        <figure class="frame"><picture><source type="image/webp" srcset="../img/open-time-800.webp 800w, ../img/open-time.webp 1600w" sizes="(max-width: 800px) 100vw, 800px"><img src="../img/open-time.jpg" alt="Hitzewellen-Intensität am 16. Juli 2023 über Amerika, Afrika und Europa, mit dem Zeitschieberegler bei Schritt 46 von 92." width="800" height="500" loading="lazy" decoding="async"></picture></figure>
         <svg class="p-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M10 8.5v7l5.5-3.5z"/></svg><h3>Zeit abspielen</h3>
         <p>Dateien mit Zeitschritten erhalten einen Schieberegler. Drücken Sie auf Play und sehen Sie zu, wie die Hitzewellen eines Sommers wandern.</p>
       </div>
@@ -248,7 +251,7 @@
     </div>
     <div class="features mini">
       <article class="example feature">
-        <figure class="frame"><img src="../img/typhoons-card.jpg" alt="NimbleMap mit 4.999 Taifun-Zugbahnen über Asien und dem Pazifik; Taifun Haiyan ist ausgewählt, und seine Infokarte sagt, dass seine Spitzenwindgeschwindigkeit von 170 Knoten höher ist als bei 99 % von 4.547 Stürmen." loading="lazy" width="1600" height="996"></figure>
+        <figure class="frame"><picture><source type="image/webp" srcset="../img/typhoons-card-800.webp 800w, ../img/typhoons-card.webp 1600w" sizes="(max-width: 800px) 100vw, 800px"><img src="../img/typhoons-card.jpg" alt="NimbleMap mit 4.999 Taifun-Zugbahnen über Asien und dem Pazifik; Taifun Haiyan ist ausgewählt, und seine Infokarte sagt, dass seine Spitzenwindgeschwindigkeit von 170 Knoten höher ist als bei 99 % von 4.547 Stürmen." width="1600" height="996" loading="lazy" decoding="async"></picture></figure>
         <div class="feature-body">
           <h3>Taifune und Hurrikane</h3>
           <p>4.999 Sturmbahnen seit 1980. Haiyans Winde von 170 Knoten übertreffen 99 % von 4.547 Stürmen.</p>
@@ -257,7 +260,7 @@
         </div>
       </article>
       <article class="example feature">
-        <figure class="frame"><img src="../img/walls-satellite.jpg" alt="Die Mauern von Peking im Jahr 1866 über Satellitenbildern, mit einer Infokarte, laut der die Stadt 35,3 km² umfasste – mehr als 99 % der 1.789 ummauerten Städte." loading="lazy" width="1600" height="996"></figure>
+        <figure class="frame"><picture><source type="image/webp" srcset="../img/walls-satellite-800.webp 800w, ../img/walls-satellite.webp 1600w" sizes="(max-width: 800px) 100vw, 800px"><img src="../img/walls-satellite.jpg" alt="Die Mauern von Peking im Jahr 1866 über Satellitenbildern, mit einer Infokarte, laut der die Stadt 35,3 km² umfasste – mehr als 99 % der 1.789 ummauerten Städte." width="1600" height="996" loading="lazy" decoding="async"></picture></figure>
         <div class="feature-body">
           <h3>Ummauerte Städte Chinas, 1866</h3>
           <p>1.789 Stadtmauern. Die Mauer von Peking umschloss 35,3&nbsp;km² – mehr als bei 99 % davon.</p>
@@ -308,7 +311,7 @@
       <p><strong>NimbleMap</strong> · eine Karten-App auf Basis von <a href="https://github.com/opengeos/RustGIS">RustGIS</a>.</p>
       <p>Die Bildschirmfotos zeigen Kartendaten © OpenStreetMap-Mitwirkende (ODbL) über Protomaps, Natural Earth (gemeinfrei) und NASA-Blue-Marble-Bilder (NASA Earth Observatory, GIBS). Beispieldaten: NOAA IBTrACS, Xue et al. 2021 (CC BY 4.0), Copernicus Global Drought Observatory / JRC (CC BY 4.0), USGS, NOAA ETOPO 2022, NOAA NCEI.</p>
     </div>
-    <div class="foot-nav"><p class="foot-links"><a href="help.html">Hilfe</a> · <a href="glossary.html">Glossar</a> · <a href="data.html">Daten</a> · <a href="pro.html">Pro</a> · <a href="https://github.com/kangning-huang/NimbleMap/blob/main/CHANGELOG.md">Änderungsprotokoll</a> · <a href="../about.html" hreflang="en">Über mich</a></p><p class="foot-note">NimbleMap ist ein unabhängiges Projekt und steht in keiner Verbindung zu Apple, Esri oder dem QGIS-Projekt.</p><p class="foot-langs"><a href="../index.html" hreflang="en" lang="en">English</a> · <a href="../zh/index.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="../es/index.html" hreflang="es" lang="es">Español</a> · <a href="../fr/index.html" hreflang="fr" lang="fr">Français</a> · <a href="../it/index.html" hreflang="it" lang="it">Italiano</a> · <a href="../nl/index.html" hreflang="nl" lang="nl">Nederlands</a> · <a href="../pt-br/index.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ru/index.html" hreflang="ru" lang="ru">Русский</a> · <a href="../ja/index.html" hreflang="ja" lang="ja">日本語</a> · <a href="../ko/index.html" hreflang="ko" lang="ko">한국어</a></p></div>
+    <div class="foot-nav"><p class="foot-links"><a href="help.html">Hilfe</a> · <a href="glossary.html">Glossar</a> · <a href="data.html">Daten</a> · <a href="pro.html">Pro</a> · <a href="https://github.com/kangning-huang/NimbleMap/blob/main/CHANGELOG.md">Änderungsprotokoll</a> · <a href="../about.html" hreflang="en">Über mich</a> · <a href="../privacy.html">Privacy</a> · <a href="../terms.html">Terms</a></p><p class="foot-note">NimbleMap ist ein unabhängiges Projekt und steht in keiner Verbindung zu Apple, Esri oder dem QGIS-Projekt.</p><p class="foot-langs"><a href="../index.html" hreflang="en" lang="en">English</a> · <a href="../zh/index.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="../es/index.html" hreflang="es" lang="es">Español</a> · <a href="../fr/index.html" hreflang="fr" lang="fr">Français</a> · <a href="../it/index.html" hreflang="it" lang="it">Italiano</a> · <a href="../nl/index.html" hreflang="nl" lang="nl">Nederlands</a> · <a href="../pt-br/index.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ru/index.html" hreflang="ru" lang="ru">Русский</a> · <a href="../ja/index.html" hreflang="ja" lang="ja">日本語</a> · <a href="../ko/index.html" hreflang="ko" lang="ko">한국어</a></p></div>
   </div>
 </footer>
 </body>
