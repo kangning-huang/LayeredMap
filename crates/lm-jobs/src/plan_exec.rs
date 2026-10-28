@@ -442,6 +442,7 @@ fn plan_inputs(action: &str, a: &Json, layers: &[PlanLayer], n: usize) -> Result
         "measure_length" => vec![one(object("line")?)],
         "summarize_each" => vec![input_of(&layers[named("raster")?], None), input_of(&layers[named("areas")?], None)],
         "summarize_here" | "summarize_drawn" => vec![input_of(&layers[named("raster")?], None), one(object("area")?)],
+        "summarize_over_time" => vec![input_of(&layers[named("raster")?], None), one(object("place")?)],
         "add_raster_values" => vec![input_of(&layers[named("raster")?], None), input_of(&layers[named("points")?], None)],
         "keep_inside" | "remove_inside" | "join_by_location" => {
             vec![input_of(&layers[named("layer")?], None), input_of(&layers[named("areas")?], None)]

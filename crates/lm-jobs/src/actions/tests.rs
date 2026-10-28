@@ -157,6 +157,79 @@ fn areas_are_measured_on_the_ellipsoid_and_ranked() {
     assert!(rows.windows(2).all(|w| w[0].value >= w[1].value));
 }
 
+/// "Total area of the districts inside one district": the count, the geodesic total of the whole
+/// shapes (neighbours touching the boundary count whole) and each numeric field's total.
+#[test]
+fn summarize_data_here_totals_area_and_numeric_fields() {
+    let mut one = input("V1/districts.geojson", 1);
+    one.rows = Some(vec![0]);
+    let own = run(&plan("measure_area", vec![one.clone()], &[]), &Control::none()).unwrap();
+    let Answer::Number { value: own_km2, .. } = own.card.answer else { panic!() };
+    let r = run(&plan("summarize_data_here", vec![one.clone(), input("V1/districts.geojson", 2)], &[]), &Control::none()).unwrap();
+    let Answer::Number { value, unit, detail } = &r.card.answer else { panic!("{:?}", r.card.answer) };
+    assert_eq!(unit, "km²");
+    assert!(*value > own_km2, "{value} vs {own_km2}");
+    assert!(detail.starts_with("Total area of "), "{detail}");
+    assert!(detail.contains("population: total "), "{detail}");
+    assert!(r.card.summary.contains("km²"), "{}", r.card.summary);
+    let (_, rows) = r.highlight.as_ref().unwrap();
+    assert!(rows.contains(&0) && rows.len() > 1, "{rows:?}");
+
+    // Points have no area: the headline is how many there are.
+    let r = run(&plan("summarize_data_here", vec![one, input("T1/schools.csv", 3)], &[]), &Control::none()).unwrap();
+    let Answer::Number { value, unit, .. } = &r.card.answer else { panic!() };
+    assert_eq!(*value, r.highlight.as_ref().unwrap().1.len() as f64);
+    assert_eq!(unit, "schools");
+}
+
+/// "The hottest heatwave day in Shanghai": the example heatwave file (92 days) at a Shanghai
+/// district (area average) and a Shanghai school (the cell under it), ranked hottest first.
+#[test]
+fn summarize_over_time_ranks_every_day_at_one_place() {
+    let heat = input("../assets/examples/heatwaves summer 2023.nc", 1);
+    let steps = heat.layer.profile.grid.as_ref().unwrap().steps();
+    assert_eq!(steps, 92);
+    let mut district = input("V1/districts.geojson", 2);
+    district.rows = Some(vec![0]);
+    let r = run(&plan("summarize_over_time", vec![heat.clone(), district], &[]), &Control::none()).unwrap();
+    let Answer::Ranking { rows, unit } = &r.card.answer else { panic!("{:?}", r.card.answer) };
+    assert_eq!(rows.len(), 92);
+    assert!(unit.contains("°C"), "{unit}");
+    let vals: Vec<f64> = rows.iter().filter_map(|r| r.value).collect();
+    assert!(vals.windows(2).all(|w| w[0] >= w[1]), "hottest first");
+    assert!(rows.iter().skip(vals.len()).all(|r| r.value.is_none()), "blank days last");
+    assert!(r.card.summary.starts_with("Highest "), "{}", r.card.summary);
+    assert!(r.card.title.contains("averaged over"), "{}", r.card.title);
+
+    let mut school = input("T1/schools.csv", 3);
+    school.rows = Some(vec![0]);
+    let r = run(&plan("summarize_over_time", vec![heat, school], &[("order", "lowest")]), &Control::none()).unwrap();
+    let Answer::Ranking { rows, .. } = &r.card.answer else { panic!() };
+    assert_eq!(rows.len(), 92);
+    let vals: Vec<f64> = rows.iter().filter_map(|r| r.value).collect();
+    assert!(vals.windows(2).all(|w| w[0] <= w[1]), "lowest first");
+    assert!(r.card.title.contains(" at "), "{}", r.card.title);
+    eprintln!("district/school: {}", r.card.summary);
+}
+
+#[test]
+fn summarize_over_time_needs_a_time_slider() {
+    let mut district = input("V1/districts.geojson", 2);
+    district.rows = Some(vec![0]);
+    let r = run(&plan("summarize_over_time", vec![input("V1/districts.geojson", 1), district], &[]), &Control::none());
+    assert!(r.is_err());
+}
+
+#[test]
+fn totals_skip_identifiers_and_coordinates() {
+    for n in ["id", "FID", "objectid", "area_code", "lat", "Longitude", "year", "osm_id"] {
+        assert!(totals_skip(n), "{n}");
+    }
+    for n in ["area_km2", "population", "beds", "idle_hours"] {
+        assert!(!totals_skip(n), "{n}");
+    }
+}
+
 #[test]
 fn a_cancelled_run_returns_nothing() {
     let ctl = Control::none();
@@ -233,6 +306,12 @@ fn layer_names_read_as_words_or_fall_back_to_the_kind() {
     let r = run(&plan("count_in", vec![pts, areas], &[]), &Control::none()).unwrap();
     assert_eq!(r.card.title, "Populated places in each area of GUB_Global_2018");
     assert!(r.card.summary.starts_with("4 areas · "), "{}", r.card.summary);
+
+    // A year at the end of a spaced name is the edition, not part of the noun.
+    let mut pts = input("N1/points.geojson", 1);
+    pts.layer.display_name = "walled cities 1866".into();
+    let r = run(&plan("count_in", vec![pts, input("N1/areas.geojson", 2)], &[]), &Control::none()).unwrap();
+    assert!(r.card.title.starts_with("Walled cities in each "), "{}", r.card.title);
 }
 
 /// A field from two others: districts' people per km², blanks stay blank.

@@ -251,6 +251,7 @@ fn required_args(action: &str) -> &'static [&'static str] {
         "measure_length" => &["line"],
         "summarize_each" => &["raster", "areas"],
         "summarize_here" => &["raster", "area"],
+        "summarize_over_time" => &["raster", "place"],
         "summarize_drawn" | "find_where" => &["raster"],
         "add_raster_values" => &["raster", "points"],
         "rank_by_value" | "color_by" => &["layer", "field"],

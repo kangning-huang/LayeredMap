@@ -165,7 +165,11 @@ fn row_cases() -> Vec<Case> {
             name: "row 8: one area, raster open",
             rows: &[8],
             ctx: Context::new(obj(DISTRICTS), vec![districts(1), heat(2)]),
-            dev6: concat!("top: Summarize Heat here | Compare with other Districts | Measure its area\n", "Change look: Filter by zone",),
+            dev6: concat!(
+                "top: Summarize Heat here | Compare with other Districts | Measure its area\n",
+                "Measure: Heat over time here\n",
+                "Change look: Filter by zone",
+            ),
             p3: concat!("top: Compare with other Districts\n", "Change look: Filter by zone",),
         },
         Case {
@@ -343,7 +347,7 @@ fn merged_cases() -> Vec<Case> {
             ctx: Context::new(obj(DISTRICTS), vec![districts(1), schools(2), heat(3)]),
             dev6: concat!(
                 "top: Summarize Heat here | What's inside? | Compare with other Districts\n",
-                "Measure: Measure its area\n",
+                "Measure: Measure its area | Heat over time here\n",
                 "Change look: Filter by zone",
             ),
             p3: concat!("top: Compare with other Districts\n", "Change look: Filter by zone",),
@@ -354,7 +358,7 @@ fn merged_cases() -> Vec<Case> {
             ctx: Context::new(obj(DISTRICTS), vec![districts(1), heat(2), schools(3)]),
             dev6: concat!(
                 "top: What's inside? | Summarize Heat here | Compare with other Districts\n",
-                "Measure: Measure its area\n",
+                "Measure: Measure its area | Heat over time here\n",
                 "Change look: Filter by zone",
             ),
             p3: concat!("top: Compare with other Districts\n", "Change look: Filter by zone",),

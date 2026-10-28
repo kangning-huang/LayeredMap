@@ -86,7 +86,7 @@ DESCRIPTIONS = {
     "count_here": "Count points inside one area (a selected, named or drawn area).",
     "which_container": "Which area (of an area layer) one point is in.",
     "whats_inside": "Show the objects of a layer that lie inside one area (lists them). Not for counting per area.",
-    "summarize_data_here": "Counts and value summaries of a layer's objects inside one area.",
+    "summarize_data_here": "How many of a layer's objects lie inside one area, their total area in km² (measured from the shapes) or total length, and each number field's total, mean and range (the total area of the walled cities in Shandong).",
     "buffer": (
         "The area within a distance of a whole layer, or of one object of it (give object: a named object, or {layer} "
         "alone for the selected object). New area layer. "
@@ -101,6 +101,11 @@ DESCRIPTIONS = {
         "of every area instead."
     ),
     "summarize_here": "Summarize a raster inside one area (stat default mean). A category raster gives class shares.",
+    "summarize_over_time": (
+        "A raster with a time slider (NetCDF) at one place on every time step: the area's average, or the value under a point, "
+        "for each day or month, ranked highest first (order 'lowest': lowest first). Answers the hottest day in a place, the wettest "
+        "month, how a value changed over time. Only the raster's shown time step is used by every other raster action."
+    ),
     "summarize_drawn": "Summarize a raster in an area the user will draw (omit area), or in a drawn area.",
     "add_raster_values": "Add the raster's value at each (shown) point as a field named after the raster (Heat: 'Heat'); hidden points stay blank. Changes the points layer; no new layer.",
     "rank_by_value": "Rank a layer's objects by a numeric field: highest first, or with order 'lowest' lowest first (the coldest, smallest, fewest, lowest).",
@@ -192,7 +197,7 @@ def slot_schema(role: str, kind: str, action: str, L: dict) -> dict:
         if (action, role) == ("count_in", "points"):
             pool = L["vector"]
         return _enum(pool)
-    obj_pool = {"point": L["points"], "line": L["lines"], "area": L["areas"]}.get(role, L["vector"])
+    obj_pool = {"point": L["points"], "line": L["lines"], "area": L["areas"], "place": L["areas"] + L["points"]}.get(role, L["vector"])
     return _object(obj_pool, optional=kind.endswith("?"))
 
 
@@ -322,13 +327,14 @@ def submit_plan_tools(context: str, with_resolve: bool = True) -> list[dict]:
         "point": _object(L["points"]),
         "line": _object(L["lines"]),
         "area": _object(L["areas"]),
+        "place": {**_object(L["areas"] + L["points"]), "description": "summarize_over_time: one area or point. " + OBJ_NOTE},
         "object": _object(L["vector"], optional=True),
         "distance": param_schema("distance", "buffer", stats),
         "merge": param_schema("merge", "buffer", stats),
         "band": param_schema("band", "summarize_each", stats),
         "stat": {"type": "string", "enum": sorted(set(POINT_STATS) | set(RASTER_STATS)), "description": "count_in: count|sum|mean|median|min|max; summarize_*: mean|median|min|max|sum|std"},
         "field": S,
-        "order": {"type": "string", "enum": ["highest", "lowest"], "description": "rank_by_value: highest first (default) or lowest first"},
+        "order": {"type": "string", "enum": ["highest", "lowest"], "description": "rank_by_value, summarize_over_time: highest first (default) or lowest first"},
         "other": {"type": "string", "enum": L["vector"], "description": "nearest_distance: the layer to measure to"},
         "fields": {"type": "string", "description": "join_by_location: comma list of the areas' fields to add (all by default)"},
         "table": {**_enum(L["tables"]), "description": "match_table: the table to add to the layer"},

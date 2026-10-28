@@ -15,6 +15,7 @@
 //! | `measure_area`, `measure_length` | the layer (one row) |
 //! | `summarize_each` | raster, areas |
 //! | `summarize_here`, `summarize_drawn` | raster, the area (one row) |
+//! | `summarize_over_time` | raster, the place (one row) |
 //! | `add_raster_values` | raster, points |
 //! | `rank_by_value` | the layer; parameter `field` |
 //! | `calculate_field` | the layer (parameters `a`, `op`, `b`, `name`) |
@@ -117,10 +118,18 @@ impl PlanInput {
     }
 
     /// The layer's name as a noun when it reads as one ("populated_places" → "populated
-    /// places"); None for names like "GUB_Global_2018", which then use the kind's noun.
+    /// places", "walled cities 1866" → "walled cities": a trailing year is dropped from a name written
+    /// with spaces); None for names like "GUB_Global_2018", which then use the kind's noun.
     fn word(&self) -> Option<String> {
         let w = self.name().replace(['_', '-'], " ").to_lowercase();
-        let w = w.split_whitespace().collect::<Vec<_>>().join(" ");
+        let mut parts: Vec<&str> = w.split_whitespace().collect();
+        if self.name().contains(' ')
+            && parts.len() >= 2
+            && parts.last().is_some_and(|p| p.len() == 4 && p.chars().all(|c| c.is_ascii_digit()))
+        {
+            parts.pop();
+        }
+        let w = parts.join(" ");
         let ok = !w.is_empty() && w.split(' ').count() <= 3 && w.chars().all(|c| c.is_alphabetic() || c == ' ');
         ok.then_some(w)
     }
@@ -270,6 +279,7 @@ pub const ACTIONS: &[&str] = &[
     "summarize_each",
     "summarize_here",
     "summarize_drawn",
+    "summarize_over_time",
     "add_raster_values",
     "rank_by_value",
     "calculate_field",
@@ -291,11 +301,13 @@ pub fn run(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
         "count_in" => count_in(plan, ctl),
         "count_here" => count_here(plan, ctl),
         "which_container" => which_container(plan, ctl),
-        "whats_inside" | "summarize_data_here" => whats_inside(plan, ctl),
+        "whats_inside" => whats_inside(plan, ctl),
+        "summarize_data_here" => summarize_data_here(plan, ctl),
         "buffer" => buffer_action(plan, ctl),
         "measure_area" | "measure_length" => measure(plan),
         "summarize_each" => summarize_each(plan, ctl),
         "summarize_here" | "summarize_drawn" => summarize_one(plan, ctl),
+        "summarize_over_time" => summarize_over_time(plan, ctl),
         "add_raster_values" => add_raster_values(plan, ctl),
         "rank_by_value" => rank_by_value(plan, ctl),
         "calculate_field" => calculate_field(plan, ctl),
@@ -886,6 +898,121 @@ fn whats_inside(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError>
     })
 }
 
+/// Fields not worth totalling: identifiers, codes, coordinates and dates.
+fn totals_skip(name: &str) -> bool {
+    let n = name.to_lowercase();
+    let words: Vec<&str> = n.split(|c: char| !c.is_alphanumeric()).filter(|w| !w.is_empty()).collect();
+    let last = words.last().copied().unwrap_or("");
+    matches!(
+        last,
+        "id" | "fid"
+            | "gid"
+            | "objectid"
+            | "oid"
+            | "code"
+            | "lat"
+            | "lon"
+            | "lng"
+            | "latitude"
+            | "longitude"
+            | "x"
+            | "y"
+            | "year"
+            | "month"
+            | "day"
+            | "date"
+            | "rank"
+            | "zoom"
+    ) || n.starts_with("id") && n.len() <= 4
+}
+
+/// "Summarize data here": the objects of a layer inside one area, with their count, their total
+/// geodesic area or length (measured from the shapes, so it works without an area field) and the
+/// sum, mean and range of each numeric field. Objects touching the boundary count whole.
+fn summarize_data_here(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
+    let (area_in, layer_in) = (plan.input(0)?, plan.input(1)?);
+    let (g, area_name) = one_area(area_in)?;
+    let (ds, rows) = layer_in.scoped()?;
+    let r = overlay::whats_inside(&g, &ds, ctl)?;
+    let n = r.rows.len() as u64;
+    let (mut area, mut length) = (0.0, 0.0);
+    for i in &r.rows {
+        match ds.features[*i].geometry.as_ref().map(geodesic::measure) {
+            Some(geodesic::Measure::Area(a)) => area += a.area_m2,
+            Some(geodesic::Measure::Length(l)) => length += l,
+            _ => {}
+        }
+    }
+    let things = layer_in.things(n);
+    let place = place_phrase(&area_name, "inside");
+    let title = format!("{} {}", capitalized(&layer_in.plural_noun()), place);
+    // Numeric fields: sum, mean and range over the objects inside (at most four fields).
+    let mut lines = Vec::new();
+    for (k, f) in ds.fields.iter().enumerate() {
+        if !matches!(f.ty, FieldType::Integer | FieldType::Double) || totals_skip(&f.name) {
+            continue;
+        }
+        let vals: Vec<f64> = r
+            .rows
+            .iter()
+            .filter_map(|i| match ds.features[*i].attrs.get(k) {
+                Some(Value::Int(v)) => Some(*v as f64),
+                Some(Value::Float(v)) if v.is_finite() => Some(*v),
+                _ => None,
+            })
+            .collect();
+        if vals.is_empty() {
+            continue;
+        }
+        let sum: f64 = vals.iter().sum();
+        let (lo, hi) = vals.iter().fold((f64::INFINITY, f64::NEG_INFINITY), |(a, b), v| (a.min(*v), b.max(*v)));
+        lines.push(format!(
+            "{}: total {} · mean {} · {} to {}",
+            f.name,
+            number(sum),
+            number(sum / vals.len() as f64),
+            number(lo),
+            number(hi)
+        ));
+        if lines.len() == 4 {
+            break;
+        }
+    }
+    let (value, unit, headline) = if area > 0.0 {
+        let (v, u) = area_words(area);
+        (v, u.to_string(), format!("Total area of {things} {place}"))
+    } else if length > 0.0 {
+        let (v, u) = length_words(length);
+        (v, u.to_string(), format!("Total length of {things} {place}"))
+    } else {
+        (n as f64, layer_in.plural_noun(), format!("{} {place}", capitalized(&layer_in.plural_noun())))
+    };
+    let mut detail = vec![headline];
+    detail.extend(lines);
+    let summary =
+        if area > 0.0 || length > 0.0 { format!("{things} {place} · {} {unit}", number(value)) } else { format!("{things} {place}") };
+    let mut notices = Vec::new();
+    if n > 0 && area > 0.0 {
+        notices.push("Areas that cross the boundary count whole.".to_string());
+    }
+    let inputs = [area_in, layer_in];
+    Ok(ActionResult {
+        label: title.clone(),
+        card: ResultCard {
+            title: title.clone(),
+            summary,
+            answer: Answer::Number { value, unit, detail: detail.join("\n") },
+            context: context(&inputs, &[]),
+            notices,
+        },
+        recipe: recipe(plan, &title, &inputs, GEODESIC, Vec::new(), Vec::new()),
+        output: ActionOutput::Card,
+        highlight: Some((layer_in.layer.id, r.rows.iter().map(|i| rows[*i]).collect())),
+        matched: None,
+        connectors: Vec::new(),
+    })
+}
+
 // ---------------------------------------------------------------------------------------------
 // Distance and measures
 
@@ -1287,6 +1414,101 @@ fn summarize_one(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError
             notices: Vec::new(),
         },
         recipe: recipe(plan, &title, &inputs, CELL_AREAS, b.decisions.clone(), Vec::new()),
+        output: ActionOutput::Card,
+        highlight: None,
+        matched: None,
+        connectors: Vec::new(),
+    })
+}
+
+/// "Summarize over time": a gridded file's value at one place (an area's average, or the cell
+/// under a point) on every time step, ranked highest first (`order` "lowest": lowest first), so
+/// the top row answers "the hottest day in Shanghai". Steps without data rank last.
+fn summarize_over_time(plan: &Plan, ctl: &Control) -> Result<ActionResult, ActionError> {
+    let (r_in, place_in) = (plan.input(0)?, plan.input(1)?);
+    let grid = r_in.layer.profile.grid.as_ref().filter(|g| g.has_time()).ok_or_else(|| {
+        ActionError::Input(format!("{} has no time steps: this works on files with a time slider, such as NetCDF.", r_in.name()))
+    })?;
+    let (ds, rows) = place_in.scoped()?;
+    let g = ds.features.first().and_then(|f| f.geometry.clone()).ok_or_else(|| ActionError::Input("Choose a place first.".into()))?;
+    let point = match &g {
+        Geometry::Point(c) => Some(*c),
+        Geometry::MultiPoint(cs) if !cs.is_empty() => Some(cs[0]),
+        Geometry::Polygon(_) => None,
+        _ => return Err(ActionError::Input("Choose an area or a point: this doesn't work along lines.".into())),
+    };
+    let place = area_label(place_in, place_in.vector()?, rows[0]);
+    let steps = grid.steps();
+    let mut unit = String::new();
+    let mut decisions = Vec::new();
+    let mut ranked = Vec::with_capacity(steps);
+    for t in 0..steps {
+        ctl.report("Reading each time step", t as u64, Some(steps as u64));
+        if ctl.is_cancelled() {
+            return Err(ActionError::Cancelled);
+        }
+        let raster = crate::import::netcdf::slice(&r_in.layer.profile.source, grid, t)
+            .map_err(|e| ActionError::Input(format!("Couldn't read time step {}: {e}", t + 1)))?;
+        let step = PlanInput { layer: r_in.layer.clone(), data: LayerData::Raster(raster), rows: None, path: r_in.path.clone() };
+        let mut b = band(plan, &step)?;
+        let value = match point {
+            Some(c) => zonal::sample_points(&mut b.src, &[c], ctl)?.into_iter().next().flatten(),
+            None => zonal::summarize(&mut b.src, std::slice::from_ref(&g), b.role, ctl)?.into_iter().next().and_then(|s| s.mean),
+        };
+        if t == 0 {
+            unit = b.unit.clone();
+            decisions = b.decisions.clone();
+        }
+        ranked.push(RankRow { label: grid.date_label(t), value, row: t });
+    }
+    ctl.report("Reading each time step", steps as u64, Some(steps as u64));
+    let lowest = plan.param("order") == Some("lowest");
+    ranked.sort_by(|a, b| match (a.value, b.value) {
+        (Some(x), Some(y)) => {
+            if lowest {
+                x.total_cmp(&y)
+            } else {
+                y.total_cmp(&x)
+            }
+        }
+        (Some(_), None) => std::cmp::Ordering::Less,
+        (None, Some(_)) => std::cmp::Ordering::Greater,
+        (None, None) => a.row.cmp(&b.row),
+    });
+    let rname = r_in.name().to_string();
+    let how = if point.is_some() { "at" } else { "averaged over" };
+    let title = format!("{} {how} {place}, each time step", capitalized(&rname));
+    let summary = match ranked.first().and_then(|r| r.value.map(|v| (r, v))) {
+        Some((r, v)) => format!(
+            "{} {} {} on {} (of {} time steps)",
+            if lowest { "Lowest" } else { "Highest" },
+            number(v),
+            unit,
+            r.label,
+            group_thousands(steps as u64)
+        ),
+        None => format!("no data {how} {place}"),
+    };
+    let blank = ranked.iter().filter(|r| r.value.is_none()).count();
+    let mut notices = Vec::new();
+    if blank > 0 {
+        notices.push(format!(
+            "{} of {} time steps have no data {how} {place}; they are listed last.",
+            group_thousands(blank as u64),
+            group_thousands(steps as u64)
+        ));
+    }
+    let inputs = [r_in, place_in];
+    Ok(ActionResult {
+        label: format!("Summarize {rname} over time {how} {place}"),
+        card: ResultCard {
+            title: title.clone(),
+            summary,
+            answer: Answer::Ranking { rows: ranked, unit },
+            context: context(&inputs, &[]),
+            notices,
+        },
+        recipe: recipe(plan, &title, &inputs, CELL_AREAS, decisions, Vec::new()),
         output: ActionOutput::Card,
         highlight: None,
         matched: None,

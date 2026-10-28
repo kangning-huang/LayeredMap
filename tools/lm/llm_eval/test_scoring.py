@@ -321,8 +321,8 @@ def test_cases_cover_the_brief():
     assert sum(c["lang"] == "zh" for c in cs) >= 10
     expected_names = {call["name"] for c in cs for call in c["expected"]}
     # The v1 benchmark is frozen; actions connected after it (2026-10-17; match_table 2026-10-18) are covered by v2 and
-    # tools/lm/benchmarks instead.
-    added_later = {"calculate_field", "split_parts", "find_where", "keep_inside", "remove_inside", "nearest_distance", "nearest_other", "join_by_location", "add_measurements", "match_table"}
+    # tools/lm/benchmarks instead (summarize_over_time 2026-10-28: the lm-ask live test and v2).
+    added_later = {"calculate_field", "split_parts", "find_where", "keep_inside", "remove_inside", "nearest_distance", "nearest_other", "join_by_location", "add_measurements", "match_table", "summarize_over_time"}
     assert set(toolmod.connected_actions()) - added_later <= expected_names
     for cat in ["multi", "vague", "impossible", "trap", "units", "filter", "style"]:
         assert any(cat in c["categories"] for c in cs), cat
