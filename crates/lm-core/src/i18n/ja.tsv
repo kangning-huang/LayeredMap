@@ -859,3 +859,8 @@ We sent a code to {address}. Type it below, or click the link in the same email 
 The email comes from {sender}, subject “{subject}”. If it isn't in your inbox, check your spam or junk folder.	メールの差出人は {sender}、件名は「{subject}」です。受信トレイにない場合は、迷惑メールフォルダを確認してください。
 The link has stopped working on this Mac. Type the code from the email, or send a new one.	この Mac ではリンクが使えなくなりました。メールのコードを入力するか、メールを再送信してください。
 The link has stopped working on this computer. Type the code from the email, or send a new one.	このコンピューターではリンクが使えなくなりました。メールのコードを入力するか、メールを再送信してください。
+App Review sign-in	App Review用サインイン
+Password	パスワード
+Sign in with email and password	メールとパスワードでサインイン
+Signing in…	サインイン中…
+enter the password	パスワードを入力してください

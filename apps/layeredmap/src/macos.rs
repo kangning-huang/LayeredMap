@@ -132,7 +132,6 @@ unsafe extern "C" fn open_urls(_this: *mut AnyObject, _cmd: Sel, _app: *mut AnyO
     }
 }
 
-
 /// Opens a local file in the default app (help pages: the browser).
 pub fn open_path(path: &std::path::Path) -> Result<(), String> {
     let s = NSString::from_str(&path.display().to_string());
@@ -142,18 +141,14 @@ pub fn open_path(path: &std::path::Path) -> Result<(), String> {
         let url = NSURL::fileURLWithPath(&s);
         NSWorkspace::sharedWorkspace().openURL(&url)
     };
-    if ok {
-        Ok(())
-    } else {
-        Err(format!("couldn't open {}", path.display()))
-    }
+    if ok { Ok(()) } else { Err(format!("couldn't open {}", path.display())) }
 }
 
 /// "macOS 15.1" (or with a patch component) from NSProcessInfo.
 pub fn os_version_label() -> Option<String> {
     // SAFETY: `processInfo` returns the process-wide singleton; `operatingSystemVersion` is a
     // plain value getter on it.
-    let v = unsafe { NSProcessInfo::processInfo() }.operatingSystemVersion();
+    let v = NSProcessInfo::processInfo().operatingSystemVersion();
     Some(if v.patchVersion == 0 {
         format!("macOS {}.{}", v.majorVersion, v.minorVersion)
     } else {

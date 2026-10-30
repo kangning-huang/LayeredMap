@@ -35,6 +35,8 @@ log = { workspace = true, features = ["std"] }
 # The update dry run only (docs/lm/update-feed.md › Dry run); bundle-macos.sh refuses it for a
 # release version.
 update-test-hook = ["lm-ui/update-test-hook"]
+# Temporary Mac App Store Review sign-in (email + password). MAS packaging enables this.
+review-password-signin = ["lm-ui/review-password-signin"]
 
 # The macOS module (Open With, Dock drops, the Edited state): the same objc2 versions winit already uses.
 [target.'cfg(target_os = "macos")'.dependencies]

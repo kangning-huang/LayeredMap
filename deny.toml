@@ -28,6 +28,13 @@ ignore = [
   # app with it, for PDF export, and egui's text rendering pulls it in through ab_glyph anyway.
   # Move to skrifa when ab_glyph does (docs/lm/decisions.md, 2026-10-19).
   { id = "RUSTSEC-2026-0192", reason = "ttf-parser parses only the app's bundled fonts; also in the build through ab_glyph" },
+  # zstd 0.13 / zstd-safe 7: only tiff 0.11.3 (latest on crates.io) still pulls them for GeoTIFF
+  # zstd strips. Advisories are patched only in zstd >=0.14.3 / zstd-safe >=8.2.0; there is no
+  # 0.13.x fix. Workspace zstd (parquet) is already on 0.14.3 / 8.2.0 / zstd-sys 2.1.2. Drop when
+  # tiff releases with zstd 0.14 (image-rs/image-tiff main already does; docs/lm/decisions.md).
+  { id = "RUSTSEC-2026-0391", reason = "zstd 0.13 via tiff 0.11.3; no 0.13.x patch; workspace zstd is 0.14.3" },
+  { id = "RUSTSEC-2026-0398", reason = "zstd-safe 7 via tiff's zstd 0.13; patched only in >=8.2.0" },
+  { id = "RUSTSEC-2026-0403", reason = "zstd-safe 7 via tiff's zstd 0.13; patched only in >=8.2.0" },
 ]
 
 [licenses]

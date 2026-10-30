@@ -58,7 +58,17 @@ mod tests {
         let names: Vec<_> = got.iter().filter_map(|p| p.file_name()?.to_str()).collect();
         assert_eq!(
             names,
-            ["districts.dbf", "districts.shx", "districts.prj", "districts.cpg", "districts.qix", "districts.sbn", "districts.sbx", "districts.shp.xml", "districts.qmd"]
+            [
+                "districts.dbf",
+                "districts.shx",
+                "districts.prj",
+                "districts.cpg",
+                "districts.qix",
+                "districts.sbn",
+                "districts.sbx",
+                "districts.shp.xml",
+                "districts.qmd"
+            ]
         );
     }
 

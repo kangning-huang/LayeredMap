@@ -32,3 +32,7 @@ security-framework-sys = "2"
 objc2 = "0.6"
 objc2-foundation = { version = "0.3", features = ["NSString", "NSURL", "NSObject", "NSProcessInfo"] }
 objc2-app-kit = { version = "0.3", features = ["NSWorkspace"] }
+
+[features]
+# Temporary Mac App Store Review sign-in (email + password). Off by default; MAS builds enable it.
+review-password-signin = []
