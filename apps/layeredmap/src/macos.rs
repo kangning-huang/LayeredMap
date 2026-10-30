@@ -148,7 +148,7 @@ pub fn open_path(path: &std::path::Path) -> Result<(), String> {
 pub fn os_version_label() -> Option<String> {
     // SAFETY: `processInfo` returns the process-wide singleton; `operatingSystemVersion` is a
     // plain value getter on it.
-    let v = unsafe { NSProcessInfo::processInfo() }.operatingSystemVersion();
+    let v = NSProcessInfo::processInfo().operatingSystemVersion();
     Some(if v.patchVersion == 0 {
         format!("macOS {}.{}", v.majorVersion, v.minorVersion)
     } else {
