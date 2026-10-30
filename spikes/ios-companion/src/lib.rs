@@ -3,14 +3,7 @@
 //! Product crates keep `unsafe_code = "forbid"`. This spike allows `unsafe` only for
 //! the `extern "C"` surface in [`ffi`]. Ask is stubbed on the Swift side.
 
-#![deny(
-    clippy::unwrap_used,
-    clippy::expect_used,
-    clippy::panic,
-    clippy::unimplemented,
-    clippy::todo,
-    clippy::unreachable
-)]
+#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 // SPIKE-ONLY: C ABI for Swift. Do not copy this pattern into `crates/lm-*`.
 #![allow(unsafe_code)]
 

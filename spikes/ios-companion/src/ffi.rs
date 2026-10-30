@@ -48,12 +48,7 @@ fn clear_out(out: *mut *mut c_char) {
 /// # Safety
 /// `bytes` must be valid for `len` reads when non-null. `out_json` must be writable when non-null.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn lm_decode_geojson(
-    bytes: *const u8,
-    len: usize,
-    out_json: *mut *mut c_char,
-    out_feature_count: *mut usize,
-) -> i32 {
+pub unsafe extern "C" fn lm_decode_geojson(bytes: *const u8, len: usize, out_json: *mut *mut c_char, out_feature_count: *mut usize) -> i32 {
     if out_json.is_null() {
         return LM_DECODE_NULL_ARG;
     }
@@ -95,11 +90,7 @@ pub unsafe extern "C" fn lm_decode_geojson(
 /// # Safety
 /// `path` must be a valid NUL-terminated C string when non-null.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn lm_decode_geojson_path(
-    path: *const c_char,
-    out_json: *mut *mut c_char,
-    out_feature_count: *mut usize,
-) -> i32 {
+pub unsafe extern "C" fn lm_decode_geojson_path(path: *const c_char, out_json: *mut *mut c_char, out_feature_count: *mut usize) -> i32 {
     if out_json.is_null() || path.is_null() {
         return LM_DECODE_NULL_ARG;
     }
@@ -172,9 +163,7 @@ mod tests {
         let mut out: *mut c_char = ptr::null_mut();
         let mut n: usize = 0;
         // SAFETY: test-owned buffer and out pointers.
-        let status = unsafe {
-            lm_decode_geojson(text.as_ptr(), text.len(), &mut out, &mut n)
-        };
+        let status = unsafe { lm_decode_geojson(text.as_ptr(), text.len(), &mut out, &mut n) };
         assert_eq!(status, LM_DECODE_OK);
         assert_eq!(n, 1);
         assert!(!out.is_null());
