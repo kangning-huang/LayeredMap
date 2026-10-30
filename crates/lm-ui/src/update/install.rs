@@ -301,7 +301,6 @@ pub fn reopen(bundle: &Path) {
         }
         NSWorkspace::sharedWorkspace().openApplicationAtURL_configuration_completionHandler(&url, &config, None);
         log::info!("update: reopened {}", bundle.display());
-        return;
     }
     #[cfg(not(target_os = "macos"))]
     {
