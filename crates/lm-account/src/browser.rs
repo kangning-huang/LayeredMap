@@ -42,9 +42,5 @@ fn open_macos(url: &str) -> Result<(), String> {
     let Some(nsurl) = NSURL::URLWithString(&NSString::from_str(url)) else {
         return Err(format!("{url}: not a URL"));
     };
-    if NSWorkspace::sharedWorkspace().openURL(&nsurl) {
-        Ok(())
-    } else {
-        Err("the browser couldn't be opened".into())
-    }
+    if NSWorkspace::sharedWorkspace().openURL(&nsurl) { Ok(()) } else { Err("the browser couldn't be opened".into()) }
 }
