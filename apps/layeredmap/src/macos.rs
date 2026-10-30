@@ -12,6 +12,10 @@
 //!
 //! The Edited state (WP5.1): the window's `documentEdited` (the dot in the close button and
 //! "Edited" after the title) and its represented file (the title's proxy icon).
+//!
+//! Opening local help / URLs and reading Reduce Motion / the OS version go through AppKit and
+//! Foundation here too (docs/lm/app-store.md › Command-line tools), so a sandboxed build never
+//! shells out to `/usr/bin/open`, `defaults` or `sw_vers`.
 
 use std::path::PathBuf;
 use std::ptr::NonNull;
@@ -21,8 +25,8 @@ use block2::RcBlock;
 use objc2::rc::Retained;
 use objc2::runtime::{AnyClass, AnyObject, Bool, Sel};
 use objc2::{ffi, sel};
-use objc2_app_kit::NSApplication;
-use objc2_foundation::{MainThreadMarker, NSArray, NSNotification, NSNotificationCenter, NSString, NSURL};
+use objc2_app_kit::{NSApplication, NSWorkspace};
+use objc2_foundation::{MainThreadMarker, NSArray, NSNotification, NSNotificationCenter, NSProcessInfo, NSString, NSURL};
 
 /// Paths macOS asked us to open that the app has not taken yet.
 static PENDING: Mutex<Vec<PathBuf>> = Mutex::new(Vec::new());
@@ -126,4 +130,40 @@ unsafe extern "C" fn open_urls(_this: *mut AnyObject, _cmd: Sel, _app: *mut AnyO
     if let Some(ctx) = CONTEXT.get() {
         ctx.request_repaint();
     }
+}
+
+
+/// Opens a local file in the default app (help pages: the browser).
+pub fn open_path(path: &std::path::Path) -> Result<(), String> {
+    let s = NSString::from_str(&path.display().to_string());
+    // SAFETY: `sharedWorkspace` and `openURL` are AppKit getters/actions with no outstanding
+    // borrows; `fileURLWithPath` builds a URL from the path string we just allocated.
+    let ok = unsafe {
+        let url = NSURL::fileURLWithPath(&s);
+        NSWorkspace::sharedWorkspace().openURL(&url)
+    };
+    if ok {
+        Ok(())
+    } else {
+        Err(format!("couldn't open {}", path.display()))
+    }
+}
+
+/// "macOS 15.1" (or with a patch component) from NSProcessInfo.
+pub fn os_version_label() -> Option<String> {
+    // SAFETY: `processInfo` returns the process-wide singleton; `operatingSystemVersion` is a
+    // plain value getter on it.
+    let v = unsafe { NSProcessInfo::processInfo() }.operatingSystemVersion();
+    Some(if v.patchVersion == 0 {
+        format!("macOS {}.{}", v.majorVersion, v.minorVersion)
+    } else {
+        format!("macOS {}.{}.{}", v.majorVersion, v.minorVersion, v.patchVersion)
+    })
+}
+
+/// System Settings › Accessibility › Display › Reduce motion.
+pub fn reduce_motion() -> bool {
+    // SAFETY: `sharedWorkspace` is the process singleton; the accessibility display getters are
+    // plain BOOL properties with no pointer arguments.
+    unsafe { NSWorkspace::sharedWorkspace().accessibilityDisplayShouldReduceMotion() }
 }

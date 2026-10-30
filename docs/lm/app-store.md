@@ -168,9 +168,9 @@ the Developer ID build (`signing.md`).
 
 | Step | What | Waits on |
 |---|---|---|
-| 1 | Spike: Shapefile siblings and recent files under the sandbox, in a minimal sandboxed build | Membership (profile) |
-| 2 | Replace the command-line tools with framework calls (helps both channels) | — |
-| 3 | `LM_CHANNEL=mas` build, container migration, privacy manifest, update check off — **scaffolding in tree 2026-10-30**; signed upload waits on Distribution certs + profile | Step 1 (sandbox sibling spike still open) |
+| 1 | Spike: Shapefile siblings and recent files under the sandbox, in a minimal sandboxed build | Membership (profile). Path rules + import preference landed (`docs/lm/spike/sandbox-related-items.md`); Info.plist related-item types already on phase-4 packaging; Mac file-coordination verification still open. |
+| 2 | Replace the command-line tools with framework calls (helps both channels) | Done on `mas/sandbox-frameworks` (Security.framework, NSWorkspace, NSProcessInfo, locale APIs). |
+| 3 | `LM_CHANNEL=mas` build, container migration, privacy manifest, update check off — **scaffolding in tree 2026-10-30**; signed upload waits on Distribution certs + profile | Step 1 (Mac file-coordination for related items still open) |
 | 4 | StoreKit helper and the purchase screens | Owner: the product and price |
 | 5 | Ask proxy: verify Apple transactions, server notifications | Owner: App Store Connect setup |
 | 6 | TestFlight for Mac, then review (all storefronts except China) | Steps 3–5 |
