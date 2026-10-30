@@ -67,12 +67,16 @@ pub fn read_key() -> Option<String> {
 
 #[cfg(target_os = "macos")]
 fn keychain_key() -> Option<String> {
-    let out = std::process::Command::new("/usr/bin/security")
-        .args(["find-generic-password", "-s", SERVICE, "-a", ACCOUNT, "-w"])
-        .output()
-        .ok()?;
-    let k = String::from_utf8(out.stdout).ok()?.trim().to_string();
-    (out.status.success() && !k.is_empty()).then_some(k)
+    use security_framework::passwords::get_generic_password;
+    use security_framework_sys::base::errSecItemNotFound;
+    match get_generic_password(SERVICE, ACCOUNT) {
+        Ok(bytes) => {
+            let k = String::from_utf8(bytes).ok()?.trim().to_string();
+            (!k.is_empty()).then_some(k)
+        }
+        Err(e) if e.code() == errSecItemNotFound => None,
+        Err(_) => None,
+    }
 }
 
 #[cfg(not(target_os = "macos"))]

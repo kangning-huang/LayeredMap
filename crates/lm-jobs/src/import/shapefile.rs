@@ -92,7 +92,15 @@ const NOT_SHAPEFILE_ZIPS: &[&str] =
     &["xlsx", "xlsm", "xltx", "docx", "docm", "dotx", "pptx", "pptm", "potx", "ods", "odt", "odp", "kmz", "epub", "jar", "apk", "ipa"];
 
 /// The sibling of `path` with extension `ext`, matched without regard to case.
+///
+/// Tries the declared companion path first (`lm_core::related`), which is what a sandboxed
+/// build can request as a related item without listing the folder. Falls back to a case-insensitive
+/// directory scan when the exact casing differs (direct / non-sandboxed opens).
 fn sibling(path: &Path, ext: &str) -> Option<std::path::PathBuf> {
+    let declared = path.with_extension(ext);
+    if declared.is_file() {
+        return Some(declared);
+    }
     let stem = path.file_stem()?.to_str()?.to_lowercase();
     let dir = path.parent().filter(|d| !d.as_os_str().is_empty()).unwrap_or(Path::new("."));
     std::fs::read_dir(dir).ok()?.flatten().map(|e| e.path()).find(|p| {

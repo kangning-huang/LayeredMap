@@ -1,9 +1,9 @@
-//! Where the session record lives: the macOS Keychain or the Windows Credential Manager, through
-//! the system's own tools (no unsafe calls in our code), or memory (every test: none writes to a
-//! real keychain or raises a permission dialog).
+//! Where the session record lives: the macOS Keychain (Security.framework) or the Windows
+//! Credential Manager, or memory (every test: none writes to a real keychain or raises a
+//! permission dialog).
 //!
-//! The record (`Session::to_record`) is hex, and it goes to the tools on standard input, never on
-//! a command line where other processes could read it.
+//! The record (`Session::to_record`) is hex. On macOS it is passed to Security.framework as bytes
+//! (never on a command line). On Windows it still goes to PowerShell on standard input.
 
 use std::sync::Mutex;
 
@@ -67,41 +67,40 @@ pub fn system() -> Option<std::sync::Arc<dyn SecretStore>> {
     None
 }
 
-/// The login keychain, through `/usr/bin/security` (as the developer's OpenRouter key is read,
-/// lm-ask `openrouter.rs`). Items made by `security` are readable by `security` without a prompt.
+/// The login keychain, through Security.framework (`security-framework` crate; no `unsafe` in
+/// this crate). Same service and account as before, so existing items remain readable.
 #[cfg(target_os = "macos")]
 pub struct Keychain;
 
 #[cfg(target_os = "macos")]
 impl SecretStore for Keychain {
     fn load(&self) -> Result<Option<String>, String> {
-        let out = std::process::Command::new("/usr/bin/security")
-            .args(["find-generic-password", "-s", SERVICE, "-a", ACCOUNT, "-w"])
-            .output()
-            .map_err(|e| e.to_string())?;
-        // 44: no such item.
-        if out.status.code() == Some(44) {
-            return Ok(None);
+        use security_framework::passwords::get_generic_password;
+        use security_framework_sys::base::errSecItemNotFound;
+        match get_generic_password(SERVICE, ACCOUNT) {
+            Ok(bytes) => {
+                let s = String::from_utf8(bytes).map_err(|_| "unreadable keychain item")?;
+                Ok((!s.is_empty()).then_some(s))
+            }
+            Err(e) if e.code() == errSecItemNotFound => Ok(None),
+            Err(e) => Err(e.to_string()),
         }
-        let s = String::from_utf8(out.stdout).map_err(|_| "unreadable keychain item")?.trim().to_string();
-        Ok((out.status.success() && !s.is_empty()).then_some(s))
     }
 
     fn save(&self, secret: &str) -> Result<(), String> {
+        use security_framework::passwords::set_generic_password;
         check_hex(secret)?;
-        // `security -i` reads commands from standard input, so the secret is never an argument.
-        let cmd = format!("add-generic-password -U -s {SERVICE} -a {ACCOUNT} -l {SERVICE} -w {secret}\n");
-        let out = run_with_input("/usr/bin/security", &["-i"], &cmd)?;
-        let said = String::from_utf8_lossy(&out.stderr).to_lowercase() + &String::from_utf8_lossy(&out.stdout).to_lowercase();
-        if out.status.success() && !said.contains("error") { Ok(()) } else { Err("the keychain refused the item".into()) }
+        set_generic_password(SERVICE, ACCOUNT, secret.as_bytes()).map_err(|e| e.to_string())
     }
 
     fn delete(&self) -> Result<(), String> {
-        let out = std::process::Command::new("/usr/bin/security")
-            .args(["delete-generic-password", "-s", SERVICE, "-a", ACCOUNT])
-            .output()
-            .map_err(|e| e.to_string())?;
-        if out.status.success() || out.status.code() == Some(44) { Ok(()) } else { Err("the keychain item couldn't be deleted".into()) }
+        use security_framework::passwords::delete_generic_password;
+        use security_framework_sys::base::errSecItemNotFound;
+        match delete_generic_password(SERVICE, ACCOUNT) {
+            Ok(()) => Ok(()),
+            Err(e) if e.code() == errSecItemNotFound => Ok(()),
+            Err(e) => Err(e.to_string()),
+        }
     }
 }
 
@@ -154,7 +153,7 @@ impl SecretStore for CredentialManager {
 }
 
 /// Runs a program with `input` on its standard input (no console window on Windows).
-#[cfg(any(target_os = "macos", windows))]
+#[cfg(windows)]
 fn run_with_input(program: &str, args: &[&str], input: &str) -> Result<std::process::Output, String> {
     use std::io::Write as _;
     use std::process::{Command, Stdio};

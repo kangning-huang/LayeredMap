@@ -23,3 +23,10 @@ ureq = { version = "3", default-features = false, features = ["rustls", "gzip"] 
 # through embed-resource, and a safe API, so the crate stays free of unsafe code.
 [target.'cfg(windows)'.dependencies]
 winreg = "0.56"
+
+# Developer OpenRouter key from the Keychain, and the system region from locale APIs
+# (docs/lm/app-store.md › Command-line tools).
+[target.'cfg(target_os = "macos")'.dependencies]
+security-framework = "3"
+security-framework-sys = "2"
+sys-locale = "0.3"

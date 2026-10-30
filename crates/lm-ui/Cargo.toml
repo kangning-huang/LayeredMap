@@ -42,3 +42,11 @@ wgpu = { version = "30", features = ["noop"] }
 # The system's preferred language on Windows, for the update notes (registry; safe API).
 [target.'cfg(windows)'.dependencies]
 winreg = "0.56"
+
+# NSProcessInfo / NSWorkspace / preferred languages for updates (docs/lm/app-store.md).
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = "0.6"
+objc2-foundation = { version = "0.3", features = ["NSArray", "NSString", "NSURL", "NSObject", "NSProcessInfo"] }
+objc2-app-kit = { version = "0.3", features = ["NSWorkspace", "NSRunningApplication", "block2"] }
+sys-locale = "0.3"
+block2 = "0.6"

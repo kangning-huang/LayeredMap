@@ -13,7 +13,7 @@
 //!    of the feed's Ed25519 signature. The image is detached. Nothing has changed yet.
 //! 3. When the app quits ([`finish`], from the app's `on_exit`, after the user's state is saved):
 //!    the running bundle is renamed aside (`.NimbleMap-old-<pid>`), the copy renamed into its
-//!    place (put back if that fails), and the new app opened (`open -n`). The new app removes the
+//!    place (put back if that fails), and the new app opened (NSWorkspace, new instance). The new app removes the
 //!    old copy at launch ([`after_update`]).
 //!
 //! The disk image is downloaded by the app itself, which doesn't ask macOS to quarantine its
@@ -283,26 +283,51 @@ pub fn finish(s: &Staged, relaunch: bool, support: Option<&Path>) {
     }
 }
 
-/// Opens a new instance of the app at `bundle` (`open -n`).
+/// Opens a new instance of the app at `bundle` (NSWorkspace, formerly `open -n`).
 pub fn reopen(bundle: &Path) {
-    let mut c = Command::new("/usr/bin/open");
-    c.arg("-n").arg(bundle);
-    // The dry run's relaunched app runs a short tour and quits (test-hook builds only).
-    #[cfg(feature = "update-test-hook")]
-    if let Ok(args) = std::env::var("LM_UPDATE_TEST_RELAUNCH_ARGS") {
-        c.arg("--args").args(args.lines());
+    #[cfg(target_os = "macos")]
+    {
+        use objc2_app_kit::{NSWorkspace, NSWorkspaceOpenConfiguration};
+        use objc2_foundation::{NSString, NSURL};
+        let url = NSURL::fileURLWithPath(&NSString::from_str(&bundle.display().to_string()));
+        let config = NSWorkspaceOpenConfiguration::configuration();
+        config.setCreatesNewApplicationInstance(true);
+        // The dry run's relaunched app runs a short tour and quits (test-hook builds only).
+        #[cfg(feature = "update-test-hook")]
+        if let Ok(args) = std::env::var("LM_UPDATE_TEST_RELAUNCH_ARGS") {
+            use objc2_foundation::NSArray;
+            let retained: Vec<_> = args.lines().map(NSString::from_str).collect();
+            config.setArguments(&NSArray::from_retained_slice(&retained));
+        }
+        NSWorkspace::sharedWorkspace().openApplicationAtURL_configuration_completionHandler(
+            &url,
+            &config,
+            None,
+        );
+        log::info!("update: reopened {}", bundle.display());
+        return;
     }
-    match c.status() {
-        Ok(s) if s.success() => log::info!("update: reopened {}", bundle.display()),
-        Ok(s) => log::warn!("update: open -n {} exited with {s}", bundle.display()),
-        Err(e) => log::warn!("update: couldn't reopen {}: {e}", bundle.display()),
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = bundle;
+        log::warn!("update: reopen is macOS-only");
     }
 }
 
 /// Opens the disk image in Finder (the fallback when the app can't replace itself).
 pub fn open_in_finder(dmg: &Path) {
-    if let Err(e) = Command::new("/usr/bin/open").arg(dmg).spawn() {
-        log::warn!("update: couldn't open {}: {e}", dmg.display());
+    #[cfg(target_os = "macos")]
+    {
+        use objc2_app_kit::NSWorkspace;
+        use objc2_foundation::{NSString, NSURL};
+        let url = NSURL::fileURLWithPath(&NSString::from_str(&dmg.display().to_string()));
+        if !NSWorkspace::sharedWorkspace().openURL(&url) {
+            log::warn!("update: couldn't open {}", dmg.display());
+        }
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = dmg;
     }
 }
 
