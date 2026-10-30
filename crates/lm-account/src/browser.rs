@@ -9,18 +9,18 @@ pub fn open(url: &str) -> Result<(), String> {
     }
     #[cfg(target_os = "macos")]
     {
-        return open_macos(url);
+        open_macos(url)
     }
     #[cfg(windows)]
     {
         let mut cmd = std::process::Command::new("rundll32.exe");
         // rundll32's URL handler takes the address as one argument, with no shell to split it at `&`.
         cmd.args(["url.dll,FileProtocolHandler", url]);
-        return match cmd.status() {
+        match cmd.status() {
             Ok(s) if s.success() => Ok(()),
             Ok(s) => Err(format!("the browser couldn't be opened ({s})")),
             Err(e) => Err(format!("the browser couldn't be opened: {e}")),
-        };
+        }
     }
     #[cfg(not(any(target_os = "macos", windows)))]
     {
