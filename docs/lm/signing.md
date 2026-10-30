@@ -21,6 +21,36 @@ is ad-hoc signed: it runs on the machine that built it; elsewhere macOS warns.
 
 Locally: `packaging/lm/bundle-macos.sh` (same environment variables).
 
+## Mac App Store (`LM_CHANNEL=mas`)
+
+For the App Store channel (`docs/lm/app-store.md`), create these in Certificates, Identifiers &
+Profiles (team `75MXK7UJ6W`), install them in the login keychain, then build with:
+
+| Variable | What it is |
+|---|---|
+| `LM_CHANNEL` | `mas` |
+| `LM_MAS_SIGN_IDENTITY` | e.g. `Apple Distribution: Kangning Huang (75MXK7UJ6W)` |
+| `LM_MAS_INSTALLER_IDENTITY` | e.g. `3rd Party Mac Developer Installer: Kangning Huang (75MXK7UJ6W)` |
+| `LM_MAS_PROVISION_PROFILE` | Path to the Mac App Store `.provisionprofile` for `app.layeredmap.desktop` |
+
+Certificates to create (distinct from Developer ID):
+
+1. **Apple Distribution** (or “Mac App Distribution”) — signs the `.app`
+2. **Mac Installer Distribution** (or “3rd Party Mac Developer Installer”) — signs the `.pkg`
+3. A **Mac App Store** provisioning profile for App ID `app.layeredmap.desktop`
+
+```sh
+LM_CHANNEL=mas \
+  LM_MAS_SIGN_IDENTITY='Apple Distribution: Kangning Huang (75MXK7UJ6W)' \
+  LM_MAS_INSTALLER_IDENTITY='3rd Party Mac Developer Installer: Kangning Huang (75MXK7UJ6W)' \
+  LM_MAS_PROVISION_PROFILE=~/Downloads/NimbleMap_MAS.provisionprofile \
+  packaging/lm/bundle-macos.sh
+```
+
+Upload the resulting `NimbleMap-…-macos-mas.pkg` with Transporter. Do not notarize MAS builds.
+Leave `LM_UPDATE_FEED_URL` unset so the app does not check for website updates.
+
+
 ## The installer disk image (WP5.7)
 
 Students install from a .dmg: the app beside a link to Applications, so installing is one drag.
