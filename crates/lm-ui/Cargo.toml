@@ -29,6 +29,8 @@ ring = "0.17"
 base64 = { workspace = true }
 
 [features]
+# Temporary Mac App Store Review sign-in (email + password). Off by default; MAS builds enable it.
+review-password-signin = ["lm-account/review-password-signin"]
 # The update dry run only (docs/lm/update-feed.md › Dry run): reads file:// feeds and disk images
 # and passes LM_UPDATE_TEST_RELAUNCH_ARGS to the reopened app. Never in a release build.
 update-test-hook = []

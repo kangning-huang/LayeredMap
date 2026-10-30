@@ -859,3 +859,8 @@ We sent a code to {address}. Type it below, or click the link in the same email 
 The email comes from {sender}, subject “{subject}”. If it isn't in your inbox, check your spam or junk folder.	邮件发件人为 {sender}，主题为“{subject}”。如果收件箱里没有，请查看垃圾邮件文件夹。
 The link has stopped working on this Mac. Type the code from the email, or send a new one.	链接在这台 Mac 上已失效。请输入邮件中的验证码，或重新发送邮件。
 The link has stopped working on this computer. Type the code from the email, or send a new one.	链接在这台电脑上已失效。请输入邮件中的验证码，或重新发送邮件。
+App Review sign-in	App Review 登录
+Password	密码
+Sign in with email and password	使用邮箱和密码登录
+Signing in…	正在登录…
+enter the password	请输入密码

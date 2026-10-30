@@ -38,6 +38,9 @@ pub struct AccountUi {
     /// Settings is open.
     pub(crate) open: bool,
     pub(crate) email: String,
+    /// Password for the temporary App Review path (`review-password-signin`).
+    #[cfg(feature = "review-password-signin")]
+    pub(crate) password: String,
     busy: Option<Busy>,
     /// The last outcome to show: text and whether it is a problem.
     pub(crate) message: Option<(String, bool)>,
@@ -81,6 +84,8 @@ impl Default for AccountUi {
             region: Region::International,
             open: false,
             email: String::new(),
+            #[cfg(feature = "review-password-signin")]
+            password: String::new(),
             busy: None,
             message: None,
             confirm_delete: false,
@@ -98,6 +103,12 @@ impl Default for AccountUi {
 pub(crate) enum Doing {
     SignIn(Provider),
     EmailLink(String),
+    /// Temporary App Review: email + password (`review-password-signin`).
+    #[cfg(feature = "review-password-signin")]
+    Password {
+        email: String,
+        password: String,
+    },
     SignOut,
     Delete,
 }
@@ -245,6 +256,10 @@ fn spawn(shell: &mut Shell, ctx: &egui::Context, doing: Doing) {
         let r = match job {
             Doing::SignIn(p) => sign_in(&account, region, &Method::Provider(p), &c, sent).inspect(|_| check_now(&account)),
             Doing::EmailLink(e) => sign_in(&account, region, &Method::Email(e), &c, sent).inspect(|_| check_now(&account)),
+            #[cfg(feature = "review-password-signin")]
+            Doing::Password { email, password } => {
+                account.sign_in_with_password(region, &email, &password).map(Some).inspect(|_| check_now(&account))
+            }
             Doing::SignOut => account.sign_out().map(|_| None),
             Doing::Delete => account.delete_account().map(|_| None),
         };
@@ -406,16 +421,22 @@ pub(crate) fn poll(shell: &mut Shell, ctx: &egui::Context) {
     }
     shell.account.message = match (b.doing, r) {
         (_, Err(AccountError::Cancelled)) => None,
-        (Doing::SignIn(_) | Doing::EmailLink(_), Ok(_)) => {
+        (doing, Ok(_)) if is_sign_in_doing(&doing) => {
             // The Ask box's sign-in message has done its job; the entitlement was just checked.
             shell.ask.clear_message();
             shell.account.email_code = None;
+            #[cfg(feature = "review-password-signin")]
+            {
+                shell.account.password.clear();
+            }
             shell.account.last_check = Some(std::time::Instant::now());
             None
         }
         (Doing::SignOut, Ok(_)) => Some((tn!("You're signed out.").into(), false)),
         (Doing::Delete, Ok(_)) => Some((tn!("Your account was deleted.").into(), false)),
         (_, Err(e)) => Some((e.to_string(), true)),
+        // Sign-out / delete success already handled; other Ok arms don't apply.
+        (_, Ok(_)) => None,
     };
 }
 
@@ -488,6 +509,15 @@ pub(crate) fn window(shell: &mut Shell, ctx: &egui::Context) {
     if close {
         shell.account.open = false;
         shell.account.confirm_delete = false;
+    }
+}
+
+fn is_sign_in_doing(d: &Doing) -> bool {
+    match d {
+        Doing::SignIn(_) | Doing::EmailLink(_) => true,
+        #[cfg(feature = "review-password-signin")]
+        Doing::Password { .. } => true,
+        _ => false,
     }
 }
 
@@ -639,6 +669,8 @@ fn sign_in_buttons(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, offline: bo
         let waiting = match &doing {
             Doing::SignIn(_) => tl!("Finish signing in in your browser…").to_string(),
             Doing::EmailLink(e) => i18n::fmt("Sending an email to {address}…", &[("address", e)]),
+            #[cfg(feature = "review-password-signin")]
+            Doing::Password { .. } => tl!("Signing in…").to_string(),
             Doing::SignOut => tl!("Signing out…").into(),
             Doing::Delete => tl!("Deleting your account…").into(),
         };
@@ -684,6 +716,38 @@ fn sign_in_buttons(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, offline: bo
         let line = i18n::fmt("We'll email you a {n}-digit code from {sender}.", &[("n", n.as_str()), ("sender", EMAIL_SENDER)]);
         ui.add(egui::Label::new(RichText::new(line).size(CAPTION).color(t.text_secondary)).wrap());
     }
+
+    #[cfg(feature = "review-password-signin")]
+    {
+        // Temporary App Review path: Connect only accepts username + password.
+        ui.add_space(14.0);
+        ui.label(RichText::new(tl!("App Review sign-in")).size(CAPTION).color(t.text_secondary));
+        ui.add_space(4.0);
+        let field = egui::TextEdit::singleline(&mut shell.account.email)
+            .hint_text(tl!("Email address"))
+            .desired_width(BUTTON_W)
+            .id(egui::Id::new("lm-account-review-email"));
+        let _ = ui.add_enabled(!offline, field);
+        ui.add_space(2.0);
+        let pass = egui::TextEdit::singleline(&mut shell.account.password)
+            .password(true)
+            .hint_text(tl!("Password"))
+            .desired_width(BUTTON_W)
+            .id(egui::Id::new("lm-account-review-password"));
+        let pr = ui.add_enabled(!offline, pass);
+        crate::a11y::label(&pr, tl!("Password"));
+        let enter = pr.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
+        ui.add_space(2.0);
+        let b = egui::Button::new(RichText::new(tl!("Sign in with email and password")).size(BODY)).min_size(vec2(BUTTON_W, 30.0));
+        let ready = !shell.account.email.trim().is_empty() && !shell.account.password.is_empty();
+        if (ui.add_enabled(!offline && ready, b).clicked() || (enter && ready)) && !offline {
+            out = Some(Pane::Start(Doing::Password {
+                email: shell.account.email.trim().to_string(),
+                password: shell.account.password.clone(),
+            }));
+        }
+    }
+
     if offline {
         ui.add_space(6.0);
         ui.label(RichText::new(error_text(&AccountError::Offline)).size(CAPTION).color(t.text_secondary));
