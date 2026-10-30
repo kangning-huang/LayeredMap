@@ -1,11 +1,15 @@
 # The Mac App Store and in-app purchase for Pro (plan)
 
-*Proposed 2026-10-19; not started. Waits on the Apple Developer membership being active.*
+*Proposed 2026-10-19. Packaging scaffolding started 2026-10-30 (`LM_CHANNEL=mas` in
+`packaging/lm/bundle-macos.sh`, `app-mas.entitlements`, `PrivacyInfo.xcprivacy`,
+`container-migration.plist`). Still needs Apple Distribution + Mac Installer Distribution
+certificates, a Mac App Store provisioning profile, and App Store Connect bundle ID alignment
+(`app.layeredmap.desktop` vs the Connect record).*
 
 **Owner decision, 2026-10-19: Pro stays free with an account for now.** The first goal is to make
 NimbleMap good and popular; monetizing comes later, if the user base grows. This page is the plan
 for that later step, so it's ready when needed. Until then the direct download with Supabase
-sign-in is the only channel, and Pro costs nothing.
+sign-in is the only channel for paying users; the Mac App Store free listing can ship without IAP.
 
 The owner asked whether NimbleMap can be sold through the Mac App Store, with Pro as an in-app
 purchase, so that people in mainland China can buy Pro without WeChat, Alipay or phone sign-in.
@@ -166,7 +170,7 @@ the Developer ID build (`signing.md`).
 |---|---|---|
 | 1 | Spike: Shapefile siblings and recent files under the sandbox, in a minimal sandboxed build | Membership (profile) |
 | 2 | Replace the command-line tools with framework calls (helps both channels) | — |
-| 3 | `LM_CHANNEL=mas` build, container migration, privacy manifest, update check off | Step 1 |
+| 3 | `LM_CHANNEL=mas` build, container migration, privacy manifest, update check off — **scaffolding in tree 2026-10-30**; signed upload waits on Distribution certs + profile | Step 1 (sandbox sibling spike still open) |
 | 4 | StoreKit helper and the purchase screens | Owner: the product and price |
 | 5 | Ask proxy: verify Apple transactions, server notifications | Owner: App Store Connect setup |
 | 6 | TestFlight for Mac, then review (all storefronts except China) | Steps 3–5 |
