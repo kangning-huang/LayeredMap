@@ -27,7 +27,9 @@ spikes/ios-companion/
   scripts/check-rust-host.sh
   scripts/build-rust-ios.sh
   ios/NimbleMapCompanion.xcodeproj
-  ios/NimbleMapCompanion/NimbleMapCompanion/*.swift
+  ios/NimbleMapCompanion/*.swift
+  ios/NimbleMapCompanion.xcodeproj/xcshareddata/xcschemes/NimbleMapCompanion.xcscheme
+  screenshots/
 ```
 
 ## Rust (works without Xcode)
@@ -84,3 +86,27 @@ Desktop CI (`cargo test --workspace`, `cargo xtask ci`) will compile this crate 
 ## Map library note
 
 Preferred: **MapLibre Native** via SPM. MapKit was not used. If MapLibre SPM fails to resolve in Xcode, fix the package reference before falling back; do not silently ship MapKit without a decisions.md update.
+
+## Simulator smoke (2026-10-30, Asia/Shanghai)
+
+Built and run on office Mac (`NYUSH-C02GX119Q6X3`, Xcode 16.4, iPhone 16 Pro Simulator 18.5/18.6 UDID `2549FF6E-6F15-43FF-8B93-B1AAA0F31866`).
+
+- Bundle id: `com.nimblemap.companion.spike`
+- Screenshot: `screenshots/sim-iphone16pro-20261030-195256.png` (map + Open URL + Ask stub)
+- Build notes: need Rust **1.99+** (if-let guards in `rustgis-data`); clear conda `CC`/`LD`/`SDKROOT` before `xcodebuild` or the Apple linker is shadowed; Xcode “Build Rust FFI” script uses `$(SRCROOT)/../scripts/…` and `$(SRCROOT)/../include`.
+
+## Frame-rate architecture comparison (max FPS / butter-smooth)
+
+Goal: **highest sustained gesture frame rate** on phone, with URL decode kept off the UI thread. Deciding metric: display-refresh delivery during pan/pinch (ProMotion up to 120 Hz on device; Simulator is typically 60 Hz).
+
+| Route | Gesture path | Expected / measured FPS feel | Fits companion + URL decode? | Verdict for phone |
+| --- | --- | --- | --- | --- |
+| **1. MapLibre Native (Metal) + SwiftUI + Rust FFI** (this spike) | MapLibre owns pan/pinch on Metal; SwiftUI sheets never block the map | **Sim measured (2026-10-30):** CADisplayLink badge showed **60 FPS** idle with MapLibre demotiles visible on iPhone 16 Pro Simulator (display-limited; Simulator is not ProMotion). Screenshot `screenshots/sim-iphone16pro-fps-20261030-195417.png`. MapLibre draws basemap + overlays on GPU; gestures do not wait on Rust. Device ProMotion should allow up to 120 Hz when the GPU keeps up. | Yes — decode via `lm_decode_*`, overlay as `MLNShapeSource` | **Keep.** Best FPS ceiling among realistic options; matches locked butter-smooth bar. |
+| **2. MapKit + SwiftUI + Rust decode** | MKMapView Metal gestures | Also ProMotion-capable; Apple-tuned. Overlay styling and GeoJSON parity are weaker than MapLibre for GIS overlays. | Yes for open/decode; weaker for custom vector styling | Viable fallback if MapLibre SPM breaks; not higher FPS than MapLibre in practice. |
+| **3. Shared Mac B2 CPU renderer → MTKView** | Worker renders to texture; gesture moves/scales cached texture (ADR-001 B2) | **ADR-001 (Mac M4, vsync off):** B2 p95 frame ~5 ms (~200 Hz headroom) but **content soft** during zoom until worker catches up (p95 render ~386 ms). On phone, CPU soft-zoom + battery cost; UI thread stays free (&lt;4 ms block on Mac). | Possible, but duplicates MapLibre’s job and soft-zoom fights “butter sharp” on phone | Lower *perceived* sharpness during gestures than GPU map engines; keep as Mac strategy, not phone map. |
+| **4. egui/eframe shrink on iOS** | egui paints whole UI | ADR-001 strategy A (redraw every frame) blows past 33 ms on zoom/pinch; B blocks UI up to ~790 ms on gesture end. Phone would feel like a web/desktop port, not native chrome. | Technically possible; fails butter-smooth UX goal | **Lower bar — reject** for companion shell. |
+
+**Sources:** this Simulator run; `docs/lm/adr-001-rendering.md` (B2/C measurements); `docs/lm/decisions.md` (2026-10-30 iPhone companion stack).
+
+**Conclusion:** keep **MapLibre Native + SwiftUI + Rust decode**. It wins on max frame-rate *feel* for phone (GPU map + native gestures + ProMotion headroom) without giving up URL/Rust decode. MapKit is the only close FPS peer; B2/MTKView is for Mac parity, not phone; egui-on-iOS is explicitly the lower bar. No stack switch unless device Instruments later shows MapLibre dropping below ~60 FPS under real overlays while MapKit holds 120.
+

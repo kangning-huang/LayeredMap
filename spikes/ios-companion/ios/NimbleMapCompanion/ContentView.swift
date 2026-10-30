@@ -25,6 +25,8 @@ struct ContentView: View {
 
                     Spacer()
 
+                    FpsOverlay()
+
                     if isBusy {
                         ProgressView()
                             .controlSize(.small)

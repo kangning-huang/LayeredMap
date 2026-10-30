@@ -13,6 +13,7 @@
 		A10000000000000000000004 /* OpenURLSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000004 /* OpenURLSheet.swift */; };
 		A10000000000000000000005 /* AskBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000005 /* AskBar.swift */; };
 		A10000000000000000000006 /* DecodeBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000006 /* DecodeBridge.swift */; };
+		A10000000000000000000008 /* FpsOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000B /* FpsOverlay.swift */; };
 		A10000000000000000000007 /* MapLibre in Frameworks */ = {isa = PBXBuildFile; productRef = A40000000000000000000001 /* MapLibre */; };
 /* End PBXBuildFile section */
 
@@ -23,10 +24,11 @@
 		A20000000000000000000004 /* OpenURLSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenURLSheet.swift; sourceTree = "<group>"; };
 		A20000000000000000000005 /* AskBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AskBar.swift; sourceTree = "<group>"; };
 		A20000000000000000000006 /* DecodeBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DecodeBridge.swift; sourceTree = "<group>"; };
+		A2000000000000000000000B /* FpsOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FpsOverlay.swift; sourceTree = "<group>"; };
 		A20000000000000000000007 /* BridgingHeader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BridgingHeader.h; sourceTree = "<group>"; };
 		A20000000000000000000008 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A20000000000000000000009 /* NimbleMapCompanion.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NimbleMapCompanion.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		A2000000000000000000000A /* lm_decode.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = lm_decode.h; path = ../../include/lm_decode.h; sourceTree = "<group>"; };
+		A2000000000000000000000A /* lm_decode.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = lm_decode.h; path = ../include/lm_decode.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -58,6 +60,7 @@
 				A20000000000000000000004 /* OpenURLSheet.swift */,
 				A20000000000000000000005 /* AskBar.swift */,
 				A20000000000000000000006 /* DecodeBridge.swift */,
+				A2000000000000000000000B /* FpsOverlay.swift */,
 				A20000000000000000000007 /* BridgingHeader.h */,
 				A20000000000000000000008 /* Info.plist */,
 				A2000000000000000000000A /* lm_decode.h */,
@@ -151,7 +154,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/bash;
-			shellScript = "set -euo pipefail\nREPO=\"${SRCROOT}/../../..\"\ncd \"$REPO\"\nif [[ \"${PLATFORM_NAME}\" == *simulator* ]]; then\n  TARGET=aarch64-apple-ios-sim\nelse\n  TARGET=aarch64-apple-ios\nfi\n\"${SRCROOT}/../../scripts/build-rust-ios.sh\" \"$TARGET\"\nLIB=\"${REPO}/target/${TARGET}/release/liblm_ios_decode_ffi.a\"\nmkdir -p \"${BUILT_PRODUCTS_DIR}\"\ncp -f \"$LIB\" \"${BUILT_PRODUCTS_DIR}/liblm_ios_decode_ffi.a\"\n";
+			shellScript = "set -euo pipefail\nREPO=\"${SRCROOT}/../../..\"\ncd \"$REPO\"\nif [[ \"${PLATFORM_NAME}\" == *simulator* ]]; then\n  TARGET=aarch64-apple-ios-sim\nelse\n  TARGET=aarch64-apple-ios\nfi\nLIB=\"${REPO}/target/${TARGET}/release/liblm_ios_decode_ffi.a\"\nif [[ ! -f \"$LIB\" ]]; then\n  # Clear conda/compiler overrides so cc-rs finds Apple clang\n  unset CC CXX AR RANLIB CFLAGS CXXFLAGS CPPFLAGS LDFLAGS LD SDKROOT CONDA_PREFIX\n  export PATH=\"/usr/bin:/bin:/usr/sbin:/sbin:${HOME}/.cargo/bin:/Applications/Xcode.app/Contents/Developer/usr/bin:\${PATH}\"\n  \"${SRCROOT}/../scripts/build-rust-ios.sh\" \"$TARGET\"\nfi\nmkdir -p \"${BUILT_PRODUCTS_DIR}\"\ncp -f \"$LIB\" \"${BUILT_PRODUCTS_DIR}/liblm_ios_decode_ffi.a\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -166,6 +169,7 @@
 				A10000000000000000000004 /* OpenURLSheet.swift in Sources */,
 				A10000000000000000000005 /* AskBar.swift in Sources */,
 				A10000000000000000000006 /* DecodeBridge.swift in Sources */,
+				A10000000000000000000008 /* FpsOverlay.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -225,7 +229,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				HEADER_SEARCH_PATHS = (
-					"$(SRCROOT)/../../include",
+					"$(SRCROOT)/../include",
 				);
 				INFOPLIST_FILE = NimbleMapCompanion/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -263,7 +267,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				HEADER_SEARCH_PATHS = (
-					"$(SRCROOT)/../../include",
+					"$(SRCROOT)/../include",
 				);
 				INFOPLIST_FILE = NimbleMapCompanion/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
