@@ -4,6 +4,8 @@
 Lead candidate from the owner: browse-tap. Not an ADR yet. Layer and symbology chrome on
 iPhone is a separate debate (PR #53 spike).*
 
+> **Alternative B (parallel, not superseding):** [`docs/lm/ios-redesign.md`](ios-redesign.md) — map-first persistent sheet, tap → card, free catalog search. Owner (Ken, 2026-10-31): keep this open-paths / Alt A debate and Alt B as **two alternatives**; build both branches and compare by trying them. This page stays Alt A's open-paths record.
+
 The iPhone companion spike (`spikes/ios-companion/`, PR #50) already opens a paste HTTPS URL,
 downloads off the main thread, decodes GeoJSON in Rust, and draws on MapLibre. Smoothness is
 good enough to keep that stack. This page pressure-tests **how people get data into the app**
