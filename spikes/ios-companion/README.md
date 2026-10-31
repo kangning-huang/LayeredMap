@@ -1,6 +1,11 @@
-# iPhone companion spike (throwaway)
+# iPhone companion spike — **Alternative A** (throwaway)
 
 Phase 0 spike for a **native iPhone companion**: SwiftUI shell, MapLibre Metal map, URL open, Rust GeoJSON decode via a tiny C ABI. Ask is a non-functional stub.
+
+**This checkout / PR is Alternative A** — floating A→B→C layers/symbology chrome
+(`docs/lm/ios-layers-symbology.md`). Home-screen label: **NimbleMap A**
+(`com.nimblemap.companion.spike.alta`). Alternative B (persistent sheet) is a separate
+branch/spike — do not merge B into A. Compare by trying both.
 
 **Not product code.** Lives under `spikes/` and will be thrown away or rewritten when the real app lands in `apps/` / `crates/lm-*`.
 
@@ -13,8 +18,9 @@ Phase 0 spike for a **native iPhone companion**: SwiftUI shell, MapLibre Metal m
 | Decode | `rustgis-data::io::read_geojson` behind `lm_decode_*` C ABI |
 | Open | Paste HTTPS URL → download off main thread → sandbox file → Rust decode → MapLibre shape source |
 | Ask | UI stub only (edge composer; does not own the layers sheet) |
-| Layers chrome | A idle pills → B bottom sheet (data layers only) → C lean symbology; live legend swatches; swipe Remove; Edit/`onMove` reorder. Design: `docs/lm/ios-layers-symbology.md` (PR #52). |
-| Out | Cloud pickers, iPad layout, egui, Mac B2 renderer, App Store, MapLibre paint from `LayerStore` |
+| Layers chrome | **Alt A:** A idle pills → B bottom sheet (data layers only) → C lean symbology; live legend swatches; swipe Remove; Edit/`onMove` reorder. Design: `docs/lm/ios-layers-symbology.md`. |
+| Map paint | Demo Cities / Roads / Parks GeoJSON; MapLibre circle/line/fill paint follows `LayerStore` (color, size/width, opacity, visibility). |
+| Out | Cloud pickers, iPad layout, egui, Mac B2 renderer, App Store, Alt B persistent-sheet chrome |
 
 Decision log: `docs/lm/decisions.md` (iPhone companion spike stack).
 
@@ -54,6 +60,16 @@ Host (`aarch64-apple-darwin`) is enough to verify decode + C ABI. The spike crat
 
 Needs **full Xcode** (iPhoneSimulator / iPhoneOS SDKs). Command Line Tools alone are not enough (`xcode-select` must point at `Xcode.app`).
 
+## How to try Alternative A
+
+1. Open `spikes/ios-companion/ios/NimbleMapCompanion.xcodeproj` in full Xcode.
+2. Run on an iPhone simulator (or device). Home screen name: **NimbleMap A**.
+3. You should see an **Alt A** chip top-left, Open / Layers / Ask pills, and NYC demo Cities / Roads / Parks on the map.
+4. Tap **Layers** → reorder (Edit), eye toggle, swipe-left **Remove**, tap a row for **Style**.
+5. Change color / size / opacity — legend swatch **and** map paint update. Done / dismiss → back to map-first A.
+
+Parallel Alternative B is a different branch; install both to compare (different bundle ids).
+
 ## Xcode / simulator
 
 1. Install Xcode from the App Store; run it once; accept the license.
@@ -77,7 +93,8 @@ Needs **full Xcode** (iPhoneSimulator / iPhoneOS SDKs). Command Line Tools alone
 | GeoJSON decode via `rustgis-data` | Full app Run on simulator/device |
 | C ABI (`lm_decode_geojson`, `_path`, `lm_string_free`) | MapLibre pan/pinch (code present; needs SPM + SDK) |
 | Unit tests for decode + FFI | Ask assistant calls |
-| A→B→C layers/symbology chrome (demo layers + live swatches) | MapLibre style paint driven by `LayerStore` |
+| A→B→C layers/symbology chrome (demo layers + live swatches) | Real dataset → layer list import |
+| MapLibre paint from `LayerStore` on demo GeoJSON | |
 | | Drive / Box / Dropbox pickers |
 | | iPad denser chrome |
 
@@ -93,7 +110,7 @@ Preferred: **MapLibre Native** via SPM. MapKit was not used. If MapLibre SPM fai
 
 Built and run on office Mac (`NYUSH-C02GX119Q6X3`, Xcode 16.4, iPhone 16 Pro Simulator 18.5/18.6 UDID `2549FF6E-6F15-43FF-8B93-B1AAA0F31866`).
 
-- Bundle id: `com.nimblemap.companion.spike`
+- Bundle id: `com.nimblemap.companion.spike.alta` (home screen: **NimbleMap A**)
 - Screenshot: `screenshots/sim-iphone16pro-20261030-195256.png` (map + Open URL + Ask stub)
 - Build notes: need Rust **1.99+** (if-let guards in `rustgis-data`); clear conda `CC`/`LD`/`SDKROOT` before `xcodebuild` or the Apple linker is shadowed; Xcode “Build Rust FFI” script uses `$(SRCROOT)/../scripts/…` and `$(SRCROOT)/../include`.
 

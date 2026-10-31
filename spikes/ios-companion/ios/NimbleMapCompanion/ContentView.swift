@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// A idle (map-first floating pills) → B Layers sheet → C symbology. See docs/lm/ios-layers-symbology.md.
+/// **Alternative A:** A idle (map-first floating pills) → B Layers sheet → C symbology.
+/// See docs/lm/ios-layers-symbology.md. Bundle label: NimbleMap A.
 struct ContentView: View {
     @StateObject private var layerStore = LayerStore()
     @State private var showOpenURL = false
@@ -11,7 +12,7 @@ struct ContentView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            MapScreen(overlayGeoJSON: overlayGeoJSON)
+            MapScreen(overlayGeoJSON: overlayGeoJSON, layers: layerStore.layers)
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
@@ -33,6 +34,13 @@ struct ContentView: View {
     /// State A: floating glass pills only. Layers opens B; Ask stays a pill/composer, not the layers sheet.
     private var topChrome: some View {
         HStack {
+            Text("Alt A")
+                .font(.caption2.weight(.bold))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 6)
+                .background(.ultraThinMaterial, in: Capsule())
+                .accessibilityLabel("Alternative A floating chrome")
+
             glassPillButton(title: "Open", systemImage: "link") {
                 showOpenURL = true
             }

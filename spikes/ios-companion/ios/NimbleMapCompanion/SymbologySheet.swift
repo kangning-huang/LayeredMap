@@ -62,7 +62,7 @@ struct SymbologySheet: View {
             } header: {
                 Text(sizeHeader)
             } footer: {
-                Text("Live preview: the legend swatch on the Layers list updates as you change style. MapLibre paint from this model is stubbed in this spike pass.")
+                Text("Live preview: the legend swatch and the map both update as you change style.")
             }
         }
         .navigationTitle("Style")

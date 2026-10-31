@@ -262,7 +262,7 @@
 					"-llm_ios_decode_ffi",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.nimblemap.companion.spike;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nimblemap.companion.spike.alta;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
@@ -300,7 +300,7 @@
 					"-llm_ios_decode_ffi",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.nimblemap.companion.spike;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nimblemap.companion.spike.alta;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;

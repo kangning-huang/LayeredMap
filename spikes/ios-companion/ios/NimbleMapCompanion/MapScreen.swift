@@ -1,13 +1,14 @@
 import SwiftUI
 import MapLibre
+import UIKit
 
 /// Native MapLibre Metal map. Pan/pinch stay on the map view; overlays update without blocking gestures.
 ///
-/// Symbology chrome (A→B→C) drives `LayerStore` + legend swatches in SwiftUI. Wiring those styles into
-/// MapLibre paint properties per data layer is intentionally stubbed in this pass — keep chrome
-/// exercisable with demo layers without blocking on style-paint plumbing.
+/// **Alt A:** demo data-layer GeoJSON + `LayerStore` symbology drive MapLibre paint (color / size /
+/// opacity / visibility). URL-opened overlays still use the separate `spike-overlay` source.
 struct MapScreen: UIViewRepresentable {
     var overlayGeoJSON: String?
+    var layers: [MapLayer]
 
     func makeUIView(context: Context) -> MLNMapView {
         let map = MLNMapView(frame: .zero)
@@ -17,12 +18,19 @@ struct MapScreen: UIViewRepresentable {
         map.attributionButton.isHidden = false
         map.allowsRotating = true
         map.allowsTilting = true
-        map.setCenter(CLLocationCoordinate2D(latitude: 20, longitude: 0), zoomLevel: 1.5, animated: false)
+        // Frame demo Cities / Roads / Parks around NYC.
+        map.setCenter(
+            CLLocationCoordinate2D(latitude: 40.74, longitude: -73.98),
+            zoomLevel: 11,
+            animated: false
+        )
         map.delegate = context.coordinator
         return map
     }
 
     func updateUIView(_ map: MLNMapView, context: Context) {
+        context.coordinator.syncDataLayers(layers, on: map)
+
         guard let overlayGeoJSON, overlayGeoJSON != context.coordinator.lastOverlay else { return }
         context.coordinator.lastOverlay = overlayGeoJSON
         context.coordinator.applyOverlay(overlayGeoJSON, on: map)
@@ -34,14 +42,123 @@ struct MapScreen: UIViewRepresentable {
 
     final class Coordinator: NSObject, MLNMapViewDelegate {
         var lastOverlay: String?
+        var lastLayers: [MapLayer] = []
+        private var knownStyleIds = Set<String>()
         private let sourceId = "spike-overlay"
         private let circleLayerId = "spike-overlay-circle"
         private let lineLayerId = "spike-overlay-line"
         private let fillLayerId = "spike-overlay-fill"
 
         func mapView(_ mapView: MLNMapView, didFinishLoading style: MLNStyle) {
+            knownStyleIds.removeAll()
+            if !lastLayers.isEmpty {
+                syncDataLayers(lastLayers, on: mapView)
+            }
             if let lastOverlay {
                 applyOverlay(lastOverlay, on: mapView)
+            }
+        }
+
+        func syncDataLayers(_ layers: [MapLayer], on map: MLNMapView) {
+            lastLayers = layers
+            guard let style = map.style else { return }
+
+            let activeIds = Set(layers.map(\.styleId))
+            for stale in knownStyleIds.subtracting(activeIds) {
+                removeLayer(styleId: stale, from: style)
+            }
+            knownStyleIds = activeIds
+
+            // Bottom of list draws under top; MapLibre add order: add bottom-first.
+            for layer in layers.reversed() {
+                upsert(layer, on: style)
+            }
+        }
+
+        private func removeLayer(styleId: String, from style: MLNStyle) {
+            for suffix in ["-fill", "-line", "-circle"] {
+                if let layer = style.layer(withIdentifier: styleId + suffix) {
+                    style.removeLayer(layer)
+                }
+            }
+            if let source = style.source(withIdentifier: styleId) {
+                style.removeSource(source)
+            }
+        }
+
+        private func upsert(_ layer: MapLayer, on style: MLNStyle) {
+            guard let data = layer.demoGeoJSON.data(using: .utf8),
+                  let shape = try? MLNShape(data: data, encoding: String.Encoding.utf8.rawValue)
+            else { return }
+
+            let source: MLNShapeSource
+            if let existing = style.source(withIdentifier: layer.styleId) as? MLNShapeSource {
+                existing.shape = shape
+                source = existing
+            } else {
+                source = MLNShapeSource(identifier: layer.styleId, shape: shape, options: nil)
+                style.addSource(source)
+            }
+
+            let uiColor = UIColor(layer.symbology.color)
+            let opacity = NSNumber(value: layer.symbology.opacity)
+            let size = NSNumber(value: layer.symbology.size)
+            let hidden = !layer.visible
+
+            switch layer.geometry {
+            case .point:
+                let id = layer.styleId + "-circle"
+                let circle: MLNCircleStyleLayer
+                if let existing = style.layer(withIdentifier: id) as? MLNCircleStyleLayer {
+                    circle = existing
+                } else {
+                    circle = MLNCircleStyleLayer(identifier: id, source: source)
+                    style.addLayer(circle)
+                }
+                circle.circleColor = NSExpression(forConstantValue: uiColor)
+                circle.circleRadius = NSExpression(forConstantValue: size)
+                circle.circleOpacity = NSExpression(forConstantValue: opacity)
+                circle.isHidden = hidden
+            case .line:
+                let id = layer.styleId + "-line"
+                let line: MLNLineStyleLayer
+                if let existing = style.layer(withIdentifier: id) as? MLNLineStyleLayer {
+                    line = existing
+                } else {
+                    line = MLNLineStyleLayer(identifier: id, source: source)
+                    style.addLayer(line)
+                }
+                line.lineColor = NSExpression(forConstantValue: uiColor)
+                line.lineWidth = NSExpression(forConstantValue: size)
+                line.lineOpacity = NSExpression(forConstantValue: opacity)
+                line.isHidden = hidden
+            case .fill:
+                let fillId = layer.styleId + "-fill"
+                let outlineId = layer.styleId + "-line"
+                let fill: MLNFillStyleLayer
+                if let existing = style.layer(withIdentifier: fillId) as? MLNFillStyleLayer {
+                    fill = existing
+                } else {
+                    fill = MLNFillStyleLayer(identifier: fillId, source: source)
+                    style.addLayer(fill)
+                }
+                fill.fillColor = NSExpression(
+                    forConstantValue: uiColor.withAlphaComponent(CGFloat(layer.symbology.opacity))
+                )
+                fill.fillOpacity = NSExpression(forConstantValue: opacity)
+                fill.isHidden = hidden
+
+                let outline: MLNLineStyleLayer
+                if let existing = style.layer(withIdentifier: outlineId) as? MLNLineStyleLayer {
+                    outline = existing
+                } else {
+                    outline = MLNLineStyleLayer(identifier: outlineId, source: source)
+                    style.addLayer(outline)
+                }
+                outline.lineColor = NSExpression(forConstantValue: uiColor)
+                outline.lineWidth = NSExpression(forConstantValue: size)
+                outline.lineOpacity = NSExpression(forConstantValue: NSNumber(value: 1.0))
+                outline.isHidden = hidden
             }
         }
 

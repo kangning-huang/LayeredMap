@@ -18,7 +18,7 @@ enum LayerGeometryKind: String, CaseIterable, Identifiable, Hashable {
 }
 
 /// Lean symbology for the spike: color, size/width, opacity.
-/// MapLibre paint updates from this model are stubbed in MapScreen for this pass.
+/// MapLibre paint on demo layers follows this model (see MapScreen).
 struct LayerSymbology: Hashable {
     var color: Color
     /// Point radius or line width (points). Fill uses it as outline weight.
@@ -33,23 +33,31 @@ struct LayerSymbology: Hashable {
 /// One data layer. Basemap is never modeled here (always on; never listed in B).
 struct MapLayer: Identifiable, Hashable {
     let id: UUID
+    /// Stable MapLibre source/layer id prefix (survives rename).
+    let styleId: String
     var name: String
     var visible: Bool
     var geometry: LayerGeometryKind
     var symbology: LayerSymbology
+    /// Demo FeatureCollection GeoJSON drawn on the map for this chrome spike.
+    var demoGeoJSON: String
 
     init(
         id: UUID = UUID(),
+        styleId: String,
         name: String,
         visible: Bool = true,
         geometry: LayerGeometryKind,
-        symbology: LayerSymbology
+        symbology: LayerSymbology,
+        demoGeoJSON: String
     ) {
         self.id = id
+        self.styleId = styleId
         self.name = name
         self.visible = visible
         self.geometry = geometry
         self.symbology = symbology
+        self.demoGeoJSON = demoGeoJSON
     }
 }
 
@@ -65,19 +73,25 @@ final class LayerStore: ObservableObject {
 
     static let demoLayers: [MapLayer] = [
         MapLayer(
+            styleId: "demo-cities",
             name: "Cities",
             geometry: .point,
-            symbology: LayerSymbology(color: .blue, size: 8, opacity: 0.9)
+            symbology: LayerSymbology(color: .blue, size: 8, opacity: 0.9),
+            demoGeoJSON: DemoGeoJSON.cities
         ),
         MapLayer(
+            styleId: "demo-roads",
             name: "Roads",
             geometry: .line,
-            symbology: LayerSymbology(color: Color(white: 0.45), size: 3, opacity: 1.0)
+            symbology: LayerSymbology(color: Color(white: 0.45), size: 3, opacity: 1.0),
+            demoGeoJSON: DemoGeoJSON.roads
         ),
         MapLayer(
+            styleId: "demo-parks",
             name: "Parks",
             geometry: .fill,
-            symbology: LayerSymbology(color: .green, size: 1, opacity: 0.45)
+            symbology: LayerSymbology(color: .green, size: 1, opacity: 0.45),
+            demoGeoJSON: DemoGeoJSON.parks
         ),
     ]
 
@@ -106,4 +120,32 @@ final class LayerStore: ObservableObject {
         guard let index = layers.firstIndex(where: { $0.id == id }) else { return }
         layers[index].visible = visible
     }
+}
+
+/// Tiny NYC-ish demo geometries so Alt A symbology changes are visible on the MapLibre demotiles.
+enum DemoGeoJSON {
+    static let cities = """
+    {"type":"FeatureCollection","features":[
+      {"type":"Feature","properties":{"name":"Midtown"},"geometry":{"type":"Point","coordinates":[-73.9857,40.7484]}},
+      {"type":"Feature","properties":{"name":"Downtown"},"geometry":{"type":"Point","coordinates":[-74.0060,40.7128]}},
+      {"type":"Feature","properties":{"name":"Brooklyn"},"geometry":{"type":"Point","coordinates":[-73.9442,40.6782]}},
+      {"type":"Feature","properties":{"name":"Queens"},"geometry":{"type":"Point","coordinates":[-73.7949,40.7282]}},
+      {"type":"Feature","properties":{"name":"Jersey"},"geometry":{"type":"Point","coordinates":[-74.0721,40.7178]}}
+    ]}
+    """
+
+    static let roads = """
+    {"type":"FeatureCollection","features":[
+      {"type":"Feature","properties":{"name":"Broadway"},"geometry":{"type":"LineString","coordinates":[[-74.0130,40.7020],[-73.9990,40.7220],[-73.9850,40.7480],[-73.9680,40.7790]]}},
+      {"type":"Feature","properties":{"name":"FDR"},"geometry":{"type":"LineString","coordinates":[[-73.9760,40.7040],[-73.9720,40.7250],[-73.9600,40.7550],[-73.9440,40.7820]]}},
+      {"type":"Feature","properties":{"name":"Cross"},"geometry":{"type":"LineString","coordinates":[[-74.0200,40.7400],[-73.9900,40.7400],[-73.9600,40.7400],[-73.9300,40.7400]]}}
+    ]}
+    """
+
+    static let parks = """
+    {"type":"FeatureCollection","features":[
+      {"type":"Feature","properties":{"name":"Central Park"},"geometry":{"type":"Polygon","coordinates":[[[-73.9819,40.7681],[-73.9580,40.7681],[-73.9493,40.7968],[-73.9730,40.7968],[-73.9819,40.7681]]]}},
+      {"type":"Feature","properties":{"name":"Prospect"},"geometry":{"type":"Polygon","coordinates":[[[-73.9695,40.6602],[-73.9620,40.6550],[-73.9680,40.6480],[-73.9770,40.6530],[-73.9695,40.6602]]]}}
+    ]}
+    """
 }
