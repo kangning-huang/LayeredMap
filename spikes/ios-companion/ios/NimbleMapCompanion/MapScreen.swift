@@ -103,7 +103,7 @@ struct MapScreen: UIViewRepresentable {
             let uiColor = UIColor(layer.symbology.color)
             let opacity = NSNumber(value: layer.symbology.opacity)
             let size = NSNumber(value: layer.symbology.size)
-            let hidden = !layer.visible
+            let visible = layer.visible
 
             switch layer.geometry {
             case .point:
@@ -118,7 +118,7 @@ struct MapScreen: UIViewRepresentable {
                 circle.circleColor = NSExpression(forConstantValue: uiColor)
                 circle.circleRadius = NSExpression(forConstantValue: size)
                 circle.circleOpacity = NSExpression(forConstantValue: opacity)
-                circle.isHidden = hidden
+                circle.isVisible = visible
             case .line:
                 let id = layer.styleId + "-line"
                 let line: MLNLineStyleLayer
@@ -131,7 +131,7 @@ struct MapScreen: UIViewRepresentable {
                 line.lineColor = NSExpression(forConstantValue: uiColor)
                 line.lineWidth = NSExpression(forConstantValue: size)
                 line.lineOpacity = NSExpression(forConstantValue: opacity)
-                line.isHidden = hidden
+                line.isVisible = visible
             case .fill:
                 let fillId = layer.styleId + "-fill"
                 let outlineId = layer.styleId + "-line"
@@ -146,7 +146,7 @@ struct MapScreen: UIViewRepresentable {
                     forConstantValue: uiColor.withAlphaComponent(CGFloat(layer.symbology.opacity))
                 )
                 fill.fillOpacity = NSExpression(forConstantValue: opacity)
-                fill.isHidden = hidden
+                fill.isVisible = visible
 
                 let outline: MLNLineStyleLayer
                 if let existing = style.layer(withIdentifier: outlineId) as? MLNLineStyleLayer {
@@ -158,7 +158,7 @@ struct MapScreen: UIViewRepresentable {
                 outline.lineColor = NSExpression(forConstantValue: uiColor)
                 outline.lineWidth = NSExpression(forConstantValue: size)
                 outline.lineOpacity = NSExpression(forConstantValue: NSNumber(value: 1.0))
-                outline.isHidden = hidden
+                outline.isVisible = visible
             }
         }
 
