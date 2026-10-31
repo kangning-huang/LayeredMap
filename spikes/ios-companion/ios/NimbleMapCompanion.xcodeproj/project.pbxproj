@@ -1,0 +1,357 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A10000000000000000000001 /* NimbleMapCompanionApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001 /* NimbleMapCompanionApp.swift */; };
+		A10000000000000000000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* ContentView.swift */; };
+		A10000000000000000000003 /* MapScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000003 /* MapScreen.swift */; };
+		A10000000000000000000004 /* OpenURLSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000004 /* OpenURLSheet.swift */; };
+		A10000000000000000000005 /* AskBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000005 /* AskBar.swift */; };
+		A10000000000000000000006 /* DecodeBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000006 /* DecodeBridge.swift */; };
+		A10000000000000000000008 /* FpsOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000B /* FpsOverlay.swift */; };
+		A10000000000000000000009 /* LayerModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000C /* LayerModels.swift */; };
+		A1000000000000000000000A /* LegendSwatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000D /* LegendSwatch.swift */; };
+		A1000000000000000000000B /* LayersSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000E /* LayersSheet.swift */; };
+		A1000000000000000000000C /* SymbologySheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000F /* SymbologySheet.swift */; };
+		A10000000000000000000007 /* MapLibre in Frameworks */ = {isa = PBXBuildFile; productRef = A40000000000000000000001 /* MapLibre */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		A20000000000000000000001 /* NimbleMapCompanionApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NimbleMapCompanionApp.swift; sourceTree = "<group>"; };
+		A20000000000000000000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		A20000000000000000000003 /* MapScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapScreen.swift; sourceTree = "<group>"; };
+		A20000000000000000000004 /* OpenURLSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenURLSheet.swift; sourceTree = "<group>"; };
+		A20000000000000000000005 /* AskBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AskBar.swift; sourceTree = "<group>"; };
+		A20000000000000000000006 /* DecodeBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DecodeBridge.swift; sourceTree = "<group>"; };
+		A2000000000000000000000B /* FpsOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FpsOverlay.swift; sourceTree = "<group>"; };
+		A2000000000000000000000C /* LayerModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LayerModels.swift; sourceTree = "<group>"; };
+		A2000000000000000000000D /* LegendSwatch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegendSwatch.swift; sourceTree = "<group>"; };
+		A2000000000000000000000E /* LayersSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LayersSheet.swift; sourceTree = "<group>"; };
+		A2000000000000000000000F /* SymbologySheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymbologySheet.swift; sourceTree = "<group>"; };
+		A20000000000000000000007 /* BridgingHeader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BridgingHeader.h; sourceTree = "<group>"; };
+		A20000000000000000000008 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A20000000000000000000009 /* NimbleMapCompanion.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NimbleMapCompanion.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A2000000000000000000000A /* lm_decode.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = lm_decode.h; path = ../include/lm_decode.h; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A30000000000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000007 /* MapLibre in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A50000000000000000000001 = {
+			isa = PBXGroup;
+			children = (
+				A50000000000000000000002 /* NimbleMapCompanion */,
+				A50000000000000000000003 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A50000000000000000000002 /* NimbleMapCompanion */ = {
+			isa = PBXGroup;
+			children = (
+				A20000000000000000000001 /* NimbleMapCompanionApp.swift */,
+				A20000000000000000000002 /* ContentView.swift */,
+				A20000000000000000000003 /* MapScreen.swift */,
+				A20000000000000000000004 /* OpenURLSheet.swift */,
+				A20000000000000000000005 /* AskBar.swift */,
+				A20000000000000000000006 /* DecodeBridge.swift */,
+				A2000000000000000000000B /* FpsOverlay.swift */,
+				A2000000000000000000000C /* LayerModels.swift */,
+				A2000000000000000000000D /* LegendSwatch.swift */,
+				A2000000000000000000000E /* LayersSheet.swift */,
+				A2000000000000000000000F /* SymbologySheet.swift */,
+				A20000000000000000000007 /* BridgingHeader.h */,
+				A20000000000000000000008 /* Info.plist */,
+				A2000000000000000000000A /* lm_decode.h */,
+			);
+			path = NimbleMapCompanion;
+			sourceTree = "<group>";
+		};
+		A50000000000000000000003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A20000000000000000000009 /* NimbleMapCompanion.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A60000000000000000000001 /* NimbleMapCompanion */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A70000000000000000000003 /* Build configuration list for PBXNativeTarget "NimbleMapCompanion" */;
+			buildPhases = (
+				A80000000000000000000001 /* Build Rust FFI */,
+				A60000000000000000000002 /* Sources */,
+				A30000000000000000000001 /* Frameworks */,
+				A60000000000000000000003 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = NimbleMapCompanion;
+			packageProductDependencies = (
+				A40000000000000000000001 /* MapLibre */,
+			);
+			productName = NimbleMapCompanion;
+			productReference = A20000000000000000000009 /* NimbleMapCompanion.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A90000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					A60000000000000000000001 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+				};
+			};
+			buildConfigurationList = A70000000000000000000001 /* Build configuration list for PBXProject "NimbleMapCompanion" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = A50000000000000000000001;
+			packageReferences = (
+				A40000000000000000000002 /* XCRemoteSwiftPackageReference "maplibre-gl-native-distribution" */,
+			);
+			productRefGroup = A50000000000000000000003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A60000000000000000000001 /* NimbleMapCompanion */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		A80000000000000000000001 /* Build Rust FFI */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Build Rust FFI";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "set -euo pipefail\nREPO=\"${SRCROOT}/../../..\"\ncd \"$REPO\"\nif [[ \"${PLATFORM_NAME}\" == *simulator* ]]; then\n  TARGET=aarch64-apple-ios-sim\nelse\n  TARGET=aarch64-apple-ios\nfi\nLIB=\"${REPO}/target/${TARGET}/release/liblm_ios_decode_ffi.a\"\nif [[ ! -f \"$LIB\" ]]; then\n  # Clear conda/compiler overrides so cc-rs finds Apple clang\n  unset CC CXX AR RANLIB CFLAGS CXXFLAGS CPPFLAGS LDFLAGS LD SDKROOT CONDA_PREFIX\n  export PATH=\"/usr/bin:/bin:/usr/sbin:/sbin:${HOME}/.cargo/bin:/Applications/Xcode.app/Contents/Developer/usr/bin:\${PATH}\"\n  \"${SRCROOT}/../scripts/build-rust-ios.sh\" \"$TARGET\"\nfi\nmkdir -p \"${BUILT_PRODUCTS_DIR}\"\ncp -f \"$LIB\" \"${BUILT_PRODUCTS_DIR}/liblm_ios_decode_ffi.a\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A60000000000000000000002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000001 /* NimbleMapCompanionApp.swift in Sources */,
+				A10000000000000000000002 /* ContentView.swift in Sources */,
+				A10000000000000000000003 /* MapScreen.swift in Sources */,
+				A10000000000000000000004 /* OpenURLSheet.swift in Sources */,
+				A10000000000000000000005 /* AskBar.swift in Sources */,
+				A10000000000000000000006 /* DecodeBridge.swift in Sources */,
+				A10000000000000000000008 /* FpsOverlay.swift in Sources */,
+				A10000000000000000000009 /* LayerModels.swift in Sources */,
+				A1000000000000000000000A /* LegendSwatch.swift in Sources */,
+				A1000000000000000000000B /* LayersSheet.swift in Sources */,
+				A1000000000000000000000C /* SymbologySheet.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A60000000000000000000003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		A70000000000000000000002 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		A70000000000000000000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		A70000000000000000000005 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/../include",
+				);
+				INFOPLIST_FILE = NimbleMapCompanion/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(BUILT_PRODUCTS_DIR)",
+				);
+				MARKETING_VERSION = 0.0.1;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-llm_ios_decode_ffi",
+					"-lc++",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.nimblemap.companion.spike.alta;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = NimbleMapCompanion/BridgingHeader.h;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		A70000000000000000000006 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/../include",
+				);
+				INFOPLIST_FILE = NimbleMapCompanion/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(BUILT_PRODUCTS_DIR)",
+				);
+				MARKETING_VERSION = 0.0.1;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-llm_ios_decode_ffi",
+					"-lc++",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.nimblemap.companion.spike.alta;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = NimbleMapCompanion/BridgingHeader.h;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A70000000000000000000001 /* Build configuration list for PBXProject "NimbleMapCompanion" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A70000000000000000000002 /* Debug */,
+				A70000000000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A70000000000000000000003 /* Build configuration list for PBXNativeTarget "NimbleMapCompanion" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A70000000000000000000005 /* Debug */,
+				A70000000000000000000006 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		A40000000000000000000002 /* XCRemoteSwiftPackageReference "maplibre-gl-native-distribution" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/maplibre/maplibre-gl-native-distribution";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 6.5.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A40000000000000000000001 /* MapLibre */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A40000000000000000000002 /* XCRemoteSwiftPackageReference "maplibre-gl-native-distribution" */;
+			productName = MapLibre;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = A90000000000000000000001 /* Project object */;
+}
