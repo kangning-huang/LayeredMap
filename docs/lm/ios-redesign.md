@@ -1,8 +1,15 @@
 # iOS redesign: map first, tap first, data without files
 
-*Status: proposal, not decided. Dated 2026-10-31. Not an ADR yet.*
+*Status: **Alternative B** (proposal / not decided). Dated 2026-10-31; amended same day: keep both alternatives. Not an ADR yet.*
 *Reviews: PR #50 (iPhone spike), PR #51 (`ios-open-paths.md`), PR #52 / #53 (`ios-layers-symbology.md` and its spike).*
-*If accepted, this page replaces parts of both debate docs. See "Changes to existing decisions".*
+
+> **Two alternatives — build both and compare.** This page is **Alternative B** (persistent
+> bottom sheet). **Alternative A** remains the floating A→B→C chrome in
+> `ios-layers-symbology.md` / spike PRs #52–#53, with open paths in `ios-open-paths.md`
+> (PR #51, merged). Owner (Ken, 2026-10-31): keep both versions; build both as separate app
+> branches/spikes; compare by trying them hands-on. **Do not discard Alt A. No pick until after
+> that compare.** See [Proposed differences vs Alternative A](#proposed-differences-vs-alternative-a)
+> for how B differs from A — proposed for the B branch only, not decided replacements of A.
 
 > **Postpone every search option that costs money per query.**
 > Version 1 searches only free sources: our own library, open-data portal APIs, and pages the
@@ -41,7 +48,9 @@ What this means for design:
 - They have no files of their own on day one. The first minute must work with no file at all.
 - They judge the app in the first 30 seconds. A wall of choices loses them.
 
-## Keep (from PRs #50–#53)
+## Keep across both alternatives (from PRs #50–#53)
+
+Shared stack and habits both Alt A and Alt B should retain:
 
 | Item | Why keep |
 |---|---|
@@ -53,9 +62,12 @@ What this means for design:
 | Copy into the app on import | Simple mental model; works offline |
 | "Ignore": tab bar, side drawer, ribbon | Correct |
 
-## Tear down
+## Tear down (Alt B vs Alt A / current spike)
 
-| Now | Problem on iPhone | Replace with |
+What Alternative B would change relative to Alternative A's floating A→B→C chrome and the
+companion spike. Alt A is kept and built separately for comparison.
+
+| Now (Alt A / spike) | Problem on iPhone (Alt B view) | Alt B replaces with |
 |---|---|---|
 | Blue "Open URL" pill, top-left | The most expert action gets the strongest color. Top-left is the "Back" spot and is hard to reach with one hand. | "+" next to search. "Paste link" lives inside it. |
 | Status strip at the bottom | A desktop status bar. In the spike screenshot it covers the MapLibre logo and the attribution button, which must stay visible. | Progress on the data row while it loads. A short toast only for errors and Undo. |
@@ -362,9 +374,13 @@ Five people, including one child. No help. A clickable build.
 
 Pass: four of five people finish each task with no help.
 
-## Changes to existing decisions
+## Proposed differences vs Alternative A
 
-| Doc · item | Was | Proposed |
+These are how **Alternative B** would differ from **Alternative A** if you pick B after the
+hands-on compare. They are **not** decided replacements of Alt A docs. Alt A stays intact while
+both branches are built.
+
+| Doc · item (Alt A) | Alt A today | Alt B proposes |
 |---|---|---|
 | `ios-open-paths.md` · A Browse-tap | Emphasize (lead) | Ignore for v1; one link to the site |
 | `ios-open-paths.md` · F Library list | Keep / lean emphasize | **Emphasize: primary** |
@@ -379,9 +395,9 @@ Pass: four of five people finish each task with no help.
 | `ios-layers-symbology.md` · C symbology form | Emphasize | Photos-style "Show by" previews |
 | `ios-layers-symbology.md` · Ask pill | Keep | Move into search results |
 
-## Build order
+## Build order (Alternative B branch)
 
-All steps up to 4 have **no per-query cost**.
+Parallel to Alt A's floating-chrome spike. All steps up to 4 have **no per-query cost**.
 
 1. Persistent sheet, tap → card with insight, first run with example data.
 2. Add data: library, Files, Paste link; inbound files from other apps; fly to data.
