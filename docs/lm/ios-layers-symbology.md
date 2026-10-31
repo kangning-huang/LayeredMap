@@ -87,6 +87,15 @@ invent a second order model for phone).
 
 Eye toggles hide or show that data layer on the map immediately. They never affect the basemap.
 
+### Remove (locked)
+
+Ken, 2026-10-31: removing a data layer uses the **same UX as other iOS apps** — swipe left on
+the row and show the red **Remove** button (standard `UITableView` / SwiftUI `swipeActions` with
+a destructive role). Do not invent a custom delete affordance, a desktop-style trash column, or
+a Remove control that only lives inside C. Confirm only if product later requires it for
+destructive data loss; the default pattern is the familiar swipe → red Remove. Basemap is not a
+row, so it cannot be removed this way (and still cannot be turned off).
+
 ### Dismiss
 
 Drag the sheet down, tap Done if present, or resume map pan/zoom in a way that dismisses the
@@ -154,6 +163,7 @@ that blocks the map.
 | Collapse B/C → A on done / pan | **Emphasize** | Resting state is always A |
 | Eye toggles on data layers | **Keep** | Fast show/hide without opening C |
 | B leading swatch = live symbology | **Emphasize** | Owner: list rows match the map; not type glyphs |
+| Swipe-left red Remove on B rows | **Emphasize** | Owner: same as other iOS apps (`swipeActions`) |
 | Short on-map legend while styling | **Keep** (lean) | Open detail; not locked; B swatches already locked |
 | Ask as non-bottom-sheet pill | **Keep** | Avoid chrome collision |
 | Basemap as a layer row / eye off | **Ignore** | Locked: basemap always on, never listed |
