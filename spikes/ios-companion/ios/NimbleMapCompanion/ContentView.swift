@@ -1,8 +1,10 @@
 import SwiftUI
 
-/// Full-screen map + stub Ask bar + Open URL sheet. Butter-smooth shell: UI never waits on decode.
+/// A idle (map-first floating pills) → B Layers sheet → C symbology. See docs/lm/ios-layers-symbology.md.
 struct ContentView: View {
+    @StateObject private var layerStore = LayerStore()
     @State private var showOpenURL = false
+    @State private var showLayers = false
     @State private var statusText = "Paste a dataset URL to open"
     @State private var overlayGeoJSON: String?
     @State private var isBusy = false
@@ -13,41 +15,9 @@ struct ContentView: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
-                HStack {
-                    Button {
-                        showOpenURL = true
-                    } label: {
-                        Label("Open URL", systemImage: "link")
-                            .font(.subheadline.weight(.semibold))
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.small)
-
-                    Spacer()
-
-                    FpsOverlay()
-
-                    if isBusy {
-                        ProgressView()
-                            .controlSize(.small)
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 12)
-
+                topChrome
                 Spacer()
-
-                AskBar()
-                    .padding(.horizontal, 12)
-                    .padding(.bottom, 8)
-
-                Text(statusText)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity)
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 10)
-                    .background(.ultraThinMaterial)
+                bottomChrome
             }
         }
         .sheet(isPresented: $showOpenURL) {
@@ -55,6 +25,64 @@ struct ContentView: View {
                 openURL(url)
             }
         }
+        .sheet(isPresented: $showLayers) {
+            LayersSheet(store: layerStore)
+        }
+    }
+
+    /// State A: floating glass pills only. Layers opens B; Ask stays a pill/composer, not the layers sheet.
+    private var topChrome: some View {
+        HStack {
+            glassPillButton(title: "Open", systemImage: "link") {
+                showOpenURL = true
+            }
+
+            Spacer()
+
+            FpsOverlay()
+
+            if isBusy {
+                ProgressView()
+                    .controlSize(.small)
+                    .padding(8)
+                    .background(.ultraThinMaterial, in: Capsule())
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 12)
+    }
+
+    private var bottomChrome: some View {
+        VStack(spacing: 10) {
+            HStack(alignment: .bottom, spacing: 10) {
+                glassPillButton(title: "Layers", systemImage: "square.3.layers.3d") {
+                    showLayers = true
+                }
+
+                AskBar()
+            }
+            .padding(.horizontal, 12)
+
+            Text(statusText)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 10)
+                .background(.ultraThinMaterial)
+        }
+    }
+
+    private func glassPillButton(title: String, systemImage: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Label(title, systemImage: systemImage)
+                .font(.subheadline.weight(.semibold))
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background(.ultraThinMaterial, in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(title)
     }
 
     private func openURL(_ raw: String) {

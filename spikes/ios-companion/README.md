@@ -12,8 +12,9 @@ Phase 0 spike for a **native iPhone companion**: SwiftUI shell, MapLibre Metal m
 | Map | MapLibre Native iOS (SPM: `maplibre-gl-native-distribution`), Metal |
 | Decode | `rustgis-data::io::read_geojson` behind `lm_decode_*` C ABI |
 | Open | Paste HTTPS URL → download off main thread → sandbox file → Rust decode → MapLibre shape source |
-| Ask | UI stub only |
-| Out | Cloud pickers, iPad layout, egui, Mac B2 renderer, App Store |
+| Ask | UI stub only (edge composer; does not own the layers sheet) |
+| Layers chrome | A idle pills → B bottom sheet (data layers only) → C lean symbology; live legend swatches; swipe Remove; Edit/`onMove` reorder. Design: `docs/lm/ios-layers-symbology.md` (PR #52). |
+| Out | Cloud pickers, iPad layout, egui, Mac B2 renderer, App Store, MapLibre paint from `LayerStore` |
 
 Decision log: `docs/lm/decisions.md` (iPhone companion spike stack).
 
@@ -27,7 +28,7 @@ spikes/ios-companion/
   scripts/check-rust-host.sh
   scripts/build-rust-ios.sh
   ios/NimbleMapCompanion.xcodeproj
-  ios/NimbleMapCompanion/*.swift
+  ios/NimbleMapCompanion/*.swift   # + LayerModels, LegendSwatch, LayersSheet, SymbologySheet
   ios/NimbleMapCompanion.xcodeproj/xcshareddata/xcschemes/NimbleMapCompanion.xcscheme
   screenshots/
 ```
@@ -76,6 +77,7 @@ Needs **full Xcode** (iPhoneSimulator / iPhoneOS SDKs). Command Line Tools alone
 | GeoJSON decode via `rustgis-data` | Full app Run on simulator/device |
 | C ABI (`lm_decode_geojson`, `_path`, `lm_string_free`) | MapLibre pan/pinch (code present; needs SPM + SDK) |
 | Unit tests for decode + FFI | Ask assistant calls |
+| A→B→C layers/symbology chrome (demo layers + live swatches) | MapLibre style paint driven by `LayerStore` |
 | | Drive / Box / Dropbox pickers |
 | | iPad denser chrome |
 

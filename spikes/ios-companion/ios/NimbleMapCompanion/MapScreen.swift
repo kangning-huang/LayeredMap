@@ -2,6 +2,10 @@ import SwiftUI
 import MapLibre
 
 /// Native MapLibre Metal map. Pan/pinch stay on the map view; overlays update without blocking gestures.
+///
+/// Symbology chrome (A→B→C) drives `LayerStore` + legend swatches in SwiftUI. Wiring those styles into
+/// MapLibre paint properties per data layer is intentionally stubbed in this pass — keep chrome
+/// exercisable with demo layers without blocking on style-paint plumbing.
 struct MapScreen: UIViewRepresentable {
     var overlayGeoJSON: String?
 

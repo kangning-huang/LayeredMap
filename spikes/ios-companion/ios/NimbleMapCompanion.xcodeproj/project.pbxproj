@@ -14,6 +14,10 @@
 		A10000000000000000000005 /* AskBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000005 /* AskBar.swift */; };
 		A10000000000000000000006 /* DecodeBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000006 /* DecodeBridge.swift */; };
 		A10000000000000000000008 /* FpsOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000B /* FpsOverlay.swift */; };
+		A10000000000000000000009 /* LayerModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000C /* LayerModels.swift */; };
+		A1000000000000000000000A /* LegendSwatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000D /* LegendSwatch.swift */; };
+		A1000000000000000000000B /* LayersSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000E /* LayersSheet.swift */; };
+		A1000000000000000000000C /* SymbologySheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000F /* SymbologySheet.swift */; };
 		A10000000000000000000007 /* MapLibre in Frameworks */ = {isa = PBXBuildFile; productRef = A40000000000000000000001 /* MapLibre */; };
 /* End PBXBuildFile section */
 
@@ -25,6 +29,10 @@
 		A20000000000000000000005 /* AskBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AskBar.swift; sourceTree = "<group>"; };
 		A20000000000000000000006 /* DecodeBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DecodeBridge.swift; sourceTree = "<group>"; };
 		A2000000000000000000000B /* FpsOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FpsOverlay.swift; sourceTree = "<group>"; };
+		A2000000000000000000000C /* LayerModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LayerModels.swift; sourceTree = "<group>"; };
+		A2000000000000000000000D /* LegendSwatch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegendSwatch.swift; sourceTree = "<group>"; };
+		A2000000000000000000000E /* LayersSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LayersSheet.swift; sourceTree = "<group>"; };
+		A2000000000000000000000F /* SymbologySheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymbologySheet.swift; sourceTree = "<group>"; };
 		A20000000000000000000007 /* BridgingHeader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BridgingHeader.h; sourceTree = "<group>"; };
 		A20000000000000000000008 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A20000000000000000000009 /* NimbleMapCompanion.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NimbleMapCompanion.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -61,6 +69,10 @@
 				A20000000000000000000005 /* AskBar.swift */,
 				A20000000000000000000006 /* DecodeBridge.swift */,
 				A2000000000000000000000B /* FpsOverlay.swift */,
+				A2000000000000000000000C /* LayerModels.swift */,
+				A2000000000000000000000D /* LegendSwatch.swift */,
+				A2000000000000000000000E /* LayersSheet.swift */,
+				A2000000000000000000000F /* SymbologySheet.swift */,
 				A20000000000000000000007 /* BridgingHeader.h */,
 				A20000000000000000000008 /* Info.plist */,
 				A2000000000000000000000A /* lm_decode.h */,
@@ -170,6 +182,10 @@
 				A10000000000000000000005 /* AskBar.swift in Sources */,
 				A10000000000000000000006 /* DecodeBridge.swift in Sources */,
 				A10000000000000000000008 /* FpsOverlay.swift in Sources */,
+				A10000000000000000000009 /* LayerModels.swift in Sources */,
+				A1000000000000000000000A /* LegendSwatch.swift in Sources */,
+				A1000000000000000000000B /* LayersSheet.swift in Sources */,
+				A1000000000000000000000C /* SymbologySheet.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
