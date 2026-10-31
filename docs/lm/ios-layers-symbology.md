@@ -50,9 +50,26 @@ Empty or one-layer maps still use A; B is only a tap away when there is somethin
 
 ## B. Layers bottom sheet
 
-Grabber, title such as Layers, one row per **data** layer. Each row: visibility eye, layer name,
-optional style swatch or chevron. The sheet covers about the lower third so the map above still
-reacts when eyes toggle.
+Grabber, title such as Layers, one row per **data** layer. Each row: leading **legend swatch**
+(see below), visibility eye, layer name, and a chevron or disclosure into C. The sheet covers
+about the lower third so the map above still reacts when eyes toggle.
+
+### Legend swatch = current symbology (locked)
+
+Ken, 2026-10-31: each layer's leading icon in B must show that layer's **current symbology as a
+legend**, so the list matches what the person sees on the map. Do **not** use generic type
+glyphs (building / tree / road icons, or a fixed geometry badge that ignores style).
+
+Examples of honest swatches:
+
+- Cities styled as blue points → a blue point circle
+- Roads styled as gray lines → a short gray line sample
+- Parks styled as green fills → a green fill square (or the fill color the style uses)
+
+When the person changes symbology in C (color, ramp, opacity, classify), the B swatch updates to
+match. Multi-class ramps may show a compact chip (mini ramp or dominant class) rather than every
+break; the point is recognition, not a full on-map legend. Basemap still never appears in B, so
+it never gets a swatch here.
 
 ### Reorder (important, locked)
 
@@ -118,9 +135,13 @@ not present the layers list; opening Layers does not expand Ask into the sheet.
 
 ## Legend (open detail)
 
-Not fully locked. Lean from the debate: a thin legend chip only while C (or active styling) is
-open, then hide so idle A stays clear. Alternative: legend only inside B/C with no on-map chip.
-Flag for a later mockup pass; do not ship an always-on on-map legend card that blocks the map.
+**In B:** locked — each data-layer row already carries a live symbology swatch (above). That is
+the list-as-legend.
+
+**On the map (A):** not fully locked. Lean from the debate: a thin legend chip only while C (or
+active styling) is open, then hide so idle A stays clear. Alternative: no on-map chip at all,
+rely on B's swatches. Flag for a later mockup pass; do not ship an always-on on-map legend card
+that blocks the map.
 
 ## Emphasize / keep / ignore
 
@@ -132,7 +153,8 @@ Flag for a later mockup pass; do not ship an always-on on-map legend card that b
 | C nested, collapsible symbology | **Emphasize** | Show when needed, hide when done |
 | Collapse B/C → A on done / pan | **Emphasize** | Resting state is always A |
 | Eye toggles on data layers | **Keep** | Fast show/hide without opening C |
-| Short legend while styling | **Keep** (lean) | Open detail; not locked |
+| B leading swatch = live symbology | **Emphasize** | Owner: list rows match the map; not type glyphs |
+| Short on-map legend while styling | **Keep** (lean) | Open detail; not locked; B swatches already locked |
 | Ask as non-bottom-sheet pill | **Keep** | Avoid chrome collision |
 | Basemap as a layer row / eye off | **Ignore** | Locked: basemap always on, never listed |
 | Persistent side drawer | **Ignore** | Mockup D anti-pattern |
@@ -148,6 +170,7 @@ Basemap appearance picker UI. App Store copy. Merging the spike into product cra
 
 - Exact Edit vs always-visible reorder handles when there are many layers
 - Whether dismissing C returns to B or straight to A when the person taps the map
-- Legend chip vs legend-only-in-sheet (see above)
+- On-map legend chip vs relying only on B swatches (B swatches themselves are locked; see above)
+- Compact multi-class swatch shape in B (mini ramp vs single chip)
 - Where a future basemap appearance control lives (not in B)
 - How many classify presets ship before "Advanced…"
