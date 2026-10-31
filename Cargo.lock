@@ -2866,6 +2866,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "lm-ios-alt-b-decode-ffi"
+version = "0.7.5"
+dependencies = [
+ "rustgis-data",
+]
+
+[[package]]
 name = "lm-jobs"
 version = "0.7.5"
 dependencies = [
