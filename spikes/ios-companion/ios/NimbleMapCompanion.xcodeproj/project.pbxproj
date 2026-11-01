@@ -1,0 +1,389 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A10000000000000000000007 /* MapLibre in Frameworks */ = {isa = PBXBuildFile; productRef = A40000000000000000000001 /* MapLibre */; };
+		2A8F5CFFD87674FB2B9862C3 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3CC244FE3B63DFF710117B7 /* ContentView.swift */; };
+		6419B28FC980FD7C3E41A9F5 /* DecodeBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89BFECAC51E1612C2BDF6ED9 /* DecodeBridge.swift */; };
+		DCBFB3BED18C444EF641FDEC /* FpsOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE46A79A64D7089A6ED041D1 /* FpsOverlay.swift */; };
+		32911856A674BE3B0ACF825A /* GeoData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C3FF1C63EC0CBC816FB50CA /* GeoData.swift */; };
+		AB1980E6251935C22C39A8F4 /* Importer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB3A0A9464B1FE5711D8E0A /* Importer.swift */; };
+		7E2ACA381050D71BE74F33F9 /* Insights.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDADA0050CC8C5C45D4AB0DA /* Insights.swift */; };
+		7ACA191F40C7B9227A4D06CD /* LayersSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84FF7D925BC8ACF059FFCD75 /* LayersSheet.swift */; };
+		30753AC4125A4774F2C05124 /* Library.swift in Sources */ = {isa = PBXBuildFile; fileRef = E509A823B9598B419254D479 /* Library.swift */; };
+		AD933EB64DB697CC22C902BD /* MapDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6E2CB77E447106621C89AC1 /* MapDocument.swift */; };
+		D72015B77FB154B811A58C1F /* MapScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA65DDCD6764300E2AA4200B /* MapScreen.swift */; };
+		5AF9A0C9734A6213509741A7 /* NimbleMapCompanionApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07D0543A1A79740C21700768 /* NimbleMapCompanionApp.swift */; };
+		46AEEE295C7D838058E58749 /* OpenSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 878EBCB3257269E2ECB8F682 /* OpenSheet.swift */; };
+		C8F0F8ECB561F9A4AF775102 /* OpenURLSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CFA5050F7CD30EB4D387FBD /* OpenURLSheet.swift */; };
+		2043F2891E88C29850F085EB /* Styling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6961A43731CAC35331D374F8 /* Styling.swift */; };
+		AF3717FEFAB0983ED3E88403 /* SymbologySheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0BAF58003173D6175027991 /* SymbologySheet.swift */; };
+		39B3B4A957FAE1848133340E /* countries.geojson in Resources */ = {isa = PBXBuildFile; fileRef = E985F66D21A63E87AC3A2C50 /* countries.geojson */; };
+		0180FBAF7F82FDFD44050471 /* cities.geojson in Resources */ = {isa = PBXBuildFile; fileRef = 3BBB91C426D1C34A6F87FD7F /* cities.geojson */; };
+		082D63AC0E7512F0B2C15C61 /* earthquakes.csv in Resources */ = {isa = PBXBuildFile; fileRef = 5A2B780630F4C70F661BC8DE /* earthquakes.csv */; };
+		0896F5206916CA6F1DCE86D9 /* volcanoes.csv in Resources */ = {isa = PBXBuildFile; fileRef = 752C22DE4D9A89B44F6D4AA5 /* volcanoes.csv */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		A20000000000000000000007 /* BridgingHeader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BridgingHeader.h; sourceTree = "<group>"; };
+		A20000000000000000000008 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A20000000000000000000009 /* NimbleMapCompanion.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NimbleMapCompanion.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A2000000000000000000000A /* lm_decode.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = lm_decode.h; path = ../include/lm_decode.h; sourceTree = "<group>"; };
+		D3CC244FE3B63DFF710117B7 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		89BFECAC51E1612C2BDF6ED9 /* DecodeBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DecodeBridge.swift; sourceTree = "<group>"; };
+		AE46A79A64D7089A6ED041D1 /* FpsOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FpsOverlay.swift; sourceTree = "<group>"; };
+		9C3FF1C63EC0CBC816FB50CA /* GeoData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeoData.swift; sourceTree = "<group>"; };
+		CBB3A0A9464B1FE5711D8E0A /* Importer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Importer.swift; sourceTree = "<group>"; };
+		EDADA0050CC8C5C45D4AB0DA /* Insights.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Insights.swift; sourceTree = "<group>"; };
+		84FF7D925BC8ACF059FFCD75 /* LayersSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LayersSheet.swift; sourceTree = "<group>"; };
+		E509A823B9598B419254D479 /* Library.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Library.swift; sourceTree = "<group>"; };
+		E6E2CB77E447106621C89AC1 /* MapDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapDocument.swift; sourceTree = "<group>"; };
+		DA65DDCD6764300E2AA4200B /* MapScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapScreen.swift; sourceTree = "<group>"; };
+		07D0543A1A79740C21700768 /* NimbleMapCompanionApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NimbleMapCompanionApp.swift; sourceTree = "<group>"; };
+		878EBCB3257269E2ECB8F682 /* OpenSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenSheet.swift; sourceTree = "<group>"; };
+		1CFA5050F7CD30EB4D387FBD /* OpenURLSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenURLSheet.swift; sourceTree = "<group>"; };
+		6961A43731CAC35331D374F8 /* Styling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Styling.swift; sourceTree = "<group>"; };
+		D0BAF58003173D6175027991 /* SymbologySheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymbologySheet.swift; sourceTree = "<group>"; };
+		E985F66D21A63E87AC3A2C50 /* countries.geojson */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = countries.geojson; path = ../../../assets/examples/countries.geojson; sourceTree = SOURCE_ROOT; };
+		3BBB91C426D1C34A6F87FD7F /* cities.geojson */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = cities.geojson; path = ../../../assets/examples/cities.geojson; sourceTree = SOURCE_ROOT; };
+		5A2B780630F4C70F661BC8DE /* earthquakes.csv */ = {isa = PBXFileReference; lastKnownFileType = text; name = earthquakes.csv; path = ../../../assets/examples/earthquakes.csv; sourceTree = SOURCE_ROOT; };
+		752C22DE4D9A89B44F6D4AA5 /* volcanoes.csv */ = {isa = PBXFileReference; lastKnownFileType = text; name = volcanoes.csv; path = ../../../assets/examples/volcanoes.csv; sourceTree = SOURCE_ROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A30000000000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000007 /* MapLibre in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A50000000000000000000001 = {
+			isa = PBXGroup;
+			children = (
+				A50000000000000000000002 /* NimbleMapCompanion */,
+				A50000000000000000000003 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A50000000000000000000002 /* NimbleMapCompanion */ = {
+			isa = PBXGroup;
+			children = (
+				D3CC244FE3B63DFF710117B7 /* ContentView.swift */,
+				89BFECAC51E1612C2BDF6ED9 /* DecodeBridge.swift */,
+				AE46A79A64D7089A6ED041D1 /* FpsOverlay.swift */,
+				9C3FF1C63EC0CBC816FB50CA /* GeoData.swift */,
+				CBB3A0A9464B1FE5711D8E0A /* Importer.swift */,
+				EDADA0050CC8C5C45D4AB0DA /* Insights.swift */,
+				84FF7D925BC8ACF059FFCD75 /* LayersSheet.swift */,
+				E509A823B9598B419254D479 /* Library.swift */,
+				E6E2CB77E447106621C89AC1 /* MapDocument.swift */,
+				DA65DDCD6764300E2AA4200B /* MapScreen.swift */,
+				07D0543A1A79740C21700768 /* NimbleMapCompanionApp.swift */,
+				878EBCB3257269E2ECB8F682 /* OpenSheet.swift */,
+				1CFA5050F7CD30EB4D387FBD /* OpenURLSheet.swift */,
+				6961A43731CAC35331D374F8 /* Styling.swift */,
+				D0BAF58003173D6175027991 /* SymbologySheet.swift */,
+				E985F66D21A63E87AC3A2C50 /* countries.geojson */,
+				3BBB91C426D1C34A6F87FD7F /* cities.geojson */,
+				5A2B780630F4C70F661BC8DE /* earthquakes.csv */,
+				752C22DE4D9A89B44F6D4AA5 /* volcanoes.csv */,
+				A20000000000000000000007 /* BridgingHeader.h */,
+				A20000000000000000000008 /* Info.plist */,
+				A2000000000000000000000A /* lm_decode.h */,
+			);
+			path = NimbleMapCompanion;
+			sourceTree = "<group>";
+		};
+		A50000000000000000000003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A20000000000000000000009 /* NimbleMapCompanion.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A60000000000000000000001 /* NimbleMapCompanion */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A70000000000000000000003 /* Build configuration list for PBXNativeTarget "NimbleMapCompanion" */;
+			buildPhases = (
+				A80000000000000000000001 /* Build Rust FFI */,
+				A60000000000000000000002 /* Sources */,
+				A30000000000000000000001 /* Frameworks */,
+				A60000000000000000000003 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = NimbleMapCompanion;
+			packageProductDependencies = (
+				A40000000000000000000001 /* MapLibre */,
+			);
+			productName = NimbleMapCompanion;
+			productReference = A20000000000000000000009 /* NimbleMapCompanion.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A90000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					A60000000000000000000001 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+				};
+			};
+			buildConfigurationList = A70000000000000000000001 /* Build configuration list for PBXProject "NimbleMapCompanion" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = A50000000000000000000001;
+			packageReferences = (
+				A40000000000000000000002 /* XCRemoteSwiftPackageReference "maplibre-gl-native-distribution" */,
+			);
+			productRefGroup = A50000000000000000000003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A60000000000000000000001 /* NimbleMapCompanion */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		A80000000000000000000001 /* Build Rust FFI */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Build Rust FFI";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "set -euo pipefail\nREPO=\"${SRCROOT}/../../..\"\ncd \"$REPO\"\nif [[ \"${PLATFORM_NAME}\" == *simulator* ]]; then\n  TARGET=aarch64-apple-ios-sim\nelse\n  TARGET=aarch64-apple-ios\nfi\nLIB=\"${REPO}/target/${TARGET}/release/liblm_ios_decode_ffi.a\"\nif true; then\n  # Clear conda/compiler overrides so cc-rs finds Apple clang\n  unset CC CXX AR RANLIB CFLAGS CXXFLAGS CPPFLAGS LDFLAGS LD SDKROOT CONDA_PREFIX\n  export PATH=\"/usr/bin:/bin:/usr/sbin:/sbin:${HOME}/.cargo/bin:/Applications/Xcode.app/Contents/Developer/usr/bin:\${PATH}\"\n  \"${SRCROOT}/../scripts/build-rust-ios.sh\" \"$TARGET\"\nfi\nmkdir -p \"${BUILT_PRODUCTS_DIR}\"\ncp -f \"$LIB\" \"${BUILT_PRODUCTS_DIR}/liblm_ios_decode_ffi.a\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A60000000000000000000002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2A8F5CFFD87674FB2B9862C3 /* ContentView.swift in Sources */,
+				6419B28FC980FD7C3E41A9F5 /* DecodeBridge.swift in Sources */,
+				DCBFB3BED18C444EF641FDEC /* FpsOverlay.swift in Sources */,
+				32911856A674BE3B0ACF825A /* GeoData.swift in Sources */,
+				AB1980E6251935C22C39A8F4 /* Importer.swift in Sources */,
+				7E2ACA381050D71BE74F33F9 /* Insights.swift in Sources */,
+				7ACA191F40C7B9227A4D06CD /* LayersSheet.swift in Sources */,
+				30753AC4125A4774F2C05124 /* Library.swift in Sources */,
+				AD933EB64DB697CC22C902BD /* MapDocument.swift in Sources */,
+				D72015B77FB154B811A58C1F /* MapScreen.swift in Sources */,
+				5AF9A0C9734A6213509741A7 /* NimbleMapCompanionApp.swift in Sources */,
+				46AEEE295C7D838058E58749 /* OpenSheet.swift in Sources */,
+				C8F0F8ECB561F9A4AF775102 /* OpenURLSheet.swift in Sources */,
+				2043F2891E88C29850F085EB /* Styling.swift in Sources */,
+				AF3717FEFAB0983ED3E88403 /* SymbologySheet.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A60000000000000000000003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				39B3B4A957FAE1848133340E /* countries.geojson in Resources */,
+				0180FBAF7F82FDFD44050471 /* cities.geojson in Resources */,
+				082D63AC0E7512F0B2C15C61 /* earthquakes.csv in Resources */,
+				0896F5206916CA6F1DCE86D9 /* volcanoes.csv in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		A70000000000000000000002 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		A70000000000000000000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		A70000000000000000000005 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/../include",
+				);
+				INFOPLIST_FILE = NimbleMapCompanion/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(BUILT_PRODUCTS_DIR)",
+				);
+				MARKETING_VERSION = 0.0.1;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-llm_ios_decode_ffi",
+					"-lc++",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.nimblemap.companion.spike.alta;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = NimbleMapCompanion/BridgingHeader.h;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		A70000000000000000000006 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/../include",
+				);
+				INFOPLIST_FILE = NimbleMapCompanion/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(BUILT_PRODUCTS_DIR)",
+				);
+				MARKETING_VERSION = 0.0.1;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-llm_ios_decode_ffi",
+					"-lc++",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.nimblemap.companion.spike.alta;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = NimbleMapCompanion/BridgingHeader.h;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A70000000000000000000001 /* Build configuration list for PBXProject "NimbleMapCompanion" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A70000000000000000000002 /* Debug */,
+				A70000000000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A70000000000000000000003 /* Build configuration list for PBXNativeTarget "NimbleMapCompanion" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A70000000000000000000005 /* Debug */,
+				A70000000000000000000006 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		A40000000000000000000002 /* XCRemoteSwiftPackageReference "maplibre-gl-native-distribution" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/maplibre/maplibre-gl-native-distribution";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 6.5.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A40000000000000000000001 /* MapLibre */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A40000000000000000000002 /* XCRemoteSwiftPackageReference "maplibre-gl-native-distribution" */;
+			productName = MapLibre;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = A90000000000000000000001 /* Project object */;
+}
