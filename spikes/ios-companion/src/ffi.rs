@@ -1,6 +1,6 @@
 //! C ABI used by the SwiftUI spike. All `unsafe` stays in this module.
 
-use crate::decode_geojson_text;
+use crate::{decode_geojson_text, open_path_envelope};
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
 use std::ptr;
@@ -121,6 +121,41 @@ pub unsafe extern "C" fn lm_decode_geojson_path(path: *const c_char, out_json: *
     }
 
     match decode_geojson_text(&text, path_str) {
+        Ok((json, n)) => {
+            set_feature_count(out_feature_count, n);
+            match set_out_string(out_json, &json) {
+                Ok(()) => LM_DECODE_OK,
+                Err(code) => code,
+            }
+        }
+        Err(msg) => {
+            let _ = set_out_string(out_json, &msg);
+            LM_DECODE_PARSE
+        }
+    }
+}
+
+/// Open any supported vector file by path; on success `out_json` is the envelope of
+/// [`open_path_envelope`], on error a plain message.
+///
+/// # Safety
+/// `path` must be a valid NUL-terminated C string when non-null.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn lm_open_path(path: *const c_char, out_json: *mut *mut c_char, out_feature_count: *mut usize) -> i32 {
+    if out_json.is_null() || path.is_null() {
+        return LM_DECODE_NULL_ARG;
+    }
+    clear_out(out_json);
+    set_feature_count(out_feature_count, 0);
+
+    // SAFETY: path is a non-null C string from the caller.
+    let c_path = unsafe { CStr::from_ptr(path) };
+    let Ok(path_str) = c_path.to_str() else {
+        let _ = set_out_string(out_json, "path is not UTF-8");
+        return LM_DECODE_INVALID_UTF8;
+    };
+
+    match open_path_envelope(path_str) {
         Ok((json, n)) => {
             set_feature_count(out_feature_count, n);
             match set_out_string(out_json, &json) {
