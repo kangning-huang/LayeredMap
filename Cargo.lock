@@ -2874,6 +2874,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "lm-ios-decode-ffi"
+version = "0.7.5"
+dependencies = [
+ "rustgis-data",
+ "serde_json",
+]
+
+[[package]]
 name = "lm-jobs"
 version = "0.7.5"
 dependencies = [
