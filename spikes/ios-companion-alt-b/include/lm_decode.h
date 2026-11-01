@@ -39,6 +39,16 @@ int32_t lm_decode_geojson_path(
     char **out_json,
     size_t *out_feature_count);
 
+/**
+ * Open any vector file rustgis-data reads by extension (GeoJSON, CSV with coordinates, KML, KMZ,
+ * GPX, zipped shapefile, GeoPackage). On LM_DECODE_OK, *out_json is
+ * {"name","geometry":"point|line|area|table","skipped","unreadable","messages":[...],"geojson":{...}}.
+ */
+int32_t lm_open_path(
+    const char *path,
+    char **out_json,
+    size_t *out_feature_count);
+
 /** Free a string returned by this library. No-op on NULL. */
 void lm_string_free(char *s);
 

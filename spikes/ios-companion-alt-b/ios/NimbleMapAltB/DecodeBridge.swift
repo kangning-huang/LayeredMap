@@ -1,59 +1,51 @@
 import Foundation
 
-/// Thin Swift wrapper around the spike C ABI (`include/lm_decode.h`).
+// Shared by Alt A and Alt B. Thin Swift wrapper around the spike C ABI (`include/lm_decode.h`).
 enum DecodeBridge {
-    struct Result {
-        let json: String
-        let featureCount: Int
+    struct Envelope {
+        let name: String
+        let geometry: String
+        let skipped: Int
+        let messages: [String]
+        let geojson: Any
+        let count: Int
     }
 
-    enum DecodeError: Error, LocalizedError {
-        case nullArg
-        case empty
-        case invalidUTF8
-        case parse(String)
-        case io(String)
-        case unknown(Int32)
-
-        var errorDescription: String? {
-            switch self {
-            case .nullArg: return "null argument"
-            case .empty: return "empty input"
-            case .invalidUTF8: return "invalid UTF-8"
-            case .parse(let m): return m
-            case .io(let m): return m
-            case .unknown(let c): return "decode status \(c)"
-            }
-        }
+    struct DecodeError: Error, LocalizedError {
+        let message: String
+        var errorDescription: String? { message }
     }
 
-    static func decodeGeoJSONFile(at path: String) -> Swift.Result<Result, DecodeError> {
+    /// Open any file `rustgis-data` reads by extension. Call off the main thread.
+    static func open(path: String) -> Result<Envelope, DecodeError> {
         path.withCString { cPath in
             var out: UnsafeMutablePointer<CChar>?
             var count: Int = 0
-            let status = lm_decode_geojson_path(cPath, &out, &count)
+            let status = lm_open_path(cPath, &out, &count)
             defer {
                 if let out {
                     lm_string_free(out)
                 }
             }
-            let message = out.map { String(cString: $0) } ?? ""
-            switch status {
-            case 0:
-                return .success(Result(json: message, featureCount: count))
-            case 1:
-                return .failure(.empty)
-            case 2:
-                return .failure(.invalidUTF8)
-            case 3:
-                return .failure(.parse(message.isEmpty ? "parse error" : message))
-            case 4:
-                return .failure(.io(message.isEmpty ? "io error" : message))
-            case 5:
-                return .failure(.nullArg)
-            default:
-                return .failure(.unknown(status))
+            guard let out else { return .failure(DecodeError(message: "decode status \(status)")) }
+            let len = strlen(out)
+            let data = Data(bytesNoCopy: out, count: len, deallocator: .none)
+            guard status == 0 else {
+                return .failure(DecodeError(message: String(data: data, encoding: .utf8) ?? "decode status \(status)"))
             }
+            guard let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                return .failure(DecodeError(message: "unreadable decoder output"))
+            }
+            return .success(
+                Envelope(
+                    name: obj["name"] as? String ?? "",
+                    geometry: obj["geometry"] as? String ?? "table",
+                    skipped: (obj["skipped"] as? NSNumber)?.intValue ?? 0,
+                    messages: obj["messages"] as? [String] ?? [],
+                    geojson: obj["geojson"] ?? [:],
+                    count: count
+                )
+            )
         }
     }
 }

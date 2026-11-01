@@ -89,3 +89,47 @@ Open `spikes/ios-companion/ios/NimbleMapCompanion.xcodeproj` (Alt A branch/PR) a
 ## CI
 
 Desktop CI compiles this crate on host targets via `spikes/*`. It does **not** build the Xcode app.
+
+## Compare build (2026-11-01)
+
+Alt A and Alt B now share one core, so a hands-on compare is about the chrome, not about which
+spike got more plumbing. These files are **identical** in both apps (edit one, copy to the other):
+`GeoData.swift`, `Insights.swift`, `Styling.swift`, `MapDocument.swift`, `Importer.swift`,
+`Library.swift`, `DecodeBridge.swift`, `MapScreen.swift`.
+
+- **Data:** the same four bundled examples (`assets/examples/`: Countries, Cities, Earthquakes,
+  Volcanoes; referenced from the repo, not copied). Files from Files / Open In / links decode
+  through `lm_open_path` → `rustgis-data::io::read_path` (GeoJSON, CSV with coordinates, KML,
+  KMZ, GPX, zipped shapefile, GeoPackage), copied into the app first.
+- **Map:** OpenFreeMap basemap (light), data from MapLibre file sources (parsed off the main
+  thread), "Show by" a field (viridis / Heat / Blues; Okabe–Ito categories), fly to new data,
+  logo and attribution moved to the top so bottom chrome never covers them.
+- **Project files:** after adding or removing a Swift file run
+  `python3 scripts/sync-xcodeproj.py ios/<App>.xcodeproj`. The Rust build phase now always runs
+  cargo (incremental) so a changed C ABI is never linked from a stale library.
+
+Headless helpers (spike-only), as environment variables at launch:
+
+| Variable | Effect |
+| --- | --- |
+| `LM_SCENE=<name>` | Opens a state for screenshots (see `runSceneIfAsked` in `ContentView.swift`) |
+| `LM_BENCH=1` | 4 s after the style loads, a scripted 15 s camera tour; prints one `LM_BENCH …` line with map frame times |
+| `LM_FPS=1` | Shows the CADisplayLink FPS badge |
+
+```bash
+xcrun simctl launch --console-pty booted <bundle id>   # with SIMCTL_CHILD_LM_BENCH=1 in the env
+```
+
+### On your iPhone
+
+1. `open ios/NimbleMapAltB.xcodeproj` (full Xcode, license accepted; `rustup` installed — the build
+   phase adds the `aarch64-apple-ios` target and builds the Rust library itself).
+2. Target NimbleMapAltB › Signing & Capabilities: pick your Team (the project ships with none). If the
+   bundle id is taken, change its suffix.
+3. Plug in the iPhone, turn on Settings › Privacy & Security › Developer Mode, pick it as the run
+   destination, Run. The first build fetches MapLibre (SPM) and compiles the Rust crate.
+4. It installs as "NimbleMap B" next to the other alternative, so both can be on the phone at once.
+
+Status at merge: the Swift was type-checked against MapLibre 6.31 headers (Catalyst SDK, Command
+Line Tools) and the Rust tests pass, but no Xcode build or simulator run was possible on the
+build machine (Xcode license not yet accepted), so expect small first-build fixes.
