@@ -48,6 +48,9 @@ struct MapScreen: UIViewRepresentable {
     func makeUIView(context: Context) -> MLNMapView {
         let map = MLNMapView(frame: .zero)
         map.styleURL = basemap.url
+        // ProMotion: ask for 120 (iOS clamps to the screen; .maximum is documented as "typically 60").
+        // Needs CADisableMinimumFrameDurationOnPhone in Info.plist, or iPhone caps it at 60.
+        map.preferredFramesPerSecond = MLNMapViewPreferredFramesPerSecond(rawValue: 120)
         // Never cover attribution: both alternatives put chrome at the bottom.
         map.logoViewPosition = .topLeft
         map.attributionButtonPosition = .topLeft
@@ -386,6 +389,7 @@ struct MapScreen: UIViewRepresentable {
 final class FrameBench {
     private var times: [CFTimeInterval] = []
     private var recording = false
+    private var hz = 60
 
     func frame() {
         guard recording else { return }
@@ -397,6 +401,7 @@ final class FrameBench {
             (35, 105, 3), (31.2, 121.5, 6), (48.8, 2.35, 4), (40.7, -74.0, 5), (-23.5, -46.6, 4), (20, 10, 1.2), (35.7, 139.7, 5),
         ]
         times = []
+        hz = max(60, map.window?.windowScene?.screen.maximumFramesPerSecond ?? 60)
         recording = true
         var delay = 0.0
         for (lat, lon, z) in stops {
@@ -428,10 +433,14 @@ final class FrameBench {
         let sorted = busy.sorted()
         let avg = busy.reduce(0, +) / Double(max(1, busy.count))
         let p95 = sorted.isEmpty ? 0 : sorted[min(sorted.count - 1, Int(Double(sorted.count) * 0.95))]
+        // late: missed the screen's own refresh (over 1.5 frames at `hz`); slow: a visible stutter (over 33.4 ms).
+        let budget = 1000 / Double(hz)
+        let late = busy.filter { $0 > budget * 1.5 }.count
         let slow = busy.filter { $0 > 33.4 }.count
+        let share = { (n: Int) in 100 * Double(n) / Double(max(1, busy.count)) }
         let line = String(
-            format: "LM_BENCH frames=%ld avg_ms=%.1f fps=%.1f p95_ms=%.1f worst_ms=%.1f slow_pct=%.1f",
-            times.count, avg, 1000 / max(avg, 0.001), p95, sorted.last ?? 0, 100 * Double(slow) / Double(max(1, busy.count))
+            format: "LM_BENCH hz=%ld frames=%ld avg_ms=%.1f fps=%.1f p95_ms=%.1f worst_ms=%.1f late_pct=%.1f slow_pct=%.1f",
+            hz, times.count, avg, 1000 / max(avg, 0.001), p95, sorted.last ?? 0, share(late), share(slow)
         )
         print(line)
         fflush(stdout)
