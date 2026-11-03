@@ -99,9 +99,10 @@ struct ContentView: View {
                         active = nil
                         doc.importingAll(Importer.pickedLabel(urls)) { await Importer.openPicked(urls) }
                     },
-                    onLink: { url in
+                    onLink: { url, title in
                         active = nil
-                        doc.importing(Importer.displayName(for: url)) { await Importer.download(url, onProgress: report) }
+                        let name = title ?? Importer.displayName(for: url)
+                        doc.importing(name) { await Importer.download(url, named: title, onProgress: report) }
                     }
                 )
             case .places:

@@ -26,7 +26,8 @@ struct OpenSheet: View {
     var onPhoneFile: (PhoneFile) -> Void
     var onRecent: (Importer.Recent) -> Void
     var onPicked: ([URL]) -> Void
-    var onLink: (URL) -> Void
+    /// A link to open, and the catalogue's name for it when there is one.
+    var onLink: (URL, String?) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var picking = false
@@ -52,6 +53,8 @@ struct OpenSheet: View {
     @State private var reasons: [Int: String] = [:]
     /// A download large enough to be worth mentioning before it starts.
     @State private var big: BigDownload?
+    /// The row whose size is being looked up, so its button can say so.
+    @State private var checking: String?
 
     struct BigDownload: Identifiable {
         let url: URL
@@ -120,13 +123,13 @@ struct OpenSheet: View {
             NavigationStack {
                 DataWebPage(url: url, title: "Pick a download", onDataLink: { link in
                     pageURL = nil
-                    onLink(link)
+                    onLink(link, nil)
                 })
             }
         }
         // Not a refusal: the number, the two honest consequences, and the choice.
         .alert("“\(big?.title ?? "")” is \(big?.size ?? "")", isPresented: bigBinding, presenting: big) { item in
-            Button("Add anyway") { onLink(item.url) }
+            Button("Add anyway") { onLink(item.url, item.title) }
             Button("Not now", role: .cancel) {}
         } message: { _ in
             Text("It may take a while to download and will use that much space on your iPhone.")
@@ -163,16 +166,44 @@ struct OpenSheet: View {
                 }
             }
         }
-        if !catalogue.isEmpty {
+        // Maps and shop branches are different kinds of answer and were sharing one heading, so
+        // "mountains" offered five retailers under "Ready to add" and "rivers" put a café among
+        // the rivers. Split them: a brand is still here for whoever typed "Walmart", but it never
+        // again pretends to be a map of the thing you asked for.
+        let maps = catalogue.filter { !$0.isBrand }
+        let brands = catalogue.filter(\.isBrand)
+        if !maps.isEmpty {
             Section(hits.isEmpty ? "Ready to add" : "More data you can add") {
-                ForEach(catalogue) { item in
+                ForEach(maps) { item in
                     CatalogRow(
                         item: item,
                         why: nil,
+                        busy: checking == item.id,
                         onAdd: { addChecking(item) },
                         onOpenPage: { pageURL = item.url }
                     )
                 }
+            }
+        }
+        if !brands.isEmpty {
+            Section {
+                ForEach(brands.prefix(20)) { item in
+                    CatalogRow(
+                        item: item,
+                        why: nil,
+                        busy: checking == item.id,
+                        onAdd: { addChecking(item) },
+                        onOpenPage: { pageURL = item.url }
+                    )
+                }
+            } header: {
+                Text("Shops and brands named “\(search)”")
+            } footer: {
+                // Saying how many there are, because 5,614 rows under a silent heading reads as
+                // the whole app rather than as one shelf of it.
+                Text(brands.count > 20
+                     ? "\(brands.count) brands match. These are shop and branch locations, not maps of \(search)."
+                     : "Shop and branch locations, not maps of \(search).")
             }
         }
         if hits.isEmpty && catalogue.isEmpty {
@@ -240,6 +271,7 @@ struct OpenSheet: View {
                     CatalogRow(
                         item: item,
                         why: reasons[i],
+                        busy: checking == item.id,
                         onAdd: { addChecking(item) },
                         onOpenPage: { pageURL = item.url }
                     )
@@ -299,9 +331,14 @@ struct OpenSheet: View {
     /// *before* the download rather than after, which is why the size is asked for here instead
     /// of trusted from the catalogue's own text.
     private func addChecking(_ item: Catalog.Item) {
+        // The size check is a network round trip, so without this the row sits there looking
+        // untouched and people tap Add again. Two testers did exactly that.
+        guard checking != item.id else { return }
+        checking = item.id
         Task {
+            defer { checking = nil }
             guard let bytes = await Catalog.bytes(of: item), Importer.isBig(bytes) else {
-                onLink(item.url)
+                onLink(item.url, item.title)
                 return
             }
             big = BigDownload(url: item.url, title: item.title, size: Importer.sizeText(bytes))
@@ -358,7 +395,7 @@ struct OpenSheet: View {
             // anyone whose data isn't one of the four bundled sets, so it must never need a
             // sideways scroll to find. (In C it was the last line of the last section.)
             NavigationLink {
-                DataWebPage(onDataLink: onLink)
+                DataWebPage(onDataLink: { onLink($0, nil) })
             } label: {
                 MoreDataRow()
             }
@@ -422,7 +459,7 @@ struct OpenSheet: View {
             return
         }
         linkFocused = false
-        onLink(url)
+        onLink(url, nil)
     }
 
     // MARK: 4 · My downloads
@@ -537,6 +574,8 @@ struct CatalogRow: View {
     var item: Catalog.Item
     /// Why this one, in a sentence, when a model was asked to rank the results.
     var why: String?
+    /// Its size is being looked up; the button says so rather than looking untouched.
+    var busy = false
     var onAdd: () -> Void
     var onOpenPage: () -> Void
 
@@ -570,10 +609,17 @@ struct CatalogRow: View {
             Spacer(minLength: 4)
             // A page cannot promise a map; it promises a place to pick a download. Saying "Add"
             // on one would be the broken promise this spike exists to remove.
-            Button(item.kind == .page ? "Open" : "Add", action: item.kind == .page ? onOpenPage : onAdd)
-                .buttonStyle(.borderedProminent)
-                .buttonBorderShape(.capsule)
-                .controlSize(.small)
+            Button(action: item.kind == .page ? onOpenPage : onAdd) {
+                if busy {
+                    ProgressView().controlSize(.small)
+                } else {
+                    Text(item.kind == .page ? "Open" : "Add")
+                }
+            }
+            .buttonStyle(.borderedProminent)
+            .buttonBorderShape(.capsule)
+            .controlSize(.small)
+            .disabled(busy)
         }
         .padding(.vertical, 2)
     }

@@ -95,7 +95,9 @@ enum ColorRule {
         if let r = dataset.raster {
             // A grid of values is drawn on the Standard ramp between its 2nd and 98th percentiles.
             guard r.look == .values, r.high > r.low else { return .single(0x9A7B4F) }
-            let colors = Palette.viridis.hex
+            // The ramp the picture was actually drawn with — not always viridis, since a grid
+            // of values can be recoloured. Hard-coding it here put a viridis key beside a Heat map.
+            let colors = r.ramp.hex
             let stops = colors.enumerated().map { (r.low + (r.high - r.low) * Double($0.offset) / Double(colors.count - 1), $0.element) }
             return .ramp(stops: stops, stepped: false, years: false)
         }

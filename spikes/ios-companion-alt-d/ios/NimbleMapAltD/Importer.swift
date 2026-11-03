@@ -257,6 +257,10 @@ enum Importer {
     /// total the server promised (0 when it won't say).
     static func download(
         _ url: URL,
+        /// What the person tapped. A catalogue row knows its own name ("Rivers of the world");
+        /// without this the layer is named from the file ("Ne 10m rivers lake centerlines"), which
+        /// reads as though the wrong thing was downloaded.
+        named: String? = nil,
         onProgress: @escaping @Sendable (Int64, Int64) -> Void = { _, _ in }
     ) async -> Result<GeoDataset, ImportError> {
         guard let scheme = url.scheme?.lowercased(), scheme == "https" || scheme == "http" else {
@@ -280,7 +284,7 @@ enum Importer {
             }
             let dest = uniqueDestination(for: fileName)
             try FileManager.default.moveItem(at: temp, to: dest)
-            return await decode(dest, name: displayName(for: dest), primary: nil, sourceName: url.host ?? "The web", credit: nil)
+            return await decode(dest, name: named ?? displayName(for: dest), primary: nil, sourceName: url.host ?? "The web", credit: nil)
         } catch is CancellationError {
             return .failure(ImportError(message: cancelled))
         } catch let error as URLError where error.code == .cancelled {

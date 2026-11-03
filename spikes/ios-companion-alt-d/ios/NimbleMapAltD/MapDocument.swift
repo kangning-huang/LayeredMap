@@ -19,7 +19,9 @@ struct MapLayer: Identifiable, Equatable {
     /// A grid of values names its key's ends with units (Priya: "11.5 ━ 226.5" said nothing).
     var legendEnds: (String, String)? {
         guard let r = dataset.raster, r.look == .values else { return nil }
-        return ("Low \(r.format(r.low))", "High \(r.format(r.high))")
+        // Not "Low"/"High": these are the 2nd and 98th percentiles, so values beyond them exist
+        // and take the end colours. Calling them low and high read as the extremes.
+        return ("Most \(r.format(r.low))", "to \(r.format(r.high))")
     }
 
     static func == (a: MapLayer, b: MapLayer) -> Bool {
@@ -259,8 +261,12 @@ final class MapDocument: ObservableObject {
         let token = timeRequest
         let name = layer.name
         let range = (r.low, r.high)
+        let ramp = r.ramp
+        let window = r.window
         Task.detached(priority: .userInitiated) {
-            let result = RasterDecode.open(source, name: name, sourceName: "", time: step, range: range)
+            // Keep the ramp and the window: a nudge of the time slider used to silently reset
+            // both, so a Heat map zoomed into the Sahel came back viridis and global.
+            let result = RasterDecode.open(source, name: name, sourceName: "", time: step, range: range, ramp: ramp, window: window)
             await MainActor.run {
                 // A newer drag already won; this one is stale.
                 guard token == self.timeRequest, case .success(let ds) = result, let i = self.index(of: id) else { return }
@@ -304,7 +310,14 @@ final class MapDocument: ObservableObject {
             maxLat: Swift.min(view.maxLat, r.bounds.maxLat)
         )
         let wantedWidth = wanted.maxLon - wanted.minLon
-        guard wantedWidth > 0, drawnWidth / wantedWidth >= Self.redrawGain else { return }
+        guard wantedWidth > 0, drawnWidth > 0 else { return }
+        // Both directions. Only ever narrowing meant that after one zoom-in the whole-world
+        // picture was replaced by a patch and never came back: the rest of the globe drew as if
+        // there were no data, and taps outside the patch did nothing, because hit-testing uses
+        // the drawn bounds. Widening again is the same test with the ratio the other way up.
+        let zoomedIn = drawnWidth / wantedWidth >= Self.redrawGain
+        let zoomedOut = wantedWidth / drawnWidth >= Self.redrawGain && drawnWidth < (r.bounds.maxLon - r.bounds.minLon)
+        guard zoomedIn || zoomedOut else { return }
         // A margin, so a small pan after the redraw does not immediately fall off the picture.
         let padX = wantedWidth * 0.25
         let padY = (wanted.maxLat - wanted.minLat) * 0.25

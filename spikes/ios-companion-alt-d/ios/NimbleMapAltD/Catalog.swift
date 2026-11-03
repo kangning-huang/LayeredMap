@@ -48,6 +48,11 @@ enum Catalog {
         /// once at launch and turns a ~100 ms keystroke into well under a millisecond.
         var hay: Set<String> = []
         var titleWords: Set<String> = []
+        /// Which of the catalogue's nine shelves this sits on ("Nature & wildlife", "Transport",
+        /// "Everyday places"…). Shipped in the JSON from the start and never read until now.
+        var section = ""
+        /// A shop-branch scrape rather than a map of something. 5,614 of 5,705 entries are these.
+        var isBrand: Bool { section == "Everyday places" && id.hasPrefix("bundled:atp-") }
 
         enum Kind: String, Hashable {
             /// Tap Add and it goes on the map.
@@ -88,7 +93,8 @@ enum Catalog {
                 keywords: keywords,
                 size: (row["size"] as? String) ?? "",
                 hay: titleWords.union(tokens(([blurb, source, format] + keywords).joined(separator: " "))),
-                titleWords: titleWords
+                titleWords: titleWords,
+                section: (row["section"] as? String) ?? ""
             )
         }
     }()
@@ -130,7 +136,19 @@ enum Catalog {
         let stems = words.map(stem)
         return bundled.compactMap { item -> (Item, Int)? in
             guard stems.allSatisfy({ item.hay.contains($0) }) else { return nil }
-            let score = stems.contains(where: { item.titleWords.contains($0) }) ? 0 : 1
+            // Shop branches are 98 % of the catalogue and they were drowning the maps. Searching
+            // "mountains" returned five retailers and no mountain; "rivers" put a café above the
+            // rivers; "poland" returned 92 supermarkets and nothing about the country. A brand is
+            // only ever what someone wanted when they typed its name, so it has to earn the top
+            // by matching in its title — and a real dataset outranks it either way.
+            let titleHit = stems.contains { item.titleWords.contains($0) }
+            let score: Int
+            switch (item.isBrand, titleHit) {
+            case (false, true): score = 0
+            case (false, false): score = 1
+            case (true, true): score = 2
+            case (true, false): score = 3
+            }
             return (item, score)
         }
         .sorted { $0.1 < $1.1 }
@@ -346,13 +364,16 @@ enum Catalog {
         let number = lower.components(separatedBy: CharacterSet(charactersIn: "0123456789.").inverted)
             .first(where: { !$0.isEmpty && Double($0) != nil })
         guard let number, let value = Double(number) else { return nil }
+        // Decimal, to match ByteCountFormatter's .file style. Parsing "220 MB" as 1024^2 and
+        // then formatting it as 10^6 turned every written size into a different, larger number:
+        // the row said 220 MB and the warning said 230.7 MB.
         let unit: Double
         if lower.contains("gb") {
-            unit = 1024 * 1024 * 1024
+            unit = 1_000_000_000
         } else if lower.contains("mb") {
-            unit = 1024 * 1024
+            unit = 1_000_000
         } else if lower.contains("kb") {
-            unit = 1024
+            unit = 1000
         } else {
             return nil
         }

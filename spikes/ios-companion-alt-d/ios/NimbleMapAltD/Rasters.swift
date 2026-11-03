@@ -207,7 +207,13 @@ enum RasterDecode {
             var assumptions: [String] = []
             if look == .values {
                 assumptions.append("Colors stretch from \(info.format(info.low)) to \(info.format(info.high)); the few values beyond take the end colors.")
-                if unit.isEmpty { assumptions.append("The file doesn't say what its numbers measure.") }
+                if unit.isEmpty {
+                    assumptions.append("The file doesn't say what its numbers measure.")
+                } else if said.isEmpty {
+                    // The unit came from the file name, not the file. Saying so matters: a GeoTIFF
+                    // called sst_template.tif was reporting "287 °C" with no hedge at all.
+                    assumptions.append("This file doesn't state its units — “\(quantity.lowercased()), \(unit)” is a guess from its name.")
+                }
             }
             // What the NetCDF reader had to assume: a wrapped longitude range, which grid of
             // several was shown. Plain sentences from Rust, shown under More details.
