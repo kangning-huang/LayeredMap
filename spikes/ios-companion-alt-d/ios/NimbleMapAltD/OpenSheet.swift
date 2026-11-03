@@ -37,6 +37,16 @@ struct OpenSheet: View {
     @State private var linkFailed = false
     @State private var showPlumbing = false
     @FocusState private var linkFocused: Bool
+    /// Where the online search has got to. `.found([])` is a real answer, not a missing one.
+    @State private var online = Online.idle
+    @State private var scope = Catalog.Scope.portals
+
+    enum Online: Equatable {
+        case idle
+        case searching
+        case found([Catalog.Item])
+        case failed
+    }
     /// The Files picker opens where the last pick came from (Priya: it started at On My iPhone).
     @AppStorage("lm.lastPickFolder") private var lastFolder = ""
 
@@ -57,6 +67,16 @@ struct OpenSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .searchable(text: $search, placement: .navigationBarDrawer(displayMode: .always),
                         prompt: "Search data (bike lanes, earthquakes…)")
+            // New words, new question: old results must not sit under a different search.
+            .onChange(of: search) { _, _ in online = .idle }
+            // Spike-only: LM_Q=<words> types a search and runs it, so the online results can be
+            // screenshotted headlessly.
+            .task {
+                guard let q = ProcessInfo.processInfo.environment["LM_Q"], !q.isEmpty, search.isEmpty else { return }
+                search = q
+                try? await Task.sleep(nanoseconds: 400_000_000)
+                runOnlineSearch()
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
             }
@@ -94,31 +114,123 @@ struct OpenSheet: View {
     @ViewBuilder
     private var searchResults: some View {
         let hits = Library.search(search)
-        if hits.isEmpty {
-            Section {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Nothing in the library for “\(search)”.")
-                        .font(.body.weight(.semibold))
-                    Text("Data like this usually lives on a city or national open-data portal. Find it there, hold the download button, choose Copy Link, and paste it below.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.vertical, 2)
-            }
-            linkSection
-            Section {
-                NavigationLink {
-                    DataWebPage(onDataLink: onLink)
-                } label: {
-                    Label("Browse all data", systemImage: "globe")
-                }
-            }
-        } else {
+        if !hits.isEmpty {
             Section("In the data library") {
                 ForEach(hits) { item in
                     LibraryRow(item: item, added: onMap(item), onAdd: { onLibrary(item) })
                 }
             }
+        }
+        if hits.isEmpty {
+            Section {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Nothing in the built-in library for “\(search)”.")
+                        .font(.body.weight(.semibold))
+                    Text("NimbleMap can look for map files on the web. Tap a result and it opens straight on your map.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.vertical, 2)
+            }
+        }
+        onlineSection
+        if hits.isEmpty {
+            linkSection
+        }
+    }
+
+    // MARK: 1b · Looking on the web
+
+    /// The catalogues, then a web search if they come back empty. Nothing runs until the person
+    /// asks: a search box that fires off network calls on every keystroke spends their data and
+    /// shows them half-typed nonsense.
+    @ViewBuilder
+    private var onlineSection: some View {
+        Section {
+            Button {
+                runOnlineSearch()
+            } label: {
+                HStack(spacing: 10) {
+                    if online == .searching {
+                        ProgressView()
+                    } else {
+                        Image(systemName: "globe").foregroundStyle(Color.accentColor)
+                    }
+                    Text(online == .searching ? "Looking…" : "Look for “\(search)” map files")
+                        .font(.body.weight(.semibold))
+                        .lineLimit(1)
+                }
+            }
+            .disabled(online == .searching)
+
+            Picker("Search in", selection: $scope) {
+                ForEach(Catalog.Scope.allCases) { s in Text(s.label).tag(s) }
+            }
+            .pickerStyle(.segmented)
+            .onChange(of: scope) { _, _ in
+                // The chips are a different question, not a filter on the old answer.
+                if case .found = online { online = .idle }
+            }
+        } header: {
+            Text("Look on the web")
+        } footer: {
+            Text("We look for files NimbleMap can open — GeoJSON, CSV, KML, Shapefile and more.")
+        }
+
+        switch online {
+        case .found(let items) where !items.isEmpty:
+            Section("Found on the web") {
+                ForEach(items) { item in
+                    CatalogRow(item: item, onAdd: { onLink(item.url) })
+                }
+            }
+        case .found:
+            // A true empty answer. Say so plainly, and say why, or it reads as a broken app.
+            Section {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("No map files found for “\(search)”.")
+                        .font(.body.weight(.semibold))
+                    Text("Some subjects aren't published as free map files — shop and business locations often aren't.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.vertical, 2)
+                if scope != .anyFile {
+                    Button {
+                        scope = .anyFile
+                        runOnlineSearch()
+                    } label: {
+                        Label("Try “Any map file” instead", systemImage: "arrow.triangle.2.circlepath")
+                    }
+                }
+                if let web = Catalog.webSearch(search, scope: scope) {
+                    NavigationLink {
+                        DataWebPage(url: web, title: "Search", onDataLink: onLink)
+                    } label: {
+                        Label("Search the web for “\(search)”", systemImage: "magnifyingglass")
+                    }
+                }
+            }
+        case .failed:
+            Section {
+                Text("Couldn't reach the data portals just now. Check your connection and try again.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+        case .idle, .searching:
+            EmptyView()
+        }
+    }
+
+    private func runOnlineSearch() {
+        let text = search
+        let where_ = scope
+        online = .searching
+        Task {
+            let items = await Catalog.search(text, scope: where_)
+            // The person has typed on since; their newer words win.
+            guard text == search, where_ == scope else { return }
+            online = .found(items)
         }
     }
 
@@ -307,6 +419,39 @@ struct MoreDataRow: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
             }
+        }
+        .padding(.vertical, 2)
+    }
+}
+
+/// One result found on the web. The format badge is the catalogue's own word, never guessed from
+/// the URL, so "GeoJSON" is a promise the app can keep.
+struct CatalogRow: View {
+    var item: Catalog.Item
+    var onAdd: () -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "globe")
+                .font(.title3)
+                .foregroundStyle(.white)
+                .frame(width: 48, height: 48)
+                .background(Color.accentColor.gradient, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.title).font(.body.weight(.semibold)).lineLimit(2)
+                if !item.blurb.isEmpty {
+                    Text(item.blurb).font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                }
+                Text("\(item.source) · \(item.format)")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 4)
+            Button("Add", action: onAdd)
+                .buttonStyle(.borderedProminent)
+                .buttonBorderShape(.capsule)
+                .controlSize(.small)
         }
         .padding(.vertical, 2)
     }

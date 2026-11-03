@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		A10000000000000000000007 /* MapLibre in Frameworks */ = {isa = PBXBuildFile; productRef = A40000000000000000000001 /* MapLibre */; };
 		CA9EE9ED77800DD0DCA7C461 /* Cards.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10FD6CD64C39D406341BA66 /* Cards.swift */; };
+		CA6CD4C999FC3A76B69CC6CA /* Catalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45E5EF6EB044A6B3CD977D3D /* Catalog.swift */; };
 		8CD53F9D36FE2AFE202F8FE1 /* ChangeLook.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7227759E47FF42CACE79BBB5 /* ChangeLook.swift */; };
 		2A8F5CFFD87674FB2B9862C3 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3CC244FE3B63DFF710117B7 /* ContentView.swift */; };
 		1DD94D719AE6EF6303E4B400 /* DataWebPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED9E3E0E5BC88223F3D991B7 /* DataWebPage.swift */; };
@@ -42,6 +43,7 @@
 		A20000000000000000000009 /* NimbleMapAltD.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NimbleMapAltD.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A2000000000000000000000A /* lm_decode.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = lm_decode.h; path = ../include/lm_decode.h; sourceTree = "<group>"; };
 		D10FD6CD64C39D406341BA66 /* Cards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Cards.swift; sourceTree = "<group>"; };
+		45E5EF6EB044A6B3CD977D3D /* Catalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Catalog.swift; sourceTree = "<group>"; };
 		7227759E47FF42CACE79BBB5 /* ChangeLook.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangeLook.swift; sourceTree = "<group>"; };
 		D3CC244FE3B63DFF710117B7 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		ED9E3E0E5BC88223F3D991B7 /* DataWebPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataWebPage.swift; sourceTree = "<group>"; };
@@ -93,6 +95,7 @@
 			isa = PBXGroup;
 			children = (
 				D10FD6CD64C39D406341BA66 /* Cards.swift */,
+				45E5EF6EB044A6B3CD977D3D /* Catalog.swift */,
 				7227759E47FF42CACE79BBB5 /* ChangeLook.swift */,
 				D3CC244FE3B63DFF710117B7 /* ContentView.swift */,
 				ED9E3E0E5BC88223F3D991B7 /* DataWebPage.swift */,
@@ -221,6 +224,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				CA9EE9ED77800DD0DCA7C461 /* Cards.swift in Sources */,
+				CA6CD4C999FC3A76B69CC6CA /* Catalog.swift in Sources */,
 				8CD53F9D36FE2AFE202F8FE1 /* ChangeLook.swift in Sources */,
 				2A8F5CFFD87674FB2B9862C3 /* ContentView.swift in Sources */,
 				1DD94D719AE6EF6303E4B400 /* DataWebPage.swift in Sources */,

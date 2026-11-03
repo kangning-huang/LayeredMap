@@ -64,6 +64,44 @@ Concretely:
 - **An error that named a button which does not exist is fixed.** C's `lonePartsMessage` told people
   to tap "Open a folder…"; no spike has ever had a button with that name.
 
+## Looking for data on the web
+
+The owner asked whether the search box could reach the web, appending the formats the app opens to
+whatever was typed. Tested against real engines (24 searches, 2026-11-03), that half works:
+
+- `bike lanes` alone returns **0 of 9** openable results; `bike lanes shapefile` returns **8 of 9**.
+- But `Walmart gpkg` returns nine walmart.com pages for Garbage Pail Kids cards, and `Walmart kml`
+  a Cuisinart KML-KO3B kitchen scale. Short format words collide with product codes.
+- OR-ing formats makes the engine answer a question *about formats*: seven of ten results for
+  `Walmart (shapefile OR geojson OR gpkg)` were format-converter tools.
+- `filetype:` is not honoured at all.
+
+So the default is **not** a web search. Open-data catalogues have real APIs that return the format
+and a direct file URL as data, need no key, and cost nothing — and they answer honestly, where a
+web search does not.
+
+| Chip | What it asks |
+| --- | --- |
+| **Open data portals** (default) | Socrata's Discovery API |
+| **City & county maps** | ArcGIS Hub's dataset API |
+| **Any map file** | both |
+
+Two things measured here that the UI depends on:
+
+- **Socrata labels every column's type**, so a dataset with no geometry is dropped before anyone
+  taps it. Of the first five results for "bike lanes", four (Seattle performance charts, an
+  Edmonton funding survey) hold no places at all.
+- **ArcGIS Hub's `downloadable` flag cannot be trusted**: of six "bike lanes" datasets flagged
+  downloadable, five answered 404. Every Hub link is checked before it is offered, because a row
+  that cannot be opened is worse than no row — it makes a promise the app then breaks.
+  The check is a **HEAD**, not a ranged GET: Hub drops the connection on `Range: bytes=0-0`, so a
+  range check marks every dataset dead, including the one that works.
+
+When the catalogues genuinely hold nothing the sheet says so, names the reason, and offers the
+looser chip and a web search — DuckDuckGo, not Google, which blocks embedded web views and whose
+usual workaround is spoofing a Safari user agent. The appended words are the measured best,
+`open data download geojson shapefile`, space-separated rather than OR'd.
+
 ## Known gaps (not addressed in D)
 
 Found in the study, deliberately out of scope for this spike — they are real and worth their own pass:
