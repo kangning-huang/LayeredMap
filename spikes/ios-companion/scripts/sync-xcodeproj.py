@@ -3,7 +3,8 @@
 
 Usage: sync-xcodeproj.py <spike>/ios/<App>.xcodeproj
 
-Every *.swift in ios/<App>/ is compiled; the example data in assets/examples/ named in
+Every *.swift in ios/<App>/ is compiled, Assets.xcassets (the app icon, from
+design/logo-nimble) is bundled; the example data in assets/examples/ named in
 RESOURCES is bundled straight from the repo (no copies). Object ids are derived from file
 names, so reruns are stable. The Rust build phase always runs cargo (incremental), so a
 changed C ABI is never linked from a stale library.
@@ -50,6 +51,13 @@ def main() -> None:
         build.append(f"\t\t{b} /* {f} in Sources */ = {{isa = PBXBuildFile; fileRef = {r} /* {f} */; }};\n")
         children.append(f"{r} /* {f} */")
         sources.append(f"{b} /* {f} in Sources */")
+    if os.path.isdir(os.path.join(src, "Assets.xcassets")):
+        f = "Assets.xcassets"
+        r, b = oid("ref", f), oid("build", f)
+        refs.append(f"\t\t{r} /* {f} */ = {{isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = {f}; sourceTree = \"<group>\"; }};\n")
+        build.append(f"\t\t{b} /* {f} in Resources */ = {{isa = PBXBuildFile; fileRef = {r} /* {f} */; }};\n")
+        children.append(f"{r} /* {f} */")
+        resources.append(f"{b} /* {f} in Resources */")
     for f in RESOURCES:
         r, b = oid("res-ref", f), oid("res-build", f)
         ftype = "text" if f.endswith(".csv") else "text.json"
@@ -60,7 +68,7 @@ def main() -> None:
 
     # Keep the non-Swift references (headers, Info.plist, product, MapLibre framework build file).
     keep_refs = [l + "\n" for l in re.findall(r"^\t\t\w+ /\* [^*]+ \*/ = \{isa = PBXFileReference;.*$", text, re.M)
-                 if ".swift" not in l and "assets/examples" not in l]
+                 if ".swift" not in l and "assets/examples" not in l and "Assets.xcassets" not in l]
     keep_build = [l + "\n" for l in re.findall(r"^\t\t\w+ /\* [^*]+ \*/ = \{isa = PBXBuildFile;.*$", text, re.M)
                   if "in Frameworks" in l]
     text = replace_section(text, "PBXBuildFile", "".join(keep_build + build))
@@ -72,7 +80,7 @@ def main() -> None:
     if not m:
         raise SystemExit("no app group")
     kept = [l.strip().rstrip(",") for l in m.group(2).splitlines() if l.strip() and ".swift" not in l
-            and not any(r in l for r in RESOURCES)]
+            and "Assets.xcassets" not in l and not any(r in l for r in RESOURCES)]
     entries = children + kept
     text = text[: m.start(2)] + "".join(f"\t\t\t\t{e},\n" for e in entries) + text[m.end(2):]
 

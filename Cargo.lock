@@ -2874,6 +2874,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "lm-ios-alt-c-decode-ffi"
+version = "0.7.5"
+dependencies = [
+ "image",
+ "rustgis-data",
+ "serde_json",
+]
+
+[[package]]
 name = "lm-ios-decode-ffi"
 version = "0.7.5"
 dependencies = [

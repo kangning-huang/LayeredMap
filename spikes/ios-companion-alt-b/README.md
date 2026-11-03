@@ -133,3 +133,7 @@ xcrun simctl launch --console-pty booted <bundle id>   # with SIMCTL_CHILD_LM_BE
 Status at merge: the Swift was type-checked against MapLibre 6.31 headers (Catalyst SDK, Command
 Line Tools) and the Rust tests pass, but no Xcode build or simulator run was possible on the
 build machine (Xcode license not yet accepted), so expect small first-build fixes.
+
+## Test files on the iPhone (2026-11-03)
+
+Documents is shown in Files as On My iPhone › NimbleMap B (`UIFileSharingEnabled`, `LSSupportsOpeningDocumentsInPlace`); the app's own copies of opened files moved from Documents/Data to Application Support/Data. The persona test files (from `LM-tmp/personas/data/maya` and `walt`, unchanged) were copied into Documents/Test files with `xcrun devicectl device copy to`.

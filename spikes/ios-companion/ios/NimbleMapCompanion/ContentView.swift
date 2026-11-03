@@ -1,21 +1,24 @@
 import SwiftUI
 
 /// **Alternative A:** A idle (map-first floating pills) → B Layers sheet → C symbology.
-/// Open paths per docs/lm/ios-open-paths.md (proposed v1 stack). Bundle label: NimbleMap A.
+/// Open paths per docs/lm/ios-open-paths.md (proposed v1 stack). Tap a feature → the same card
+/// as Alt B (owner, 2026-11-02), as a sheet. Bundle label: NimbleMap A.
 struct ContentView: View {
     @StateObject private var doc = MapDocument()
     @State private var active: ActiveSheet?
     @State private var showFiles = false
     @State private var status: String?
     @State private var sceneRun = false
+    @State private var overlap: [MapHit] = []
 
     var body: some View {
         ZStack {
             MapScreen(
                 layers: doc.layers,
                 camera: doc.camera,
-                highlight: nil,
+                highlight: doc.outline(featureHit),
                 insets: UIEdgeInsets(top: 90, left: 36, bottom: 120, right: 36),
+                onTap: handleTap,
                 onUserGesture: {
                     // Resting state is always A: pan or pinch collapses B and C.
                     if active == .layers { active = nil }
@@ -30,7 +33,7 @@ struct ContentView: View {
                     OpenCard(
                         onBrowse: { active = .browse },
                         onExamples: { active = .open(.examples) },
-                        onFiles: { showFiles = true },
+                        onFiles: { active = .open(.phone) },
                         onURL: { active = .url },
                         onRecent: reopen
                     )
@@ -56,9 +59,13 @@ struct ContentView: View {
                         active = nil
                         doc.importing(item.title, { await Importer.openBundled(item) }, showBy: item.showBy)
                     },
-                    onRecent: { r in
+                    onPhoneFile: { f in
                         active = nil
-                        reopen(r)
+                        doc.importingAll(f.name) { await PhoneFiles.open(f) }
+                    },
+                    onPicked: { urls in
+                        active = nil
+                        doc.importingAll(Importer.pickedLabel(urls)) { await Importer.openPicked(urls) }
                     }
                 )
             case .browse:
@@ -80,15 +87,26 @@ struct ContentView: View {
                 LayersSheet(doc: doc, startStyle: id)
             case .ask:
                 AskSheet()
+            case .feature(let hit):
+                featureSheet(hit)
+            case .list(let id):
+                listSheet(id)
             }
         }
-        .fileImporter(isPresented: $showFiles, allowedContentTypes: Importer.contentTypes) { result in
-            guard case .success(let url) = result else { return }
-            doc.importing(Importer.displayName(for: url)) { await Importer.openExternal(url) }
+        .fileImporter(isPresented: $showFiles, allowedContentTypes: Importer.contentTypes, allowsMultipleSelection: true) { result in
+            guard case .success(let urls) = result, !urls.isEmpty else { return }
+            doc.importingAll(Importer.pickedLabel(urls)) { await Importer.openPicked(urls) }
         }
         .onOpenURL { url in
             active = nil
             doc.importing(Importer.displayName(for: url)) { await Importer.openExternal(url) }
+        }
+        .confirmationDialog("\(overlap.count) things here", isPresented: overlapBinding, titleVisibility: .visible) {
+            ForEach(overlap, id: \.self) { hit in
+                if case let (layer, f)? = doc.feature(hit) {
+                    Button("\(layer.dataset.title(of: f)) · \(layer.name)") { show(hit) }
+                }
+            }
         }
         .alert("Couldn't open this", isPresented: errorBinding) {
             Button("OK", role: .cancel) { doc.error = nil }
@@ -160,6 +178,77 @@ struct ContentView: View {
 
     // MARK: Actions
 
+    // MARK: Tap a feature
+
+    private var featureHit: MapHit? {
+        if case .feature(let hit) = active { return hit }
+        return nil
+    }
+
+    private func handleTap(_ hits: [MapHit], _ point: CGPoint) {
+        if hits.count > 1 {
+            // The chooser shows from the map, so a sheet in the way closes first.
+            if active == nil {
+                overlap = hits
+            } else {
+                active = nil
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) { overlap = hits }
+            }
+        } else if let hit = hits.first {
+            show(hit)
+        } else if featureHit != nil {
+            active = nil
+        }
+    }
+
+    private func show(_ hit: MapHit) {
+        if active == nil {
+            active = .feature(hit)
+        } else {
+            switchTo(.feature(hit))
+        }
+    }
+
+    @ViewBuilder
+    private func featureSheet(_ hit: MapHit) -> some View {
+        if case let (layer, f)? = doc.feature(hit) {
+            FeatureCard(
+                insight: Insights.feature(f, in: layer.dataset, layerID: layer.id),
+                layer: layer,
+                onClose: { active = nil },
+                onColorBy: { field in
+                    var s = layer.style
+                    s.showBy = field
+                    doc.setStyle(layer.id, s)
+                    switchTo(.style(layer.id))
+                },
+                onZoom: { doc.fly(to: f.bounds, pointZoom: 6) },
+                onList: { switchTo(.list(layer.id)) }
+            )
+            .presentationDetents([.medium, .large])
+            .presentationBackgroundInteraction(.enabled(upThrough: .medium))
+            .presentationDragIndicator(.visible)
+        } else {
+            Text("This layer was removed.").foregroundStyle(.secondary)
+        }
+    }
+
+    @ViewBuilder
+    private func listSheet(_ id: UUID) -> some View {
+        if let layer = doc.layer(id) {
+            FeatureList(layer: layer, onClose: { active = nil }) { index in
+                let hit = MapHit(layerID: id, featureIndex: index)
+                if case let (_, f)? = doc.feature(hit) { doc.fly(to: f.bounds, pointZoom: 5) }
+                switchTo(.feature(hit))
+            }
+            .presentationDetents([.medium, .large])
+        }
+    }
+
+    private var overlapBinding: Binding<Bool> {
+        Binding(get: { !overlap.isEmpty }, set: { if !$0 { overlap = [] } })
+    }
+
     private func switchTo(_ sheet: ActiveSheet) {
         active = nil
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) { active = sheet }
@@ -198,6 +287,7 @@ struct ContentView: View {
             switch scene {
             case "open": active = .open(.home)
             case "examples": active = .open(.examples)
+            case "phone": active = .open(.phone)
             case "browse": active = .browse
             case "url": active = .url
             case "ask": active = .ask
@@ -209,6 +299,8 @@ struct ContentView: View {
                 if scene == "layers" { active = .layers }
             case "style":
                 if let id = doc.layers.first?.id { active = .style(id) }
+            case "feature":
+                if let id = doc.layers.first?.id { active = .feature(MapHit(layerID: id, featureIndex: 0)) }
             default:
                 break
             }
@@ -223,6 +315,8 @@ enum ActiveSheet: Identifiable, Equatable {
     case layers
     case style(UUID)
     case ask
+    case feature(MapHit)
+    case list(UUID)
 
     var id: String {
         switch self {
@@ -232,6 +326,8 @@ enum ActiveSheet: Identifiable, Equatable {
         case .layers: return "layers"
         case .style(let id): return "style-\(id)"
         case .ask: return "ask"
+        case .feature(let hit): return "feature-\(hit.layerID)-\(hit.featureIndex)"
+        case .list(let id): return "list-\(id)"
         }
     }
 }
