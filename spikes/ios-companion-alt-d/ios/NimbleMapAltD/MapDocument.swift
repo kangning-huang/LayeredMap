@@ -57,6 +57,13 @@ final class MapDocument: ObservableObject {
     @Published var camera: CameraRequest?
     /// Shown while a file downloads or decodes ("Adding Earthquakes…").
     @Published var busy: String?
+    /// 0…1 while a download reports its size; nil when the server won't say how big it is, so the
+    /// bar stays indeterminate rather than inventing a number.
+    @Published var busyFraction: Double?
+    /// "2.4 MB of 11 MB" under the bar.
+    @Published var busyDetail: String?
+    /// The running import, so a Stop button can end it.
+    private var busyTask: Task<Void, Never>?
     @Published var toast: Toast?
     @Published var error: String?
 
@@ -240,10 +247,10 @@ final class MapDocument: ObservableObject {
     /// Several at once (files picked together, a folder): each dataset is added; the first
     /// problem is shown, with how many more there were.
     func importingAll(_ label: String, _ work: @escaping @Sendable () async -> [Result<GeoDataset, ImportError>]) {
-        busy = "Adding \(label)…"
-        Task {
+        startBusy("Adding \(label)…")
+        busyTask = Task {
             let results = await work()
-            self.busy = nil
+            self.endBusy()
             var problems: [String] = []
             for result in results {
                 switch result {
@@ -260,16 +267,55 @@ final class MapDocument: ObservableObject {
     }
 
     func importing(_ label: String, _ work: @escaping @Sendable () async -> Result<GeoDataset, ImportError>, showBy: String? = nil) {
-        busy = "Adding \(label)…"
-        Task {
+        startBusy("Adding \(label)…")
+        busyTask = Task {
             let result = await work()
-            self.busy = nil
+            self.endBusy()
             switch result {
             case .success(let ds):
                 self.add(ds, showBy: showBy)
             case .failure(let e):
-                self.error = e.message
+                // A Stop the person pressed is not an error.
+                if e.message != Importer.cancelled { self.error = e.message }
             }
         }
+    }
+
+    // MARK: Progress
+
+    private func startBusy(_ label: String) {
+        busy = label
+        busyFraction = nil
+        busyDetail = nil
+    }
+
+    private func endBusy() {
+        busy = nil
+        busyFraction = nil
+        busyDetail = nil
+        busyTask = nil
+    }
+
+    /// Handed to `Importer.download` as its progress callback. `total` is 0 when the server sent no
+    /// Content-Length, which leaves the bar indeterminate instead of guessing.
+    func downloadProgress(_ received: Int64, _ total: Int64) {
+        guard busy != nil else { return }
+        if total > 0 {
+            busyFraction = min(1, Double(received) / Double(total))
+            busyDetail = "\(Self.bytes(received)) of \(Self.bytes(total))"
+        } else {
+            busyFraction = nil
+            busyDetail = Self.bytes(received)
+        }
+    }
+
+    /// The Stop button on the progress capsule.
+    func cancelBusy() {
+        busyTask?.cancel()
+        endBusy()
+    }
+
+    private static func bytes(_ n: Int64) -> String {
+        ByteCountFormatter.string(fromByteCount: n, countStyle: .file)
     }
 }

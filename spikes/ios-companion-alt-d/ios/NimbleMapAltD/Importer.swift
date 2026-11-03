@@ -244,12 +244,20 @@ enum Importer {
     }
 
     /// Paste link / a tap in the browser. Downloads off the main thread, then the same pipeline.
-    static func download(_ url: URL) async -> Result<GeoDataset, ImportError> {
+    ///
+    /// D reports progress while it runs: a bare "Adding …" capsule with no bar and no way out
+    /// reads as a hang on anything bigger than a second or two, and the catalogue links files of
+    /// tens of megabytes. `onProgress` is called on the main actor with bytes received and the
+    /// total the server promised (0 when it won't say).
+    static func download(
+        _ url: URL,
+        onProgress: @escaping @Sendable (Int64, Int64) -> Void = { _, _ in }
+    ) async -> Result<GeoDataset, ImportError> {
         guard let scheme = url.scheme?.lowercased(), scheme == "https" || scheme == "http" else {
             return .failure(ImportError(message: "That isn't a web link."))
         }
         do {
-            let (temp, response) = try await URLSession.shared.download(from: url)
+            let (temp, response) = try await Downloader(onProgress: onProgress).run(url)
             if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
                 return .failure(ImportError(message: "The link didn't work (the site answered \(http.statusCode))."))
             }
@@ -270,8 +278,90 @@ enum Importer {
             let dest = uniqueDestination(for: fileName)
             try FileManager.default.moveItem(at: temp, to: dest)
             return await decode(dest, name: displayName(for: dest), primary: nil, sourceName: url.host ?? "The web", credit: nil)
+        } catch is CancellationError {
+            return .failure(ImportError(message: cancelled))
+        } catch let error as URLError where error.code == .cancelled {
+            return .failure(ImportError(message: cancelled))
         } catch {
             return .failure(ImportError(message: "Couldn't download: \(error.localizedDescription)"))
+        }
+    }
+
+    /// A Stop that the person pressed is not an error worth an alert; the caller drops it.
+    static let cancelled = "__lm_cancelled__"
+
+    /// Downloads a URL while reporting progress.
+    ///
+    /// This owns its own `URLSession` on purpose: `URLSession.shared` does not deliver per-task
+    /// delegate callbacks, so `shared.download(from:delegate:)` runs to completion with the bar
+    /// never moving. A session that owns the delegate gets `didWriteData` as the bytes arrive.
+    private final class Downloader: NSObject, URLSessionDownloadDelegate, @unchecked Sendable {
+        private let onProgress: @Sendable (Int64, Int64) -> Void
+        private let lock = NSLock()
+        private var continuation: CheckedContinuation<(URL, URLResponse), Error>?
+        private var task: URLSessionDownloadTask?
+        private lazy var session = URLSession(configuration: .default, delegate: self, delegateQueue: nil)
+
+        init(onProgress: @escaping @Sendable (Int64, Int64) -> Void) {
+            self.onProgress = onProgress
+        }
+
+        func run(_ url: URL) async throws -> (URL, URLResponse) {
+            try await withTaskCancellationHandler {
+                try await withCheckedThrowingContinuation { c in
+                    lock.lock()
+                    continuation = c
+                    let t = session.downloadTask(with: url)
+                    task = t
+                    lock.unlock()
+                    t.resume()
+                }
+            } onCancel: {
+                lock.lock()
+                let t = task
+                lock.unlock()
+                t?.cancel()
+            }
+        }
+
+        /// Resumes the continuation exactly once; later callbacks for the same task are ignored.
+        private func finish(_ result: Result<(URL, URLResponse), Error>) {
+            lock.lock()
+            let c = continuation
+            continuation = nil
+            lock.unlock()
+            guard let c else { return }
+            c.resume(with: result)
+            session.finishTasksAndInvalidate()
+        }
+
+        func urlSession(
+            _ session: URLSession,
+            downloadTask: URLSessionDownloadTask,
+            didWriteData bytesWritten: Int64,
+            totalBytesWritten: Int64,
+            totalBytesExpectedToWrite: Int64
+        ) {
+            // NSURLSessionTransferSizeUnknown (-1) when the server sends no Content-Length
+            // (chunked or gzipped replies); 0 keeps the bar indeterminate instead of guessing.
+            let total = max(0, totalBytesExpectedToWrite)
+            let send = onProgress
+            Task { @MainActor in send(totalBytesWritten, total) }
+        }
+
+        func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
+            // URLSession deletes `location` as soon as this returns, so move it first.
+            let keep = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            do {
+                try FileManager.default.moveItem(at: location, to: keep)
+                finish(.success((keep, downloadTask.response ?? URLResponse())))
+            } catch {
+                finish(.failure(error))
+            }
+        }
+
+        func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+            if let error { finish(.failure(error)) }
         }
     }
 

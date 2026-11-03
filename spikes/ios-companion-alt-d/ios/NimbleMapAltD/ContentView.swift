@@ -56,7 +56,12 @@ struct ContentView: View {
                         }
                 }
                 if let busy = doc.busy {
-                    capsule(busy, systemImage: "arrow.down.circle")
+                    BusyCapsule(
+                        label: busy,
+                        fraction: doc.busyFraction,
+                        detail: doc.busyDetail,
+                        onStop: { doc.cancelBusy() }
+                    )
                 }
                 Spacer()
                 bottomChrome
@@ -84,7 +89,7 @@ struct ContentView: View {
                     },
                     onLink: { url in
                         active = nil
-                        doc.importing(Importer.displayName(for: url)) { await Importer.download(url) }
+                        doc.importing(Importer.displayName(for: url)) { await Importer.download(url, onProgress: report) }
                     }
                 )
             case .layers:
@@ -436,6 +441,14 @@ struct ContentView: View {
 
     // MARK: Actions
 
+    /// Progress callback for every download, bound to this view's document.
+    private var report: @Sendable (Int64, Int64) -> Void {
+        let doc = self.doc
+        return { received, total in
+            Task { @MainActor in doc.downloadProgress(received, total) }
+        }
+    }
+
     private func addLibrary(_ item: LibraryItem) {
         active = nil
         doc.importing(item.title, { await Importer.openBundled(item) }, showBy: item.showBy)
@@ -467,6 +480,13 @@ struct ContentView: View {
             try? await Task.sleep(nanoseconds: 1_500_000_000)
             switch scene {
             case "open": active = .open
+            // Downloads LM_URL (or a small catalogue file) so the progress capsule can be
+            // screenshotted headlessly; https can't be sent in with `simctl openurl`.
+            case "download":
+                let fallback = "https://data.alltheplaces.xyz/runs/latest/output/starbucks_us.geojson"
+                if let u = URL(string: ProcessInfo.processInfo.environment["LM_URL"] ?? fallback) {
+                    doc.importing(Importer.displayName(for: u)) { await Importer.download(u, onProgress: report) }
+                }
             case "layers": active = .layers
             case "look": if let id = doc.layers.first?.id { startLook(id, showBy: nil) }
             case "feature": if let id = doc.layers.first?.id { show(MapHit(layerID: id, featureIndex: 0)) }
@@ -625,6 +645,53 @@ struct MapLegend: View {
         }
         guard let by = layer.style.showBy.flatMap({ layer.dataset.field(named: $0) }) else { return layer.name }
         return "\(layer.name) · by \(by.label.lowercased())"
+    }
+}
+
+/// The download capsule. C showed a static "Adding Global mining polygons v2…" with no bar and no
+/// way out, which on a slow link or a big file is indistinguishable from a hang — the persona study
+/// flagged it, and the catalogue links files of tens of megabytes. A determinate bar whenever the
+/// server sends a Content-Length, the byte counts under it, and a Stop.
+struct BusyCapsule: View {
+    var label: String
+    var fraction: Double?
+    var detail: String?
+    var onStop: () -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 5) {
+                Label(label, systemImage: "arrow.down.circle")
+                    .font(.footnote.weight(.semibold))
+                    .lineLimit(1)
+                if let fraction {
+                    ProgressView(value: fraction)
+                        .progressViewStyle(.linear)
+                        .frame(width: 184)
+                } else {
+                    ProgressView()
+                        .progressViewStyle(.linear)
+                        .frame(width: 184)
+                }
+                if let detail {
+                    Text(detail)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                }
+            }
+            Button(action: onStop) {
+                Text("Stop").font(.footnote.weight(.bold))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Stop downloading")
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .transition(.opacity)
+        .accessibilityElement(children: .combine)
+        .accessibilityValue(detail ?? "")
     }
 }
 
