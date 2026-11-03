@@ -30,6 +30,18 @@ struct RasterInfo {
     let quantity: String
     let unit: String
 
+    /// A NetCDF time axis in words ("July 2023"), one per step; empty when the file has no time
+    /// axis, which is what hides the slider.
+    var times: [String] = []
+    /// Which step is drawn, into `times`.
+    var time: Int = 0
+    /// The file this came from, so another step can be read from it.
+    var source: URL?
+
+    var hasTime: Bool { times.count > 1 }
+
+    var timeLabel: String { times.indices.contains(time) ? times[time] : "" }
+
     /// The value under a point, read from the grid (nil outside or on no-data).
     func value(at c: CLLocationCoordinate2D) -> Double? {
         guard let values, c.longitude >= bounds.minLon, c.longitude <= bounds.maxLon,
@@ -104,13 +116,22 @@ enum RasterDecode {
     static func isRaster(_ url: URL) -> Bool { extensions.contains(url.pathExtension.lowercased()) }
 
     /// Read a raster file (call off the main thread) into a dataset with no features.
-    static func open(_ file: URL, name: String, sourceName: String) -> Result<GeoDataset, ImportError> {
+    ///
+    /// `time` picks the step of a NetCDF time axis; `range` is the colour range to keep, so
+    /// stepping through time does not restretch the ramp and make every month look the same.
+    static func open(
+        _ file: URL,
+        name: String,
+        sourceName: String,
+        time: Int = 0,
+        range: (Double, Double)? = nil
+    ) -> Result<GeoDataset, ImportError> {
         let cache = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first ?? FileManager.default.temporaryDirectory
         let stem = cache.appendingPathComponent("raster-\(UUID().uuidString)").path
         let result: Result<[String: Any], DecodeBridge.DecodeError> = file.path.withCString { cPath in
             stem.withCString { cStem in
                 var out: UnsafeMutablePointer<CChar>?
-                let status = lm_open_raster(cPath, cStem, &out)
+                let status = lm_open_raster_step(cPath, cStem, Int32(time), range?.0 ?? 1, range?.1 ?? 0, &out)
                 defer { if let out { lm_string_free(out) } }
                 guard let out else { return .failure(DecodeBridge.DecodeError(message: "decode status \(status)")) }
                 let text = String(cString: out)
@@ -139,21 +160,32 @@ enum RasterDecode {
             let quantity = said.isEmpty ? guessed.0 : said
             let unit = said.isEmpty ? guessed.1 : RasterInfo.readableUnit(saidUnit)
             func num(_ k: String) -> Double { (o[k] as? NSNumber)?.doubleValue ?? 0 }
+            // Pulled out of the initializer: with the time-axis fields added, type-checking the
+            // whole call in one expression takes the compiler an unreasonable amount of time.
+            let pngURL = URL(fileURLWithPath: png)
+            let valuesURL: URL? = (o["values"] as? String).map { URL(fileURLWithPath: $0) }
+            let bounds = GeoBounds(minLon: b[0], minLat: b[1], maxLon: b[2], maxLat: b[3])
+            let bands: Int = (o["bands"] as? NSNumber)?.intValue ?? 1
+            let stepNames: [String] = (o["times"] as? [String]) ?? []
+            let stepIndex: Int = (o["time"] as? NSNumber)?.intValue ?? 0
             let info = RasterInfo(
                 look: look,
-                png: URL(fileURLWithPath: png),
-                values: (o["values"] as? String).map { URL(fileURLWithPath: $0) },
+                png: pngURL,
+                values: valuesURL,
                 gridWidth: grid[0],
                 gridHeight: grid[1],
-                bounds: GeoBounds(minLon: b[0], minLat: b[1], maxLon: b[2], maxLat: b[3]),
+                bounds: bounds,
                 low: num("low"),
                 high: num("high"),
                 min: num("min"),
                 max: num("max"),
                 cellMeters: num("cell_m"),
-                bandCount: (o["bands"] as? NSNumber)?.intValue ?? 1,
+                bandCount: bands,
                 quantity: quantity,
-                unit: unit
+                unit: unit,
+                times: stepNames,
+                time: stepIndex,
+                source: file
             )
             var assumptions: [String] = []
             if look == .values {

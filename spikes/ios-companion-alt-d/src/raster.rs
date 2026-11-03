@@ -31,6 +31,29 @@ fn ramp(t: f64) -> [u8; 3] {
     [0, 1, 2].map(|k| (a[k] as f64 + (b[k] as f64 - a[k] as f64) * f).round() as u8)
 }
 
+/// How many time steps the colour range is taken from, evenly spaced (the desktop uses 12 too).
+const RANGE_SAMPLE_STEPS: usize = 12;
+
+/// The 2–98 % range across the whole time axis, from a handful of evenly spaced steps. Reading
+/// every step of a long axis would cost more than opening the file; a dozen is enough to stop
+/// January and July looking the same. `None` when nothing could be read.
+fn sample_range(path: &Path, steps: usize) -> Option<(f64, f64)> {
+    let n = steps.clamp(1, RANGE_SAMPLE_STEPS);
+    let (mut low, mut high) = (f64::INFINITY, f64::NEG_INFINITY);
+    for k in 0..n {
+        // Evenly spaced, first and last included.
+        let t = if n == 1 { 0 } else { k * (steps - 1) / (n - 1) };
+        let Ok(o) = crate::netcdf::open_at(path, t) else { continue };
+        let Some(b) = o.raster.bands.first() else { continue };
+        let (a, z) = (b.stats.percentile(2.0), b.stats.percentile(98.0));
+        if a.is_finite() && z.is_finite() {
+            low = low.min(a);
+            high = high.max(z);
+        }
+    }
+    (low.is_finite() && high > low).then_some((low, high))
+}
+
 /// How the pixels are shown: a picture (a scanned map, a photo) or measured values on a ramp.
 fn is_picture(r: &Raster) -> bool {
     match &r.color {
@@ -46,14 +69,30 @@ fn is_picture(r: &Raster) -> bool {
 /// `{"name","look":"picture|values","bounds":[w,s,e,n],"png","values","grid":[w,h],"low","high",
 /// "min","max","bands","data_type","cell_m"}`.
 pub fn open_raster_envelope(path: &str, out_stem: &str) -> Result<String, String> {
+    open_raster_envelope_at(path, out_stem, 0, None)
+}
+
+/// As [`open_raster_envelope`], at NetCDF time step `time`.
+///
+/// `fixed_range` is the colour range to keep. Stepping through time must not restretch the ramp —
+/// otherwise January and July both look "normal" and the map says nothing — so the first open
+/// samples a few steps for a range that holds for the whole axis, and every later step is coloured
+/// with that same range. The desktop reader does the same (`netcdf::sample_range`).
+pub fn open_raster_envelope_at(path: &str, out_stem: &str, time: usize, fixed_range: Option<(f64, f64)>) -> Result<String, String> {
     // NetCDF goes through the spike's own pure-Rust reader: `rustgis-data` reads it only by
     // shelling out to GDAL, which does not exist on an iPhone. Everything after this is shared.
     let p = Path::new(path);
-    let (r, quantity, unit, notes) = if crate::netcdf::is_netcdf(p) {
-        let o = crate::netcdf::open(p)?;
-        (o.raster, Some(o.quantity), Some(o.unit), o.notes)
+    let (r, quantity, unit, notes, times, time_index, sampled) = if crate::netcdf::is_netcdf(p) {
+        let o = crate::netcdf::open_at(p, time)?;
+        let sampled = match fixed_range {
+            Some(range) => Some(range),
+            // Only worth sampling when there is an axis to step along.
+            None if o.times.len() > 1 => sample_range(p, o.times.len()),
+            None => None,
+        };
+        (o.raster, Some(o.quantity), Some(o.unit), o.notes, o.times, o.time, sampled)
     } else {
-        (raster::read_path(p).map_err(|e| e.to_string())?, None, None, Vec::new())
+        (raster::read_path(p).map_err(|e| e.to_string())?, None, None, Vec::new(), Vec::new(), 0, None)
     };
     let e = r.extent();
     let (west, east) = (e.min_x.max(-180.0), e.max_x.min(180.0));
@@ -73,6 +112,8 @@ pub fn open_raster_envelope(path: &str, out_stem: &str) -> Result<String, String
     let band0 = r.bands.first().ok_or("the raster has no bands")?;
     let (low, high) = (band0.stats.percentile(2.0), band0.stats.percentile(98.0));
     let (low, high) = if high > low { (low, high) } else { (band0.stats.min, band0.stats.max.max(band0.stats.min + 1e-9)) };
+    // A range taken across the whole time axis wins, so the colours mean the same at every step.
+    let (low, high) = sampled.filter(|(a, b)| b > a).unwrap_or((low, high));
     // Byte bands are shown as they are; others are stretched 2–98 %.
     let stretch = |band: usize, v: f32| -> u8 {
         if r.data_type == "UInt8" {
@@ -152,6 +193,10 @@ pub fn open_raster_envelope(path: &str, out_stem: &str) -> Result<String, String
         "quantity": quantity,
         "unit": unit,
         "notes": notes,
+        // NetCDF time axis: one label per step ("July 2023") and which one this grid is. Empty
+        // when the file has no time axis, which is what hides the slider.
+        "times": times,
+        "time": time_index,
     })
     .to_string())
 }

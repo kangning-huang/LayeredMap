@@ -74,6 +74,7 @@ struct ChangeLookSheet: View {
     var onCancel: () -> Void
     var onDone: () -> Void
     var onMore: () -> Void
+    var onTime: (Int) -> Void = { _ in }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -91,6 +92,13 @@ struct ChangeLookSheet: View {
                 LegendBar(scheme: layer.scheme, ends: layer.legendEnds)
                     .padding(.horizontal, 18)
                     .padding(.top, 10)
+            }
+            // A grid with a time axis: the same slider as the card, so time is reachable from
+            // Layers without having to tap the map first.
+            if let r = layer.dataset.raster, r.hasTime {
+                TimeSlider(raster: r, onSet: onTime, onStep: { onTime(r.time + $0) })
+                    .padding(.horizontal, 18)
+                    .padding(.top, 12)
             }
             if layer.dataset.raster == nil {
                 Button(action: onMore) {

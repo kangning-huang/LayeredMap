@@ -79,8 +79,13 @@ A and B and C could not open NetCDF at all, so the two climate entries on the si
   latitude/longitude found by CF `units` and `standard_name` (not just by name), `scale_factor` /
   `add_offset` unpacking and `_FillValue` / `missing_value` masking, longitudes of 0–360 wrapped to
   −180–180, and a grid stored south-to-north turned north up.
-- **What it drops:** picking a variable, the time axis, levels, and the colour range sampled across
-  time. Curvilinear and projected grids are refused with a plain sentence, not a crash.
+- **Time works like the desktop's.** A file with a time axis gets a slider: the step's date in
+  words ("January 1948"), ← and → for one step at a time, and the span labelled at both ends.
+  Stepping re-reads one 2-D hyperslab, not the file. The colour range is sampled across the axis
+  (12 evenly spaced steps, as the desktop does) and then held, so January and July are coloured on
+  the same scale instead of each being restretched to look normal.
+- **What it drops:** picking a variable, levels, and Play. Curvilinear and projected grids are
+  refused with a plain sentence, not a crash.
 - **The file names the quantity.** A GeoTIFF says nothing, so C guessed "Height"/"m" from the file
   name. A NetCDF variable carries `long_name` and `units`, so the card and legend use those;
   machine-written units ("degC") are shown the way people write them ("°C").

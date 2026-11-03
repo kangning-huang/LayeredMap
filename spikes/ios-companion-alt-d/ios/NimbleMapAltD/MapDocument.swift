@@ -9,6 +9,9 @@ struct MapLayer: Identifiable, Equatable {
     let dataset: GeoDataset
     var visible: Bool
     var style: LayerStyle
+    /// Bumped when the dataset's cells are replaced (a new NetCDF time step). `dataset` is a
+    /// class, so without this the layer compares equal to itself and the map never redraws.
+    var dataRev: Int = 0
 
     var name: String { dataset.name }
     var scheme: ColorRule { ColorRule.make(style: style, dataset: dataset) }
@@ -20,7 +23,7 @@ struct MapLayer: Identifiable, Equatable {
     }
 
     static func == (a: MapLayer, b: MapLayer) -> Bool {
-        a.id == b.id && a.visible == b.visible && a.style == b.style
+        a.id == b.id && a.visible == b.visible && a.style == b.style && a.dataRev == b.dataRev
     }
 }
 
@@ -64,6 +67,8 @@ final class MapDocument: ObservableObject {
     @Published var busyDetail: String?
     /// The running import, so a Stop button can end it.
     private var busyTask: Task<Void, Never>?
+    /// Counts time-step reads so a slow one can't overwrite a newer one.
+    private var timeRequest = 0
     @Published var toast: Toast?
     @Published var error: String?
 
@@ -233,6 +238,40 @@ final class MapDocument: ObservableObject {
     func setStyle(_ id: UUID, _ style: LayerStyle) {
         guard let i = index(of: id) else { return }
         layers[i].style = style
+    }
+
+    // MARK: Time (NetCDF)
+
+    /// The step a layer's cells show, which may lag the slider while a read is in flight.
+    func shownTime(_ id: UUID) -> Int { layer(id)?.dataset.raster?.time ?? 0 }
+
+    /// Shows step `to` of a grid with a time axis. The slider runs ahead of the file: drags land
+    /// faster than a step can be read, so only the newest request is kept and anything older is
+    /// dropped on arrival (`timeRequest`). The colour range is the one the layer already has, so
+    /// the ramp means the same at every step.
+    func setTime(_ id: UUID, _ to: Int) {
+        guard let layer = layer(id), let r = layer.dataset.raster, r.hasTime, let source = r.source else { return }
+        let step = max(0, min(to, r.times.count - 1))
+        guard step != r.time else { return }
+        timeRequest += 1
+        let token = timeRequest
+        let name = layer.name
+        let range = (r.low, r.high)
+        Task.detached(priority: .userInitiated) {
+            let result = RasterDecode.open(source, name: name, sourceName: "", time: step, range: range)
+            await MainActor.run {
+                // A newer drag already won; this one is stale.
+                guard token == self.timeRequest, case .success(let ds) = result, let i = self.index(of: id) else { return }
+                self.layers[i].dataset.adoptCells(from: ds)
+                self.layers[i].dataRev &+= 1
+            }
+        }
+    }
+
+    /// Steps a grid's time by `delta`, stopping at the ends.
+    func stepTime(_ id: UUID, _ delta: Int) {
+        guard let r = layer(id)?.dataset.raster, r.hasTime else { return }
+        setTime(id, r.time + delta)
     }
 
     func undo() {

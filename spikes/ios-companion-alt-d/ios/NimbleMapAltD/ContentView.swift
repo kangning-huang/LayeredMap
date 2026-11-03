@@ -116,7 +116,8 @@ struct ContentView: View {
                         at: CLLocationCoordinate2D(latitude: lat, longitude: lon),
                         onClose: { active = nil },
                         onLook: { startLook(id, showBy: nil) },
-                        onZoom: { doc.fly(to: layer.dataset.bounds) }
+                        onZoom: { doc.fly(to: layer.dataset.bounds) },
+                        onTime: { doc.setTime(id, $0) }
                     )
                     .presentationDetents([.medium, .large])
                     .presentationBackgroundInteraction(.enabled(upThrough: .medium))
@@ -434,7 +435,8 @@ struct ContentView: View {
                 onMore: {
                     lookOriginal = nil
                     switchTo(.style(id))
-                }
+                },
+                onTime: { doc.setTime(id, $0) }
             )
         }
     }

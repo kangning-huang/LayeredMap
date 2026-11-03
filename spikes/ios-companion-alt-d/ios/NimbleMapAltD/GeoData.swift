@@ -108,6 +108,13 @@ final class GeoDataset: Identifiable {
     var savedPath: String?
     /// Set for map images and grids of values; they have no features.
     var raster: RasterInfo?
+
+    /// Takes another read of the same file's cells — a different NetCDF time step — keeping this
+    /// dataset's identity, name and fields so the layer's place, style and card do not change.
+    func adoptCells(from other: GeoDataset) {
+        guard let next = other.raster else { return }
+        raster = next
+    }
     let sourceName: String
     let credit: String?
 
