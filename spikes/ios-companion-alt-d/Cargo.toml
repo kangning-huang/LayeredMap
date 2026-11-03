@@ -1,0 +1,28 @@
+[package]
+name = "lm-ios-alt-d-decode-ffi"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+description = "Throwaway iPhone Alt C spike: C ABI GeoJSON decode for Swift. Not product code."
+
+[lib]
+name = "lm_ios_alt_d_decode_ffi"
+crate-type = ["staticlib", "cdylib", "rlib"]
+path = "src/lib.rs"
+
+# Spike-only: cannot inherit workspace.lints (unsafe_code = forbid) and override.
+# Product crates keep forbid; this C ABI surface needs allow. See README.
+[lints.rust]
+unsafe_code = "allow"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+type_complexity = "allow"
+
+[dependencies]
+rustgis-data = { workspace = true }
+serde_json = { workspace = true }
+image = { workspace = true }

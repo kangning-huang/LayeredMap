@@ -521,7 +521,7 @@ enum GeoMeasure {
             r.lengthKm = total
         case "Polygon":
             r.kind = .area
-            let rings = (coords as? [Any] ?? []).map(points)
+            let rings = (coords as? [Any] ?? []).map { points($0) }
             for p in rings.first ?? [] { r.bounds.add(lon: p.0, lat: p.1) }
             r.areaKm2 = polygonArea(rings)
         case "MultiPolygon":
@@ -530,7 +530,7 @@ enum GeoMeasure {
             var biggest = 0.0
             var biggestBounds = GeoBounds.empty
             for poly in coords as? [Any] ?? [] {
-                let rings = (poly as? [Any] ?? []).map(points)
+                let rings = (poly as? [Any] ?? []).map { points($0) }
                 var b = GeoBounds.empty
                 for p in rings.first ?? [] {
                     b.add(lon: p.0, lat: p.1)
