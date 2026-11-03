@@ -40,6 +40,11 @@ struct OpenSheet: View {
     /// Where the online search has got to. `.found([])` is a real answer, not a missing one.
     @State private var online = Online.idle
     @State private var scope = Catalog.Scope.portals
+    /// A Google search, opened in Safari rather than a web view (see `Catalog.webSearch`).
+    @State private var safariURL: URL?
+    /// Row index → the model's one line on why this result answers the question. Empty when no
+    /// model was asked, or when it was and said nothing usable.
+    @State private var reasons: [Int: String] = [:]
 
     enum Online: Equatable {
         case idle
@@ -96,6 +101,7 @@ struct OpenSheet: View {
             onPicked(urls)
         }
         .fileDialogDefaultDirectory(lastFolder.isEmpty ? nil : URL(fileURLWithPath: lastFolder, isDirectory: true))
+        .sheet(item: $safariURL) { SafariView(url: $0) }
         .alert("That didn't look like a web address", isPresented: $linkFailed) {
             Button("OK", role: .cancel) {}
         } message: {
@@ -114,17 +120,32 @@ struct OpenSheet: View {
     @ViewBuilder
     private var searchResults: some View {
         let hits = Library.search(search)
+        // Everything the app already knows, answered as the person types: no network, no waiting,
+        // no model, works on a train. Most searches should end here.
+        let catalogue = Catalog.searchBundled(search)
         if !hits.isEmpty {
-            Section("In the data library") {
+            Section("Ready to add") {
                 ForEach(hits) { item in
                     LibraryRow(item: item, added: onMap(item), onAdd: { onLibrary(item) })
                 }
             }
         }
-        if hits.isEmpty {
+        if !catalogue.isEmpty {
+            Section(hits.isEmpty ? "Ready to add" : "More data you can add") {
+                ForEach(catalogue) { item in
+                    CatalogRow(
+                        item: item,
+                        why: nil,
+                        onAdd: { onLink(item.url) },
+                        onOpenPage: { safariURL = item.url }
+                    )
+                }
+            }
+        }
+        if hits.isEmpty && catalogue.isEmpty {
             Section {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Nothing in the built-in library for “\(search)”.")
+                    Text("Nothing built in for “\(search)”.")
                         .font(.body.weight(.semibold))
                     Text("NimbleMap can look for map files on the web. Tap a result and it opens straight on your map.")
                         .font(.footnote)
@@ -133,8 +154,8 @@ struct OpenSheet: View {
                 .padding(.vertical, 2)
             }
         }
-        onlineSection
-        if hits.isEmpty {
+        onlineSection(hasLocal: !hits.isEmpty || !catalogue.isEmpty)
+        if hits.isEmpty && catalogue.isEmpty {
             linkSection
         }
     }
@@ -145,7 +166,7 @@ struct OpenSheet: View {
     /// asks: a search box that fires off network calls on every keystroke spends their data and
     /// shows them half-typed nonsense.
     @ViewBuilder
-    private var onlineSection: some View {
+    private func onlineSection(hasLocal: Bool) -> some View {
         Section {
             Button {
                 runOnlineSearch()
@@ -156,7 +177,9 @@ struct OpenSheet: View {
                     } else {
                         Image(systemName: "globe").foregroundStyle(Color.accentColor)
                     }
-                    Text(online == .searching ? "Looking…" : "Look for “\(search)” map files")
+                    Text(online == .searching
+                         ? "Looking…"
+                         : (hasLocal ? "Also look on the web" : "Look for “\(search)” map files"))
                         .font(.body.weight(.semibold))
                         .lineLimit(1)
                 }
@@ -180,8 +203,13 @@ struct OpenSheet: View {
         switch online {
         case .found(let items) where !items.isEmpty:
             Section("Found on the web") {
-                ForEach(items) { item in
-                    CatalogRow(item: item, onAdd: { onLink(item.url) })
+                ForEach(Array(items.enumerated()), id: \.element.id) { i, item in
+                    CatalogRow(
+                        item: item,
+                        why: reasons[i],
+                        onAdd: { onLink(item.url) },
+                        onOpenPage: { safariURL = item.url }
+                    )
                 }
             }
         case .found:
@@ -204,8 +232,8 @@ struct OpenSheet: View {
                     }
                 }
                 if let web = Catalog.webSearch(search, scope: scope) {
-                    NavigationLink {
-                        DataWebPage(url: web, title: "Search", onDataLink: onLink)
+                    Button {
+                        safariURL = web
                     } label: {
                         Label("Search the web for “\(search)”", systemImage: "magnifyingglass")
                     }
@@ -226,11 +254,27 @@ struct OpenSheet: View {
         let text = search
         let where_ = scope
         online = .searching
+        reasons = [:]
         Task {
             let items = await Catalog.search(text, scope: where_)
             // The person has typed on since; their newer words win.
             guard text == search, where_ == scope else { return }
             online = .found(items)
+
+            // Ranking is a second, optional pass: the results are already on screen, and a model
+            // that is slow or missing just means no "why" lines. It never gates the answer.
+            guard Assist.available, items.count > 1 else { return }
+            let listed = items.map { Assist.Item(title: $0.title, source: $0.source, blurb: $0.blurb) }
+            guard let ranked = await Assist.rank(listed, for: text), text == search, where_ == scope else { return }
+            let best = ranked.filter { items.indices.contains($0.index) }
+            guard !best.isEmpty else { return }
+            let order = best.map(\.index)
+            let rest = items.indices.filter { !order.contains($0) }
+            let reordered = (order + rest).map { items[$0] }
+            var why: [Int: String] = [:]
+            for (place, r) in best.enumerated() { why[place] = r.why }
+            reasons = why
+            online = .found(reordered)
         }
     }
 
@@ -428,32 +472,43 @@ struct MoreDataRow: View {
 /// the URL, so "GeoJSON" is a promise the app can keep.
 struct CatalogRow: View {
     var item: Catalog.Item
+    /// Why this one, in a sentence, when a model was asked to rank the results.
+    var why: String?
     var onAdd: () -> Void
+    var onOpenPage: () -> Void
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: "globe")
+            Image(systemName: item.kind == .page ? "safari" : "globe")
                 .font(.title3)
                 .foregroundStyle(.white)
                 .frame(width: 48, height: 48)
                 .background(Color.accentColor.gradient, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.title).font(.body.weight(.semibold)).lineLimit(2)
-                if !item.blurb.isEmpty {
+                if let why {
+                    Text(why).font(.caption).foregroundStyle(Color.accentColor).lineLimit(2)
+                } else if !item.blurb.isEmpty {
                     Text(item.blurb).font(.caption).foregroundStyle(.secondary).lineLimit(2)
                 }
-                Text("\(item.source) · \(item.format)")
+                Text(detail)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
             Spacer(minLength: 4)
-            Button("Add", action: onAdd)
+            // A page cannot promise a map; it promises a place to pick a download. Saying "Add"
+            // on one would be the broken promise this spike exists to remove.
+            Button(item.kind == .page ? "Open" : "Add", action: item.kind == .page ? onOpenPage : onAdd)
                 .buttonStyle(.borderedProminent)
                 .buttonBorderShape(.capsule)
                 .controlSize(.small)
         }
         .padding(.vertical, 2)
+    }
+
+    private var detail: String {
+        [item.source, item.format, item.size].filter { !$0.isEmpty }.joined(separator: " · ")
     }
 }
 

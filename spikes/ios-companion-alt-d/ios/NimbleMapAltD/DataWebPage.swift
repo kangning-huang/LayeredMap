@@ -84,6 +84,11 @@ struct DataWebView: UIViewRepresentable {
     }
 }
 
+/// So a `URL?` can drive `.sheet(item:)` for the Safari search.
+extension URL: @retroactive Identifiable {
+    public var id: String { absoluteString }
+}
+
 struct SafariView: UIViewControllerRepresentable {
     var url: URL
 

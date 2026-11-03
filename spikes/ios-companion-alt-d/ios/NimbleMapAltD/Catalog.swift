@@ -30,8 +30,70 @@ enum Catalog {
         let format: String
         /// Where it came from, for the row's second line ("data.cityofnewyork.us").
         let source: String
-        /// A direct download, not a portal page.
         let url: URL
+        /// Whether the link hands back the data or a page to pick a download from. Checked by
+        /// content type when the catalogue was built, never guessed from the URL: Dataverse serves
+        /// `application/zipped-shapefile` from a URL with no extension at all, and plenty of URLs
+        /// ending in `.csv` serve an HTML landing page.
+        var kind: Kind = .file
+        /// Only the bundled catalogue has these; they are what offline search matches on.
+        var keywords: [String] = []
+        var size = ""
+
+        enum Kind: String, Hashable {
+            /// Tap Add and it goes on the map.
+            case file
+            /// Tap through, pick a download there.
+            case page
+        }
+    }
+
+    // MARK: The bundled catalogue
+
+    /// Datasets shipped with the app, lifted from the site's data page and checked when the
+    /// catalogue was built. Searching these costs nothing: no network, no waiting, no model, and
+    /// it works on a train. Most searches should end here, which is the point — the online
+    /// catalogues and the model are for what this list does not hold.
+    static let bundled: [Item] = {
+        guard let url = Bundle.main.url(forResource: "catalog", withExtension: "json"),
+              let data = try? Data(contentsOf: url),
+              let rows = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]]
+        else { return [] }
+        return rows.compactMap { row in
+            guard let id = row["id"] as? String, let title = row["title"] as? String,
+                  let link = row["url"] as? String, let file = URL(string: link)
+            else { return nil }
+            return Item(
+                id: "bundled:\(id)",
+                title: title,
+                blurb: (row["blurb"] as? String) ?? "",
+                format: (row["format"] as? String) ?? "",
+                source: (row["source"] as? String) ?? "",
+                url: file,
+                kind: Item.Kind(rawValue: (row["kind"] as? String) ?? "file") ?? .file,
+                keywords: (row["keywords"] as? [String]) ?? [],
+                size: (row["size"] as? String) ?? ""
+            )
+        }
+    }()
+
+    /// Offline search over the bundled catalogue. Every word typed must appear somewhere in the
+    /// entry — title, what it is, who publishes it, its section, or its keywords — so "roman
+    /// roads" finds the Roman Empire roads and "roads" alone does not drown in everything else.
+    /// A title match sorts first, because someone typing "earthquakes" means the one called that.
+    static func searchBundled(_ text: String) -> [Item] {
+        let words = text.lowercased().split(whereSeparator: { !$0.isLetter && !$0.isNumber }).map(String.init)
+        guard !words.isEmpty else { return [] }
+        return bundled.compactMap { item -> (Item, Int)? in
+            let title = item.title.lowercased()
+            let haystack = ([title, item.blurb, item.source, item.format] + item.keywords)
+                .joined(separator: " ").lowercased()
+            guard words.allSatisfy({ haystack.contains($0) }) else { return nil }
+            let score = words.contains(where: { title.contains($0) }) ? 0 : 1
+            return (item, score)
+        }
+        .sorted { $0.1 < $1.1 }
+        .map(\.0)
     }
 
     /// Where to look. Three, because one query cannot serve both "bike lanes" (abundant, published
@@ -53,15 +115,34 @@ enum Catalog {
         }
     }
 
-    /// Catalogue results for `text`. Socrata and ArcGIS Hub are asked at the same time; Hub's
-    /// links are checked before they are offered (see `verified`).
+    /// Everything found for `text`, bundled catalogue first.
+    ///
+    /// Order matters more than it looks: the bundled list answers instantly, offline and free, so
+    /// it is tried before anything that costs a request. The model is asked for better search
+    /// words only when the bundled list came back empty — if "earthquakes" already matched, there
+    /// is nothing to improve and no reason to spend anything.
     static func search(_ text: String, scope: Scope) async -> [Item] {
         let q = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard q.count >= 2 else { return [] }
-        async let socrata = scope == .cityMaps ? [] : fromSocrata(q)
-        async let hub = scope == .portals ? [] : fromArcGISHub(q)
-        var seen = Set<String>()
-        return (await socrata + (await hub)).filter { seen.insert($0.url.absoluteString).inserted }
+
+        // Catalogue indexes are keyword matches, so a typed sentence finds nothing. Ask a model
+        // for better words only when the bundled catalogue already came up short — if
+        // "earthquakes" matched offline there is nothing to improve and nothing to spend.
+        // `let`, not `var`: the two calls below capture it concurrently, which Swift 6 rejects
+        // for a mutable binding.
+        let terms: String
+        if searchBundled(q).isEmpty, Assist.available, let better = await Assist.searchTerms(for: q) {
+            terms = better
+        } else {
+            terms = q
+        }
+
+        async let socrata = scope == .cityMaps ? [] : fromSocrata(terms)
+        async let hub = scope == .portals ? [] : fromArcGISHub(terms)
+        // The bundled matches are already on screen; this is only what the web adds to them.
+        let alreadyShown = Set(searchBundled(q).map(\.url.absoluteString))
+        var seen = alreadyShown
+        return ((await socrata) + (await hub)).filter { seen.insert($0.url.absoluteString).inserted }
     }
 
     // MARK: Socrata
@@ -172,14 +253,20 @@ enum Catalog {
 
     /// A web search for subjects the catalogues do not hold.
     ///
-    /// DuckDuckGo, not Google: Google blocks embedded web views (the "This browser or app may not
-    /// be secure" interstitial) and the usual workaround is to spoof a Safari user agent, which is
-    /// deliberate evasion and an App Review risk. DuckDuckGo's robots.txt allows `/?*` — though
-    /// not `/html` or `/lite`, which are disallowed, so this uses the ordinary results page.
+    /// **Google, opened in Safari** — `SFSafariViewController`, which is a real out-of-process
+    /// Safari with its own address bar, not an embedded web view. Google's block applies to
+    /// `WKWebView`-based browsers, and the usual way round it is to spoof a Safari user agent,
+    /// which is deliberate evasion and an App Review risk. Opening Safari needs no spoofing, no
+    /// key and no money, and the person can see where they are.
+    ///
+    /// The cost of that honesty: Safari owns the download. A file saved there lands in Files, and
+    /// the person brings it back with Share → NimbleMap or "Show my Downloads folder". The app
+    /// cannot intercept it the way it can in its own web view.
     ///
     /// The words appended are the measured best: `open data download geojson shapefile`. They are
     /// space-separated on purpose — the parenthesised OR form scored worse on every subject tested
-    /// — and the short format words (`gpkg`, `kml`, `shp`) are deliberately left out.
+    /// — and the short format words (`gpkg`, `kml`, `shp`) are deliberately left out, because
+    /// `Walmart gpkg` returns Garbage Pail Kids cards and `Walmart kml` a KML-brand kitchen scale.
     static func webSearch(_ text: String, scope: Scope) -> URL? {
         let q = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !q.isEmpty else { return nil }
@@ -189,7 +276,7 @@ enum Catalog {
         case .cityMaps: terms = "\(q) (site:hub.arcgis.com OR site:opendata.arcgis.com OR site:catalog.data.gov)"
         case .anyFile: terms = "\(q) geojson shapefile csv download"
         }
-        var c = URLComponents(string: "https://duckduckgo.com/")
+        var c = URLComponents(string: "https://www.google.com/search")
         c?.queryItems = [URLQueryItem(name: "q", value: terms)]
         return c?.url
     }

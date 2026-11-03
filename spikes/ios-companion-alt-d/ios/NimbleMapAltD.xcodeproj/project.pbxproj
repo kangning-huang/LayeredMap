@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		A10000000000000000000007 /* MapLibre in Frameworks */ = {isa = PBXBuildFile; productRef = A40000000000000000000001 /* MapLibre */; };
+		7808E39C8A721920D9C247B7 /* Assist.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B5DC4360601212ADF8A70BC /* Assist.swift */; };
 		CA9EE9ED77800DD0DCA7C461 /* Cards.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10FD6CD64C39D406341BA66 /* Cards.swift */; };
 		CA6CD4C999FC3A76B69CC6CA /* Catalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45E5EF6EB044A6B3CD977D3D /* Catalog.swift */; };
 		8CD53F9D36FE2AFE202F8FE1 /* ChangeLook.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7227759E47FF42CACE79BBB5 /* ChangeLook.swift */; };
@@ -35,6 +36,7 @@
 		0180FBAF7F82FDFD44050471 /* cities.geojson in Resources */ = {isa = PBXBuildFile; fileRef = 3BBB91C426D1C34A6F87FD7F /* cities.geojson */; };
 		082D63AC0E7512F0B2C15C61 /* earthquakes.csv in Resources */ = {isa = PBXBuildFile; fileRef = 5A2B780630F4C70F661BC8DE /* earthquakes.csv */; };
 		0896F5206916CA6F1DCE86D9 /* volcanoes.csv in Resources */ = {isa = PBXBuildFile; fileRef = 752C22DE4D9A89B44F6D4AA5 /* volcanoes.csv */; };
+		0A94F5E5AFE6CC26B6588ECC /* catalog.json in Resources */ = {isa = PBXBuildFile; fileRef = F6F365D1871D571544D378C9 /* catalog.json */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -42,6 +44,8 @@
 		A20000000000000000000008 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A20000000000000000000009 /* NimbleMapAltD.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NimbleMapAltD.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A2000000000000000000000A /* lm_decode.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = lm_decode.h; path = ../include/lm_decode.h; sourceTree = "<group>"; };
+		F6F365D1871D571544D378C9 /* catalog.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = catalog.json; sourceTree = "<group>"; };
+		7B5DC4360601212ADF8A70BC /* Assist.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Assist.swift; sourceTree = "<group>"; };
 		D10FD6CD64C39D406341BA66 /* Cards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Cards.swift; sourceTree = "<group>"; };
 		45E5EF6EB044A6B3CD977D3D /* Catalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Catalog.swift; sourceTree = "<group>"; };
 		7227759E47FF42CACE79BBB5 /* ChangeLook.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangeLook.swift; sourceTree = "<group>"; };
@@ -69,6 +73,7 @@
 		3BBB91C426D1C34A6F87FD7F /* cities.geojson */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = cities.geojson; path = ../../../assets/examples/cities.geojson; sourceTree = SOURCE_ROOT; };
 		5A2B780630F4C70F661BC8DE /* earthquakes.csv */ = {isa = PBXFileReference; lastKnownFileType = text; name = earthquakes.csv; path = ../../../assets/examples/earthquakes.csv; sourceTree = SOURCE_ROOT; };
 		752C22DE4D9A89B44F6D4AA5 /* volcanoes.csv */ = {isa = PBXFileReference; lastKnownFileType = text; name = volcanoes.csv; path = ../../../assets/examples/volcanoes.csv; sourceTree = SOURCE_ROOT; };
+		F6F365D1871D571544D378C9 /* catalog.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = catalog.json; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -94,6 +99,7 @@
 		A50000000000000000000002 /* NimbleMapAltD */ = {
 			isa = PBXGroup;
 			children = (
+				7B5DC4360601212ADF8A70BC /* Assist.swift */,
 				D10FD6CD64C39D406341BA66 /* Cards.swift */,
 				45E5EF6EB044A6B3CD977D3D /* Catalog.swift */,
 				7227759E47FF42CACE79BBB5 /* ChangeLook.swift */,
@@ -121,6 +127,7 @@
 				3BBB91C426D1C34A6F87FD7F /* cities.geojson */,
 				5A2B780630F4C70F661BC8DE /* earthquakes.csv */,
 				752C22DE4D9A89B44F6D4AA5 /* volcanoes.csv */,
+				F6F365D1871D571544D378C9 /* catalog.json */,
 				A20000000000000000000007 /* BridgingHeader.h */,
 				A20000000000000000000008 /* Info.plist */,
 				A2000000000000000000000A /* lm_decode.h */,
@@ -223,6 +230,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7808E39C8A721920D9C247B7 /* Assist.swift in Sources */,
 				CA9EE9ED77800DD0DCA7C461 /* Cards.swift in Sources */,
 				CA6CD4C999FC3A76B69CC6CA /* Catalog.swift in Sources */,
 				8CD53F9D36FE2AFE202F8FE1 /* ChangeLook.swift in Sources */,
@@ -260,6 +268,7 @@
 				0180FBAF7F82FDFD44050471 /* cities.geojson in Resources */,
 				082D63AC0E7512F0B2C15C61 /* earthquakes.csv in Resources */,
 				0896F5206916CA6F1DCE86D9 /* volcanoes.csv in Resources */,
+				0A94F5E5AFE6CC26B6588ECC /* catalog.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
