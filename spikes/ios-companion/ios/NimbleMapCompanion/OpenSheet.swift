@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 import WebKit
 import SafariServices
 
@@ -57,11 +58,13 @@ struct OpenCard: View {
     }
 }
 
-/// The Open sheet: same doors as the card, plus Examples and Recents lists.
+/// The Open sheet: same doors as the card, plus Examples and On my iPhone (map files NimbleMap
+/// can open, newest first; the full Files browser one row below).
 struct OpenSheet: View {
     enum Start: String, Equatable {
         case home
         case examples
+        case phone
     }
 
     var start: Start
@@ -70,10 +73,14 @@ struct OpenSheet: View {
     var onFiles: () -> Void
     var onURL: () -> Void
     var onExample: (LibraryItem) -> Void
-    var onRecent: (Importer.Recent) -> Void
+    var onPhoneFile: (PhoneFile) -> Void
+    var onPicked: ([URL]) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var path: [Start] = []
+    @State private var pickingFolder = false
+    @State private var folderJob = FilePick.listFolder
+    @State private var refresh = 0
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -85,22 +92,11 @@ struct OpenSheet: View {
                     NavigationLink(value: Start.examples) {
                         Label("Examples", systemImage: "square.grid.2x2")
                     }
-                    Button(action: onFiles) {
+                    NavigationLink(value: Start.phone) {
                         Label("On my iPhone", systemImage: "folder")
                     }
                 }
-                let recents = Importer.recents()
-                if !recents.isEmpty {
-                    Section("Recents") {
-                        ForEach(recents) { r in
-                            Button {
-                                onRecent(r)
-                            } label: {
-                                Label(r.name, systemImage: "clock")
-                            }
-                        }
-                    }
-                }
+                PhoneFilesSection(limit: 3, refresh: refresh, onOpen: onPhoneFile, onChooseFolder: { pick(.listFolder) })
                 Section {
                     Button("Open URL…", action: onURL)
                 } footer: {
@@ -112,14 +108,53 @@ struct OpenSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
             }
-            .navigationDestination(for: Start.self) { _ in
-                examples
+            .navigationDestination(for: Start.self) { page in
+                if page == .phone { phone } else { examples }
             }
         }
         .presentationDetents([.medium, .large])
-        .onAppear {
-            if start == .examples && path.isEmpty { path = [.examples] }
+        .fileImporter(isPresented: $pickingFolder, allowedContentTypes: folderJob.types, allowsMultipleSelection: folderJob.several) { result in
+            guard case .success(let urls) = result, !urls.isEmpty else { return }
+            if folderJob == .listFolder {
+                urls.forEach { PhoneFiles.addFolder($0) }
+                refresh += 1
+                return
+            }
+            onPicked(urls)
         }
+        .onAppear {
+            if start != .home && path.isEmpty { path = [start] }
+        }
+    }
+
+    private func pick(_ job: FilePick) {
+        folderJob = job
+        pickingFolder = true
+    }
+
+    private var phone: some View {
+        List {
+            PhoneFilesSection(limit: 30, refresh: refresh, onOpen: onPhoneFile, onChooseFolder: { pick(.listFolder) })
+            Section {
+                Button(action: onFiles) {
+                    Label("Browse map files…", systemImage: "doc.text.magnifyingglass")
+                }
+                Button {
+                    pick(.openFolder)
+                } label: {
+                    Label("Open a folder (Shapefile)…", systemImage: "folder")
+                }
+                Button {
+                    pick(.anyFile)
+                } label: {
+                    Label("Browse any file (Google Drive…)", systemImage: "doc.questionmark")
+                }
+            } footer: {
+                Text("Browse map files lets you pick only the kinds NimbleMap opens. A Shapefile is several files: open the folder they're in. Some cloud apps (Google Drive) grey out map files there: use Browse any file. Google Drive, Dropbox, OneDrive and Box appear under Browse once installed.")
+            }
+        }
+        .navigationTitle("On my iPhone")
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     private var examples: some View {

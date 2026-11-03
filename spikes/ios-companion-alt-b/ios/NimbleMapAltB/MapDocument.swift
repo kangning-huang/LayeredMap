@@ -109,6 +109,28 @@ final class MapDocument: ObservableObject {
     var canUndo: Bool { !undoStack.isEmpty }
 
     /// Run an import off the main thread; the map keeps panning.
+    /// Several at once (files picked together, a folder): each dataset is added; the first
+    /// problem is shown, with how many more there were.
+    func importingAll(_ label: String, _ work: @escaping @Sendable () async -> [Result<GeoDataset, ImportError>]) {
+        busy = "Adding \(label)…"
+        Task {
+            let results = await work()
+            self.busy = nil
+            var problems: [String] = []
+            for result in results {
+                switch result {
+                case .success(let ds):
+                    self.add(ds, showBy: nil)
+                case .failure(let e):
+                    problems.append(e.message)
+                }
+            }
+            if let first = problems.first {
+                self.error = problems.count > 1 ? "\(first) (\(problems.count - 1) more couldn't open.)" : first
+            }
+        }
+    }
+
     func importing(_ label: String, _ work: @escaping @Sendable () async -> Result<GeoDataset, ImportError>, showBy: String? = nil) {
         busy = "Adding \(label)…"
         Task {

@@ -22,7 +22,9 @@
 		AD933EB64DB697CC22C902BD /* MapDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6E2CB77E447106621C89AC1 /* MapDocument.swift */; };
 		D72015B77FB154B811A58C1F /* MapScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA65DDCD6764300E2AA4200B /* MapScreen.swift */; };
 		93DF105ABBC0097F76C8DC31 /* NimbleMapAltBApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCE9D98E6F0ED3C5F1EE8B80 /* NimbleMapAltBApp.swift */; };
+		9BDEAF29B20502B18F3D4096 /* PhoneFiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9AAE52D09DC490D99A42A65 /* PhoneFiles.swift */; };
 		2043F2891E88C29850F085EB /* Styling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6961A43731CAC35331D374F8 /* Styling.swift */; };
+		222F0DBFFE5EB23DCD3FD16F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5B04B2273026590A440D27C9 /* Assets.xcassets */; };
 		39B3B4A957FAE1848133340E /* countries.geojson in Resources */ = {isa = PBXBuildFile; fileRef = E985F66D21A63E87AC3A2C50 /* countries.geojson */; };
 		0180FBAF7F82FDFD44050471 /* cities.geojson in Resources */ = {isa = PBXBuildFile; fileRef = 3BBB91C426D1C34A6F87FD7F /* cities.geojson */; };
 		082D63AC0E7512F0B2C15C61 /* earthquakes.csv in Resources */ = {isa = PBXBuildFile; fileRef = 5A2B780630F4C70F661BC8DE /* earthquakes.csv */; };
@@ -48,7 +50,9 @@
 		E6E2CB77E447106621C89AC1 /* MapDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapDocument.swift; sourceTree = "<group>"; };
 		DA65DDCD6764300E2AA4200B /* MapScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapScreen.swift; sourceTree = "<group>"; };
 		FCE9D98E6F0ED3C5F1EE8B80 /* NimbleMapAltBApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NimbleMapAltBApp.swift; sourceTree = "<group>"; };
+		D9AAE52D09DC490D99A42A65 /* PhoneFiles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneFiles.swift; sourceTree = "<group>"; };
 		6961A43731CAC35331D374F8 /* Styling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Styling.swift; sourceTree = "<group>"; };
+		5B04B2273026590A440D27C9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		E985F66D21A63E87AC3A2C50 /* countries.geojson */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = countries.geojson; path = ../../../assets/examples/countries.geojson; sourceTree = SOURCE_ROOT; };
 		3BBB91C426D1C34A6F87FD7F /* cities.geojson */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = cities.geojson; path = ../../../assets/examples/cities.geojson; sourceTree = SOURCE_ROOT; };
 		5A2B780630F4C70F661BC8DE /* earthquakes.csv */ = {isa = PBXFileReference; lastKnownFileType = text; name = earthquakes.csv; path = ../../../assets/examples/earthquakes.csv; sourceTree = SOURCE_ROOT; };
@@ -92,7 +96,9 @@
 				E6E2CB77E447106621C89AC1 /* MapDocument.swift */,
 				DA65DDCD6764300E2AA4200B /* MapScreen.swift */,
 				FCE9D98E6F0ED3C5F1EE8B80 /* NimbleMapAltBApp.swift */,
+				D9AAE52D09DC490D99A42A65 /* PhoneFiles.swift */,
 				6961A43731CAC35331D374F8 /* Styling.swift */,
+				5B04B2273026590A440D27C9 /* Assets.xcassets */,
 				E985F66D21A63E87AC3A2C50 /* countries.geojson */,
 				3BBB91C426D1C34A6F87FD7F /* cities.geojson */,
 				5A2B780630F4C70F661BC8DE /* earthquakes.csv */,
@@ -213,6 +219,7 @@
 				AD933EB64DB697CC22C902BD /* MapDocument.swift in Sources */,
 				D72015B77FB154B811A58C1F /* MapScreen.swift in Sources */,
 				93DF105ABBC0097F76C8DC31 /* NimbleMapAltBApp.swift in Sources */,
+				9BDEAF29B20502B18F3D4096 /* PhoneFiles.swift in Sources */,
 				2043F2891E88C29850F085EB /* Styling.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -224,6 +231,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				222F0DBFFE5EB23DCD3FD16F /* Assets.xcassets in Resources */,
 				39B3B4A957FAE1848133340E /* countries.geojson in Resources */,
 				0180FBAF7F82FDFD44050471 /* cities.geojson in Resources */,
 				082D63AC0E7512F0B2C15C61 /* earthquakes.csv in Resources */,
