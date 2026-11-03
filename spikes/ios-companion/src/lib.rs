@@ -9,8 +9,8 @@
 
 mod ffi;
 
-use rustgis_data::io::{read_geojson, read_path, to_geojson};
 use rustgis_data::GeometryType;
+use rustgis_data::io::{read_geojson, read_path, to_geojson};
 use serde_json::json;
 use std::path::Path;
 
