@@ -50,6 +50,15 @@ struct OpenSheet: View {
     /// Row index → the model's one line on why this result answers the question. Empty when no
     /// model was asked, or when it was and said nothing usable.
     @State private var reasons: [Int: String] = [:]
+    /// A download large enough to be worth mentioning before it starts.
+    @State private var big: BigDownload?
+
+    struct BigDownload: Identifiable {
+        let url: URL
+        let title: String
+        let size: String
+        var id: URL { url }
+    }
 
     enum Online: Equatable {
         case idle
@@ -115,11 +124,22 @@ struct OpenSheet: View {
                 })
             }
         }
+        // Not a refusal: the number, the two honest consequences, and the choice.
+        .alert("“\(big?.title ?? "")” is \(big?.size ?? "")", isPresented: bigBinding, presenting: big) { item in
+            Button("Add anyway") { onLink(item.url) }
+            Button("Not now", role: .cancel) {}
+        } message: { _ in
+            Text("It may take a while to download and will use that much space on your iPhone.")
+        }
         .alert("That didn't look like a web address", isPresented: $linkFailed) {
             Button("OK", role: .cancel) {}
         } message: {
             Text("Go back to the site, hold the download button, and choose Copy Link. Then paste it here.")
         }
+    }
+
+    private var bigBinding: Binding<Bool> {
+        Binding(get: { big != nil }, set: { if !$0 { big = nil } })
     }
 
     private var searching: Bool {
@@ -149,7 +169,7 @@ struct OpenSheet: View {
                     CatalogRow(
                         item: item,
                         why: nil,
-                        onAdd: { onLink(item.url) },
+                        onAdd: { addChecking(item) },
                         onOpenPage: { pageURL = item.url }
                     )
                 }
@@ -220,7 +240,7 @@ struct OpenSheet: View {
                     CatalogRow(
                         item: item,
                         why: reasons[i],
-                        onAdd: { onLink(item.url) },
+                        onAdd: { addChecking(item) },
                         onOpenPage: { pageURL = item.url }
                     )
                 }
@@ -269,6 +289,22 @@ struct OpenSheet: View {
             }
         case .idle, .searching:
             EmptyView()
+        }
+    }
+
+    /// Add it, but ask first if it is big.
+    ///
+    /// Nothing is refused for being large — a phone can open a 220 MB file, and whether that is
+    /// worth the wait and the storage is the owner's call. What the app owes them is the number
+    /// *before* the download rather than after, which is why the size is asked for here instead
+    /// of trusted from the catalogue's own text.
+    private func addChecking(_ item: Catalog.Item) {
+        Task {
+            guard let bytes = await Catalog.bytes(of: item), Importer.isBig(bytes) else {
+                onLink(item.url)
+                return
+            }
+            big = BigDownload(url: item.url, title: item.title, size: Importer.sizeText(bytes))
         }
     }
 
@@ -522,6 +558,14 @@ struct CatalogRow: View {
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
+                // Its own line, never clipped: the size is what decides whether this is worth
+                // starting on a phone, so it must survive a narrow screen.
+                if !item.size.isEmpty {
+                    Label(item.size, systemImage: "arrow.down.circle")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .labelStyle(.titleAndIcon)
+                }
             }
             Spacer(minLength: 4)
             // A page cannot promise a map; it promises a place to pick a download. Saying "Add"
@@ -534,8 +578,12 @@ struct CatalogRow: View {
         .padding(.vertical, 2)
     }
 
+    /// The source and format, which can run on and be clipped without costing anything. The size
+    /// is deliberately *not* in here: it used to be the last of three fields on one clipped line,
+    /// so on an iPhone the only number that decides whether to spend a data allowance was always
+    /// the part that fell off the end.
     private var detail: String {
-        [item.source, item.format, item.size].filter { !$0.isEmpty }.joined(separator: " · ")
+        [item.source, item.format].filter { !$0.isEmpty }.joined(separator: " · ")
     }
 }
 

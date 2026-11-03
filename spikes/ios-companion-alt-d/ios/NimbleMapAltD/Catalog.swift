@@ -310,6 +310,54 @@ enum Catalog {
         }
     }
 
+    /// How big a link is, asked before anything is downloaded.
+    ///
+    /// The row's own `size` text comes from the catalogue and is often vague ("about 4 MB") or
+    /// missing entirely for a harvested entry, so the number worth warning about is asked for at
+    /// the moment it matters. Returns nil when the server will not say, which is common and is
+    /// not a reason to stop — it only means there is nothing to warn about.
+    /// The bytes behind an entry: what the server says, or failing that what the catalogue says.
+    ///
+    /// Asking the server is better when it answers, because catalogue text goes stale. But plenty
+    /// of them will not answer: a Socrata export is generated on request, so New York's street
+    /// trees — the largest thing in the catalogue at 220 MB — reports `Content-Length: 0`. Without
+    /// the written fallback the one entry most worth warning about is the one that warns least.
+    static func bytes(of item: Item) async -> Int64? {
+        if let measured = await sizeOf(item.url) { return measured }
+        return written(item.size)
+    }
+
+    /// "220 MB", "about 4 MB", "34 MB" → bytes. Nil when there is no number in it.
+    static func written(_ text: String) -> Int64? {
+        let lower = text.lowercased()
+        let number = lower.components(separatedBy: CharacterSet(charactersIn: "0123456789.").inverted)
+            .first(where: { !$0.isEmpty && Double($0) != nil })
+        guard let number, let value = Double(number) else { return nil }
+        let unit: Double
+        if lower.contains("gb") {
+            unit = 1024 * 1024 * 1024
+        } else if lower.contains("mb") {
+            unit = 1024 * 1024
+        } else if lower.contains("kb") {
+            unit = 1024
+        } else {
+            return nil
+        }
+        return Int64(value * unit)
+    }
+
+    static func sizeOf(_ url: URL) async -> Int64? {
+        var r = URLRequest(url: url)
+        r.httpMethod = "HEAD"
+        r.timeoutInterval = 8
+        guard let (_, response) = try? await URLSession.shared.data(for: r),
+              let http = response as? HTTPURLResponse,
+              (200..<300).contains(http.statusCode)
+        else { return nil }
+        let length = http.expectedContentLength
+        return length > 0 ? length : nil
+    }
+
     /// HEAD, which Hub answers in full (200 for a live dataset, 404 for a dead one) without
     /// sending the file.
     ///
