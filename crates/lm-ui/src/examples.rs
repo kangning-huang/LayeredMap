@@ -117,25 +117,34 @@ fn all_files() -> impl Iterator<Item = &'static str> {
     EXAMPLES.iter().flat_map(|e| e.files.iter().copied())
 }
 
+/// Where the browser build holds the example files once fetched (`lm_jobs::vfs`), and the folder
+/// of the site they are fetched from.
+pub const WEB_DIR: &str = "/examples";
+
 /// Where the files are in a development checkout.
 const DEV_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../assets/examples");
 
 /// The examples folder inside an app bundle, `<NimbleMap.app>/Contents/Resources/examples`, for
 /// an executable at `<NimbleMap.app>/Contents/MacOS/layeredmap` (on Windows `Resources\examples`
 /// beside `layeredmap.exe`, on Linux `Resources/examples` beside `layeredmap`).
+#[cfg_attr(target_arch = "wasm32", allow(dead_code))]
 fn bundle_dir(exe: &Path) -> Option<PathBuf> {
     Some(lm_core::platform::resources_dir(exe, lm_core::platform::Os::CURRENT)?.join("examples"))
 }
 
 /// The examples folder: the bundle's when it holds the files, otherwise the checkout's.
+#[cfg_attr(target_arch = "wasm32", allow(dead_code))]
 fn resolve(exe: Option<&Path>, exists: impl Fn(&Path) -> bool) -> PathBuf {
     exe.and_then(bundle_dir).filter(|d| all_files().all(|f| exists(&d.join(f)))).unwrap_or_else(|| PathBuf::from(DEV_DIR))
 }
 
 /// The files of the example `id` ("world" when unknown).
 pub fn paths_of(id: &str) -> Vec<PathBuf> {
-    let exe = std::env::current_exe().ok();
-    let dir = resolve(exe.as_deref(), |p| p.is_file());
+    // The browser build fetches them from the site into memory (`FileRequest::Fetch`).
+    #[cfg(target_arch = "wasm32")]
+    let dir = PathBuf::from(WEB_DIR);
+    #[cfg(not(target_arch = "wasm32"))]
+    let dir = resolve(std::env::current_exe().ok().as_deref(), |p| p.is_file());
     let e = EXAMPLES.iter().find(|e| e.id == id).unwrap_or(&EXAMPLES[0]);
     e.files.iter().map(|f| dir.join(f)).collect()
 }

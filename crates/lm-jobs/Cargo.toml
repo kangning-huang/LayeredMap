@@ -10,6 +10,8 @@ description = "NimbleMap: plans, previews, background jobs, atomic commit"
 workspace = true
 
 [dependencies]
+# std::time that also works in the browser (apps/nimblemap-web).
+web-time = { workspace = true }
 lm-core = { path = "../lm-core" }
 lm-profile = { path = "../lm-profile" }
 lm-analysis = { path = "../lm-analysis" }

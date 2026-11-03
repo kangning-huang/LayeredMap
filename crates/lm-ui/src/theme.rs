@@ -110,7 +110,25 @@ pub fn regular(size: f32) -> FontId {
 }
 
 /// Noto Sans SC Regular, shared by the interface and the map renderer's labels.
+#[cfg(not(target_arch = "wasm32"))]
 pub const NOTO_SC_REGULAR: &[u8] = include_bytes!("../../../assets/fonts/NotoSansSC-Regular.otf");
+
+/// Where the browser build registers Noto Sans SC once downloaded (`register_font_file`): it
+/// isn't in the WebAssembly, which would otherwise be 8 MB larger (docs/lm/web-app.md › Sizes).
+pub const WEB_NOTO_SC: &str = "/web-fonts/NotoSansSC-Regular.otf";
+
+/// Noto Sans SC Regular: bundled on the desktop; in the browser, once the page has fetched it
+/// (empty until then).
+pub fn noto_sc() -> &'static [u8] {
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        NOTO_SC_REGULAR
+    }
+    #[cfg(target_arch = "wasm32")]
+    {
+        font_file(std::path::Path::new(WEB_NOTO_SC)).unwrap_or_default()
+    }
+}
 
 /// Bundled fonts (WP0.4): Inter with tabular figures frozen in, Noto Sans SC for Chinese, and
 /// the Phosphor icon font. On Windows, Segoe UI and Microsoft YaHei follow them (WP6.2), read
@@ -122,10 +140,19 @@ pub fn fonts() -> egui::FontDefinitions {
     };
     add("Inter", include_bytes!("../../../assets/fonts/Inter-Regular.ttf"));
     add("Inter SemiBold", include_bytes!("../../../assets/fonts/Inter-SemiBold.ttf"));
-    add("Noto Sans SC", NOTO_SC_REGULAR);
-    add("Noto Sans SC Medium", include_bytes!("../../../assets/fonts/NotoSansSC-Medium.otf"));
-    let regular: Vec<String> = vec!["Inter".into(), "Noto Sans SC".into()];
-    let bold: Vec<String> = vec!["Inter SemiBold".into(), "Noto Sans SC Medium".into()];
+    let mut regular: Vec<String> = vec!["Inter".into()];
+    let mut bold: Vec<String> = vec!["Inter SemiBold".into()];
+    // The browser build adds Chinese once it has downloaded Noto Sans SC, and draws bold Chinese
+    // with the regular face (8 MB less to download).
+    if !noto_sc().is_empty() {
+        add("Noto Sans SC", noto_sc());
+        #[cfg(not(target_arch = "wasm32"))]
+        add("Noto Sans SC Medium", include_bytes!("../../../assets/fonts/NotoSansSC-Medium.otf"));
+        #[cfg(target_arch = "wasm32")]
+        add("Noto Sans SC Medium", noto_sc());
+        regular.push("Noto Sans SC".into());
+        bold.push("Noto Sans SC Medium".into());
+    }
     let mut prop = regular.clone();
     prop.extend(defs.families.get(&FontFamily::Proportional).cloned().unwrap_or_default());
     defs.families.insert(FontFamily::Proportional, prop);
@@ -195,18 +222,41 @@ fn system_cjk_faces(cjk: lm_core::i18n::Cjk) -> Option<Vec<(std::path::PathBuf, 
         );
         Some(faces.iter().map(|(f, i, w)| (dir.join(f), *i, *w)).collect())
     }
-    #[cfg(not(any(target_os = "macos", windows)))]
+    // The browser build: a face the page fetched and registered (`register_font_file`), once it
+    // has (Korean only: Noto Sans SC has the kanji and kana, but no hangul).
+    #[cfg(target_arch = "wasm32")]
+    {
+        let path = std::path::PathBuf::from(WEB_KOREAN_FACE);
+        (cjk == lm_core::i18n::Cjk::Korean && font_file(&path).is_some()).then(|| vec![(path, 0, Weight::Both)])
+    }
+    #[cfg(not(any(target_os = "macos", windows, target_arch = "wasm32")))]
     {
         let _ = cjk;
         None
     }
 }
 
+/// Where the browser build registers the Korean face it downloads (`register_font_file`).
+pub const WEB_KOREAN_FACE: &str = "/web-fonts/NotoSansKR.ttf";
+
+fn font_files() -> &'static std::sync::Mutex<Vec<(std::path::PathBuf, &'static [u8])>> {
+    static FILES: std::sync::Mutex<Vec<(std::path::PathBuf, &'static [u8])>> = std::sync::Mutex::new(Vec::new());
+    &FILES
+}
+
+/// Holds a font file's bytes under `path`, as if read from there (the browser build, which
+/// downloads the faces a desktop reads from the system).
+pub fn register_font_file(path: &str, bytes: Vec<u8>) {
+    if let Ok(mut files) = font_files().lock() {
+        files.retain(|(p, _)| p.as_os_str() != path);
+        files.push((std::path::PathBuf::from(path), Box::leak(bytes.into_boxed_slice())));
+    }
+}
+
 /// Font files read so far, kept for the life of the process: switching languages back and forth
 /// reads each file once, and two faces of one collection share its bytes.
 fn font_file(path: &std::path::Path) -> Option<&'static [u8]> {
-    static FILES: std::sync::Mutex<Vec<(std::path::PathBuf, &'static [u8])>> = std::sync::Mutex::new(Vec::new());
-    let mut files = FILES.lock().ok()?;
+    let mut files = font_files().lock().ok()?;
     if let Some((_, b)) = files.iter().find(|(p, _)| p == path) {
         return Some(b);
     }

@@ -121,7 +121,7 @@ pub fn fonts() -> ex::Fonts {
     ex::Fonts {
         regular: include_bytes!("../../../assets/fonts/Inter-Regular.ttf"),
         semibold: include_bytes!("../../../assets/fonts/Inter-SemiBold.ttf"),
-        fallback: theme::NOTO_SC_REGULAR,
+        fallback: theme::noto_sc(),
     }
 }
 
@@ -312,7 +312,7 @@ impl ImageSheet {
         let (tx, rx) = std::sync::mpsc::channel();
         let waker = ctx.clone();
         let job_key = key.clone();
-        let spawned = std::thread::Builder::new().name("lm-export".into()).spawn(move || {
+        let spawned = lm_core::task::spawn("lm-export", move || {
             let mut map = (*map).clone();
             // The satellite basemap's imagery or close-up map, as the export's own zoom decides.
             crate::basemap::imagery_fallback_for_zoom(&mut map, lm_mapview::zoom_of(camera.res), dark);

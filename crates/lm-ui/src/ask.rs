@@ -8,7 +8,7 @@
 //! instead of the field (`account_ui::ask_prompt`), so neither asking nor the microphone works.
 
 use std::sync::mpsc::{Receiver, channel};
-use std::time::Instant;
+use web_time::Instant;
 
 use egui::{Align2, RichText, Ui, vec2};
 use egui_phosphor::regular as icon;
@@ -430,7 +430,9 @@ fn step_words(o: &StepOutcome) -> Option<String> {
 /// is unlocked or can be (locked, it shows how to unlock it).
 pub fn shows(shell: &Shell, map: egui::Rect) -> bool {
     // Nothing to ask about until a layer is open; the welcome card has that space.
-    if !shell.pro_access().visible() || shell.ws.doc.layers.is_empty() {
+    // The browser build shows the box (signing in there comes later) once a layer is open.
+    let visible = cfg!(target_arch = "wasm32") || shell.pro_access().visible();
+    if !visible || shell.ws.doc.layers.is_empty() {
         return false;
     }
     let (left, right) = shell.panel_insets();
@@ -493,7 +495,9 @@ pub fn ask_box(shell: &mut Shell, ui: &mut Ui, map: egui::Rect) {
                 }
                 // Locked, the prompt takes the field's place (and with it the microphone); so it
                 // does with the developer override when the Ask proxy needs someone signed in.
-                if !shell.pro() || shell.account.needs_sign_in() {
+                if cfg!(target_arch = "wasm32") && !shell.pro() {
+                    web_soon(ui, &t, width);
+                } else if !shell.pro() || shell.account.needs_sign_in() {
                     crate::account_ui::ask_prompt(shell, ui, &t, width);
                 } else {
                     field(shell, ui, &t, width);
@@ -539,6 +543,23 @@ fn frame_answer(shell: &mut Shell, map: egui::Rect, foot: f32, card: egui::Rect,
     let free = best.unwrap_or(egui::Rect::from_min_max(egui::pos2(x0, map.top()), egui::pos2(x1, foot)));
     let local = free.translate(-map.min.to_vec2());
     shell.map_view_mut().zoom_to_extent_in(&e, map.size(), local);
+}
+
+/// The browser build's Ask box until sign-in works there: the field, greyed, saying so.
+fn web_soon(ui: &mut Ui, t: &theme::Theme, width: f32) {
+    egui::Frame::new()
+        .fill(t.surface)
+        .stroke(egui::Stroke::new(1.0, t.border))
+        .corner_radius(egui::CornerRadius::same(22))
+        .inner_margin(egui::Margin::symmetric(16, 12))
+        .show(ui, |ui| {
+            ui.set_width(width - 32.0);
+            ui.horizontal(|ui| {
+                ui.label(egui::RichText::new(egui_phosphor::regular::SPARKLE).color(t.text_secondary));
+                let soon = "Ask about your layers · sign-in comes to the web version soon"; // i18n: the web preview only, English until it is translated
+                ui.label(egui::RichText::new(soon).color(t.text_secondary));
+            });
+        });
 }
 
 fn field(shell: &mut Shell, ui: &mut Ui, t: &theme::Theme, width: f32) {

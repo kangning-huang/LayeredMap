@@ -35,7 +35,7 @@ impl FormatAdapter for Gpx {
     }
 
     fn open_metadata(&self, path: &Path, _ctx: &Ctx) -> Result<Metadata, ImportError> {
-        let m = std::fs::metadata(path).map_err(|e| ImportError::read(&file_name(path), e))?;
+        let m = crate::vfs::metadata(path).map_err(|e| ImportError::read(&file_name(path), e))?;
         if m.len() > XML_MAX_BYTES {
             return Err(xmlfile::too_large(&file_name(path), "GPX"));
         }

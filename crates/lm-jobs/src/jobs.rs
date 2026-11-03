@@ -25,7 +25,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::mpsc::{Receiver, Sender, channel};
 use std::sync::{Arc, Condvar, Mutex, MutexGuard, PoisonError};
 use std::thread::JoinHandle;
-use std::time::{Duration, Instant};
+use web_time::{Duration, Instant};
 
 pub use lm_analysis::control::{Cancelled, Control, Progress};
 use lm_core::document::{ApplyError, DocLayer, Document, Op, Style, Transaction};
@@ -298,6 +298,10 @@ impl Pool {
     /// A pool of [`default_workers`] threads whose jobs' scratch folders go under the system
     /// temporary directory (`layeredmap-jobs/<process id>`).
     pub fn new(wake: Option<Wake>) -> Pool {
+        // The browser has no temporary folder or process id (jobs there make no scratch files).
+        #[cfg(target_arch = "wasm32")]
+        let root = PathBuf::from("/layeredmap-jobs");
+        #[cfg(not(target_arch = "wasm32"))]
         let root = std::env::temp_dir().join("layeredmap-jobs").join(std::process::id().to_string());
         Pool::with(default_workers(), root, wake)
     }
@@ -308,7 +312,9 @@ impl Pool {
         let (tx, rx) = channel::<Task>();
         let rx = Arc::new(Mutex::new(rx));
         let mut handles = Vec::new();
-        for i in 0..workers.max(1) {
+        // The browser build has no threads: jobs are queued on `lm_core::task` instead (`submit_for`).
+        let workers = if cfg!(target_arch = "wasm32") { 0 } else { workers.max(1) };
+        for i in 0..workers {
             let rx = rx.clone();
             match std::thread::Builder::new().name(format!("lm-job-{i}")).spawn(move || worker(&rx)) {
                 Ok(h) => handles.push(h),
@@ -402,6 +408,9 @@ impl Pool {
             }
         });
         self.active.add();
+        #[cfg(target_arch = "wasm32")]
+        let sent = lock(&self.tx).as_ref().map(|_| lm_core::task::spawn("lm-job", task));
+        #[cfg(not(target_arch = "wasm32"))]
         let sent = lock(&self.tx).as_ref().map(|tx| tx.send(task));
         if !matches!(sent, Some(Ok(()))) {
             // No workers (shutting down): the job ends at once as failed.

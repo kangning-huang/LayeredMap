@@ -192,7 +192,7 @@ The only direct line from the interface to RustGIS is the map view's drawing pat
 - `lm-ui` never calls `rustgis-data` or `rustgis-analysis` directly. All work goes through `lm-jobs`.
 - Every network request asks `lm-net`'s gate first; a NimbleMap source file that uses `ureq` without it fails the check (added in Phase 5).
 - Numbers never come from the renderer. Counts and means are computed from data, never from drawn pixels or visible symbols.
-- Every `lm-` crate except `lm-ui`, `lm-mapview` and the app builds for `wasm32-unknown-unknown`, matching upstream's rule. This keeps a future web version possible; it is not a tested fallback.
+- Every `lm-` crate builds for `wasm32-unknown-unknown`, matching upstream's rule; `lm-ui` and `lm-mapview` do too since the web preview (`apps/nimblemap-web`, docs/lm/web-app.md), which runs the same shell in the browser. The desktop app (`apps/layeredmap`) stays native-only. Background work goes through `lm_core::task::spawn` (a thread on the desktop, a queue run between frames in the browser) and importers read through `lm_jobs::vfs`, so both builds share one pipeline.
 - Upstream rules carry over: no `unwrap()`, `expect()`, `panic!` or `unsafe` outside tests, and every interface string is wrapped for translation. One exception: unsafe code is allowed in the app's macOS module for native macOS hooks (Open With, Dock drops, the Edited state), with a SAFETY comment on each block and a second review.
 
 **State model.** There are three stores with one update loop.

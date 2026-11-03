@@ -16,12 +16,12 @@ use super::{Ctx, ImportError, file_name};
 /// Reads an XML file (at most [`XML_MAX_BYTES`]), counting progress and stopping on cancel.
 pub(super) fn read_capped(path: &Path, format: &str, ctx: &Ctx) -> Result<Vec<u8>, ImportError> {
     let name = file_name(path);
-    let size = std::fs::metadata(path).map_err(|e| ImportError::read(&name, e))?.len();
+    let size = crate::vfs::metadata(path).map_err(|e| ImportError::read(&name, e))?.len();
     if size > XML_MAX_BYTES {
         return Err(too_large(&name, format));
     }
     ctx.ticket.set_total(size);
-    let file = std::fs::File::open(path).map_err(|e| ImportError::read(&name, e))?;
+    let file = crate::vfs::open(path).map_err(|e| ImportError::read(&name, e))?;
     let mut bytes = Vec::with_capacity(usize::try_from(size).unwrap_or(0));
     Counting::new(file, ctx.ticket.clone()).take(XML_MAX_BYTES + 1).read_to_end(&mut bytes).map_err(|e| ImportError::read(&name, e))?;
     ctx.ticket.check()?;

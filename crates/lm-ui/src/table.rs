@@ -254,7 +254,7 @@ pub fn drawer(shell: &mut Shell, ui: &mut Ui, map: egui::Rect, left: f32, right:
         let (tx, rx) = std::sync::mpsc::channel();
         let (ds2, mask2, sort, q) = (ds.clone(), mask.clone(), shell.table.sort, lm_jobs::find::fold(shell.table.search.trim()));
         let wake = shell.ws.wake.clone();
-        let spawned = std::thread::Builder::new().name("lm-table".into()).spawn(move || {
+        let spawned = lm_core::task::spawn("lm-table", move || {
             let mut rows = data::table_rows(&ds2, mask2.as_deref().map(|m| m.as_slice()), sort);
             if !q.is_empty() {
                 // The same matching as Find in a layer (WP3.10): accents and case ignored, numbers

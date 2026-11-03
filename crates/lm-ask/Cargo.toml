@@ -10,6 +10,8 @@ description = "NimbleMap Pro: the Ask box's assistant (plain-words requests to c
 workspace = true
 
 [dependencies]
+# std::time that also works in the browser (apps/nimblemap-web).
+web-time = { workspace = true }
 lm-core = { path = "../lm-core" }
 lm-jobs = { path = "../lm-jobs" }
 lm-net = { path = "../lm-net" }

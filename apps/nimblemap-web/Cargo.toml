@@ -1,0 +1,28 @@
+[package]
+name = "nimblemap-web"
+description = "NimbleMap in the browser (eframe web runner, WebGPU with WebGL2 fallback): docs/lm/web-app.md"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+lm-ui = { path = "../../crates/lm-ui" }
+lm-core = { path = "../../crates/lm-core" }
+lm-jobs = { path = "../../crates/lm-jobs" }
+lm-net = { path = "../../crates/lm-net" }
+rustgis-tiles = { workspace = true }
+egui = { workspace = true }
+log = { workspace = true }
+web-time = { workspace = true }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+eframe = { workspace = true, features = ["default_fonts", "wgpu"] }
+rfd = { workspace = true }
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+js-sys = "0.3"
+web-sys = { version = "0.3", features = ["Window", "Document", "Element", "HtmlElement", "Node", "HtmlCanvasElement", "HtmlAnchorElement", "Blob", "BlobPropertyBag", "Url", "Location", "Navigator", "Event", "EventTarget", "BeforeUnloadEvent", "Storage", "Response", "Headers", "Request", "RequestInit", "RequestRedirect", "ReadableStream", "ReadableStreamDefaultReader", "Cache", "CacheStorage", "CacheQueryOptions", "Performance", "MediaQueryList"] }

@@ -10,6 +10,8 @@ description = "NimbleMap: the map-first shell"
 workspace = true
 
 [dependencies]
+# std::time that also works in the browser (apps/nimblemap-web).
+web-time = { workspace = true }
 lm-core = { path = "../lm-core" }
 lm-actions = { path = "../lm-actions" }
 lm-jobs = { path = "../lm-jobs" }
@@ -50,3 +52,7 @@ objc2-foundation = { version = "0.3", features = ["NSArray", "NSString", "NSURL"
 objc2-app-kit = { version = "0.3", features = ["NSWorkspace", "NSRunningApplication", "block2"] }
 sys-locale = "0.3"
 block2 = "0.6"
+
+# The browser build (apps/nimblemap-web): ring's random numbers come from the browser's crypto.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+getrandom = { version = "0.2", features = ["js"] }

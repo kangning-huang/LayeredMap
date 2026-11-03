@@ -40,7 +40,7 @@ impl FormatAdapter for GeoPackage {
     }
 
     fn open_metadata(&self, path: &Path, _ctx: &Ctx) -> Result<Metadata, ImportError> {
-        let m = std::fs::metadata(path).map_err(|e| ImportError::read(&file_name(path), e))?;
+        let m = crate::vfs::metadata(path).map_err(|e| ImportError::read(&file_name(path), e))?;
         if m.len() > GEOPACKAGE_MAX_BYTES {
             return Err(ImportError::Refused(format!(
                 "{} is larger than 2 GB, the most {APP} reads as a GeoPackage for now. Your file has not been changed.",
@@ -76,7 +76,7 @@ impl FormatAdapter for GeoPackage {
 fn database_bytes(path: &Path, size: u64, ctx: &Ctx) -> Result<Vec<u8>, ImportError> {
     let name = file_name(path);
     ctx.ticket.set_total(size);
-    let file = std::fs::File::open(path).map_err(|e| ImportError::read(&name, e))?;
+    let file = crate::vfs::open(path).map_err(|e| ImportError::read(&name, e))?;
     let mut bytes = Vec::with_capacity(usize::try_from(size).unwrap_or(0));
     Counting::new(file, ctx.ticket.clone())
         .take(GEOPACKAGE_MAX_BYTES + 1)
@@ -88,7 +88,7 @@ fn database_bytes(path: &Path, size: u64, ctx: &Ctx) -> Result<Vec<u8>, ImportEr
         let pending: Vec<(&str, std::path::PathBuf)> = ["-wal", "-journal"]
             .into_iter()
             .map(|s| (s, sidecar(path, s)))
-            .filter(|(_, p)| std::fs::metadata(p).is_ok_and(|m| m.is_file() && m.len() > 0))
+            .filter(|(_, p)| crate::vfs::metadata(p).is_ok_and(|m| m.is_file() && !m.is_empty()))
             .collect();
         if !pending.is_empty() {
             log::info!("{name}: changes held in {:?}; reading a settled copy", pending.iter().map(|(s, _)| *s).collect::<Vec<_>>());

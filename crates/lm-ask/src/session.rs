@@ -205,7 +205,7 @@ fn empty_filters(steps: &[Step], outcomes: &[StepOutcome], layers: &[PlanLayer])
 }
 
 fn now() -> i64 {
-    std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_secs() as i64)
+    web_time::SystemTime::now().duration_since(web_time::UNIX_EPOCH).map_or(0, |d| d.as_secs() as i64)
 }
 
 /// OpenRouter providers left out of every request. InferenceNet (GLM 5.3 Flash) writes only a

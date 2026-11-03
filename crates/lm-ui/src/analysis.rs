@@ -280,7 +280,7 @@ fn finish_plan(c: &Composer, inputs: Vec<lm_jobs::actions::PlanInput>, params: B
         inputs,
         params,
         method: spec.and_then(|s| s.method.clone()).unwrap_or_default(),
-        computed_at: std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_secs() as i64),
+        computed_at: web_time::SystemTime::now().duration_since(web_time::UNIX_EPOCH).map_or(0, |d| d.as_secs() as i64),
         software: lm_core::brand::with_version(env!("CARGO_PKG_VERSION")),
     })
 }

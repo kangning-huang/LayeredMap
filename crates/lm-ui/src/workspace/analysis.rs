@@ -71,7 +71,7 @@ pub struct Analysis {
     pub(super) preview: Option<Preview>,
     pub(super) preview_synced: Option<u64>,
     /// When the current run started, for the estimate log.
-    pub started: Option<std::time::Instant>,
+    pub started: Option<web_time::Instant>,
     pub(super) highlight: Option<(LayerId, Vec<usize>)>,
     /// Generations for Ask previews (counted apart from the slot's).
     pub(super) preview_generation: u64,
@@ -135,7 +135,7 @@ impl Workspace {
     pub fn run_plan(&mut self, plan: Plan) -> u64 {
         let wake = self.wake.clone();
         let pool = self.analysis.pool.get_or_insert_with(|| Pool::new(wake));
-        self.analysis.started = Some(std::time::Instant::now());
+        self.analysis.started = Some(web_time::Instant::now());
         self.analysis.slot.submit(pool, move |ctx| match actions::run(&plan, &ctx.control) {
             Ok(r) => Ok(Ok(Arc::new(r))),
             Err(ActionError::Cancelled) => Err(JobError::Cancelled),

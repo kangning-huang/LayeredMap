@@ -187,6 +187,10 @@ pub enum FileRequest {
     Locate { layer: lm_core::model::LayerId, file_name: String },
     /// Pick where to save a map package (a `.lmap` file; WP6.5).
     SavePackage { suggested_name: String },
+    /// The browser build: fetch these files from the site into memory (`lm_jobs::vfs`), then
+    /// open them (the examples, which are not bundled in the WebAssembly).
+    #[cfg(target_arch = "wasm32")]
+    Fetch(Vec<PathBuf>),
 }
 
 /// What the shell remembers between launches (the app stores it).
@@ -342,7 +346,8 @@ impl Shell {
         lm_core::i18n::set_current(lang);
         ctx.set_fonts(theme::fonts_for(lang.cjk()));
         // The renderer keeps only label text a font can draw: give it Chinese.
-        if !lm_mapview::add_label_font(theme::NOTO_SC_REGULAR.to_vec()) {
+        // (The browser build registers it once downloaded, apps/nimblemap-web.)
+        if !theme::noto_sc().is_empty() && !lm_mapview::add_label_font(theme::noto_sc().to_vec()) {
             log::warn!("the bundled Chinese font could not be registered for map labels");
         }
         // Offline mode is set before the map exists, so not even its first frame asks for tiles.
@@ -667,14 +672,8 @@ impl Shell {
             Command::Relink(id, path) => saving::relink(self, id, &path, t),
             Command::Restore(yes) => saving::answer_recovery(self, ctx, yes, t),
             Command::RequestOpen => self.file_requests.push(FileRequest::Open),
-            Command::OpenExamples => {
-                let waker = ctx.clone();
-                self.ws.open(examples::paths(), move || waker.request_repaint());
-            }
-            Command::OpenExample(id) => {
-                let waker = ctx.clone();
-                self.ws.open(examples::paths_of(&id), move || waker.request_repaint());
-            }
+            Command::OpenExamples => self.open_example_files(ctx, examples::paths()),
+            Command::OpenExample(id) => self.open_example_files(ctx, examples::paths_of(&id)),
             Command::RequestSaveDocument => self.file_requests.push(FileRequest::SaveDocument),
             Command::RequestOpenDocument => self.file_requests.push(FileRequest::OpenDocument),
             Command::Undo => {
@@ -772,6 +771,12 @@ impl Shell {
     }
 
     /// File dialogs the app should show, oldest first.
+    /// Shows a short notice over the map (the browser build says there what it can't do yet).
+    pub fn notify(&mut self, ctx: &egui::Context, text: impl Into<String>) {
+        let t = ctx.input(|i| i.time);
+        self.notice = Some((text.into(), t));
+    }
+
     pub fn take_file_requests(&mut self) -> Vec<FileRequest> {
         std::mem::take(&mut self.file_requests)
     }
@@ -921,6 +926,17 @@ impl Shell {
         (left, right)
     }
 
+    /// Opens example files; the browser build first asks the app to fetch those not yet held.
+    fn open_example_files(&mut self, ctx: &egui::Context, paths: Vec<PathBuf>) {
+        #[cfg(target_arch = "wasm32")]
+        if !paths.iter().all(|p| lm_jobs::vfs::is_held(p)) {
+            self.file_requests.push(FileRequest::Fetch(paths));
+            return;
+        }
+        let waker = ctx.clone();
+        self.ws.open(paths, move || waker.request_repaint());
+    }
+
     /// Phase 2 bookkeeping each frame: imports, the map's layers, fitting new data, the log.
     fn update_workspace(&mut self, ctx: &egui::Context) {
         let t = ctx.input(|i| i.time);
@@ -956,7 +972,7 @@ impl Shell {
             let answers = std::mem::take(&mut self.ws.answers);
             if let Some(path) = &self.question_log {
                 let log = lm_doc::QuestionLog::new(path.clone());
-                let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_millis() as i64);
+                let now = web_time::SystemTime::now().duration_since(web_time::UNIX_EPOCH).map_or(0, |d| d.as_millis() as i64);
                 for a in answers {
                     if let Err(e) = log.append(&lm_core::question::QuestionEvent::new(now, a.kind, &a.answer, a.seconds)) {
                         log::warn!("question log: {e}");

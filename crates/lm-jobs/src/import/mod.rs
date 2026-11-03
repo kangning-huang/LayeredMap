@@ -208,7 +208,7 @@ pub fn start(path: PathBuf, wake: impl Fn() + Send + Sync + 'static) -> ImportJo
     let job = ImportJob { path: path.clone(), ticket: ticket.clone(), rx };
     let wake = Arc::new(wake);
     let w = wake.clone();
-    let spawned = std::thread::Builder::new().name("lm-import".into()).spawn(move || {
+    let spawned = lm_core::task::spawn("lm-import", move || {
         let send = |e: ImportEvent| {
             let _ = tx.send(e);
             w();
@@ -347,7 +347,7 @@ fn pick_adapter(path: &Path, head: &[u8], p1: bool) -> Result<&'static dyn Forma
 pub fn import_path(path: &Path, ctx: &Ctx) -> Result<Vec<ImportedLayer>, ImportError> {
     ctx.stage(Stage::Detect)?;
     let name = file_name(path);
-    let meta = std::fs::metadata(path).map_err(|e| ImportError::Failed {
+    let meta = crate::vfs::metadata(path).map_err(|e| ImportError::Failed {
         message: if e.kind() == std::io::ErrorKind::NotFound {
             format!("{name} is no longer where it was. Nothing was added to your map.")
         } else {
@@ -361,7 +361,7 @@ pub fn import_path(path: &Path, ctx: &Ctx) -> Result<Vec<ImportedLayer>, ImportE
     let mut head = vec![0u8; 4096];
     let n = {
         use std::io::Read;
-        let mut f = std::fs::File::open(path).map_err(|e| ImportError::read(&name, e))?;
+        let mut f = crate::vfs::open(path).map_err(|e| ImportError::read(&name, e))?;
         f.read(&mut head).map_err(|e| ImportError::read(&name, e))?
     };
     head.truncate(n);
@@ -376,13 +376,13 @@ pub fn import_path(path: &Path, ctx: &Ctx) -> Result<Vec<ImportedLayer>, ImportE
 /// The source record for a file (path, size, modification time); the hash is computed by the
 /// document when it saves.
 fn source_ref(path: &Path, member: Option<String>) -> SourceRef {
-    let meta = std::fs::metadata(path).ok();
+    let meta = crate::vfs::metadata(path).ok();
     let mtime = meta
         .as_ref()
         .and_then(|m| m.modified().ok())
         .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
         .map_or(0, |d| d.as_secs() as i64);
-    let abs = std::fs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf());
+    let abs = crate::vfs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf());
     SourceRef { path: abs.display().to_string(), member, size: meta.map_or(0, |m| m.len()), mtime, sha256: None }
 }
 

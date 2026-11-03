@@ -35,7 +35,7 @@ impl FormatAdapter for Excel {
     }
 
     fn open_metadata(&self, path: &Path, _ctx: &Ctx) -> Result<Metadata, ImportError> {
-        let m = std::fs::metadata(path).map_err(|e| ImportError::read(&file_name(path), e))?;
+        let m = crate::vfs::metadata(path).map_err(|e| ImportError::read(&file_name(path), e))?;
         if m.len() > WORKBOOK_MAX_BYTES {
             return Err(ImportError::Refused(format!(
                 "{} is larger than 1 GB, the most {APP} reads as a workbook. Saving the sheet as CSV makes it open. Your file has not been changed.",
@@ -86,7 +86,7 @@ impl FormatAdapter for Excel {
 fn read_bytes(path: &Path, size: u64, ctx: &Ctx) -> Result<Vec<u8>, ImportError> {
     let name = file_name(path);
     ctx.ticket.set_total(size);
-    let file = std::fs::File::open(path).map_err(|e| ImportError::read(&name, e))?;
+    let file = crate::vfs::open(path).map_err(|e| ImportError::read(&name, e))?;
     let mut bytes = Vec::with_capacity(usize::try_from(size).unwrap_or(0));
     Counting::new(file, ctx.ticket.clone())
         .take(WORKBOOK_MAX_BYTES + 1)
@@ -124,7 +124,7 @@ pub fn choose_sheet(layer: &ImportedLayer, choice: &Choice) -> Result<ImportedLa
     };
     let path = Path::new(&layer.profile.source.path);
     let name = file_name(path);
-    let size = std::fs::metadata(path)
+    let size = crate::vfs::metadata(path)
         .map_err(|e| ImportError::Failed {
             message: format!("{name} is no longer where it was. Nothing was changed."),
             details: e.to_string(),

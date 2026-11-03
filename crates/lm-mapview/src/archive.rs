@@ -91,10 +91,21 @@ pub fn start(wake: impl Fn() + Send + 'static) {
         .ok();
 }
 
-/// The web build reads the pinned archive.
+/// The web build: the page looks for the newest build itself (it has no threads and needs a
+/// same-origin proxy, apps/nimblemap-web) and reports it with [`set_found`].
 #[cfg(target_arch = "wasm32")]
 pub fn start(_wake: impl Fn() + Send + 'static) {
     WANTED.store(true, std::sync::atomic::Ordering::SeqCst);
+    let mut s = STATE.lock().unwrap_or_else(|e| e.into_inner());
+    if *s == State::Idle {
+        *s = State::Looking;
+    }
+}
+
+/// The web build: the newest build that answered (`None`: none did, the pinned one is read).
+#[cfg(target_arch = "wasm32")]
+pub fn set_found(url: Option<String>) {
+    set(url.map_or(State::Failed, State::Found));
 }
 
 /// The builds to try, newest first: the list's newest builds of the schema the style draws, then
@@ -150,7 +161,7 @@ mod native {
             return None;
         }
         let metadata = agent.get(super::METADATA).call().ok().and_then(|mut r| r.body_mut().read_to_string().ok());
-        let today = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).ok()?.as_secs() as i64 / 86_400;
+        let today = web_time::SystemTime::now().duration_since(web_time::UNIX_EPOCH).ok()?.as_secs() as i64 / 86_400;
         super::candidates(metadata.as_deref(), today).into_iter().take_while(|_| allowed()).find(|u| agent.head(u).call().is_ok())
     }
 }

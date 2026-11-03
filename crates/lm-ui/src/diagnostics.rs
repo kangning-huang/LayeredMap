@@ -19,7 +19,7 @@ pub fn file_name(app: &str, today: &str) -> String {
 
 /// Today's date (UTC) as YYYY-MM-DD.
 fn today() -> String {
-    let days = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_secs() / 86_400) as i64;
+    let days = web_time::SystemTime::now().duration_since(web_time::UNIX_EPOCH).map_or(0, |d| d.as_secs() / 86_400) as i64;
     let d = lm_mapview::archive::ymd(days);
     format!("{}-{}-{}", &d[..4], &d[4..6], &d[6..8])
 }
