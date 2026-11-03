@@ -53,6 +53,9 @@ struct OpenSheet: View {
     /// Row index → the model's one line on why this result answers the question. Empty when no
     /// model was asked, or when it was and said nothing usable.
     @State private var reasons: [Int: String] = [:]
+    /// A catalogue entry that holds a family rather than a file — a country, a year, a brand, a
+    /// corner of the world still to be picked.
+    @State private var choosing: Catalog.Item?
     /// A download large enough to be worth mentioning before it starts.
     @State private var big: BigDownload?
     /// The row whose size is being looked up, so its button can say so.
@@ -132,6 +135,11 @@ struct OpenSheet: View {
                 })
             }
         }
+        .sheet(item: $choosing) { item in
+            ChooseSheet(item: item, view: doc.viewBounds, busy: checking == item.id) { url, name in
+                addChecking(url: url, title: name, id: item.id)
+            }
+        }
         // Not a refusal: the number, the two honest consequences, and the choice.
         .alert("“\(big?.title ?? "")” is \(big?.size ?? "")", isPresented: bigBinding, presenting: big) { item in
             Button("Add anyway") { onLink(item.url, item.title) }
@@ -185,7 +193,8 @@ struct OpenSheet: View {
                         why: nil,
                         busy: checking == item.id,
                         onAdd: { addChecking(item) },
-                        onOpenPage: { pageURL = item.url }
+                        onOpenPage: { pageURL = item.url },
+                        onChoose: { choosing = item }
                     )
                 }
             }
@@ -198,7 +207,8 @@ struct OpenSheet: View {
                         why: nil,
                         busy: checking == item.id,
                         onAdd: { addChecking(item) },
-                        onOpenPage: { pageURL = item.url }
+                        onOpenPage: { pageURL = item.url },
+                        onChoose: { choosing = item }
                     )
                 }
             } header: {
@@ -278,7 +288,8 @@ struct OpenSheet: View {
                         why: reasons[i],
                         busy: checking == item.id,
                         onAdd: { addChecking(item) },
-                        onOpenPage: { pageURL = item.url }
+                        onOpenPage: { pageURL = item.url },
+                        onChoose: { choosing = item }
                     )
                 }
             }
@@ -336,17 +347,25 @@ struct OpenSheet: View {
     /// *before* the download rather than after, which is why the size is asked for here instead
     /// of trusted from the catalogue's own text.
     private func addChecking(_ item: Catalog.Item) {
+        addChecking(url: item.url, title: item.title, id: item.id)
+    }
+
+    /// The same check for a URL a chooser has just built. A chosen file is if anything *more*
+    /// likely to be enormous than a fixed one — a 500 m panel of Black Marble is half a gigabyte,
+    /// and nothing in the catalogue can say so in advance, because which one it is was decided a
+    /// second ago.
+    private func addChecking(url: URL, title: String, id: String) {
         // The size check is a network round trip, so without this the row sits there looking
         // untouched and people tap Add again. Two testers did exactly that.
-        guard checking != item.id else { return }
-        checking = item.id
+        guard checking != id else { return }
+        checking = id
         Task {
             defer { checking = nil }
-            guard let bytes = await Catalog.bytes(of: item), Importer.isBig(bytes) else {
-                onLink(item.url, item.title)
+            guard let bytes = await Catalog.bytes(at: url), Importer.isBig(bytes) else {
+                onLink(url, title)
                 return
             }
-            big = BigDownload(url: item.url, title: item.title, size: Importer.sizeText(bytes))
+            big = BigDownload(url: url, title: title, size: Importer.sizeText(bytes))
         }
     }
 
@@ -583,10 +602,36 @@ struct CatalogRow: View {
     var busy = false
     var onAdd: () -> Void
     var onOpenPage: () -> Void
+    /// A row that holds a family: ask which member before downloading anything.
+    var onChoose: () -> Void = {}
+
+    private var action: () -> Void {
+        switch item.kind {
+        case .page: return onOpenPage
+        case .choose: return onChoose
+        case .file: return onAdd
+        }
+    }
+
+    private var label: String {
+        switch item.kind {
+        case .page: return "Open"
+        case .choose: return "Choose"
+        case .file: return "Add"
+        }
+    }
+
+    private var icon: String {
+        switch item.kind {
+        case .page: return "safari"
+        case .choose: return "slider.horizontal.3"
+        case .file: return "globe"
+        }
+    }
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: item.kind == .page ? "safari" : "globe")
+            Image(systemName: icon)
                 .font(.title3)
                 .foregroundStyle(.white)
                 .frame(width: 48, height: 48)
@@ -613,12 +658,13 @@ struct CatalogRow: View {
             }
             Spacer(minLength: 4)
             // A page cannot promise a map; it promises a place to pick a download. Saying "Add"
-            // on one would be the broken promise this spike exists to remove.
-            Button(action: item.kind == .page ? onOpenPage : onAdd) {
+            // on one would be the broken promise this spike exists to remove. "Choose" is the
+            // same promise kept for a row that holds a family: it says a question is coming.
+            Button(action: action) {
                 if busy {
                     ProgressView().controlSize(.small)
                 } else {
-                    Text(item.kind == .page ? "Open" : "Add")
+                    Text(label)
                 }
             }
             .buttonStyle(.borderedProminent)

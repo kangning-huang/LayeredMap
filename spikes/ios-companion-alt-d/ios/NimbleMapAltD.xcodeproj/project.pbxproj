@@ -12,6 +12,7 @@
 		CA9EE9ED77800DD0DCA7C461 /* Cards.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10FD6CD64C39D406341BA66 /* Cards.swift */; };
 		CA6CD4C999FC3A76B69CC6CA /* Catalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45E5EF6EB044A6B3CD977D3D /* Catalog.swift */; };
 		8CD53F9D36FE2AFE202F8FE1 /* ChangeLook.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7227759E47FF42CACE79BBB5 /* ChangeLook.swift */; };
+		51FD5CF9C6C2F4B0D3D91803 /* ChooseSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A2FA242878D4387A8203987 /* ChooseSheet.swift */; };
 		2A8F5CFFD87674FB2B9862C3 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3CC244FE3B63DFF710117B7 /* ContentView.swift */; };
 		1DD94D719AE6EF6303E4B400 /* DataWebPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED9E3E0E5BC88223F3D991B7 /* DataWebPage.swift */; };
 		6419B28FC980FD7C3E41A9F5 /* DecodeBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89BFECAC51E1612C2BDF6ED9 /* DecodeBridge.swift */; };
@@ -48,10 +49,12 @@
 		A2000000000000000000000A /* lm_decode.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = lm_decode.h; path = ../include/lm_decode.h; sourceTree = "<group>"; };
 		F6F365D1871D571544D378C9 /* catalog.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = catalog.json; sourceTree = "<group>"; };
 		F6F365D1871D571544D378C9 /* catalog.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = catalog.json; sourceTree = "<group>"; };
+		F6F365D1871D571544D378C9 /* catalog.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = catalog.json; sourceTree = "<group>"; };
 		7B5DC4360601212ADF8A70BC /* Assist.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Assist.swift; sourceTree = "<group>"; };
 		D10FD6CD64C39D406341BA66 /* Cards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Cards.swift; sourceTree = "<group>"; };
 		45E5EF6EB044A6B3CD977D3D /* Catalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Catalog.swift; sourceTree = "<group>"; };
 		7227759E47FF42CACE79BBB5 /* ChangeLook.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangeLook.swift; sourceTree = "<group>"; };
+		3A2FA242878D4387A8203987 /* ChooseSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChooseSheet.swift; sourceTree = "<group>"; };
 		D3CC244FE3B63DFF710117B7 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		ED9E3E0E5BC88223F3D991B7 /* DataWebPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataWebPage.swift; sourceTree = "<group>"; };
 		89BFECAC51E1612C2BDF6ED9 /* DecodeBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DecodeBridge.swift; sourceTree = "<group>"; };
@@ -108,6 +111,7 @@
 				D10FD6CD64C39D406341BA66 /* Cards.swift */,
 				45E5EF6EB044A6B3CD977D3D /* Catalog.swift */,
 				7227759E47FF42CACE79BBB5 /* ChangeLook.swift */,
+				3A2FA242878D4387A8203987 /* ChooseSheet.swift */,
 				D3CC244FE3B63DFF710117B7 /* ContentView.swift */,
 				ED9E3E0E5BC88223F3D991B7 /* DataWebPage.swift */,
 				89BFECAC51E1612C2BDF6ED9 /* DecodeBridge.swift */,
@@ -241,6 +245,7 @@
 				CA9EE9ED77800DD0DCA7C461 /* Cards.swift in Sources */,
 				CA6CD4C999FC3A76B69CC6CA /* Catalog.swift in Sources */,
 				8CD53F9D36FE2AFE202F8FE1 /* ChangeLook.swift in Sources */,
+				51FD5CF9C6C2F4B0D3D91803 /* ChooseSheet.swift in Sources */,
 				2A8F5CFFD87674FB2B9862C3 /* ContentView.swift in Sources */,
 				1DD94D719AE6EF6303E4B400 /* DataWebPage.swift in Sources */,
 				6419B28FC980FD7C3E41A9F5 /* DecodeBridge.swift in Sources */,

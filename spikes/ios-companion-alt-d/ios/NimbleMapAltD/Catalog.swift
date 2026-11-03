@@ -53,13 +53,134 @@ enum Catalog {
         var section = ""
         /// A shop-branch scrape rather than a map of something. 5,614 of 5,705 entries are these.
         var isBrand: Bool { section == "Everyday places" && id.hasPrefix("bundled:atp-") }
+        /// Set only on `.choose` rows: what there is to choose between.
+        var chooser: Chooser?
 
         enum Kind: String, Hashable {
             /// Tap Add and it goes on the map.
             case file
             /// Tap through, pick a download there.
             case page
+            /// Pick a country, a year, a brand, a corner of the world — *then* it goes on the map.
+            case choose
         }
+    }
+
+    /// A row that offers a genuine choice instead of one file wearing a plural's clothes.
+    ///
+    /// Four rows used to describe a family and hand over a single member: "any country and any
+    /// year from 2000 to 2020" gave China in 2020, "Starbucks, McDonald's, IKEA and thousands
+    /// more" gave Starbucks in the US, "the lossyear tile for your region" gave southern China to
+    /// everyone on earth. The text was not wrong about what exists — it was wrong about what the
+    /// button did, which is worse, because it is only discoverable *after* the download.
+    ///
+    /// A chooser is that text made operable: a URL template and the axes that fill it. The options
+    /// were resolved by `scripts/harvest-catalog.py` against the publisher's own listing, so every
+    /// combination on offer is one that exists. Size is still asked for over the network at the
+    /// moment of adding, exactly as for a fixed row — these run from 4 MB to half a gigabyte and
+    /// the number has to be today's.
+    struct Chooser: Hashable {
+        /// Filled with each axis's **value**: `{iso3}`, and `{iso3|lower}` where the publisher
+        /// spells the same code both ways in one path.
+        let url: String
+        /// Filled with each axis's **label**, because a layer called "00N_060W" helps nobody.
+        let naming: String
+        /// An axis that can be answered from where the map is pointing rather than from the list.
+        var fromView: FromView?
+        var axes: [Axis]
+
+        /// A grid the world is cut into, so the square under the map can be worked out.
+        struct FromView: Hashable {
+            let key: String
+            let grid: Double
+            let label: String
+
+            /// The tile containing this point, in the publisher's own spelling (`00N_060W`): named
+            /// for its north-west corner, which is the north edge *above* the point and the west
+            /// edge below it.
+            func tile(at lat: Double, _ lon: Double) -> String {
+                let north = Int((lat / grid).rounded(.up) * grid)
+                let west = Int((lon / grid).rounded(.down) * grid)
+                return String(format: "%02d%@_%03d%@",
+                              abs(north), north < 0 ? "S" : "N",
+                              abs(west), west < 0 ? "W" : "E")
+            }
+        }
+
+        struct Axis: Identifiable, Hashable {
+            let key: String
+            let label: String
+            var options: [Option]
+            /// Which option to start on, so the sheet is always ready to add.
+            var preset: String?
+            /// Options this file does not carry because the catalogue already holds them:
+            /// `alltheplaces` means every brand entry in `bundled`. Writing 5,613 brands out a
+            /// second time would have doubled a file that is already a third brands.
+            var source: String?
+            var id: String { key }
+        }
+
+        struct Option: Identifiable, Hashable {
+            let label: String
+            let value: String
+            /// A second line: the coordinates behind a forest's name, say.
+            var note = ""
+            var id: String { value }
+        }
+
+        /// Every axis's options, with the ones that live in the catalogue filled in.
+        func options(of axis: Axis) -> [Option] {
+            guard axis.source == "alltheplaces" else { return axis.options }
+            return Catalog.brandOptions
+        }
+
+        func fill(_ template: String, from picks: [String: Option], label: Bool) -> String {
+            var out = template
+            for axis in axes {
+                let pick = picks[axis.key]
+                let text = label ? (pick?.label ?? "") : (pick?.value ?? "")
+                out = out.replacingOccurrences(of: "{\(axis.key)}", with: text)
+                out = out.replacingOccurrences(of: "{\(axis.key)|lower}", with: text.lowercased())
+            }
+            return out
+        }
+
+        func resolve(_ picks: [String: Option]) -> (url: URL, name: String)? {
+            let link = fill(url, from: picks, label: false)
+            guard !link.contains("{"), let url = URL(string: link) else { return nil }
+            return (url, fill(naming, from: picks, label: true))
+        }
+    }
+
+    /// Every All the Places brand in the bundled catalogue, as choosable options. Worked out once:
+    /// there are 5,613 of them and the brand picker is a search field.
+    static let brandOptions: [Chooser.Option] = bundled
+        .filter(\.isBrand)
+        .map { Chooser.Option(label: $0.title, value: $0.url.absoluteString, note: $0.blurb) }
+        .sorted { $0.label.localizedCaseInsensitiveCompare($1.label) == .orderedAscending }
+
+    private static func chooser(from row: [String: Any]) -> Chooser? {
+        guard let block = row["choose"] as? [String: Any],
+              let url = block["url"] as? String,
+              let axes = block["axes"] as? [[String: Any]]
+        else { return nil }
+        let parsed: [Chooser.Axis] = axes.compactMap { a in
+            guard let key = a["key"] as? String, let label = a["label"] as? String else { return nil }
+            let options = ((a["options"] as? [[String: Any]]) ?? []).compactMap { o -> Chooser.Option? in
+                guard let l = o["label"] as? String, let v = o["value"] as? String else { return nil }
+                return Chooser.Option(label: l, value: v, note: (o["note"] as? String) ?? "")
+            }
+            return Chooser.Axis(key: key, label: label, options: options,
+                                preset: a["default"] as? String, source: a["source"] as? String)
+        }
+        guard !parsed.isEmpty else { return nil }
+        var view: Chooser.FromView?
+        if let f = block["fromView"] as? [String: Any], let key = f["key"] as? String,
+           let grid = f["grid"] as? Double, let label = f["label"] as? String
+        {
+            view = Chooser.FromView(key: key, grid: grid, label: label)
+        }
+        return Chooser(url: url, naming: (block["naming"] as? String) ?? "", fromView: view, axes: parsed)
     }
 
     // MARK: The bundled catalogue
@@ -94,7 +215,8 @@ enum Catalog {
                 size: (row["size"] as? String) ?? "",
                 hay: titleWords.union(tokens(([blurb, source, format] + keywords).joined(separator: " "))),
                 titleWords: titleWords,
-                section: (row["section"] as? String) ?? ""
+                section: (row["section"] as? String) ?? "",
+                chooser: chooser(from: row)
             )
         }
     }()
@@ -160,8 +282,14 @@ enum Catalog {
         w.count > 3 && w.hasSuffix("s") && !w.hasSuffix("ss") ? String(w.dropLast()) : w
     }
 
+    /// Lowercased, because the query is. Dropping that `.lowercased()` is exactly what happened
+    /// when tokenising moved out of the search and into `bundled` to kill the 106 ms keystroke:
+    /// the old code lowercased the joined haystack first, the new code tokenised it raw. The
+    /// effect was invisible for most entries and total for some — a word was findable only where
+    /// it happened to be written in lower case somewhere. "night lights" found "Earth at night"
+    /// through its keywords; "earth at night", the entry's own name, found nothing at all.
     private static func tokens(_ s: String) -> Set<String> {
-        Set(s.split(whereSeparator: { !$0.isLetter && !$0.isNumber }).map { stem(String($0)) })
+        Set(s.lowercased().split(whereSeparator: { !$0.isLetter && !$0.isNumber }).map { stem(String($0)) })
     }
 
     /// Where to look. Three, because one query cannot serve both "bike lanes" (abundant, published
@@ -356,6 +484,12 @@ enum Catalog {
     static func bytes(of item: Item) async -> Int64? {
         if let measured = await sizeOf(item.url) { return measured }
         return written(item.size)
+    }
+
+    /// For a URL a chooser has just assembled, where there is no written size to fall back on and
+    /// none would have been right anyway.
+    static func bytes(at url: URL) async -> Int64? {
+        await sizeOf(url)
     }
 
     /// "220 MB", "about 4 MB", "34 MB" → bytes. Nil when there is no number in it.
