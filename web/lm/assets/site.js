@@ -171,3 +171,27 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 // Mac and Windows downloads are both available; each button names its platform.
+
+// One download button: it gets the Mac app on a Mac, the Windows app on a Windows PC, and on
+// anything else (phones, tablets, Linux) it opens the download page. The link below the button
+// names and offers the other desktop app. Without this script the button gets the Mac app.
+document.addEventListener("DOMContentLoaded", function () {
+  var p = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || "";
+  var touch = navigator.maxTouchPoints > 1;
+  var win = /win/i.test(p) || /Windows NT/.test(navigator.userAgent);
+  var mac = /mac/i.test(p) && !touch;
+  if (mac) return;
+  var gets = document.querySelectorAll(".btn-get[data-win-href]");
+  for (var i = 0; i < gets.length; i++) {
+    var g = gets[i];
+    var macHref = g.getAttribute("href");
+    if (!win) {
+      g.href = g.getAttribute("data-page-href") || "download.html";
+      g.removeAttribute("download");
+      continue;
+    }
+    g.href = g.getAttribute("data-win-href");
+    var alt = g.closest(".actions, .cta-actions").parentNode.querySelector(".dl-alt");
+    if (alt) { alt.href = macHref; alt.textContent = alt.getAttribute("data-mac-label"); }
+  }
+});

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Shapefile, GeoJSON, CSV &amp; GeoTIFF am Mac öffnen, gratis · NimbleMap</title>
-<meta name="description" content="Eine kostenlose Mac-App, die Shapefile-, GeoPackage-, NetCDF-, GeoTIFF-, GeoJSON- und CSV-Dateien mit Breiten- und Längengrad als Karte öffnet: Ziehen Sie sie einfach in NimbleMap. Die Layer passen aufeinander, ohne dass Sie ein Koordinatensystem einstellen, und Ihre Dateien verlassen nie Ihren Mac.">
+<meta name="description" content="Eine kostenlose Mac-App, die Shapefile-, GeoPackage-, NetCDF-, GeoTIFF-, GeoJSON- und CSV-Dateien mit Breiten- und Längengrad als Karte öffnet: Ziehen…">
 <link rel="canonical" href="download.html">
 <link rel="alternate" hreflang="en" href="../download.html">
 <link rel="alternate" hreflang="zh-Hans" href="../zh/download.html">
@@ -27,8 +27,8 @@
 <meta property="og:image" content="../img/walls-compare.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
-<link rel="stylesheet" href="../assets/site.css?v=074">
-<script src="../assets/site.js?v=074"></script>
+<link rel="stylesheet" href="../assets/site.css?v=077">
+<script src="../assets/site.js?v=075"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -39,7 +39,19 @@
   "applicationCategory": "UtilitiesApplication",
   "description": "Eine Karten-App für den Mac, die Shapefile-, GeoJSON-, CSV-, GeoTIFF-, GeoPackage-, Excel-, KML-, GPX- und NetCDF-Dateien öffnet, die man hineinzieht. Die Dateien verlassen nie den Computer.",
   "isAccessibleForFree": true,
-  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" }
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "EUR"
+  },
+  "@id": "https://nimblemap.com/#app",
+  "sameAs": "https://github.com/kangning-huang/NimbleMap",
+  "author": {
+    "@id": "https://nimblemap.com/about.html#person"
+  },
+  "publisher": {
+    "@id": "https://nimblemap.com/about.html#person"
+  }
 }
 </script>
 </head>
@@ -52,6 +64,7 @@
       <a href="index.html#examples">Beispiele</a>
       <a href="data.html">Daten</a>
       <a href="help.html">Hilfe</a>
+      <a href="../about.html" hreflang="en">Über mich</a>
       <a href="download.html" aria-current="page">Download</a>
       <details class="lang-menu">
         <summary aria-label="Sprache: Deutsch" title="Sprache"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.6 3.9 5.6 3.9 9s-1.3 6.4-3.9 9c-2.6-2.6-3.9-5.6-3.9-9S9.4 5.6 12 3z"/></svg><span>DE</span></summary>
@@ -139,7 +152,7 @@
     <div class="downloads">
       <div class="dl">
         <h3>NimbleMap für Mac</h3>
-        <p>Kostenlos · Vorabversion 0.7.4</p>
+        <p>Kostenlos · Vorabversion 0.7.5</p>
         <a class="btn btn-primary" href="https://github.com/kangning-huang/NimbleMap/releases/latest/download/NimbleMap-macos-arm64.dmg" download>Download</a>
         <p class="dl-note" style="margin-top:12px">Mit einer Developer ID signiert und von Apple notariell beglaubigt. Beim ersten Öffnen fragt macOS, ob Sie eine aus dem Internet geladene App öffnen möchten: Klicken Sie auf „Öffnen“.</p>
         <p class="dl-pro">Die Analysewerkzeuge sind kostenlos und ohne Anmeldung nutzbar. Pro, das Fragefeld für Fragen in einfachen Worten, wird freigeschaltet, wenn Sie sich in der App anmelden – kostenlos mit einem Konto. <a href="pro.html">Was Pro zusätzlich bietet</a></p>
@@ -154,7 +167,7 @@
       <div class="dl">
         <h3>Spiegelserver für Festlandchina</h3>
         <p>Dieselbe App von GitCode, für Downloads in Festlandchina. Identische Datei (gleiche SHA-256).</p>
-        <a class="btn btn-quiet" href="https://gitcode.com/KN-Huang/NimbleMap/releases/download/v0.7.4/NimbleMap-macos-arm64.dmg" data-dl="alt" download>Download</a>
+        <a class="btn btn-quiet" href="https://gitcode.com/KN-Huang/NimbleMap/releases/download/v0.7.5/NimbleMap-macos-arm64.dmg" data-dl="alt" download>Download</a>
         <p class="dl-note" style="margin-top:12px"><a href="https://gitcode.com/KN-Huang/NimbleMap/releases" data-dl="alt-releases">Alle Versionen auf GitCode</a></p>
       </div>
     </div>
@@ -243,7 +256,7 @@
       <p>Nein. Dateien öffnen sich ohne Einstellungen, und wenn die App etwas raten muss, etwa welche Spalten die Koordinaten enthalten, sagt sie es Ihnen in einer Zeile und lässt Sie das ändern. Das <a href="glossary.html">Glossar</a> erklärt Kartenbegriffe in einfachen Worten.</p>
 
       <h3>Werden meine Dateien irgendwo hochgeladen?</h3>
-      <p>In der kostenlosen App nicht: Alles wird auf Ihrem Mac gelesen, analysiert und gezeichnet, und sie funktioniert offline. Kacheln der Hintergrundkarte werden geladen, wenn Sie online sind, aber Ihre Daten werden nie gesendet. In Pro schickt das Fragefeld dem Assistenten die Namen Ihrer Layer, die Feldnamen und die Ausdehnungen, damit er die Frage versteht – niemals die Werte.</p>
+      <p>In der kostenlosen App nicht: Alles wird auf Ihrem Computer gelesen, analysiert und gezeichnet, und sie funktioniert offline. Kacheln der Hintergrundkarte werden geladen, wenn Sie online sind, aber Ihre Kartendateien werden nie hochgeladen. In Pro schickt Ask Ihre Frage, Layer- und Feldnamen, Ausdehnungen, aktive Filter (inkl. Werte), relevante Werte des ausgewählten Objekts und bis zu fünf passende Werte aus der Frage — nie Dateien, Formen, Koordinaten oder Pfade. Siehe <a href="../privacy.html">Privacy</a>.</p>
 
       <h3>Gibt es eine Windows-Version?</h3>
       <p>Für Mac (Apple Silicon, macOS 13+) und Windows 10/11 (x64). <a href="#windows">Für Windows herunterladen</a></p>
@@ -258,7 +271,7 @@
       <p><strong>NimbleMap</strong> · eine Karten-App auf Basis von RustGIS.</p>
       <p>Die Bildschirmfotos zeigen Kartendaten © OpenStreetMap-Mitwirkende (ODbL) über Protomaps, Natural Earth (gemeinfrei) und NASA-Blue-Marble-Bilder (NASA Earth Observatory, GIBS). Beispieldaten: Xue et al. 2021 (CC BY 4.0).</p>
     </div>
-    <div class="foot-nav"><p class="foot-links"><a href="help.html">Hilfe</a> · <a href="glossary.html">Glossar</a> · <a href="data.html">Daten</a> · <a href="pro.html">Pro</a> · <a href="https://github.com/kangning-huang/NimbleMap/blob/main/CHANGELOG.md">Änderungsprotokoll</a></p><p class="foot-note">NimbleMap ist ein unabhängiges Projekt und steht in keiner Verbindung zu Apple, Esri oder dem QGIS-Projekt.</p><p class="foot-langs"><a href="../download.html" hreflang="en" lang="en">English</a> · <a href="../zh/download.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="../es/download.html" hreflang="es" lang="es">Español</a> · <a href="../fr/download.html" hreflang="fr" lang="fr">Français</a> · <a href="../it/download.html" hreflang="it" lang="it">Italiano</a> · <a href="../nl/download.html" hreflang="nl" lang="nl">Nederlands</a> · <a href="../pt-br/download.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ru/download.html" hreflang="ru" lang="ru">Русский</a> · <a href="../ja/download.html" hreflang="ja" lang="ja">日本語</a> · <a href="../ko/download.html" hreflang="ko" lang="ko">한국어</a></p></div>
+    <div class="foot-nav"><p class="foot-links"><a href="help.html">Hilfe</a> · <a href="glossary.html">Glossar</a> · <a href="data.html">Daten</a> · <a href="pro.html">Pro</a> · <a href="https://github.com/kangning-huang/NimbleMap/blob/main/CHANGELOG.md">Änderungsprotokoll</a> · <a href="../about.html" hreflang="en">Über mich</a> · <a href="../privacy.html">Privacy</a> · <a href="../terms.html">Terms</a></p><p class="foot-note">NimbleMap ist ein unabhängiges Projekt und steht in keiner Verbindung zu Apple, Esri oder dem QGIS-Projekt.</p><p class="foot-langs"><a href="../download.html" hreflang="en" lang="en">English</a> · <a href="../zh/download.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="../es/download.html" hreflang="es" lang="es">Español</a> · <a href="../fr/download.html" hreflang="fr" lang="fr">Français</a> · <a href="../it/download.html" hreflang="it" lang="it">Italiano</a> · <a href="../nl/download.html" hreflang="nl" lang="nl">Nederlands</a> · <a href="../pt-br/download.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ru/download.html" hreflang="ru" lang="ru">Русский</a> · <a href="../ja/download.html" hreflang="ja" lang="ja">日本語</a> · <a href="../ko/download.html" hreflang="ko" lang="ko">한국어</a></p></div>
   </div>
 </footer>
 </body>

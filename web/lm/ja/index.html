@@ -34,9 +34,9 @@
 <link rel="icon" href="../favicon.ico" sizes="any">
 <link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
-<link rel="stylesheet" href="../assets/site.css?v=074">
+<link rel="stylesheet" href="../assets/site.css?v=077">
 <link rel="stylesheet" href="../assets/data.css?v=3">
-<script src="../assets/site.js?v=074"></script>
+<script src="../assets/site.js?v=075"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -54,14 +54,17 @@
   },
   "url": "https://nimblemap.com/ja/",
   "image": "https://nimblemap.com/img/open-storms.jpg",
-  "softwareVersion": "0.7.4",
+  "softwareVersion": "0.7.5",
   "downloadUrl": "https://github.com/kangning-huang/NimbleMap/releases/latest",
   "publisher": {
-    "@type": "Person",
-    "name": "Kangning Huang",
-    "url": "https://kangning-huang.com/"
+    "@id": "https://nimblemap.com/about.html#person"
   },
-  "alternateName": "凌波微图"
+  "alternateName": "凌波微图",
+  "@id": "https://nimblemap.com/#app",
+  "sameAs": "https://github.com/kangning-huang/NimbleMap",
+  "author": {
+    "@id": "https://nimblemap.com/about.html#person"
+  }
 }
 </script>
 </head>
@@ -74,6 +77,7 @@
       <a href="index.html#examples">サンプル</a>
       <a href="data.html">データ</a>
       <a href="help.html">ヘルプ</a>
+      <a href="../about.html" hreflang="en">作者について</a>
       <a href="download.html">ダウンロード</a>
       <details class="lang-menu">
         <summary aria-label="言語：日本語" title="言語"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.6 3.9 5.6 3.9 9s-1.3 6.4-3.9 9c-2.6-2.6-3.9-5.6-3.9-9S9.4 5.6 12 3z"/></svg><span>日本語</span></summary>
@@ -103,22 +107,20 @@
       <p class="eyebrow">Mac・Windows 向け無料アプリ</p>
       <h1>ネットで地図データを見つけたら、NimbleMap にドラッグ。</h1>
       <p class="lede">Shapefile、GeoPackage、NetCDF、GeoTIFF、GPX、KML、座標付きの CSV。NASA や USGS（米国地質調査所）、自治体のオープンデータポータルからダウンロードするファイルです。NimbleMap なら数秒で地図として開けます。GIS の知識も設定も要りません。</p>
-      <p class="hero-how">ファイルを NimbleMap にドラッグするだけ。Shapefile、GeoPackage、NetCDF はダブルクリックでもすぐに開けます。</p>
       <div class="actions">
-        <a class="btn btn-primary btn-get" href="https://github.com/kangning-huang/NimbleMap/releases/latest/download/NimbleMap-macos-arm64.dmg" download>Mac 版を無料でダウンロード</a>
-        <a class="btn btn-quiet btn-windows" href="https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.1/NimbleMap-windows-x64-setup.exe" download>Windows 版をダウンロード</a>
-        <a class="btn btn-quiet" href="#data">データはどこで手に入る？</a>
+        <a class="btn btn-primary btn-get" href="https://github.com/kangning-huang/NimbleMap/releases/latest/download/NimbleMap-macos-arm64.dmg" download data-win-href="https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.1/NimbleMap-windows-x64-setup.exe">ダウンロード</a>
+        <a class="btn btn-quiet btn-web" href="https://nimblemap.app/?lang=ja">ブラウザで試す</a>
+        <a class="btn btn-quiet" href="#data">データの探し方</a>
       </div>
-      <p class="desktop-platforms">Mac（Apple シリコン、macOS 13 以降）と Windows 10/11（x64）に対応。</p>
-      <p class="dl-fine"><strong>Mac:</strong> 無料 · 約 109 MB · macOS 13 以降 · Apple シリコン · オフラインで動作</p>
+      <p class="dl-fine">Mac（Apple シリコン、macOS 13 以降）と Windows 10/11（x64）に対応。ブラウザ版はインストール不要で、ファイルはお使いのコンピュータから出ません。<a class="dl-alt" href="https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.1/NimbleMap-windows-x64-setup.exe" download data-mac-href="https://github.com/kangning-huang/NimbleMap/releases/latest/download/NimbleMap-macos-arm64.dmg" data-mac-label="Mac 版をダウンロード">Windows 版をダウンロード</a></p>
     </div>
     <div class="hero-shot showcase drop-scene" data-rotate="3500">
       <figure class="frame stage">
-        <img class="slide is-on" src="../img/open-storms.jpg" alt="IBTrACS_storm_tracks_1980-2026.shp を開いた NimbleMap。アジアと太平洋に嵐の経路 4,999 本が最大風速で色分けされ、レイヤーのカードにはファイル名と凡例が表示されています。" width="1600" height="996">
-        <img class="slide" src="../img/open-earthquakes.jpg" alt="usgs_earthquakes_M6plus_1900-2026.gpkg を開いた NimbleMap。太平洋を取り巻く地震 14,537 件がマグニチュードで色分けされています。" width="1600" height="996" loading="lazy" aria-hidden="true">
-        <img class="slide" src="../img/open-heatwave.jpg" alt="GDO_heatwave_intensity_JJA_2023.nc を 2023年7月16日で開いた NimbleMap。3 つの大陸にまたがる熱波の強度が赤系の色で表示され、地図の下にタイムスライダーがあります。" width="1600" height="996" loading="lazy" aria-hidden="true">
-        <img class="slide" src="../img/open-relief.jpg" alt="ETOPO_2022_relief_30min.tif を開いた NimbleMap。地球全体の陸地と海底の標高がカラーランプで表示されています。" width="1600" height="996" loading="lazy" aria-hidden="true">
-        <img class="slide" src="../img/open-volcanoes.jpg" alt="NCEI_volcano_locations.csv を開いた NimbleMap。環太平洋火山帯を中心に火山 1,609 か所が点で表示され、標高で色分けされています。" width="1600" height="996" loading="lazy" aria-hidden="true">
+        <picture><source type="image/webp" srcset="../img/open-storms-800.webp 800w, ../img/open-storms.webp 1600w" sizes="(max-width: 800px) 100vw, 800px"><img class="slide is-on" src="../img/open-storms.jpg" alt="IBTrACS_storm_tracks_1980-2026.shp を開いた NimbleMap。アジアと太平洋に嵐の経路 4,999 本が最大風速で色分けされ、レイヤーのカードにはファイル名と凡例が表示されています。" width="1600" height="996" fetchpriority="high" decoding="async"></picture>
+        <picture><source type="image/webp" srcset="../img/open-earthquakes-800.webp 800w, ../img/open-earthquakes.webp 1600w" sizes="(max-width: 800px) 100vw, 800px"><img class="slide" src="../img/open-earthquakes.jpg" alt="usgs_earthquakes_M6plus_1900-2026.gpkg を開いた NimbleMap。太平洋を取り巻く地震 14,537 件がマグニチュードで色分けされています。" width="1600" height="996" loading="lazy" aria-hidden="true" decoding="async"></picture>
+        <picture><source type="image/webp" srcset="../img/open-heatwave-800.webp 800w, ../img/open-heatwave.webp 1600w" sizes="(max-width: 800px) 100vw, 800px"><img class="slide" src="../img/open-heatwave.jpg" alt="GDO_heatwave_intensity_JJA_2023.nc を 2023年7月16日で開いた NimbleMap。3 つの大陸にまたがる熱波の強度が赤系の色で表示され、地図の下にタイムスライダーがあります。" width="1600" height="996" loading="lazy" aria-hidden="true" decoding="async"></picture>
+        <picture><source type="image/webp" srcset="../img/open-relief-800.webp 800w, ../img/open-relief.webp 1600w" sizes="(max-width: 800px) 100vw, 800px"><img class="slide" src="../img/open-relief.jpg" alt="ETOPO_2022_relief_30min.tif を開いた NimbleMap。地球全体の陸地と海底の標高がカラーランプで表示されています。" width="1600" height="996" loading="lazy" aria-hidden="true" decoding="async"></picture>
+        <picture><source type="image/webp" srcset="../img/open-volcanoes-800.webp 800w, ../img/open-volcanoes.webp 1600w" sizes="(max-width: 800px) 100vw, 800px"><img class="slide" src="../img/open-volcanoes.jpg" alt="NCEI_volcano_locations.csv を開いた NimbleMap。環太平洋火山帯を中心に火山 1,609 か所が点で表示され、標高で色分けされています。" width="1600" height="996" loading="lazy" aria-hidden="true" decoding="async"></picture>
       </figure>
       <svg class="drop-arrow" viewBox="0 0 110 70" aria-hidden="true"><path d="M6 64C26 30 56 14 98 10"/><path class="head" d="M88 3l11 7-10 8"/></svg>
       <div class="files" role="group" aria-label="ダウンロードした地図ファイルのフォルダ：1 つ選ぶと、NimbleMap で開いた様子が見られます">
@@ -150,7 +152,6 @@
 <section id="data">
   <div class="wrap">
     <div class="section-head">
-      <p class="eyebrow">無料のデータ</p>
       <h2>データはどこで手に入る？</h2>
       <p class="lede">リアルタイムの地震からローマ街道まで、選りすぐりの公開データセット。ほとんどはワンクリックでダウンロードできます。</p>
     </div>
@@ -187,9 +188,7 @@
 <section id="formats">
   <div class="wrap">
     <div class="section-head">
-      <p class="eyebrow">開けるファイル</p>
       <h2>実際にダウンロードするファイルを、そのまま</h2>
-      <p class="lede">ファイルを NimbleMap にドラッグすれば、正しい投影法で正しい位置に表示され、すぐに探検できます。</p>
     </div>
     <ul class="formats">
       <li><p class="exts"><span>.shp</span></p><h3>Shapefile</h3><p>境界、道路、嵐の経路。.dbf、.shx、.prj ファイルを同じ場所に置いておいてください。</p></li>
@@ -209,27 +208,26 @@
 <section id="principles">
   <div class="wrap">
     <div class="section-head">
-      <p class="eyebrow">開いたら</p>
       <h2>あとは探検するだけ</h2>
     </div>
     <div class="principle-shots four">
       <div class="principle">
-        <figure class="frame"><img src="../img/open-zoom.jpg" alt="南シナ海とフィリピンを横切る何千本もの嵐の経路を拡大表示。最大風速で色分けされています。" loading="lazy" width="800" height="500"></figure>
+        <figure class="frame"><picture><source type="image/webp" srcset="../img/open-zoom-800.webp 800w, ../img/open-zoom.webp 1600w" sizes="(max-width: 800px) 100vw, 800px"><img src="../img/open-zoom.jpg" alt="南シナ海とフィリピンを横切る何千本もの嵐の経路を拡大表示。最大風速で色分けされています。" width="800" height="500" loading="lazy" decoding="async"></picture></figure>
         <svg class="p-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21M10.5 7.5v6M7.5 10.5h6"/></svg><h3>ズームと移動</h3>
         <p>スクロール、ピンチ、ドラッグで、地球全体から 1 本の海岸線まで。</p>
       </div>
       <div class="principle">
-        <figure class="frame"><img src="../img/open-search.jpg" alt="レイヤーのカードの検索ボックスに「Haiyan」と入力：3 件が見つかり、Haiyan という名前の嵐の経路 3 本が地図上に太く表示されています。" loading="lazy" width="800" height="500"></figure>
+        <figure class="frame"><picture><source type="image/webp" srcset="../img/open-search-800.webp 800w, ../img/open-search.webp 1600w" sizes="(max-width: 800px) 100vw, 800px"><img src="../img/open-search.jpg" alt="レイヤーのカードの検索ボックスに「Haiyan」と入力：3 件が見つかり、Haiyan という名前の嵐の経路 3 本が地図上に太く表示されています。" width="800" height="500" loading="lazy" decoding="async"></picture></figure>
         <svg class="p-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 6h9M3.5 11h6M3.5 16h5"/><circle cx="15.5" cy="13.5" r="4"/><path d="m18.5 16.5 3 3"/></svg><h3>地名もデータも検索</h3>
         <p>都市名を入力すればそこへ飛び、名前を入力すればファイルの中から見つけ出します。この例では、Haiyan という名前の嵐をすべて。</p>
       </div>
       <div class="principle">
-        <figure class="frame"><img src="../img/open-click.jpg" alt="地物のカード：2011年の東北地方太平洋沖地震のマグニチュード 9.10 は、14,537 件の地震の 99% より大きい。" loading="lazy" width="800" height="500"></figure>
+        <figure class="frame"><picture><source type="image/webp" srcset="../img/open-click-800.webp 800w, ../img/open-click.webp 1600w" sizes="(max-width: 800px) 100vw, 800px"><img src="../img/open-click.jpg" alt="地物のカード：2011年の東北地方太平洋沖地震のマグニチュード 9.10 は、14,537 件の地震の 99% より大きい。" width="800" height="500" loading="lazy" decoding="async"></picture></figure>
         <svg class="p-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v9a1.5 1.5 0 0 1-1.5 1.5H10l-4.2 3.6V16H5.5A1.5 1.5 0 0 1 4 14.5z"/><path d="M10.2 8.4a1.9 1.9 0 1 1 2.6 1.8c-.5.2-.8.6-.8 1.1v.4"/><circle cx="12" cy="13.6" r=".6" class="dot"/></svg><h3>何でもクリック</h3>
         <p>それが何で、ほかと比べてどうかがわかります。2011年の東北地方太平洋沖地震は、14,537 件の 99% より強い地震でした。</p>
       </div>
       <div class="principle">
-        <figure class="frame"><img src="../img/open-time.jpg" alt="2023年7月16日の南北アメリカ、アフリカ、ヨーロッパの熱波の強度。タイムスライダーは 92 ステップ中 46 ステップ目にあります。" loading="lazy" width="800" height="500"></figure>
+        <figure class="frame"><picture><source type="image/webp" srcset="../img/open-time-800.webp 800w, ../img/open-time.webp 1600w" sizes="(max-width: 800px) 100vw, 800px"><img src="../img/open-time.jpg" alt="2023年7月16日の南北アメリカ、アフリカ、ヨーロッパの熱波の強度。タイムスライダーは 92 ステップ中 46 ステップ目にあります。" width="800" height="500" loading="lazy" decoding="async"></picture></figure>
         <svg class="p-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M10 8.5v7l5.5-3.5z"/></svg><h3>時間を再生</h3>
         <p>時間ステップのあるファイルにはスライダーが付きます。再生ボタンを押して、ひと夏の熱波が動いていく様子を見てみましょう。</p>
       </div>
@@ -249,13 +247,11 @@
 <section id="examples">
   <div class="wrap">
     <div class="section-head">
-      <p class="eyebrow">練習</p>
       <h2>地図は初めて？内蔵の 8 つのサンプルで練習しよう</h2>
-      <p class="lede">ダウンロードは不要です。アプリに最初から入っています。</p>
     </div>
     <div class="features mini">
       <article class="example feature">
-        <figure class="frame"><img src="../img/typhoons-card.jpg" alt="アジアと太平洋に 4,999 本の台風の経路を表示した NimbleMap。台風ハイエンが選択され、カードには最大風速 170 ノットが 4,547 個の嵐の 99% より高いと表示されています。" loading="lazy" width="1600" height="996"></figure>
+        <figure class="frame"><picture><source type="image/webp" srcset="../img/typhoons-card-800.webp 800w, ../img/typhoons-card.webp 1600w" sizes="(max-width: 800px) 100vw, 800px"><img src="../img/typhoons-card.jpg" alt="アジアと太平洋に 4,999 本の台風の経路を表示した NimbleMap。台風ハイエンが選択され、カードには最大風速 170 ノットが 4,547 個の嵐の 99% より高いと表示されています。" width="1600" height="996" loading="lazy" decoding="async"></picture></figure>
         <div class="feature-body">
           <h3>台風とハリケーン</h3>
           <p>1980年以降の嵐の経路 4,999 本。ハイエンの風速 170 ノットは、4,547 個の嵐の 99% を上回ります。</p>
@@ -264,7 +260,7 @@
         </div>
       </article>
       <article class="example feature">
-        <figure class="frame"><img src="../img/walls-satellite.jpg" alt="衛星画像の上に描いた 1866年の北京の城壁。カードには面積 35.3 km² で、1,789 の城郭都市の 99% より大きいと表示されています。" loading="lazy" width="1600" height="996"></figure>
+        <figure class="frame"><picture><source type="image/webp" srcset="../img/walls-satellite-800.webp 800w, ../img/walls-satellite.webp 1600w" sizes="(max-width: 800px) 100vw, 800px"><img src="../img/walls-satellite.jpg" alt="衛星画像の上に描いた 1866年の北京の城壁。カードには面積 35.3 km² で、1,789 の城郭都市の 99% より大きいと表示されています。" width="1600" height="996" loading="lazy" decoding="async"></picture></figure>
         <div class="feature-body">
           <h3>1866年の中国の城郭都市</h3>
           <p>城壁 1,789 か所。北京の城壁が囲む 35.3&nbsp;km² は、その 99% より広い面積です。</p>
@@ -289,7 +285,6 @@
 <section id="share">
   <div class="wrap share-grid">
     <div class="section-head">
-      <p class="eyebrow">共有</p>
       <h2>見つけたものを共有しよう</h2>
       <p class="lede">タイトル、凡例、出典表記を加えて、スライド、レポート、SNS の投稿用に書き出せます。</p>
     </div>
@@ -302,13 +297,10 @@
     <img class="cta-icon" src="../img/icon-256.png" alt="" width="96" height="96">
     <h2>地球の本物のデータを探検しよう。</h2>
     <div class="cta-actions">
-      <a class="btn btn-primary btn-get" href="https://github.com/kangning-huang/NimbleMap/releases/latest/download/NimbleMap-macos-arm64.dmg" download>Mac 版を無料でダウンロード</a>
-        <a class="btn btn-quiet btn-windows" href="https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.1/NimbleMap-windows-x64-setup.exe" download>Windows 版をダウンロード</a>
-    </div>
-    <p class="desktop-platforms">Mac（Apple シリコン、macOS 13 以降）と Windows 10/11（x64）に対応。</p>
-    <p class="dl-fine"><strong>Mac:</strong> 無料 · 約 109 MB · macOS 13 以降 · Apple シリコン · オフラインで動作</p>
+      <a class="btn btn-primary btn-get" href="https://github.com/kangning-huang/NimbleMap/releases/latest/download/NimbleMap-macos-arm64.dmg" download data-win-href="https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.1/NimbleMap-windows-x64-setup.exe">ダウンロード</a>
+        <a class="btn btn-quiet btn-web" href="https://nimblemap.app/?lang=ja">ブラウザで試す</a>
+      </div>
     <div class="share" role="group" aria-label="共有"><span class="share-label">共有</span><a class="share-btn" data-net="x" href="#" target="_blank" rel="noopener" aria-label="共有：X">X</a><a class="share-btn" data-net="facebook" href="#" target="_blank" rel="noopener" aria-label="共有：Facebook">Facebook</a><a class="share-btn" data-net="reddit" href="#" target="_blank" rel="noopener" aria-label="共有：Reddit">Reddit</a><a class="share-btn" data-net="linkedin" href="#" target="_blank" rel="noopener" aria-label="共有：LinkedIn">LinkedIn</a></div>
-    <p class="built-on">NimbleMap は <a href="https://github.com/opengeos/RustGIS">RustGIS</a> をベースに作られています。</p>
   </div>
 </section>
 </main>
@@ -316,10 +308,10 @@
 <footer class="site-foot">
   <div class="wrap">
     <div>
-      <p><strong>NimbleMap</strong> · RustGIS をベースにした、地図が主役のアプリ。</p>
+      <p><strong>NimbleMap</strong> · <a href="https://github.com/opengeos/RustGIS">RustGIS</a> をベースにした、地図が主役のアプリ。</p>
       <p>スクリーンショットの地図データ：© OpenStreetMap contributors（ODbL）／Protomaps、Natural Earth（パブリックドメイン）、NASA Blue Marble 画像（NASA Earth Observatory、GIBS）。サンプルデータ：NOAA IBTrACS、Xue et al. 2021（CC BY 4.0）、Copernicus Global Drought Observatory／JRC（CC BY 4.0）、USGS、NOAA ETOPO 2022、NOAA NCEI。</p>
     </div>
-    <div class="foot-nav"><p class="foot-links"><a href="help.html">ヘルプ</a> · <a href="glossary.html">用語集</a> · <a href="data.html">データ</a> · <a href="pro.html">Pro</a> · <a href="https://github.com/kangning-huang/NimbleMap/blob/main/CHANGELOG.md">変更履歴</a></p><p class="foot-note">NimbleMap は独立したプロジェクトであり、Apple、Esri、QGIS プロジェクトとは関係ありません。</p><p class="foot-langs"><a href="../index.html" hreflang="en" lang="en">English</a> · <a href="../zh/index.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="../de/index.html" hreflang="de" lang="de">Deutsch</a> · <a href="../es/index.html" hreflang="es" lang="es">Español</a> · <a href="../fr/index.html" hreflang="fr" lang="fr">Français</a> · <a href="../it/index.html" hreflang="it" lang="it">Italiano</a> · <a href="../nl/index.html" hreflang="nl" lang="nl">Nederlands</a> · <a href="../pt-br/index.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ru/index.html" hreflang="ru" lang="ru">Русский</a> · <a href="../ko/index.html" hreflang="ko" lang="ko">한국어</a></p></div>
+    <div class="foot-nav"><p class="foot-links"><a href="help.html">ヘルプ</a> · <a href="glossary.html">用語集</a> · <a href="data.html">データ</a> · <a href="pro.html">Pro</a> · <a href="https://github.com/kangning-huang/NimbleMap/blob/main/CHANGELOG.md">変更履歴</a> · <a href="../about.html" hreflang="en">作者について</a> · <a href="../privacy.html">Privacy</a> · <a href="../terms.html">Terms</a></p><p class="foot-note">NimbleMap は独立したプロジェクトであり、Apple、Esri、QGIS プロジェクトとは関係ありません。</p><p class="foot-langs"><a href="../index.html" hreflang="en" lang="en">English</a> · <a href="../zh/index.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="../de/index.html" hreflang="de" lang="de">Deutsch</a> · <a href="../es/index.html" hreflang="es" lang="es">Español</a> · <a href="../fr/index.html" hreflang="fr" lang="fr">Français</a> · <a href="../it/index.html" hreflang="it" lang="it">Italiano</a> · <a href="../nl/index.html" hreflang="nl" lang="nl">Nederlands</a> · <a href="../pt-br/index.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ru/index.html" hreflang="ru" lang="ru">Русский</a> · <a href="../ko/index.html" hreflang="ko" lang="ko">한국어</a></p></div>
   </div>
 </footer>
 </body>

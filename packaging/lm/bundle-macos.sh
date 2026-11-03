@@ -1,11 +1,16 @@
 #!/usr/bin/env bash
-# Builds NimbleMap.app (and, with signing credentials, signs, notarizes and staples it).
+# Builds NimbleMap.app (and, with signing credentials, signs / notarizes or packages for the Mac App Store).
 #
 #   packaging/lm/bundle-macos.sh [out-dir]
 #
-# One app: Pro's features unlock when someone signs in (docs/lm/accounts-design.md › Entitlement).
+# Channel (docs/lm/app-store.md):
+#   LM_CHANNEL=direct   (default) Developer ID .app + optional notarization
+#   LM_CHANNEL=mas      Mac App Store: App Sandbox, Apple Distribution, productbuild .pkg
 #
-# Signing runs only when these are set (CI secrets; see docs/lm/signing.md):
+# One app: Pro's features unlock when someone signs in (docs/lm/accounts-design.md › Entitlement).
+# Leave LM_UPDATE_FEED_URL unset for MAS (App Store updates the app).
+#
+# Direct signing (docs/lm/signing.md):
 #   LM_SIGN_IDENTITY   "Developer ID Application: <name> (<team id>)" — in the keychain
 #   LM_NOTARY_PROFILE  a notarytool keychain profile (xcrun notarytool store-credentials), on a Mac;
 #   or LM_NOTARY_APPLE_ID, LM_NOTARY_TEAM_ID, LM_NOTARY_PASSWORD (an app-specific password), in CI
@@ -16,7 +21,13 @@
 #                     the login keychain (service nimblemap-signing-keychain, account developer-id);
 #                     the password is never printed or written anywhere.
 #
-# Updates (WP5.7, docs/lm/update-feed.md): the feed addresses are compiled in by default:
+# MAS signing:
+#   LM_MAS_SIGN_IDENTITY      "Apple Distribution: <name> (<team id>)"
+#   LM_MAS_INSTALLER_IDENTITY "3rd Party Mac Developer Installer: <name> (<team id>)"
+#                             (or "Mac Installer Distribution: …" depending on certificate name)
+#   LM_MAS_PROVISION_PROFILE  path to the Mac App Store .provisionprofile
+#
+# Updates (WP5.7, docs/lm/update-feed.md): the feed addresses are compiled in by default for direct:
 #   LM_UPDATE_FEED_URL           default https://nimblemap.com/update/feed.json
 #   LM_UPDATE_FEED_FALLBACK_URL  default the same file in the GitCode mirror (mainland China)
 # Set either to "none" to leave it out (a build with neither never checks).
@@ -37,9 +48,20 @@ out="${1:-$root/dist/lm}"
 target_dir="${CARGO_TARGET_DIR:-$root/target}"
 version="$(sed -n 's/^version = "\(.*\)"/\1/p' "$root/Cargo.toml" | head -1)"
 build="${LM_BUILD_NUMBER:-0}"
+channel="${LM_CHANNEL:-direct}"
+case "$channel" in
+  direct|mas) ;;
+  *) echo "bundle-macos: LM_CHANNEL must be direct or mas (got: $channel)" >&2; exit 1 ;;
+esac
 
-export LM_UPDATE_FEED_URL="${LM_UPDATE_FEED_URL:-https://nimblemap.com/update/feed.json}"
-export LM_UPDATE_FEED_FALLBACK_URL="${LM_UPDATE_FEED_FALLBACK_URL:-https://api.gitcode.com/api/v5/repos/KN-Huang/NimbleMap/raw/docs/update/feed.json?ref=main}"
+if [[ "$channel" == "mas" ]]; then
+  # App Store updates the app; do not compile in the direct-download feed.
+  export LM_UPDATE_FEED_URL="${LM_UPDATE_FEED_URL:-none}"
+  export LM_UPDATE_FEED_FALLBACK_URL="${LM_UPDATE_FEED_FALLBACK_URL:-none}"
+else
+  export LM_UPDATE_FEED_URL="${LM_UPDATE_FEED_URL:-https://nimblemap.com/update/feed.json}"
+  export LM_UPDATE_FEED_FALLBACK_URL="${LM_UPDATE_FEED_FALLBACK_URL:-https://api.gitcode.com/api/v5/repos/KN-Huang/NimbleMap/raw/docs/update/feed.json?ref=main}"
+fi
 echo "bundle-macos: update feed $LM_UPDATE_FEED_URL (fallback $LM_UPDATE_FEED_FALLBACK_URL)"
 features=()
 if [[ -n "${LM_CARGO_FEATURES:-}" ]]; then
@@ -212,6 +234,43 @@ cat > "$app/Contents/Info.plist" <<PLIST
       <key>LSItemContentTypes</key><array><string>edu.ucar.unidata.netcdf</string></array>
       <key>CFBundleTypeExtensions</key><array><string>nc</string><string>nc4</string><string>cdf</string></array>
     </dict>
+    <!-- Sandbox related items (docs/lm/app-store.md): siblings of .shp / GeoTIFF / CSV. -->
+    <dict>
+      <key>CFBundleTypeName</key><string>Shapefile attribute table</string>
+      <key>CFBundleTypeRole</key><string>None</string>
+      <key>LSHandlerRank</key><string>None</string>
+      <key>LSTypeIsPackage</key><false/>
+      <key>NSIsRelatedItemType</key><true/>
+      <key>CFBundleTypeExtensions</key><array><string>dbf</string></array>
+    </dict>
+    <dict>
+      <key>CFBundleTypeName</key><string>Shapefile index</string>
+      <key>CFBundleTypeRole</key><string>None</string>
+      <key>LSHandlerRank</key><string>None</string>
+      <key>NSIsRelatedItemType</key><true/>
+      <key>CFBundleTypeExtensions</key><array><string>shx</string></array>
+    </dict>
+    <dict>
+      <key>CFBundleTypeName</key><string>Projection / world file</string>
+      <key>CFBundleTypeRole</key><string>None</string>
+      <key>LSHandlerRank</key><string>None</string>
+      <key>NSIsRelatedItemType</key><true/>
+      <key>CFBundleTypeExtensions</key><array><string>prj</string><string>tfw</string><string>wld</string></array>
+    </dict>
+    <dict>
+      <key>CFBundleTypeName</key><string>Shapefile code page</string>
+      <key>CFBundleTypeRole</key><string>None</string>
+      <key>LSHandlerRank</key><string>None</string>
+      <key>NSIsRelatedItemType</key><true/>
+      <key>CFBundleTypeExtensions</key><array><string>cpg</string></array>
+    </dict>
+    <dict>
+      <key>CFBundleTypeName</key><string>GeoTIFF sidecar</string>
+      <key>CFBundleTypeRole</key><string>None</string>
+      <key>LSHandlerRank</key><string>None</string>
+      <key>NSIsRelatedItemType</key><true/>
+      <key>CFBundleTypeExtensions</key><array><string>aux.xml</string></array>
+    </dict>
   </array>
   <!-- The .lmap type, which ${brand} owns and declares (docs/lm/format-v1.md). -->
   <key>UTExportedTypeDeclarations</key>
@@ -318,13 +377,61 @@ ru|Разработчик: |доцент (assistant professor) экологич�
 ja|開発者：|ニューヨーク大学上海校 環境学 助教|
 ko|개발자: |NYU 상하이 환경학 조교수|
 CREDITS
+if [[ "$channel" == "mas" ]]; then
+  # Privacy manifest + container migration for people who already used the direct download.
+  cp "$root/packaging/lm/PrivacyInfo.xcprivacy" "$app/Contents/Resources/PrivacyInfo.xcprivacy"
+  cp "$root/packaging/lm/container-migration.plist" "$app/Contents/Resources/container-migration.plist"
+  # Embedded provisioning profile (required for App Store upload when distribution-signed).
+  if [[ -n "${LM_MAS_PROVISION_PROFILE:-}" ]]; then
+    cp "$LM_MAS_PROVISION_PROFILE" "$app/Contents/embedded.provisionprofile"
+  else
+    echo "bundle-macos: warning: LM_MAS_PROVISION_PROFILE unset; MAS upload will need a profile" >&2
+  fi
+fi
 
 # On an exFAT or FAT drive macOS keeps extended attributes in AppleDouble `._*` files, which
 # codesign rejects as unsigned subcomponents: drop them and the attributes before signing.
 xattr -cr "$app" 2>/dev/null || true
 find "$app" -name '._*' -delete
+# LaCie/exFAT often copies as 700; App Store rejects packages with non-world-readable files.
+chmod -R a+rX "$app"
+find "$app" -type f -name 'layeredmap' -exec chmod a+x {} +
+find "$app" -type f -name 'lm-dictate' -exec chmod a+x {} +
 
-if [[ -n "${LM_SIGN_IDENTITY:-}" ]]; then
+if [[ "$channel" == "mas" ]]; then
+  # Mac App Store: Apple Distribution + sandbox entitlements; no notarization.
+  if [[ -n "${LM_MAS_SIGN_IDENTITY:-}" ]]; then
+    dictate_ent=(--entitlements "$root/packaging/lm/app-mas-dictate.entitlements")
+    app_ent=(--entitlements "$root/packaging/lm/app-mas.entitlements")
+    codesign --force --options runtime --timestamp "${dictate_ent[@]}" --sign "$LM_MAS_SIGN_IDENTITY" "$app/Contents/MacOS/lm-dictate"
+    codesign --force --options runtime --timestamp "${app_ent[@]}" --sign "$LM_MAS_SIGN_IDENTITY" "$app"
+    codesign --verify --strict --verbose=2 "$app"
+    # codesign prints CodeDirectory flags on stderr. Capture first so pipefail+SIGPIPE
+    # from grep -q closing the pipe cannot look like a failed check.
+    _cd="$(codesign --display --verbose=2 "$app" 2>&1 || true)"
+    if ! grep -Eq 'flags=.*(runtime|0x10000)' <<<"$_cd"; then
+      echo "bundle-macos: $app is signed without the hardened runtime" >&2
+      printf '%s
+' "$_cd" >&2
+      exit 1
+    fi
+    unset _cd
+  else
+    echo "bundle-macos: no LM_MAS_SIGN_IDENTITY; ad-hoc signing with MAS entitlements (local only)" >&2
+    codesign --force --entitlements "$root/packaging/lm/app-mas-dictate.entitlements" --sign - "$app/Contents/MacOS/lm-dictate"
+    codesign --force --entitlements "$root/packaging/lm/app-mas.entitlements" --sign - "$app"
+  fi
+  pkg="$out/${name// /-}-${version}-${build}-macos-mas.pkg"
+  if [[ -n "${LM_MAS_INSTALLER_IDENTITY:-}" ]]; then
+    productbuild --component "$app" /Applications --sign "$LM_MAS_INSTALLER_IDENTITY" "$pkg"
+  else
+    productbuild --component "$app" /Applications "$pkg"
+    echo "bundle-macos: warning: LM_MAS_INSTALLER_IDENTITY unset; .pkg is unsigned" >&2
+  fi
+  echo "bundle-macos: $pkg"
+  echo "bundle-macos: upload with Transporter or: xcrun altool --upload-app -f "$pkg" …"
+elif [[ -n "${LM_SIGN_IDENTITY:-}" ]]; then
+  # Direct download: Developer ID + hardened runtime (+ optional notarization).
   # The Developer ID identity's own keychain (scripts get errSecInternalComponent from the login
   # keychain): unlock it with the password the login keychain keeps. Never echoed.
   signing_kc="${LM_SIGNING_KEYCHAIN:-$HOME/Library/Keychains/nimblemap-signing.keychain-db}"
@@ -342,13 +449,14 @@ if [[ -n "${LM_SIGN_IDENTITY:-}" ]]; then
   codesign --force --options runtime --timestamp "${ent[@]}" --sign "$LM_SIGN_IDENTITY" "$app/Contents/MacOS/lm-dictate"
   codesign --force --options runtime --timestamp "${ent[@]}" --sign "$LM_SIGN_IDENTITY" "$app"
   codesign --verify --strict --verbose=2 "$app"
-  # The hardened runtime (WP5.7), which notarization requires: the signature must carry it.
-  # Captured first: with pipefail, grep -q exiting on its match would make codesign fail on SIGPIPE.
-  signature="$(codesign --display --verbose=2 "$app" 2>&1)"
-  if ! grep -q 'flags=.*runtime' <<< "$signature"; then
+  _cd="$(codesign --display --verbose=2 "$app" 2>&1 || true)"
+  if ! grep -Eq 'flags=.*(runtime|0x10000)' <<<"$_cd"; then
     echo "bundle-macos: $app is signed without the hardened runtime" >&2
+    printf '%s
+' "$_cd" >&2
     exit 1
   fi
+  unset _cd
   if [[ -n "${LM_NOTARY_PROFILE:-}" ]]; then
     notary=(--keychain-profile "$LM_NOTARY_PROFILE")
   elif [[ -n "${LM_NOTARY_APPLE_ID:-}" ]]; then
@@ -370,5 +478,7 @@ else
   codesign --force --sign - "$app/Contents/MacOS/lm-dictate"
   codesign --force --sign - "$app"
 fi
-ditto -c -k --keepParent "$app" "$out/${name// /-}-${version}-${build}-macos-arm64.zip"
-echo "bundle-macos: $app"
+if [[ "$channel" != "mas" ]]; then
+  ditto -c -k --keepParent "$app" "$out/${name// /-}-${version}-${build}-macos-arm64.zip"
+fi
+echo "bundle-macos: $app (channel=$channel)"

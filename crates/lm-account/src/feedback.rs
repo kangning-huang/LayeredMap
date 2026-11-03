@@ -205,8 +205,8 @@ pub struct About {
 }
 
 impl About {
-    /// This build on this system, in the interface language `language`. Runs `sw_vers` on macOS:
-    /// call it on a background thread.
+    /// This build on this system, in the interface language `language`. Reads the OS version
+    /// through process APIs on macOS: call it on a background thread.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn current(language: &str) -> About {
         About { app_version: env!("CARGO_PKG_VERSION").to_string(), os_version: system_version(), language: language.to_string() }
@@ -218,8 +218,14 @@ impl About {
 pub fn system_version() -> Option<String> {
     #[cfg(target_os = "macos")]
     {
-        let out = std::process::Command::new("/usr/bin/sw_vers").arg("-productVersion").output().ok()?;
-        out.status.success().then(|| format!("macOS {}", String::from_utf8_lossy(&out.stdout).trim()))
+        use objc2_foundation::NSProcessInfo;
+        let v = NSProcessInfo::processInfo().operatingSystemVersion();
+        // major.minor is enough for feedback; patch is included when non-zero.
+        Some(if v.patchVersion == 0 {
+            format!("macOS {}.{}", v.majorVersion, v.minorVersion)
+        } else {
+            format!("macOS {}.{}.{}", v.majorVersion, v.minorVersion, v.patchVersion)
+        })
     }
     #[cfg(windows)]
     {

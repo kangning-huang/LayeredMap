@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Move direct-download Application Support into the App Store container on first launch. -->
+<plist version="1.0">
+<dict>
+  <key>Move</key>
+  <array>
+    <dict>
+      <key>SourcePath</key>
+      <string>~/Library/Application Support/LayeredMap</string>
+      <key>DestinationPath</key>
+      <string>Library/Application Support/LayeredMap</string>
+    </dict>
+  </array>
+</dict>
+</plist>

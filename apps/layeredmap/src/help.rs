@@ -52,8 +52,8 @@ pub fn open(lang: Lang) {
         return;
     }
     #[cfg(target_os = "macos")]
-    if let Err(e) = std::process::Command::new("/usr/bin/open").arg(&path).spawn() {
-        log::warn!("help: couldn't open {}: {e}", path.display());
+    if let Err(e) = crate::macos::open_path(&path) {
+        log::warn!("help: {e}");
     }
     // Linux and the other Unix desktops: the desktop's default browser.
     #[cfg(all(unix, not(target_os = "macos")))]

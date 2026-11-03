@@ -64,8 +64,7 @@ pub fn about(app: &str) -> String {
 fn os_version() -> Option<String> {
     #[cfg(target_os = "macos")]
     {
-        let out = std::process::Command::new("/usr/bin/sw_vers").arg("-productVersion").output().ok()?;
-        out.status.success().then(|| format!("macOS {}", String::from_utf8_lossy(&out.stdout).trim()))
+        crate::macos::os_version_label()
     }
     #[cfg(windows)]
     {

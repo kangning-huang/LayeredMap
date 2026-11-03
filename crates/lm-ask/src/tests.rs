@@ -415,3 +415,53 @@ fn c05_steps_without_arguments_are_sent_back_naming_the_missing_ones() {
         assert!(repair.contains(want), "{repair}");
     }
 }
+
+/// The owner's two questions from 2026-10-28, asked of the real model with the built-in layers
+/// (`cargo test -p lm-ask owners_questions -- --ignored --nocapture`; a few tenths of a cent).
+#[test]
+#[ignore]
+#[cfg(not(target_arch = "wasm32"))]
+fn owners_questions_total_area_and_hottest_day() {
+    let dir = crate::reference::default_dir().expect("reference data");
+    let reference = crate::reference::Reference::open(&dir, Some("CN")).map(std::sync::Arc::new);
+    let key = crate::openrouter::read_key().expect("an OpenRouter key");
+    let t = crate::openrouter::OpenRouter::new(key);
+    let cases = [
+        (
+            "Calculate the total area of the walled cities within the province of Shandong.",
+            "assets/examples/walled cities 1866.geojson",
+            "walled cities 1866",
+            "summarize_data_here",
+        ),
+        (
+            "Find the hottest heatwave day in Shanghai.",
+            "assets/examples/heatwaves summer 2023.nc",
+            "heatwaves summer 2023",
+            "summarize_over_time",
+        ),
+        ("上海热浪最强的是哪一天？", "assets/examples/heatwaves summer 2023.nc", "heatwaves summer 2023", "summarize_over_time"),
+    ];
+    let mut misses = Vec::new();
+    for (text, file, name, want) in cases {
+        let mut r = request(text, vec![layer(file, name, 1)], vec![None]);
+        r.reference = reference.clone();
+        let turn = ask(&t, &r, &Control::none());
+        match turn.answer {
+            Ok(Answer::Plan(p)) => {
+                let steps = format!("{:?}", p.steps);
+                let last = p.outcomes.iter().rev().find_map(|o| match o {
+                    lm_jobs::plan_exec::StepOutcome::Card { card, .. } => Some(format!("{} | {}", card.title, card.summary)),
+                    _ => None,
+                });
+                eprintln!("{text}\n  steps {steps}\n  answer {last:?}\n  notes {:?}", p.notes);
+                if !steps.contains(want) {
+                    misses.push(format!("{text}: no {want}"));
+                }
+            }
+            Ok(Answer::Question { text: q, .. }) => misses.push(format!("{text}: asked {q}")),
+            Ok(Answer::CannotDo(why)) => misses.push(format!("{text}: refused {why}")),
+            Err(e) => misses.push(format!("{text}: {e}")),
+        }
+    }
+    assert!(misses.is_empty(), "{misses:#?}");
+}

@@ -71,11 +71,7 @@ struct App {
 fn reduce_motion() -> bool {
     #[cfg(target_os = "macos")]
     {
-        std::process::Command::new("defaults")
-            .args(["read", "com.apple.universalaccess", "reduceMotion"])
-            .output()
-            .map(|o| String::from_utf8_lossy(&o.stdout).trim() == "1")
-            .unwrap_or(false)
+        macos::reduce_motion()
     }
     #[cfg(not(target_os = "macos"))]
     {

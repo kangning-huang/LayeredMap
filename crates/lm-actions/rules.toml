@@ -317,6 +317,22 @@ input_reason = "Click one area on the map first."
 companion = { kind = "raster", reason = "Add a raster layer to summarize its values in this area." }
 
 [[action]]
+id = "summarize_over_time"
+label = "[Heat] over time here"
+more_only = true
+aliases = ["time series", "hottest day", "each day", "over time"]
+group = "Measure"
+min_phase = 4
+surface = "assistant"
+output = "card"
+algorithm = "zonal::summarize"
+method = "the area-weighted mean (or the cell under a point) on every time step, ranked highest first"
+decisions = ["which band"]
+inputs = ["one_area", "one_point"]
+input_reason = "Click one area or point on the map first."
+companion = { kind = "raster", reason = "Add a file with a time slider (NetCDF) to see its values over time here." }
+
+[[action]]
 id = "summarize_each"
 label = "Summarize [Heat] in each [District]"
 aliases = ["zonal statistics", "zonal stats", "raster by polygon"]
@@ -388,7 +404,7 @@ min_phase = 4
 surface = "assistant"
 output = "card"
 algorithm = "overlay::whats_inside"
-method = "counts and value summaries of what touches or lies inside the area"
+method = "the count, total geodesic area or length, and number-field totals of what touches or lies inside the area"
 decisions = ["which layer to summarize"]
 inputs = ["drawn_area"]
 input_reason = "Draw an area on the map first."

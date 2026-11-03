@@ -7,7 +7,7 @@ Every page carries the same language plumbing, and it must list every language t
 - the language menu in the header (a `<details>` list, so it works without JavaScript);
 - the list of languages in the footer;
 - the app's download links (the DMG: GitHub Releases, or the GitCode mirror on Chinese pages);
-- the site navigation in the header (Home, Examples, Data, Help, Download) and the footer's links
+- the site navigation in the header (Home, Examples, Data, Help, About, Download) and the footer's links
   (Help, Glossary, Pro, Changelog) with the line saying NimbleMap is an independent project.
 
 Translated pages are written by hand; this script rewrites only those parts, from LANGS and
@@ -66,31 +66,32 @@ class Words:
     data: str
     changelog: str
     independent: str
+    about: str
 
 
 WORDS = {
     "": Words("Home", "Examples", "Help", "Glossary", "Download", "Pro", "Data", "Changelog",
-              "NimbleMap is an independent project, not affiliated with Apple, Esri or the QGIS project."),
+              "NimbleMap is an independent project, not affiliated with Apple, Esri or the QGIS project.", "About"),
     "zh": Words("首页", "示例", "帮助", "术语表", "下载", "Pro 版", "数据", "更新日志",
-                "凌波微图是独立项目，与苹果公司、Esri 及 QGIS 项目均无关联。"),
+                "凌波微图是独立项目，与苹果公司、Esri 及 QGIS 项目均无关联。", "关于作者"),
     "de": Words("Startseite", "Beispiele", "Hilfe", "Glossar", "Download", "Pro", "Daten", "Änderungsprotokoll",
-                "NimbleMap ist ein unabhängiges Projekt und steht in keiner Verbindung zu Apple, Esri oder dem QGIS-Projekt."),
+                "NimbleMap ist ein unabhängiges Projekt und steht in keiner Verbindung zu Apple, Esri oder dem QGIS-Projekt.", "Über mich"),
     "es": Words("Inicio", "Ejemplos", "Ayuda", "Glosario", "Descargar", "Pro", "Datos", "Registro de cambios",
-                "NimbleMap es un proyecto independiente, sin relación con Apple, Esri ni el proyecto QGIS."),
+                "NimbleMap es un proyecto independiente, sin relación con Apple, Esri ni el proyecto QGIS.", "Acerca de"),
     "fr": Words("Accueil", "Exemples", "Aide", "Glossaire", "Télécharger", "Pro", "Données", "Journal des modifications",
-                "NimbleMap est un projet indépendant, sans lien avec Apple, Esri ni le projet QGIS."),
+                "NimbleMap est un projet indépendant, sans lien avec Apple, Esri ni le projet QGIS.", "À propos"),
     "it": Words("Home", "Esempi", "Aiuto", "Glossario", "Scarica", "Pro", "Dati", "Registro delle modifiche",
-                "NimbleMap è un progetto indipendente, non affiliato ad Apple, Esri o al progetto QGIS."),
+                "NimbleMap è un progetto indipendente, non affiliato ad Apple, Esri o al progetto QGIS.", "Informazioni"),
     "nl": Words("Start", "Voorbeelden", "Help", "Woordenlijst", "Downloaden", "Pro", "Data", "Wijzigingslog",
-                "NimbleMap is een onafhankelijk project en is niet verbonden aan Apple, Esri of het QGIS-project."),
+                "NimbleMap is een onafhankelijk project en is niet verbonden aan Apple, Esri of het QGIS-project.", "Over"),
     "pt-br": Words("Início", "Exemplos", "Ajuda", "Glossário", "Baixar", "Pro", "Dados", "Registro de alterações",
-                   "O NimbleMap é um projeto independente, sem vínculo com a Apple, a Esri ou o projeto QGIS."),
+                   "O NimbleMap é um projeto independente, sem vínculo com a Apple, a Esri ou o projeto QGIS.", "Sobre"),
     "ru": Words("Главная", "Примеры", "Справка", "Словарь", "Скачать", "Pro", "Данные", "История изменений",
-                "NimbleMap — независимый проект, не связанный с Apple, Esri или проектом QGIS."),
+                "NimbleMap — независимый проект, не связанный с Apple, Esri или проектом QGIS.", "Об авторе"),
     "ja": Words("ホーム", "サンプル", "ヘルプ", "用語集", "ダウンロード", "Pro", "データ", "変更履歴",
-                "NimbleMap は独立したプロジェクトであり、Apple、Esri、QGIS プロジェクトとは関係ありません。"),
+                "NimbleMap は独立したプロジェクトであり、Apple、Esri、QGIS プロジェクトとは関係ありません。", "作者について"),
     "ko": Words("홈", "예제", "도움말", "용어집", "다운로드", "Pro", "데이터", "변경 내역",
-                "NimbleMap은 독립 프로젝트이며, Apple, Esri, QGIS 프로젝트와 관련이 없습니다."),
+                "NimbleMap은 독립 프로젝트이며, Apple, Esri, QGIS 프로젝트와 관련이 없습니다.", "만든 사람"),
 }
 
 CHANGELOG = "https://github.com/kangning-huang/NimbleMap/blob/main/CHANGELOG.md"
@@ -102,7 +103,7 @@ CHANGELOG = "https://github.com/kangning-huang/NimbleMap/blob/main/CHANGELOG.md"
 DMG_NAME = "NimbleMap-macos-arm64.dmg"
 DMG_GITHUB = f"https://github.com/kangning-huang/NimbleMap/releases/latest/download/{DMG_NAME}"
 GITCODE = "https://gitcode.com/KN-Huang/NimbleMap"
-DMG_GITCODE = f"{GITCODE}/releases/download/v0.7.4/{DMG_NAME}"
+DMG_GITCODE = f"{GITCODE}/releases/download/v0.7.5/{DMG_NAME}"
 DMG = {"zh": DMG_GITCODE}  # every other language: DMG_GITHUB
 # The download page's second card offers the other host: GitCode everywhere, GitHub on Chinese
 # pages. Its links carry data-dl="alt" (the DMG) and data-dl="alt-releases" (the releases page).
@@ -239,15 +240,18 @@ def nav(lang: Lang, name: str) -> str:
     """The header's page links; the current section is marked (the workflows belong to Help)."""
     w = words(lang)
     here = {"index.html": "index.html", "data.html": "data.html", "help.html": "help.html",
-            "download.html": "download.html"}.get(name)
+            "download.html": "download.html", "about.html": "about.html"}.get(name)
     if name.startswith("workflow-"):
         here = "help.html"
+    en = LANGS[0]
+    about = "about.html" if lang is en else href(lang, en, "about.html")
     rows = [("index.html", w.home), ("index.html#examples", w.examples), ("data.html", w.data), ("help.html", w.help),
-            ("download.html", w.download)]
+            (about, w.about), ("download.html", w.download)]
     out = []
     for target, label in rows:
         current = ' aria-current="page"' if target == here else ""
-        out.append(f'      <a href="{target}"{current}>{label}</a>\n')
+        lang_attr = f' hreflang="{en.hreflang}"' if target == about and lang is not en else ""
+        out.append(f'      <a href="{target}"{lang_attr}{current}>{label}</a>\n')
     return "".join(out)
 
 
@@ -264,8 +268,13 @@ def foot_col(lang: Lang, name: str, site: Path) -> str:
     else:
         en = LANGS[0]
         data = f'<a href="{href(lang, en, "data.html")}" hreflang="{en.hreflang}">{w.data}</a>'
+    en = LANGS[0]
+    about = (f'<a href="about.html">{w.about}</a>' if lang is en
+             else f'<a href="{href(lang, en, "about.html")}" hreflang="{en.hreflang}">{w.about}</a>')
+    up = "" if lang is en else "../"
+    legal = [f'<a href="{up}privacy.html">Privacy</a>', f'<a href="{up}terms.html">Terms</a>']
     links = " · ".join([f'<a href="help.html">{w.help}</a>', f'<a href="glossary.html">{w.glossary}</a>', data, pro,
-                        f'<a href="{CHANGELOG}">{w.changelog}</a>'])
+                        f'<a href="{CHANGELOG}">{w.changelog}</a>', about, *legal])
     return (f'<div class="foot-nav"><p class="foot-links">{links}</p>'
             f'<p class="foot-note">{w.independent}</p>{foot(lang, name, site)}</div>')
 

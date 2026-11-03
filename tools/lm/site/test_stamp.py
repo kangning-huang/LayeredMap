@@ -3,6 +3,7 @@
     python3 -I -m pytest -q tools/lm/site
 """
 
+import json
 import re
 import sys
 from pathlib import Path
@@ -123,9 +124,14 @@ def test_every_page_speaks_its_folders_language(rel):
         assert f'hreflang="{other.hreflang}"' in menu, other.hreflang
         assert (other == lang) or f'hreflang="{other.hreflang}"' in foot, other.hreflang
     assert menu.count('aria-current="true"') == 1
-    # Structured data names its language.
+    # Structured data about the page names its language (a WebSite may list several);
+    # breadcrumbs and the person behind the site have none in schema.org.
     for block in re.findall(r'<script type="application/ld\+json">(.*?)</script>', text, re.S):
-        assert f'"inLanguage": "{lang.hreflang}"' in block, rel
+        data = json.loads(block)
+        if data.get("@type") in ("BreadcrumbList", "Person", "Organization"):
+            continue
+        langs_named = data.get("inLanguage")
+        assert lang.hreflang in (langs_named if isinstance(langs_named, list) else [langs_named]), rel
     # Visible text in a language other than English doesn't keep the English navigation.
     if lang.hreflang != "en":
         nav = re.search(r'<nav class="nav" aria-label="([^"]*)"', text).group(1)
@@ -145,3 +151,21 @@ def test_app_downloads_come_from_the_languages_host(rel):
         # The second card offers the other host, and the Pro line is the one set in langs.py.
         assert langs.dmg(lang, alt=True) != want
         assert langs.PRO_UNLOCK[lang.folder] in text
+
+
+def test_publishes_index_links_as_folders():
+    page = ('<a href="index.html">H</a> <a href="index.html#examples">E</a> <a href="zh/index.html">Z</a> '
+            '<a href="../de/index.html" hreflang="de">D</a> <a href="../index.html">U</a> '
+            '<a href="help.html">K</a> <a href="https://example.org/index.html">X</a>')
+    assert stamp.folder_links(page) == (
+        '<a href="./">H</a> <a href="./#examples">E</a> <a href="zh/">Z</a> '
+        '<a href="../de/" hreflang="de">D</a> <a href="../">U</a> '
+        '<a href="help.html">K</a> <a href="https://example.org/index.html">X</a>')
+
+
+def test_source_pages_link_index_html_for_offline_help():
+    # Folder links ("zh/", "./") would open a directory listing from file:// and in the app's help.
+    folder = re.compile(r'<a [^>]*href="(?:\./|(?:\.\./)+|[a-z-]+/)(?:#[^"]*)?"')
+    bad = [p.relative_to(stamp.SITE).as_posix() for p in stamp.SITE.rglob("*.html")
+           if not p.name.startswith("._") and folder.search(p.read_text(encoding="utf-8"))]
+    assert bad == []

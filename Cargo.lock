@@ -972,6 +972,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "core-foundation"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b2a6cd9ae233e7f62ba4e9353e81a88df7fc8a5987b8d445b4d90c879bd156f6"
+dependencies = [
+ "core-foundation-sys",
+ "libc",
+]
+
+[[package]]
 name = "core-foundation-sys"
 version = "0.8.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -984,7 +994,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c07782be35f9e1140080c6b96f0d44b739e2278479f64e02fdab4e32dfd8b081"
 dependencies = [
  "bitflags 1.3.2",
- "core-foundation",
+ "core-foundation 0.9.4",
  "core-graphics-types",
  "foreign-types",
  "libc",
@@ -997,7 +1007,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "45390e6114f68f718cc7a830514a96f903cccd70d02a8f6d9f643ac4ba45afaf"
 dependencies = [
  "bitflags 1.3.2",
- "core-foundation",
+ "core-foundation 0.9.4",
  "libc",
 ]
 
@@ -2648,7 +2658,7 @@ dependencies = [
 
 [[package]]
 name = "layeredmap"
-version = "0.7.4"
+version = "0.7.5"
 dependencies = [
  "block2 0.5.1",
  "eframe",
@@ -2767,13 +2777,18 @@ checksum = "11d3d7f243d5c5a8b9bb5d6dd2b1602c0cb0b9db1621bafc7ed66e35ff9fe092"
 
 [[package]]
 name = "lm-account"
-version = "0.7.4"
+version = "0.7.5"
 dependencies = [
  "base64",
  "getrandom 0.3.4",
  "lm-core",
  "lm-net",
  "log",
+ "objc2 0.6.5",
+ "objc2-app-kit 0.3.2",
+ "objc2-foundation 0.3.2",
+ "security-framework",
+ "security-framework-sys",
  "serde_json",
  "sha2 0.10.9",
  "ureq",
@@ -2782,7 +2797,7 @@ dependencies = [
 
 [[package]]
 name = "lm-actions"
-version = "0.7.4"
+version = "0.7.5"
 dependencies = [
  "lm-core",
  "lm-profile",
@@ -2794,7 +2809,7 @@ dependencies = [
 
 [[package]]
 name = "lm-analysis"
-version = "0.7.4"
+version = "0.7.5"
 dependencies = [
  "geo",
  "geographiclib-rs",
@@ -2811,13 +2826,16 @@ dependencies = [
 
 [[package]]
 name = "lm-ask"
-version = "0.7.4"
+version = "0.7.5"
 dependencies = [
  "lm-core",
  "lm-jobs",
  "lm-net",
  "log",
+ "security-framework",
+ "security-framework-sys",
  "serde_json",
+ "sys-locale",
  "ureq",
  "web-time",
  "winreg",
@@ -2825,21 +2843,21 @@ dependencies = [
 
 [[package]]
 name = "lm-capability-audit"
-version = "0.7.4"
+version = "0.7.5"
 dependencies = [
  "rustgis-data",
 ]
 
 [[package]]
 name = "lm-core"
-version = "0.7.4"
+version = "0.7.5"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "lm-doc"
-version = "0.7.4"
+version = "0.7.5"
 dependencies = [
  "lm-core",
  "rustgis-data",
@@ -2851,8 +2869,42 @@ dependencies = [
 ]
 
 [[package]]
+name = "lm-ios-alt-b-decode-ffi"
+version = "0.7.5"
+dependencies = [
+ "rustgis-data",
+ "serde_json",
+]
+
+[[package]]
+name = "lm-ios-alt-c-decode-ffi"
+version = "0.7.5"
+dependencies = [
+ "image",
+ "rustgis-data",
+ "serde_json",
+]
+
+[[package]]
+name = "lm-ios-alt-d-decode-ffi"
+version = "0.7.5"
+dependencies = [
+ "image",
+ "rustgis-data",
+ "serde_json",
+]
+
+[[package]]
+name = "lm-ios-decode-ffi"
+version = "0.7.5"
+dependencies = [
+ "rustgis-data",
+ "serde_json",
+]
+
+[[package]]
 name = "lm-jobs"
-version = "0.7.4"
+version = "0.7.5"
 dependencies = [
  "csv",
  "encoding_rs",
@@ -2876,7 +2928,7 @@ dependencies = [
 
 [[package]]
 name = "lm-mapview"
-version = "0.7.4"
+version = "0.7.5"
 dependencies = [
  "ab_glyph",
  "egui",
@@ -2900,7 +2952,7 @@ dependencies = [
 
 [[package]]
 name = "lm-net"
-version = "0.7.4"
+version = "0.7.5"
 dependencies = [
  "log",
  "ureq",
@@ -2908,7 +2960,7 @@ dependencies = [
 
 [[package]]
 name = "lm-profile"
-version = "0.7.4"
+version = "0.7.5"
 dependencies = [
  "encoding_rs",
  "lm-core",
@@ -2919,7 +2971,7 @@ dependencies = [
 
 [[package]]
 name = "lm-render-spike"
-version = "0.7.4"
+version = "0.7.5"
 dependencies = [
  "bytemuck",
  "eframe",
@@ -2935,9 +2987,10 @@ dependencies = [
 
 [[package]]
 name = "lm-ui"
-version = "0.7.4"
+version = "0.7.5"
 dependencies = [
  "base64",
+ "block2 0.6.2",
  "egui",
  "egui-phosphor",
  "egui-wgpu",
@@ -2953,8 +3006,12 @@ dependencies = [
  "lm-mapview",
  "lm-net",
  "log",
+ "objc2 0.6.5",
+ "objc2-app-kit 0.3.2",
+ "objc2-foundation 0.3.2",
  "ring",
  "serde_json",
+ "sys-locale",
  "web-time",
  "wgpu",
  "winreg",
@@ -3235,7 +3292,7 @@ dependencies = [
 
 [[package]]
 name = "nimblemap-web"
-version = "0.7.4"
+version = "0.7.5"
 dependencies = [
  "eframe",
  "egui",
@@ -3381,8 +3438,8 @@ dependencies = [
  "block2 0.5.1",
  "libc",
  "objc2 0.5.3",
- "objc2-core-data",
- "objc2-core-image",
+ "objc2-core-data 0.2.2",
+ "objc2-core-image 0.2.2",
  "objc2-foundation 0.2.2",
  "objc2-quartz-core 0.2.2",
 ]
@@ -3395,10 +3452,17 @@ checksum = "d49e936b501e5c5bf01fda3a9452ff86dc3ea98ad5f283e1455153142d97518c"
 dependencies = [
  "bitflags 2.13.2",
  "block2 0.6.2",
+ "libc",
  "objc2 0.6.5",
+ "objc2-cloud-kit 0.3.2",
+ "objc2-core-data 0.3.2",
  "objc2-core-foundation",
  "objc2-core-graphics",
+ "objc2-core-image 0.3.2",
+ "objc2-core-text",
+ "objc2-core-video",
  "objc2-foundation 0.3.2",
+ "objc2-quartz-core 0.3.2",
 ]
 
 [[package]]
@@ -3412,6 +3476,17 @@ dependencies = [
  "objc2 0.5.3",
  "objc2-core-location",
  "objc2-foundation 0.2.2",
+]
+
+[[package]]
+name = "objc2-cloud-kit"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "73ad74d880bb43877038da939b7427bba67e9dd42004a18b809ba7d87cee241c"
+dependencies = [
+ "bitflags 2.13.2",
+ "objc2 0.6.5",
+ "objc2-foundation 0.3.2",
 ]
 
 [[package]]
@@ -3435,6 +3510,17 @@ dependencies = [
  "block2 0.5.1",
  "objc2 0.5.3",
  "objc2-foundation 0.2.2",
+]
+
+[[package]]
+name = "objc2-core-data"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0b402a653efbb5e82ce4df10683b6b28027616a2715e90009947d50b8dd298fa"
+dependencies = [
+ "bitflags 2.13.2",
+ "objc2 0.6.5",
+ "objc2-foundation 0.3.2",
 ]
 
 [[package]]
@@ -3474,6 +3560,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "objc2-core-image"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e5d563b38d2b97209f8e861173de434bd0214cf020e3423a52624cd1d989f006"
+dependencies = [
+ "objc2 0.6.5",
+ "objc2-foundation 0.3.2",
+]
+
+[[package]]
 name = "objc2-core-location"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3483,6 +3579,31 @@ dependencies = [
  "objc2 0.5.3",
  "objc2-contacts",
  "objc2-foundation 0.2.2",
+]
+
+[[package]]
+name = "objc2-core-text"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0cde0dfb48d25d2b4862161a4d5fcc0e3c24367869ad306b0c9ec0073bfed92d"
+dependencies = [
+ "bitflags 2.13.2",
+ "objc2 0.6.5",
+ "objc2-core-foundation",
+ "objc2-core-graphics",
+]
+
+[[package]]
+name = "objc2-core-video"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d425caf1df73233f29fd8a5c3e5edbc30d2d4307870f802d18f00d83dc5141a6"
+dependencies = [
+ "bitflags 2.13.2",
+ "objc2 0.6.5",
+ "objc2-core-foundation",
+ "objc2-core-graphics",
+ "objc2-io-surface",
 ]
 
 [[package]]
@@ -3512,6 +3633,7 @@ checksum = "e3e0adef53c21f888deb4fa59fc59f7eb17404926ee8a6f59f5df0fd7f9f3272"
 dependencies = [
  "bitflags 2.13.2",
  "block2 0.6.2",
+ "libc",
  "objc2 0.6.5",
  "objc2-core-foundation",
 ]
@@ -3609,9 +3731,9 @@ dependencies = [
  "bitflags 2.13.2",
  "block2 0.5.1",
  "objc2 0.5.3",
- "objc2-cloud-kit",
- "objc2-core-data",
- "objc2-core-image",
+ "objc2-cloud-kit 0.2.2",
+ "objc2-core-data 0.2.2",
+ "objc2-core-image 0.2.2",
  "objc2-core-location",
  "objc2-foundation 0.2.2",
  "objc2-link-presentation",
@@ -4409,7 +4531,7 @@ dependencies = [
 
 [[package]]
 name = "rustgis"
-version = "0.7.4"
+version = "0.7.5"
 dependencies = [
  "eframe",
  "egui",
@@ -4423,7 +4545,7 @@ dependencies = [
 
 [[package]]
 name = "rustgis-analysis"
-version = "0.7.4"
+version = "0.7.5"
 dependencies = [
  "geo",
  "log",
@@ -4435,7 +4557,7 @@ dependencies = [
 
 [[package]]
 name = "rustgis-assistant"
-version = "0.7.4"
+version = "0.7.5"
 dependencies = [
  "base64",
  "log",
@@ -4446,7 +4568,7 @@ dependencies = [
 
 [[package]]
 name = "rustgis-cli"
-version = "0.7.4"
+version = "0.7.5"
 dependencies = [
  "rustgis-assistant",
  "rustgis-engine",
@@ -4455,7 +4577,7 @@ dependencies = [
 
 [[package]]
 name = "rustgis-data"
-version = "0.7.4"
+version = "0.7.5"
 dependencies = [
  "arrow-array",
  "arrow-schema",
@@ -4487,7 +4609,7 @@ dependencies = [
 
 [[package]]
 name = "rustgis-engine"
-version = "0.7.4"
+version = "0.7.5"
 dependencies = [
  "base64",
  "iana-time-zone",
@@ -4509,7 +4631,7 @@ dependencies = [
 
 [[package]]
 name = "rustgis-geolibre"
-version = "0.7.4"
+version = "0.7.5"
 dependencies = [
  "flate2",
  "log",
@@ -4525,14 +4647,14 @@ dependencies = [
 
 [[package]]
 name = "rustgis-geom"
-version = "0.7.4"
+version = "0.7.5"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "rustgis-map"
-version = "0.7.4"
+version = "0.7.5"
 dependencies = [
  "base64",
  "crs-definitions",
@@ -4547,7 +4669,7 @@ dependencies = [
 
 [[package]]
 name = "rustgis-plugins"
-version = "0.7.4"
+version = "0.7.5"
 dependencies = [
  "base64",
  "log",
@@ -4565,7 +4687,7 @@ dependencies = [
 
 [[package]]
 name = "rustgis-python"
-version = "0.7.4"
+version = "0.7.5"
 dependencies = [
  "pyo3",
  "pyo3-build-config",
@@ -4575,7 +4697,7 @@ dependencies = [
 
 [[package]]
 name = "rustgis-render"
-version = "0.7.4"
+version = "0.7.5"
 dependencies = [
  "ab_glyph",
  "base64",
@@ -4593,7 +4715,7 @@ dependencies = [
 
 [[package]]
 name = "rustgis-tiles"
-version = "0.7.4"
+version = "0.7.5"
 dependencies = [
  "image",
  "log",
@@ -4610,7 +4732,7 @@ dependencies = [
 
 [[package]]
 name = "rustgis-ui-egui"
-version = "0.7.4"
+version = "0.7.5"
 dependencies = [
  "base64",
  "egui",
@@ -4630,7 +4752,7 @@ dependencies = [
 
 [[package]]
 name = "rustgis-web"
-version = "0.7.4"
+version = "0.7.5"
 dependencies = [
  "eframe",
  "egui",
@@ -4751,6 +4873,29 @@ name = "scroll"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c1257cd4248b4132760d6524d6dda4e053bc648c9070b960929bf50cfb1e7add"
+
+[[package]]
+name = "security-framework"
+version = "3.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b7f4bc775c73d9a02cde8bf7b2ec4c9d12743edf609006c7facc23998404cd1d"
+dependencies = [
+ "bitflags 2.13.2",
+ "core-foundation 0.10.1",
+ "core-foundation-sys",
+ "libc",
+ "security-framework-sys",
+]
+
+[[package]]
+name = "security-framework-sys"
+version = "2.17.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6ce2691df843ecc5d231c0b14ece2acc3efb62c0a398c7e1d875f3983ce020e3"
+dependencies = [
+ "core-foundation-sys",
+ "libc",
+]
 
 [[package]]
 name = "self_cell"
@@ -5189,7 +5334,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd"
 dependencies = [
  "fastrand",
- "getrandom 0.3.4",
+ "getrandom 0.4.3",
  "once_cell",
  "rustix 1.1.5",
  "windows-sys 0.61.2",
@@ -6499,7 +6644,7 @@ dependencies = [
  "calloop 0.13.0",
  "cfg_aliases",
  "concurrent-queue",
- "core-foundation",
+ "core-foundation 0.9.4",
  "core-graphics",
  "cursor-icon",
  "dpi",
@@ -6654,7 +6799,7 @@ checksum = "e450f9b2ed1dff33c94c12589a87338689467b9c4f5d8a5710bd09a847d2c8a7"
 
 [[package]]
 name = "xtask"
-version = "0.7.4"
+version = "0.7.5"
 dependencies = [
  "base64",
  "miniz_oxide 0.9.1",

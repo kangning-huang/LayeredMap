@@ -594,12 +594,17 @@ pub fn finish_at_exit(staged: Option<(install::Staged, bool)>) {
     install::finish(&s, relaunch, support.as_deref());
 }
 
-/// The running macOS version (`sw_vers`), on the checking thread.
+/// The running macOS version (NSProcessInfo), on the checking thread.
 fn macos_version() -> Option<String> {
     #[cfg(target_os = "macos")]
     {
-        let out = std::process::Command::new("/usr/bin/sw_vers").arg("-productVersion").output().ok()?;
-        out.status.success().then(|| String::from_utf8_lossy(&out.stdout).trim().to_string())
+        use objc2_foundation::NSProcessInfo;
+        let v = NSProcessInfo::processInfo().operatingSystemVersion();
+        Some(if v.patchVersion == 0 {
+            format!("{}.{}", v.majorVersion, v.minorVersion)
+        } else {
+            format!("{}.{}.{}", v.majorVersion, v.minorVersion, v.patchVersion)
+        })
     }
     #[cfg(not(target_os = "macos"))]
     {
@@ -612,13 +617,7 @@ fn macos_version() -> Option<String> {
 pub fn prefers_chinese() -> bool {
     #[cfg(target_os = "macos")]
     {
-        std::process::Command::new("/usr/bin/defaults")
-            .args(["read", "-g", "AppleLanguages"])
-            .output()
-            .ok()
-            .and_then(|o| String::from_utf8(o.stdout).ok())
-            .and_then(|s| s.split(['"', ',', '(', ')']).map(str::trim).find(|l| !l.is_empty()).map(|l| l.starts_with("zh")))
-            .unwrap_or(false)
+        sys_locale::get_locales().next().is_some_and(|l| l.starts_with("zh"))
     }
     // Windows: the first of Settings › Time & language › Language & region › Preferred languages.
     #[cfg(windows)]

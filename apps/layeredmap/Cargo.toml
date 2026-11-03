@@ -40,8 +40,8 @@ update-test-hook = ["lm-ui/update-test-hook"]
 [target.'cfg(target_os = "macos")'.dependencies]
 objc2 = "0.5.2"
 block2 = "0.5.1"
-objc2-foundation = { version = "0.2.2", features = ["block2", "NSArray", "NSEnumerator", "NSNotification", "NSOperation", "NSString", "NSURL", "NSThread"] }
-objc2-app-kit = { version = "0.2.2", features = ["NSApplication", "NSResponder", "NSWindow"] }
+objc2-foundation = { version = "0.2.2", features = ["block2", "NSArray", "NSEnumerator", "NSNotification", "NSOperation", "NSProcessInfo", "NSString", "NSURL", "NSThread"] }
+objc2-app-kit = { version = "0.2.2", features = ["NSApplication", "NSAccessibility", "NSResponder", "NSWindow", "NSWorkspace"] }
 
 # The Windows module (the menu bar on the window) and the system version for crash logs.
 [target.'cfg(windows)'.dependencies]

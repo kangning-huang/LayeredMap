@@ -75,11 +75,11 @@ pub fn region_of_locale(locale: &str) -> Option<String> {
     Some(last.to_string())
 }
 
-/// This Mac's region (System Settings › General › Language & Region).
+/// This Mac's region (System Settings › General › Language & Region), from the locale APIs
+/// (`sys_locale`), not `defaults read`.
 #[cfg(target_os = "macos")]
 pub fn system_region() -> Option<String> {
-    let out = std::process::Command::new("/usr/bin/defaults").args(["read", "-g", "AppleLocale"]).output().ok()?;
-    region_of_locale(String::from_utf8(out.stdout).ok()?.trim())
+    sys_locale::get_locale().as_deref().and_then(region_of_locale)
 }
 
 /// This PC's region: Settings › Time & language › Language & region › Country or region (the

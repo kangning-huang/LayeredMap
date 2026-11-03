@@ -27,8 +27,8 @@
 <meta property="og:image" content="../img/walls-compare.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
-<link rel="stylesheet" href="../assets/site.css?v=074">
-<script src="../assets/site.js?v=074"></script>
+<link rel="stylesheet" href="../assets/site.css?v=077">
+<script src="../assets/site.js?v=075"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -40,7 +40,19 @@
   "applicationCategory": "UtilitiesApplication",
   "description": "一款 Mac 地图应用，把 Shapefile、GeoJSON、CSV、GeoTIFF、GeoPackage、Excel、KML、GPX 和 NetCDF 文件拖进来即可打开，文件不离开电脑。",
   "isAccessibleForFree": true,
-  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "CNY" }
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "CNY"
+  },
+  "@id": "https://nimblemap.com/#app",
+  "sameAs": "https://github.com/kangning-huang/NimbleMap",
+  "author": {
+    "@id": "https://nimblemap.com/about.html#person"
+  },
+  "publisher": {
+    "@id": "https://nimblemap.com/about.html#person"
+  }
 }
 </script>
 </head>
@@ -53,6 +65,7 @@
       <a href="index.html#examples">示例</a>
       <a href="data.html">数据</a>
       <a href="help.html">帮助</a>
+      <a href="../about.html" hreflang="en">关于作者</a>
       <a href="download.html" aria-current="page">下载</a>
       <details class="lang-menu">
         <summary aria-label="语言：简体中文" title="语言"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.6 3.9 5.6 3.9 9s-1.3 6.4-3.9 9c-2.6-2.6-3.9-5.6-3.9-9S9.4 5.6 12 3z"/></svg><span>中文</span></summary>
@@ -140,17 +153,17 @@
     <div class="downloads">
       <div class="dl">
         <h3>凌波微图 Mac 版</h3>
-        <p>免费 · 0.7.4 预览版</p>
-        <a class="btn btn-primary" href="https://gitcode.com/KN-Huang/NimbleMap/releases/download/v0.7.4/NimbleMap-macos-arm64.dmg" download>下载</a>
-        <p class="dl-note" style="margin-top:12px">从 GitCode 下载：这是为中国大陆准备的镜像，文件与 GitHub 上发布的完全相同（SHA-256 一致，可下载<a href="https://gitcode.com/KN-Huang/NimbleMap/releases/download/v0.7.4/NimbleMap-macos-arm64.dmg.sha256">校验值文件</a>核对）。</p>
+        <p>免费 · 0.7.5 预览版</p>
+        <a class="btn btn-primary" href="https://gitcode.com/KN-Huang/NimbleMap/releases/download/v0.7.5/NimbleMap-macos-arm64.dmg" download>下载</a>
+        <p class="dl-note" style="margin-top:12px">从 GitCode 下载：这是为中国大陆准备的镜像，文件与 GitHub 上发布的完全相同（SHA-256 一致，可下载<a href="https://gitcode.com/KN-Huang/NimbleMap/releases/download/v0.7.5/NimbleMap-macos-arm64.dmg.sha256">校验值文件</a>核对）。</p>
         <p class="dl-note">已使用开发者 ID 签名并通过 Apple 公证。第一次打开时，macOS 会询问是否打开从互联网下载的应用：点按“打开”即可。</p>
         <p class="dl-pro">分析工具免费使用，无需登录。Pro 版即用大白话提问的提问框，在应用内登录后即可解锁，注册账户即可免费使用。<a href="pro.html">Pro 多了什么</a></p>
       </div>
       <div class="dl" id="windows">
         <h3>Windows 10 / 11 · x64</h3>
         <p>0.7.1 preview · Windows 10 1809+</p>
-        <a class="btn btn-primary btn-windows" href="https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.1/NimbleMap-windows-x64-setup.exe" download>下载 Windows 版</a>
-        <p class="dl-note"><a href="https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.1/NimbleMap-windows-x64-setup.exe.sha256">SHA-256</a></p>
+        <a class="btn btn-primary btn-windows" href="https://gitcode.com/KN-Huang/NimbleMap/releases/download/v0.7.1/NimbleMap-windows-x64-setup.exe" download>下载 Windows 版</a>
+        <p class="dl-note"><a href="https://gitcode.com/KN-Huang/NimbleMap/releases/download/v0.7.1/NimbleMap-windows-x64-setup.exe.sha256">SHA-256</a> · <a href="https://github.com/kangning-huang/NimbleMap/releases/download/v0.7.1/NimbleMap-windows-x64-setup.exe" download>从 GitHub 下载</a></p>
         <p class="dl-note" style="margin-top:12px">此预览版尚未签名，Windows SmartScreen 可能显示警告。</p>
       </div>
       <div class="dl">
@@ -248,7 +261,7 @@
       <p>不需要。打开文件不用任何设置；应用需要猜测时（比如哪两列是坐标），会用一句话告诉你，并让你修改。<a href="glossary.html">术语表</a>用大白话解释地图术语。</p>
 
       <h3>我的文件会被上传吗？</h3>
-      <p>免费版不会：所有文件都在你的 Mac 上读取、分析和绘制，断网也能用。联网时会下载底图瓦片，但你的数据从不发送出去。Pro 版的提问框会把图层名、字段名和范围发给助手，以便理解你的问题，但从不发送具体数值。</p>
+      <p>免费版不会：所有文件都在你的电脑上读取、分析和绘制，断网也能用。联网时会下载底图瓦片，但地图文件不会上传。Pro 的提问会发送你的问题、图层与字段名、范围、当前筛选（含取值）、所选对象的相关取值，以及问题中点到的最多五个匹配值——不会发送文件本身、几何、坐标或路径。详见 <a href="../privacy.html">Privacy</a>。</p>
 
       <h3>有 Windows 版吗？</h3>
       <p>支持 Mac（Apple 芯片，macOS 13 或更高版本）和 Windows 10/11（x64）。 <a href="#windows">下载 Windows 版</a></p>
@@ -263,7 +276,7 @@
       <p><strong>凌波微图 NimbleMap</strong> · 基于 RustGIS 的地图优先应用。</p>
       <p>截图中的地图数据：© OpenStreetMap 贡献者（ODbL），经 Protomaps 提供；Natural Earth（公有领域）；NASA Blue Marble 影像（NASA Earth Observatory、GIBS）。示例数据：Xue et al. 2021（CC BY 4.0）。</p>
     </div>
-    <div class="foot-nav"><p class="foot-links"><a href="help.html">帮助</a> · <a href="glossary.html">术语表</a> · <a href="data.html">数据</a> · <a href="pro.html">Pro 版</a> · <a href="https://github.com/kangning-huang/NimbleMap/blob/main/CHANGELOG.md">更新日志</a></p><p class="foot-note">凌波微图是独立项目，与苹果公司、Esri 及 QGIS 项目均无关联。</p><p class="foot-langs"><a href="../download.html" hreflang="en" lang="en">English</a> · <a href="../de/download.html" hreflang="de" lang="de">Deutsch</a> · <a href="../es/download.html" hreflang="es" lang="es">Español</a> · <a href="../fr/download.html" hreflang="fr" lang="fr">Français</a> · <a href="../it/download.html" hreflang="it" lang="it">Italiano</a> · <a href="../nl/download.html" hreflang="nl" lang="nl">Nederlands</a> · <a href="../pt-br/download.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ru/download.html" hreflang="ru" lang="ru">Русский</a> · <a href="../ja/download.html" hreflang="ja" lang="ja">日本語</a> · <a href="../ko/download.html" hreflang="ko" lang="ko">한국어</a></p></div>
+    <div class="foot-nav"><p class="foot-links"><a href="help.html">帮助</a> · <a href="glossary.html">术语表</a> · <a href="data.html">数据</a> · <a href="pro.html">Pro 版</a> · <a href="https://github.com/kangning-huang/NimbleMap/blob/main/CHANGELOG.md">更新日志</a> · <a href="../about.html" hreflang="en">关于作者</a> · <a href="../privacy.html">Privacy</a> · <a href="../terms.html">Terms</a></p><p class="foot-note">凌波微图是独立项目，与苹果公司、Esri 及 QGIS 项目均无关联。</p><p class="foot-langs"><a href="../download.html" hreflang="en" lang="en">English</a> · <a href="../de/download.html" hreflang="de" lang="de">Deutsch</a> · <a href="../es/download.html" hreflang="es" lang="es">Español</a> · <a href="../fr/download.html" hreflang="fr" lang="fr">Français</a> · <a href="../it/download.html" hreflang="it" lang="it">Italiano</a> · <a href="../nl/download.html" hreflang="nl" lang="nl">Nederlands</a> · <a href="../pt-br/download.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ru/download.html" hreflang="ru" lang="ru">Русский</a> · <a href="../ja/download.html" hreflang="ja" lang="ja">日本語</a> · <a href="../ko/download.html" hreflang="ko" lang="ko">한국어</a></p></div>
   </div>
 </footer>
 </body>
