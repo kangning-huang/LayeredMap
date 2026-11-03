@@ -64,6 +64,38 @@ Concretely:
 - **An error that named a button which does not exist is fixed.** C's `lonePartsMessage` told people
   to tap "Open a folder…"; no spike has ever had a button with that name.
 
+## NetCDF grids (climate and population)
+
+A and B and C could not open NetCDF at all, so the two climate entries on the site's data page
+(`.nc` files) could only ever end in "NimbleMap can't open .nc files yet." D opens them.
+
+- **Why a new reader.** `rustgis-data` reads NetCDF only by shelling out to GDAL's
+  `gdal_translate` (`crates/data/src/raster/gdal.rs`), and there is no GDAL on an iPhone. The
+  desktop reader (`crates/lm-jobs/src/import/netcdf.rs`) is pure Rust but is wired into `lm-core`'s
+  layer and grid profiles, the time slider and the variable dropdown. So `src/netcdf.rs` is a small
+  reading of the same format with the same `netcdf-reader` crate, cut to what the spike shows:
+  **one variable, its first time step and first level, as one grid of values.**
+- **What it keeps**, because leaving these out gives wrong maps rather than missing ones:
+  latitude/longitude found by CF `units` and `standard_name` (not just by name), `scale_factor` /
+  `add_offset` unpacking and `_FillValue` / `missing_value` masking, longitudes of 0–360 wrapped to
+  −180–180, and a grid stored south-to-north turned north up.
+- **Time works like the desktop's.** A file with a time axis gets a slider: the step's date in
+  words ("January 1948"), ← and → for one step at a time, and the span labelled at both ends.
+  Stepping re-reads one 2-D hyperslab, not the file. The colour range is sampled across the axis
+  (12 evenly spaced steps, as the desktop does) and then held, so January and July are coloured on
+  the same scale instead of each being restretched to look normal.
+- **What it drops:** picking a variable, levels, and Play. Curvilinear and projected grids are
+  refused with a plain sentence, not a crash.
+- **The file names the quantity.** A GeoTIFF says nothing, so C guessed "Height"/"m" from the file
+  name. A NetCDF variable carries `long_name` and `units`, so the card and legend use those;
+  machine-written units ("degC") are shown the way people write them ("°C").
+- Everything after the read is shared with GeoTIFF: the same Web Mercator resample, Viridis ramp,
+  values grid for "tap to read the value", legend and See-through slider.
+
+Verified against NOAA's NCEP monthly mean air temperature (26 MB, NetCDF-3, 0–360 longitudes):
+`long_name` "Monthly Mean Air Temperature at sigma level 0.995", 144×73 cells, extent
+−180…178.75 / −90…90, range −41.0…34.2 °C, drawn with the tropics yellow and the poles purple.
+
 ## Looking for data on the web
 
 The owner asked whether the search box could reach the web, appending the formats the app opens to
@@ -98,8 +130,8 @@ Two things measured here that the UI depends on:
   range check marks every dataset dead, including the one that works.
 
 When the catalogues genuinely hold nothing the sheet says so, names the reason, and offers the
-looser chip and a web search — DuckDuckGo, not Google, which blocks embedded web views and whose
-usual workaround is spoofing a Safari user agent. The appended words are the measured best,
+looser chip and a web search — Google, opened in Safari rather than an embedded web view, so no
+user-agent spoofing is needed. The appended words are the measured best,
 `open data download geojson shapefile`, space-separated rather than OR'd.
 
 ## Known gaps (not addressed in D)

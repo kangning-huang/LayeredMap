@@ -258,6 +258,15 @@ struct MapScreen: UIViewRepresentable {
             switch layer.dataset.kind {
             case .raster:
                 guard let r = style.layer(withIdentifier: i.fill) as? MLNRasterStyleLayer else { return }
+                // Another NetCDF time step is a new picture on the same source. `source(for:)`
+                // hands back the source it already made, so the swap has to happen here.
+                if let png = layer.dataset.raster?.png,
+                   fileURLs[layer.id] != png,
+                   let img = style.source(withIdentifier: i.source) as? MLNImageSource
+                {
+                    img.url = png
+                    fileURLs[layer.id] = png
+                }
                 r.rasterOpacity = opacity
                 r.isVisible = layer.visible
             case .point:

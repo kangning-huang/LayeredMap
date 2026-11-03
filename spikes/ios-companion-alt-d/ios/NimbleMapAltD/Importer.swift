@@ -35,9 +35,12 @@ enum Importer {
     /// Shapefile is in). Plain text is left out: it is mostly notes, not tables.
     static var contentTypes: [UTType] {
         var types: [UTType] = [.commaSeparatedText, .tabSeparatedText, .json, .zip, .folder, .tiff]
-        for ext in ["geojson", "kml", "kmz", "gpx", "gpkg", "shp", "asc"] + shapefileParts {
+        for ext in ["geojson", "kml", "kmz", "gpx", "gpkg", "shp", "asc", "nc", "nc4", "cdf"] + shapefileParts {
             if let t = UTType(filenameExtension: ext), !types.contains(t) { types.append(t) }
         }
+        // NetCDF has no system UTI, so the app declares one (Info.plist). Without this the Files
+        // picker greys out every .nc file.
+        if let nc = UTType("org.unidata.netcdf"), !types.contains(nc) { types.append(nc) }
         return types
     }
 

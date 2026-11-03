@@ -30,6 +30,18 @@ struct RasterInfo {
     let quantity: String
     let unit: String
 
+    /// A NetCDF time axis in words ("July 2023"), one per step; empty when the file has no time
+    /// axis, which is what hides the slider.
+    var times: [String] = []
+    /// Which step is drawn, into `times`.
+    var time: Int = 0
+    /// The file this came from, so another step can be read from it.
+    var source: URL?
+
+    var hasTime: Bool { times.count > 1 }
+
+    var timeLabel: String { times.indices.contains(time) ? times[time] : "" }
+
     /// The value under a point, read from the grid (nil outside or on no-data).
     func value(at c: CLLocationCoordinate2D) -> Double? {
         guard let values, c.longitude >= bounds.minLon, c.longitude <= bounds.maxLon,
@@ -69,6 +81,23 @@ struct RasterInfo {
         return unit.isEmpty ? n : "\(n) \(unit)"
     }
 
+    /// CF unit strings are written for machines ("degC", "degrees_Celsius", "m s-1"). Show the
+    /// common ones the way a person writes them, and leave anything else exactly as the file said
+    /// rather than mangling it.
+    static func readableUnit(_ raw: String) -> String {
+        switch raw.lowercased().replacingOccurrences(of: " ", with: "_") {
+        case "degc", "degrees_celsius", "degree_celsius", "celsius": return "°C"
+        case "degk", "k", "kelvin", "degrees_kelvin": return "K"
+        case "degf", "degrees_fahrenheit", "fahrenheit": return "°F"
+        case "m", "metre", "meter", "metres", "meters": return "m"
+        case "km", "kilometre", "kilometer", "kilometres", "kilometers": return "km"
+        case "mm": return "mm"
+        case "percent", "%": return "%"
+        case "1", "none", "dimensionless", "unitless": return ""
+        default: return raw
+        }
+    }
+
     static func guessQuantity(_ name: String) -> (String, String) {
         let n = name.lowercased()
         if ["elev", "height", "dem", "dtm", "altitude", "terrain", "altimetr"].contains(where: n.contains) { return ("Height", "m") }
@@ -80,18 +109,29 @@ struct RasterInfo {
 }
 
 enum RasterDecode {
-    static let extensions = ["tif", "tiff", "asc"]
+    // NetCDF climate and population grids (`.nc`) are read by the spike's own pure-Rust reader;
+    // they arrive here as a grid of values like any GeoTIFF.
+    static let extensions = ["tif", "tiff", "asc", "nc", "nc4", "cdf", "netcdf"]
 
     static func isRaster(_ url: URL) -> Bool { extensions.contains(url.pathExtension.lowercased()) }
 
     /// Read a raster file (call off the main thread) into a dataset with no features.
-    static func open(_ file: URL, name: String, sourceName: String) -> Result<GeoDataset, ImportError> {
+    ///
+    /// `time` picks the step of a NetCDF time axis; `range` is the colour range to keep, so
+    /// stepping through time does not restretch the ramp and make every month look the same.
+    static func open(
+        _ file: URL,
+        name: String,
+        sourceName: String,
+        time: Int = 0,
+        range: (Double, Double)? = nil
+    ) -> Result<GeoDataset, ImportError> {
         let cache = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first ?? FileManager.default.temporaryDirectory
         let stem = cache.appendingPathComponent("raster-\(UUID().uuidString)").path
         let result: Result<[String: Any], DecodeBridge.DecodeError> = file.path.withCString { cPath in
             stem.withCString { cStem in
                 var out: UnsafeMutablePointer<CChar>?
-                let status = lm_open_raster(cPath, cStem, &out)
+                let status = lm_open_raster_step(cPath, cStem, Int32(time), range?.0 ?? 1, range?.1 ?? 0, &out)
                 defer { if let out { lm_string_free(out) } }
                 guard let out else { return .failure(DecodeBridge.DecodeError(message: "decode status \(status)")) }
                 let text = String(cString: out)
@@ -112,29 +152,49 @@ enum RasterDecode {
                 return .failure(ImportError(message: "Couldn't open this map image."))
             }
             let look = RasterInfo.Look(rawValue: o["look"] as? String ?? "") ?? .picture
-            let (quantity, unit) = RasterInfo.guessQuantity(name)
+            // A NetCDF file states what it measures and in what unit (CF `long_name`/`units`), so
+            // use those; a GeoTIFF says nothing, so fall back to guessing from the file name.
+            let said = (o["quantity"] as? String).map { $0.trimmingCharacters(in: .whitespaces) } ?? ""
+            let saidUnit = (o["unit"] as? String).map { $0.trimmingCharacters(in: .whitespaces) } ?? ""
+            let guessed = RasterInfo.guessQuantity(name)
+            let quantity = said.isEmpty ? guessed.0 : said
+            let unit = said.isEmpty ? guessed.1 : RasterInfo.readableUnit(saidUnit)
             func num(_ k: String) -> Double { (o[k] as? NSNumber)?.doubleValue ?? 0 }
+            // Pulled out of the initializer: with the time-axis fields added, type-checking the
+            // whole call in one expression takes the compiler an unreasonable amount of time.
+            let pngURL = URL(fileURLWithPath: png)
+            let valuesURL: URL? = (o["values"] as? String).map { URL(fileURLWithPath: $0) }
+            let bounds = GeoBounds(minLon: b[0], minLat: b[1], maxLon: b[2], maxLat: b[3])
+            let bands: Int = (o["bands"] as? NSNumber)?.intValue ?? 1
+            let stepNames: [String] = (o["times"] as? [String]) ?? []
+            let stepIndex: Int = (o["time"] as? NSNumber)?.intValue ?? 0
             let info = RasterInfo(
                 look: look,
-                png: URL(fileURLWithPath: png),
-                values: (o["values"] as? String).map { URL(fileURLWithPath: $0) },
+                png: pngURL,
+                values: valuesURL,
                 gridWidth: grid[0],
                 gridHeight: grid[1],
-                bounds: GeoBounds(minLon: b[0], minLat: b[1], maxLon: b[2], maxLat: b[3]),
+                bounds: bounds,
                 low: num("low"),
                 high: num("high"),
                 min: num("min"),
                 max: num("max"),
                 cellMeters: num("cell_m"),
-                bandCount: (o["bands"] as? NSNumber)?.intValue ?? 1,
+                bandCount: bands,
                 quantity: quantity,
-                unit: unit
+                unit: unit,
+                times: stepNames,
+                time: stepIndex,
+                source: file
             )
             var assumptions: [String] = []
             if look == .values {
                 assumptions.append("Colors stretch from \(info.format(info.low)) to \(info.format(info.high)); the few values beyond take the end colors.")
                 if unit.isEmpty { assumptions.append("The file doesn't say what its numbers measure.") }
             }
+            // What the NetCDF reader had to assume: a wrapped longitude range, which grid of
+            // several was shown. Plain sentences from Rust, shown under More details.
+            assumptions.append(contentsOf: (o["notes"] as? [String]) ?? [])
             let ds = GeoDataset(
                 name: name,
                 kind: .raster,

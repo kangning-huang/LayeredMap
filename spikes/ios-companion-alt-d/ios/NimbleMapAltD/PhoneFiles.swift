@@ -34,6 +34,7 @@ struct PhoneFile: Identifiable, Sendable {
         case "zip": return "Zip"
         case "tif", "tiff": return "Map image (GeoTIFF)"
         case "asc": return "Grid of values"
+        case "nc", "nc4", "cdf", "netcdf": return "Climate grid (NetCDF)"
         default: return ext.uppercased()
         }
     }
@@ -44,6 +45,7 @@ struct PhoneFile: Identifiable, Sendable {
         case "gpx": return "point.topleft.down.to.point.bottomright.curvepath"
         case "zip": return "doc.zipper"
         case "tif", "tiff", "asc": return "photo"
+        case "nc", "nc4", "cdf", "netcdf": return "square.grid.3x3.fill"
         default: return "map"
         }
     }
@@ -227,6 +229,12 @@ enum PhoneFiles {
             guard let head else { return true }
             let tags: [[UInt8]] = [[0x0E, 0x83], [0x82, 0x84], [0xAF, 0x87], [0x83, 0x0E], [0x84, 0x82], [0x87, 0xAF]]
             return tags.contains { t in head.range(of: Data(t)) != nil }
+        case "nc", "nc4", "cdf", "netcdf":
+            // "CDF\x01/\x02/\x05" for NetCDF-3, the HDF5 signature for NetCDF-4.
+            guard let head = try? handle.read(upToCount: 8), head.count >= 4 else { return true }
+            let classic = head.starts(with: [0x43, 0x44, 0x46]) && [0x01, 0x02, 0x05].contains(head[3])
+            let hdf5 = head.starts(with: [0x89, 0x48, 0x44, 0x46])
+            return classic || hdf5
         default:
             return true
         }

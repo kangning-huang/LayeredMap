@@ -59,6 +59,21 @@ int32_t lm_open_raster(
     const char *out_stem,
     char **out_json);
 
+/**
+ * Re-read a NetCDF grid at another time step. For a file with a time axis the envelope also
+ * carries {"times":["July 2023",...],"time":n}.
+ *
+ * Pass the low/high the first open returned so the colour ramp means the same at every step;
+ * pass low >= high to let it work the range out itself.
+ */
+int32_t lm_open_raster_step(
+    const char *path,
+    const char *out_stem,
+    int32_t time,
+    double low,
+    double high,
+    char **out_json);
+
 /** Free a string returned by this library. No-op on NULL. */
 void lm_string_free(char *s);
 
