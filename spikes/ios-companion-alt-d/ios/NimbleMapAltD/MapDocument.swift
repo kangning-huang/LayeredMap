@@ -69,6 +69,8 @@ final class MapDocument: ObservableObject {
     private var busyTask: Task<Void, Never>?
     /// Counts time-step reads so a slow one can't overwrite a newer one.
     private var timeRequest = 0
+    /// The same, for redraws at another ramp or zoom.
+    private var rasterRequest = 0
     @Published var toast: Toast?
     @Published var error: String?
 
@@ -262,6 +264,72 @@ final class MapDocument: ObservableObject {
             await MainActor.run {
                 // A newer drag already won; this one is stale.
                 guard token == self.timeRequest, case .success(let ds) = result, let i = self.index(of: id) else { return }
+                self.layers[i].dataset.adoptCells(from: ds)
+                self.layers[i].dataRev &+= 1
+            }
+        }
+    }
+
+    /// Redraws a grid of values on another colour ramp.
+    ///
+    /// A raster is one picture on the map, not styled features, so there is nothing on the phone
+    /// to recolour — the picture has to be drawn again. That is why this is a round trip through
+    /// Rust rather than a style change like every other layer's colours.
+    func setRasterRamp(_ id: UUID, _ ramp: Palette) {
+        guard let layer = layer(id), let r = layer.dataset.raster, r.look == .values, r.ramp != ramp else { return }
+        redrawRaster(id, ramp: ramp, window: r.window)
+    }
+
+    /// How much smaller the view has to be than the drawn window before redrawing is worth it.
+    ///
+    /// This is the speed/detail trade-off. A redraw reads the file again and writes a new PNG, so
+    /// doing it on every nudge of the map would make panning feel like wading. Waiting for a 4×
+    /// difference in width means a redraw happens roughly once every two zoom levels — about as
+    /// often as the detail visibly runs out — and never while someone is just sliding around at
+    /// the same scale.
+    private static let redrawGain = 4.0
+
+    /// Redraw for what is on screen, if that would actually gain detail.
+    ///
+    /// Only ever called when the camera has settled (`onCameraIdle`), never mid-gesture.
+    func refineRaster(_ id: UUID, view: GeoBounds) {
+        guard let layer = layer(id), let r = layer.dataset.raster, r.source != nil else { return }
+        let drawn = r.window ?? r.bounds
+        let drawnWidth = drawn.maxLon - drawn.minLon
+        // Clamp to the data: asking for more than the file covers gains nothing.
+        let wanted = GeoBounds(
+            minLon: Swift.max(view.minLon, r.bounds.minLon),
+            minLat: Swift.max(view.minLat, r.bounds.minLat),
+            maxLon: Swift.min(view.maxLon, r.bounds.maxLon),
+            maxLat: Swift.min(view.maxLat, r.bounds.maxLat)
+        )
+        let wantedWidth = wanted.maxLon - wanted.minLon
+        guard wantedWidth > 0, drawnWidth / wantedWidth >= Self.redrawGain else { return }
+        // A margin, so a small pan after the redraw does not immediately fall off the picture.
+        let padX = wantedWidth * 0.25
+        let padY = (wanted.maxLat - wanted.minLat) * 0.25
+        let padded = GeoBounds(
+            minLon: Swift.max(wanted.minLon - padX, r.bounds.minLon),
+            minLat: Swift.max(wanted.minLat - padY, r.bounds.minLat),
+            maxLon: Swift.min(wanted.maxLon + padX, r.bounds.maxLon),
+            maxLat: Swift.min(wanted.maxLat + padY, r.bounds.maxLat)
+        )
+        redrawRaster(id, ramp: r.ramp, window: padded)
+    }
+
+    /// Draw a raster again with different settings, keeping its colour range so only the thing
+    /// that was asked for changes.
+    private func redrawRaster(_ id: UUID, ramp: Palette, window: GeoBounds?) {
+        guard let layer = layer(id), let r = layer.dataset.raster, let source = r.source else { return }
+        rasterRequest += 1
+        let token = rasterRequest
+        let name = layer.name
+        let range = (r.low, r.high)
+        let step = r.time
+        Task.detached(priority: .userInitiated) {
+            let result = RasterDecode.open(source, name: name, sourceName: "", time: step, range: range, ramp: ramp, window: window)
+            await MainActor.run {
+                guard token == self.rasterRequest, case .success(let ds) = result, let i = self.index(of: id) else { return }
                 self.layers[i].dataset.adoptCells(from: ds)
                 self.layers[i].dataRev &+= 1
             }

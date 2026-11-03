@@ -260,12 +260,22 @@ struct MapScreen: UIViewRepresentable {
                 guard let r = style.layer(withIdentifier: i.fill) as? MLNRasterStyleLayer else { return }
                 // Another NetCDF time step is a new picture on the same source. `source(for:)`
                 // hands back the source it already made, so the swap has to happen here.
-                if let png = layer.dataset.raster?.png,
-                   fileURLs[layer.id] != png,
+                if let r = layer.dataset.raster,
+                   fileURLs[layer.id] != r.png,
                    let img = style.source(withIdentifier: i.source) as? MLNImageSource
                 {
-                    img.url = png
-                    fileURLs[layer.id] = png
+                    // A redraw for a zoomed-in view covers a smaller patch of world, so the
+                    // corners move as well as the picture. Setting the url alone would stretch
+                    // the new, more detailed image across the whole original extent.
+                    let b = r.bounds
+                    img.coordinates = MLNCoordinateQuad(
+                        topLeft: CLLocationCoordinate2D(latitude: b.maxLat, longitude: b.minLon),
+                        bottomLeft: CLLocationCoordinate2D(latitude: b.minLat, longitude: b.minLon),
+                        bottomRight: CLLocationCoordinate2D(latitude: b.minLat, longitude: b.maxLon),
+                        topRight: CLLocationCoordinate2D(latitude: b.maxLat, longitude: b.maxLon)
+                    )
+                    img.url = r.png
+                    fileURLs[layer.id] = r.png
                 }
                 r.rasterOpacity = opacity
                 r.isVisible = layer.visible

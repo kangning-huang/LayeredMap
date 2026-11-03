@@ -72,6 +72,11 @@ int32_t lm_open_raster_step(
     int32_t time,
     double low,
     double high,
+    const char *ramp,
+    double west,
+    double south,
+    double east,
+    double north,
     char **out_json);
 
 /** Free a string returned by this library. No-op on NULL. */

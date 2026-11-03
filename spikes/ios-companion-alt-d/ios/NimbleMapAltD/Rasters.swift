@@ -37,6 +37,12 @@ struct RasterInfo {
     var time: Int = 0
     /// The file this came from, so another step can be read from it.
     var source: URL?
+    /// The ramp this picture was drawn with. A raster is a picture, not styled features, so
+    /// changing its colours means drawing it again — this is what to draw it with next time.
+    var ramp: Palette = .viridis
+    /// The part of the world this picture covers. Equal to `bounds` for a whole-file drawing;
+    /// smaller once it has been redrawn for a zoomed-in view.
+    var window: GeoBounds?
 
     var hasTime: Bool { times.count > 1 }
 
@@ -124,14 +130,22 @@ enum RasterDecode {
         name: String,
         sourceName: String,
         time: Int = 0,
-        range: (Double, Double)? = nil
+        range: (Double, Double)? = nil,
+        ramp: Palette = .viridis,
+        window: GeoBounds? = nil
     ) -> Result<GeoDataset, ImportError> {
         let cache = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first ?? FileManager.default.temporaryDirectory
         let stem = cache.appendingPathComponent("raster-\(UUID().uuidString)").path
+        // A window of (0,0,0,0) means "all of it": Rust treats a zero-size window as absent.
+        let w = window ?? GeoBounds(minLon: 0, minLat: 0, maxLon: 0, maxLat: 0)
         let result: Result<[String: Any], DecodeBridge.DecodeError> = file.path.withCString { cPath in
             stem.withCString { cStem in
+                ramp.rawValue.withCString { cRamp in
                 var out: UnsafeMutablePointer<CChar>?
-                let status = lm_open_raster_step(cPath, cStem, Int32(time), range?.0 ?? 1, range?.1 ?? 0, &out)
+                let status = lm_open_raster_step(
+                    cPath, cStem, Int32(time), range?.0 ?? 1, range?.1 ?? 0,
+                    cRamp, w.minLon, w.minLat, w.maxLon, w.maxLat, &out
+                )
                 defer { if let out { lm_string_free(out) } }
                 guard let out else { return .failure(DecodeBridge.DecodeError(message: "decode status \(status)")) }
                 let text = String(cString: out)
@@ -140,6 +154,7 @@ enum RasterDecode {
                     return .failure(DecodeBridge.DecodeError(message: "unreadable decoder output"))
                 }
                 return .success(obj)
+                }
             }
         }
         switch result {
@@ -185,7 +200,9 @@ enum RasterDecode {
                 unit: unit,
                 times: stepNames,
                 time: stepIndex,
-                source: file
+                source: file,
+                ramp: ramp,
+                window: window
             )
             var assumptions: [String] = []
             if look == .values {

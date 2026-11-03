@@ -6,6 +6,7 @@ struct ChangeLookStrip: View {
     var layer: MapLayer
     var onPick: (String?) -> Void
     var onOpacity: (Double) -> Void
+    var onRamp: (Palette) -> Void = { _ in }
 
     var body: some View {
         let ds = layer.dataset
@@ -43,6 +44,34 @@ struct ChangeLookStrip: View {
                 .padding(.horizontal, 18)
             }
             } else {
+                // A grid of values gets the same choice of ramps as any other coloured layer.
+                // It has to be drawn again rather than restyled, which is why it is a tap and a
+                // moment's wait rather than instant like the vector previews above.
+                if layer.dataset.raster?.look == .values {
+                    Text("Colors").font(.headline).padding(.horizontal, 18)
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 12) {
+                            ForEach(Palette.allCases) { p in
+                                let chosen = layer.dataset.raster?.ramp == p
+                                Button { onRamp(p) } label: {
+                                    VStack(spacing: 6) {
+                                        LinearGradient(colors: p.colors, startPoint: .leading, endPoint: .trailing)
+                                            .frame(width: 92, height: 40)
+                                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                                    .strokeBorder(chosen ? Color.accentColor : Color.secondary.opacity(0.25), lineWidth: chosen ? 3 : 1)
+                                            )
+                                        Text(p.label).font(.caption.weight(chosen ? .bold : .regular)).frame(width: 92)
+                                    }
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityAddTraits(chosen ? .isSelected : [])
+                            }
+                        }
+                        .padding(.horizontal, 18)
+                    }
+                }
                 Text("See-through").font(.headline).padding(.horizontal, 18)
                 Text(layer.dataset.raster?.look == .picture ? "Slide left to see today's map through it." : "Slide left to see the streets through it.").font(.subheadline).foregroundStyle(.secondary).padding(.horizontal, 18)
             }
@@ -75,6 +104,7 @@ struct ChangeLookSheet: View {
     var onDone: () -> Void
     var onMore: () -> Void
     var onTime: (Int) -> Void = { _ in }
+    var onRamp: (Palette) -> Void = { _ in }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -87,7 +117,7 @@ struct ChangeLookSheet: View {
             }
             .padding(.horizontal, 18)
             .padding(.top, 16)
-            ChangeLookStrip(layer: layer, onPick: onPick, onOpacity: onOpacity)
+            ChangeLookStrip(layer: layer, onPick: onPick, onOpacity: onOpacity, onRamp: onRamp)
             if case .single = layer.scheme {} else {
                 LegendBar(scheme: layer.scheme, ends: layer.legendEnds)
                     .padding(.horizontal, 18)

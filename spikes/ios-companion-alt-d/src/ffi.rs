@@ -207,12 +207,18 @@ pub unsafe extern "C" fn lm_open_raster(path: *const c_char, out_stem: *const c_
 /// # Safety
 /// `path` and `out_stem` must be non-null C strings; `out_json` must be a valid writable pointer.
 #[unsafe(no_mangle)]
+#[allow(clippy::too_many_arguments)]
 pub unsafe extern "C" fn lm_open_raster_step(
     path: *const c_char,
     out_stem: *const c_char,
     time: i32,
     low: f64,
     high: f64,
+    ramp: *const c_char,
+    west: f64,
+    south: f64,
+    east: f64,
+    north: f64,
     out_json: *mut *mut c_char,
 ) -> i32 {
     if out_json.is_null() || path.is_null() || out_stem.is_null() {
@@ -227,7 +233,12 @@ pub unsafe extern "C" fn lm_open_raster_step(
     };
     let range = (high > low && low.is_finite() && high.is_finite()).then_some((low, high));
     let step = time.max(0) as usize;
-    let result = std::panic::catch_unwind(|| crate::raster::open_raster_envelope_at(p, o, step, range))
+    // SAFETY: a non-null C string from the caller, or absent for the default ramp.
+    let ramp = if ramp.is_null() { "viridis" } else { unsafe { CStr::from_ptr(ramp) }.to_str().unwrap_or("viridis") };
+    // A window of zero or nonsense size means "the whole thing".
+    let window =
+        (east > west && north > south && [west, south, east, north].iter().all(|v| v.is_finite())).then_some((west, south, east, north));
+    let result = std::panic::catch_unwind(|| crate::raster::open_raster_envelope_at(p, o, step, range, ramp, window))
         .unwrap_or_else(|_| Err("couldn't read this raster".into()));
     match result {
         Ok(json) => match set_out_string(out_json, &json) {

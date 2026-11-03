@@ -11,8 +11,24 @@ use std::path::Path;
 const MAX_SIDE: u32 = 1024;
 const MAX_LAT: f64 = 85.05;
 
-/// Viridis, low → high (the app's "Standard" ramp).
+/// The same three ramps the vector side offers (`Styling.swift`'s `Palette`), low → high, so a
+/// grid of values can be recoloured like everything else on the map. A raster is drawn as a
+/// picture, not as styled features, so unlike a vector layer its colours cannot be changed on the
+/// phone — the picture has to be drawn again, which is why the ramp is chosen here.
 const VIRIDIS: [[u8; 3]; 5] = [[0x44, 0x01, 0x54], [0x3B, 0x52, 0x8B], [0x21, 0x91, 0x8C], [0x5E, 0xC9, 0x62], [0xFD, 0xE7, 0x25]];
+const HEAT: [[u8; 3]; 5] = [[0xFF, 0xF5, 0xB0], [0xFE, 0xCC, 0x5C], [0xFD, 0x8D, 0x3C], [0xF0, 0x3B, 0x20], [0xBD, 0x00, 0x26]];
+const BLUES: [[u8; 3]; 5] = [[0xEF, 0xF3, 0xFF], [0xBD, 0xD7, 0xE7], [0x6B, 0xAE, 0xD6], [0x31, 0x82, 0xBD], [0x08, 0x51, 0x9C]];
+/// Grey, for a value grid laid over a busy map where colour would fight the streets.
+const GREYS: [[u8; 3]; 5] = [[0xF7, 0xF7, 0xF7], [0xCC, 0xCC, 0xCC], [0x96, 0x96, 0x96], [0x63, 0x63, 0x63], [0x25, 0x25, 0x25]];
+
+fn palette(name: &str) -> &'static [[u8; 3]; 5] {
+    match name {
+        "heat" => &HEAT,
+        "blues" => &BLUES,
+        "greys" => &GREYS,
+        _ => &VIRIDIS,
+    }
+}
 
 fn merc_y(lat: f64) -> f64 {
     let lat = lat.clamp(-MAX_LAT, MAX_LAT).to_radians();
@@ -23,11 +39,11 @@ fn lat_of(y: f64) -> f64 {
     y.sinh().atan().to_degrees()
 }
 
-fn ramp(t: f64) -> [u8; 3] {
-    let t = t.clamp(0.0, 1.0) * (VIRIDIS.len() - 1) as f64;
-    let i = (t.floor() as usize).min(VIRIDIS.len() - 2);
+fn shade(colors: &[[u8; 3]; 5], t: f64) -> [u8; 3] {
+    let t = t.clamp(0.0, 1.0) * (colors.len() - 1) as f64;
+    let i = (t.floor() as usize).min(colors.len() - 2);
     let f = t - i as f64;
-    let (a, b) = (VIRIDIS[i], VIRIDIS[i + 1]);
+    let (a, b) = (colors[i], colors[i + 1]);
     [0, 1, 2].map(|k| (a[k] as f64 + (b[k] as f64 - a[k] as f64) * f).round() as u8)
 }
 
@@ -69,16 +85,33 @@ fn is_picture(r: &Raster) -> bool {
 /// `{"name","look":"picture|values","bounds":[w,s,e,n],"png","values","grid":[w,h],"low","high",
 /// "min","max","bands","data_type","cell_m"}`.
 pub fn open_raster_envelope(path: &str, out_stem: &str) -> Result<String, String> {
-    open_raster_envelope_at(path, out_stem, 0, None)
+    open_raster_envelope_at(path, out_stem, 0, None, "viridis", None)
 }
 
-/// As [`open_raster_envelope`], at NetCDF time step `time`.
+/// How much of the world a drawing covers: `(west, south, east, north)`.
+pub type Window = (f64, f64, f64, f64);
+
+/// As [`open_raster_envelope`], at NetCDF time step `time`, on `ramp`, over `window`.
 ///
 /// `fixed_range` is the colour range to keep. Stepping through time must not restretch the ramp —
 /// otherwise January and July both look "normal" and the map says nothing — so the first open
 /// samples a few steps for a range that holds for the whole axis, and every later step is coloured
-/// with that same range. The desktop reader does the same (`netcdf::sample_range`).
-pub fn open_raster_envelope_at(path: &str, out_stem: &str, time: usize, fixed_range: Option<(f64, f64)>) -> Result<String, String> {
+/// with that same range. The desktop reader does the same (`netcdf::sample_range`). A redraw at a
+/// different ramp or window passes the same range for the same reason: only the colours or the
+/// detail should change, never what a colour means.
+///
+/// `window` draws only part of the raster. The picture is always at most `MAX_SIDE` across, so
+/// drawing the whole world costs one pixel per few kilometres and looks like porridge once the
+/// map is zoomed in. Redrawing just the visible part spends those same pixels on a hundredth of
+/// the area, which is where the detail comes from — the data was always there.
+pub fn open_raster_envelope_at(
+    path: &str,
+    out_stem: &str,
+    time: usize,
+    fixed_range: Option<(f64, f64)>,
+    ramp: &str,
+    window: Option<Window>,
+) -> Result<String, String> {
     // NetCDF goes through the spike's own pure-Rust reader: `rustgis-data` reads it only by
     // shelling out to GDAL, which does not exist on an iPhone. Everything after this is shared.
     let p = Path::new(path);
@@ -95,20 +128,33 @@ pub fn open_raster_envelope_at(path: &str, out_stem: &str, time: usize, fixed_ra
         (raster::read_path(p).map_err(|e| e.to_string())?, None, None, Vec::new(), Vec::new(), 0, None)
     };
     let e = r.extent();
-    let (west, east) = (e.min_x.max(-180.0), e.max_x.min(180.0));
-    let (south, north) = (e.min_y.max(-MAX_LAT), e.max_y.min(MAX_LAT));
+    let (mut west, mut east) = (e.min_x.max(-180.0), e.max_x.min(180.0));
+    let (mut south, mut north) = (e.min_y.max(-MAX_LAT), e.max_y.min(MAX_LAT));
+    // Clipped to the part being looked at, never beyond what the file actually covers.
+    if let Some((w0, s0, e0, n0)) = window {
+        west = west.max(w0.max(-180.0));
+        east = east.min(e0.min(180.0));
+        south = south.max(s0.max(-MAX_LAT));
+        north = north.min(n0.min(MAX_LAT));
+    }
     if !(east > west && north > south) {
         return Err("the raster's location couldn't be worked out".into());
     }
     let (yn, ys) = (merc_y(north), merc_y(south));
     let span_x = (east - west).to_radians();
     let span_y = yn - ys;
-    let longest = r.width.max(r.height).clamp(64, MAX_SIDE) as f64;
+    // How many of the file's own cells fall in this window: there is no point drawing a window
+    // larger than the data under it, and on a tiny window this keeps the picture small.
+    let covered = ((east - west) / (e.max_x - e.min_x).max(1e-12) * f64::from(r.width)).abs();
+    let covered_y = ((north - south) / (e.max_y - e.min_y).max(1e-12) * f64::from(r.height)).abs();
+    let native = covered.max(covered_y).ceil().max(1.0);
+    let longest = native.clamp(64.0, MAX_SIDE as f64);
     let (w, h) =
         if span_x >= span_y { (longest, (longest * span_y / span_x).max(1.0)) } else { ((longest * span_x / span_y).max(1.0), longest) };
     let (w, h) = (w.round() as u32, h.round() as u32);
 
     let picture = is_picture(&r);
+    let colors = palette(ramp);
     let band0 = r.bands.first().ok_or("the raster has no bands")?;
     let (low, high) = (band0.stats.percentile(2.0), band0.stats.percentile(98.0));
     let (low, high) = if high > low { (low, high) } else { (band0.stats.min, band0.stats.max.max(band0.stats.min + 1e-9)) };
@@ -154,7 +200,7 @@ pub fn open_raster_envelope_at(path: &str, out_stem: &str, time: usize, fixed_ra
                     out.copy_from_slice(&c);
                 }
             } else if let Some(v) = r.value(0, col, row) {
-                let c = ramp((v as f64 - low) / (high - low));
+                let c = shade(colors, (v as f64 - low) / (high - low));
                 out.copy_from_slice(&[c[0], c[1], c[2], 255]);
                 if let Some(slot) = values.get_mut((j * w + i) as usize) {
                     *slot = v;
@@ -190,6 +236,8 @@ pub fn open_raster_envelope_at(path: &str, out_stem: &str, time: usize, fixed_ra
         "cell_m": (cx + cy) / 2.0,
         // NetCDF only: the file says what it measures and in what unit, so Swift does not have to
         // guess them from the file name.
+        "ramp": ramp,
+        "windowed": window.is_some(),
         "quantity": quantity,
         "unit": unit,
         "notes": notes,

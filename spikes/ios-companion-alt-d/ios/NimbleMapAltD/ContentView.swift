@@ -19,6 +19,7 @@ struct ContentView: View {
     @State private var started = false
     @State private var cameraReady = false
     @State private var sceneRun = false
+    @StateObject private var here = WhereAmI()
 
     var body: some View {
         ZStack {
@@ -34,6 +35,11 @@ struct ContentView: View {
                 },
                 onCameraIdle: { bounds in
                     doc.viewBounds = bounds
+                    // Zoomed in far enough that the drawn picture has run out of detail: draw
+                    // the visible part again at full resolution. Idle only, so panning stays smooth.
+                    for l in doc.layers where l.visible && l.dataset.raster != nil {
+                        doc.refineRaster(l.id, view: bounds)
+                    }
                     // Only once the saved map is back, and only for the person's own map.
                     if cameraReady && doc.sampleID == nil && !doc.isEmpty { SavedMap.view = bounds }
                 }
@@ -64,6 +70,12 @@ struct ContentView: View {
                     )
                 }
                 Spacer()
+                HStack(alignment: .bottom) {
+                    Spacer()
+                    mapButtons
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 10)
                 bottomChrome
             }
             .animation(.snappy, value: doc.toast)
@@ -92,6 +104,12 @@ struct ContentView: View {
                         doc.importing(Importer.displayName(for: url)) { await Importer.download(url, onProgress: report) }
                     }
                 )
+            case .places:
+                PlacesSheet { item in
+                    let c = item.placemark.coordinate
+                    // A point has no extent; fly to it at a town-ish zoom.
+                    doc.fly(to: GeoBounds(minLon: c.longitude, minLat: c.latitude, maxLon: c.longitude, maxLat: c.latitude), pointZoom: 11)
+                }
             case .layers:
                 LayersSheet(
                     doc: doc,
@@ -146,6 +164,16 @@ struct ContentView: View {
                 }
             }
         }
+        .onChange(of: here.foundKey) { _, _ in
+            guard let found = here.found else { return }
+            doc.fly(to: GeoBounds(minLon: found.longitude, minLat: found.latitude, maxLon: found.longitude, maxLat: found.latitude), pointZoom: 13)
+            here.found = nil
+        }
+        .alert("Can't show where you are", isPresented: locationBinding) {
+            Button("OK", role: .cancel) { here.problem = nil }
+        } message: {
+            Text(here.problem ?? "")
+        }
         .alert("Couldn't open this", isPresented: errorBinding) {
             Button("OK", role: .cancel) { doc.error = nil }
         } message: {
@@ -186,7 +214,7 @@ struct ContentView: View {
     /// puts the place in the half above it.
     private var mapInsets: UIEdgeInsets {
         switch active {
-        case .feature, .list, .layers, .open, .style, .rasterSpot:
+        case .feature, .list, .layers, .open, .places, .style, .rasterSpot:
             return UIEdgeInsets(top: 110, left: 36, bottom: 480, right: 36)
         case .look:
             return UIEdgeInsets(top: 110, left: 36, bottom: 390, right: 36)
@@ -197,35 +225,69 @@ struct ContentView: View {
 
     // MARK: Chrome (A's floating pills; B's two round map buttons)
 
+    /// The top row: add data, and find a place. The map buttons used to sit under them on the
+    /// right; they have moved to the bottom corner, where there is room and where a thumb reaches.
     private var topChrome: some View {
-        HStack(alignment: .top, spacing: 10) {
+        HStack(alignment: .center, spacing: 10) {
             pill("Add data", systemImage: "plus") { active = .open }
-            Spacer()
-            VStack(spacing: 10) {
-                Menu {
-                    Picker("Map style", selection: $basemap) {
-                        ForEach(Basemap.allCases) { b in Text(b.label).tag(b) }
-                    }
-                } label: {
-                    roundIcon("map")
+            Button {
+                active = .places
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "magnifyingglass")
+                    Text("Search places").lineLimit(1)
                 }
-                .accessibilityLabel("Map style")
-                Button {
-                    var all = GeoBounds.empty
-                    for l in doc.layers where l.visible { all.add(l.dataset.bounds) }
-                    doc.fly(to: all)
-                } label: {
-                    roundIcon("scope")
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Show all data")
-                if ProcessInfo.processInfo.environment["LM_FPS"] == "1" {
-                    FpsOverlay()
-                }
+                .font(.subheadline.weight(.semibold))
+                .padding(.horizontal, 16)
+                .frame(maxWidth: .infinity, minHeight: 44)
+                .background(chromeBackground, in: Capsule())
+                .overlay(Capsule().strokeBorder(chromeEdge, lineWidth: 0.5))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Search for a place")
+            if ProcessInfo.processInfo.environment["LM_FPS"] == "1" {
+                FpsOverlay()
             }
         }
         .padding(.horizontal, 16)
         .padding(.top, 52)
+    }
+
+    /// Map style and "where am I", bottom right — away from the legend, which is bottom left.
+    private var mapButtons: some View {
+        VStack(spacing: 10) {
+            Menu {
+                Picker("Map style", selection: $basemap) {
+                    ForEach(Basemap.allCases) { b in Text(b.label).tag(b) }
+                }
+            } label: {
+                roundIcon("map")
+            }
+            .accessibilityLabel("Map style")
+            Button {
+                var all = GeoBounds.empty
+                for l in doc.layers where l.visible { all.add(l.dataset.bounds) }
+                doc.fly(to: all)
+            } label: {
+                roundIcon("square.dashed")
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Show all data")
+            // Genuinely "where am I": the crosshair used to fit the data's bounds, which is a
+            // different thing wearing the same icon.
+            Button {
+                here.locate()
+            } label: {
+                ZStack {
+                    roundIcon(here.isLocating ? "location.fill" : "location")
+                    if here.isLocating {
+                        ProgressView().controlSize(.small)
+                    }
+                }
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Show where I am")
+        }
     }
 
     @ViewBuilder
@@ -251,13 +313,22 @@ struct ContentView: View {
         .padding(.bottom, 24)
     }
 
+    /// Chrome has to read against a near-white basemap as well as a dark one.
+    ///
+    /// `.regularMaterial` is mostly transparent, so on the Light style — which is almost white —
+    /// a floating pill all but disappeared. The thicker material keeps the frosted look but holds
+    /// its own ground, and a hairline edge draws the shape even where the two tones match.
+    private var chromeBackground: Material { .thickMaterial }
+    private var chromeEdge: Color { Color.primary.opacity(0.12) }
+
     private func pill(_ title: String, systemImage: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Label(title, systemImage: systemImage)
                 .font(.subheadline.weight(.semibold))
                 .padding(.horizontal, 16)
                 .frame(minHeight: 44)
-                .background(.regularMaterial, in: Capsule())
+                .background(chromeBackground, in: Capsule())
+                .overlay(Capsule().strokeBorder(chromeEdge, lineWidth: 0.5))
         }
         .buttonStyle(.plain)
     }
@@ -266,7 +337,8 @@ struct ContentView: View {
         Image(systemName: name)
             .font(.body.weight(.semibold))
             .frame(width: 44, height: 44)
-            .background(.regularMaterial, in: Circle())
+            .background(chromeBackground, in: Circle())
+            .overlay(Circle().strokeBorder(chromeEdge, lineWidth: 0.5))
     }
 
     private func capsule(_ text: String, systemImage: String) -> some View {
@@ -436,7 +508,8 @@ struct ContentView: View {
                     lookOriginal = nil
                     switchTo(.style(id))
                 },
-                onTime: { doc.setTime(id, $0) }
+                onTime: { doc.setTime(id, $0) },
+                onRamp: { doc.setRasterRamp(id, $0) }
             )
         }
     }
@@ -467,6 +540,10 @@ struct ContentView: View {
 
     private var overlapBinding: Binding<Bool> {
         Binding(get: { !overlap.isEmpty }, set: { if !$0 { overlap = [] } })
+    }
+
+    private var locationBinding: Binding<Bool> {
+        Binding(get: { here.problem != nil }, set: { if !$0 { here.problem = nil } })
     }
 
     private var errorBinding: Binding<Bool> {
@@ -500,6 +577,7 @@ struct ContentView: View {
 
 enum ActiveSheet: Identifiable, Equatable {
     case open
+    case places
     case layers
     case look(UUID)
     case style(UUID)
@@ -511,6 +589,7 @@ enum ActiveSheet: Identifiable, Equatable {
     var id: String {
         switch self {
         case .open: return "open"
+        case .places: return "places"
         case .layers: return "layers"
         case .look(let id): return "look-\(id)"
         case .style(let id): return "style-\(id)"
