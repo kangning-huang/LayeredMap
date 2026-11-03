@@ -103,6 +103,10 @@ struct ContentView: View {
                         active = nil
                         let name = title ?? Importer.displayName(for: url)
                         doc.importing(name) { await Importer.download(url, named: title, onProgress: report) }
+                    },
+                    onFile: { file in
+                        active = nil
+                        doc.importingAll(Importer.displayName(for: file)) { await Importer.openPicked([file]) }
                     }
                 )
             case .places:

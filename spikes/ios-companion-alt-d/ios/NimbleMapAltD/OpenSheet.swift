@@ -28,6 +28,8 @@ struct OpenSheet: View {
     var onPicked: ([URL]) -> Void
     /// A link to open, and the catalogue's name for it when there is one.
     var onLink: (URL, String?) -> Void
+    /// A file the in-app browser downloaded itself.
+    var onFile: (URL) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var picking = false
@@ -124,6 +126,9 @@ struct OpenSheet: View {
                 DataWebPage(url: url, title: "Pick a download", onDataLink: { link in
                     pageURL = nil
                     onLink(link, nil)
+                }, onDataFile: { file in
+                    pageURL = nil
+                    onFile(file)
                 })
             }
         }
@@ -395,7 +400,7 @@ struct OpenSheet: View {
             // anyone whose data isn't one of the four bundled sets, so it must never need a
             // sideways scroll to find. (In C it was the last line of the last section.)
             NavigationLink {
-                DataWebPage(onDataLink: { onLink($0, nil) })
+                DataWebPage(onDataLink: { onLink($0, nil) }, onDataFile: onFile)
             } label: {
                 MoreDataRow()
             }

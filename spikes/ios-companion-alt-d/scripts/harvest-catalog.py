@@ -157,6 +157,36 @@ CURATED_KEYWORDS = {
 }
 
 
+# Entries that answer "where is X" for a place name, and the bundled files their names come from.
+#
+# Someone typing "Poland" or "Osaka" wants that place on a map. Before this they got 92 Polish
+# supermarkets, because the only entries carrying the word were shop branches. The app already
+# ships 177 country outlines and 1,251 towns; teaching the catalogue their names costs a few
+# hundred kilobytes of keywords and turns every place name into a real answer.
+PLACE_NAME_SOURCES = {
+    "countries": ("../../assets/examples/countries.geojson",
+                  ["ne-10m-admin_0_countries", "ne-50m-admin_0_countries", "ne-110m-admin_0_countries"]),
+    "cities": ("../../assets/examples/cities.geojson",
+               ["ne-10m-populated_places", "ne-50m-populated_places", "ne-110m-populated_places"]),
+}
+
+
+def place_names(relative):
+    """Every place name in a bundled example file, lowercased."""
+    path = (HERE / relative).resolve()
+    try:
+        data = json.loads(path.read_text())
+    except Exception as e:  # noqa: BLE001
+        print(f"place names: skipped {path.name} ({e})", file=sys.stderr)
+        return []
+    out = set()
+    for f in data.get("features", []):
+        name = (f.get("properties") or {}).get("name")
+        if isinstance(name, str) and len(name) > 2:
+            out.add(name.lower())
+    return sorted(out)
+
+
 def title_case(words):
     small = {"and", "of", "the", "de", "la", "du", "van", "der"}
     out = []
@@ -335,6 +365,33 @@ def main():
             continue
         seen.add(i["url"])
         unique.append(i)
+
+    # Teach the reference layers every place name they can actually show.
+    by_id = {i["id"]: i for i in unique}
+    for kind, (source, ids) in PLACE_NAME_SOURCES.items():
+        names = place_names(source)
+        if not names:
+            continue
+        hit = 0
+        for entry_id in ids:
+            item = by_id.get(entry_id)
+            if not item:
+                continue
+            item["keywords"] = sorted(set(item.get("keywords", [])) | set(names))
+            hit += 1
+        print(f"place names: {len(names)} {kind} added to {hit} entries")
+
+    # Downloading a whole country from OpenStreetMap is never the right first move: the row says
+    # "every country and many regions" and hands over 263 MB of Taiwan. Send people to the chooser.
+    geofabrik = by_id.get("a-whole-country-from-openstreetmap-geofabrik")
+    if geofabrik:
+        geofabrik["kind"] = "page"
+        geofabrik["url"] = "https://download.geofabrik.de/"
+        geofabrik["size"] = ""
+        geofabrik["title"] = "A country or region from OpenStreetMap"
+        geofabrik["blurb"] = ("Pick a country or region and download it. These are whole-country "
+                              "extracts and can be hundreds of megabytes, so choose the smallest "
+                              "area that covers what you need.")
 
     OUT.write_text(json.dumps(unique, ensure_ascii=False, separators=(",", ":")) + "\n")
     kb = OUT.stat().st_size / 1024
