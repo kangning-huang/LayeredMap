@@ -201,6 +201,46 @@ pub unsafe extern "C" fn lm_open_raster(path: *const c_char, out_stem: *const c_
     }
 }
 
+/// Re-read a NetCDF grid at another time step, keeping the colour range so the ramp means the
+/// same thing at every step. Pass `low >= high` to let it work the range out itself.
+///
+/// # Safety
+/// `path` and `out_stem` must be non-null C strings; `out_json` must be a valid writable pointer.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn lm_open_raster_step(
+    path: *const c_char,
+    out_stem: *const c_char,
+    time: i32,
+    low: f64,
+    high: f64,
+    out_json: *mut *mut c_char,
+) -> i32 {
+    if out_json.is_null() || path.is_null() || out_stem.is_null() {
+        return LM_DECODE_NULL_ARG;
+    }
+    clear_out(out_json);
+    // SAFETY: both are non-null C strings from the caller.
+    let (p, o) = unsafe { (CStr::from_ptr(path), CStr::from_ptr(out_stem)) };
+    let (Ok(p), Ok(o)) = (p.to_str(), o.to_str()) else {
+        let _ = set_out_string(out_json, "path is not UTF-8");
+        return LM_DECODE_INVALID_UTF8;
+    };
+    let range = (high > low && low.is_finite() && high.is_finite()).then_some((low, high));
+    let step = time.max(0) as usize;
+    let result = std::panic::catch_unwind(|| crate::raster::open_raster_envelope_at(p, o, step, range))
+        .unwrap_or_else(|_| Err("couldn't read this raster".into()));
+    match result {
+        Ok(json) => match set_out_string(out_json, &json) {
+            Ok(()) => LM_DECODE_OK,
+            Err(code) => code,
+        },
+        Err(msg) => {
+            let _ = set_out_string(out_json, &msg);
+            LM_DECODE_PARSE
+        }
+    }
+}
+
 /// Free a string returned by this library.
 ///
 /// # Safety

@@ -8,6 +8,7 @@
 #![allow(unsafe_code)]
 
 mod ffi;
+pub mod netcdf;
 pub mod raster;
 
 use rustgis_data::GeometryType;

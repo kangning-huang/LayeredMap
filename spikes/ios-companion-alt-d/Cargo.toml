@@ -26,3 +26,6 @@ type_complexity = "allow"
 rustgis-data = { workspace = true }
 serde_json = { workspace = true }
 image = { workspace = true }
+# NetCDF grids: pure Rust, so it works on the phone. `rustgis-data` reads NetCDF only through
+# GDAL's gdal_translate, which there is no way to run on iOS.
+netcdf-reader = { workspace = true }

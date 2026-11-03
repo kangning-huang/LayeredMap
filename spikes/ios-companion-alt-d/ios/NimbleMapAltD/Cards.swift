@@ -149,12 +149,90 @@ struct DataCard: View {
 
 /// Tap a map image (Alt C): the value under the finger for a grid of values, in plain words with
 /// where it sits among the rest; for a picture, what it is and how to compare it with today's map.
+/// The time slider for a NetCDF grid, like the desktop's: the step's date in words, ← and → for
+/// one step at a time, and a slider for the rest. Play is deliberately left out of the spike.
+///
+/// The slider's own position leads the map: a drag asks for steps faster than they can be read,
+/// so the thumb follows the finger and the cells catch up (`MapDocument.setTime` drops stale
+/// reads). The ends are labelled so the span of the file is readable without dragging.
+struct TimeSlider: View {
+    var raster: RasterInfo
+    var onSet: (Int) -> Void
+    var onStep: (Int) -> Void
+
+    /// Where the thumb is while dragging; nil means "wherever the cells are".
+    @State private var dragging: Double?
+
+    var body: some View {
+        let last = Double(raster.times.count - 1)
+        let shown = dragging ?? Double(raster.time)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(label(Int(shown.rounded())))
+                    .font(.body.weight(.semibold))
+                    .monospacedDigit()
+                Spacer()
+                Text("\(Int(shown.rounded()) + 1) of \(raster.times.count)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+            }
+            HStack(spacing: 10) {
+                stepButton("chevron.left", by: -1, enabled: raster.time > 0)
+                Slider(
+                    value: Binding(get: { shown }, set: { dragging = $0 }),
+                    in: 0...max(last, 1),
+                    step: 1,
+                    onEditingChanged: { editing in
+                        if !editing, let d = dragging {
+                            onSet(Int(d.rounded()))
+                            dragging = nil
+                        }
+                    }
+                )
+                .disabled(raster.times.count < 2)
+                stepButton("chevron.right", by: 1, enabled: raster.time < raster.times.count - 1)
+            }
+            HStack {
+                Text(label(0)).font(.caption2).foregroundStyle(.secondary)
+                Spacer()
+                Text(label(raster.times.count - 1)).font(.caption2).foregroundStyle(.secondary)
+            }
+        }
+        .padding(14)
+        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Time")
+        .accessibilityValue(label(raster.time))
+    }
+
+    private func label(_ i: Int) -> String {
+        raster.times.indices.contains(i) ? raster.times[i] : ""
+    }
+
+    private func stepButton(_ symbol: String, by delta: Int, enabled: Bool) -> some View {
+        Button {
+            dragging = nil
+            onStep(delta)
+        } label: {
+            Image(systemName: symbol)
+                .font(.body.weight(.semibold))
+                .frame(width: 34, height: 34)
+        }
+        .buttonStyle(.bordered)
+        .buttonBorderShape(.circle)
+        .disabled(!enabled)
+        .accessibilityLabel(delta < 0 ? "Previous step" : "Next step")
+    }
+}
+
 struct RasterCard: View {
     var layer: MapLayer
     var at: CLLocationCoordinate2D
     var onClose: () -> Void
     var onLook: () -> Void
     var onZoom: () -> Void
+    var onTime: (Int) -> Void = { _ in }
 
     var body: some View {
         let r = layer.dataset.raster
@@ -174,6 +252,9 @@ struct RasterCard: View {
                 .padding(14)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                if let r, r.hasTime {
+                    TimeSlider(raster: r, onSet: { onTime($0) }, onStep: { onTime(r.time + $0) })
+                }
                 HStack(spacing: 8) {
                     ActionButton(title: r?.look == .picture ? "See-through" : "Change look", systemImage: "circle.lefthalf.filled", action: onLook)
                     ActionButton(title: "Zoom to", systemImage: "plus.magnifyingglass", action: onZoom)
