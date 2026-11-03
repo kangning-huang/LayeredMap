@@ -77,23 +77,60 @@ enum Catalog {
         }
     }()
 
-    /// Offline search over the bundled catalogue. Every word typed must appear somewhere in the
-    /// entry — title, what it is, who publishes it, its section, or its keywords — so "roman
-    /// roads" finds the Roman Empire roads and "roads" alone does not drown in everything else.
-    /// A title match sorts first, because someone typing "earthquakes" means the one called that.
+    /// Words that carry no meaning for a catalogue and must not be able to veto a match.
+    ///
+    /// People type questions, not keywords. The study's reader typed "where do people live in
+    /// china"; the catalogue holds "Where people live, 1 km grid", whose blurb even names China —
+    /// and the search returned nothing, because the entry does not contain the word "do". One
+    /// auxiliary verb hid the right answer and she concluded she had asked wrong.
+    private static let stopWords: Set<String> = [
+        "a", "about", "all", "an", "and", "any", "are", "around", "as", "at", "be", "by", "can",
+        "data", "dataset", "datasets", "do", "does", "download", "file", "files", "find", "for",
+        "from", "get", "give", "has", "have", "how", "i", "in", "is", "it", "its", "layer", "map",
+        "maps", "me", "my", "near", "of", "on", "or", "please", "show", "some", "that", "the",
+        "their", "there", "to", "want", "what", "when", "where", "which", "with", "would",
+    ]
+
+    /// Offline search over the bundled catalogue.
+    ///
+    /// Every meaningful word typed must appear in the entry, so "roman roads" finds the Roman
+    /// Empire and "roads" alone does not drown in everything else. Three rules make that bearable
+    /// for how people actually type:
+    ///
+    /// * **Filler words are dropped** (see `stopWords`), so a question works as well as keywords.
+    ///   If a query is nothing *but* filler, it is matched as typed rather than matching all.
+    /// * **A word matches at a word boundary**, not anywhere in the text. Without this "ports"
+    ///   matched a tornado dataset through the word "reports".
+    /// * **A trailing "s" is optional both ways**, because people type plurals and catalogues are
+    ///   written in the singular, and neither should lose to the other.
+    ///
+    /// A title match sorts first: someone typing "earthquakes" means the one called that.
     static func searchBundled(_ text: String) -> [Item] {
-        let words = text.lowercased().split(whereSeparator: { !$0.isLetter && !$0.isNumber }).map(String.init)
-        guard !words.isEmpty else { return [] }
+        let typed = text.lowercased().split(whereSeparator: { !$0.isLetter && !$0.isNumber }).map(String.init)
+        guard !typed.isEmpty else { return [] }
+        let meaningful = typed.filter { !stopWords.contains($0) }
+        let words = meaningful.isEmpty ? typed : meaningful
+
         return bundled.compactMap { item -> (Item, Int)? in
             let title = item.title.lowercased()
             let haystack = ([title, item.blurb, item.source, item.format] + item.keywords)
                 .joined(separator: " ").lowercased()
-            guard words.allSatisfy({ haystack.contains($0) }) else { return nil }
-            let score = words.contains(where: { title.contains($0) }) ? 0 : 1
+            let hay = tokens(haystack)
+            guard words.allSatisfy({ hay.contains(stem($0)) }) else { return nil }
+            let score = words.contains(where: { tokens(title).contains(stem($0)) }) ? 0 : 1
             return (item, score)
         }
         .sorted { $0.1 < $1.1 }
         .map(\.0)
+    }
+
+    /// "shipwrecks" and "shipwreck" are the same search.
+    private static func stem(_ w: String) -> String {
+        w.count > 3 && w.hasSuffix("s") && !w.hasSuffix("ss") ? String(w.dropLast()) : w
+    }
+
+    private static func tokens(_ s: String) -> Set<String> {
+        Set(s.split(whereSeparator: { !$0.isLetter && !$0.isNumber }).map { stem(String($0)) })
     }
 
     /// Where to look. Three, because one query cannot serve both "bike lanes" (abundant, published
@@ -115,15 +152,26 @@ enum Catalog {
         }
     }
 
-    /// Everything found for `text`, bundled catalogue first.
+    /// What a search found, and whether it could ask at all.
+    ///
+    /// The difference matters more than anything else in this file. "Nothing is published about
+    /// this" and "I could not reach the portals" look identical to a person, and only one of them
+    /// is a reason to stop looking. Reporting a dead connection as an empty world is how someone
+    /// gives up on a dataset that exists.
+    enum Outcome {
+        case found([Item])
+        case unreachable
+    }
+
+    /// Everything the web adds for `text`, or `.unreachable` when no portal could be asked.
     ///
     /// Order matters more than it looks: the bundled list answers instantly, offline and free, so
-    /// it is tried before anything that costs a request. The model is asked for better search
+    /// it is searched before anything that costs a request. The model is asked for better search
     /// words only when the bundled list came back empty — if "earthquakes" already matched, there
     /// is nothing to improve and no reason to spend anything.
-    static func search(_ text: String, scope: Scope) async -> [Item] {
+    static func search(_ text: String, scope: Scope) async -> Outcome {
         let q = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard q.count >= 2 else { return [] }
+        guard q.count >= 2 else { return .found([]) }
 
         // Catalogue indexes are keyword matches, so a typed sentence finds nothing. Ask a model
         // for better words only when the bundled catalogue already came up short — if
@@ -137,28 +185,57 @@ enum Catalog {
             terms = q
         }
 
-        async let socrata = scope == .cityMaps ? [] : fromSocrata(terms)
-        async let hub = scope == .portals ? [] : fromArcGISHub(terms)
+        async let socrata = scope == .cityMaps ? Reply.skipped : fromSocrata(terms)
+        async let hub = scope == .portals ? Reply.skipped : fromArcGISHub(terms)
+        let replies = [await socrata, await hub]
+
+        // Every portal we actually asked failed to answer: that is a broken connection, not an
+        // empty world, and saying so is the difference between "try again later" and giving up.
+        let asked = replies.filter { $0 != .skipped }
+        let answered = asked.filter { $0 != .unreachable }
+        if !asked.isEmpty && answered.isEmpty {
+            return .unreachable
+        }
+
         // The bundled matches are already on screen; this is only what the web adds to them.
-        let alreadyShown = Set(searchBundled(q).map(\.url.absoluteString))
-        var seen = alreadyShown
-        return ((await socrata) + (await hub)).filter { seen.insert($0.url.absoluteString).inserted }
+        let shown: [String] = searchBundled(q).map { $0.url.absoluteString }
+        var seen = Set(shown)
+        var found: [Item] = []
+        for reply in replies {
+            for item in reply.items where seen.insert(item.url.absoluteString).inserted {
+                found.append(item)
+            }
+        }
+        return .found(found)
+    }
+
+    /// One portal's answer, keeping "asked and got nothing" apart from "could not ask".
+    enum Reply: Equatable {
+        case skipped
+        case unreachable
+        case items([Item])
+
+        var items: [Item] {
+            if case .items(let i) = self { return i }
+            return []
+        }
     }
 
     // MARK: Socrata
 
     /// Socrata's Discovery API: no key, no cost, and it labels each column's type, so a dataset
     /// with no geometry can be dropped before anyone taps it.
-    private static func fromSocrata(_ q: String) async -> [Item] {
+    private static func fromSocrata(_ q: String) async -> Reply {
         var c = URLComponents(string: "https://api.us.socrata.com/api/catalog/v1")
         c?.queryItems = [
             URLQueryItem(name: "q", value: q),
             URLQueryItem(name: "only", value: "dataset"),
             URLQueryItem(name: "limit", value: "20"),
         ]
-        guard let url = c?.url, let root = await json(url) else { return [] }
+        guard let url = c?.url else { return .unreachable }
+        guard let root = await json(url) else { return .unreachable }
         let results = (root["results"] as? [[String: Any]]) ?? []
-        return results.compactMap { row -> Item? in
+        return .items(results.compactMap { row -> Item? in
             guard let r = row["resource"] as? [String: Any],
                   let id = r["id"] as? String,
                   let name = r["name"] as? String,
@@ -171,7 +248,7 @@ enum Catalog {
             guard let file = URL(string: "https://\(domain)/resource/\(id).geojson") else { return nil }
             let blurb = (r["description"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             return Item(id: "socrata:\(domain):\(id)", title: name, blurb: blurb, format: "GeoJSON", source: domain, url: file)
-        }
+        })
     }
 
     /// Socrata's names for columns that hold a place.
@@ -185,13 +262,14 @@ enum Catalog {
     /// ArcGIS Hub: where most city and county maps live. Its `downloadable` flag is not
     /// trustworthy — of eight datasets flagged downloadable in testing, one served a file and
     /// seven answered 404 — so every link is checked before it is shown (`verified`).
-    private static func fromArcGISHub(_ q: String) async -> [Item] {
+    private static func fromArcGISHub(_ q: String) async -> Reply {
         var c = URLComponents(string: "https://hub.arcgis.com/api/v3/datasets")
         c?.queryItems = [
             URLQueryItem(name: "q", value: q),
             URLQueryItem(name: "page[size]", value: "12"),
         ]
-        guard let url = c?.url, let root = await json(url) else { return [] }
+        guard let url = c?.url else { return .unreachable }
+        guard let root = await json(url) else { return .unreachable }
         let data = (root["data"] as? [[String: Any]]) ?? []
         let candidates: [Item] = data.compactMap { row in
             guard let id = row["id"] as? String, let a = row["attributes"] as? [String: Any],
@@ -212,7 +290,7 @@ enum Catalog {
             let org = (a["orgTitle"] as? String) ?? "ArcGIS Hub"
             return Item(id: "hub:\(id)", title: name, blurb: blurb, format: "GeoJSON", source: org, url: file)
         }
-        return await verified(candidates)
+        return .items(await verified(candidates))
     }
 
     /// Keeps only the links that really answer. A row that cannot be opened is worse than no row:

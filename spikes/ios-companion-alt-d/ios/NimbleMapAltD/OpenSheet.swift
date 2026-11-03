@@ -42,6 +42,11 @@ struct OpenSheet: View {
     @State private var scope = Catalog.Scope.portals
     /// A Google search, opened in Safari rather than a web view (see `Catalog.webSearch`).
     @State private var safariURL: URL?
+    /// A catalogue entry that is a page rather than a file. This opens in the app's **own** web
+    /// view, not Safari: that one watches for a tap on a data link and brings the file straight
+    /// back to the map. Safari would download it into Files and leave the person hunting for it,
+    /// which is the exact dead end the "Open" button is meant to avoid.
+    @State private var pageURL: URL?
     /// Row index → the model's one line on why this result answers the question. Empty when no
     /// model was asked, or when it was and said nothing usable.
     @State private var reasons: [Int: String] = [:]
@@ -102,6 +107,14 @@ struct OpenSheet: View {
         }
         .fileDialogDefaultDirectory(lastFolder.isEmpty ? nil : URL(fileURLWithPath: lastFolder, isDirectory: true))
         .sheet(item: $safariURL) { SafariView(url: $0) }
+        .sheet(item: $pageURL) { url in
+            NavigationStack {
+                DataWebPage(url: url, title: "Pick a download", onDataLink: { link in
+                    pageURL = nil
+                    onLink(link)
+                })
+            }
+        }
         .alert("That didn't look like a web address", isPresented: $linkFailed) {
             Button("OK", role: .cancel) {}
         } message: {
@@ -137,7 +150,7 @@ struct OpenSheet: View {
                         item: item,
                         why: nil,
                         onAdd: { onLink(item.url) },
-                        onOpenPage: { safariURL = item.url }
+                        onOpenPage: { pageURL = item.url }
                     )
                 }
             }
@@ -208,7 +221,7 @@ struct OpenSheet: View {
                         item: item,
                         why: reasons[i],
                         onAdd: { onLink(item.url) },
-                        onOpenPage: { safariURL = item.url }
+                        onOpenPage: { pageURL = item.url }
                     )
                 }
             }
@@ -216,11 +229,15 @@ struct OpenSheet: View {
             // A true empty answer. Say so plainly, and say why, or it reads as a broken app.
             Section {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("No map files found for “\(search)”.")
+                    // Saying "no map files found" under three results the app just offered would
+                    // be nonsense; the web simply added nothing to them.
+                    Text(hasLocal ? "Nothing more on the web for “\(search)”." : "No map files found for “\(search)”.")
                         .font(.body.weight(.semibold))
-                    Text("Some subjects aren't published as free map files — shop and business locations often aren't.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                    if !hasLocal {
+                        Text("Some subjects aren't published as free map files — shop and business locations often aren't.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
                 }
                 .padding(.vertical, 2)
                 if scope != .anyFile {
@@ -237,6 +254,11 @@ struct OpenSheet: View {
                     } label: {
                         Label("Search the web for “\(search)”", systemImage: "magnifyingglass")
                     }
+                    // Safari owns anything downloaded there, so say where the file will go
+                    // *before* the trip rather than leaving someone hunting for it afterwards.
+                    Text("This opens Safari. A file you download there is saved to Files — come back and tap “Show my Downloads folder”.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
             }
         case .failed:
@@ -256,9 +278,14 @@ struct OpenSheet: View {
         online = .searching
         reasons = [:]
         Task {
-            let items = await Catalog.search(text, scope: where_)
+            let outcome = await Catalog.search(text, scope: where_)
             // The person has typed on since; their newer words win.
             guard text == search, where_ == scope else { return }
+            guard case .found(let items) = outcome else {
+                // Could not ask, which is not the same as nothing existing.
+                online = .failed
+                return
+            }
             online = .found(items)
 
             // Ranking is a second, optional pass: the results are already on screen, and a model
