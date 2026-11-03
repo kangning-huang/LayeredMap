@@ -46,7 +46,15 @@ fn is_picture(r: &Raster) -> bool {
 /// `{"name","look":"picture|values","bounds":[w,s,e,n],"png","values","grid":[w,h],"low","high",
 /// "min","max","bands","data_type","cell_m"}`.
 pub fn open_raster_envelope(path: &str, out_stem: &str) -> Result<String, String> {
-    let r = raster::read_path(Path::new(path)).map_err(|e| e.to_string())?;
+    // NetCDF goes through the spike's own pure-Rust reader: `rustgis-data` reads it only by
+    // shelling out to GDAL, which does not exist on an iPhone. Everything after this is shared.
+    let p = Path::new(path);
+    let (r, quantity, unit, notes) = if crate::netcdf::is_netcdf(p) {
+        let o = crate::netcdf::open(p)?;
+        (o.raster, Some(o.quantity), Some(o.unit), o.notes)
+    } else {
+        (raster::read_path(p).map_err(|e| e.to_string())?, None, None, Vec::new())
+    };
     let e = r.extent();
     let (west, east) = (e.min_x.max(-180.0), e.max_x.min(180.0));
     let (south, north) = (e.min_y.max(-MAX_LAT), e.max_y.min(MAX_LAT));
@@ -139,6 +147,11 @@ pub fn open_raster_envelope(path: &str, out_stem: &str) -> Result<String, String
         "bands": r.band_count(),
         "data_type": r.data_type,
         "cell_m": (cx + cy) / 2.0,
+        // NetCDF only: the file says what it measures and in what unit, so Swift does not have to
+        // guess them from the file name.
+        "quantity": quantity,
+        "unit": unit,
+        "notes": notes,
     })
     .to_string())
 }

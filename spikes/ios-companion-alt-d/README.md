@@ -64,6 +64,33 @@ Concretely:
 - **An error that named a button which does not exist is fixed.** C's `lonePartsMessage` told people
   to tap "Open a folder…"; no spike has ever had a button with that name.
 
+## NetCDF grids (climate and population)
+
+A and B and C could not open NetCDF at all, so the two climate entries on the site's data page
+(`.nc` files) could only ever end in "NimbleMap can't open .nc files yet." D opens them.
+
+- **Why a new reader.** `rustgis-data` reads NetCDF only by shelling out to GDAL's
+  `gdal_translate` (`crates/data/src/raster/gdal.rs`), and there is no GDAL on an iPhone. The
+  desktop reader (`crates/lm-jobs/src/import/netcdf.rs`) is pure Rust but is wired into `lm-core`'s
+  layer and grid profiles, the time slider and the variable dropdown. So `src/netcdf.rs` is a small
+  reading of the same format with the same `netcdf-reader` crate, cut to what the spike shows:
+  **one variable, its first time step and first level, as one grid of values.**
+- **What it keeps**, because leaving these out gives wrong maps rather than missing ones:
+  latitude/longitude found by CF `units` and `standard_name` (not just by name), `scale_factor` /
+  `add_offset` unpacking and `_FillValue` / `missing_value` masking, longitudes of 0–360 wrapped to
+  −180–180, and a grid stored south-to-north turned north up.
+- **What it drops:** picking a variable, the time axis, levels, and the colour range sampled across
+  time. Curvilinear and projected grids are refused with a plain sentence, not a crash.
+- **The file names the quantity.** A GeoTIFF says nothing, so C guessed "Height"/"m" from the file
+  name. A NetCDF variable carries `long_name` and `units`, so the card and legend use those;
+  machine-written units ("degC") are shown the way people write them ("°C").
+- Everything after the read is shared with GeoTIFF: the same Web Mercator resample, Viridis ramp,
+  values grid for "tap to read the value", legend and See-through slider.
+
+Verified against NOAA's NCEP monthly mean air temperature (26 MB, NetCDF-3, 0–360 longitudes):
+`long_name` "Monthly Mean Air Temperature at sigma level 0.995", 144×73 cells, extent
+−180…178.75 / −90…90, range −41.0…34.2 °C, drawn with the tropics yellow and the poles purple.
+
 ## Known gaps (not addressed in D)
 
 Found in the study, deliberately out of scope for this spike — they are real and worth their own pass:

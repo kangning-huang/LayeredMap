@@ -69,6 +69,23 @@ struct RasterInfo {
         return unit.isEmpty ? n : "\(n) \(unit)"
     }
 
+    /// CF unit strings are written for machines ("degC", "degrees_Celsius", "m s-1"). Show the
+    /// common ones the way a person writes them, and leave anything else exactly as the file said
+    /// rather than mangling it.
+    static func readableUnit(_ raw: String) -> String {
+        switch raw.lowercased().replacingOccurrences(of: " ", with: "_") {
+        case "degc", "degrees_celsius", "degree_celsius", "celsius": return "°C"
+        case "degk", "k", "kelvin", "degrees_kelvin": return "K"
+        case "degf", "degrees_fahrenheit", "fahrenheit": return "°F"
+        case "m", "metre", "meter", "metres", "meters": return "m"
+        case "km", "kilometre", "kilometer", "kilometres", "kilometers": return "km"
+        case "mm": return "mm"
+        case "percent", "%": return "%"
+        case "1", "none", "dimensionless", "unitless": return ""
+        default: return raw
+        }
+    }
+
     static func guessQuantity(_ name: String) -> (String, String) {
         let n = name.lowercased()
         if ["elev", "height", "dem", "dtm", "altitude", "terrain", "altimetr"].contains(where: n.contains) { return ("Height", "m") }
@@ -80,7 +97,9 @@ struct RasterInfo {
 }
 
 enum RasterDecode {
-    static let extensions = ["tif", "tiff", "asc"]
+    // NetCDF climate and population grids (`.nc`) are read by the spike's own pure-Rust reader;
+    // they arrive here as a grid of values like any GeoTIFF.
+    static let extensions = ["tif", "tiff", "asc", "nc", "nc4", "cdf", "netcdf"]
 
     static func isRaster(_ url: URL) -> Bool { extensions.contains(url.pathExtension.lowercased()) }
 
@@ -112,7 +131,13 @@ enum RasterDecode {
                 return .failure(ImportError(message: "Couldn't open this map image."))
             }
             let look = RasterInfo.Look(rawValue: o["look"] as? String ?? "") ?? .picture
-            let (quantity, unit) = RasterInfo.guessQuantity(name)
+            // A NetCDF file states what it measures and in what unit (CF `long_name`/`units`), so
+            // use those; a GeoTIFF says nothing, so fall back to guessing from the file name.
+            let said = (o["quantity"] as? String).map { $0.trimmingCharacters(in: .whitespaces) } ?? ""
+            let saidUnit = (o["unit"] as? String).map { $0.trimmingCharacters(in: .whitespaces) } ?? ""
+            let guessed = RasterInfo.guessQuantity(name)
+            let quantity = said.isEmpty ? guessed.0 : said
+            let unit = said.isEmpty ? guessed.1 : RasterInfo.readableUnit(saidUnit)
             func num(_ k: String) -> Double { (o[k] as? NSNumber)?.doubleValue ?? 0 }
             let info = RasterInfo(
                 look: look,
@@ -135,6 +160,9 @@ enum RasterDecode {
                 assumptions.append("Colors stretch from \(info.format(info.low)) to \(info.format(info.high)); the few values beyond take the end colors.")
                 if unit.isEmpty { assumptions.append("The file doesn't say what its numbers measure.") }
             }
+            // What the NetCDF reader had to assume: a wrapped longitude range, which grid of
+            // several was shown. Plain sentences from Rust, shown under More details.
+            assumptions.append(contentsOf: (o["notes"] as? [String]) ?? [])
             let ds = GeoDataset(
                 name: name,
                 kind: .raster,

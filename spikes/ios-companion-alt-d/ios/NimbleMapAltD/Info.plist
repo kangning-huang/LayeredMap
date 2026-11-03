@@ -27,6 +27,8 @@
 				<string>public.comma-separated-values-text</string>
 				<string>public.json</string>
 				<string>public.zip-archive</string>
+				<string>public.tiff</string>
+				<string>org.unidata.netcdf</string>
 			</array>
 		</dict>
 	</array>
@@ -69,6 +71,30 @@
 	</array>
 	<key>UTImportedTypeDeclarations</key>
 	<array>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>NetCDF grid</string>
+			<key>UTTypeIdentifier</key>
+			<string>org.unidata.netcdf</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>nc</string>
+					<string>nc4</string>
+					<string>cdf</string>
+				</array>
+				<key>public.mime-type</key>
+				<array>
+					<string>application/x-netcdf</string>
+					<string>application/netcdf</string>
+				</array>
+			</dict>
+		</dict>
 		<dict>
 			<key>UTTypeConformsTo</key>
 			<array>
