@@ -37,6 +37,35 @@ struct OpenSheet: View {
     @State private var linkFailed = false
     @State private var showPlumbing = false
     @FocusState private var linkFocused: Bool
+    /// Where the online search has got to. `.found([])` is a real answer, not a missing one.
+    @State private var online = Online.idle
+    @State private var scope = Catalog.Scope.portals
+    /// A Google search, opened in Safari rather than a web view (see `Catalog.webSearch`).
+    @State private var safariURL: URL?
+    /// A catalogue entry that is a page rather than a file. This opens in the app's **own** web
+    /// view, not Safari: that one watches for a tap on a data link and brings the file straight
+    /// back to the map. Safari would download it into Files and leave the person hunting for it,
+    /// which is the exact dead end the "Open" button is meant to avoid.
+    @State private var pageURL: URL?
+    /// Row index → the model's one line on why this result answers the question. Empty when no
+    /// model was asked, or when it was and said nothing usable.
+    @State private var reasons: [Int: String] = [:]
+    /// A download large enough to be worth mentioning before it starts.
+    @State private var big: BigDownload?
+
+    struct BigDownload: Identifiable {
+        let url: URL
+        let title: String
+        let size: String
+        var id: URL { url }
+    }
+
+    enum Online: Equatable {
+        case idle
+        case searching
+        case found([Catalog.Item])
+        case failed
+    }
     /// The Files picker opens where the last pick came from (Priya: it started at On My iPhone).
     @AppStorage("lm.lastPickFolder") private var lastFolder = ""
 
@@ -57,6 +86,16 @@ struct OpenSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .searchable(text: $search, placement: .navigationBarDrawer(displayMode: .always),
                         prompt: "Search data (bike lanes, earthquakes…)")
+            // New words, new question: old results must not sit under a different search.
+            .onChange(of: search) { _, _ in online = .idle }
+            // Spike-only: LM_Q=<words> types a search and runs it, so the online results can be
+            // screenshotted headlessly.
+            .task {
+                guard let q = ProcessInfo.processInfo.environment["LM_Q"], !q.isEmpty, search.isEmpty else { return }
+                search = q
+                try? await Task.sleep(nanoseconds: 400_000_000)
+                runOnlineSearch()
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
             }
@@ -76,11 +115,31 @@ struct OpenSheet: View {
             onPicked(urls)
         }
         .fileDialogDefaultDirectory(lastFolder.isEmpty ? nil : URL(fileURLWithPath: lastFolder, isDirectory: true))
+        .sheet(item: $safariURL) { SafariView(url: $0) }
+        .sheet(item: $pageURL) { url in
+            NavigationStack {
+                DataWebPage(url: url, title: "Pick a download", onDataLink: { link in
+                    pageURL = nil
+                    onLink(link)
+                })
+            }
+        }
+        // Not a refusal: the number, the two honest consequences, and the choice.
+        .alert("“\(big?.title ?? "")” is \(big?.size ?? "")", isPresented: bigBinding, presenting: big) { item in
+            Button("Add anyway") { onLink(item.url) }
+            Button("Not now", role: .cancel) {}
+        } message: { _ in
+            Text("It may take a while to download and will use that much space on your iPhone.")
+        }
         .alert("That didn't look like a web address", isPresented: $linkFailed) {
             Button("OK", role: .cancel) {}
         } message: {
             Text("Go back to the site, hold the download button, and choose Copy Link. Then paste it here.")
         }
+    }
+
+    private var bigBinding: Binding<Bool> {
+        Binding(get: { big != nil }, set: { if !$0 { big = nil } })
     }
 
     private var searching: Bool {
@@ -94,31 +153,191 @@ struct OpenSheet: View {
     @ViewBuilder
     private var searchResults: some View {
         let hits = Library.search(search)
-        if hits.isEmpty {
+        // Everything the app already knows, answered as the person types: no network, no waiting,
+        // no model, works on a train. Most searches should end here.
+        let catalogue = Catalog.searchBundled(search)
+        if !hits.isEmpty {
+            Section("Ready to add") {
+                ForEach(hits) { item in
+                    LibraryRow(item: item, added: onMap(item), onAdd: { onLibrary(item) })
+                }
+            }
+        }
+        if !catalogue.isEmpty {
+            Section(hits.isEmpty ? "Ready to add" : "More data you can add") {
+                ForEach(catalogue) { item in
+                    CatalogRow(
+                        item: item,
+                        why: nil,
+                        onAdd: { addChecking(item) },
+                        onOpenPage: { pageURL = item.url }
+                    )
+                }
+            }
+        }
+        if hits.isEmpty && catalogue.isEmpty {
             Section {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Nothing in the library for “\(search)”.")
+                    Text("Nothing built in for “\(search)”.")
                         .font(.body.weight(.semibold))
-                    Text("Data like this usually lives on a city or national open-data portal. Find it there, hold the download button, choose Copy Link, and paste it below.")
+                    Text("NimbleMap can look for map files on the web. Tap a result and it opens straight on your map.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
                 .padding(.vertical, 2)
             }
+        }
+        onlineSection(hasLocal: !hits.isEmpty || !catalogue.isEmpty)
+        if hits.isEmpty && catalogue.isEmpty {
             linkSection
+        }
+    }
+
+    // MARK: 1b · Looking on the web
+
+    /// The catalogues, then a web search if they come back empty. Nothing runs until the person
+    /// asks: a search box that fires off network calls on every keystroke spends their data and
+    /// shows them half-typed nonsense.
+    @ViewBuilder
+    private func onlineSection(hasLocal: Bool) -> some View {
+        Section {
+            Button {
+                runOnlineSearch()
+            } label: {
+                HStack(spacing: 10) {
+                    if online == .searching {
+                        ProgressView()
+                    } else {
+                        Image(systemName: "globe").foregroundStyle(Color.accentColor)
+                    }
+                    Text(online == .searching
+                         ? "Looking…"
+                         : (hasLocal ? "Also look on the web" : "Look for “\(search)” map files"))
+                        .font(.body.weight(.semibold))
+                        .lineLimit(1)
+                }
+            }
+            .disabled(online == .searching)
+
+            Picker("Search in", selection: $scope) {
+                ForEach(Catalog.Scope.allCases) { s in Text(s.label).tag(s) }
+            }
+            .pickerStyle(.segmented)
+            .onChange(of: scope) { _, _ in
+                // The chips are a different question, not a filter on the old answer.
+                if case .found = online { online = .idle }
+            }
+        } header: {
+            Text("Look on the web")
+        } footer: {
+            Text("We look for files NimbleMap can open — GeoJSON, CSV, KML, Shapefile and more.")
+        }
+
+        switch online {
+        case .found(let items) where !items.isEmpty:
+            Section("Found on the web") {
+                ForEach(Array(items.enumerated()), id: \.element.id) { i, item in
+                    CatalogRow(
+                        item: item,
+                        why: reasons[i],
+                        onAdd: { addChecking(item) },
+                        onOpenPage: { pageURL = item.url }
+                    )
+                }
+            }
+        case .found:
+            // A true empty answer. Say so plainly, and say why, or it reads as a broken app.
             Section {
-                NavigationLink {
-                    DataWebPage(onDataLink: onLink)
-                } label: {
-                    Label("Browse all data", systemImage: "globe")
+                VStack(alignment: .leading, spacing: 8) {
+                    // Saying "no map files found" under three results the app just offered would
+                    // be nonsense; the web simply added nothing to them.
+                    Text(hasLocal ? "Nothing more on the web for “\(search)”." : "No map files found for “\(search)”.")
+                        .font(.body.weight(.semibold))
+                    if !hasLocal {
+                        Text("Some subjects aren't published as free map files — shop and business locations often aren't.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.vertical, 2)
+                if scope != .anyFile {
+                    Button {
+                        scope = .anyFile
+                        runOnlineSearch()
+                    } label: {
+                        Label("Try “Any map file” instead", systemImage: "arrow.triangle.2.circlepath")
+                    }
+                }
+                if let web = Catalog.webSearch(search, scope: scope) {
+                    Button {
+                        safariURL = web
+                    } label: {
+                        Label("Search the web for “\(search)”", systemImage: "magnifyingglass")
+                    }
+                    // Safari owns anything downloaded there, so say where the file will go
+                    // *before* the trip rather than leaving someone hunting for it afterwards.
+                    Text("This opens Safari. A file you download there is saved to Files — come back and tap “Show my Downloads folder”.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
             }
-        } else {
-            Section("In the data library") {
-                ForEach(hits) { item in
-                    LibraryRow(item: item, added: onMap(item), onAdd: { onLibrary(item) })
-                }
+        case .failed:
+            Section {
+                Text("Couldn't reach the data portals just now. Check your connection and try again.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
+        case .idle, .searching:
+            EmptyView()
+        }
+    }
+
+    /// Add it, but ask first if it is big.
+    ///
+    /// Nothing is refused for being large — a phone can open a 220 MB file, and whether that is
+    /// worth the wait and the storage is the owner's call. What the app owes them is the number
+    /// *before* the download rather than after, which is why the size is asked for here instead
+    /// of trusted from the catalogue's own text.
+    private func addChecking(_ item: Catalog.Item) {
+        Task {
+            guard let bytes = await Catalog.bytes(of: item), Importer.isBig(bytes) else {
+                onLink(item.url)
+                return
+            }
+            big = BigDownload(url: item.url, title: item.title, size: Importer.sizeText(bytes))
+        }
+    }
+
+    private func runOnlineSearch() {
+        let text = search
+        let where_ = scope
+        online = .searching
+        reasons = [:]
+        Task {
+            let outcome = await Catalog.search(text, scope: where_)
+            // The person has typed on since; their newer words win.
+            guard text == search, where_ == scope else { return }
+            guard case .found(let items) = outcome else {
+                // Could not ask, which is not the same as nothing existing.
+                online = .failed
+                return
+            }
+            online = .found(items)
+
+            // Ranking is a second, optional pass: the results are already on screen, and a model
+            // that is slow or missing just means no "why" lines. It never gates the answer.
+            guard Assist.available, items.count > 1 else { return }
+            let listed = items.map { Assist.Item(title: $0.title, source: $0.source, blurb: $0.blurb) }
+            guard let ranked = await Assist.rank(listed, for: text), text == search, where_ == scope else { return }
+            let best = ranked.filter { items.indices.contains($0.index) }
+            guard !best.isEmpty else { return }
+            let order = best.map(\.index)
+            let rest = items.indices.filter { !order.contains($0) }
+            let reordered = (order + rest).map { items[$0] }
+            var why: [Int: String] = [:]
+            for (place, r) in best.enumerated() { why[place] = r.why }
+            reasons = why
+            online = .found(reordered)
         }
     }
 
@@ -309,6 +528,62 @@ struct MoreDataRow: View {
             }
         }
         .padding(.vertical, 2)
+    }
+}
+
+/// One result found on the web. The format badge is the catalogue's own word, never guessed from
+/// the URL, so "GeoJSON" is a promise the app can keep.
+struct CatalogRow: View {
+    var item: Catalog.Item
+    /// Why this one, in a sentence, when a model was asked to rank the results.
+    var why: String?
+    var onAdd: () -> Void
+    var onOpenPage: () -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: item.kind == .page ? "safari" : "globe")
+                .font(.title3)
+                .foregroundStyle(.white)
+                .frame(width: 48, height: 48)
+                .background(Color.accentColor.gradient, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.title).font(.body.weight(.semibold)).lineLimit(2)
+                if let why {
+                    Text(why).font(.caption).foregroundStyle(Color.accentColor).lineLimit(2)
+                } else if !item.blurb.isEmpty {
+                    Text(item.blurb).font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                }
+                Text(detail)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                // Its own line, never clipped: the size is what decides whether this is worth
+                // starting on a phone, so it must survive a narrow screen.
+                if !item.size.isEmpty {
+                    Label(item.size, systemImage: "arrow.down.circle")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .labelStyle(.titleAndIcon)
+                }
+            }
+            Spacer(minLength: 4)
+            // A page cannot promise a map; it promises a place to pick a download. Saying "Add"
+            // on one would be the broken promise this spike exists to remove.
+            Button(item.kind == .page ? "Open" : "Add", action: item.kind == .page ? onOpenPage : onAdd)
+                .buttonStyle(.borderedProminent)
+                .buttonBorderShape(.capsule)
+                .controlSize(.small)
+        }
+        .padding(.vertical, 2)
+    }
+
+    /// The source and format, which can run on and be clipped without costing anything. The size
+    /// is deliberately *not* in here: it used to be the last of three fields on one clipped line,
+    /// so on an iPhone the only number that decides whether to spend a data allowance was always
+    /// the part that fell off the end.
+    private var detail: String {
+        [item.source, item.format].filter { !$0.isEmpty }.joined(separator: " · ")
     }
 }
 

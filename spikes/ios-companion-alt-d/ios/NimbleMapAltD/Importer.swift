@@ -9,8 +9,21 @@ struct ImportError: Error {
 }
 
 enum Importer {
-    /// Phone limit for one file (redesign › File check: "the size is under the phone limit").
-    static let maxBytes: Int64 = 60 * 1024 * 1024
+    /// Above this a file is worth a word of warning — not a refusal.
+    ///
+    /// There used to be a 60 MB cap that turned anything larger away, and it was checked *after*
+    /// the whole file had come down, so a 220 MB download spent the person's data and then told
+    /// them no. Six of the catalogue's own entries were over it. A phone can open these; the only
+    /// honest problems are that it takes a while and takes up room, and both are the owner's call
+    /// to make, not the app's.
+    static let bigBytes: Int64 = 60 * 1024 * 1024
+
+    /// Is this worth warning about before it starts?
+    static func isBig(_ bytes: Int64) -> Bool { bytes > bigBytes }
+
+    static func sizeText(_ bytes: Int64) -> String {
+        ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
+    }
 
     static let extensions = ["geojson", "json", "csv", "tsv", "txt", "kml", "kmz", "gpx", "zip", "gpkg", "shp"] + RasterDecode.extensions
 
@@ -134,7 +147,6 @@ enum Importer {
         guard extensions.contains(ext) else {
             return .failure(ImportError(message: "NimbleMap can't open .\(ext) files yet."))
         }
-        if let tooBig = sizeProblem([url]) { return .failure(tooBig) }
         let dest = uniqueDestination(for: url.lastPathComponent)
         do {
             try coordinatedCopy(url, to: dest)
@@ -154,7 +166,6 @@ enum Importer {
             parts = PhoneFiles.withAccess(to: shp) { siblingParts(of: shp) } ?? siblingParts(of: shp)
         }
         guard hasRequiredParts(parts) else { return .failure(ImportError(message: lonePartsMessage)) }
-        if let tooBig = sizeProblem([shp] + parts) { return .failure(tooBig) }
         let stem = shp.deletingPathExtension().lastPathComponent
         let folder = uniqueDestination(for: stem)
         do {
@@ -218,14 +229,6 @@ enum Importer {
         return out
     }
 
-    private static func sizeProblem(_ urls: [URL]) -> ImportError? {
-        let size = urls.reduce(Int64(0)) { sum, url in
-            sum + Int64((try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0)
-        }
-        guard size > maxBytes else { return nil }
-        return ImportError(message: "This file is too big for the phone (\(ByteCountFormatter.string(fromByteCount: size, countStyle: .file))).")
-    }
-
     /// Reads through the file's provider, so a file that lives in iCloud Drive, Google Drive,
     /// Dropbox, OneDrive or Box is downloaded first instead of failing.
     private static func coordinatedCopy(_ source: URL, to dest: URL) throws {
@@ -269,9 +272,6 @@ enum Importer {
                 return .failure(ImportError(message: "This link opens a web page, not a map file."))
             }
             let size = (try? FileManager.default.attributesOfItem(atPath: temp.path)[.size] as? NSNumber)?.int64Value ?? 0
-            if size > maxBytes {
-                return .failure(ImportError(message: "This file is too big for the phone (\(ByteCountFormatter.string(fromByteCount: size, countStyle: .file)))."))
-            }
             var fileName = response.suggestedFilename ?? url.lastPathComponent
             var ext = (fileName as NSString).pathExtension.lowercased()
             if !extensions.contains(ext) {
@@ -446,7 +446,7 @@ enum Importer {
         let m = message.lowercased()
         if m.contains("shp on its own") { return lonePartsMessage }
         if m.contains("coordinate") || m.contains("latitude") { return "This table has no places in it: no columns like latitude and longitude." }
-        if m.contains("too large") { return "This file is too big for the phone." }
+        if m.contains("too large") { return "This file is too big for this phone to open." }
         if m.contains("unsupported") { return "NimbleMap can't open this kind of file yet." }
         return "Couldn't open this file. (\(message))"
     }

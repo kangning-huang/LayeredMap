@@ -15,6 +15,9 @@ import re
 import sys
 
 RESOURCES = ["countries.geojson", "cities.geojson", "earthquakes.csv", "volcanoes.csv"]
+# Bundled beside the Swift files rather than from assets/examples: the data catalogue the app
+# searches offline (Catalog.swift).
+LOCAL_RESOURCES = ["catalog.json"]
 
 
 def oid(kind: str, name: str) -> str:
@@ -66,6 +69,13 @@ def main() -> None:
         children.append(f"{r} /* {f} */")
         resources.append(f"{b} /* {f} in Resources */")
 
+    for f in LOCAL_RESOURCES:
+        r, b = oid("local-res-ref", f), oid("local-res-build", f)
+        refs.append(f"\t\t{r} /* {f} */ = {{isa = PBXFileReference; lastKnownFileType = text.json; path = {f}; sourceTree = \"<group>\"; }};\n")
+        build.append(f"\t\t{b} /* {f} in Resources */ = {{isa = PBXBuildFile; fileRef = {r} /* {f} */; }};\n")
+        children.append(f"{r} /* {f} */")
+        resources.append(f"{b} /* {f} in Resources */")
+
     # Keep the non-Swift references (headers, Info.plist, product, MapLibre framework build file).
     keep_refs = [l + "\n" for l in re.findall(r"^\t\t\w+ /\* [^*]+ \*/ = \{isa = PBXFileReference;.*$", text, re.M)
                  if ".swift" not in l and "assets/examples" not in l and "Assets.xcassets" not in l]
@@ -80,7 +90,7 @@ def main() -> None:
     if not m:
         raise SystemExit("no app group")
     kept = [l.strip().rstrip(",") for l in m.group(2).splitlines() if l.strip() and ".swift" not in l
-            and "Assets.xcassets" not in l and not any(r in l for r in RESOURCES)]
+            and "Assets.xcassets" not in l and not any(r in l for r in RESOURCES + LOCAL_RESOURCES)]
     entries = children + kept
     text = text[: m.start(2)] + "".join(f"\t\t\t\t{e},\n" for e in entries) + text[m.end(2):]
 
@@ -88,7 +98,7 @@ def main() -> None:
     text = replace_files_list(text, "Resources", resources)
     text = text.replace('if [[ ! -f \\"$LIB\\" ]]; then\\n', "if true; then\\n")
     open(path, "w").write(text)
-    print(f"{app}: {len(swift)} Swift files, {len(RESOURCES)} resources")
+    print(f"{app}: {len(swift)} Swift files, {len(RESOURCES) + len(LOCAL_RESOURCES)} resources")
 
 
 if __name__ == "__main__":

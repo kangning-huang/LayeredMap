@@ -6,6 +6,10 @@ import WebKit
 /// owner: the site's Data tab is a good way to browse datasets). A tap on a link to a file NimbleMap
 /// opens downloads it onto the map; anything else stays a web page.
 struct DataWebPage: View {
+    /// Which page: the site's data page by default, or a web search when the catalogues came back
+    /// empty. A link to a file NimbleMap opens is intercepted either way.
+    var url: URL? = DataWebPage.page
+    var title = "NimbleMap data"
     var onDataLink: (URL) -> Void
 
     @State private var safari = false
@@ -13,12 +17,12 @@ struct DataWebPage: View {
 
     var body: some View {
         Group {
-            if let page = DataWebPage.page {
-                DataWebView(url: page, onDataLink: onDataLink)
+            if let url {
+                DataWebView(url: url, onDataLink: onDataLink)
                     .ignoresSafeArea(edges: .bottom)
             }
         }
-        .navigationTitle("NimbleMap data")
+        .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -31,7 +35,7 @@ struct DataWebPage: View {
             }
         }
         .sheet(isPresented: $safari) {
-            if let page = DataWebPage.page { SafariView(url: page) }
+            if let url { SafariView(url: url) }
         }
     }
 }
@@ -78,6 +82,11 @@ struct DataWebView: UIViewRepresentable {
             return .allow
         }
     }
+}
+
+/// So a `URL?` can drive `.sheet(item:)` for the Safari search.
+extension URL: @retroactive Identifiable {
+    public var id: String { absoluteString }
 }
 
 struct SafariView: UIViewControllerRepresentable {
