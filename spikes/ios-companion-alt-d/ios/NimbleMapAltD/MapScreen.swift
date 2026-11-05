@@ -47,6 +47,12 @@ struct MapScreen: UIViewRepresentable {
     /// The visible area after the camera settles (Alt C saves it, so a relaunch returns there).
     var onCameraIdle: ((GeoBounds) -> Void)?
     var pin: CLLocationCoordinate2D?
+    /// Which way the map is turned (degrees, 0 = north up), as it changes. MapLibre's own compass
+    /// sat top right among the search bar and the system clock; the app draws its own at the
+    /// bottom of the map buttons instead.
+    var onHeading: ((Double) -> Void)?
+    /// A new value turns the map back to north up.
+    var northRequest: UUID?
 
     func makeUIView(context: Context) -> MLNMapView {
         let map = MLNMapView(frame: .zero)
@@ -59,7 +65,7 @@ struct MapScreen: UIViewRepresentable {
         map.attributionButtonPosition = .topLeft
         map.logoViewMargins = CGPoint(x: 12, y: 6)
         map.attributionButtonMargins = CGPoint(x: 100, y: 6)
-        map.compassViewMargins = CGPoint(x: 64, y: 12)
+        map.compassView.compassVisibility = .hidden
         map.allowsRotating = true
         map.allowsTilting = false
         map.setCenter(CLLocationCoordinate2D(latitude: 25, longitude: 10), zoomLevel: 0.8, animated: false)
@@ -90,6 +96,10 @@ struct MapScreen: UIViewRepresentable {
         c.sync(layers, on: map)
         c.setHighlight(highlight, on: map)
         c.setPin(pin, on: map)
+        if let northRequest, northRequest != c.lastNorth {
+            c.lastNorth = northRequest
+            map.setDirection(0, animated: true)
+        }
         if let camera, camera.id != c.lastCamera {
             c.lastCamera = camera.id
             c.apply(camera, on: map)
@@ -104,6 +114,8 @@ struct MapScreen: UIViewRepresentable {
         var parent: MapScreen?
         var basemap: Basemap = .light
         var lastCamera: UUID?
+        var lastNorth: UUID?
+        private var lastHeading = 0.0
         private var styleLoaded = false
         private var appliedOrder: [UUID] = []
         private var applied: [UUID: (LayerStyle, Bool)] = [:]
@@ -394,7 +406,20 @@ struct MapScreen: UIViewRepresentable {
             map.setVisibleCoordinateBounds(bounds, edgePadding: insets, animated: !camera.exact, completionHandler: nil)
         }
 
+        func mapView(_ mapView: MLNMapView, regionIsChangingWith reason: MLNCameraChangeReason) {
+            reportHeading(mapView)
+        }
+
+        /// Whole degrees only, so a pan doesn't redraw the buttons on every frame.
+        private func reportHeading(_ map: MLNMapView) {
+            let h = map.direction.rounded()
+            guard h != lastHeading else { return }
+            lastHeading = h
+            parent?.onHeading?(h)
+        }
+
         func mapView(_ mapView: MLNMapView, regionDidChangeWith reason: MLNCameraChangeReason, animated: Bool) {
+            reportHeading(mapView)
             let v = mapView.visibleCoordinateBounds
             parent?.onCameraIdle?(GeoBounds(minLon: v.sw.longitude, minLat: v.sw.latitude, maxLon: v.ne.longitude, maxLat: v.ne.latitude))
         }

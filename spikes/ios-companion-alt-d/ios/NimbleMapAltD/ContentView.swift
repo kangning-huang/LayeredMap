@@ -10,6 +10,9 @@ struct ContentView: View {
     @State private var showFiles = false
     @State private var showHint = false
     @State private var basemap: Basemap = .light
+    /// The map's rotation (degrees), for the compass; 0 hides it.
+    @State private var heading = 0.0
+    @State private var northRequest: UUID?
     @State private var overlap: [MapHit] = []
     /// Where the "N things here" tap was, so map images under it can be offered too.
     @State private var overlapAt: CLLocationCoordinate2D?
@@ -42,7 +45,9 @@ struct ContentView: View {
                     }
                     // Only once the saved map is back, and only for the person's own map.
                     if cameraReady && doc.sampleID == nil && !doc.isEmpty { SavedMap.view = bounds }
-                }
+                },
+                onHeading: { heading = $0 },
+                northRequest: northRequest
             )
             .ignoresSafeArea()
 
@@ -292,7 +297,26 @@ struct ContentView: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Show where I am")
+            // Only while the map is turned, as MapLibre's own did; a tap turns north back up.
+            let h = heading.truncatingRemainder(dividingBy: 360)
+            if abs(h) >= 1 && abs(h) <= 359 {
+                Button {
+                    northRequest = UUID()
+                } label: {
+                    Image(systemName: "location.north.fill")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(.red)
+                        .rotationEffect(.degrees(-heading))
+                        .frame(width: 44, height: 44)
+                        .background(chromeBackground, in: Circle())
+                        .overlay(Circle().strokeBorder(chromeEdge, lineWidth: 0.5))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Turn north up")
+                .transition(.scale.combined(with: .opacity))
+            }
         }
+        .animation(.snappy, value: abs(heading.truncatingRemainder(dividingBy: 360)) >= 1)
     }
 
     @ViewBuilder
