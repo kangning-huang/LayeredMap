@@ -707,7 +707,7 @@ pub fn reapply_choices(fresh: ImportedLayer, saved: &LayerProfile) -> Result<Imp
         layer = choose_sheet(&layer, &c)?;
     }
     for k in [K::CsvCoordinateColumns, K::CsvAmbiguousColumns] {
-        if let Some(c) = confirmed(k).filter(|c| layer.raw.is_some() && (c.id.starts_with("columns:") || c.id == "not_sure")) {
+        if let Some(c) = confirmed(k).filter(|c| layer.raw.is_some() && (c.id.starts_with("columns:") || c.id.starts_with("point:") || c.id == "not_sure")) {
             layer = relocate_csv(&layer, &c)?;
         }
     }
