@@ -80,6 +80,17 @@ final class MapDocument: ObservableObject {
     private var rasterRequest = 0
     @Published var toast: Toast?
     @Published var error: String?
+    /// Data in a local grid with nothing to guess the grid from: ask where it is.
+    @Published var needsPlace: PendingPlace?
+
+    struct PendingPlace: Identifiable {
+        let id = UUID()
+        let file: URL
+        let name: String
+        let message: String
+        /// A layer already on the map to move, rather than a new one to add.
+        var replacing: UUID?
+    }
 
     private var undoStack: [() -> Void] = []
     private var colorCounter = 0
@@ -245,11 +256,11 @@ final class MapDocument: ObservableObject {
     /// Distance (metres) from `c` to the `fewFeatures`-th nearest feature of `ds`, counting one
     /// at `c` itself. nil for a layer too small to need it.
     static func reach(around c: CLLocationCoordinate2D, in ds: GeoDataset) -> Double? {
-        let n = ds.features.count
+        let n = ds.features.lazy.filter { $0.bounds.isValid }.count
         guard n > 1 else { return nil }
         let k = min(fewFeatures, n)
         let lat1 = c.latitude * .pi / 180, lon1 = c.longitude * .pi / 180, cos1 = cos(lat1)
-        var d = ds.features.map { f -> Double in
+        var d = ds.features.filter { $0.bounds.isValid }.map { f -> Double in
             // Haversine; plenty fast for ~100k points on a tap.
             let lat2 = f.center.latitude * .pi / 180, lon2 = f.center.longitude * .pi / 180
             let a = pow(sin((lat2 - lat1) / 2), 2) + cos1 * cos(lat2) * pow(sin((lon2 - lon1) / 2), 2)
@@ -417,7 +428,11 @@ final class MapDocument: ObservableObject {
                 case .success(let ds):
                     self.add(ds, showBy: nil)
                 case .failure(let e):
-                    problems.append(e.message)
+                    if let file = e.needsPlace {
+                        self.needsPlace = PendingPlace(file: file, name: Importer.displayName(for: file), message: e.message)
+                    } else {
+                        problems.append(e.message)
+                    }
                 }
             }
             if let first = problems.first {
@@ -435,8 +450,79 @@ final class MapDocument: ObservableObject {
             case .success(let ds):
                 self.add(ds, showBy: showBy)
             case .failure(let e):
-                // A Stop the person pressed is not an error.
-                if e.message != Importer.cancelled { self.error = e.message }
+                if let file = e.needsPlace {
+                    self.needsPlace = PendingPlace(file: file, name: label, message: e.message)
+                } else if e.message != Importer.cancelled {
+                    // A Stop the person pressed is not an error.
+                    self.error = e.message
+                }
+            }
+        }
+    }
+
+    // MARK: Data in a local grid
+
+    /// A layer moved to another grid is a new layer; an open card for the old one follows it here.
+    private var replacements: [UUID: UUID] = [:]
+
+    /// The layer `id` became, if it was moved to another grid.
+    func layer(following id: UUID) -> MapLayer? {
+        var at = id
+        for _ in 0..<20 {
+            if let l = layer(at) { return l }
+            guard let next = replacements[at] else { return nil }
+            at = next
+        }
+        return nil
+    }
+
+    /// The person said roughly where the pending data is: read it again, guessing its grid there.
+    func place(_ pending: PendingPlace, near: CLLocationCoordinate2D) {
+        reread(pending.file, name: pending.name, replacing: pending.replacing, near: near, epsg: nil)
+    }
+
+    /// "Try another grid" on a layer that was placed by a guess.
+    func regrid(_ id: UUID, epsg: Int) {
+        guard let layer = layer(id), let p = layer.dataset.placement else { return }
+        reread(p.file, name: layer.name, replacing: id, near: p.near, epsg: epsg)
+    }
+
+    /// "Somewhere else…": ask where the layer's data is, then move it there.
+    func askWhere(_ id: UUID) {
+        guard let layer = layer(id), let p = layer.dataset.placement else { return }
+        needsPlace = PendingPlace(
+            file: p.file, name: layer.name,
+            message: "“\(layer.name)” uses coordinates in a local grid.",
+            replacing: id
+        )
+    }
+
+    private func reread(_ file: URL, name: String, replacing: UUID?, near: CLLocationCoordinate2D?, epsg: Int?) {
+        startBusy("Placing \(name)…")
+        busyTask = Task {
+            let result = await Importer.decode(file, name: name, primary: nil, sourceName: "Your file", credit: nil, near: near, epsg: epsg)
+            self.endBusy()
+            switch result {
+            case .success(let ds):
+                if let replacing, let i = self.index(of: replacing) {
+                    // Same place in the list, same look; only where it sits changes. A new id, so
+                    // the map loads the new shapes (it keys a layer's source on its id).
+                    let old = self.layers[i]
+                    let moved = MapLayer(id: UUID(), dataset: ds, visible: old.visible, style: old.style)
+                    self.layers[i] = moved
+                    self.replacements[old.id] = moved.id
+                    self.toastAction = nil
+                    self.toast = Toast(message: "Moved \(name) · \(ds.placement?.name ?? "new grid")", canUndo: false)
+                    self.fly(to: ds.bounds)
+                } else {
+                    self.add(ds, showBy: nil)
+                }
+            case .failure(let e):
+                if e.needsPlace != nil {
+                    self.error = "No grid NimbleMap knows puts “\(name)” near that place. Try a place closer to where the data is."
+                } else {
+                    self.error = e.message
+                }
             }
         }
     }

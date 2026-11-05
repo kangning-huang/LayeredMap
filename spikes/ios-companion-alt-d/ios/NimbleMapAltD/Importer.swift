@@ -1,4 +1,5 @@
 import Compression
+import CoreLocation
 import Foundation
 import UniformTypeIdentifiers
 
@@ -7,6 +8,37 @@ import UniformTypeIdentifiers
 
 struct ImportError: Error {
     let message: String
+    /// Data in a local grid with nothing to guess the grid from: the app's copy, to read again
+    /// once the person says roughly where it is.
+    var needsPlace: URL? = nil
+}
+
+/// Where a grid for data in metres should be guessed near: the map, when it is zoomed in on
+/// somewhere, else where the person last was. Read off the main thread by the importer.
+final class NearHint: @unchecked Sendable {
+    static let shared = NearHint()
+    private let lock = NSLock()
+    private var map: CLLocationCoordinate2D?
+    private var me: CLLocationCoordinate2D?
+
+    /// The visible area, from the map: only a view of a region or smaller says "here".
+    func mapView(_ b: GeoBounds) {
+        lock.lock()
+        defer { lock.unlock() }
+        map = b.isValid && (b.maxLon - b.minLon) < 30 && (b.maxLat - b.minLat) < 30 ? b.center : nil
+    }
+
+    func person(_ c: CLLocationCoordinate2D) {
+        lock.lock()
+        defer { lock.unlock() }
+        me = c
+    }
+
+    var current: CLLocationCoordinate2D? {
+        lock.lock()
+        defer { lock.unlock() }
+        return map ?? me
+    }
 }
 
 enum Importer {
@@ -28,6 +60,18 @@ enum Importer {
 
     static let extensions = ["geojson", "json", "csv", "tsv", "txt", "kml", "kmz", "gpx", "zip", "gpkg", "shp"] + RasterDecode.extensions
 
+    /// The kind of file inside: "nc" for "gistemp.nc.gz", the extension itself otherwise.
+    static func innerExtension(_ url: URL) -> String {
+        let ext = url.pathExtension.lowercased()
+        return ext == "gz" ? url.deletingPathExtension().pathExtension.lowercased() : ext
+    }
+
+    /// A file NimbleMap opens, including one gzipped around a kind it opens ("x.nc.gz").
+    static func canOpen(_ url: URL) -> Bool {
+        let inner = innerExtension(url)
+        return extensions.contains(inner) && (url.pathExtension.lowercased() != "gz" || inner != "gz")
+    }
+
     /// A Shapefile's other parts: they travel with its .shp and never open on their own.
     static let shapefileParts = ["shx", "dbf", "prj", "cpg"]
 
@@ -35,7 +79,7 @@ enum Importer {
     /// opens, a Shapefile's parts (picked together with Select) and folders (the folder a
     /// Shapefile is in). Plain text is left out: it is mostly notes, not tables.
     static var contentTypes: [UTType] {
-        var types: [UTType] = [.commaSeparatedText, .tabSeparatedText, .json, .zip, .folder, .tiff]
+        var types: [UTType] = [.commaSeparatedText, .tabSeparatedText, .json, .zip, .folder, .tiff, .gzip]
         for ext in ["geojson", "kml", "kmz", "gpx", "gpkg", "shp", "asc", "nc", "nc4", "cdf"] + shapefileParts {
             if let t = UTType(filenameExtension: ext), !types.contains(t) { types.append(t) }
         }
@@ -92,7 +136,8 @@ enum Importer {
     }
 
     static func displayName(for url: URL) -> String {
-        let stem = url.deletingPathExtension().lastPathComponent
+        var stem = url.deletingPathExtension().lastPathComponent
+        if url.pathExtension.lowercased() == "gz" { stem = (stem as NSString).deletingPathExtension }
         let tidy = stem.replacingOccurrences(of: "_", with: " ").replacingOccurrences(of: "-", with: " ")
         return tidy.prefix(1).uppercased() + tidy.dropFirst()
     }
@@ -156,6 +201,12 @@ enum Importer {
             try coordinatedCopy(url, to: dest)
         } catch {
             return .failure(ImportError(message: "Couldn't read this file: \(error.localizedDescription)"))
+        }
+        // A table in a local grid can come with a .prj that says which: it travels with the copy
+        // (renamed to match), or the reader never sees it.
+        let prj = url.deletingPathExtension().appendingPathExtension("prj")
+        if FileManager.default.fileExists(atPath: prj.path) {
+            try? coordinatedCopy(prj, to: dest.deletingPathExtension().appendingPathExtension("prj"))
         }
         touch(dest)
         return await decode(dest, name: displayName(for: url), primary: nil, sourceName: "Your file", credit: nil)
@@ -226,7 +277,7 @@ enum Importer {
                 url = url.deletingLastPathComponent().appendingPathComponent(name)
             }
             let ext = url.pathExtension.lowercased()
-            if shapefileParts.contains(ext) || (extensions.contains(ext) && PhoneFiles.looksLikeMap(url, ext: ext)) {
+            if shapefileParts.contains(ext) || (ext == "gz" && canOpen(url)) || (extensions.contains(ext) && PhoneFiles.looksLikeMap(url, ext: ext)) {
                 out.append(url)
             }
         }
@@ -426,7 +477,12 @@ enum Importer {
 
     // MARK: Decode
 
-    static func decode(_ file: URL, name: String, primary: String?, sourceName: String, credit: String?) async -> Result<GeoDataset, ImportError> {
+    /// `near` and `epsg` are for data in a local grid (see `NearHint`, `Placement`): where to guess
+    /// its grid, or the grid the person chose.
+    static func decode(
+        _ file: URL, name: String, primary: String?, sourceName: String, credit: String?,
+        near: CLLocationCoordinate2D? = NearHint.shared.current, epsg: Int? = nil
+    ) async -> Result<GeoDataset, ImportError> {
         await Task.detached(priority: .userInitiated) { () -> Result<GeoDataset, ImportError> in
             if RasterDecode.isRaster(file) {
                 let result = RasterDecode.open(file, name: name, sourceName: sourceName)
@@ -437,7 +493,7 @@ enum Importer {
                 }
                 return result
             }
-            switch DecodeBridge.open(path: file.path) {
+            switch DecodeBridge.open(path: file.path, near: near, epsg: epsg) {
             case .failure(let e):
                 return .failure(ImportError(message: plain(e.localizedDescription)))
             case .success(let envelope):
@@ -447,9 +503,32 @@ enum Importer {
                 if envelope.geometry == "table" {
                     return .failure(ImportError(message: "This table has no places in it: no columns like latitude and longitude."))
                 }
+                let placed = envelope.placement
+                let how = placed?["how"] as? String
+                if how == "unplaced" {
+                    return .failure(ImportError(
+                        message: "“\(name)” uses coordinates in a local grid, not latitude and longitude, and NimbleMap needs to know roughly where it is.",
+                        needsPlace: file
+                    ))
+                }
                 var assumptions = envelope.messages
-                if ["csv", "tsv", "txt"].contains(file.pathExtension.lowercased()) {
+                if ["csv", "tsv", "txt"].contains(file.pathExtension.lowercased()) && how == nil
+                    && !assumptions.contains(where: { $0.hasPrefix("Places from") }) {
                     assumptions.insert("Places come from the latitude and longitude columns.", at: 0)
+                }
+                var placement: Placement?
+                if let placed, let how {
+                    let grid = placed["name"] as? String ?? "a local grid"
+                    let others = (placed["alternatives"] as? [[String: Any]] ?? []).compactMap { a -> (epsg: Int, name: String)? in
+                        guard let code = (a["epsg"] as? NSNumber)?.intValue, let n = a["name"] as? String else { return nil }
+                        return (code, n)
+                    }
+                    switch how {
+                    case "prj": assumptions.insert("Placed with the grid named in its .prj file: \(grid).", at: 0)
+                    case "chosen": assumptions.insert("Placed using \(grid), the grid you chose.", at: 0)
+                    default: assumptions.insert("Its coordinates are in a local grid, not latitude and longitude. Placed using \(grid): the grid that puts it nearest to where your map was. If it's in the wrong place, try another grid below.", at: 0)
+                    }
+                    placement = Placement(file: file, how: how, name: grid, alternatives: others, near: near)
                 }
                 if envelope.skipped > 0 {
                     assumptions.append("\(NumberWords.integer(envelope.skipped)) rows were left out: they had no readable place.")
@@ -468,6 +547,7 @@ enum Importer {
                     let data = dataFolder.standardizedFileURL.path + "/"
                     let path = file.standardizedFileURL.path
                     if path.hasPrefix(data) { ds.savedPath = String(path.dropFirst(data.count)) }
+                    ds.placement = placement
                     if file.pathExtension.lowercased() == "kml",
                        let (field, colors) = FileColors.match(ds, styles: FileColors.kmlStyles(at: file)) {
                         ds.fileColorsField = field
@@ -488,7 +568,14 @@ enum Importer {
         if m.contains("coordinate") || m.contains("latitude") { return "This table has no places in it: no columns like latitude and longitude." }
         if m.contains("too large") { return "This file is too big for this phone to open." }
         if m.contains("unsupported") { return "NimbleMap can't open this kind of file yet." }
-        return "Couldn't open this file. (\(message))"
+        if m.contains("never closed") || m.contains("unexpected end") || m.contains("unexpected eof") || m.contains("truncated") {
+            return "This file looks cut short or damaged. Try downloading it again."
+        }
+        // The reader names the file by its full path inside the app ("/var/mobile/…/x.kml: …"),
+        // which means nothing to the person and pushes the actual reason off the screen.
+        var reason = message
+        if reason.hasPrefix("/"), let r = reason.range(of: ": ") { reason = String(reason[r.upperBound...]) }
+        return "Couldn't open this file. (\(reason))"
     }
 
     private static func guessExtension(mime: String, url: URL) -> String {

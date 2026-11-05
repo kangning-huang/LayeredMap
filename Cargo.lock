@@ -2890,6 +2890,7 @@ name = "lm-ios-alt-d-decode-ffi"
 version = "0.7.5"
 dependencies = [
  "image",
+ "lm-profile",
  "netcdf-reader",
  "rustgis-data",
  "serde_json",

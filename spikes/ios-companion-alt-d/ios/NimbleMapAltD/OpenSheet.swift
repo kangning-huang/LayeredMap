@@ -116,8 +116,13 @@ struct OpenSheet: View {
             let isFolder = (try? first.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true
             lastFolder = (isFolder && job == .listFolder ? first : first.deletingLastPathComponent()).path
             if job == .listFolder {
-                urls.forEach { PhoneFiles.addFolder($0) }
+                // Folders are remembered; a file picked here (the picker can come up with the
+                // last door's types) is opened instead of being saved as a "folder".
+                let files = urls.filter { (try? $0.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) != true }
+                urls.filter { !files.contains($0) }.forEach { PhoneFiles.addFolder($0) }
                 refresh += 1
+                if files.isEmpty { return }
+                onPicked(files)
                 return
             }
             onPicked(urls)
@@ -489,7 +494,7 @@ struct OpenSheet: View {
     // MARK: 4 · My downloads
 
     private var downloadsSection: some View {
-        PhoneFilesSection(limit: 5, refresh: refresh, onOpen: onPhoneFile, onChooseFolder: { pick(.listFolder) })
+        PhoneFilesSection(limit: 5, refresh: refresh, onOpen: onPhoneFile, onChooseFolder: { pick(.listFolder) }, onChooseFiles: { pick(.files) })
     }
 
     // MARK: 5 · The plumbing, collapsed
@@ -531,9 +536,12 @@ struct OpenSheet: View {
         doc.layers.contains { $0.name == item.title }
     }
 
+    /// Set the door, then open the picker on the next turn of the run loop. Setting both at once
+    /// let SwiftUI present the picker with the previous door's types — a file picker for "Add
+    /// another folder…", whose files were then remembered as folders.
     private func pick(_ next: FilePick) {
         job = next
-        picking = true
+        DispatchQueue.main.async { picking = true }
     }
 }
 

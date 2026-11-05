@@ -12,6 +12,8 @@ struct ContentView: View {
     @State private var basemap: Basemap = .light
     /// The map's rotation (degrees), for the compass; 0 hides it.
     @State private var heading = 0.0
+    /// Data in a local grid waiting for the person to say roughly where it is.
+    @State private var placing: MapDocument.PendingPlace?
     @State private var northRequest: UUID?
     @State private var overlap: [MapHit] = []
     /// Where the "N things here" tap was, so map images under it can be offered too.
@@ -38,6 +40,7 @@ struct ContentView: View {
                 },
                 onCameraIdle: { bounds in
                     doc.viewBounds = bounds
+                    NearHint.shared.mapView(bounds)
                     // Zoomed in far enough that the drawn picture has run out of detail: draw
                     // the visible part again at full resolution. Idle only, so panning stays smooth.
                     for l in doc.layers where l.visible && l.dataset.raster != nil {
@@ -114,6 +117,14 @@ struct ContentView: View {
                         doc.importingAll(Importer.displayName(for: file)) { await Importer.openPicked([file]) }
                     }
                 )
+            case .placeFor:
+                PlacesSheet { item in
+                    active = nil
+                    if let pending = placing {
+                        placing = nil
+                        doc.place(pending, near: item.placemark.coordinate)
+                    }
+                }
             case .places:
                 PlacesSheet { item in
                     let c = item.placemark.coordinate
@@ -176,8 +187,19 @@ struct ContentView: View {
         }
         .onChange(of: here.foundKey) { _, _ in
             guard let found = here.found else { return }
+            NearHint.shared.person(found)
             doc.fly(toPoint: found, closest: 13)
             here.found = nil
+        }
+        .alert("Where is this data?", isPresented: Binding(get: { doc.needsPlace != nil }, set: { if !$0 { doc.needsPlace = nil } })) {
+            Button("Search for a place") {
+                placing = doc.needsPlace
+                doc.needsPlace = nil
+                active = .placeFor
+            }
+            Button("Cancel", role: .cancel) { doc.needsPlace = nil }
+        } message: {
+            Text((doc.needsPlace?.message ?? "") + " Name a town or region it's in, and NimbleMap will find the grid that puts it there.")
         }
         .alert("Can't show where you are", isPresented: locationBinding) {
             Button("OK", role: .cancel) { here.problem = nil }
@@ -224,7 +246,7 @@ struct ContentView: View {
     /// puts the place in the half above it.
     private var mapInsets: UIEdgeInsets {
         switch active {
-        case .feature, .list, .layers, .open, .places, .style, .rasterSpot:
+        case .feature, .list, .layers, .open, .places, .placeFor, .style, .rasterSpot:
             return UIEdgeInsets(top: 110, left: 36, bottom: 480, right: 36)
         case .look:
             return UIEdgeInsets(top: 110, left: 36, bottom: 390, right: 36)
@@ -618,6 +640,8 @@ struct ContentView: View {
 enum ActiveSheet: Identifiable, Equatable {
     case open
     case places
+    /// "Where is this data?": a place search for data in a local grid.
+    case placeFor
     case layers
     case look(UUID)
     case style(UUID)
@@ -630,6 +654,7 @@ enum ActiveSheet: Identifiable, Equatable {
         switch self {
         case .open: return "open"
         case .places: return "places"
+        case .placeFor: return "placeFor"
         case .layers: return "layers"
         case .look(let id): return "look-\(id)"
         case .style(let id): return "style-\(id)"

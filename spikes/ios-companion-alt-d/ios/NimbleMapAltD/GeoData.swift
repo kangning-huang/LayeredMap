@@ -80,6 +80,18 @@ struct GeoBounds: Equatable {
 }
 
 /// A decoded data set. Built off the main thread, then read-only.
+/// How data in a local grid was put on the map (see `placement.rs`).
+struct Placement {
+    /// The app's copy of the file, read again for another grid.
+    let file: URL
+    /// "prj", "guess" or "chosen".
+    let how: String
+    let name: String
+    /// Other grids that land it near `near`, nearest first.
+    let alternatives: [(epsg: Int, name: String)]
+    let near: CLLocationCoordinate2D?
+}
+
 final class GeoDataset: Identifiable {
     let id = UUID()
     let name: String
@@ -106,6 +118,9 @@ final class GeoDataset: Identifiable {
     /// Where it came from, so the map can be reopened: a library item, or a file in the app.
     var libraryID: String?
     var savedPath: String?
+    /// Data that came in a local grid (metres, not longitude/latitude): how it was placed, so the
+    /// layer card can offer another grid.
+    var placement: Placement?
     /// Set for map images and grids of values; they have no features.
     var raster: RasterInfo?
 
@@ -209,8 +224,15 @@ final class GeoDataset: Identifiable {
     }
 
     /// "177 countries", "1,251 cities"; "22 places" for "Lisbon trip" (not "22 lisbon trip").
+    /// Rows kept in the table that have no place on the map (blank coordinates, a 0, 0 stand-in,
+    /// a find on Mars). Their `center` is 0, 0 only as a placeholder.
+    var unlocated: Int {
+        kind == .table || raster != nil ? 0 : features.lazy.filter { !$0.bounds.isValid }.count
+    }
+
     var countPhrase: String {
-        let n = features.count
+        let missing = unlocated
+        let n = features.count - missing
         let lower = name.lowercased()
         let plainPlural = !lower.contains(" ") && lower.hasSuffix("s") && !lower.hasSuffix("ss")
         let noun: String
@@ -228,7 +250,10 @@ final class GeoDataset: Identifiable {
         if let raster {
             return raster.look == .values ? "\(raster.quantity.lowercased()) grid" : "map image"
         }
-        return "\(NumberWords.integer(n)) \(noun)"
+        // NASA's meteorites: 45,716 rows, but 13,530 have no usable place; saying 45,716 places
+        // promised dots that aren't there.
+        let more = missing > 0 ? " (\(NumberWords.integer(missing)) more without a location)" : ""
+        return "\(NumberWords.integer(n)) \(noun)\(more)"
     }
 
     func numbers(for field: FieldInfo) -> [(index: Int, value: Double)] {

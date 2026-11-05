@@ -1,6 +1,6 @@
 //! C ABI used by the SwiftUI spike. All `unsafe` stays in this module.
 
-use crate::{decode_geojson_text, open_path_envelope};
+use crate::decode_geojson_text;
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
 use std::ptr;
@@ -142,6 +142,26 @@ pub unsafe extern "C" fn lm_decode_geojson_path(path: *const c_char, out_json: *
 /// `path` must be a valid NUL-terminated C string when non-null.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn lm_open_path(path: *const c_char, out_json: *mut *mut c_char, out_feature_count: *mut usize) -> i32 {
+    // SAFETY: forwarded as given.
+    unsafe { lm_open_path_at(path, 0, 0.0, 0.0, 0, out_json, out_feature_count) }
+}
+
+/// [`lm_open_path`] for data that may not be in longitude/latitude: `has_near` != 0 gives where to
+/// guess its grid near (`near_lon`, `near_lat`: the map's centre or the person's location), and
+/// `epsg` != 0 is a grid the person chose. See [`crate::placement`].
+///
+/// # Safety
+/// `path` must be a valid NUL-terminated C string when non-null.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn lm_open_path_at(
+    path: *const c_char,
+    has_near: i32,
+    near_lon: f64,
+    near_lat: f64,
+    epsg: u32,
+    out_json: *mut *mut c_char,
+    out_feature_count: *mut usize,
+) -> i32 {
     if out_json.is_null() || path.is_null() {
         return LM_DECODE_NULL_ARG;
     }
@@ -155,7 +175,9 @@ pub unsafe extern "C" fn lm_open_path(path: *const c_char, out_json: *mut *mut c
         return LM_DECODE_INVALID_UTF8;
     };
 
-    match open_path_envelope(path_str) {
+    let near = (has_near != 0).then_some((near_lon, near_lat));
+    let chosen = u16::try_from(epsg).ok().filter(|c| *c != 0);
+    match crate::open_path_envelope_at(path_str, near, chosen) {
         Ok((json, n)) => {
             set_feature_count(out_feature_count, n);
             match set_out_string(out_json, &json) {

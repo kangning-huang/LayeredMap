@@ -36,13 +36,18 @@ struct LayersSheet: View {
                 ToolbarItem(placement: .primaryAction) { EditButton().disabled(doc.layers.count < 2) }
             }
             .navigationDestination(for: UUID.self) { id in
-                if let layer = doc.layer(id) {
+                if let layer = doc.layer(following: id) {
                     DataCard(
                         layer: layer,
                         onClose: { path.removeAll() },
-                        onChangeLook: { onLook(id) },
-                        onList: { onList(id) },
-                        onZoom: { doc.fly(to: layer.dataset.bounds) }
+                        onChangeLook: { onLook(layer.id) },
+                        onList: { onList(layer.id) },
+                        onZoom: { doc.fly(to: layer.dataset.bounds) },
+                        onRegrid: { doc.regrid(layer.id, epsg: $0) },
+                        onSomewhereElse: {
+                            dismiss()
+                            doc.askWhere(layer.id)
+                        }
                     )
                     .toolbar(.hidden, for: .navigationBar)
                 } else {

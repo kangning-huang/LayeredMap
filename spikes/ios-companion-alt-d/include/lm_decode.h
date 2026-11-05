@@ -50,6 +50,21 @@ int32_t lm_open_path(
     size_t *out_feature_count);
 
 /**
+ * lm_open_path for data that may not be in longitude/latitude (metres in a national grid).
+ * has_near != 0: guess the grid near (near_lon, near_lat). epsg != 0: a grid the person chose.
+ * A ".prj" beside the file wins. The envelope gains "placement":
+ * {"how": "prj"|"guess"|"chosen"|"unplaced", "epsg", "name", "km", "alternatives": [...]}.
+ */
+int32_t lm_open_path_at(
+    const char *path,
+    int32_t has_near,
+    double near_lon,
+    double near_lat,
+    uint32_t epsg,
+    char **out_json,
+    size_t *out_feature_count);
+
+/**
  * Open a raster (GeoTIFF, ASCII grid). Writes <out_stem>.png (and <out_stem>.values, little-endian
  * f32, for value rasters). On LM_DECODE_OK, *out_json is
  * {"name","look":"picture|values","bounds":[w,s,e,n],"png","values","grid":[w,h],"low","high",...}.
