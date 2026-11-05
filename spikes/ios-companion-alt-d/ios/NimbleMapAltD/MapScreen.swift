@@ -364,7 +364,18 @@ struct MapScreen: UIViewRepresentable {
             if b.maxLon - b.minLon < 1e-6 && b.maxLat - b.minLat < 1e-6 {
                 // Center the point in the part of the map the chrome leaves open (above a card),
                 // not the middle of the screen (Priya: "When I zoom to a place, let me see it").
-                let zoom = max(map.zoomLevel, camera.pointZoom)
+                var zoom = max(map.zoomLevel, camera.pointZoom)
+                if let reach = camera.reachMeters {
+                    // Close enough that `reach` still fits in the open part of the map (inside the
+                    // chrome, with a margin so the farthest of the few isn't on the edge), never
+                    // closer than `pointZoom`, never out past a whole continent.
+                    let openW = Double(map.bounds.width - insets.left - insets.right)
+                    let openH = Double(map.bounds.height - insets.top - insets.bottom)
+                    let half = max(40, min(openW, openH) / 2 * 0.8)
+                    let metresPerPointAtZ0 = 40_075_016.686 * cos(b.center.latitude * .pi / 180) / 512
+                    let fit = log2(metresPerPointAtZ0 * half / reach)
+                    zoom = min(camera.pointZoom, max(2, fit))
+                }
                 let degreesPerPoint = 360 / (512 * pow(2, zoom))
                 let dy = Double(insets.bottom - insets.top) / 2
                 let dx = Double(insets.right - insets.left) / 2

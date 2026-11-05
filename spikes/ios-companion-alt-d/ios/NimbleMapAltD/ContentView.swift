@@ -171,7 +171,7 @@ struct ContentView: View {
         }
         .onChange(of: here.foundKey) { _, _ in
             guard let found = here.found else { return }
-            doc.fly(to: GeoBounds(minLon: found.longitude, minLat: found.latitude, maxLon: found.longitude, maxLat: found.latitude), pointZoom: 13)
+            doc.fly(toPoint: found, closest: 13)
             here.found = nil
         }
         .alert("Can't show where you are", isPresented: locationBinding) {
@@ -436,6 +436,17 @@ struct ContentView: View {
         }
     }
 
+    /// A point zooms only as close as its own layer allows (a few of its neighbours in view); a
+    /// line or area is framed by its own extent as before.
+    private func zoom(to f: GeoFeature, in layer: UUID, closest: Double) {
+        let b = f.bounds
+        if b.maxLon - b.minLon < 1e-6 && b.maxLat - b.minLat < 1e-6 {
+            doc.fly(toPoint: f.center, closest: closest, layer: layer)
+        } else {
+            doc.fly(to: b, pointZoom: closest)
+        }
+    }
+
     @ViewBuilder
     private func featureSheet(_ hit: MapHit) -> some View {
         if case let (layer, f)? = doc.feature(hit) {
@@ -444,7 +455,7 @@ struct ContentView: View {
                 layer: layer,
                 onClose: { active = nil },
                 onColorBy: { field in startLook(layer.id, showBy: field) },
-                onZoom: { doc.fly(to: f.bounds, pointZoom: 14) },
+                onZoom: { zoom(to: f, in: layer.id, closest: 14) },
                 onList: { switchTo(.list(layer.id)) },
                 groundRows: groundRows(f)
             )
@@ -461,7 +472,7 @@ struct ContentView: View {
         if let layer = doc.layer(id) {
             FeatureList(layer: layer, onClose: { active = nil }) { index in
                 let hit = MapHit(layerID: id, featureIndex: index)
-                if case let (_, f)? = doc.feature(hit) { doc.fly(to: f.bounds, pointZoom: 13) }
+                if case let (_, f)? = doc.feature(hit) { zoom(to: f, in: id, closest: 13) }
                 switchTo(.feature(hit))
             }
             .presentationDetents([.medium, .large])

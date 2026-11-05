@@ -1,3 +1,4 @@
+import CoreLocation
 import Foundation
 import SwiftUI
 
@@ -36,6 +37,10 @@ struct CameraRequest: Equatable {
     var pointZoom: Double = 4
     /// Show exactly these bounds, no chrome padding, no animation (returning to a saved view).
     var exact = false
+    /// For a point: how far around it (metres) the view must reach so the data stays legible —
+    /// a few features of each layer, not one lone dot. `pointZoom` is then the closest it may go,
+    /// not a fixed level, and the map may zoom out to get there.
+    var reachMeters: Double?
 }
 
 struct Toast: Identifiable, Equatable {
@@ -217,6 +222,41 @@ final class MapDocument: ObservableObject {
     func fly(to bounds: GeoBounds, pointZoom: Double = 4) {
         guard bounds.isValid else { return }
         camera = CameraRequest(bounds: bounds, pointZoom: pointZoom)
+    }
+
+    /// How many features "a few" is: what a zoom to a point should still show of a layer.
+    static let fewFeatures = 5
+
+    /// Fly to a point, but only as close as the data allows. A fixed zoom 13–14 was right for a
+    /// layer of shops and wrong for one of cities, volcanoes or earthquakes: zoom to your own
+    /// city and you saw a single dot, or none. So the view reaches out to the `fewFeatures`-th
+    /// nearest feature of every visible layer (or of `layer` alone, for "zoom to this feature"),
+    /// and `closest` is only the limit for dense data. With nothing to show, it is `closest`.
+    func fly(toPoint c: CLLocationCoordinate2D, closest: Double, layer: UUID? = nil) {
+        let point = GeoBounds(minLon: c.longitude, minLat: c.latitude, maxLon: c.longitude, maxLat: c.latitude)
+        guard point.isValid else { return }
+        let candidates = layers.filter { l in
+            l.dataset.raster == nil && (layer.map { $0 == l.id } ?? l.visible)
+        }
+        let reach = candidates.compactMap { MapDocument.reach(around: c, in: $0.dataset) }.max()
+        camera = CameraRequest(bounds: point, pointZoom: closest, reachMeters: reach)
+    }
+
+    /// Distance (metres) from `c` to the `fewFeatures`-th nearest feature of `ds`, counting one
+    /// at `c` itself. nil for a layer too small to need it.
+    static func reach(around c: CLLocationCoordinate2D, in ds: GeoDataset) -> Double? {
+        let n = ds.features.count
+        guard n > 1 else { return nil }
+        let k = min(fewFeatures, n)
+        let lat1 = c.latitude * .pi / 180, lon1 = c.longitude * .pi / 180, cos1 = cos(lat1)
+        var d = ds.features.map { f -> Double in
+            // Haversine; plenty fast for ~100k points on a tap.
+            let lat2 = f.center.latitude * .pi / 180, lon2 = f.center.longitude * .pi / 180
+            let a = pow(sin((lat2 - lat1) / 2), 2) + cos1 * cos(lat2) * pow(sin((lon2 - lon1) / 2), 2)
+            return 2 * 6_371_008.8 * asin(min(1, sqrt(a)))
+        }
+        d.sort()
+        return d[k - 1] > 0 ? d[k - 1] : nil
     }
 
     func remove(_ id: UUID) {
