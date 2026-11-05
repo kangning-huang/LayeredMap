@@ -31,7 +31,9 @@ unset LD CC CXX AR RANLIB CFLAGS CXXFLAGS CPPFLAGS LDFLAGS LDFLAGS_LD \
 export PATH="/usr/bin:/bin:/usr/sbin:/sbin:$HOME/.cargo/bin"
 
 DEVICE_ID="$(xcrun devicectl list devices 2>/dev/null \
-  | awk '/iPhone|iPad/ && $0 !~ /Simulator/ {print $(NF-1)}' | head -1)"
+  | awk '/iPhone|iPad/ && $0 !~ /Simulator|simulated/ {
+      for (i = 1; i <= NF; i++) if ($i ~ /^[0-9A-F]{8}-[0-9A-F]{16}$|^[0-9A-F-]{25,}$/) { print $i; exit }
+    }' | head -1)"
 if [[ -z "$DEVICE_ID" ]]; then
   echo "No iPhone found. Plug it in, unlock it, and tap Trust." >&2
   exit 1

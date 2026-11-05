@@ -86,7 +86,9 @@ struct DataWebView: UIViewRepresentable {
         }
 
         static func isData(_ url: URL) -> Bool {
-            let ext = url.pathExtension.lowercased()
+            var ext = url.pathExtension.lowercased()
+            // "gistemp.nc.gz": judge by what is inside the gzip.
+            if ext == "gz" { ext = url.deletingPathExtension().pathExtension.lowercased() }
             if Importer.extensions.contains(ext) && ext != "txt" && ext != "json" { return true }
             let s = url.absoluteString.lowercased()
             return s.contains("rows.csv") || s.hasSuffix(".geojson") || s.contains("format=geojson")
@@ -104,7 +106,7 @@ struct DataWebView: UIViewRepresentable {
             if mime.contains("html") || mime.contains("xhtml") { return false }
             let known = ["geo+json", "application/zip", "zipped-shapefile", "x-netcdf", "netcdf",
                          "text/csv", "tab-separated", "image/tiff", "geopackage", "google-earth",
-                         "octet-stream", "gpx"]
+                         "octet-stream", "gpx", "gzip"]
             return known.contains { mime.contains($0) }
         }
 
@@ -153,11 +155,17 @@ struct DataWebView: UIViewRepresentable {
             let name = suggestedFilename.isEmpty ? "download" : suggestedFilename
             let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
             try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-            completionHandler(dir.appendingPathComponent(name))
+            let dest = dir.appendingPathComponent(name)
+            destinations[ObjectIdentifier(download)] = dest
+            completionHandler(dest)
         }
 
+        /// Where each download was told to go. `download.progress.fileURL` is not reliably set
+        /// when the download finishes, and a nil there meant the file was silently dropped.
+        private var destinations: [ObjectIdentifier: URL] = [:]
+
         func downloadDidFinish(_ download: WKDownload) {
-            guard let file = download.progress.fileURL else { return }
+            guard let file = destinations.removeValue(forKey: ObjectIdentifier(download)) ?? download.progress.fileURL else { return }
             let hand = onDataFile
             Task { @MainActor in hand(file) }
         }

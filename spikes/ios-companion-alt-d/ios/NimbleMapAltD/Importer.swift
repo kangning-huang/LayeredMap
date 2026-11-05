@@ -1,3 +1,4 @@
+import Compression
 import Foundation
 import UniformTypeIdentifiers
 
@@ -143,6 +144,9 @@ enum Importer {
     }
 
     private static func openOne(_ url: URL) async -> Result<GeoDataset, ImportError> {
+        if url.pathExtension.lowercased() == "gz" || Gzip.isGzip(url) {
+            return await openGzip(url, name: Gzip.innerName(url.lastPathComponent), sourceName: "Your file", named: nil)
+        }
         let ext = url.pathExtension.lowercased()
         guard extensions.contains(ext) else {
             return .failure(ImportError(message: "NimbleMap can't open .\(ext) files yet."))
@@ -277,6 +281,12 @@ enum Importer {
             }
             let size = (try? FileManager.default.attributesOfItem(atPath: temp.path)[.size] as? NSNumber)?.int64Value ?? 0
             var fileName = response.suggestedFilename ?? url.lastPathComponent
+            if fileName.lowercased().hasSuffix(".gz") || Gzip.isGzip(temp) {
+                defer { try? FileManager.default.removeItem(at: temp) }
+                var inner = Gzip.innerName(fileName)
+                if inner == fileName { inner = Gzip.innerName(url.lastPathComponent) }
+                return await openGzip(temp, name: inner, sourceName: url.host ?? "The web", named: named)
+            }
             var ext = (fileName as NSString).pathExtension.lowercased()
             if !extensions.contains(ext) {
                 ext = guessExtension(mime: mime, url: url)
@@ -292,6 +302,32 @@ enum Importer {
         } catch {
             return .failure(ImportError(message: "Couldn't download: \(error.localizedDescription)"))
         }
+    }
+
+    /// Unpacks a gzip file into the app's data folder as `name` ("gistemp.nc") and opens that.
+    /// Runs off the main actor: a 26 MB NetCDF unpacks to well over 100 MB.
+    private static func openGzip(_ gz: URL, name: String, sourceName: String, named: String?) async -> Result<GeoDataset, ImportError> {
+        let ext = (name as NSString).pathExtension.lowercased()
+        guard extensions.contains(ext) else {
+            let what = ext.isEmpty ? "this file" : ".\(ext) files"
+            return .failure(ImportError(message: "This is a compressed (.gz) file, and NimbleMap can't open \(what) inside it yet."))
+        }
+        let dest = uniqueDestination(for: name)
+        let unpacked: Result<Void, ImportError> = await Task.detached(priority: .userInitiated) {
+            do {
+                try Gzip.inflate(gz, to: dest)
+                return .success(())
+            } catch let e as Gzip.Failure {
+                try? FileManager.default.removeItem(at: dest)
+                return .failure(ImportError(message: "Couldn't unpack this .gz file: \(e.message)"))
+            } catch {
+                try? FileManager.default.removeItem(at: dest)
+                return .failure(ImportError(message: "Couldn't unpack this .gz file: \(error.localizedDescription)"))
+            }
+        }.value
+        if case .failure(let e) = unpacked { return .failure(e) }
+        touch(dest)
+        return await decode(dest, name: named ?? displayName(for: dest), primary: nil, sourceName: sourceName, credit: nil)
     }
 
     /// A Stop that the person pressed is not an error worth an alert; the caller drops it.
@@ -458,7 +494,7 @@ enum Importer {
     private static func guessExtension(mime: String, url: URL) -> String {
         let path = url.absoluteString.lowercased()
         if mime.contains("csv") || path.contains(".csv") || path.contains("csv?") { return "csv" }
-        if mime.contains("zip") { return "zip" }
+        if mime.contains("zip") && !mime.contains("gzip") { return "zip" }
         if mime.contains("kml") { return "kml" }
         if mime.contains("gpx") { return "gpx" }
         return "geojson"
@@ -474,5 +510,108 @@ enum Importer {
             n += 1
         }
         return candidate
+    }
+}
+
+// MARK: Gzip
+
+/// A `.gz` around a file NimbleMap opens (the site's GISTEMP link is `.nc.gz`). Nothing in the app
+/// unpacked gzip, so the link was not recognised as data, and a file that did arrive was refused
+/// as ".gz" — or worse, renamed `.zip` because "x-gzip" contains "zip".
+enum Gzip {
+    /// The two bytes every gzip member starts with.
+    static func isGzip(_ url: URL) -> Bool {
+        guard let h = try? FileHandle(forReadingFrom: url) else { return false }
+        defer { try? h.close() }
+        let magic = (try? h.read(upToCount: 2)) ?? Data()
+        return magic.count == 2 && magic[magic.startIndex] == 0x1f && magic[magic.startIndex + 1] == 0x8b
+    }
+
+    /// "gistemp.nc.gz" → "gistemp.nc"; "x.tgz"/"x.gz" with nothing inside the name → "x".
+    static func innerName(_ name: String) -> String {
+        let lower = name.lowercased()
+        if lower.hasSuffix(".gz") { return String(name.dropLast(3)) }
+        return name
+    }
+
+    struct Failure: Error { let message: String }
+
+    /// Streams `source` through raw DEFLATE into `dest`. Uncompressed NetCDF grids run to
+    /// hundreds of megabytes, so neither side is ever held in memory whole.
+    static func inflate(_ source: URL, to dest: URL) throws {
+        let input = try FileHandle(forReadingFrom: source)
+        defer { try? input.close() }
+        let header = try input.read(upToCount: 64 * 1024) ?? Data()
+        let start = try headerLength(header)
+        try input.seek(toOffset: UInt64(start))
+
+        FileManager.default.createFile(atPath: dest.path, contents: nil)
+        let output = try FileHandle(forWritingTo: dest)
+        defer { try? output.close() }
+
+        let chunk = 1 << 20
+        let dst = UnsafeMutablePointer<UInt8>.allocate(capacity: chunk)
+        defer { dst.deallocate() }
+        let streamPtr = UnsafeMutablePointer<compression_stream>.allocate(capacity: 1)
+        defer { streamPtr.deallocate() }
+        guard compression_stream_init(streamPtr, COMPRESSION_STREAM_DECODE, COMPRESSION_ZLIB) == COMPRESSION_STATUS_OK else {
+            throw Failure(message: "Couldn't start unpacking.")
+        }
+        defer { compression_stream_destroy(streamPtr) }
+
+        var done = false
+        var wrote = false
+        while !done {
+            let data = try input.read(upToCount: chunk) ?? Data()
+            let last = data.isEmpty
+            try data.withUnsafeBytes { (raw: UnsafeRawBufferPointer) in
+                streamPtr.pointee.src_ptr = raw.bindMemory(to: UInt8.self).baseAddress ?? UnsafePointer(dst)
+                streamPtr.pointee.src_size = data.count
+                repeat {
+                    streamPtr.pointee.dst_ptr = dst
+                    streamPtr.pointee.dst_size = chunk
+                    let status = compression_stream_process(streamPtr, last ? Int32(COMPRESSION_STREAM_FINALIZE.rawValue) : 0)
+                    let produced = chunk - streamPtr.pointee.dst_size
+                    if produced > 0 {
+                        output.write(Data(bytes: dst, count: produced))
+                        wrote = true
+                    }
+                    switch status {
+                    case COMPRESSION_STATUS_END:
+                        // The DEFLATE body is over; what follows is the gzip trailer (CRC, size).
+                        done = true
+                        return
+                    case COMPRESSION_STATUS_OK:
+                        break
+                    default:
+                        throw Failure(message: "The compressed file is damaged.")
+                    }
+                } while streamPtr.pointee.src_size > 0 || streamPtr.pointee.dst_size == 0
+            }
+            if last && !done {
+                if wrote { done = true } else { throw Failure(message: "The compressed file is empty or cut short.") }
+            }
+        }
+    }
+
+    /// RFC 1952: 10 fixed bytes, then optional extra field, file name, comment and header CRC.
+    private static func headerLength(_ d: Data) throws -> Int {
+        let b = [UInt8](d)
+        guard b.count >= 10, b[0] == 0x1f, b[1] == 0x8b, b[2] == 8 else {
+            throw Failure(message: "This isn't a gzip file.")
+        }
+        let flags = b[3]
+        var i = 10
+        if flags & 0x04 != 0 {
+            guard b.count >= i + 2 else { throw Failure(message: "The compressed file is damaged.") }
+            i += 2 + (Int(b[i]) | (Int(b[i + 1]) << 8))
+        }
+        for bit in [UInt8(0x08), 0x10] where flags & bit != 0 {
+            while i < b.count && b[i] != 0 { i += 1 }
+            i += 1
+        }
+        if flags & 0x02 != 0 { i += 2 }
+        guard i <= b.count else { throw Failure(message: "The compressed file is damaged.") }
+        return i
     }
 }
