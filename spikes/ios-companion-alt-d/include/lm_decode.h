@@ -65,6 +65,20 @@ int32_t lm_open_path_at(
     size_t *out_feature_count);
 
 /**
+ * Every layer in a file: a JSON array of lm_open_path_at envelopes, one per layer of a .zip
+ * (each with "member": its path in the archive), one for any other file.
+ */
+int32_t lm_open_path_all(
+    const char *path,
+    int32_t has_near,
+    double near_lon,
+    double near_lat,
+    uint32_t epsg,
+    const char *out_dir, /* NULL: layers inline as "geojson"; else written there as files */
+    char **out_json,
+    size_t *out_feature_count);
+
+/**
  * Open a raster (GeoTIFF, ASCII grid). Writes <out_stem>.png (and <out_stem>.values, little-endian
  * f32, for value rasters). On LM_DECODE_OK, *out_json is
  * {"name","look":"picture|values","bounds":[w,s,e,n],"png","values","grid":[w,h],"low","high",...}.

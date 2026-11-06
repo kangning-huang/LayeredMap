@@ -61,7 +61,7 @@ pub fn tidy_lonlat(ds: &mut Dataset) -> Vec<String> {
         )),
         [(x, y), ..] => messages.push(format!(
             "{} places were left off the map: their coordinates (such as {x}, {y}) aren't longitudes and latitudes on Earth.",
-            off.len()
+            crate::thousands(off.len())
         )),
     }
     let zero = |f: &rustgis_data::Feature| matches!(&f.geometry, Some(Geometry::Point(c)) if c.x == 0.0 && c.y == 0.0);
@@ -73,7 +73,8 @@ pub fn tidy_lonlat(ds: &mut Dataset) -> Vec<String> {
             }
         }
         messages.push(format!(
-            "{zeros} rows had 0, 0 as their location — usually a stand-in for “unknown” — and were left off the map."
+            "{} rows had 0, 0 as their location — usually a stand-in for “unknown” — and were left off the map.",
+            crate::thousands(zeros)
         ));
     }
     messages

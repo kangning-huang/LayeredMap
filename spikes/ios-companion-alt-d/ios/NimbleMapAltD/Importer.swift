@@ -58,7 +58,7 @@ enum Importer {
         ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
     }
 
-    static let extensions = ["geojson", "json", "csv", "tsv", "txt", "kml", "kmz", "gpx", "zip", "gpkg", "shp"] + RasterDecode.extensions
+    static let extensions = ["geojson", "json", "csv", "tsv", "txt", "kml", "kmz", "gpx", "zip", "gpkg", "shp", "xlsx", "xls"] + RasterDecode.extensions
 
     /// The kind of file inside: "nc" for "gistemp.nc.gz", the extension itself otherwise.
     static func innerExtension(_ url: URL) -> String {
@@ -80,7 +80,7 @@ enum Importer {
     /// Shapefile is in). Plain text is left out: it is mostly notes, not tables.
     static var contentTypes: [UTType] {
         var types: [UTType] = [.commaSeparatedText, .tabSeparatedText, .json, .zip, .folder, .tiff, .gzip]
-        for ext in ["geojson", "kml", "kmz", "gpx", "gpkg", "shp", "asc", "nc", "nc4", "cdf"] + shapefileParts {
+        for ext in ["geojson", "kml", "kmz", "gpx", "gpkg", "shp", "asc", "nc", "nc4", "cdf", "xlsx", "xls"] + shapefileParts {
             if let t = UTType(filenameExtension: ext), !types.contains(t) { types.append(t) }
         }
         // NetCDF has no system UTI, so the app declares one (Info.plist). Without this the Files
@@ -149,8 +149,9 @@ enum Importer {
     static let lonePartsMessage = "This map comes as several files that belong together. The easiest fix is to download it again as a .zip — a .zip opens as it is. Otherwise, under “Downloaded a .zip, or several files?”, tap “Several files that belong together” and choose the folder holding them."
 
     /// A file sent from another app (Open In / Share). Copies it in first.
-    static func openExternal(_ url: URL) async -> Result<GeoDataset, ImportError> {
-        await openPicked([url]).first ?? .failure(ImportError(message: "Couldn't read this file."))
+    static func openExternal(_ url: URL) async -> [Result<GeoDataset, ImportError>] {
+        let all = await openPicked([url])
+        return all.isEmpty ? [.failure(ImportError(message: "Couldn't read this file."))] : all
     }
 
     /// What was picked in Files: one file, several (Select), or a folder. A Shapefile's parts
@@ -182,25 +183,25 @@ enum Importer {
             if ext == "shp" {
                 results.append(await openShapefile(url, picked: files))
             } else {
-                results.append(await openOne(url))
+                results.append(contentsOf: await openOne(url))
             }
         }
         return results
     }
 
-    private static func openOne(_ url: URL) async -> Result<GeoDataset, ImportError> {
+    private static func openOne(_ url: URL) async -> [Result<GeoDataset, ImportError>] {
         if url.pathExtension.lowercased() == "gz" || Gzip.isGzip(url) {
-            return await openGzip(url, name: Gzip.innerName(url.lastPathComponent), sourceName: "Your file", named: nil)
+            return [await openGzip(url, name: Gzip.innerName(url.lastPathComponent), sourceName: "Your file", named: nil)]
         }
         let ext = url.pathExtension.lowercased()
         guard extensions.contains(ext) else {
-            return .failure(ImportError(message: "NimbleMap can't open .\(ext) files yet."))
+            return [.failure(ImportError(message: "NimbleMap can't open .\(ext) files yet."))]
         }
         let dest = uniqueDestination(for: url.lastPathComponent)
         do {
             try coordinatedCopy(url, to: dest)
         } catch {
-            return .failure(ImportError(message: "Couldn't read this file: \(error.localizedDescription)"))
+            return [.failure(ImportError(message: "Couldn't read this file: \(error.localizedDescription)"))]
         }
         // A table in a local grid can come with a .prj that says which: it travels with the copy
         // (renamed to match), or the reader never sees it.
@@ -209,7 +210,7 @@ enum Importer {
             try? coordinatedCopy(prj, to: dest.deletingPathExtension().appendingPathExtension("prj"))
         }
         touch(dest)
-        return await decode(dest, name: displayName(for: url), primary: nil, sourceName: "Your file", credit: nil)
+        return await decodeAll(dest, name: displayName(for: url), primary: nil, sourceName: "Your file", credit: nil)
     }
 
     /// The .shp with its parts: picked with it, or next to it in a folder NimbleMap can read
@@ -317,18 +318,18 @@ enum Importer {
         /// reads as though the wrong thing was downloaded.
         named: String? = nil,
         onProgress: @escaping @Sendable (Int64, Int64) -> Void = { _, _ in }
-    ) async -> Result<GeoDataset, ImportError> {
+    ) async -> [Result<GeoDataset, ImportError>] {
         guard let scheme = url.scheme?.lowercased(), scheme == "https" || scheme == "http" else {
-            return .failure(ImportError(message: "That isn't a web link."))
+            return [.failure(ImportError(message: "That isn't a web link."))]
         }
         do {
             let (temp, response) = try await Downloader(onProgress: onProgress).run(url)
             if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
-                return .failure(ImportError(message: "The link didn't work (the site answered \(http.statusCode))."))
+                return [.failure(ImportError(message: "The link didn't work (the site answered \(http.statusCode))."))]
             }
             let mime = response.mimeType?.lowercased() ?? ""
             if mime.contains("html") {
-                return .failure(ImportError(message: "This link opens a web page, not a map file."))
+                return [.failure(ImportError(message: "This link opens a web page, not a map file."))]
             }
             let size = (try? FileManager.default.attributesOfItem(atPath: temp.path)[.size] as? NSNumber)?.int64Value ?? 0
             var fileName = response.suggestedFilename ?? url.lastPathComponent
@@ -336,7 +337,7 @@ enum Importer {
                 defer { try? FileManager.default.removeItem(at: temp) }
                 var inner = Gzip.innerName(fileName)
                 if inner == fileName { inner = Gzip.innerName(url.lastPathComponent) }
-                return await openGzip(temp, name: inner, sourceName: url.host ?? "The web", named: named)
+                return [await openGzip(temp, name: inner, sourceName: url.host ?? "The web", named: named)]
             }
             var ext = (fileName as NSString).pathExtension.lowercased()
             if !extensions.contains(ext) {
@@ -345,13 +346,13 @@ enum Importer {
             }
             let dest = uniqueDestination(for: fileName)
             try FileManager.default.moveItem(at: temp, to: dest)
-            return await decode(dest, name: named ?? displayName(for: dest), primary: nil, sourceName: url.host ?? "The web", credit: nil)
+            return await decodeAll(dest, name: named ?? displayName(for: dest), primary: nil, sourceName: url.host ?? "The web", credit: nil)
         } catch is CancellationError {
-            return .failure(ImportError(message: cancelled))
+            return [.failure(ImportError(message: cancelled))]
         } catch let error as URLError where error.code == .cancelled {
-            return .failure(ImportError(message: cancelled))
+            return [.failure(ImportError(message: cancelled))]
         } catch {
-            return .failure(ImportError(message: "Couldn't download: \(error.localizedDescription)"))
+            return [.failure(ImportError(message: "Couldn't download: \(error.localizedDescription)"))]
         }
     }
 
@@ -469,100 +470,140 @@ enum Importer {
         return result
     }
 
-    static func reopen(_ recent: Recent) async -> Result<GeoDataset, ImportError> {
+    static func reopen(_ recent: Recent) async -> [Result<GeoDataset, ImportError>] {
         let parent = recent.url.deletingLastPathComponent()
         touch(parent.standardizedFileURL == dataFolder.standardizedFileURL ? recent.url : parent)
-        return await decode(recent.url, name: recent.name, primary: nil, sourceName: "Your file", credit: nil)
+        return await decodeAll(recent.url, name: recent.name, primary: nil, sourceName: "Your file", credit: nil)
     }
 
     // MARK: Decode
 
-    /// `near` and `epsg` are for data in a local grid (see `NearHint`, `Placement`): where to guess
-    /// its grid, or the grid the person chose.
+    /// Where the reader writes each opened layer's files (`store.rs`). Cleared at launch: layers
+    /// are read again from the copies in `dataFolder` when a saved map comes back.
+    static var layerFolder: URL {
+        let caches = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first ?? FileManager.default.temporaryDirectory
+        return caches.appendingPathComponent("layers", isDirectory: true)
+    }
+
+    static func clearLayerFolder() {
+        try? FileManager.default.removeItem(at: layerFolder)
+    }
+
+    /// The first layer of a file (most files have one). `near` and `epsg` are for data in a local
+    /// grid (see `NearHint`, `Placement`): where to guess its grid, or the grid the person chose.
     static func decode(
         _ file: URL, name: String, primary: String?, sourceName: String, credit: String?,
         near: CLLocationCoordinate2D? = NearHint.shared.current, epsg: Int? = nil
     ) async -> Result<GeoDataset, ImportError> {
-        await Task.detached(priority: .userInitiated) { () -> Result<GeoDataset, ImportError> in
+        await decodeAll(file, name: name, primary: primary, sourceName: sourceName, credit: credit, near: near, epsg: epsg).first
+            ?? .failure(ImportError(message: "This file has no map features in it."))
+    }
+
+    /// Every layer of a file: one per layer of a .zip (the eclipse's eight Shapefiles, Geofabrik's
+    /// twenty), one for anything else. `member` picks one layer of a .zip (a saved map reopening).
+    static func decodeAll(
+        _ file: URL, name: String, primary: String?, sourceName: String, credit: String?,
+        near: CLLocationCoordinate2D? = NearHint.shared.current, epsg: Int? = nil, member: String? = nil
+    ) async -> [Result<GeoDataset, ImportError>] {
+        await Task.detached(priority: .userInitiated) { () -> [Result<GeoDataset, ImportError>] in
+            let data = dataFolder.standardizedFileURL.path + "/"
+            let path = file.standardizedFileURL.path
+            let saved = path.hasPrefix(data) ? String(path.dropFirst(data.count)) : nil
             if RasterDecode.isRaster(file) {
                 let result = RasterDecode.open(file, name: name, sourceName: sourceName)
-                if case .success(let ds) = result {
-                    let data = dataFolder.standardizedFileURL.path + "/"
-                    let path = file.standardizedFileURL.path
-                    if path.hasPrefix(data) { ds.savedPath = String(path.dropFirst(data.count)) }
-                }
-                return result
+                if case .success(let ds) = result { ds.savedPath = saved }
+                return [result]
             }
-            switch DecodeBridge.open(path: file.path, near: near, epsg: epsg) {
+            switch DecodeBridge.openAll(path: file.path, outDir: layerFolder.appendingPathComponent(UUID().uuidString), near: near, epsg: epsg) {
             case .failure(let e):
-                return .failure(ImportError(message: plain(e.localizedDescription)))
-            case .success(let envelope):
-                guard envelope.count > 0 else {
-                    return .failure(ImportError(message: "This file has no map features in it."))
-                }
-                if envelope.geometry == "table" {
-                    return .failure(ImportError(message: "This table has no places in it: no columns like latitude and longitude."))
-                }
-                let placed = envelope.placement
-                let how = placed?["how"] as? String
-                if how == "unplaced" {
-                    return .failure(ImportError(
-                        message: "“\(name)” uses coordinates in a local grid, not latitude and longitude, and NimbleMap needs to know roughly where it is.",
-                        needsPlace: file
-                    ))
-                }
-                var assumptions = envelope.messages
-                if ["csv", "tsv", "txt"].contains(file.pathExtension.lowercased()) && how == nil
-                    && !assumptions.contains(where: { $0.hasPrefix("Places from") }) {
-                    assumptions.insert("Places come from the latitude and longitude columns.", at: 0)
-                }
-                var placement: Placement?
-                if let placed, let how {
-                    let grid = placed["name"] as? String ?? "a local grid"
-                    let others = (placed["alternatives"] as? [[String: Any]] ?? []).compactMap { a -> (epsg: Int, name: String)? in
-                        guard let code = (a["epsg"] as? NSNumber)?.intValue, let n = a["name"] as? String else { return nil }
-                        return (code, n)
+                return [.failure(ImportError(message: plain(e.localizedDescription)))]
+            case .success(var envelopes):
+                if let member { envelopes = envelopes.filter { $0.member == member } }
+                let several = envelopes.count > 1
+                return envelopes.map { envelope in
+                    // One layer keeps the file's name; several are named by their own files.
+                    let layerName = several ? displayName(for: URL(fileURLWithPath: envelope.name + ".x")) : name
+                    let result = dataset(from: envelope, file: file, name: layerName, primary: primary,
+                                         sourceName: sourceName, credit: credit, near: near, single: !several && envelope.member == nil)
+                    if case .success(let ds) = result {
+                        ds.savedPath = saved
+                        ds.member = envelope.member
                     }
-                    switch how {
-                    case "prj": assumptions.insert("Placed with the grid named in its .prj file: \(grid).", at: 0)
-                    case "chosen": assumptions.insert("Placed using \(grid), the grid you chose.", at: 0)
-                    default: assumptions.insert("Its coordinates are in a local grid, not latitude and longitude. Placed using \(grid): the grid that puts it nearest to where your map was. If it's in the wrong place, try another grid below.", at: 0)
-                    }
-                    placement = Placement(file: file, how: how, name: grid, alternatives: others, near: near)
-                }
-                if envelope.skipped > 0 {
-                    assumptions.append("\(NumberWords.integer(envelope.skipped)) rows were left out: they had no readable place.")
-                }
-                do {
-                    let ds = try GeoParse.dataset(
-                        name: name,
-                        geojson: envelope.geojson,
-                        kindHint: GeometryKind(rawValue: envelope.geometry),
-                        assumptions: assumptions,
-                        primary: primary,
-                        sourceName: sourceName,
-                        credit: credit
-                    )
-                    // Alt C: remember where it lives, and keep a KML's own colors.
-                    let data = dataFolder.standardizedFileURL.path + "/"
-                    let path = file.standardizedFileURL.path
-                    if path.hasPrefix(data) { ds.savedPath = String(path.dropFirst(data.count)) }
-                    ds.placement = placement
-                    if file.pathExtension.lowercased() == "kml",
-                       let (field, colors) = FileColors.match(ds, styles: FileColors.kmlStyles(at: file)) {
-                        ds.fileColorsField = field
-                        ds.fileColors = colors
-                    }
-                    return .success(ds)
-                } catch {
-                    return .failure(ImportError(message: "This file has no map features in it."))
+                    return result
                 }
             }
         }.value
     }
 
+    /// One layer from the reader, as the map's dataset.
+    private static func dataset(
+        from envelope: DecodeBridge.Envelope, file: URL, name: String, primary: String?, sourceName: String,
+        credit: String?, near: CLLocationCoordinate2D?, single: Bool
+    ) -> Result<GeoDataset, ImportError> {
+        guard envelope.count > 0 else {
+            return .failure(ImportError(message: "This file has no map features in it."))
+        }
+        if envelope.geometry == "table" {
+            return .failure(ImportError(message: "This table has no places in it: no columns like latitude and longitude, only names or codes. NimbleMap on iPhone can't join a table to places yet; on the Mac you can join it to the countries layer."))
+        }
+        let placed = envelope.placement
+        let how = placed?["how"] as? String
+        if how == "unplaced" {
+            return .failure(ImportError(
+                message: "“\(name)” uses coordinates in a local grid, not latitude and longitude, and NimbleMap needs to know roughly where it is.",
+                needsPlace: single ? file : nil
+            ))
+        }
+        var assumptions = envelope.messages
+        if ["csv", "tsv", "txt"].contains(file.pathExtension.lowercased()) && how == nil
+            && !assumptions.contains(where: { $0.hasPrefix("Places from") }) {
+            assumptions.insert("Places come from the latitude and longitude columns.", at: 0)
+        }
+        var placement: Placement?
+        if let placed, let how {
+            let grid = placed["name"] as? String ?? "a local grid"
+            let others = (placed["alternatives"] as? [[String: Any]] ?? []).compactMap { a -> (epsg: Int, name: String)? in
+                guard let code = (a["epsg"] as? NSNumber)?.intValue, let n = a["name"] as? String else { return nil }
+                return (code, n)
+            }
+            switch how {
+            case "prj": assumptions.insert("Placed with the grid named in its .prj file: \(grid).", at: 0)
+            case "chosen": assumptions.insert("Placed using \(grid), the grid you chose.", at: 0)
+            default: assumptions.insert("Its coordinates are in a local grid, not latitude and longitude. Placed using \(grid): the grid that puts it nearest to where your map was. If it's in the wrong place, try another grid below.", at: 0)
+            }
+            // Another grid reads the file again: only for a file that is this one layer.
+            if single { placement = Placement(file: file, how: how, name: grid, alternatives: others, near: near) }
+        }
+        if envelope.skipped > 0 {
+            assumptions.append("\(NumberWords.integer(envelope.skipped)) rows were left out: they had no readable place.")
+        }
+        do {
+            let ds = try GeoParse.dataset(
+                name: name,
+                files: envelope.files,
+                count: envelope.count,
+                kindHint: GeometryKind(rawValue: envelope.geometry),
+                assumptions: assumptions,
+                primary: primary,
+                sourceName: sourceName,
+                credit: credit
+            )
+            ds.placement = placement
+            if file.pathExtension.lowercased() == "kml",
+               let (field, colors) = FileColors.match(ds, styles: FileColors.kmlStyles(at: file)) {
+                ds.fileColorsField = field
+                ds.fileColors = colors
+            }
+            return .success(ds)
+        } catch {
+            return .failure(ImportError(message: "This file has no map features in it."))
+        }
+    }
+
     /// Reader messages are written for the desktop; soften the few a phone user meets most.
     static func plain(_ message: String) -> String {
+        // Already written for a person by the phone's own reader (too big, nothing in a zip…).
+        if (message.contains("NimbleMap") || message.contains("this iPhone")) && !message.hasPrefix("/") { return message }
         let m = message.lowercased()
         if m.contains("shp on its own") { return lonePartsMessage }
         if m.contains("coordinate") || m.contains("latitude") { return "This table has no places in it: no columns like latitude and longitude." }
@@ -671,12 +712,14 @@ enum Gzip {
                     case COMPRESSION_STATUS_OK:
                         break
                     default:
-                        throw Failure(message: "The compressed file is damaged.")
+                        throw Failure(message: "The compressed file is damaged or cut short. Try downloading it again.")
                     }
                 } while streamPtr.pointee.src_size > 0 || streamPtr.pointee.dst_size == 0
             }
             if last && !done {
-                if wrote { done = true } else { throw Failure(message: "The compressed file is empty or cut short.") }
+                // The data ran out before the compressed stream said it was finished: a download
+                // that stopped part-way (NASA's server does this on slow connections).
+                throw Failure(message: wrote ? "The compressed file is cut short. Try downloading it again." : "The compressed file is empty or cut short. Try downloading it again.")
             }
         }
     }

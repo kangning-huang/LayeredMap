@@ -10,6 +10,8 @@ enum SavedMap {
         var name: String
         var visible: Bool
         var style: LayerStyle
+        /// Which layer of a .zip (several layers share its path).
+        var member: String? = nil
 
         func open() async -> Result<GeoDataset, ImportError>? {
             if let library, let item = Library.items.first(where: { $0.id == library }) {
@@ -18,19 +20,40 @@ enum SavedMap {
             if let path {
                 let url = Importer.dataFolder.appendingPathComponent(path)
                 guard FileManager.default.fileExists(atPath: url.path) else { return nil }
-                return await Importer.decode(url, name: name, primary: nil, sourceName: "Your file", credit: nil)
+                return await Importer.decodeAll(url, name: name, primary: nil, sourceName: "Your file", credit: nil, member: member).first
             }
             return nil
         }
     }
 
     private static let key = "lm.savedMap"
+    private static let unsettledKey = "lm.savedMapUnsettled"
+
+    /// Set while a changed map hasn't yet had time to load and draw. Still set at launch means the
+    /// app died with this map on screen (out of memory, on a phone: the tornado tracks on top of
+    /// earlier layers), and restoring it would only die again, every launch.
+    static var unsettled: Bool {
+        get { UserDefaults.standard.bool(forKey: unsettledKey) }
+        set { UserDefaults.standard.set(newValue, forKey: unsettledKey) }
+    }
+
+    private static var settleWork: DispatchWorkItem?
+
+    /// The map changed: unsettled until it has stayed up for a while.
+    static func markChanged() {
+        unsettled = true
+        settleWork?.cancel()
+        let work = DispatchWorkItem { unsettled = false }
+        settleWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 15, execute: work)
+    }
 
     /// Top-first, like the list.
     static func save(_ layers: [MapLayer]) {
+        markChanged()
         let entries = layers.compactMap { l -> Layer? in
             guard l.dataset.libraryID != nil || l.dataset.savedPath != nil else { return nil }
-            return Layer(library: l.dataset.libraryID, path: l.dataset.savedPath, name: l.name, visible: l.visible, style: l.style)
+            return Layer(library: l.dataset.libraryID, path: l.dataset.savedPath, name: l.name, visible: l.visible, style: l.style, member: l.dataset.member)
         }
         if let data = try? JSONEncoder().encode(entries) {
             UserDefaults.standard.set(data, forKey: key)

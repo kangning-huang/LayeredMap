@@ -27,6 +27,8 @@ rustgis-data = { workspace = true }
 # The desktop's coordinate-column finder, so a table locates on the phone as it does there.
 lm-profile = { path = "../../crates/lm-profile" }
 serde_json = { workspace = true }
+# Zip members inflated straight to disk (src/zipstream.rs).
+miniz_oxide = { workspace = true }
 image = { workspace = true }
 # NetCDF grids: pure Rust, so it works on the phone. `rustgis-data` reads NetCDF only through
 # GDAL's gdal_translate, which there is no way to run on iOS.

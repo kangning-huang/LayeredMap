@@ -158,12 +158,12 @@ struct DataThumbnail: View, Equatable {
     var body: some View {
         let scheme = ColorRule.make(style: style, dataset: dataset)
         let shapes = ThumbGeometry.shapes(for: dataset)
-        let colors = dataset.features.map { f in scheme.color(for: style.showBy.flatMap { f.properties[$0] }) }
+        let colors = shapes.map { s in scheme.color(for: style.showBy.flatMap { dataset.features[s.index].properties[$0] }) }
         Canvas { ctx, size in
             ctx.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Color(.secondarySystemBackground)))
-            for (i, shape) in shapes.enumerated() {
+            for (i, item) in shapes.enumerated() {
                 let c = Color(hex: colors[safe: i] ?? style.color)
-                switch shape {
+                switch item.shape {
                 case .rings(let rings):
                     var p = Path()
                     for ring in rings {
@@ -196,9 +196,13 @@ enum ThumbGeometry {
         case point(CGPoint)
     }
 
-    @MainActor private static var cache: [UUID: [Shape]] = [:]
+    @MainActor private static var cache: [UUID: [(index: Int, shape: Shape)]] = [:]
 
-    @MainActor static func shapes(for ds: GeoDataset) -> [Shape] {
+    /// The most features drawn in a thumbnail: shapes are read from disk now, and a few thousand
+    /// already look like the whole layer at this size.
+    static let most = 1500
+
+    @MainActor static func shapes(for ds: GeoDataset) -> [(index: Int, shape: Shape)] {
         if let c = cache[ds.id] { return c }
         let b = ds.bounds
         let w = max(1e-9, b.maxLon - b.minLon)
@@ -212,8 +216,17 @@ enum ThumbGeometry {
             let step = max(1, all.count / 40)
             return stride(from: 0, to: all.count, by: step).map { all[$0] }
         }
-        let shapes: [Shape] = ds.features.map { f in
-            let g = f.raw["geometry"] as? [String: Any]
+        let step = max(1, ds.features.count / most)
+        let shapes: [(index: Int, shape: Shape)] = stride(from: 0, to: ds.features.count, by: step).map { i -> (index: Int, shape: Shape) in
+            let f = ds.features[i]
+            // Points need no shape: their centre is enough, and nothing is read from disk.
+            let g = ds.kind == .point ? nil : f.raw["geometry"] as? [String: Any]
+            return (i, shape(f, g))
+        }
+        cache[ds.id] = shapes
+        return shapes
+
+        func shape(_ f: GeoFeature, _ g: [String: Any]?) -> Shape {
             let coords = g?["coordinates"]
             switch g?["type"] as? String {
             case "Polygon":
@@ -229,7 +242,5 @@ enum ThumbGeometry {
                 return .point(CGPoint(x: (c.longitude - b.minLon) / w, y: 1 - (c.latitude - b.minLat) / h))
             }
         }
-        cache[ds.id] = shapes
-        return shapes
     }
 }

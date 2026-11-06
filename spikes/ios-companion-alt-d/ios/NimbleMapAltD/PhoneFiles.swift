@@ -29,6 +29,7 @@ struct PhoneFile: Identifiable, Sendable {
         case "shp": return "Shapefile"
         case "geojson", "json": return "GeoJSON"
         case "csv", "tsv", "txt": return "Table"
+        case "xlsx", "xls": return "Spreadsheet"
         case "kml", "kmz": return "My Maps / Google Earth"
         case "gpx": return "GPS track"
         case "gpkg": return "GeoPackage"
@@ -42,7 +43,7 @@ struct PhoneFile: Identifiable, Sendable {
 
     var symbol: String {
         switch ext {
-        case "csv", "tsv", "txt": return "tablecells"
+        case "csv", "tsv", "txt", "xlsx", "xls": return "tablecells"
         case "gpx": return "point.topleft.down.to.point.bottomright.curvepath"
         case "zip": return "doc.zipper"
         case "tif", "tiff", "asc": return "photo"
@@ -287,7 +288,7 @@ enum PhoneFiles {
 
     static func open(_ file: PhoneFile) async -> [Result<GeoDataset, ImportError>] {
         guard file.folderID != nil else {
-            return [await Importer.reopen(Importer.Recent(url: file.url, name: file.name, date: file.date))]
+            return await Importer.reopen(Importer.Recent(url: file.url, name: file.name, date: file.date))
         }
         guard let folder = scanned.first(where: { $0.id == file.folderID }), let root = resolve(folder) else {
             return [.failure(ImportError(message: "NimbleMap can no longer see this folder. Choose it again."))]

@@ -192,6 +192,53 @@ pub unsafe extern "C" fn lm_open_path_at(
     }
 }
 
+/// Every layer in a file (one per layer of a `.zip`): `out_json` is a JSON array of the
+/// envelopes of [`crate::open_path_layers`]; arguments as [`lm_open_path_at`]. With `out_dir`
+/// (may be NULL), each layer is written there as files and its envelope names them.
+///
+/// # Safety
+/// `path` must be a valid NUL-terminated C string when non-null.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn lm_open_path_all(
+    path: *const c_char,
+    has_near: i32,
+    near_lon: f64,
+    near_lat: f64,
+    epsg: u32,
+    out_dir: *const c_char,
+    out_json: *mut *mut c_char,
+    out_feature_count: *mut usize,
+) -> i32 {
+    if out_json.is_null() || path.is_null() {
+        return LM_DECODE_NULL_ARG;
+    }
+    clear_out(out_json);
+    set_feature_count(out_feature_count, 0);
+    // SAFETY: path is a non-null C string from the caller.
+    let c_path = unsafe { CStr::from_ptr(path) };
+    let Ok(path_str) = c_path.to_str() else {
+        let _ = set_out_string(out_json, "path is not UTF-8");
+        return LM_DECODE_INVALID_UTF8;
+    };
+    let near = (has_near != 0).then_some((near_lon, near_lat));
+    let chosen = u16::try_from(epsg).ok().filter(|c| *c != 0);
+    // SAFETY: out_dir is NULL or a valid C string from the caller.
+    let dir = (!out_dir.is_null()).then(|| unsafe { CStr::from_ptr(out_dir) }.to_str().ok()).flatten().map(std::path::Path::new);
+    match crate::open_path_layers(path_str, near, chosen, dir) {
+        Ok((json, n)) => {
+            set_feature_count(out_feature_count, n);
+            match set_out_string(out_json, &json) {
+                Ok(()) => LM_DECODE_OK,
+                Err(code) => code,
+            }
+        }
+        Err(msg) => {
+            let _ = set_out_string(out_json, &msg);
+            LM_DECODE_PARSE
+        }
+    }
+}
+
 /// Open a raster (GeoTIFF, ASCII grid) and write its picture next to `out_stem` (see
 /// [`crate::raster::open_raster_envelope`]).
 ///

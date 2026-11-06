@@ -224,7 +224,6 @@ enum RasterDecode {
                 features: [],
                 fields: [],
                 bounds: info.bounds,
-                mapGeoJSON: Data(),
                 assumptions: assumptions,
                 primaryField: nil,
                 titleField: nil,

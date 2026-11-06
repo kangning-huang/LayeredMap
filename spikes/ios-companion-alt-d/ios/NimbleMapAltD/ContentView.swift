@@ -1,4 +1,5 @@
 import SwiftUI
+import os
 import CoreLocation
 
 /// **Alternative C**, from the A/B persona study (LM-tmp/personas/report.md): A's clean map, file
@@ -110,7 +111,7 @@ struct ContentView: View {
                     onLink: { url, title in
                         active = nil
                         let name = title ?? Importer.displayName(for: url)
-                        doc.importing(name) { await Importer.download(url, named: title, onProgress: report) }
+                        doc.importingAll(name) { await Importer.download(url, named: title, onProgress: report) }
                     },
                     onFile: { file in
                         active = nil
@@ -170,7 +171,7 @@ struct ContentView: View {
         }
         .onOpenURL { url in
             active = nil
-            doc.importing(Importer.displayName(for: url)) { await Importer.openExternal(url) }
+            doc.importingAll(Importer.displayName(for: url)) { await Importer.openExternal(url) }
         }
         .confirmationDialog("\(overlap.count + overlapRasters.count) things here", isPresented: overlapBinding, titleVisibility: .visible) {
             ForEach(overlap, id: \.self) { hit in
@@ -227,7 +228,15 @@ struct ContentView: View {
         defer {
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) { cameraReady = true }
         }
-        if await doc.restore() {
+        Importer.clearLayerFolder()
+        if SavedMap.unsettled && !SavedMap.isEmpty {
+            // Last time ended while this map was loading or drawing: don't load it into the same end.
+            SavedMap.unsettled = false
+            doc.error = "NimbleMap closed while opening your last map — most likely it held more data than this iPhone has room for. It has started with an empty map. Your files are still under Recents; open them one or two at a time."
+            SavedMap.save([])
+            SavedMap.unsettled = false
+        } else if await doc.restore() {
+            SavedMap.markChanged()
             runSceneIfAsked()
             return
         }
@@ -597,7 +606,7 @@ struct ContentView: View {
     }
 
     private func reopen(_ r: Importer.Recent) {
-        doc.importing(r.name) { await Importer.reopen(r) }
+        doc.importingAll(r.name) { await Importer.reopen(r) }
     }
 
     private var overlapBinding: Binding<Bool> {
@@ -618,6 +627,7 @@ struct ContentView: View {
         guard !sceneRun, let scene = ProcessInfo.processInfo.environment["LM_SCENE"] else { return }
         sceneRun = true
         Task { @MainActor in
+            print("LM_MEM at launch: \(os_proc_available_memory() / 1_048_576) MB available")
             try? await Task.sleep(nanoseconds: 1_500_000_000)
             switch scene {
             case "open": active = .open
@@ -626,12 +636,61 @@ struct ContentView: View {
             case "download":
                 let fallback = "https://data.alltheplaces.xyz/runs/latest/output/starbucks_us.geojson"
                 if let u = URL(string: ProcessInfo.processInfo.environment["LM_URL"] ?? fallback) {
-                    doc.importing(Importer.displayName(for: u)) { await Importer.download(u, onProgress: report) }
+                    doc.importingAll(Importer.displayName(for: u)) { await Importer.download(u, onProgress: report) }
+                }
+            // Opens LM_FILE (a path) as if picked in Files.
+            case "file":
+                if let path = ProcessInfo.processInfo.environment["LM_FILE"] {
+                    // Absolute, or relative to Documents (a phone's container path isn't known
+                    // to whoever launches it).
+                    let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
+                    let u = path.hasPrefix("/") || docs == nil ? URL(fileURLWithPath: path) : docs!.appendingPathComponent(path)
+                    doc.importingAll(Importer.pickedLabel([u])) { await Importer.openPicked([u]) }
                 }
             case "layers": active = .layers
             case "look": if let id = doc.layers.first?.id { startLook(id, showBy: nil) }
             case "feature": if let id = doc.layers.first?.id { show(MapHit(layerID: id, featureIndex: 0)) }
             default: break
+            }
+            // Say how it went, for a sweep reading the console (`simctl launch --console-pty`).
+            if scene == "download" || scene == "file" {
+                for _ in 0..<1200 where doc.busy == nil && doc.layers.isEmpty && doc.error == nil && doc.needsPlace == nil {
+                    try? await Task.sleep(nanoseconds: 250_000_000)
+                }
+                for _ in 0..<2400 where doc.busy != nil {
+                    try? await Task.sleep(nanoseconds: 250_000_000)
+                }
+                for l in doc.layers {
+                    let b = l.dataset.bounds
+                    print("LM_SCENE layer \(l.name) · \(l.dataset.kind.rawValue) · \(l.dataset.countPhrase) · fields \(l.dataset.fields.count) · \(l.dataset.placement.map { "\($0.how) \($0.name)" } ?? "lon/lat") · bounds \(String(format: "%.2f,%.2f,%.2f,%.2f", b.minLon, b.minLat, b.maxLon, b.maxLat))")
+                    for a in l.dataset.assumptions { print("LM_SCENE   note: \(a)") }
+                }
+                // LM_THEN=color,feature: colour the first layer by its main field, then open the
+                // card of its first feature with a place (exercises the splice and the outline).
+                let then = ProcessInfo.processInfo.environment["LM_THEN"] ?? ""
+                if let layer = doc.layers.first(where: { $0.id != doc.sampleID }) {
+                    if then.contains("color"), let field = layer.dataset.primaryField ?? layer.dataset.fields.first(where: { $0.kind == .category }) {
+                        startLook(layer.id, showBy: field.name)
+                        try? await Task.sleep(nanoseconds: 2_000_000_000)
+                        lookOriginal = nil   // keep the colour, as Done does
+                        active = nil
+                        print("LM_SCENE colored by \(field.name)")
+                        if let l = doc.layer(layer.id), let j = try? JSONSerialization.data(withJSONObject: l.scheme.expressionJSON(field: field.name)) {
+                            print("LM_SCENE expression \(String(decoding: j, as: UTF8.self).prefix(600))")
+                        }
+                    }
+                    if then.contains("feature"), let f = layer.dataset.features.first(where: { $0.bounds.isValid }) {
+                        show(MapHit(layerID: layer.id, featureIndex: f.index))
+                        print("LM_SCENE card \(layer.dataset.title(of: f)) · outline \(doc.outline(MapHit(layerID: layer.id, featureIndex: f.index))?.count ?? 0) bytes")
+                    }
+                }
+                print("LM_MEM after import: \(os_proc_available_memory() / 1_048_576) MB available")
+                try? await Task.sleep(nanoseconds: 8_000_000_000)
+                print("LM_MEM after drawing: \(os_proc_available_memory() / 1_048_576) MB available")
+                if let e = doc.error { print("LM_SCENE error: \(e)") }
+                if let p = doc.needsPlace { print("LM_SCENE asks where: \(p.message)") }
+                print("LM_SCENE done")
+                fflush(stdout)
             }
         }
     }

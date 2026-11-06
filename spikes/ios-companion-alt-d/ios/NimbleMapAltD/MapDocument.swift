@@ -430,7 +430,8 @@ final class MapDocument: ObservableObject {
                 case .failure(let e):
                     if let file = e.needsPlace {
                         self.needsPlace = PendingPlace(file: file, name: Importer.displayName(for: file), message: e.message)
-                    } else {
+                    } else if e.message != Importer.cancelled {
+                        // A Stop the person pressed is not an error.
                         problems.append(e.message)
                     }
                 }

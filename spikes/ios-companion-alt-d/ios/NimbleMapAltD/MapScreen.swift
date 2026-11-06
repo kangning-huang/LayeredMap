@@ -120,6 +120,8 @@ struct MapScreen: UIViewRepresentable {
         private var appliedOrder: [UUID] = []
         private var applied: [UUID: (LayerStyle, Bool)] = [:]
         private var fileURLs: [UUID: URL] = [:]
+        /// The field each layer's source carries (see `GeoDataset.mapGeoJSON(showing:)`).
+        private var sourceField: [UUID: String?] = [:]
         private var lastHighlight: Data?
         private var pinAnnotation: MLNPointAnnotation?
         private var pendingCamera: CameraRequest?
@@ -165,14 +167,60 @@ struct MapScreen: UIViewRepresentable {
             switch layer.dataset.kind {
             case .point: return [i.circle]
             case .line: return [i.line]
-            case .area, .table, .raster: return [i.fill]
+            case .area, .table: return [i.fill, i.circle]
+            case .raster: return [i.fill]
             }
+        }
+
+        /// Areas too small to see when zoomed out (36,882 solar farms, 44,929 mines: a blank world
+        /// at first sight) get a dot at their centre until they are big enough to see: up to the
+        /// zoom where a typical one is about 4 points across. nil when they show from the start,
+        /// or when there are so many (building footprints) that dots would cost more than help.
+        static func dotsMaxZoom(_ ds: GeoDataset) -> Double? {
+            guard ds.kind == .area, ds.features.count <= 200_000 else { return nil }
+            let step = max(1, ds.features.count / 2000)
+            var sizes: [Double] = []
+            for f in stride(from: 0, to: ds.features.count, by: step).map({ ds.features[$0] }) where f.bounds.isValid {
+                sizes.append(max(f.bounds.maxLon - f.bounds.minLon, f.bounds.maxLat - f.bounds.minLat))
+            }
+            guard !sizes.isEmpty else { return nil }
+            sizes.sort()
+            let typical = max(sizes[sizes.count / 2], 1e-7)
+            let z = log2(4 * 360 / (512 * typical))
+            return z < 1.5 ? nil : min(z, 15)
+        }
+
+        private func dotSource(for layer: MapLayer, in style: MLNStyle) -> MLNSource {
+            let id = ids(layer.id).source + "-c"
+            if let s = style.source(withIdentifier: id) { return s }
+            let points: [MLNPointFeature] = layer.dataset.features.compactMap { f in
+                guard f.bounds.isValid else { return nil }
+                let p = MLNPointFeature()
+                p.coordinate = f.center
+                // Its index (taps) and the colour field only, like the map file.
+                var attrs: [String: Any] = ["_lm_i": f.index]
+                if let field = layer.style.showBy, let v = f.properties[field] { attrs[field] = v }
+                p.attributes = attrs
+                return p
+            }
+            let s = MLNShapeSource(identifier: id, features: points, options: nil)
+            style.addSource(s)
+            return s
         }
 
         func sync(_ layers: [MapLayer], on map: MLNMapView) {
             guard styleLoaded, let style = map.style else { return }
             let order = layers.map(\.id)
-            if order != appliedOrder {
+            // A layer coloured by another field needs that field in its source (it holds only one).
+            var rebuild = false
+            for layer in layers where layer.dataset.raster == nil && fileURLs[layer.id] != nil && sourceField[layer.id] != layer.style.showBy {
+                removeLayers(layer.id, from: style)
+                if let s = style.source(withIdentifier: ids(layer.id).source) { style.removeSource(s) }
+                if let s = style.source(withIdentifier: ids(layer.id).source + "-c") { style.removeSource(s) }
+                fileURLs.removeValue(forKey: layer.id)
+                rebuild = true
+            }
+            if order != appliedOrder || rebuild {
                 // Remove ours and re-add bottom-first so draw order matches the list.
                 for id in appliedOrder { removeLayers(id, from: style) }
                 if let l = style.layer(withIdentifier: highlightSource + "-line") { style.removeLayer(l) }
@@ -183,6 +231,7 @@ struct MapScreen: UIViewRepresentable {
                 lastHighlight = nil
                 for id in Set(fileURLs.keys).subtracting(order) {
                     if let s = style.source(withIdentifier: ids(id).source) { style.removeSource(s) }
+                    if let s = style.source(withIdentifier: ids(id).source + "-c") { style.removeSource(s) }
                     fileURLs.removeValue(forKey: id)
                 }
             }
@@ -221,15 +270,11 @@ struct MapScreen: UIViewRepresentable {
             if let u = fileURLs[layer.id] {
                 url = u
             } else {
-                let dir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
-                    ?? FileManager.default.temporaryDirectory
-                url = dir.appendingPathComponent("\(i.source).geojson")
-                do {
-                    try layer.dataset.mapGeoJSON.write(to: url, options: .atomic)
-                } catch {
-                    return nil
-                }
+                // The reader's file (shapes and indexes only), or a copy with the colour field.
+                guard let u = layer.dataset.mapFile(showing: layer.style.showBy) else { return nil }
+                url = u
                 fileURLs[layer.id] = url
+                sourceField[layer.id] = layer.style.showBy
             }
             let s = MLNShapeSource(identifier: i.source, url: url, options: nil)
             style.addSource(s)
@@ -258,6 +303,13 @@ struct MapScreen: UIViewRepresentable {
                 let o = MLNLineStyleLayer(identifier: i.line, source: src)
                 o.lineColor = NSExpression(forConstantValue: UIColor.white)
                 style.addLayer(o)
+                if let z = Coordinator.dotsMaxZoom(layer.dataset) {
+                    let c = MLNCircleStyleLayer(identifier: i.circle, source: dotSource(for: layer, in: style))
+                    c.maximumZoomLevel = Float(z)
+                    c.circleStrokeColor = NSExpression(forConstantValue: UIColor.white)
+                    c.circleStrokeWidth = NSExpression(forConstantValue: 0.5)
+                    style.addLayer(c)
+                }
             }
         }
 
@@ -319,6 +371,12 @@ struct MapScreen: UIViewRepresentable {
                 o.lineWidth = size
                 o.lineOpacity = NSExpression(forConstantValue: min(1, layer.style.opacity + 0.2))
                 o.isVisible = layer.visible
+                if let c = style.layer(withIdentifier: i.circle) as? MLNCircleStyleLayer {
+                    c.circleColor = color
+                    c.circleOpacity = NSExpression(forConstantValue: min(1, layer.style.opacity + 0.3))
+                    c.circleRadius = NSExpression(forConstantValue: 2.6)
+                    c.isVisible = layer.visible
+                }
             }
         }
 
