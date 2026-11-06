@@ -34,6 +34,7 @@
 		2043F2891E88C29850F085EB /* Styling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6961A43731CAC35331D374F8 /* Styling.swift */; };
 		AF3717FEFAB0983ED3E88403 /* SymbologySheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0BAF58003173D6175027991 /* SymbologySheet.swift */; };
 		8F63A5A81F0841C188F856ED /* WhereAmI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04A115F5DCD2F931CB36610A /* WhereAmI.swift */; };
+		A1B2C3D4E5F60718293A4B5C /* PointTiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1C2D3E4F5A60718293A4B5D /* PointTiles.swift */; };
 		222F0DBFFE5EB23DCD3FD16F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5B04B2273026590A440D27C9 /* Assets.xcassets */; };
 		39B3B4A957FAE1848133340E /* countries.geojson in Resources */ = {isa = PBXBuildFile; fileRef = E985F66D21A63E87AC3A2C50 /* countries.geojson */; };
 		0180FBAF7F82FDFD44050471 /* cities.geojson in Resources */ = {isa = PBXBuildFile; fileRef = 3BBB91C426D1C34A6F87FD7F /* cities.geojson */; };
@@ -76,6 +77,7 @@
 		6961A43731CAC35331D374F8 /* Styling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Styling.swift; sourceTree = "<group>"; };
 		D0BAF58003173D6175027991 /* SymbologySheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymbologySheet.swift; sourceTree = "<group>"; };
 		04A115F5DCD2F931CB36610A /* WhereAmI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhereAmI.swift; sourceTree = "<group>"; };
+		B1C2D3E4F5A60718293A4B5D /* PointTiles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointTiles.swift; sourceTree = "<group>"; };
 		5B04B2273026590A440D27C9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		E985F66D21A63E87AC3A2C50 /* countries.geojson */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = countries.geojson; path = ../../../assets/examples/countries.geojson; sourceTree = SOURCE_ROOT; };
 		3BBB91C426D1C34A6F87FD7F /* cities.geojson */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = cities.geojson; path = ../../../assets/examples/cities.geojson; sourceTree = SOURCE_ROOT; };
@@ -133,6 +135,7 @@
 				6961A43731CAC35331D374F8 /* Styling.swift */,
 				D0BAF58003173D6175027991 /* SymbologySheet.swift */,
 				04A115F5DCD2F931CB36610A /* WhereAmI.swift */,
+				B1C2D3E4F5A60718293A4B5D /* PointTiles.swift */,
 				5B04B2273026590A440D27C9 /* Assets.xcassets */,
 				E985F66D21A63E87AC3A2C50 /* countries.geojson */,
 				3BBB91C426D1C34A6F87FD7F /* cities.geojson */,
@@ -267,6 +270,7 @@
 				2043F2891E88C29850F085EB /* Styling.swift in Sources */,
 				AF3717FEFAB0983ED3E88403 /* SymbologySheet.swift in Sources */,
 				8F63A5A81F0841C188F856ED /* WhereAmI.swift in Sources */,
+				A1B2C3D4E5F60718293A4B5C /* PointTiles.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
