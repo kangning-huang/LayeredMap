@@ -872,10 +872,7 @@ fn first_point(l: &ImportedLayer) -> (f64, f64) {
 /// A table whose location is one WKT column (`the_geom`, as Socrata and CARTO export it).
 #[test]
 fn csv_wkt_point_column_is_located() {
-    let l = import_text(
-        "wkt.csv",
-        "name,the_geom\nA,POINT (-87.62 41.88)\nB,POINT (-87.65 41.90)\nC,POINT (-87.70 41.95)\nD,\n",
-    );
+    let l = import_text("wkt.csv", "name,the_geom\nA,POINT (-87.62 41.88)\nB,POINT (-87.65 41.90)\nC,POINT (-87.70 41.95)\nD,\n");
     assert_eq!(l.profile.kind, LayerKind::Points);
     assert_eq!(l.profile.count, 3);
     assert_eq!(l.profile.exclusions.len(), 1, "the blank row: {:?}", l.profile.exclusions);
@@ -975,24 +972,46 @@ fn csv_one_zero_zero_row_stays() {
     assert_eq!(ds.features.iter().filter(|f| f.geometry.is_some()).count(), 3);
 }
 
-/// LM_CSV=<a CSV>: import it as the desktop does and print what came back.
+/// LM_FILES=<paths, one per line> (or LM_CSV=<one path>): import each as the desktop does and
+/// print one summary line per layer (`LMCHECK` prefix), for sweeping real downloads.
 #[test]
 #[ignore]
 fn import_a_real_csv() {
-    let Ok(path) = std::env::var("LM_CSV") else { return };
-    match import_path(std::path::Path::new(&path), &Ctx::detached(Ticket::default())) {
-        Ok(layers) => {
-            for l in layers {
-                let p = &l.profile;
-                println!("kind={:?} count={} crs={:?} extent={:?}", p.kind, p.count, p.crs, p.extent_wgs84);
-                println!("status={:?}", l.status);
-                for a in &p.assumptions {
-                    println!("assumption {:?}: {}", a.kind, a.line);
+    let list = std::env::var("LM_FILES").or_else(|_| std::env::var("LM_CSV")).unwrap_or_default();
+    for path in list.lines().map(str::trim).filter(|l| !l.is_empty()) {
+        let t = std::time::Instant::now();
+        match import_path(std::path::Path::new(path), &Ctx::detached(Ticket::default())) {
+            Ok(layers) => {
+                for l in layers {
+                    let p = &l.profile;
+                    let located = match &l.data {
+                        LayerData::Vector(ds) => ds.features.iter().filter(|f| f.geometry.is_some()).count().to_string(),
+                        _ => "-".to_string(),
+                    };
+                    println!(
+                        "LMCHECK {path}\t{}\tkind={:?}\tcount={}\tlocated={located}\tcrs={:?}/{:?}\textent={:?}\texcl={}\tstatus={:?}\t{:.1}s",
+                        l.name,
+                        p.kind,
+                        p.count,
+                        p.crs.value,
+                        p.crs.confidence,
+                        p.extent_wgs84.map(|e| (e.min_x as i64, e.min_y as i64, e.max_x as i64, e.max_y as i64)),
+                        p.exclusions.len(),
+                        l.status,
+                        t.elapsed().as_secs_f64()
+                    );
+                    for a in &p.assumptions {
+                        println!("LMCHECK   assumption {:?}: {}", a.kind, a.line);
+                    }
+                    for n in &p.notices {
+                        println!("LMCHECK   notice: {n}");
+                    }
+                    if let Some(e) = p.exclusions.first() {
+                        println!("LMCHECK   first exclusion: row {} {}", e.row, e.reason);
+                    }
                 }
-                println!("notices={:?}", p.notices);
-                println!("exclusions={} first={:?}", p.exclusions.len(), p.exclusions.iter().take(3).collect::<Vec<_>>());
             }
+            Err(e) => println!("LMCHECK {path}\tERROR {e:?}\t{:.1}s", t.elapsed().as_secs_f64()),
         }
-        Err(e) => println!("ERROR {e:?}"),
     }
 }

@@ -381,6 +381,13 @@ pub struct LayerProfile {
     /// layer. Older builds ignore it.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub grid: Option<crate::grid::GridProfile>,
+    /// Per band, in the order of `bands`: the 2nd and 98th percentiles of a sample of the cells
+    /// (with the band's choices applied), for the default colour range of a skewed band
+    /// (`Style::for_profile`). `None` for a band where it doesn't apply (categories, colour
+    /// tables, RGB); empty for every other layer and in documents saved before. Kept here rather
+    /// than on `BandProfile`, whose constructor in `lm-profile` doesn't know it.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub band_percentiles: Vec<Option<(f64, f64)>>,
 }
 
 /// A table joined to a layer (WP3.11), as the document keeps it. The join itself (keys, match
@@ -485,6 +492,7 @@ mod tests {
             data_rev: 0,
             joins: Vec::new(),
             grid: None,
+            band_percentiles: Vec::new(),
         };
         assert_eq!(p.subtitle(), "248 points · schools.csv");
     }

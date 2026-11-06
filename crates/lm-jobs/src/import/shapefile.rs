@@ -244,7 +244,7 @@ impl FormatAdapter for ZippedShapefile {
         let size = crate::vfs::metadata(path).map_err(|e| ImportError::read(&name, e))?.len();
         if size > super::limits::ZIP_MAX_EXPANDED {
             return Err(ImportError::Refused(format!(
-                "{name} is larger than 2 GB, the most {APP} reads as a zipped Shapefile. Unzip it and open the .shp. Your file has not been changed."
+                "{name} is larger than 2 GB, the most {APP} reads from a zip. Unzip it and open the files inside. Your file has not been changed."
             )));
         }
         let bytes = crate::vfs::read(path).map_err(|e| ImportError::read(&name, e))?;
@@ -253,24 +253,25 @@ impl FormatAdapter for ZippedShapefile {
         check_zip(&entries)?;
         ctx.ticket.check()?;
         let ext = |n: &str| Path::new(n).extension().and_then(|e| e.to_str()).unwrap_or("").to_ascii_lowercase();
-        let is_fork = |n: &str| n.split('/').any(|p| p == "__MACOSX" || p.starts_with("._"));
-        let wanted = |n: &str| !is_fork(n) && matches!(ext(n).as_str(), "shp" | "shx" | "dbf" | "prj" | "cpg");
+        let is_fork = super::archive::is_fork;
+        // A zip without a Shapefile: what else it holds is opened (GeoJSON, CSV, GeoTIFF…).
+        if !entries.iter().any(|e| !is_fork(&e.name) && ext(&e.name) == "shp") {
+            return super::archive::open_members(path, &bytes, &entries, ctx);
+        }
+        let stem_of = |n: &str| n.get(..n.len().saturating_sub(ext(n).len() + 1)).unwrap_or(n).to_lowercase();
+        let mut shps: Vec<String> = entries.iter().filter(|e| !is_fork(&e.name) && ext(&e.name) == "shp").map(|e| e.name.clone()).collect();
+        shps.sort();
+        // One Shapefile stored twice (`Shift-JIS/x.shp`, `UTF-8/x.shp`) is opened once.
+        let shps = super::archive::dedupe_same_name(&shps);
+        let stems: Vec<String> = shps.iter().map(|n| stem_of(n)).collect();
+        let wanted =
+            |n: &str| !is_fork(n) && matches!(ext(n).as_str(), "shp" | "shx" | "dbf" | "prj" | "cpg") && stems.contains(&stem_of(n));
         let files = rustgis_engine::data::zip::read_matching(&bytes, wanted).map_err(|e| ImportError::read(&name, e))?;
         drop(bytes);
         ctx.stage(Stage::Extent)?;
-        let stem_of = |n: &str| n.get(..n.len().saturating_sub(ext(n).len() + 1)).unwrap_or(n).to_lowercase();
-        let mut shps: Vec<&String> = files.iter().filter(|(n, _)| ext(n) == "shp").map(|(n, _)| n).collect();
-        shps.sort();
-        if shps.is_empty() {
-            let others: Vec<String> = entries.iter().map(|e| e.name.clone()).filter(|n| !is_fork(n) && !n.ends_with('/')).take(5).collect();
-            return Err(ImportError::Unsupported(format!(
-                "{name} holds no Shapefile. {APP} opens zipped Shapefiles; open other files directly{}.",
-                if others.is_empty() { String::new() } else { format!(" (it holds {})", others.join(", ")) }
-            )));
-        }
         let get = |stem: &str, e: &str| files.iter().find(|(n, _)| ext(n) == e && stem_of(n) == stem).map(|(_, b)| b.clone());
         let mut out = Vec::new();
-        for shp_name in shps {
+        for shp_name in &shps {
             ctx.ticket.check()?;
             let stem = stem_of(shp_name);
             let layer_name = Path::new(shp_name.as_str()).file_stem().and_then(|s| s.to_str()).unwrap_or("layer").to_string();

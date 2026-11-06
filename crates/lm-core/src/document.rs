@@ -165,7 +165,9 @@ impl Style {
     }
 
     /// The default style for a layer from its profile: the kind's symbol, and for rasters the
-    /// first band's range as the stretch.
+    /// first band's range as the stretch: its whole range, or the 2nd–98th percentile when the
+    /// band is heavily skewed (a population grid whose few city cells would leave the rest in
+    /// one colour).
     pub fn for_profile(profile: &LayerProfile, color: Rgba) -> Style {
         let mut s = Style::for_kind(profile.kind, color, profile.count);
         if profile.kind == LayerKind::Raster
@@ -176,6 +178,12 @@ impl Style {
             && lo < hi
         {
             s.stretch = Some((lo, hi));
+            if b.cell_meaning.value != crate::model::CellMeaning::Category
+                && let Some(Some((p2, p98))) = profile.band_percentiles.first()
+                && let Some(clip) = skewed_stretch((lo, hi), (*p2, *p98))
+            {
+                s.stretch = Some(clip);
+            }
         }
         s
     }
@@ -187,6 +195,18 @@ impl Style {
         c[3] = 255;
         c
     }
+}
+
+/// A band is heavily skewed when its 98th percentile is below a quarter of the way from its
+/// minimum to its maximum (most cells low, a few very high).
+pub const SKEW_P98_FRACTION: f64 = 0.25;
+
+/// The 2nd–98th percentile as the colour range of a band whose whole range is `range`, when the
+/// band is heavily skewed and the percentiles make a usable range; `None` keeps the whole range.
+pub fn skewed_stretch(range: (f64, f64), (p2, p98): (f64, f64)) -> Option<(f64, f64)> {
+    let (lo, hi) = range;
+    let usable = p2.is_finite() && p98.is_finite() && p2 < p98 && p2 >= lo && p98 <= hi;
+    (usable && p98 - lo < SKEW_P98_FRACTION * (hi - lo)).then_some((p2, p98))
 }
 
 /// A darker shade of a colour (area outlines): 70% of each channel.
@@ -762,6 +782,7 @@ pub(crate) mod tests {
             data_rev: 0,
             joins: Vec::new(),
             grid: None,
+            band_percentiles: Vec::new(),
         }
     }
 
@@ -900,6 +921,37 @@ pub(crate) mod tests {
         }];
         let s = Style::for_profile(&p, OKABE_ITO[0]);
         assert_eq!((s.ramp.as_str(), s.stretch), ("viridis", Some((-10.0, 4000.0))));
+        // Percentiles spread over the range: the whole range stays.
+        p.band_percentiles = vec![Some((40.0, 3500.0))];
+        assert_eq!(Style::for_profile(&p, OKABE_ITO[0]).stretch, Some((-10.0, 4000.0)));
+    }
+
+    #[test]
+    fn a_skewed_raster_stretches_to_its_middle_96_percent() {
+        let mut p = profile("chn_ppp_2020.tif", LayerKind::Raster);
+        p.bands = vec![BandProfile {
+            index: 1,
+            name: "population".into(),
+            nodata: Known::certain(None, ""),
+            scale: None,
+            offset: None,
+            unit: Known::unknown(None, ""),
+            cell_meaning: Known::likely(CellMeaning::Total, ""),
+            min: Some(0.0),
+            max: Some(285_422.0),
+        }];
+        // Old documents (no percentiles) keep the whole range.
+        assert_eq!(Style::for_profile(&p, OKABE_ITO[0]).stretch, Some((0.0, 285_422.0)));
+        p.band_percentiles = vec![Some((0.0, 1_350.0))];
+        assert_eq!(Style::for_profile(&p, OKABE_ITO[0]).stretch, Some((0.0, 1_350.0)));
+        // Categories keep their range; so does a band whose percentiles make no range.
+        p.bands[0].cell_meaning = Known::likely(CellMeaning::Category, "");
+        assert_eq!(Style::for_profile(&p, OKABE_ITO[0]).stretch, Some((0.0, 285_422.0)));
+        p.bands[0].cell_meaning = Known::likely(CellMeaning::Total, "");
+        p.band_percentiles = vec![Some((0.0, 0.0))];
+        assert_eq!(Style::for_profile(&p, OKABE_ITO[0]).stretch, Some((0.0, 285_422.0)));
+        assert_eq!(skewed_stretch((0.0, 100.0), (1.0, 24.0)), Some((1.0, 24.0)));
+        assert_eq!(skewed_stretch((0.0, 100.0), (1.0, 26.0)), None);
     }
 
     #[test]

@@ -569,10 +569,22 @@ pub fn csv_locate_delimited(headers: &[String], sample_rows: &[Vec<String>], fil
             let mut candidates: Vec<CoordinatePair> = many.iter().map(|p| (*p).clone()).collect();
             // Stable order: by column position.
             candidates.sort_by_key(|p| (p.x_index.min(p.y_index), p.x_index));
+            let best = candidates.iter().map(|p| p.rows_in_range).max().unwrap_or(0);
+            // Nearly tied, a pair named plainly beats numbered variants: Movebank exports carry
+            // `location-long`/`location-lat` (the chosen fix) beside `argos:lon1`/`argos:lat1` and
+            // `…2` (the two raw Doppler solutions, the second often a mirror image), and lon1 had
+            // one more filled row in the sample than the real thing.
+            let numbered = |p: &CoordinatePair| p.x.chars().any(|c| c.is_ascii_digit()) || p.y.chars().any(|c| c.is_ascii_digit());
+            let close = |p: &CoordinatePair| p.rows_in_range as f64 >= 0.98 * best as f64;
             let recommended = candidates
                 .iter()
                 .enumerate()
-                .max_by(|(ia, a), (ib, b)| a.rows_in_range.cmp(&b.rows_in_range).then(ib.cmp(ia)))
+                .max_by(|(ia, a), (ib, b)| {
+                    (close(a) && !numbered(a))
+                        .cmp(&(close(b) && !numbered(b)))
+                        .then(a.rows_in_range.cmp(&b.rows_in_range))
+                        .then(ib.cmp(ia))
+                })
                 .map(|(i, _)| i)
                 .unwrap_or(0);
             let assumption = ambiguous_question(&candidates, recommended);
@@ -699,6 +711,20 @@ mod tests {
         let CsvLocation::Ambiguous { candidates, recommended, .. } = csv_locate(&headers, &r, "f.csv") else { panic!() };
         assert_eq!(candidates.len(), 2);
         assert_eq!(candidates[recommended].x, "pickup_longitude");
+    }
+
+    /// Movebank: the chosen fix (`location-long/lat`) over the raw Argos solutions, even when one
+    /// of those has a row more in the sample.
+    #[test]
+    fn csv_plain_pair_beats_numbered_variants_when_nearly_tied() {
+        let headers = s(&["location-long", "location-lat", "argos:lat1", "argos:lat2", "argos:lon1", "argos:lon2"]);
+        let mut r: Vec<Vec<String>> = shanghai(50)
+            .into_iter()
+            .map(|q| vec![q[1].clone(), q[2].clone(), q[2].clone(), q[2].clone(), q[1].clone(), q[1].clone()])
+            .collect();
+        r.push(s(&["", "", "31.1", "31.1", "121.3", "121.3"]));
+        let CsvLocation::Ambiguous { candidates, recommended, .. } = csv_locate(&headers, &r, "f.csv") else { panic!() };
+        assert_eq!(candidates[recommended].x, "location-long");
     }
 
     #[test]

@@ -863,6 +863,7 @@ fn layer_for(o: &Opened, path: &Path, variable: &str, level: usize, time: usize,
         data_rev: 0,
         joins: Vec::new(),
         grid: Some(grid),
+        band_percentiles: Vec::new(),
     };
     let stem = path.file_stem().and_then(|s| s.to_str()).unwrap_or("grid").to_string();
     // One colour range for every time step, from the sampled steps (editable in Style).

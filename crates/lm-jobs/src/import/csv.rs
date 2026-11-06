@@ -459,6 +459,7 @@ fn build_with(
         data_rev: 0,
         joins: Vec::new(),
         grid: None,
+        band_percentiles: Vec::new(),
     };
     Ok(ImportedLayer { name, status: status_of(&profile), profile, data: LayerData::Vector(Arc::new(ds)), raw: None, style: None })
 }
