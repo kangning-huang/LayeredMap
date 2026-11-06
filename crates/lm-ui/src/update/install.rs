@@ -299,11 +299,7 @@ pub fn reopen(bundle: &Path) {
             let retained: Vec<_> = args.lines().map(NSString::from_str).collect();
             config.setArguments(&NSArray::from_retained_slice(&retained));
         }
-        NSWorkspace::sharedWorkspace().openApplicationAtURL_configuration_completionHandler(
-            &url,
-            &config,
-            None,
-        );
+        NSWorkspace::sharedWorkspace().openApplicationAtURL_configuration_completionHandler(&url, &config, None);
         log::info!("update: reopened {}", bundle.display());
         return;
     }
