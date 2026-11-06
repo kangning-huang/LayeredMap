@@ -50,7 +50,11 @@ struct DataWebView: UIViewRepresentable {
     var onDataFile: (URL) -> Void = { _ in }
 
     func makeUIView(context: Context) -> WKWebView {
-        let web = WKWebView(frame: .zero)
+        // "NimbleMapApp" tells nimblemap.com not to load its analytics in here: the app declares
+        // "Data Not Collected" on the App Store (the site also skips any app's web view).
+        let config = WKWebViewConfiguration()
+        config.applicationNameForUserAgent = "Mobile/15E148 NimbleMapApp/1.0"
+        let web = WKWebView(frame: .zero, configuration: config)
         web.navigationDelegate = context.coordinator
         web.load(URLRequest(url: url))
         return web
