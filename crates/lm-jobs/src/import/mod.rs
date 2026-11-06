@@ -9,6 +9,7 @@
 //! they don't (large GeoJSON and CSV are scanned as streams, never read whole to learn a name or
 //! bounds).
 
+mod archive;
 mod csv;
 mod excel;
 mod geojson;
@@ -365,6 +366,10 @@ pub fn import_path(path: &Path, ctx: &Ctx) -> Result<Vec<ImportedLayer>, ImportE
         f.read(&mut head).map_err(|e| ImportError::read(&name, e))?
     };
     head.truncate(n);
+    // A gzipped file (`.nc.gz`, `.csv.gz`): unpacked into the cache, then read as what's inside.
+    if head.starts_with(&[0x1f, 0x8b]) {
+        return archive::import_gz(path, ctx);
+    }
     let adapter = pick_adapter(path, &head, P1_FORMATS)?;
     ctx.stage(Stage::Metadata)?;
     let m = adapter.open_metadata(path, ctx)?;
@@ -508,6 +513,7 @@ fn vector_profile(
         data_rev: 0,
         joins: Vec::new(),
         grid: None,
+        band_percentiles: Vec::new(),
     }
 }
 
@@ -707,7 +713,9 @@ pub fn reapply_choices(fresh: ImportedLayer, saved: &LayerProfile) -> Result<Imp
         layer = choose_sheet(&layer, &c)?;
     }
     for k in [K::CsvCoordinateColumns, K::CsvAmbiguousColumns] {
-        if let Some(c) = confirmed(k).filter(|c| layer.raw.is_some() && (c.id.starts_with("columns:") || c.id == "not_sure")) {
+        if let Some(c) = confirmed(k)
+            .filter(|c| layer.raw.is_some() && (c.id.starts_with("columns:") || c.id.starts_with("point:") || c.id == "not_sure"))
+        {
             layer = relocate_csv(&layer, &c)?;
         }
     }

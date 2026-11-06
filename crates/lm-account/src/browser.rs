@@ -3,6 +3,8 @@
 
 /// Opens `url` in the default browser. Only https addresses (and this computer's, for tests).
 #[cfg(not(target_arch = "wasm32"))]
+// Each platform block returns; only one is compiled, so the returns are not needless.
+#[allow(clippy::needless_return)]
 pub fn open(url: &str) -> Result<(), String> {
     if !crate::config::allowed_url(url) {
         return Err(format!("{url}: not opened (https only)"));

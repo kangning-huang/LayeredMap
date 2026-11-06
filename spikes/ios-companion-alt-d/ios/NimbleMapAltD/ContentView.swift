@@ -1,4 +1,5 @@
 import SwiftUI
+import os
 import CoreLocation
 
 /// **Alternative C**, from the A/B persona study (LM-tmp/personas/report.md): A's clean map, file
@@ -10,6 +11,11 @@ struct ContentView: View {
     @State private var showFiles = false
     @State private var showHint = false
     @State private var basemap: Basemap = .light
+    /// The map's rotation (degrees), for the compass; 0 hides it.
+    @State private var heading = 0.0
+    /// Data in a local grid waiting for the person to say roughly where it is.
+    @State private var placing: MapDocument.PendingPlace?
+    @State private var northRequest: UUID?
     @State private var overlap: [MapHit] = []
     /// Where the "N things here" tap was, so map images under it can be offered too.
     @State private var overlapAt: CLLocationCoordinate2D?
@@ -19,6 +25,7 @@ struct ContentView: View {
     @State private var started = false
     @State private var cameraReady = false
     @State private var sceneRun = false
+    @StateObject private var here = WhereAmI()
 
     var body: some View {
         ZStack {
@@ -34,9 +41,17 @@ struct ContentView: View {
                 },
                 onCameraIdle: { bounds in
                     doc.viewBounds = bounds
+                    NearHint.shared.mapView(bounds)
+                    // Zoomed in far enough that the drawn picture has run out of detail: draw
+                    // the visible part again at full resolution. Idle only, so panning stays smooth.
+                    for l in doc.layers where l.visible && l.dataset.raster != nil {
+                        doc.refineRaster(l.id, view: bounds)
+                    }
                     // Only once the saved map is back, and only for the person's own map.
                     if cameraReady && doc.sampleID == nil && !doc.isEmpty { SavedMap.view = bounds }
-                }
+                },
+                onHeading: { heading = $0 },
+                northRequest: northRequest
             )
             .ignoresSafeArea()
 
@@ -64,6 +79,12 @@ struct ContentView: View {
                     )
                 }
                 Spacer()
+                HStack(alignment: .bottom) {
+                    Spacer()
+                    mapButtons
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 10)
                 bottomChrome
             }
             .animation(.snappy, value: doc.toast)
@@ -87,11 +108,30 @@ struct ContentView: View {
                         active = nil
                         doc.importingAll(Importer.pickedLabel(urls)) { await Importer.openPicked(urls) }
                     },
-                    onLink: { url in
+                    onLink: { url, title in
                         active = nil
-                        doc.importing(Importer.displayName(for: url)) { await Importer.download(url, onProgress: report) }
+                        let name = title ?? Importer.displayName(for: url)
+                        doc.importingAll(name) { await Importer.download(url, named: title, onProgress: report) }
+                    },
+                    onFile: { file in
+                        active = nil
+                        doc.importingAll(Importer.displayName(for: file)) { await Importer.openPicked([file]) }
                     }
                 )
+            case .placeFor:
+                PlacesSheet { item in
+                    active = nil
+                    if let pending = placing {
+                        placing = nil
+                        doc.place(pending, near: item.placemark.coordinate)
+                    }
+                }
+            case .places:
+                PlacesSheet { item in
+                    let c = item.placemark.coordinate
+                    // A point has no extent; fly to it at a town-ish zoom.
+                    doc.fly(to: GeoBounds(minLon: c.longitude, minLat: c.latitude, maxLon: c.longitude, maxLat: c.latitude), pointZoom: 11)
+                }
             case .layers:
                 LayersSheet(
                     doc: doc,
@@ -131,7 +171,7 @@ struct ContentView: View {
         }
         .onOpenURL { url in
             active = nil
-            doc.importing(Importer.displayName(for: url)) { await Importer.openExternal(url) }
+            doc.importingAll(Importer.displayName(for: url)) { await Importer.openExternal(url) }
         }
         .confirmationDialog("\(overlap.count + overlapRasters.count) things here", isPresented: overlapBinding, titleVisibility: .visible) {
             ForEach(overlap, id: \.self) { hit in
@@ -145,6 +185,27 @@ struct ContentView: View {
                     if let at = overlapAt { show(raster: layer.id, at: at) }
                 }
             }
+        }
+        .onChange(of: here.foundKey) { _, _ in
+            guard let found = here.found else { return }
+            NearHint.shared.person(found)
+            doc.fly(toPoint: found, closest: 13)
+            here.found = nil
+        }
+        .alert("Where is this data?", isPresented: Binding(get: { doc.needsPlace != nil }, set: { if !$0 { doc.needsPlace = nil } })) {
+            Button("Search for a place") {
+                placing = doc.needsPlace
+                doc.needsPlace = nil
+                active = .placeFor
+            }
+            Button("Cancel", role: .cancel) { doc.needsPlace = nil }
+        } message: {
+            Text((doc.needsPlace?.message ?? "") + " Name a town or region it's in, and NimbleMap will find the grid that puts it there.")
+        }
+        .alert("Can't show where you are", isPresented: locationBinding) {
+            Button("OK", role: .cancel) { here.problem = nil }
+        } message: {
+            Text(here.problem ?? "")
         }
         .alert("Couldn't open this", isPresented: errorBinding) {
             Button("OK", role: .cancel) { doc.error = nil }
@@ -167,7 +228,15 @@ struct ContentView: View {
         defer {
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) { cameraReady = true }
         }
-        if await doc.restore() {
+        Importer.clearLayerFolder()
+        if SavedMap.unsettled && !SavedMap.isEmpty {
+            // Last time ended while this map was loading or drawing: don't load it into the same end.
+            SavedMap.unsettled = false
+            doc.error = "NimbleMap closed while opening your last map — most likely it held more data than this iPhone has room for. It has started with an empty map. Your files are still under Recents; open them one or two at a time."
+            SavedMap.save([])
+            SavedMap.unsettled = false
+        } else if await doc.restore() {
+            SavedMap.markChanged()
             runSceneIfAsked()
             return
         }
@@ -186,7 +255,7 @@ struct ContentView: View {
     /// puts the place in the half above it.
     private var mapInsets: UIEdgeInsets {
         switch active {
-        case .feature, .list, .layers, .open, .style, .rasterSpot:
+        case .feature, .list, .layers, .open, .places, .placeFor, .style, .rasterSpot:
             return UIEdgeInsets(top: 110, left: 36, bottom: 480, right: 36)
         case .look:
             return UIEdgeInsets(top: 110, left: 36, bottom: 390, right: 36)
@@ -197,35 +266,88 @@ struct ContentView: View {
 
     // MARK: Chrome (A's floating pills; B's two round map buttons)
 
+    /// The top row: add data, and find a place. The map buttons used to sit under them on the
+    /// right; they have moved to the bottom corner, where there is room and where a thumb reaches.
     private var topChrome: some View {
-        HStack(alignment: .top, spacing: 10) {
+        HStack(alignment: .center, spacing: 10) {
             pill("Add data", systemImage: "plus") { active = .open }
-            Spacer()
-            VStack(spacing: 10) {
-                Menu {
-                    Picker("Map style", selection: $basemap) {
-                        ForEach(Basemap.allCases) { b in Text(b.label).tag(b) }
-                    }
-                } label: {
-                    roundIcon("map")
+            Button {
+                active = .places
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "magnifyingglass")
+                    Text("Search places").lineLimit(1)
                 }
-                .accessibilityLabel("Map style")
-                Button {
-                    var all = GeoBounds.empty
-                    for l in doc.layers where l.visible { all.add(l.dataset.bounds) }
-                    doc.fly(to: all)
-                } label: {
-                    roundIcon("scope")
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Show all data")
-                if ProcessInfo.processInfo.environment["LM_FPS"] == "1" {
-                    FpsOverlay()
-                }
+                .font(.subheadline.weight(.semibold))
+                .padding(.horizontal, 16)
+                .frame(maxWidth: .infinity, minHeight: 44)
+                .background(chromeBackground, in: Capsule())
+                .overlay(Capsule().strokeBorder(chromeEdge, lineWidth: 0.5))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Search for a place")
+            if ProcessInfo.processInfo.environment["LM_FPS"] == "1" {
+                FpsOverlay()
             }
         }
         .padding(.horizontal, 16)
         .padding(.top, 52)
+    }
+
+    /// Map style and "where am I", bottom right — away from the legend, which is bottom left.
+    private var mapButtons: some View {
+        VStack(spacing: 10) {
+            Menu {
+                Picker("Map style", selection: $basemap) {
+                    ForEach(Basemap.allCases) { b in Text(b.label).tag(b) }
+                }
+            } label: {
+                roundIcon("map")
+            }
+            .accessibilityLabel("Map style")
+            Button {
+                var all = GeoBounds.empty
+                for l in doc.layers where l.visible { all.add(l.dataset.bounds) }
+                doc.fly(to: all)
+            } label: {
+                roundIcon("square.dashed")
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Show all data")
+            // Genuinely "where am I": the crosshair used to fit the data's bounds, which is a
+            // different thing wearing the same icon.
+            Button {
+                here.locate()
+            } label: {
+                ZStack {
+                    roundIcon(here.isLocating ? "location.fill" : "location")
+                    if here.isLocating {
+                        ProgressView().controlSize(.small)
+                    }
+                }
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Show where I am")
+            // Only while the map is turned, as MapLibre's own did; a tap turns north back up.
+            let h = heading.truncatingRemainder(dividingBy: 360)
+            if abs(h) >= 1 && abs(h) <= 359 {
+                Button {
+                    northRequest = UUID()
+                } label: {
+                    Image(systemName: "location.north.fill")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(.red)
+                        .rotationEffect(.degrees(-heading))
+                        .frame(width: 44, height: 44)
+                        .background(chromeBackground, in: Circle())
+                        .overlay(Circle().strokeBorder(chromeEdge, lineWidth: 0.5))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Turn north up")
+                .transition(.scale.combined(with: .opacity))
+            }
+        }
+        .animation(.snappy, value: abs(heading.truncatingRemainder(dividingBy: 360)) >= 1)
     }
 
     @ViewBuilder
@@ -251,13 +373,22 @@ struct ContentView: View {
         .padding(.bottom, 24)
     }
 
+    /// Chrome has to read against a near-white basemap as well as a dark one.
+    ///
+    /// `.regularMaterial` is mostly transparent, so on the Light style — which is almost white —
+    /// a floating pill all but disappeared. The thicker material keeps the frosted look but holds
+    /// its own ground, and a hairline edge draws the shape even where the two tones match.
+    private var chromeBackground: Material { .thickMaterial }
+    private var chromeEdge: Color { Color.primary.opacity(0.12) }
+
     private func pill(_ title: String, systemImage: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Label(title, systemImage: systemImage)
                 .font(.subheadline.weight(.semibold))
                 .padding(.horizontal, 16)
                 .frame(minHeight: 44)
-                .background(.regularMaterial, in: Capsule())
+                .background(chromeBackground, in: Capsule())
+                .overlay(Capsule().strokeBorder(chromeEdge, lineWidth: 0.5))
         }
         .buttonStyle(.plain)
     }
@@ -266,7 +397,8 @@ struct ContentView: View {
         Image(systemName: name)
             .font(.body.weight(.semibold))
             .frame(width: 44, height: 44)
-            .background(.regularMaterial, in: Circle())
+            .background(chromeBackground, in: Circle())
+            .overlay(Circle().strokeBorder(chromeEdge, lineWidth: 0.5))
     }
 
     private func capsule(_ text: String, systemImage: String) -> some View {
@@ -359,6 +491,17 @@ struct ContentView: View {
         }
     }
 
+    /// A point zooms only as close as its own layer allows (a few of its neighbours in view); a
+    /// line or area is framed by its own extent as before.
+    private func zoom(to f: GeoFeature, in layer: UUID, closest: Double) {
+        let b = f.bounds
+        if b.maxLon - b.minLon < 1e-6 && b.maxLat - b.minLat < 1e-6 {
+            doc.fly(toPoint: f.center, closest: closest, layer: layer)
+        } else {
+            doc.fly(to: b, pointZoom: closest)
+        }
+    }
+
     @ViewBuilder
     private func featureSheet(_ hit: MapHit) -> some View {
         if case let (layer, f)? = doc.feature(hit) {
@@ -367,7 +510,7 @@ struct ContentView: View {
                 layer: layer,
                 onClose: { active = nil },
                 onColorBy: { field in startLook(layer.id, showBy: field) },
-                onZoom: { doc.fly(to: f.bounds, pointZoom: 14) },
+                onZoom: { zoom(to: f, in: layer.id, closest: 14) },
                 onList: { switchTo(.list(layer.id)) },
                 groundRows: groundRows(f)
             )
@@ -384,7 +527,7 @@ struct ContentView: View {
         if let layer = doc.layer(id) {
             FeatureList(layer: layer, onClose: { active = nil }) { index in
                 let hit = MapHit(layerID: id, featureIndex: index)
-                if case let (_, f)? = doc.feature(hit) { doc.fly(to: f.bounds, pointZoom: 13) }
+                if case let (_, f)? = doc.feature(hit) { zoom(to: f, in: id, closest: 13) }
                 switchTo(.feature(hit))
             }
             .presentationDetents([.medium, .large])
@@ -436,7 +579,8 @@ struct ContentView: View {
                     lookOriginal = nil
                     switchTo(.style(id))
                 },
-                onTime: { doc.setTime(id, $0) }
+                onTime: { doc.setTime(id, $0) },
+                onRamp: { doc.setRasterRamp(id, $0) }
             )
         }
     }
@@ -462,11 +606,15 @@ struct ContentView: View {
     }
 
     private func reopen(_ r: Importer.Recent) {
-        doc.importing(r.name) { await Importer.reopen(r) }
+        doc.importingAll(r.name) { await Importer.reopen(r) }
     }
 
     private var overlapBinding: Binding<Bool> {
         Binding(get: { !overlap.isEmpty }, set: { if !$0 { overlap = [] } })
+    }
+
+    private var locationBinding: Binding<Bool> {
+        Binding(get: { here.problem != nil }, set: { if !$0 { here.problem = nil } })
     }
 
     private var errorBinding: Binding<Bool> {
@@ -479,6 +627,7 @@ struct ContentView: View {
         guard !sceneRun, let scene = ProcessInfo.processInfo.environment["LM_SCENE"] else { return }
         sceneRun = true
         Task { @MainActor in
+            print("LM_MEM at launch: \(os_proc_available_memory() / 1_048_576) MB available")
             try? await Task.sleep(nanoseconds: 1_500_000_000)
             switch scene {
             case "open": active = .open
@@ -487,12 +636,61 @@ struct ContentView: View {
             case "download":
                 let fallback = "https://data.alltheplaces.xyz/runs/latest/output/starbucks_us.geojson"
                 if let u = URL(string: ProcessInfo.processInfo.environment["LM_URL"] ?? fallback) {
-                    doc.importing(Importer.displayName(for: u)) { await Importer.download(u, onProgress: report) }
+                    doc.importingAll(Importer.displayName(for: u)) { await Importer.download(u, onProgress: report) }
+                }
+            // Opens LM_FILE (a path) as if picked in Files.
+            case "file":
+                if let path = ProcessInfo.processInfo.environment["LM_FILE"] {
+                    // Absolute, or relative to Documents (a phone's container path isn't known
+                    // to whoever launches it).
+                    let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
+                    let u = path.hasPrefix("/") || docs == nil ? URL(fileURLWithPath: path) : docs!.appendingPathComponent(path)
+                    doc.importingAll(Importer.pickedLabel([u])) { await Importer.openPicked([u]) }
                 }
             case "layers": active = .layers
             case "look": if let id = doc.layers.first?.id { startLook(id, showBy: nil) }
             case "feature": if let id = doc.layers.first?.id { show(MapHit(layerID: id, featureIndex: 0)) }
             default: break
+            }
+            // Say how it went, for a sweep reading the console (`simctl launch --console-pty`).
+            if scene == "download" || scene == "file" {
+                for _ in 0..<1200 where doc.busy == nil && doc.layers.isEmpty && doc.error == nil && doc.needsPlace == nil {
+                    try? await Task.sleep(nanoseconds: 250_000_000)
+                }
+                for _ in 0..<2400 where doc.busy != nil {
+                    try? await Task.sleep(nanoseconds: 250_000_000)
+                }
+                for l in doc.layers {
+                    let b = l.dataset.bounds
+                    print("LM_SCENE layer \(l.name) · \(l.dataset.kind.rawValue) · \(l.dataset.countPhrase) · fields \(l.dataset.fields.count) · \(l.dataset.placement.map { "\($0.how) \($0.name)" } ?? "lon/lat") · bounds \(String(format: "%.2f,%.2f,%.2f,%.2f", b.minLon, b.minLat, b.maxLon, b.maxLat))")
+                    for a in l.dataset.assumptions { print("LM_SCENE   note: \(a)") }
+                }
+                // LM_THEN=color,feature: colour the first layer by its main field, then open the
+                // card of its first feature with a place (exercises the splice and the outline).
+                let then = ProcessInfo.processInfo.environment["LM_THEN"] ?? ""
+                if let layer = doc.layers.first(where: { $0.id != doc.sampleID }) {
+                    if then.contains("color"), let field = layer.dataset.primaryField ?? layer.dataset.fields.first(where: { $0.kind == .category }) {
+                        startLook(layer.id, showBy: field.name)
+                        try? await Task.sleep(nanoseconds: 2_000_000_000)
+                        lookOriginal = nil   // keep the colour, as Done does
+                        active = nil
+                        print("LM_SCENE colored by \(field.name)")
+                        if let l = doc.layer(layer.id), let j = try? JSONSerialization.data(withJSONObject: l.scheme.expressionJSON(field: field.name)) {
+                            print("LM_SCENE expression \(String(decoding: j, as: UTF8.self).prefix(600))")
+                        }
+                    }
+                    if then.contains("feature"), let f = layer.dataset.features.first(where: { $0.bounds.isValid }) {
+                        show(MapHit(layerID: layer.id, featureIndex: f.index))
+                        print("LM_SCENE card \(layer.dataset.title(of: f)) · outline \(doc.outline(MapHit(layerID: layer.id, featureIndex: f.index))?.count ?? 0) bytes")
+                    }
+                }
+                print("LM_MEM after import: \(os_proc_available_memory() / 1_048_576) MB available")
+                try? await Task.sleep(nanoseconds: 8_000_000_000)
+                print("LM_MEM after drawing: \(os_proc_available_memory() / 1_048_576) MB available")
+                if let e = doc.error { print("LM_SCENE error: \(e)") }
+                if let p = doc.needsPlace { print("LM_SCENE asks where: \(p.message)") }
+                print("LM_SCENE done")
+                fflush(stdout)
             }
         }
     }
@@ -500,6 +698,9 @@ struct ContentView: View {
 
 enum ActiveSheet: Identifiable, Equatable {
     case open
+    case places
+    /// "Where is this data?": a place search for data in a local grid.
+    case placeFor
     case layers
     case look(UUID)
     case style(UUID)
@@ -511,6 +712,8 @@ enum ActiveSheet: Identifiable, Equatable {
     var id: String {
         switch self {
         case .open: return "open"
+        case .places: return "places"
+        case .placeFor: return "placeFor"
         case .layers: return "layers"
         case .look(let id): return "look-\(id)"
         case .style(let id): return "style-\(id)"

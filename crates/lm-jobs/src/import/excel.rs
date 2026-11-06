@@ -124,13 +124,19 @@ pub fn choose_sheet(layer: &ImportedLayer, choice: &Choice) -> Result<ImportedLa
     };
     let path = Path::new(&layer.profile.source.path);
     let name = file_name(path);
+    // A workbook inside a zip: `source.member` is `<workbook> › <sheet>`.
+    let in_zip = layer.profile.source.member.as_deref().filter(|_| !matches!(super::extension(path).as_str(), "xlsx" | "xlsm" | "xls"));
+    let workbook = in_zip.and_then(|m| m.split_once(super::archive::PART)).map(|(w, _)| w.to_string());
     let size = crate::vfs::metadata(path)
         .map_err(|e| ImportError::Failed {
             message: format!("{name} is no longer where it was. Nothing was changed."),
             details: e.to_string(),
         })?
         .len();
-    let bytes = read_bytes(path, size, &Ctx::detached(super::Ticket::default()))?;
+    let bytes = match &workbook {
+        Some(w) => super::archive::read_member(path, w)?,
+        None => read_bytes(path, size, &Ctx::detached(super::Ticket::default()))?,
+    };
     let grid = sheets::grid(&bytes, Some(sheet)).map_err(|e| ImportError::read(&name, e))?;
     let assumption = layer.profile.assumptions.iter().find(|a| a.kind == AssumptionKind::ExcelSheet).cloned().map(|mut a| {
         a.chosen = choice.clone();
@@ -143,5 +149,9 @@ pub fn choose_sheet(layer: &ImportedLayer, choice: &Choice) -> Result<ImportedLa
     });
     let mut out = open_sheet(path, grid, assumption)?;
     out.name = layer.name.clone();
+    if let Some(w) = workbook {
+        let sheet = out.profile.source.member.take().unwrap_or_default();
+        out.profile.source.member = Some(format!("{w}{}{sheet}", super::archive::PART));
+    }
     Ok(out)
 }

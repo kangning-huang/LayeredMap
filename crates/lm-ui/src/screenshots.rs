@@ -2049,3 +2049,61 @@ fn update_notice_manual_de() {
     });
     h.snapshot("update_notice_manual_de");
 }
+
+/// LM_FILES=<paths, one per line> LM_SHOTS=<folder>: open each file in the app headlessly (as a
+/// drop does: import, add, select), zoom to all data, and save what the window shows as
+/// `<folder>/<n>.png`. For sweeping the website's curated datasets; not a regression check.
+#[test]
+#[ignore]
+fn curated_sweep() {
+    let Ok(list) = std::env::var("LM_FILES") else { return };
+    let out = std::path::PathBuf::from(std::env::var("LM_SHOTS").unwrap_or_else(|_| std::env::temp_dir().display().to_string()));
+    for path in list.lines().map(str::trim).filter(|l| !l.is_empty()) {
+        let tag = std::path::Path::new(path).parent().and_then(|d| d.file_name()).and_then(|n| n.to_str()).unwrap_or("x").to_string();
+        let p = path.to_string();
+        let t = std::time::Instant::now();
+        let mut h = harness_sized(SIZE, 1.0, lm_core::phase::BUILD_PHASE, false, WORLD, move |s| {
+            let layers = lm_jobs::import::import_path(std::path::Path::new(&p), &lm_jobs::import::Ctx::detached(Default::default()))
+                .unwrap_or_default();
+            s.ws.add_imported(layers, 100);
+            if let Some(id) = s.ws.doc.layers.last().map(|l| l.id) {
+                s.ws.select_layer(id);
+            }
+        });
+        // Large layers are prepared in the background: wait until the map knows their extent
+        // (up to a minute), as the app does before it flies to new data.
+        for _ in 0..6000 {
+            h.step();
+            let known = h.state_mut().as_mut().is_some_and(|s| {
+                let e = s.map_view().map().full_extent();
+                !e.is_empty() && e.min_x.is_finite()
+            });
+            if known || h.state().as_ref().is_some_and(|s| s.ws.doc.layers.is_empty()) {
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        }
+        let ctx = h.ctx.clone();
+        if let Some(s) = h.state_mut().as_mut() {
+            s.command(&ctx, crate::Command::ZoomToAll);
+        }
+        for _ in 0..600 {
+            h.step();
+            if h.state_mut().as_mut().is_some_and(|s| !s.map_view().tiles_pending()) {
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        }
+        h.run_steps(30);
+        let names: Vec<String> =
+            h.state().as_ref().map(|s| s.ws.doc.layers.iter().map(|l| l.display_name.clone()).collect()).unwrap_or_default();
+        match h.render() {
+            Ok(img) => {
+                let f = out.join(format!("{tag}.png"));
+                let _ = img.save(&f);
+                println!("LMSHOT {tag}\t{} layers {:?}\t{:.1}s", names.len(), names, t.elapsed().as_secs_f64());
+            }
+            Err(e) => println!("LMSHOT {tag}\tRENDER ERROR {e}"),
+        }
+    }
+}

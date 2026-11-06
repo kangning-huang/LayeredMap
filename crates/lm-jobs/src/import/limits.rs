@@ -8,6 +8,10 @@ use lm_core::brand::NAME as APP;
 pub const ZIP_MAX_EXPANDED: u64 = 2 << 30;
 /// Highest compression ratio allowed, per entry and for the whole archive.
 pub const ZIP_MAX_RATIO: u64 = 100;
+/// An entry (or a whole archive) that expands to no more than this is never refused for its
+/// ratio: attribute tables (`.dbf`) full of padding routinely compress 150–200 times, and a few
+/// tens of megabytes can't hurt (the 2 GB total cap still holds).
+pub const ZIP_RATIO_FLOOR: u64 = 64 << 20;
 /// Most entries in an archive.
 pub const ZIP_MAX_ENTRIES: usize = 10_000;
 /// A GeoJSON larger than this is refused with a suggestion to convert it.
@@ -109,13 +113,13 @@ pub fn check_zip(entries: &[ZipEntry]) -> Result<(), ImportError> {
                 e.name
             )));
         }
-        if e.expanded > e.compressed.saturating_mul(ZIP_MAX_RATIO).max(1 << 20) {
+        if e.expanded > e.compressed.saturating_mul(ZIP_MAX_RATIO).max(ZIP_RATIO_FLOOR) {
             return Err(bomb());
         }
     }
     let expanded: u64 = entries.iter().map(|e| e.expanded).sum();
     let compressed: u64 = entries.iter().map(|e| e.compressed).sum();
-    if expanded > ZIP_MAX_EXPANDED || expanded > compressed.saturating_mul(ZIP_MAX_RATIO).max(1 << 20) {
+    if expanded > ZIP_MAX_EXPANDED || expanded > compressed.saturating_mul(ZIP_MAX_RATIO).max(ZIP_RATIO_FLOOR) {
         return Err(bomb());
     }
     Ok(())
@@ -149,8 +153,19 @@ mod tests {
     fn compression_ratio_and_size_are_limited() {
         assert!(check_zip(&[e("a.csv", 1 << 20, 50 << 20)]).is_ok());
         assert!(check_zip(&[e("a.csv", 1 << 20, 200 << 20)]).is_err());
-        // Small files may compress very well (a 1 MiB floor).
+        // Small files may compress very well (a 64 MiB floor).
         assert!(check_zip(&[e("a.csv", 100, 900_000)]).is_ok());
+        // Japan's railway zip: an 11 MB .dbf from 65 KB (173×) opens, alone and with the rest.
+        assert!(check_zip(&[e("UTF-8/N02-24_Station.dbf", 65_000, 11_229_346)]).is_ok());
+        let japan = [e("a.dbf", 65_000, 11_229_346), e("b.dbf", 70_000, 13_039_648), e("c.shp", 5_000_000, 7_701_972)];
+        assert!(check_zip(&japan).is_ok());
+        // Above the floor the ratio still counts, per entry and for the whole archive.
+        assert!(check_zip(&[e("a.csv", 100_000, 65 << 20)]).is_err(), "over 100× and over 64 MiB");
+        assert!(check_zip(&[e("a.csv", 1 << 20, 63 << 20)]).is_ok(), "63× is fine at any size");
+        let spread: Vec<ZipEntry> = (0..10).map(|i| e(&format!("{i}.csv"), 60_000, 10 << 20)).collect();
+        assert!(check_zip(&spread).is_err(), "100 MiB in all from 600 KB: each entry under the floor, the archive not");
+        let small: Vec<ZipEntry> = (0..5).map(|i| e(&format!("{i}.csv"), 10_000, 10 << 20)).collect();
+        assert!(check_zip(&small).is_ok(), "50 MiB in all stays under the floor");
         let many: Vec<ZipEntry> = (0..30).map(|i| e(&format!("{i}.csv"), 1 << 30, 90 << 20)).collect();
         assert!(check_zip(&many).is_err(), "over 2 GB in total");
     }

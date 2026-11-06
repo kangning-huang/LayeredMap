@@ -8,6 +8,8 @@ enum Palette: String, CaseIterable, Identifiable, Codable {
     case viridis
     case heat
     case blues
+    /// Grey, for a value grid over a busy map where colour would fight the streets.
+    case greys
 
     var id: String { rawValue }
 
@@ -16,6 +18,7 @@ enum Palette: String, CaseIterable, Identifiable, Codable {
         case .viridis: return "Standard"
         case .heat: return "Heat"
         case .blues: return "Blues"
+        case .greys: return "Grey"
         }
     }
 
@@ -25,6 +28,7 @@ enum Palette: String, CaseIterable, Identifiable, Codable {
         case .viridis: return [0x440154, 0x3B528B, 0x21918C, 0x5EC962, 0xFDE725]
         case .heat: return [0xFFF5B0, 0xFECC5C, 0xFD8D3C, 0xF03B20, 0xBD0026]
         case .blues: return [0xEFF3FF, 0xBDD7E7, 0x6BAED6, 0x3182BD, 0x08519C]
+        case .greys: return [0xF7F7F7, 0xCCCCCC, 0x969696, 0x636363, 0x252525]
         }
     }
 
@@ -91,7 +95,9 @@ enum ColorRule {
         if let r = dataset.raster {
             // A grid of values is drawn on the Standard ramp between its 2nd and 98th percentiles.
             guard r.look == .values, r.high > r.low else { return .single(0x9A7B4F) }
-            let colors = Palette.viridis.hex
+            // The ramp the picture was actually drawn with — not always viridis, since a grid
+            // of values can be recoloured. Hard-coding it here put a viridis key beside a Heat map.
+            let colors = r.ramp.hex
             let stops = colors.enumerated().map { (r.low + (r.high - r.low) * Double($0.offset) / Double(colors.count - 1), $0.element) }
             return .ramp(stops: stops, stepped: false, years: false)
         }

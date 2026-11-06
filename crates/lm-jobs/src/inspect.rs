@@ -910,13 +910,20 @@ pub fn raster_window(r: &Raster, style: &lm_core::document::Style) -> Option<(f6
 pub fn raster_ramp(r: &Raster, style: &lm_core::document::Style) -> Option<(Stretch, Vec<(f64, Rgba)>)> {
     let b = style_band(r, style);
     let s = &r.bands.get(b)?.stats;
+    let clip = Normalizer::new(DEFAULT_STRETCH, s, &r.data_type);
     let (stretch, (rlo, rhi)) = match style.stretch {
-        // The renderer's range is the whole band; the window is drawn inside it.
-        Some(_) => (Stretch::MinMax, (s.min, s.max)),
-        None => {
-            let n = Normalizer::new(DEFAULT_STRETCH, s, &r.data_type);
-            (DEFAULT_STRETCH, (n.lo, n.hi))
+        // The renderer maps its range onto 256 colours. A window inside the middle 96% (a
+        // skewed band's percentiles) is drawn inside that range, so it keeps its shades instead of
+        // falling into one or two of the whole range's 256 steps. The window may start a little
+        // below it (at most 5% of its width): those few low cells take the first colour.
+        Some((wlo, whi))
+            if style.like.is_none() && clip.lo < clip.hi && whi <= clip.hi && wlo < whi && clip.lo - wlo <= 0.05 * (whi - wlo) =>
+        {
+            (DEFAULT_STRETCH, (clip.lo, clip.hi))
         }
+        // Otherwise the renderer's range is the whole band; the window is drawn inside it.
+        Some(_) => (Stretch::MinMax, (s.min, s.max)),
+        None => (DEFAULT_STRETCH, (clip.lo, clip.hi)),
     };
     let (wlo, whi) = raster_window(r, style)?;
     let stops = (0..256)
@@ -1114,6 +1121,7 @@ mod tests {
             data_rev: 0,
             joins: Vec::new(),
             grid: None,
+            band_percentiles: Vec::new(),
         };
         let style = Style::for_profile(&profile, OKABE_ITO[0]);
         (DocLayer::new(LayerId(1), "Districts".into(), profile, style), ds)
@@ -1467,5 +1475,35 @@ mod overlap_tests {
             let o = overlap(p);
             eprintln!("{p}: overlap {o:?} → {:?}", o.and_then(dense_lines_style));
         }
+    }
+}
+
+#[cfg(test)]
+mod ramp_tests {
+    use super::*;
+    use rustgis_engine::data::raster::{Crs, GeoTransform};
+
+    /// A skewed band (a population grid: most cells small, a few cities huge) stretched to its
+    /// percentiles keeps its shades: the renderer's 256 steps span the middle 96%, not the whole
+    /// range, where the window would be one step wide.
+    #[test]
+    fn a_narrow_window_on_a_skewed_band_keeps_its_shades() {
+        let cells: Vec<f32> = (0..10_000).map(|i| if i % 1000 == 0 { 285_000.0 } else { (i % 1000) as f32 }).collect();
+        let t = GeoTransform { origin_x: 0.0, origin_y: 10.0, pixel_width: 0.1, pixel_height: -0.1 };
+        let r = Raster::new("pop", 100, 100, vec![cells], t, Crs::LonLat, None, Default::default(), "Float32").unwrap();
+        let style =
+            |stretch| lm_core::document::Style { stretch, ..lm_core::document::Style::for_kind(LayerKind::Raster, OKABE_ITO[0], 1) };
+        let distinct = |stops: &[(f64, Rgba)]| {
+            let mut c: Vec<Rgba> = stops.iter().map(|(_, c)| *c).collect();
+            c.dedup();
+            c.len()
+        };
+        let clip = Normalizer::new(DEFAULT_STRETCH, &r.bands[0].stats, "Float32");
+        let (s, stops) = raster_ramp(&r, &style(Some((0.0, clip.hi * 0.8)))).unwrap();
+        assert_eq!(s, DEFAULT_STRETCH);
+        assert!(distinct(&stops) > 100, "{}", distinct(&stops));
+        // A window reaching past the middle 96% is drawn inside the whole range, as before.
+        let (s, _) = raster_ramp(&r, &style(Some((0.0, 200_000.0)))).unwrap();
+        assert_eq!(s, Stretch::MinMax);
     }
 }

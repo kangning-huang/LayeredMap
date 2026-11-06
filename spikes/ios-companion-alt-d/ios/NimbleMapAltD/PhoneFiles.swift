@@ -1,3 +1,4 @@
+import CoreLocation
 import Foundation
 import SwiftUI
 import UniformTypeIdentifiers
@@ -28,6 +29,7 @@ struct PhoneFile: Identifiable, Sendable {
         case "shp": return "Shapefile"
         case "geojson", "json": return "GeoJSON"
         case "csv", "tsv", "txt": return "Table"
+        case "xlsx", "xls": return "Spreadsheet"
         case "kml", "kmz": return "My Maps / Google Earth"
         case "gpx": return "GPS track"
         case "gpkg": return "GeoPackage"
@@ -41,7 +43,7 @@ struct PhoneFile: Identifiable, Sendable {
 
     var symbol: String {
         switch ext {
-        case "csv", "tsv", "txt": return "tablecells"
+        case "csv", "tsv", "txt", "xlsx", "xls": return "tablecells"
         case "gpx": return "point.topleft.down.to.point.bottomright.curvepath"
         case "zip": return "doc.zipper"
         case "tif", "tiff", "asc": return "photo"
@@ -77,6 +79,7 @@ enum PhoneFiles {
     static func addFolder(_ url: URL) -> Bool {
         let scoped = url.startAccessingSecurityScopedResource()
         defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+        guard (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true else { return false }
         guard let mark = try? url.bookmarkData(options: [], includingResourceValuesForKeys: nil, relativeTo: nil) else { return false }
         var list = folders.filter { resolve($0)?.standardizedFileURL != url.standardizedFileURL }
         list.append(Folder(id: UUID().uuidString, name: url.lastPathComponent, bookmark: mark))
@@ -88,7 +91,33 @@ enum PhoneFiles {
         save(folders.filter { $0.id != id })
     }
 
+    /// The app's own folder in Files ("On My iPhone › NimbleMap D"). Files dropped there were
+    /// never listed: the app only looked in folders the person had handed it, and this one needs
+    /// no handing.
+    static let documentsID = "documents"
+    static var documents: Folder { Folder(id: documentsID, name: "On My iPhone", bookmark: Data()) }
+
+    /// What is scanned: the app's own folder, then the chosen ones.
+    static var scanned: [Folder] { [documents] + folders }
+
+    /// Drops remembered "folders" that are really files. The one picker served both doors, and
+    /// SwiftUI could show it with the last door's file types, so files picked to *open* were
+    /// saved as folders to *list*: rows that looked like files and did nothing.
+    static func pruneNonFolders() {
+        let keep = folders.filter { folder in
+            guard let url = resolve(folder) else { return true }
+            let scoped = url.startAccessingSecurityScopedResource()
+            defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+            let isDir = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory)
+            return isDir != false
+        }
+        if keep.count != folders.count { save(keep) }
+    }
+
     private static func resolve(_ folder: Folder) -> URL? {
+        if folder.id == documentsID {
+            return FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
+        }
         var stale = false
         return try? URL(resolvingBookmarkData: folder.bookmark, options: [], relativeTo: nil, bookmarkDataIsStale: &stale)
     }
@@ -96,7 +125,7 @@ enum PhoneFiles {
     /// Runs `work` with read access to the chosen folder that holds `url`; nil if none does.
     static func withAccess<T>(to url: URL, _ work: () -> T) -> T? {
         let path = url.standardizedFileURL.path
-        for folder in folders {
+        for folder in scanned {
             guard let root = resolve(folder), path.hasPrefix(root.standardizedFileURL.path + "/") else { continue }
             let scoped = root.startAccessingSecurityScopedResource()
             defer { if scoped { root.stopAccessingSecurityScopedResource() } }
@@ -118,7 +147,8 @@ enum PhoneFiles {
                 date: r.date, verb: "Opened", folderID: nil, folderName: nil, missing: [], inCloud: false
             )
         }
-        for folder in folders {
+        pruneNonFolders()
+        for folder in scanned {
             all += scan(folder)
         }
         // The same file opened here and still in its folder: one row, the newer.
@@ -165,10 +195,16 @@ enum PhoneFiles {
                 real = url.deletingLastPathComponent().appendingPathComponent(name)
                 inCloud = true
             }
-            let ext = (name as NSString).pathExtension.lowercased()
+            var ext = (name as NSString).pathExtension.lowercased()
             let isPart = Importer.shapefileParts.contains(ext)
-            guard Importer.extensions.contains(ext) || isPart else { continue }
-            if !isPart && !inCloud && !looksLikeMap(real, ext: ext) { continue }
+            if ext == "gz" {
+                // Listed as what is inside ("Climate grid (NetCDF)"); unread, it's compressed.
+                guard Importer.canOpen(real) else { continue }
+                ext = Importer.innerExtension(real)
+            } else {
+                guard Importer.extensions.contains(ext) || isPart else { continue }
+                if !isPart && !inCloud && !looksLikeMap(real, ext: ext) { continue }
+            }
             let changed = values?.contentModificationDate ?? values?.creationDate ?? .distantPast
             let added = values?.addedToDirectoryDate ?? values?.creationDate ?? changed
             entries.append(Entry(url: real, ext: ext, added: added, changed: changed, inCloud: inCloud))
@@ -214,9 +250,17 @@ enum PhoneFiles {
         case "csv", "tsv", "txt":
             let head = text(try? handle.read(upToCount: 4_096))
             let header = head.split(whereSeparator: \.isNewline).first.map(String.init) ?? ""
-            let names = Set(header.split(whereSeparator: { ",;\t|".contains($0) }).map { $0.trimmingCharacters(in: CharacterSet(charactersIn: " \"'")) })
-            let places: Set<String> = ["lat", "latitude", "lon", "lng", "long", "longitude", "x", "y", "wkt", "geometry", "geom", "纬度", "经度"]
-            return !names.isDisjoint(with: places)
+            // Only a sieve for folders full of other tables: the reader decides for real, and it
+            // finds far more than exact names (`reclat`, `INTPTLAT`, `decimalLatitude`, a
+            // `Location 1` column of "(41.8, -87.6)"). An exact-name list here hid all of those.
+            let names = header.split(whereSeparator: { ",;\t|".contains($0) })
+                .map { $0.trimmingCharacters(in: CharacterSet(charactersIn: " \"'#")) }
+            let inside = ["lat", "lon", "lng", "long", "coord", "geo", "location", "point", "wkt", "geom", "shape",
+                          "easting", "northing", "ubicaci", "coorden", "localiz", "纬", "经", "坐标", "位置"]
+            return names.contains { n in
+                let words = n.split(whereSeparator: { !$0.isLetter && !$0.isNumber }).map(String.init)
+                return inside.contains { n.contains($0) } || words.contains { ["x", "y"].contains($0) || $0.hasPrefix("x") && $0.count <= 6 && $0.contains("coord") }
+            }
         case "zip":
             // A zip lists its files at the end: look there for a map file's name.
             let end = (try? handle.seekToEnd()) ?? 0
@@ -244,9 +288,9 @@ enum PhoneFiles {
 
     static func open(_ file: PhoneFile) async -> [Result<GeoDataset, ImportError>] {
         guard file.folderID != nil else {
-            return [await Importer.reopen(Importer.Recent(url: file.url, name: file.name, date: file.date))]
+            return await Importer.reopen(Importer.Recent(url: file.url, name: file.name, date: file.date))
         }
-        guard let folder = folders.first(where: { $0.id == file.folderID }), let root = resolve(folder) else {
+        guard let folder = scanned.first(where: { $0.id == file.folderID }), let root = resolve(folder) else {
             return [.failure(ImportError(message: "NimbleMap can no longer see this folder. Choose it again."))]
         }
         let scoped = root.startAccessingSecurityScopedResource()
@@ -264,6 +308,10 @@ extension PhoneFiles {
         guard let name = ProcessInfo.processInfo.environment["LM_PHONE_TEST"],
               let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
         addFolder(docs.appendingPathComponent(name, isDirectory: true))
+        // LM_NEAR="lon,lat": as if the map were looking there (for data in a local grid).
+        if let near = ProcessInfo.processInfo.environment["LM_NEAR"]?.split(separator: ",").compactMap({ Double($0) }), near.count == 2 {
+            NearHint.shared.person(CLLocationCoordinate2D(latitude: near[1], longitude: near[0]))
+        }
         Task.detached {
             for ext in ["shp", "shx", "dbf", "prj", "cpg", "geojson", "gpkg"] {
                 let t = UTType(filenameExtension: ext)
@@ -281,8 +329,10 @@ extension PhoneFiles {
             for f in rows where f.folderID != nil {
                 for r in await open(f) {
                     switch r {
-                    case .success(let ds): print("LM_PHONE open \(f.name): ok, \(ds.countPhrase)")
-                    case .failure(let e): print("LM_PHONE open \(f.name): \(e.message)")
+                    case .success(let ds):
+                        let b = ds.bounds
+                        print("LM_PHONE open \(f.name): ok, \(ds.countPhrase) · \(ds.placement.map { "\($0.how): \($0.name)" } ?? "lon/lat") · centre \(String(format: "%.3f, %.3f", b.center.longitude, b.center.latitude))")
+                    case .failure(let e): print("LM_PHONE open \(f.name): \(e.needsPlace != nil ? "ASKS WHERE — " : "")\(e.message)")
                     }
                 }
             }
@@ -328,6 +378,9 @@ struct PhoneFilesSection: View {
     var refresh = 0
     var onOpen: (PhoneFile) -> Void
     var onChooseFolder: () -> Void
+    /// The Files picker for one or more files. It used to sit inside "Downloaded a .zip, or
+    /// several files?", so the plainest way in — pick a file — was the hardest to find.
+    var onChooseFiles: () -> Void = {}
 
     @State private var files: [PhoneFile] = []
     @State private var folders: [PhoneFiles.Folder] = []
@@ -335,6 +388,9 @@ struct PhoneFilesSection: View {
 
     var body: some View {
         Section {
+            Button(action: onChooseFiles) {
+                Label("Open a file…", systemImage: "doc.badge.plus")
+            }
             if loaded && files.isEmpty {
                 Text(folders.isEmpty
                      ? "Nothing yet — add your Downloads folder and map files you save from Safari will appear here."
@@ -345,7 +401,10 @@ struct PhoneFilesSection: View {
                 row(f)
             }
             ForEach(folders) { folder in
-                Label(folder.name, systemImage: "folder")
+                // Not a file: a folder whose map files are listed above. Said so, since it is
+                // not tappable and otherwise reads as a file that won't open.
+                Label("Listing files in “\(folder.name)”", systemImage: "folder")
+                    .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .swipeActions {
                         Button("Stop listing", role: .destructive) {
@@ -358,16 +417,16 @@ struct PhoneFilesSection: View {
                 Label(folders.isEmpty ? "Show my Downloads folder…" : "Add another folder…", systemImage: "folder.badge.plus")
             }
         } header: {
-            Text("My downloads")
+            Text("My files")
         } footer: {
-            Text("iPhone only lets an app see folders you hand it. Choose Downloads — or a folder in iCloud Drive, Google Drive, Dropbox, OneDrive or Box — and map files there show up here, newest first.")
+            Text("Map files in On My iPhone › NimbleMap D show up here by themselves. For anywhere else, iPhone only lets an app see folders you hand it: choose Downloads — or a folder in iCloud Drive, Google Drive, Dropbox, OneDrive or Box — and map files there show up here too, newest first.")
         }
         .task(id: refresh) { await reload() }
     }
 
     private func reload() async {
-        folders = PhoneFiles.folders
         files = await PhoneFiles.list()
+        folders = PhoneFiles.folders
         loaded = true
     }
 

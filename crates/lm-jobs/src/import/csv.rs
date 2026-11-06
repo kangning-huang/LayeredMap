@@ -6,8 +6,10 @@ use std::io::Read;
 use std::path::Path;
 use std::sync::Arc;
 
-use lm_core::model::{Assumption, AssumptionKind, Choice, Crs, Exclusion, Known, LayerKind, LayerProfile};
-use lm_profile::{CoordinatePair, CsvLocation, NumberStyle, RawTable};
+use lm_core::model::{
+    Assumption, AssumptionKind, Choice, Confidence, Consequence, Crs, Exclusion, Known, LayerKind, LayerProfile, Subject, Treatment,
+};
+use lm_profile::{CoordinatePair, CsvLocation, NumberStyle, PointColumn, RawTable};
 use rustgis_engine::data::geometry::Geometry;
 use rustgis_engine::data::{Dataset, Field, FieldType, GeometryType, Value};
 use rustgis_engine::geom::Coord;
@@ -268,6 +270,46 @@ fn locate_row(row: &[String], pair: &CoordinatePair, styles: &[NumberStyle], che
     Ok(Coord::new(x, y))
 }
 
+/// Rows looked at to find a column of points (as `POINT (…)` or `(lat, lon)`).
+const POINT_SAMPLE: usize = 5000;
+
+/// A column holding each record's location as one value, for a table with no coordinate pair.
+fn find_point_column(raw: &RawRows) -> Option<PointColumn> {
+    lm_profile::point_column(&raw.headers, &raw.rows[..raw.rows.len().min(POINT_SAMPLE)])
+}
+
+/// Stable choice id: `point:{column}`.
+fn point_choice(pc: &PointColumn) -> Choice {
+    Choice::new(format!("point:{}", pc.name), pc.name.clone())
+}
+
+/// The visible line for a point column, worded like the coordinate-columns line; Change offers
+/// Not sure (open as a table).
+fn point_assumption(pc: &PointColumn) -> Assumption {
+    Assumption {
+        kind: AssumptionKind::CsvCoordinateColumns,
+        subject: Subject::Layer,
+        chosen: point_choice(pc),
+        alternatives: vec![point_choice(pc), Choice::not_sure()],
+        confidence: Confidence::Likely,
+        consequence: Consequence::ChangesLocations,
+        treatment: Treatment::Visible,
+        line: format!("Located using {} as GPS coordinates (WGS 84).", pc.name),
+        confirmed_by_user: false,
+    }
+}
+
+/// Why a row has no usable location, or its point, read from a point column.
+fn locate_point(row: &[String], pc: &PointColumn) -> Result<Coord, String> {
+    let cell = row.get(pc.index).map_or("", |c| c.trim());
+    if cell.is_empty() {
+        return Err(format!("No location: {} is blank", pc.name));
+    }
+    lm_profile::parse_point(cell, pc.order)
+        .map(|(lon, lat)| Coord::new(lon, lat))
+        .ok_or_else(|| format!("No location: {} is not a point in range (\"{cell}\")", pc.name))
+}
+
 /// Where a table of raw cells came from: a CSV file, or one sheet of a workbook.
 pub(super) struct TableOrigin<'a> {
     pub path: &'a Path,
@@ -292,58 +334,98 @@ pub(super) fn build(origin: TableOrigin, raw: &RawRows, location: CsvLocation) -
         CsvLocation::Projected { pair, .. } => (Some(pair.clone()), false),
         CsvLocation::Table { .. } => (None, false),
     };
-    build_with(origin, raw, location, pair, lonlat)
+    // No coordinate pair: the location may be one column (`POINT (…)`, `(lat, lon)`).
+    let point = if pair.is_none() { find_point_column(raw) } else { None };
+    let line = point.as_ref().map(point_assumption);
+    let lonlat = lonlat || point.is_some();
+    build_with(origin, raw, location, pair, lonlat, point.as_ref(), line)
 }
 
 /// [`build`] with the coordinate pair given: `pair` is used for the geometry (`None` opens the
-/// rows as a table); `lonlat` says whether its values are degrees.
+/// rows as a table); `lonlat` says whether its values are degrees. Without a pair, `point` (a
+/// column of points in degrees) is used instead; `point_line` is its assumption, kept when Not
+/// sure is chosen so it can be changed back.
 fn build_with(
     origin: TableOrigin,
     raw: &RawRows,
     location: CsvLocation,
     pair: Option<CoordinatePair>,
     lonlat: bool,
+    point: Option<&PointColumn>,
+    point_line: Option<Assumption>,
 ) -> Result<ImportedLayer, ImportError> {
+    let point = if pair.is_some() { None } else { point };
+    let located = pair.is_some() || point.is_some();
     let TableOrigin { path, member, name, format, encoding, notices, assumptions: before } = origin;
     let styles: Vec<NumberStyle> = (0..raw.headers.len()).map(|i| column_style(raw, i)).collect();
     let types: Vec<FieldType> = styles.iter().enumerate().map(|(i, s)| infer_type(raw, i, *s)).collect();
     let fields: Vec<Field> = raw.headers.iter().zip(&types).map(|(h, t)| Field::new(h.clone(), *t)).collect();
-    let mut ds = Dataset::new(name.clone(), if pair.is_some() { GeometryType::Point } else { GeometryType::None }, fields);
+    let mut ds = Dataset::new(name.clone(), if located { GeometryType::Point } else { GeometryType::None }, fields);
     ds.source = Some(path.display().to_string());
     let mut exclusions = Vec::new();
     for (i, row) in raw.rows.iter().enumerate() {
         let attrs: Vec<Value> =
             types.iter().zip(&styles).enumerate().map(|(c, (t, s))| row.get(c).map_or(Value::Null, |cell| typed(cell, *t, *s))).collect();
-        let geom = match &pair {
-            Some(p) => match locate_row(row, p, &styles, lonlat) {
-                Ok(c) => Some(Geometry::Point(c)),
-                Err(reason) => {
-                    exclusions.push(Exclusion { row: i as u64 + 1, reason });
-                    None
-                }
-            },
+        let at = match (&pair, point) {
+            (Some(p), _) => Some(locate_row(row, p, &styles, lonlat)),
+            (None, Some(pc)) => Some(locate_point(row, pc)),
+            (None, None) => None,
+        };
+        let geom = match at {
+            Some(Ok(c)) => Some(Geometry::Point(c)),
+            Some(Err(reason)) => {
+                exclusions.push(Exclusion { row: i as u64 + 1, reason });
+                None
+            }
             None => None,
         };
         ds.push_next(geom, attrs);
     }
+    // Several points at exactly 0, 0 are a stand-in for "unknown", not places in the Gulf of
+    // Guinea (6,214 of NASA's 45,716 meteorites). They come off the map as exclusions with a
+    // reason; one point at 0, 0 is left alone, as it may be real.
+    if located && lonlat {
+        let zero = |g: &Option<Geometry>| matches!(g, Some(Geometry::Point(c)) if c.x == 0.0 && c.y == 0.0);
+        if ds.features.iter().filter(|f| zero(&f.geometry)).count() >= 2 {
+            for (i, f) in ds.features.iter_mut().enumerate() {
+                if zero(&f.geometry) {
+                    f.geometry = None;
+                    exclusions.push(Exclusion {
+                        row: i as u64 + 1,
+                        reason: "No location: 0, 0 is a common stand-in for “unknown”, and several rows have it".to_string(),
+                    });
+                }
+            }
+            exclusions.sort_by_key(|e| e.row);
+        }
+    }
     let mut assumptions: Vec<Assumption> = before;
     assumptions.extend(location.assumption().into_iter().cloned());
+    let has_point_line = point_line.is_some();
+    assumptions.extend(point_line);
     let raw_table = RawTable { headers: &raw.headers, rows: &raw.rows, delimiter: raw.delimiter };
-    let (field_profiles, field_assumptions) = lm_profile::profile_fields(&ds, Some(raw_table), &location.coordinate_columns());
+    let mut coordinate_columns = location.coordinate_columns();
+    if let Some(pc) = point {
+        coordinate_columns.push(lm_profile::CoordinateColumn { name: pc.name.clone(), confidence: Confidence::Likely });
+    }
+    let (field_profiles, field_assumptions) = lm_profile::profile_fields(&ds, Some(raw_table), &coordinate_columns);
     assumptions.extend(field_assumptions);
     let extent = super::extent_of(&ds);
-    let kind = if pair.is_some() && lonlat && extent.is_some() { LayerKind::Points } else { LayerKind::Table };
+    let kind = if located && lonlat && extent.is_some() { LayerKind::Points } else { LayerKind::Table };
     let crs = if !lonlat {
         if pair.is_some() {
             Known::unknown(Crs::Unknown, "The values aren't degrees and the file doesn't say.")
         } else {
             Known::unknown(Crs::Unknown, "No coordinate columns.")
         }
+    } else if point.is_some() {
+        // The point column's line already says "as GPS coordinates (WGS 84)".
+        Known::likely(Crs::Wgs84, "A column of points with values within ±180 / ±90.")
     } else {
         // csv_locate's line already says "as GPS coordinates (WGS 84)".
         Known::likely(Crs::Wgs84, "Coordinate columns with values within ±180 / ±90.")
     };
-    if lonlat && pair.is_some() {
+    if lonlat && located {
         // A sheet's name hints at the source as much as its file's.
         let file = match &member {
             Some(sheet) => format!("{} {sheet}", file_name(path)),
@@ -354,7 +436,10 @@ fn build_with(
         }
     }
     let mut notices = notices;
-    if let CsvLocation::Table { reason } = &location {
+    // A found point column's line says where the records are (or that Not sure was chosen).
+    if let CsvLocation::Table { reason } = &location
+        && !has_point_line
+    {
         notices.push(reason.clone());
     }
     let profile = LayerProfile {
@@ -368,18 +453,19 @@ fn build_with(
         bands: Vec::new(),
         assumptions,
         // A table's rows aren't excluded: they open as rows.
-        exclusions: if kind == LayerKind::Table && pair.is_none() { Vec::new() } else { exclusions },
+        exclusions: if kind == LayerKind::Table && !located { Vec::new() } else { exclusions },
         encoding,
         notices,
         data_rev: 0,
         joins: Vec::new(),
         grid: None,
+        band_percentiles: Vec::new(),
     };
     Ok(ImportedLayer { name, status: status_of(&profile), profile, data: LayerData::Vector(Arc::new(ds)), raw: None, style: None })
 }
 
-/// Rebuilds a CSV (or Excel sheet) layer with the columns the user chose (`columns:x,y`), or as a
-/// table (Not sure). Its format, sheet and sheet choice are kept.
+/// Rebuilds a CSV (or Excel sheet) layer with the columns the user chose (`columns:x,y`), the
+/// column of points (`point:{column}`), or as a table (Not sure). Its format, sheet and sheet choice are kept.
 pub fn relocate(layer: &ImportedLayer, raw: &Arc<RawRows>, choice: &Choice) -> Result<ImportedLayer, ImportError> {
     let path = Path::new(&layer.profile.source.path);
     let mut location = lm_profile::csv_locate_delimited(&raw.headers, &raw.rows, layer.profile.source.file_name(), raw.delimiter);
@@ -409,12 +495,17 @@ pub fn relocate(layer: &ImportedLayer, raw: &Arc<RawRows>, choice: &Choice) -> R
         }
         None => (None, false),
     };
+    // A table with no coordinate pair may be located by one column (`point:{column}`).
+    let found = if matches!(location, CsvLocation::Table { .. }) { find_point_column(raw) } else { None };
+    let mut point_line = found.as_ref().map(point_assumption);
+    let point = found.filter(|pc| pair.is_none() && choice.id == point_choice(pc).id);
+    let lonlat = lonlat || point.is_some();
     // Record the answer on the question (or visible line) it settles.
     if let Some(a) = match &mut location {
         CsvLocation::Located { assumption, .. } | CsvLocation::Ambiguous { assumption, .. } | CsvLocation::Projected { assumption, .. } => {
             Some(assumption)
         }
-        CsvLocation::Table { .. } => None,
+        CsvLocation::Table { .. } => point_line.as_mut(),
     } {
         a.chosen = choice.clone();
         a.confirmed_by_user = true;
@@ -432,7 +523,7 @@ pub fn relocate(layer: &ImportedLayer, raw: &Arc<RawRows>, choice: &Choice) -> R
         notices: layer.profile.notices.clone(),
         assumptions: layer.profile.assumptions.iter().filter(|a| a.kind == AssumptionKind::ExcelSheet).cloned().collect(),
     };
-    let mut out = build_with(origin, raw, location, pair, lonlat)?;
+    let mut out = build_with(origin, raw, location, pair, lonlat, point.as_ref(), point_line)?;
     let mut seen = std::collections::HashSet::new();
     out.profile.notices.retain(|n| seen.insert(n.clone()));
     out.raw = Some(raw.clone());

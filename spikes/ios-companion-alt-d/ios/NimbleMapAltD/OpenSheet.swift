@@ -26,7 +26,10 @@ struct OpenSheet: View {
     var onPhoneFile: (PhoneFile) -> Void
     var onRecent: (Importer.Recent) -> Void
     var onPicked: ([URL]) -> Void
-    var onLink: (URL) -> Void
+    /// A link to open, and the catalogue's name for it when there is one.
+    var onLink: (URL, String?) -> Void
+    /// A file the in-app browser downloaded itself.
+    var onFile: (URL) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var picking = false
@@ -50,8 +53,13 @@ struct OpenSheet: View {
     /// Row index → the model's one line on why this result answers the question. Empty when no
     /// model was asked, or when it was and said nothing usable.
     @State private var reasons: [Int: String] = [:]
+    /// A catalogue entry that holds a family rather than a file — a country, a year, a brand, a
+    /// corner of the world still to be picked.
+    @State private var choosing: Catalog.Item?
     /// A download large enough to be worth mentioning before it starts.
     @State private var big: BigDownload?
+    /// The row whose size is being looked up, so its button can say so.
+    @State private var checking: String?
 
     struct BigDownload: Identifiable {
         let url: URL
@@ -108,8 +116,13 @@ struct OpenSheet: View {
             let isFolder = (try? first.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true
             lastFolder = (isFolder && job == .listFolder ? first : first.deletingLastPathComponent()).path
             if job == .listFolder {
-                urls.forEach { PhoneFiles.addFolder($0) }
+                // Folders are remembered; a file picked here (the picker can come up with the
+                // last door's types) is opened instead of being saved as a "folder".
+                let files = urls.filter { (try? $0.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) != true }
+                urls.filter { !files.contains($0) }.forEach { PhoneFiles.addFolder($0) }
                 refresh += 1
+                if files.isEmpty { return }
+                onPicked(files)
                 return
             }
             onPicked(urls)
@@ -120,13 +133,21 @@ struct OpenSheet: View {
             NavigationStack {
                 DataWebPage(url: url, title: "Pick a download", onDataLink: { link in
                     pageURL = nil
-                    onLink(link)
+                    onLink(link, nil)
+                }, onDataFile: { file in
+                    pageURL = nil
+                    onFile(file)
                 })
+            }
+        }
+        .sheet(item: $choosing) { item in
+            ChooseSheet(item: item, view: doc.viewBounds, busy: checking == item.id) { url, name in
+                addChecking(url: url, title: name, id: item.id)
             }
         }
         // Not a refusal: the number, the two honest consequences, and the choice.
         .alert("“\(big?.title ?? "")” is \(big?.size ?? "")", isPresented: bigBinding, presenting: big) { item in
-            Button("Add anyway") { onLink(item.url) }
+            Button("Add anyway") { onLink(item.url, item.title) }
             Button("Not now", role: .cancel) {}
         } message: { _ in
             Text("It may take a while to download and will use that much space on your iPhone.")
@@ -163,16 +184,46 @@ struct OpenSheet: View {
                 }
             }
         }
-        if !catalogue.isEmpty {
+        // Maps and shop branches are different kinds of answer and were sharing one heading, so
+        // "mountains" offered five retailers under "Ready to add" and "rivers" put a café among
+        // the rivers. Split them: a brand is still here for whoever typed "Walmart", but it never
+        // again pretends to be a map of the thing you asked for.
+        let maps = catalogue.filter { !$0.isBrand }
+        let brands = catalogue.filter(\.isBrand)
+        if !maps.isEmpty {
             Section(hits.isEmpty ? "Ready to add" : "More data you can add") {
-                ForEach(catalogue) { item in
+                ForEach(maps) { item in
                     CatalogRow(
                         item: item,
                         why: nil,
+                        busy: checking == item.id,
                         onAdd: { addChecking(item) },
-                        onOpenPage: { pageURL = item.url }
+                        onOpenPage: { pageURL = item.url },
+                        onChoose: { choosing = item }
                     )
                 }
+            }
+        }
+        if !brands.isEmpty {
+            Section {
+                ForEach(brands.prefix(20)) { item in
+                    CatalogRow(
+                        item: item,
+                        why: nil,
+                        busy: checking == item.id,
+                        onAdd: { addChecking(item) },
+                        onOpenPage: { pageURL = item.url },
+                        onChoose: { choosing = item }
+                    )
+                }
+            } header: {
+                Text("Shops and brands named “\(search)”")
+            } footer: {
+                // Saying how many there are, because 5,614 rows under a silent heading reads as
+                // the whole app rather than as one shelf of it.
+                Text(brands.count > 20
+                     ? "\(brands.count) brands match. These are shop and branch locations, not maps of \(search)."
+                     : "Shop and branch locations, not maps of \(search).")
             }
         }
         if hits.isEmpty && catalogue.isEmpty {
@@ -240,8 +291,10 @@ struct OpenSheet: View {
                     CatalogRow(
                         item: item,
                         why: reasons[i],
+                        busy: checking == item.id,
                         onAdd: { addChecking(item) },
-                        onOpenPage: { pageURL = item.url }
+                        onOpenPage: { pageURL = item.url },
+                        onChoose: { choosing = item }
                     )
                 }
             }
@@ -299,12 +352,25 @@ struct OpenSheet: View {
     /// *before* the download rather than after, which is why the size is asked for here instead
     /// of trusted from the catalogue's own text.
     private func addChecking(_ item: Catalog.Item) {
+        addChecking(url: item.url, title: item.title, id: item.id)
+    }
+
+    /// The same check for a URL a chooser has just built. A chosen file is if anything *more*
+    /// likely to be enormous than a fixed one — a 500 m panel of Black Marble is half a gigabyte,
+    /// and nothing in the catalogue can say so in advance, because which one it is was decided a
+    /// second ago.
+    private func addChecking(url: URL, title: String, id: String) {
+        // The size check is a network round trip, so without this the row sits there looking
+        // untouched and people tap Add again. Two testers did exactly that.
+        guard checking != id else { return }
+        checking = id
         Task {
-            guard let bytes = await Catalog.bytes(of: item), Importer.isBig(bytes) else {
-                onLink(item.url)
+            defer { checking = nil }
+            guard let bytes = await Catalog.bytes(at: url), Importer.isBig(bytes) else {
+                onLink(url, title)
                 return
             }
-            big = BigDownload(url: item.url, title: item.title, size: Importer.sizeText(bytes))
+            big = BigDownload(url: url, title: title, size: Importer.sizeText(bytes))
         }
     }
 
@@ -358,7 +424,7 @@ struct OpenSheet: View {
             // anyone whose data isn't one of the four bundled sets, so it must never need a
             // sideways scroll to find. (In C it was the last line of the last section.)
             NavigationLink {
-                DataWebPage(onDataLink: onLink)
+                DataWebPage(onDataLink: { onLink($0, nil) }, onDataFile: onFile)
             } label: {
                 MoreDataRow()
             }
@@ -422,13 +488,13 @@ struct OpenSheet: View {
             return
         }
         linkFocused = false
-        onLink(url)
+        onLink(url, nil)
     }
 
     // MARK: 4 · My downloads
 
     private var downloadsSection: some View {
-        PhoneFilesSection(limit: 5, refresh: refresh, onOpen: onPhoneFile, onChooseFolder: { pick(.listFolder) })
+        PhoneFilesSection(limit: 5, refresh: refresh, onOpen: onPhoneFile, onChooseFolder: { pick(.listFolder) }, onChooseFiles: { pick(.files) })
     }
 
     // MARK: 5 · The plumbing, collapsed
@@ -470,9 +536,12 @@ struct OpenSheet: View {
         doc.layers.contains { $0.name == item.title }
     }
 
+    /// Set the door, then open the picker on the next turn of the run loop. Setting both at once
+    /// let SwiftUI present the picker with the previous door's types — a file picker for "Add
+    /// another folder…", whose files were then remembered as folders.
     private func pick(_ next: FilePick) {
         job = next
-        picking = true
+        DispatchQueue.main.async { picking = true }
     }
 }
 
@@ -537,12 +606,40 @@ struct CatalogRow: View {
     var item: Catalog.Item
     /// Why this one, in a sentence, when a model was asked to rank the results.
     var why: String?
+    /// Its size is being looked up; the button says so rather than looking untouched.
+    var busy = false
     var onAdd: () -> Void
     var onOpenPage: () -> Void
+    /// A row that holds a family: ask which member before downloading anything.
+    var onChoose: () -> Void = {}
+
+    private var action: () -> Void {
+        switch item.kind {
+        case .page: return onOpenPage
+        case .choose: return onChoose
+        case .file: return onAdd
+        }
+    }
+
+    private var label: String {
+        switch item.kind {
+        case .page: return "Open"
+        case .choose: return "Choose"
+        case .file: return "Add"
+        }
+    }
+
+    private var icon: String {
+        switch item.kind {
+        case .page: return "safari"
+        case .choose: return "slider.horizontal.3"
+        case .file: return "globe"
+        }
+    }
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: item.kind == .page ? "safari" : "globe")
+            Image(systemName: icon)
                 .font(.title3)
                 .foregroundStyle(.white)
                 .frame(width: 48, height: 48)
@@ -569,11 +666,19 @@ struct CatalogRow: View {
             }
             Spacer(minLength: 4)
             // A page cannot promise a map; it promises a place to pick a download. Saying "Add"
-            // on one would be the broken promise this spike exists to remove.
-            Button(item.kind == .page ? "Open" : "Add", action: item.kind == .page ? onOpenPage : onAdd)
-                .buttonStyle(.borderedProminent)
-                .buttonBorderShape(.capsule)
-                .controlSize(.small)
+            // on one would be the broken promise this spike exists to remove. "Choose" is the
+            // same promise kept for a row that holds a family: it says a question is coming.
+            Button(action: action) {
+                if busy {
+                    ProgressView().controlSize(.small)
+                } else {
+                    Text(label)
+                }
+            }
+            .buttonStyle(.borderedProminent)
+            .buttonBorderShape(.capsule)
+            .controlSize(.small)
+            .disabled(busy)
         }
         .padding(.vertical, 2)
     }

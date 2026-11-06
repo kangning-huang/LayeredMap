@@ -24,6 +24,11 @@ if ! xcrun --sdk iphoneos --show-sdk-path >/dev/null 2>&1 && [[ "$TARGET" == "aa
   exit 1
 fi
 
+# Without this rustc links the device build against iOS 10, while the C dependencies (zstd,
+# sqlite) are compiled against the current SDK — the mismatch ends in "Undefined symbols for
+# architecture arm64". The simulator target happens to pick a modern default and so never showed it.
+export IPHONEOS_DEPLOYMENT_TARGET="${IPHONEOS_DEPLOYMENT_TARGET:-17.0}"
+
 rustup target add "$TARGET" >/dev/null
 cargo build -p lm-ios-alt-d-decode-ffi --release --target "$TARGET"
 

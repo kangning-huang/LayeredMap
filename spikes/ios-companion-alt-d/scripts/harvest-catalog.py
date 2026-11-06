@@ -157,6 +157,335 @@ CURATED_KEYWORDS = {
 }
 
 
+# Entries that answer "where is X" for a place name, and the bundled files their names come from.
+#
+# Someone typing "Poland" or "Osaka" wants that place on a map. Before this they got 92 Polish
+# supermarkets, because the only entries carrying the word were shop branches. The app already
+# ships 177 country outlines and 1,251 towns; teaching the catalogue their names costs a few
+# hundred kilobytes of keywords and turns every place name into a real answer.
+PLACE_NAME_SOURCES = {
+    "countries": ("../../../assets/examples/countries.geojson",
+                  ["ne-10m-admin_0_countries", "ne-50m-admin_0_countries", "ne-110m-admin_0_countries"]),
+    "cities": ("../../../assets/examples/cities.geojson",
+               ["ne-10m-populated_places", "ne-50m-populated_places", "ne-110m-populated_places"]),
+}
+
+
+# ---------------------------------------------------------------------------
+# Choosers
+# ---------------------------------------------------------------------------
+#
+# Four rows promised a choice and delivered one hardcoded file. "Where people live" said "any
+# country and any year from 2000 to 2020" and handed over China, 2020. "Chain stores" said
+# "Starbucks, McDonald's, IKEA and thousands more" and handed over Starbucks in the US. "Forest
+# loss" said "download the lossyear tile for your region" — there is no *your* in a fixed URL;
+# everyone got southern China. "Earth at night" offered three resolutions and two years and gave
+# one of the six. Each row read like a menu and behaved like a vending machine with one button.
+#
+# A chooser is the menu made real: a URL template plus the axes to fill it. Every option is a
+# combination this script has actually resolved, so nothing on offer 404s. The size is still asked
+# for over the network at the moment of adding, as for any other row — these files run from 4 MB to
+# half a gigabyte and the number has to be the real one, not a guess baked in months ago.
+#
+# Two little template languages, each used in exactly one field: `url` substitutes an option's
+# *value*, `naming` substitutes its *label*. So the Hansen URL gets `00N_060W` and the layer on the
+# map gets called "Amazon — lower Amazon, Brazil".
+
+# WorldPop publishes one GeoTIFF per country per year at a wholly predictable path. The country
+# list is whatever the 2020 directory holds, intersected with the names the app already ships, so
+# the picker reads "Kenya" rather than "KEN".
+WORLDPOP_DIR = "https://data.worldpop.org/GIS/Population/Global_2000_2020_1km_UNadj/"
+
+# Hansen's lossyear tiles are 10° squares named for their north-west corner, and only the 280 that
+# contain land exist. Most people do not think in tile corners, so the ones that matter carry the
+# name of the forest instead; the rest keep their coordinates and are still searchable.
+HANSEN_RUN = "GFC-2025-v1.13"
+HANSEN_NAMES = {
+    "00N_050W": "Amazon — the mouth, Brazil",
+    "00N_060W": "Amazon — lower Amazon, Brazil",
+    "00N_070W": "Amazon — central, Brazil & Colombia",
+    "10S_060W": "Amazon — the arc of deforestation, Rondônia",
+    "10S_070W": "Amazon — Acre & Madre de Dios, Brazil & Peru",
+    "10S_050W": "Amazon — Mato Grosso, Brazil",
+    "20S_050W": "Brazil — Cerrado & Atlantic Forest",
+    "10N_080W": "Panama, Colombia & the Darién",
+    "20N_100W": "Mexico",
+    "30N_090W": "United States — Gulf coast pine belt",
+    "40N_080W": "United States — the Appalachians",
+    "50N_100W": "Canada — the prairie forest edge",
+    "60N_100W": "Canada — central boreal",
+    "60N_120W": "Canada — western boreal & Alaska",
+    "00N_010E": "Congo Basin — west",
+    "00N_020E": "Congo Basin — centre",
+    "00N_030E": "Congo Basin — east",
+    "10S_030E": "Miombo woodlands, Tanzania & Zambia",
+    "20S_040E": "Madagascar",
+    "10N_000E": "West Africa — Ghana, Côte d'Ivoire & Nigeria",
+    "50N_000E": "Western Europe",
+    "60N_020E": "Fennoscandia",
+    "60N_060E": "Siberian taiga — west",
+    "60N_100E": "Siberian taiga — central",
+    "50N_120E": "Russian Far East & north-east China",
+    "20N_070E": "India — the Western Ghats",
+    "30N_110E": "Southern China",
+    "00N_100E": "Sumatra",
+    "00N_110E": "Borneo",
+    "10N_100E": "Mainland South-East Asia",
+    "10S_140E": "New Guinea",
+    "30S_150E": "South-east Australia",
+    "40S_070W": "Patagonia & the Chilean forests",
+}
+
+# NASA's Black Marble, as it actually exists: one 2016 composite, whole-world at two resolutions
+# and 500 m in eight quarter-hemisphere panels. The old blurb also promised 2012, which is not
+# published as a georeferenced GeoTIFF anywhere this script could find, so the row no longer
+# claims it.
+BLACK_MARBLE_RECORD = ("https://assets.science.nasa.gov/content/dam/science/esd/eo/images/"
+                       "imagerecords/144000/144898/BlackMarble_2016_{part}_geo.tif")
+# The label is what the layer on the map ends up called, so the size does not belong in it —
+# "Earth at night — Whole world, 0.1° — about 4 MB" is a filename, not a name. The size goes in
+# the note, where it belongs: it is what you choose *by*, not what you end up with.
+BLACK_MARBLE_PARTS = [
+    ("01deg", "Whole world, 0.1°"),
+    ("3km", "Whole world, 3 km"),
+    ("A1", "500 m — western North America, Alaska & the Pacific"),
+    ("B1", "500 m — eastern North America, Europe & West Africa"),
+    ("C1", "500 m — eastern Europe, the Middle East, Russia & India"),
+    ("D1", "500 m — East & South-East Asia"),
+    ("A2", "500 m — the South Pacific"),
+    ("B2", "500 m — South America"),
+    ("C2", "500 m — southern Africa & the Indian Ocean"),
+    ("D2", "500 m — Australia & New Zealand"),
+]
+
+
+def http_text(url, timeout=60):
+    req = urllib.request.Request(url, headers={"User-Agent": UA})
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        return r.read().decode("utf-8", "replace")
+
+
+def tile_corner_label(tile):
+    """`00N_060W` -> `0–10°S, 60–50°W`: the square it actually covers, not its corner."""
+    m = re.fullmatch(r"(\d+)([NS])_(\d+)([EW])", tile)
+    if not m:
+        return tile
+    lat, ns, lon, ew = int(m.group(1)), m.group(2), int(m.group(3)), m.group(4)
+    north = lat if ns == "N" else -lat
+    west = lon if ew == "E" else -lon
+    south, east = north - 10, west + 10
+
+    def lat_text(a, b):
+        lo, hi = sorted((a, b))
+        if lo >= 0:
+            return f"{lo}–{hi}°N"
+        if hi <= 0:
+            return f"{-hi}–{-lo}°S"
+        return f"{-lo}°S–{hi}°N"
+
+    def lon_text(a, b):
+        lo, hi = sorted((a, b))
+        if lo >= 0:
+            return f"{lo}–{hi}°E"
+        if hi <= 0:
+            return f"{-hi}–{-lo}°W"
+        return f"{-lo}°W–{hi}°E"
+
+    return f"{lat_text(north, south)}, {lon_text(west, east)}"
+
+
+def worldpop_chooser():
+    """Country × year, from WorldPop's own directory listing."""
+    try:
+        listing = http_text(WORLDPOP_DIR + "2020/")
+    except Exception as e:  # noqa: BLE001
+        print(f"worldpop: skipped ({e})", file=sys.stderr)
+        return None
+    have = set(re.findall(r'href="([A-Z]{3})/?"', listing))
+    names = {}
+    path = (HERE / "../../../assets/examples/countries.geojson").resolve()
+    try:
+        for f in json.loads(path.read_text()).get("features", []):
+            p = f.get("properties") or {}
+            if p.get("iso_a3") in have and isinstance(p.get("name"), str):
+                names[p["iso_a3"]] = p["name"]
+    except Exception as e:  # noqa: BLE001
+        print(f"worldpop: no country names ({e})", file=sys.stderr)
+        return None
+    countries = [{"label": n, "value": c} for c, n in sorted(names.items(), key=lambda kv: kv[1])]
+    print(f"worldpop: {len(countries)} countries × 21 years")
+    return {
+        "url": WORLDPOP_DIR + "{year}/{iso3}/{iso3|lower}_ppp_{year}_1km_Aggregated_UNadj.tif",
+        "naming": "People per km² — {iso3}, {year}",
+        "axes": [
+            {"key": "iso3", "label": "Country", "default": "CHN", "options": countries},
+            {"key": "year", "label": "Year", "default": "2020",
+             "options": [{"label": str(y), "value": str(y)} for y in range(2020, 1999, -1)]},
+        ],
+    }
+
+
+def hansen_chooser():
+    """Every lossyear tile that exists, named after its forest where it has one."""
+    url = (f"https://storage.googleapis.com/earthenginepartners-hansen"
+           f"?prefix={HANSEN_RUN}/Hansen_{HANSEN_RUN}_lossyear&max-keys=2000")
+    try:
+        xml = http_text(url)
+    except Exception as e:  # noqa: BLE001
+        print(f"hansen: skipped ({e})", file=sys.stderr)
+        return None
+    tiles = sorted(set(re.findall(r"lossyear_(\d+[NS]_\d+[EW])\.tif", xml)))
+    if not tiles:
+        print("hansen: no tiles in the bucket listing", file=sys.stderr)
+        return None
+    unknown = sorted(set(HANSEN_NAMES) - set(tiles))
+    if unknown:
+        print(f"hansen: {len(unknown)} named tiles no longer exist: {', '.join(unknown)}",
+              file=sys.stderr)
+    named = [t for t in tiles if t in HANSEN_NAMES]
+    rest = [t for t in tiles if t not in HANSEN_NAMES]
+    options = ([{"label": HANSEN_NAMES[t], "value": t, "note": tile_corner_label(t)} for t in named]
+               + [{"label": tile_corner_label(t), "value": t} for t in rest])
+    print(f"hansen: {len(tiles)} tiles, {len(named)} named")
+    return {
+        "url": (f"https://storage.googleapis.com/earthenginepartners-hansen/{HANSEN_RUN}/"
+                f"Hansen_{HANSEN_RUN}_lossyear_{{tile}}.tif"),
+        "naming": "Forest loss — {tile}",
+        # Every tile is 10° of latitude and longitude, so the one under the map can be worked out
+        # rather than hunted for.
+        "fromView": {"key": "tile", "grid": 10, "label": "Where I'm looking"},
+        "axes": [{"key": "tile", "label": "Area", "default": "00N_060W", "options": options}],
+    }
+
+
+def black_marble_chooser():
+    """Ten parts, each with the size it actually is right now.
+
+    These run from 4 MB to half a gigabyte and the choice is mostly *about* the size, so the
+    number is measured here rather than written from memory — one HEAD each, at build time.
+    """
+    import concurrent.futures
+
+    def measure(part):
+        r = subprocess.run(["curl", "-sIL", "-A", UA, "--max-time", "25", "-o", "/dev/null",
+                            "-w", "%{http_code}\t%{size_header}\t%{header_json}",
+                            BLACK_MARBLE_RECORD.format(part=part)],
+                           capture_output=True, text=True)
+        code, _, headers = (r.stdout.split("\t") + ["", "", ""])[:3]
+        if not code.startswith("2"):
+            return part, ""
+        try:
+            n = int(json.loads(headers).get("content-length", ["0"])[-1])
+        except Exception:  # noqa: BLE001
+            return part, ""
+        return part, f"about {round(n / 1_000_000)} MB" if n else ""
+
+    with concurrent.futures.ThreadPoolExecutor(10) as ex:
+        sizes = dict(ex.map(measure, [v for v, _ in BLACK_MARBLE_PARTS]))
+    missing = [v for v, _ in BLACK_MARBLE_PARTS if not sizes.get(v)]
+    if missing:
+        print(f"black marble: no size for {', '.join(missing)}", file=sys.stderr)
+    print(f"black marble: {len(BLACK_MARBLE_PARTS)} parts, {len(BLACK_MARBLE_PARTS) - len(missing)} sized")
+    return {
+        "url": BLACK_MARBLE_RECORD,
+        "naming": "Earth at night — {part}",
+        "axes": [{"key": "part", "label": "Which part, and how fine", "default": "3km",
+                  "options": [{"label": lbl, "value": v, "note": sizes.get(v, "")}
+                              for v, lbl in BLACK_MARBLE_PARTS]}],
+    }
+
+
+def chain_store_chooser():
+    """The brand list is already in this file: 5,600-odd entries the app can search."""
+    return {
+        "url": "{brand}",
+        "naming": "{brand}",
+        # Filled from the catalogue's own All the Places entries when the sheet opens, rather than
+        # written out a second time — they are a third of the file as it is.
+        #
+        # The default matters more here than on the other three. Left to fall through to the
+        # alphabetically first option the sheet opened on "3 Brasseurs (France)", which reads like
+        # a list that has broken rather than one that is waiting for you. Starbucks is the brand
+        # the blurb names first and the one the earlier fixed URL used.
+        "axes": [{"key": "brand", "label": "Brand", "source": "alltheplaces",
+                  "default": "https://data.alltheplaces.xyz/runs/latest/output/starbucks_us.geojson"}],
+    }
+
+
+# The `url` on a chooser row is vestigial — the chooser builds its own from the axes — so it is
+# pointed at the publisher's own page instead of at one of the files.
+#
+# That is not tidiness. "Chain stores" kept the hardcoded `starbucks_us.geojson`, and because
+# curated entries are deduplicated first, that one URL *evicted* All the Places' own Starbucks (US)
+# entry from the catalogue entirely. The row that was supposed to offer every brand was quietly
+# deleting one of them, and the chooser's Starbucks default then had nothing to match and silently
+# opened on "3 Brasseurs (France)".
+CHOOSERS = {
+    "where-people-live-1-km-grid": (worldpop_chooser, {
+        "blurb": ("Estimated number of people in every 1 km cell. Choose any country and any year "
+                  "from 2000 to 2020 — try China either side of the Hu Line."),
+        "size": "",
+        "url": "https://hub.worldpop.org/",
+    }),
+    "global-forest-loss-2001-2025": (hansen_chooser, {
+        "blurb": ("A 30-metre map of where forest was cleared, each pixel coded with the year it "
+                  "was lost. Choose a forest — the Amazon, the Congo Basin, Borneo — or the tile "
+                  "under wherever the map is pointing, then click a pixel to read the year."),
+        "size": "",
+        "url": "https://glad.earthengine.app/view/global-forest-change",
+    }),
+    "earth-at-night": (black_marble_chooser, {
+        "blurb": ("The planet's city lights in 2016. Choose the whole world at 0.1° or 3 km, or "
+                  "one eighth of it at 500 m. Put the bundled cities on top and see which glow "
+                  "brightest."),
+        "size": "",
+        "url": "https://earthobservatory.nasa.gov/features/NightLights",
+    }),
+    "chain-stores-brand-by-brand": (chain_store_chooser, {
+        "blurb": ("Store and branch locations collected every week from the brands' own store "
+                  "finders. Choose from several thousand: Starbucks, McDonald's, IKEA, Tesco, "
+                  "Aldi — most with a worldwide file and one per country."),
+        "size": "",
+        "url": "https://www.alltheplaces.xyz/",
+    }),
+}
+
+
+def attach_choosers(by_id):
+    """Turn the four fixed-URL rows into real pickers.
+
+    Runs *before* deduplication, so that giving these rows back their publisher's page frees the
+    data URLs they were holding.
+    """
+    for entry_id, (build, patch) in CHOOSERS.items():
+        item = by_id.get(entry_id)
+        if not item:
+            print(f"chooser: no entry {entry_id}", file=sys.stderr)
+            continue
+        chooser = build()
+        if not chooser:
+            continue
+        item.update(patch)
+        item["kind"] = "choose"
+        item["choose"] = chooser
+
+
+def place_names(relative):
+    """Every place name in a bundled example file, lowercased."""
+    path = (HERE / relative).resolve()
+    try:
+        data = json.loads(path.read_text())
+    except Exception as e:  # noqa: BLE001
+        print(f"place names: skipped {path.name} ({e})", file=sys.stderr)
+        return []
+    out = set()
+    for f in data.get("features", []):
+        name = (f.get("properties") or {}).get("name")
+        if isinstance(name, str) and len(name) > 2:
+            out.add(name.lower())
+    return sorted(out)
+
+
 def title_case(words):
     small = {"and", "of", "the", "de", "la", "du", "van", "der"}
     out = []
@@ -329,12 +658,40 @@ def main():
         print(f"  no keywords yet: {', '.join(missing)}")
 
     items = curated + from_natural_earth() + from_all_the_places()
+    attach_choosers({i["id"]: i for i in items})
     seen, unique = set(), []
     for i in items:
         if i["url"] in seen:
             continue
         seen.add(i["url"])
         unique.append(i)
+
+    # Teach the reference layers every place name they can actually show.
+    by_id = {i["id"]: i for i in unique}
+    for kind, (source, ids) in PLACE_NAME_SOURCES.items():
+        names = place_names(source)
+        if not names:
+            continue
+        hit = 0
+        for entry_id in ids:
+            item = by_id.get(entry_id)
+            if not item:
+                continue
+            item["keywords"] = sorted(set(item.get("keywords", [])) | set(names))
+            hit += 1
+        print(f"place names: {len(names)} {kind} added to {hit} entries")
+
+    # Downloading a whole country from OpenStreetMap is never the right first move: the row says
+    # "every country and many regions" and hands over 263 MB of Taiwan. Send people to the chooser.
+    geofabrik = by_id.get("a-whole-country-from-openstreetmap-geofabrik")
+    if geofabrik:
+        geofabrik["kind"] = "page"
+        geofabrik["url"] = "https://download.geofabrik.de/"
+        geofabrik["size"] = ""
+        geofabrik["title"] = "A country or region from OpenStreetMap"
+        geofabrik["blurb"] = ("Pick a country or region and download it. These are whole-country "
+                              "extracts and can be hundreds of megabytes, so choose the smallest "
+                              "area that covers what you need.")
 
     OUT.write_text(json.dumps(unique, ensure_ascii=False, separators=(",", ":")) + "\n")
     kb = OUT.stat().st_size / 1024

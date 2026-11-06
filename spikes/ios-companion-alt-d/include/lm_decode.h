@@ -50,6 +50,35 @@ int32_t lm_open_path(
     size_t *out_feature_count);
 
 /**
+ * lm_open_path for data that may not be in longitude/latitude (metres in a national grid).
+ * has_near != 0: guess the grid near (near_lon, near_lat). epsg != 0: a grid the person chose.
+ * A ".prj" beside the file wins. The envelope gains "placement":
+ * {"how": "prj"|"guess"|"chosen"|"unplaced", "epsg", "name", "km", "alternatives": [...]}.
+ */
+int32_t lm_open_path_at(
+    const char *path,
+    int32_t has_near,
+    double near_lon,
+    double near_lat,
+    uint32_t epsg,
+    char **out_json,
+    size_t *out_feature_count);
+
+/**
+ * Every layer in a file: a JSON array of lm_open_path_at envelopes, one per layer of a .zip
+ * (each with "member": its path in the archive), one for any other file.
+ */
+int32_t lm_open_path_all(
+    const char *path,
+    int32_t has_near,
+    double near_lon,
+    double near_lat,
+    uint32_t epsg,
+    const char *out_dir, /* NULL: layers inline as "geojson"; else written there as files */
+    char **out_json,
+    size_t *out_feature_count);
+
+/**
  * Open a raster (GeoTIFF, ASCII grid). Writes <out_stem>.png (and <out_stem>.values, little-endian
  * f32, for value rasters). On LM_DECODE_OK, *out_json is
  * {"name","look":"picture|values","bounds":[w,s,e,n],"png","values","grid":[w,h],"low","high",...}.
@@ -72,6 +101,11 @@ int32_t lm_open_raster_step(
     int32_t time,
     double low,
     double high,
+    const char *ramp,
+    double west,
+    double south,
+    double east,
+    double north,
     char **out_json);
 
 /** Free a string returned by this library. No-op on NULL. */

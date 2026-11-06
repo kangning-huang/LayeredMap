@@ -180,6 +180,7 @@ impl FormatAdapter for GeoTiff {
             data_rev: 0,
             joins: Vec::new(),
             grid: None,
+            band_percentiles: Vec::new(),
         };
         // The choices (NoData, Landsat scale, kelvin) are applied to the data and the numbers.
         let r = apply_raster_choices(&r, &mut profile, &metas)?;
@@ -251,6 +252,15 @@ pub fn apply_raster_choices(raw: &Raster, profile: &mut LayerProfile, metas: &[B
                 hi = hi.max(x);
             }
         }
+        let continuous =
+            matches!(raw.color, rustgis_engine::data::raster::ColorHint::Gray | rustgis_engine::data::raster::ColorHint::GrayAlpha);
+        let pct = if continuous { percentiles(values, nd32, sc, off) } else { None };
+        if profile.band_percentiles.len() != profile.bands.len() {
+            profile.band_percentiles = vec![None; profile.bands.len()];
+        }
+        if let Some(p) = profile.band_percentiles.get_mut(i) {
+            *p = pct;
+        }
         if let Some(b) = profile.bands.get_mut(i) {
             b.nodata.value = nd;
             b.scale = scale;
@@ -295,6 +305,27 @@ pub fn apply_raster_choices(raw: &Raster, profile: &mut LayerProfile, metas: &[B
     Ok(r)
 }
 
+/// Most cells looked at for a band's percentiles.
+const PERCENTILE_SAMPLE: usize = 200_000;
+
+/// The 2nd and 98th percentiles of a band's valid cells (not No data, finite), decoded with
+/// `scale` and `offset`, from an even sample of at most [`PERCENTILE_SAMPLE`] cells.
+fn percentiles(values: &[f32], nodata: Option<f32>, scale: f64, offset: f64) -> Option<(f64, f64)> {
+    let step = (values.len() / PERCENTILE_SAMPLE).max(1);
+    let mut v: Vec<f64> = values
+        .iter()
+        .step_by(step)
+        .filter(|v| v.is_finite() && nodata.is_none_or(|d| **v != d))
+        .map(|&v| f64::from(v) * scale + offset)
+        .collect();
+    if v.is_empty() {
+        return None;
+    }
+    v.sort_by(f64::total_cmp);
+    let at = |q: f64| v[((v.len() - 1) as f64 * q).round() as usize];
+    Some((at(0.02), at(0.98)))
+}
+
 /// Changes a raster assumption (NoData, Landsat scale, kelvin) and applies it to the data.
 pub fn rechoose_raster(
     layer: &ImportedLayer,
@@ -331,5 +362,42 @@ mod tests {
         assert_eq!(m[1].unit.as_deref(), Some("K"));
         assert_eq!(m[1].description.as_deref(), Some("Surface temperature"));
         assert_eq!(parse_gdal_metadata("", 1), vec![BandMeta::default()]);
+    }
+
+    #[test]
+    fn percentiles_skip_nodata_and_follow_scale_and_offset() {
+        // 1,000 cells: 0..=979 and twenty cells of 1e6 (a city), and No data.
+        let mut v: Vec<f32> = (0..980).map(|i| i as f32).collect();
+        v.extend(std::iter::repeat_n(1e6, 20));
+        v.extend(std::iter::repeat_n(-9999.0, 500));
+        v.push(f32::NAN);
+        let (p2, p98) = percentiles(&v, Some(-9999.0), 1.0, 0.0).unwrap();
+        assert_eq!((p2, p98), (20.0, 979.0));
+        let (q2, q98) = percentiles(&v, Some(-9999.0), 0.5, 10.0).unwrap();
+        assert_eq!((q2, q98), (20.0, 499.5));
+        assert_eq!(percentiles(&[-9999.0], Some(-9999.0), 1.0, 0.0), None);
+    }
+
+    /// A skewed single-band GeoTIFF (most cells small, a few huge) opens stretched to its
+    /// 2nd–98th percentile; an even one keeps its whole range.
+    #[test]
+    fn a_skewed_geotiff_opens_with_its_middle_96_percent() {
+        use rustgis_engine::data::raster::{Crs as RCrs, GeoTransform};
+        let dir = std::env::temp_dir().join(format!("lm-raster-skew-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let open = |name: &str, cells: Vec<f32>| {
+            let t = GeoTransform { origin_x: 100.0, origin_y: 40.0, pixel_width: 0.1, pixel_height: -0.1 };
+            let r = Raster::new(name, 100, 100, vec![cells], t, RCrs::LonLat, None, Default::default(), "Float32").unwrap();
+            let p = dir.join(format!("{name}.tif"));
+            std::fs::write(&p, rustgis_engine::data::raster::geotiff::write(&r, 0).unwrap()).unwrap();
+            let l = super::super::import_path(&p, &super::super::Ctx::detached(super::super::Ticket::default())).unwrap().remove(0);
+            lm_core::document::Style::for_profile(&l.profile, lm_core::document::OKABE_ITO[0]).stretch.unwrap()
+        };
+        let skewed: Vec<f32> = (0..10_000).map(|i| if i % 500 == 0 { 250_000.0 } else { (i % 100) as f32 }).collect();
+        let (lo, hi) = open("pop", skewed);
+        assert!(lo >= 0.0 && hi <= 100.0, "{lo}..{hi}");
+        let even: Vec<f32> = (0..10_000).map(|i| i as f32).collect();
+        assert_eq!(open("even", even), (0.0, 9_999.0));
+        let _ = std::fs::remove_dir_all(dir);
     }
 }

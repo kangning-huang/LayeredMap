@@ -32,6 +32,7 @@ fn profile(name: &str) -> LayerProfile {
         data_rev: 0,
         joins: Vec::new(),
         grid: None,
+        band_percentiles: Vec::new(),
     }
 }
 

@@ -96,6 +96,9 @@ struct DataCard: View {
     var onChangeLook: () -> Void
     var onList: () -> Void
     var onZoom: () -> Void
+    /// Data in a local grid: read it again in another grid, or ask where it is.
+    var onRegrid: (Int) -> Void = { _ in }
+    var onSomewhereElse: () -> Void = {}
 
     var body: some View {
         let summary = Insights.dataset(layer.dataset)
@@ -121,6 +124,19 @@ struct DataCard: View {
                                 Text(a).font(.subheadline)
                             }
                         }
+                    }
+                }
+                if let p = layer.dataset.placement, p.how != "prj" {
+                    // The grid was a guess (or a choice from guesses): one tap to try the next
+                    // nearest, or to say where the data really is.
+                    Menu {
+                        ForEach(p.alternatives, id: \.epsg) { alt in
+                            Button(alt.name) { onRegrid(alt.epsg) }
+                        }
+                        Button("Somewhere else…", systemImage: "magnifyingglass") { onSomewhereElse() }
+                    } label: {
+                        Label("Wrong place? Try another grid", systemImage: "map")
+                            .font(.subheadline.weight(.semibold))
                     }
                 }
                 if !summary.rows.isEmpty {

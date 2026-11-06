@@ -855,3 +855,163 @@ fn placing_recounts() {
     let placed = reproject(&l, 4549).unwrap();
     assert_eq!(placed.profile.count + placed.profile.exclusions.len() as u64, 17);
 }
+
+/// The location line of a layer located by one column, if any.
+fn point_line(l: &ImportedLayer) -> Option<&lm_core::model::Assumption> {
+    l.profile.assumptions.iter().find(|a| a.kind == AssumptionKind::CsvCoordinateColumns && a.chosen.id.starts_with("point:"))
+}
+
+fn first_point(l: &ImportedLayer) -> (f64, f64) {
+    let LayerData::Vector(ds) = &l.data else { panic!() };
+    match ds.features.iter().find_map(|f| f.geometry.as_ref()) {
+        Some(rustgis_engine::data::geometry::Geometry::Point(c)) => (c.x, c.y),
+        other => panic!("{other:?}"),
+    }
+}
+
+/// A table whose location is one WKT column (`the_geom`, as Socrata and CARTO export it).
+#[test]
+fn csv_wkt_point_column_is_located() {
+    let l = import_text("wkt.csv", "name,the_geom\nA,POINT (-87.62 41.88)\nB,POINT (-87.65 41.90)\nC,POINT (-87.70 41.95)\nD,\n");
+    assert_eq!(l.profile.kind, LayerKind::Points);
+    assert_eq!(l.profile.count, 3);
+    assert_eq!(l.profile.exclusions.len(), 1, "the blank row: {:?}", l.profile.exclusions);
+    assert_eq!(l.profile.exclusions[0].row, 4);
+    assert_eq!(l.profile.crs.value, lm_core::model::Crs::Wgs84);
+    assert_eq!(first_point(&l), (-87.62, 41.88));
+    let a = point_line(&l).unwrap();
+    assert_eq!(a.treatment, Treatment::Visible);
+    assert_eq!(a.line, "Located using the_geom as GPS coordinates (WGS 84).");
+    assert_eq!(a.alternatives.last(), Some(&lm_core::model::Choice::not_sure()));
+    assert!(l.profile.notices.is_empty(), "no 'no coordinate columns' notice: {:?}", l.profile.notices);
+    // The column's text is kept as written.
+    assert_eq!(column(&l, "the_geom")[0], rustgis_engine::data::Value::Text("POINT (-87.62 41.88)".into()));
+}
+
+/// Socrata's `Location 1`: `(lat, lon)`, or an address whose last line is the pair. Not sure
+/// opens it as a table, and the point column can be chosen again.
+#[test]
+fn csv_socrata_location_column_is_located_and_can_be_changed() {
+    let l = import_text(
+        "socrata.csv",
+        "Name,Location 1\n\
+         A,\"(41.88, -87.62)\"\n\
+         B,\"(41.90, -87.65)\"\n\
+         C,\"121 N LaSalle St\nChicago, IL 60602\n(41.8837, -87.6324)\"\n\
+         D,\"(41.95, -87.70)\"\n",
+    );
+    assert_eq!(l.profile.kind, LayerKind::Points);
+    assert_eq!(l.profile.count, 4);
+    assert!(l.profile.exclusions.is_empty(), "{:?}", l.profile.exclusions);
+    assert_eq!(first_point(&l), (-87.62, 41.88), "latitude first");
+    let LayerData::Vector(ds) = &l.data else { panic!() };
+    assert!(
+        matches!(ds.features[2].geometry, Some(rustgis_engine::data::geometry::Geometry::Point(c)) if c.x == -87.6324 && c.y == 41.8837),
+        "the pair on the address's last line"
+    );
+    let a = point_line(&l).unwrap().clone();
+    assert_eq!(a.line, "Located using Location 1 as GPS coordinates (WGS 84).");
+    assert_eq!(a.chosen.id, "point:Location 1");
+
+    let t = relocate_csv(&l, &lm_core::model::Choice::not_sure()).unwrap();
+    assert_eq!(t.profile.kind, LayerKind::Table);
+    assert!(t.profile.exclusions.is_empty());
+    let ta = point_line(&t).map(|a| a.chosen.id.clone());
+    assert_eq!(ta, None, "Not sure is recorded on the line");
+    let ta = t.profile.assumptions.iter().find(|a| a.kind == AssumptionKind::CsvCoordinateColumns).unwrap();
+    assert_eq!((ta.chosen.id.as_str(), ta.confirmed_by_user), ("not_sure", true));
+
+    let back = relocate_csv(&t, &a.chosen).unwrap();
+    assert_eq!(back.profile.kind, LayerKind::Points);
+    assert_eq!(back.profile.count, 4);
+    assert!(point_line(&back).unwrap().confirmed_by_user);
+}
+
+/// A point column is only looked for when no coordinate pair is found; a table without either
+/// still opens as a table, with its notice.
+#[test]
+fn csv_without_a_location_stays_a_table() {
+    let l = import_text("plain.csv", "name,notes,count\nA,\"(1, 2)\",3\nB,\"(4, 5)\",6\n");
+    assert_eq!(l.profile.kind, LayerKind::Table);
+    assert!(point_line(&l).is_none(), "{:?}", l.profile.assumptions);
+    assert!(l.profile.exclusions.is_empty());
+    assert!(!l.profile.notices.is_empty(), "the table's reason is shown");
+}
+
+/// NASA's meteorites in miniature: a find on Mars (longitude 354°) and two rows at 0, 0 (their
+/// "unknown") must not stop the rest opening as points, and each comes off with a reason.
+#[test]
+fn csv_mars_and_zero_zero_rows_are_excluded_not_fatal() {
+    let dir = std::env::temp_dir().join(format!("lm-jobs-mars-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let f = dir.join("meteorites.csv");
+    let mut text = String::from("name,reclat,reclong\nMeridiani Planum,-1.946170,354.473330\nU1,0,0\nU2,0.000000,0.000000\n");
+    for i in 0..40 {
+        text.push_str(&format!("m{i},{},{}\n", 10.0 + f64::from(i) * 0.5, 20.0 + f64::from(i) * 0.5));
+    }
+    std::fs::write(&f, text).unwrap();
+    let l = import_path(&f, &Ctx::detached(Ticket::default())).unwrap().remove(0);
+    assert_eq!(l.profile.kind, LayerKind::Points);
+    let LayerData::Vector(ds) = &l.data else { panic!("vector") };
+    assert_eq!(ds.features.iter().filter(|f| f.geometry.is_some()).count(), 40);
+    let reasons: Vec<&str> = l.profile.exclusions.iter().map(|e| e.reason.as_str()).collect();
+    assert_eq!(reasons.len(), 3, "{reasons:?}");
+    assert!(reasons[0].contains("outside longitude"), "{reasons:?}");
+    assert!(reasons[1].contains("0, 0") && reasons[2].contains("0, 0"), "{reasons:?}");
+}
+
+/// A single point at 0, 0 may be real (a buoy, a test site): it stays.
+#[test]
+fn csv_one_zero_zero_row_stays() {
+    let dir = std::env::temp_dir().join(format!("lm-jobs-zero-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let f = dir.join("buoys.csv");
+    std::fs::write(&f, "name,lat,lon\nSoul,0,0\nA,10,20\nB,11,21\n").unwrap();
+    let l = import_path(&f, &Ctx::detached(Ticket::default())).unwrap().remove(0);
+    let LayerData::Vector(ds) = &l.data else { panic!("vector") };
+    assert_eq!(ds.features.iter().filter(|f| f.geometry.is_some()).count(), 3);
+}
+
+/// LM_FILES=<paths, one per line> (or LM_CSV=<one path>): import each as the desktop does and
+/// print one summary line per layer (`LMCHECK` prefix), for sweeping real downloads.
+#[test]
+#[ignore]
+fn import_a_real_csv() {
+    let list = std::env::var("LM_FILES").or_else(|_| std::env::var("LM_CSV")).unwrap_or_default();
+    for path in list.lines().map(str::trim).filter(|l| !l.is_empty()) {
+        let t = std::time::Instant::now();
+        match import_path(std::path::Path::new(path), &Ctx::detached(Ticket::default())) {
+            Ok(layers) => {
+                for l in layers {
+                    let p = &l.profile;
+                    let located = match &l.data {
+                        LayerData::Vector(ds) => ds.features.iter().filter(|f| f.geometry.is_some()).count().to_string(),
+                        _ => "-".to_string(),
+                    };
+                    println!(
+                        "LMCHECK {path}\t{}\tkind={:?}\tcount={}\tlocated={located}\tcrs={:?}/{:?}\textent={:?}\texcl={}\tstatus={:?}\t{:.1}s",
+                        l.name,
+                        p.kind,
+                        p.count,
+                        p.crs.value,
+                        p.crs.confidence,
+                        p.extent_wgs84.map(|e| (e.min_x as i64, e.min_y as i64, e.max_x as i64, e.max_y as i64)),
+                        p.exclusions.len(),
+                        l.status,
+                        t.elapsed().as_secs_f64()
+                    );
+                    for a in &p.assumptions {
+                        println!("LMCHECK   assumption {:?}: {}", a.kind, a.line);
+                    }
+                    for n in &p.notices {
+                        println!("LMCHECK   notice: {n}");
+                    }
+                    if let Some(e) = p.exclusions.first() {
+                        println!("LMCHECK   first exclusion: row {} {}", e.row, e.reason);
+                    }
+                }
+            }
+            Err(e) => println!("LMCHECK {path}\tERROR {e:?}\t{:.1}s", t.elapsed().as_secs_f64()),
+        }
+    }
+}

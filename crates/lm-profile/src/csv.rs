@@ -2,7 +2,7 @@
 //! CSVs with easting/northing-looking values, "No coordinate system; projected-looking values").
 
 use crate::crs::projected_question;
-use crate::{lines, make, tokens};
+use crate::{lines, make, words};
 use lm_core::model::{Assumption, AssumptionKind, Choice, Confidence, Consequence, Extent, Known, Subject, Treatment};
 
 /// Share of non-blank sample rows that must parse as in-range coordinates for a pair to locate
@@ -292,14 +292,80 @@ struct CoordName {
 
 fn axis_word(token: &str) -> Option<(Axis, Family)> {
     match token {
-        "lon" | "lng" | "long" | "longitude" | "longitud" | "longitudine" => Some((Axis::X, Family::LonLat)),
-        "lat" | "latitude" | "latitud" | "latitudine" => Some((Axis::Y, Family::LonLat)),
-        "x" | "xcoord" | "xcoordinate" => Some((Axis::X, Family::Xy)),
-        "y" | "ycoord" | "ycoordinate" => Some((Axis::Y, Family::Xy)),
+        // "longtitude": a misspelling that ships in real tables (seen in a survey of 10,000 open-data
+        // tables, 2026-11).
+        "lon" | "lng" | "long" | "longitude" | "longitud" | "longitudine" | "longtitude" | "lons" => Some((Axis::X, Family::LonLat)),
+        "lat" | "latitude" | "latitud" | "latitudine" | "lats" => Some((Axis::Y, Family::LonLat)),
+        "x" | "xcoord" | "xcoordinate" | "xcoordina" | "mapx" | "xpos" | "coordx" | "utmx" | "pointx" => Some((Axis::X, Family::Xy)),
+        "y" | "ycoord" | "ycoordinate" | "ycoordina" | "mapy" | "ypos" | "coordy" | "utmy" | "pointy" => Some((Axis::Y, Family::Xy)),
         "easting" | "east" => Some((Axis::X, Family::EastNorth)),
         "northing" | "north" => Some((Axis::Y, Family::EastNorth)),
         _ => None,
     }
+}
+
+/// Words that start or end like a coordinate word but aren't one (from the same survey: CDC's
+/// `colon_screen`, plat/lot numbers, Spanish `renglon`, `latino`, `loneliness`, `long_term`…).
+const NOT_COORDINATE_WORDS: &[&str] = &[
+    "colon",
+    "plat",
+    "flat",
+    "splat",
+    "renglon",
+    "salon",
+    "nylon",
+    "melon",
+    "babylon",
+    "london",
+    "lonely",
+    "loneliness",
+    "latino",
+    "latina",
+    "latinx",
+    "latin",
+    "latency",
+    "lateral",
+    "later",
+    "latest",
+    "late",
+    "latte",
+    "lathe",
+    "lattice",
+    "along",
+    "belong",
+    "oblong",
+    "prolong",
+    "headlong",
+    "lifelong",
+    "furlong",
+    "longest",
+    "longer",
+    "longing",
+    "longevity",
+    "longitudinal",
+    "longname",
+    "longterm",
+    "longdesc",
+];
+
+/// A coordinate word glued to another word: NASA's `reclat`/`reclong`, the Census's
+/// `INTPTLAT`/`INTPTLON`, `latdecdeg`, `geolat`. The rest of the word (letters only, two or
+/// more) is returned as part of the pairing key, so `reclat` pairs with `reclong`.
+fn glued_axis_word(token: &str) -> Option<((Axis, Family), String)> {
+    if NOT_COORDINATE_WORDS.contains(&token) {
+        return None;
+    }
+    // Longest first, so "longitude" isn't read as "long" + "itude".
+    for word in ["longitude", "latitude", "longtitude", "long", "lng", "lon", "lat"] {
+        let rest = token.strip_prefix(word).or_else(|| token.strip_suffix(word));
+        if let Some(rest) = rest
+            && rest.len() >= 2
+            && rest.chars().all(|c| c.is_ascii_alphabetic())
+        {
+            return axis_word(word).map(|w| (w, rest.to_string()));
+        }
+    }
+    None
 }
 
 fn coord_name(index: usize, header: &str) -> Option<CoordName> {
@@ -309,24 +375,45 @@ fn coord_name(index: usize, header: &str) -> Option<CoordName> {
             return Some(CoordName { index, axis, family: Family::LonLat, key: lower.replace(word, "") });
         }
     }
-    let toks = tokens(&lower);
-    let mut found: Option<(Axis, Family)> = None;
-    let mut rest: Vec<String> = Vec::new();
-    for t in &toks {
-        // "lng2" → "lng" + "2".
-        let stem = t.trim_end_matches(|c: char| c.is_ascii_digit());
-        let digits = &t[stem.len()..];
-        match axis_word(stem) {
-            Some(w) if found.is_none() => {
-                found = Some(w);
-                if !digits.is_empty() {
-                    rest.push(digits.to_string());
-                }
-            }
-            _ => rest.push(t.clone()),
+    // Split at case changes too ("decimalLatitude" → decimal, latitude), and keep a word's
+    // trailing digits with it ("lng2"), as `tokens` did.
+    let mut toks: Vec<String> = Vec::new();
+    for w in words(header.trim()) {
+        match toks.last_mut() {
+            Some(prev) if w.chars().all(|c| c.is_ascii_digit()) && prev.chars().any(|c| c.is_alphabetic()) => prev.push_str(&w),
+            _ => toks.push(w),
         }
     }
-    let (axis, family) = found?;
+    let stem_of = |t: &str| -> (String, String) {
+        let stem = t.trim_end_matches(|c: char| c.is_ascii_digit());
+        (stem.to_string(), t[stem.len()..].to_string())
+    };
+    // A longitude/latitude word wins over an x/y one in the same header ("y_lat", "x_lon"), and a
+    // whole word over a glued one.
+    let exact: Vec<(usize, (Axis, Family))> =
+        toks.iter().enumerate().filter_map(|(i, t)| axis_word(&stem_of(t).0).map(|w| (i, w))).collect();
+    let pick = exact
+        .iter()
+        .find(|(_, (_, f))| *f == Family::LonLat)
+        .or_else(|| exact.first())
+        .map(|&(i, w)| (i, w, None))
+        .or_else(|| toks.iter().enumerate().find_map(|(i, t)| glued_axis_word(&stem_of(t).0).map(|(w, r)| (i, w, Some(r)))));
+    let (at, (axis, family), glued_rest) = pick?;
+    let mut rest: Vec<String> = Vec::new();
+    if let Some(r) = glued_rest {
+        rest.push(r);
+    }
+    for (i, t) in toks.iter().enumerate() {
+        if i == at {
+            let digits = stem_of(t).1;
+            if !digits.is_empty() {
+                rest.push(digits);
+            }
+        } else if !exact.iter().any(|(j, _)| *j == i) {
+            // Another axis word ("y" in "y_lat") says nothing about which pair this is.
+            rest.push(t.clone());
+        }
+    }
     // Common qualifiers that do not tell pairs apart.
     rest.retain(|t| !matches!(t.as_str(), "dd" | "deg" | "degrees" | "decimal" | "wgs84" | "coord" | "coordinate"));
     Some(CoordName { index, axis, family, key: rest.join("_") })
@@ -515,10 +602,19 @@ pub fn csv_locate_delimited(headers: &[String], sample_rows: &[Vec<String>], fil
             let mut candidates: Vec<CoordinatePair> = many.iter().map(|p| (*p).clone()).collect();
             // Stable order: by column position.
             candidates.sort_by_key(|p| (p.x_index.min(p.y_index), p.x_index));
+            let best = candidates.iter().map(|p| p.rows_in_range).max().unwrap_or(0);
+            // Nearly tied, a pair named plainly beats numbered variants: Movebank exports carry
+            // `location-long`/`location-lat` (the chosen fix) beside `argos:lon1`/`argos:lat1` and
+            // `…2` (the two raw Doppler solutions, the second often a mirror image), and lon1 had
+            // one more filled row in the sample than the real thing.
+            let numbered = |p: &CoordinatePair| p.x.chars().any(|c| c.is_ascii_digit()) || p.y.chars().any(|c| c.is_ascii_digit());
+            let close = |p: &CoordinatePair| p.rows_in_range as f64 >= 0.98 * best as f64;
             let recommended = candidates
                 .iter()
                 .enumerate()
-                .max_by(|(ia, a), (ib, b)| a.rows_in_range.cmp(&b.rows_in_range).then(ib.cmp(ia)))
+                .max_by(|(ia, a), (ib, b)| {
+                    (close(a) && !numbered(a)).cmp(&(close(b) && !numbered(b))).then(a.rows_in_range.cmp(&b.rows_in_range)).then(ib.cmp(ia))
+                })
                 .map(|(i, _)| i)
                 .unwrap_or(0);
             let assumption = ambiguous_question(&candidates, recommended);
@@ -600,6 +696,87 @@ mod tests {
                 }
                 other => panic!("{x}/{y}: {other:?}"),
             }
+        }
+    }
+
+    /// Names seen in a survey of 10,000 open-data tables (Socrata catalogue, 2026-11) and on the
+    /// site's data page (NASA's meteorites: `reclat`/`reclong`).
+    #[test]
+    fn csv_coordinate_columns_matches_names_from_the_survey() {
+        let variants: &[(&str, &str)] = &[
+            ("reclong", "reclat"),
+            ("INTPTLON", "INTPTLAT"),
+            ("longdecdeg", "latdecdeg"),
+            ("decimalLongitude", "decimalLatitude"),
+            ("longitud", "latitud"),
+            ("longtitude", "latitude"),
+            ("lon_deg", "lat_deg"),
+            ("#lon_deg", "#lat_deg"),
+            ("x_lon", "y_lat"),
+            ("longitude_x", "latitude_x"),
+            ("school_longitude", "school_latitude"),
+            ("GIS_LONGITUDE", "GIS_LATITUDE"),
+            ("Longitude (WGS84)", "Latitude (WGS84)"),
+            ("stop_lon", "stop_lat"),
+            ("lng2", "lat2"),
+        ];
+        for (x, y) in variants {
+            let headers = s(&["name", x, y]);
+            match csv_locate(&headers, &shanghai(20), "f.csv") {
+                CsvLocation::Located { pair, .. } => assert_eq!((pair.x.as_str(), pair.y.as_str()), (*x, *y)),
+                other => panic!("{x}/{y}: {other:?}"),
+            }
+        }
+        // Projected-style names pair up too (their values decide what they are).
+        for (x, y) in [
+            ("x_coordinate", "y_coordinate"),
+            ("POINT_X", "POINT_Y"),
+            ("MapX", "MapY"),
+            ("UTM_X", "UTM_Y"),
+            ("XPos", "YPos"),
+            ("X_COORDINA", "Y_COORDINA"),
+            ("X Coordinate (State Plane)", "Y Coordinate (State Plane)"),
+        ] {
+            let headers = s(&["name", x, y]);
+            assert!(matches!(csv_locate(&headers, &shanghai(20), "f.csv"), CsvLocation::Located { .. }), "{x}/{y}");
+        }
+    }
+
+    #[test]
+    fn csv_several_pairs_from_the_survey_ask_and_recommend_the_first() {
+        let headers = s(&["pickup_longitude", "pickup_latitude", "dropoff_longitude", "dropoff_latitude"]);
+        let r: Vec<Vec<String>> = shanghai(20).into_iter().map(|r| vec![r[1].clone(), r[2].clone(), r[1].clone(), r[2].clone()]).collect();
+        let CsvLocation::Ambiguous { candidates, recommended, .. } = csv_locate(&headers, &r, "f.csv") else { panic!() };
+        assert_eq!(candidates.len(), 2);
+        assert_eq!(candidates[recommended].x, "pickup_longitude");
+    }
+
+    /// Movebank: the chosen fix (`location-long/lat`) over the raw Argos solutions, even when one
+    /// of those has a row more in the sample.
+    #[test]
+    fn csv_plain_pair_beats_numbered_variants_when_nearly_tied() {
+        let headers = s(&["location-long", "location-lat", "argos:lat1", "argos:lat2", "argos:lon1", "argos:lon2"]);
+        let mut r: Vec<Vec<String>> = shanghai(50)
+            .into_iter()
+            .map(|q| vec![q[1].clone(), q[2].clone(), q[2].clone(), q[2].clone(), q[1].clone(), q[1].clone()])
+            .collect();
+        r.push(s(&["", "", "31.1", "31.1", "121.3", "121.3"]));
+        let CsvLocation::Ambiguous { candidates, recommended, .. } = csv_locate(&headers, &r, "f.csv") else { panic!() };
+        assert_eq!(candidates[recommended].x, "location-long");
+    }
+
+    #[test]
+    fn csv_look_alike_words_from_the_survey_are_not_coordinates() {
+        for h in [
+            ["colon_screen_crudeprev", "plat"],
+            ["renglon", "hispanic_latino"],
+            ["loneliness_crudeprev", "latency"],
+            ["long_term_leases", "minutes_late"],
+            ["longevity_pay", "lateral_acceleration"],
+            ["route_long_name", "spc_latin"],
+        ] {
+            let headers = s(&h);
+            assert!(matches!(csv_locate(&headers, &rows(&[&["1", "2"], &["3", "4"]]), "f.csv"), CsvLocation::Table { .. }), "{h:?}");
         }
     }
 

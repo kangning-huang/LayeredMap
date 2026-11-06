@@ -2890,6 +2890,8 @@ name = "lm-ios-alt-d-decode-ffi"
 version = "0.7.5"
 dependencies = [
  "image",
+ "lm-profile",
+ "miniz_oxide 0.9.1",
  "netcdf-reader",
  "rustgis-data",
  "serde_json",
@@ -2914,6 +2916,7 @@ dependencies = [
  "lm-net",
  "lm-profile",
  "log",
+ "miniz_oxide 0.9.1",
  "netcdf-reader",
  "roxmltree",
  "rusqlite",

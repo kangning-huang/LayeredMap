@@ -47,6 +47,12 @@ struct MapScreen: UIViewRepresentable {
     /// The visible area after the camera settles (Alt C saves it, so a relaunch returns there).
     var onCameraIdle: ((GeoBounds) -> Void)?
     var pin: CLLocationCoordinate2D?
+    /// Which way the map is turned (degrees, 0 = north up), as it changes. MapLibre's own compass
+    /// sat top right among the search bar and the system clock; the app draws its own at the
+    /// bottom of the map buttons instead.
+    var onHeading: ((Double) -> Void)?
+    /// A new value turns the map back to north up.
+    var northRequest: UUID?
 
     func makeUIView(context: Context) -> MLNMapView {
         let map = MLNMapView(frame: .zero)
@@ -59,7 +65,7 @@ struct MapScreen: UIViewRepresentable {
         map.attributionButtonPosition = .topLeft
         map.logoViewMargins = CGPoint(x: 12, y: 6)
         map.attributionButtonMargins = CGPoint(x: 100, y: 6)
-        map.compassViewMargins = CGPoint(x: 64, y: 12)
+        map.compassView.compassVisibility = .hidden
         map.allowsRotating = true
         map.allowsTilting = false
         map.setCenter(CLLocationCoordinate2D(latitude: 25, longitude: 10), zoomLevel: 0.8, animated: false)
@@ -90,6 +96,10 @@ struct MapScreen: UIViewRepresentable {
         c.sync(layers, on: map)
         c.setHighlight(highlight, on: map)
         c.setPin(pin, on: map)
+        if let northRequest, northRequest != c.lastNorth {
+            c.lastNorth = northRequest
+            map.setDirection(0, animated: true)
+        }
         if let camera, camera.id != c.lastCamera {
             c.lastCamera = camera.id
             c.apply(camera, on: map)
@@ -104,10 +114,14 @@ struct MapScreen: UIViewRepresentable {
         var parent: MapScreen?
         var basemap: Basemap = .light
         var lastCamera: UUID?
+        var lastNorth: UUID?
+        private var lastHeading = 0.0
         private var styleLoaded = false
         private var appliedOrder: [UUID] = []
         private var applied: [UUID: (LayerStyle, Bool)] = [:]
         private var fileURLs: [UUID: URL] = [:]
+        /// The field each layer's source carries (see `GeoDataset.mapGeoJSON(showing:)`).
+        private var sourceField: [UUID: String?] = [:]
         private var lastHighlight: Data?
         private var pinAnnotation: MLNPointAnnotation?
         private var pendingCamera: CameraRequest?
@@ -153,14 +167,60 @@ struct MapScreen: UIViewRepresentable {
             switch layer.dataset.kind {
             case .point: return [i.circle]
             case .line: return [i.line]
-            case .area, .table, .raster: return [i.fill]
+            case .area, .table: return [i.fill, i.circle]
+            case .raster: return [i.fill]
             }
+        }
+
+        /// Areas too small to see when zoomed out (36,882 solar farms, 44,929 mines: a blank world
+        /// at first sight) get a dot at their centre until they are big enough to see: up to the
+        /// zoom where a typical one is about 4 points across. nil when they show from the start,
+        /// or when there are so many (building footprints) that dots would cost more than help.
+        static func dotsMaxZoom(_ ds: GeoDataset) -> Double? {
+            guard ds.kind == .area, ds.features.count <= 200_000 else { return nil }
+            let step = max(1, ds.features.count / 2000)
+            var sizes: [Double] = []
+            for f in stride(from: 0, to: ds.features.count, by: step).map({ ds.features[$0] }) where f.bounds.isValid {
+                sizes.append(max(f.bounds.maxLon - f.bounds.minLon, f.bounds.maxLat - f.bounds.minLat))
+            }
+            guard !sizes.isEmpty else { return nil }
+            sizes.sort()
+            let typical = max(sizes[sizes.count / 2], 1e-7)
+            let z = log2(4 * 360 / (512 * typical))
+            return z < 1.5 ? nil : min(z, 15)
+        }
+
+        private func dotSource(for layer: MapLayer, in style: MLNStyle) -> MLNSource {
+            let id = ids(layer.id).source + "-c"
+            if let s = style.source(withIdentifier: id) { return s }
+            let points: [MLNPointFeature] = layer.dataset.features.compactMap { f in
+                guard f.bounds.isValid else { return nil }
+                let p = MLNPointFeature()
+                p.coordinate = f.center
+                // Its index (taps) and the colour field only, like the map file.
+                var attrs: [String: Any] = ["_lm_i": f.index]
+                if let field = layer.style.showBy, let v = f.properties[field] { attrs[field] = v }
+                p.attributes = attrs
+                return p
+            }
+            let s = MLNShapeSource(identifier: id, features: points, options: nil)
+            style.addSource(s)
+            return s
         }
 
         func sync(_ layers: [MapLayer], on map: MLNMapView) {
             guard styleLoaded, let style = map.style else { return }
             let order = layers.map(\.id)
-            if order != appliedOrder {
+            // A layer coloured by another field needs that field in its source (it holds only one).
+            var rebuild = false
+            for layer in layers where layer.dataset.raster == nil && fileURLs[layer.id] != nil && sourceField[layer.id] != layer.style.showBy {
+                removeLayers(layer.id, from: style)
+                if let s = style.source(withIdentifier: ids(layer.id).source) { style.removeSource(s) }
+                if let s = style.source(withIdentifier: ids(layer.id).source + "-c") { style.removeSource(s) }
+                fileURLs.removeValue(forKey: layer.id)
+                rebuild = true
+            }
+            if order != appliedOrder || rebuild {
                 // Remove ours and re-add bottom-first so draw order matches the list.
                 for id in appliedOrder { removeLayers(id, from: style) }
                 if let l = style.layer(withIdentifier: highlightSource + "-line") { style.removeLayer(l) }
@@ -171,6 +231,7 @@ struct MapScreen: UIViewRepresentable {
                 lastHighlight = nil
                 for id in Set(fileURLs.keys).subtracting(order) {
                     if let s = style.source(withIdentifier: ids(id).source) { style.removeSource(s) }
+                    if let s = style.source(withIdentifier: ids(id).source + "-c") { style.removeSource(s) }
                     fileURLs.removeValue(forKey: id)
                 }
             }
@@ -209,15 +270,11 @@ struct MapScreen: UIViewRepresentable {
             if let u = fileURLs[layer.id] {
                 url = u
             } else {
-                let dir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
-                    ?? FileManager.default.temporaryDirectory
-                url = dir.appendingPathComponent("\(i.source).geojson")
-                do {
-                    try layer.dataset.mapGeoJSON.write(to: url, options: .atomic)
-                } catch {
-                    return nil
-                }
+                // The reader's file (shapes and indexes only), or a copy with the colour field.
+                guard let u = layer.dataset.mapFile(showing: layer.style.showBy) else { return nil }
+                url = u
                 fileURLs[layer.id] = url
+                sourceField[layer.id] = layer.style.showBy
             }
             let s = MLNShapeSource(identifier: i.source, url: url, options: nil)
             style.addSource(s)
@@ -246,6 +303,13 @@ struct MapScreen: UIViewRepresentable {
                 let o = MLNLineStyleLayer(identifier: i.line, source: src)
                 o.lineColor = NSExpression(forConstantValue: UIColor.white)
                 style.addLayer(o)
+                if let z = Coordinator.dotsMaxZoom(layer.dataset) {
+                    let c = MLNCircleStyleLayer(identifier: i.circle, source: dotSource(for: layer, in: style))
+                    c.maximumZoomLevel = Float(z)
+                    c.circleStrokeColor = NSExpression(forConstantValue: UIColor.white)
+                    c.circleStrokeWidth = NSExpression(forConstantValue: 0.5)
+                    style.addLayer(c)
+                }
             }
         }
 
@@ -260,12 +324,22 @@ struct MapScreen: UIViewRepresentable {
                 guard let r = style.layer(withIdentifier: i.fill) as? MLNRasterStyleLayer else { return }
                 // Another NetCDF time step is a new picture on the same source. `source(for:)`
                 // hands back the source it already made, so the swap has to happen here.
-                if let png = layer.dataset.raster?.png,
-                   fileURLs[layer.id] != png,
+                if let r = layer.dataset.raster,
+                   fileURLs[layer.id] != r.png,
                    let img = style.source(withIdentifier: i.source) as? MLNImageSource
                 {
-                    img.url = png
-                    fileURLs[layer.id] = png
+                    // A redraw for a zoomed-in view covers a smaller patch of world, so the
+                    // corners move as well as the picture. Setting the url alone would stretch
+                    // the new, more detailed image across the whole original extent.
+                    let b = r.bounds
+                    img.coordinates = MLNCoordinateQuad(
+                        topLeft: CLLocationCoordinate2D(latitude: b.maxLat, longitude: b.minLon),
+                        bottomLeft: CLLocationCoordinate2D(latitude: b.minLat, longitude: b.minLon),
+                        bottomRight: CLLocationCoordinate2D(latitude: b.minLat, longitude: b.maxLon),
+                        topRight: CLLocationCoordinate2D(latitude: b.maxLat, longitude: b.maxLon)
+                    )
+                    img.url = r.png
+                    fileURLs[layer.id] = r.png
                 }
                 r.rasterOpacity = opacity
                 r.isVisible = layer.visible
@@ -297,6 +371,12 @@ struct MapScreen: UIViewRepresentable {
                 o.lineWidth = size
                 o.lineOpacity = NSExpression(forConstantValue: min(1, layer.style.opacity + 0.2))
                 o.isVisible = layer.visible
+                if let c = style.layer(withIdentifier: i.circle) as? MLNCircleStyleLayer {
+                    c.circleColor = color
+                    c.circleOpacity = NSExpression(forConstantValue: min(1, layer.style.opacity + 0.3))
+                    c.circleRadius = NSExpression(forConstantValue: 2.6)
+                    c.isVisible = layer.visible
+                }
             }
         }
 
@@ -354,7 +434,18 @@ struct MapScreen: UIViewRepresentable {
             if b.maxLon - b.minLon < 1e-6 && b.maxLat - b.minLat < 1e-6 {
                 // Center the point in the part of the map the chrome leaves open (above a card),
                 // not the middle of the screen (Priya: "When I zoom to a place, let me see it").
-                let zoom = max(map.zoomLevel, camera.pointZoom)
+                var zoom = max(map.zoomLevel, camera.pointZoom)
+                if let reach = camera.reachMeters {
+                    // Close enough that `reach` still fits in the open part of the map (inside the
+                    // chrome, with a margin so the farthest of the few isn't on the edge), never
+                    // closer than `pointZoom`, never out past a whole continent.
+                    let openW = Double(map.bounds.width - insets.left - insets.right)
+                    let openH = Double(map.bounds.height - insets.top - insets.bottom)
+                    let half = max(40, min(openW, openH) / 2 * 0.8)
+                    let metresPerPointAtZ0 = 40_075_016.686 * cos(b.center.latitude * .pi / 180) / 512
+                    let fit = log2(metresPerPointAtZ0 * half / reach)
+                    zoom = min(camera.pointZoom, max(2, fit))
+                }
                 let degreesPerPoint = 360 / (512 * pow(2, zoom))
                 let dy = Double(insets.bottom - insets.top) / 2
                 let dx = Double(insets.right - insets.left) / 2
@@ -373,7 +464,20 @@ struct MapScreen: UIViewRepresentable {
             map.setVisibleCoordinateBounds(bounds, edgePadding: insets, animated: !camera.exact, completionHandler: nil)
         }
 
+        func mapView(_ mapView: MLNMapView, regionIsChangingWith reason: MLNCameraChangeReason) {
+            reportHeading(mapView)
+        }
+
+        /// Whole degrees only, so a pan doesn't redraw the buttons on every frame.
+        private func reportHeading(_ map: MLNMapView) {
+            let h = map.direction.rounded()
+            guard h != lastHeading else { return }
+            lastHeading = h
+            parent?.onHeading?(h)
+        }
+
         func mapView(_ mapView: MLNMapView, regionDidChangeWith reason: MLNCameraChangeReason, animated: Bool) {
+            reportHeading(mapView)
             let v = mapView.visibleCoordinateBounds
             parent?.onCameraIdle?(GeoBounds(minLon: v.sw.longitude, minLat: v.sw.latitude, maxLon: v.ne.longitude, maxLat: v.ne.latitude))
         }

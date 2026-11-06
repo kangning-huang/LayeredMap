@@ -1,3 +1,4 @@
+import CoreLocation
 import Foundation
 import SwiftUI
 
@@ -19,7 +20,9 @@ struct MapLayer: Identifiable, Equatable {
     /// A grid of values names its key's ends with units (Priya: "11.5 ━ 226.5" said nothing).
     var legendEnds: (String, String)? {
         guard let r = dataset.raster, r.look == .values else { return nil }
-        return ("Low \(r.format(r.low))", "High \(r.format(r.high))")
+        // Not "Low"/"High": these are the 2nd and 98th percentiles, so values beyond them exist
+        // and take the end colours. Calling them low and high read as the extremes.
+        return ("Most \(r.format(r.low))", "to \(r.format(r.high))")
     }
 
     static func == (a: MapLayer, b: MapLayer) -> Bool {
@@ -34,6 +37,10 @@ struct CameraRequest: Equatable {
     var pointZoom: Double = 4
     /// Show exactly these bounds, no chrome padding, no animation (returning to a saved view).
     var exact = false
+    /// For a point: how far around it (metres) the view must reach so the data stays legible —
+    /// a few features of each layer, not one lone dot. `pointZoom` is then the closest it may go,
+    /// not a fixed level, and the map may zoom out to get there.
+    var reachMeters: Double?
 }
 
 struct Toast: Identifiable, Equatable {
@@ -69,8 +76,21 @@ final class MapDocument: ObservableObject {
     private var busyTask: Task<Void, Never>?
     /// Counts time-step reads so a slow one can't overwrite a newer one.
     private var timeRequest = 0
+    /// The same, for redraws at another ramp or zoom.
+    private var rasterRequest = 0
     @Published var toast: Toast?
     @Published var error: String?
+    /// Data in a local grid with nothing to guess the grid from: ask where it is.
+    @Published var needsPlace: PendingPlace?
+
+    struct PendingPlace: Identifiable {
+        let id = UUID()
+        let file: URL
+        let name: String
+        let message: String
+        /// A layer already on the map to move, rather than a new one to add.
+        var replacing: UUID?
+    }
 
     private var undoStack: [() -> Void] = []
     private var colorCounter = 0
@@ -215,6 +235,41 @@ final class MapDocument: ObservableObject {
         camera = CameraRequest(bounds: bounds, pointZoom: pointZoom)
     }
 
+    /// How many features "a few" is: what a zoom to a point should still show of a layer.
+    static let fewFeatures = 5
+
+    /// Fly to a point, but only as close as the data allows. A fixed zoom 13–14 was right for a
+    /// layer of shops and wrong for one of cities, volcanoes or earthquakes: zoom to your own
+    /// city and you saw a single dot, or none. So the view reaches out to the `fewFeatures`-th
+    /// nearest feature of every visible layer (or of `layer` alone, for "zoom to this feature"),
+    /// and `closest` is only the limit for dense data. With nothing to show, it is `closest`.
+    func fly(toPoint c: CLLocationCoordinate2D, closest: Double, layer: UUID? = nil) {
+        let point = GeoBounds(minLon: c.longitude, minLat: c.latitude, maxLon: c.longitude, maxLat: c.latitude)
+        guard point.isValid else { return }
+        let candidates = layers.filter { l in
+            l.dataset.raster == nil && (layer.map { $0 == l.id } ?? l.visible)
+        }
+        let reach = candidates.compactMap { MapDocument.reach(around: c, in: $0.dataset) }.max()
+        camera = CameraRequest(bounds: point, pointZoom: closest, reachMeters: reach)
+    }
+
+    /// Distance (metres) from `c` to the `fewFeatures`-th nearest feature of `ds`, counting one
+    /// at `c` itself. nil for a layer too small to need it.
+    static func reach(around c: CLLocationCoordinate2D, in ds: GeoDataset) -> Double? {
+        let n = ds.features.lazy.filter { $0.bounds.isValid }.count
+        guard n > 1 else { return nil }
+        let k = min(fewFeatures, n)
+        let lat1 = c.latitude * .pi / 180, lon1 = c.longitude * .pi / 180, cos1 = cos(lat1)
+        var d = ds.features.filter { $0.bounds.isValid }.map { f -> Double in
+            // Haversine; plenty fast for ~100k points on a tap.
+            let lat2 = f.center.latitude * .pi / 180, lon2 = f.center.longitude * .pi / 180
+            let a = pow(sin((lat2 - lat1) / 2), 2) + cos1 * cos(lat2) * pow(sin((lon2 - lon1) / 2), 2)
+            return 2 * 6_371_008.8 * asin(min(1, sqrt(a)))
+        }
+        d.sort()
+        return d[k - 1] > 0 ? d[k - 1] : nil
+    }
+
     func remove(_ id: UUID) {
         guard let i = index(of: id) else { return }
         let removed = layers.remove(at: i)
@@ -257,11 +312,88 @@ final class MapDocument: ObservableObject {
         let token = timeRequest
         let name = layer.name
         let range = (r.low, r.high)
+        let ramp = r.ramp
+        let window = r.window
         Task.detached(priority: .userInitiated) {
-            let result = RasterDecode.open(source, name: name, sourceName: "", time: step, range: range)
+            // Keep the ramp and the window: a nudge of the time slider used to silently reset
+            // both, so a Heat map zoomed into the Sahel came back viridis and global.
+            let result = RasterDecode.open(source, name: name, sourceName: "", time: step, range: range, ramp: ramp, window: window)
             await MainActor.run {
                 // A newer drag already won; this one is stale.
                 guard token == self.timeRequest, case .success(let ds) = result, let i = self.index(of: id) else { return }
+                self.layers[i].dataset.adoptCells(from: ds)
+                self.layers[i].dataRev &+= 1
+            }
+        }
+    }
+
+    /// Redraws a grid of values on another colour ramp.
+    ///
+    /// A raster is one picture on the map, not styled features, so there is nothing on the phone
+    /// to recolour — the picture has to be drawn again. That is why this is a round trip through
+    /// Rust rather than a style change like every other layer's colours.
+    func setRasterRamp(_ id: UUID, _ ramp: Palette) {
+        guard let layer = layer(id), let r = layer.dataset.raster, r.look == .values, r.ramp != ramp else { return }
+        redrawRaster(id, ramp: ramp, window: r.window)
+    }
+
+    /// How much smaller the view has to be than the drawn window before redrawing is worth it.
+    ///
+    /// This is the speed/detail trade-off. A redraw reads the file again and writes a new PNG, so
+    /// doing it on every nudge of the map would make panning feel like wading. Waiting for a 4×
+    /// difference in width means a redraw happens roughly once every two zoom levels — about as
+    /// often as the detail visibly runs out — and never while someone is just sliding around at
+    /// the same scale.
+    private static let redrawGain = 4.0
+
+    /// Redraw for what is on screen, if that would actually gain detail.
+    ///
+    /// Only ever called when the camera has settled (`onCameraIdle`), never mid-gesture.
+    func refineRaster(_ id: UUID, view: GeoBounds) {
+        guard let layer = layer(id), let r = layer.dataset.raster, r.source != nil else { return }
+        let drawn = r.window ?? r.bounds
+        let drawnWidth = drawn.maxLon - drawn.minLon
+        // Clamp to the data: asking for more than the file covers gains nothing.
+        let wanted = GeoBounds(
+            minLon: Swift.max(view.minLon, r.bounds.minLon),
+            minLat: Swift.max(view.minLat, r.bounds.minLat),
+            maxLon: Swift.min(view.maxLon, r.bounds.maxLon),
+            maxLat: Swift.min(view.maxLat, r.bounds.maxLat)
+        )
+        let wantedWidth = wanted.maxLon - wanted.minLon
+        guard wantedWidth > 0, drawnWidth > 0 else { return }
+        // Both directions. Only ever narrowing meant that after one zoom-in the whole-world
+        // picture was replaced by a patch and never came back: the rest of the globe drew as if
+        // there were no data, and taps outside the patch did nothing, because hit-testing uses
+        // the drawn bounds. Widening again is the same test with the ratio the other way up.
+        let zoomedIn = drawnWidth / wantedWidth >= Self.redrawGain
+        let zoomedOut = wantedWidth / drawnWidth >= Self.redrawGain && drawnWidth < (r.bounds.maxLon - r.bounds.minLon)
+        guard zoomedIn || zoomedOut else { return }
+        // A margin, so a small pan after the redraw does not immediately fall off the picture.
+        let padX = wantedWidth * 0.25
+        let padY = (wanted.maxLat - wanted.minLat) * 0.25
+        let padded = GeoBounds(
+            minLon: Swift.max(wanted.minLon - padX, r.bounds.minLon),
+            minLat: Swift.max(wanted.minLat - padY, r.bounds.minLat),
+            maxLon: Swift.min(wanted.maxLon + padX, r.bounds.maxLon),
+            maxLat: Swift.min(wanted.maxLat + padY, r.bounds.maxLat)
+        )
+        redrawRaster(id, ramp: r.ramp, window: padded)
+    }
+
+    /// Draw a raster again with different settings, keeping its colour range so only the thing
+    /// that was asked for changes.
+    private func redrawRaster(_ id: UUID, ramp: Palette, window: GeoBounds?) {
+        guard let layer = layer(id), let r = layer.dataset.raster, let source = r.source else { return }
+        rasterRequest += 1
+        let token = rasterRequest
+        let name = layer.name
+        let range = (r.low, r.high)
+        let step = r.time
+        Task.detached(priority: .userInitiated) {
+            let result = RasterDecode.open(source, name: name, sourceName: "", time: step, range: range, ramp: ramp, window: window)
+            await MainActor.run {
+                guard token == self.rasterRequest, case .success(let ds) = result, let i = self.index(of: id) else { return }
                 self.layers[i].dataset.adoptCells(from: ds)
                 self.layers[i].dataRev &+= 1
             }
@@ -296,7 +428,12 @@ final class MapDocument: ObservableObject {
                 case .success(let ds):
                     self.add(ds, showBy: nil)
                 case .failure(let e):
-                    problems.append(e.message)
+                    if let file = e.needsPlace {
+                        self.needsPlace = PendingPlace(file: file, name: Importer.displayName(for: file), message: e.message)
+                    } else if e.message != Importer.cancelled {
+                        // A Stop the person pressed is not an error.
+                        problems.append(e.message)
+                    }
                 }
             }
             if let first = problems.first {
@@ -314,8 +451,79 @@ final class MapDocument: ObservableObject {
             case .success(let ds):
                 self.add(ds, showBy: showBy)
             case .failure(let e):
-                // A Stop the person pressed is not an error.
-                if e.message != Importer.cancelled { self.error = e.message }
+                if let file = e.needsPlace {
+                    self.needsPlace = PendingPlace(file: file, name: label, message: e.message)
+                } else if e.message != Importer.cancelled {
+                    // A Stop the person pressed is not an error.
+                    self.error = e.message
+                }
+            }
+        }
+    }
+
+    // MARK: Data in a local grid
+
+    /// A layer moved to another grid is a new layer; an open card for the old one follows it here.
+    private var replacements: [UUID: UUID] = [:]
+
+    /// The layer `id` became, if it was moved to another grid.
+    func layer(following id: UUID) -> MapLayer? {
+        var at = id
+        for _ in 0..<20 {
+            if let l = layer(at) { return l }
+            guard let next = replacements[at] else { return nil }
+            at = next
+        }
+        return nil
+    }
+
+    /// The person said roughly where the pending data is: read it again, guessing its grid there.
+    func place(_ pending: PendingPlace, near: CLLocationCoordinate2D) {
+        reread(pending.file, name: pending.name, replacing: pending.replacing, near: near, epsg: nil)
+    }
+
+    /// "Try another grid" on a layer that was placed by a guess.
+    func regrid(_ id: UUID, epsg: Int) {
+        guard let layer = layer(id), let p = layer.dataset.placement else { return }
+        reread(p.file, name: layer.name, replacing: id, near: p.near, epsg: epsg)
+    }
+
+    /// "Somewhere else…": ask where the layer's data is, then move it there.
+    func askWhere(_ id: UUID) {
+        guard let layer = layer(id), let p = layer.dataset.placement else { return }
+        needsPlace = PendingPlace(
+            file: p.file, name: layer.name,
+            message: "“\(layer.name)” uses coordinates in a local grid.",
+            replacing: id
+        )
+    }
+
+    private func reread(_ file: URL, name: String, replacing: UUID?, near: CLLocationCoordinate2D?, epsg: Int?) {
+        startBusy("Placing \(name)…")
+        busyTask = Task {
+            let result = await Importer.decode(file, name: name, primary: nil, sourceName: "Your file", credit: nil, near: near, epsg: epsg)
+            self.endBusy()
+            switch result {
+            case .success(let ds):
+                if let replacing, let i = self.index(of: replacing) {
+                    // Same place in the list, same look; only where it sits changes. A new id, so
+                    // the map loads the new shapes (it keys a layer's source on its id).
+                    let old = self.layers[i]
+                    let moved = MapLayer(id: UUID(), dataset: ds, visible: old.visible, style: old.style)
+                    self.layers[i] = moved
+                    self.replacements[old.id] = moved.id
+                    self.toastAction = nil
+                    self.toast = Toast(message: "Moved \(name) · \(ds.placement?.name ?? "new grid")", canUndo: false)
+                    self.fly(to: ds.bounds)
+                } else {
+                    self.add(ds, showBy: nil)
+                }
+            case .failure(let e):
+                if e.needsPlace != nil {
+                    self.error = "No grid NimbleMap knows puts “\(name)” near that place. Try a place closer to where the data is."
+                } else {
+                    self.error = e.message
+                }
             }
         }
     }

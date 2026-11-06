@@ -16,19 +16,35 @@
 			<key>CFBundleTypeRole</key>
 			<string>Viewer</string>
 			<key>LSHandlerRank</key>
-			<string>Alternate</string>
+			<string>Owner</string>
 			<key>LSItemContentTypes</key>
 			<array>
 				<string>org.geojson.geojson</string>
+				<string>org.unidata.netcdf</string>
 				<string>com.google.earth.kml</string>
 				<string>com.google.earth.kmz</string>
 				<string>com.topografix.gpx</string>
 				<string>org.opengeospatial.geopackage</string>
+				<string>com.esri.shapefile</string>
+				<string>com.esri.shapefile.shx</string>
+				<string>com.esri.shapefile.dbf</string>
+				<string>com.esri.shapefile.prj</string>
+				<string>com.esri.shapefile.cpg</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Data file</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>LSItemContentTypes</key>
+			<array>
 				<string>public.comma-separated-values-text</string>
 				<string>public.json</string>
 				<string>public.zip-archive</string>
 				<string>public.tiff</string>
-				<string>org.unidata.netcdf</string>
 			</array>
 		</dict>
 	</array>
@@ -50,13 +66,15 @@
 	<true/>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<true/>
-	<key>UIFileSharingEnabled</key>
-	<true/>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
 		<false/>
 	</dict>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>So the map can show where you are when you tap the location button. Your location is never stored or sent anywhere.</string>
+	<key>UIFileSharingEnabled</key>
+	<true/>
 	<key>UILaunchScreen</key>
 	<dict/>
 	<key>UIRequiredDeviceCapabilities</key>

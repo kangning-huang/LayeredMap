@@ -39,15 +39,187 @@ struct FieldInfo: Identifiable, Hashable {
     var id: String { name }
 }
 
-/// One feature: its attributes, where it is and how big it is. Numbers come from the data.
+/// One feature: where it is and how big it is, and a window onto its attributes in the layer's
+/// columns. It used to carry a dictionary of every attribute and its whole shape: for 154,400
+/// white storks that was millions of objects, and a phone ended the app. Now it is a few numbers;
+/// attributes are looked up in `LayerStore`, and the shape is read from disk when it is needed.
 struct GeoFeature {
     let index: Int
-    let properties: [String: Any]
+    let store: LayerStore?
     let center: CLLocationCoordinate2D
     let bounds: GeoBounds
     let areaKm2: Double?
     let lengthKm: Double?
-    let raw: [String: Any]
+
+    /// `feature.properties["name"]`, as before, without a dictionary per feature.
+    var properties: Row { Row(store: store, index: index) }
+
+    /// The feature as GeoJSON with its shape (for the outline drawn when it's tapped).
+    var raw: [String: Any] { ["type": "Feature", "geometry": store?.geometry(index) ?? NSNull()] }
+}
+
+/// One feature's attributes, read from the layer's columns.
+struct Row {
+    let store: LayerStore?
+    let index: Int
+    subscript(key: String) -> Any? { store?.value(index, key) }
+    var keys: [String] { store?.names ?? [] }
+}
+
+/// A layer's attributes by column, and its shapes on disk (written by the reader: `store.rs`).
+/// Numbers are kept as `Double`s; any other column as codes into its distinct values, stored once.
+final class LayerStore: @unchecked Sendable {
+    enum Column {
+        case number([Double])
+        case text([String], [UInt32])
+    }
+
+    let names: [String]
+    let columns: [Column]
+    private let byName: [String: Int]
+    let rows: Int
+    let mapURL: URL
+    private let idx: Data
+
+    init?(cols: URL, map: URL, idx idxURL: URL) {
+        guard let data = try? Data(contentsOf: cols, options: .alwaysMapped),
+              let idx = try? Data(contentsOf: idxURL, options: .alwaysMapped) else { return nil }
+        var at = 0
+        func u32() -> UInt32? {
+            guard at + 4 <= data.count else { return nil }
+            defer { at += 4 }
+            return data.withUnsafeBytes { $0.loadUnaligned(fromByteOffset: at, as: UInt32.self) }
+        }
+        func string() -> String? {
+            guard let n = u32().map(Int.init), at + n <= data.count else { return nil }
+            defer { at += n }
+            return String(decoding: data[at..<(at + n)], as: UTF8.self)
+        }
+        guard data.count >= 12, data.prefix(4) == Data("LMC1".utf8) else { return nil }
+        at = 4
+        guard let rows = u32().map(Int.init), let ncols = u32().map(Int.init) else { return nil }
+        var names: [String] = []
+        var columns: [Column] = []
+        for _ in 0..<ncols {
+            guard let name = string(), at < data.count else { return nil }
+            let kind = data[at]
+            at += 1
+            if kind == 0 {
+                guard at + rows * 8 <= data.count else { return nil }
+                let values = data.withUnsafeBytes { raw in
+                    (0..<rows).map { raw.loadUnaligned(fromByteOffset: at + $0 * 8, as: Double.self) }
+                }
+                at += rows * 8
+                columns.append(.number(values))
+            } else {
+                guard let n = u32().map(Int.init) else { return nil }
+                var dict: [String] = []
+                dict.reserveCapacity(n)
+                for _ in 0..<n {
+                    guard let v = string() else { return nil }
+                    dict.append(v)
+                }
+                guard at + rows * 4 <= data.count else { return nil }
+                let codes = data.withUnsafeBytes { raw in
+                    (0..<rows).map { raw.loadUnaligned(fromByteOffset: at + $0 * 4, as: UInt32.self) }
+                }
+                at += rows * 4
+                columns.append(.text(dict, codes))
+            }
+            names.append(name)
+        }
+        self.names = names
+        self.columns = columns
+        self.byName = Dictionary(names.enumerated().map { ($1, $0) }, uniquingKeysWith: { a, _ in a })
+        self.rows = rows
+        self.mapURL = map
+        self.idx = idx
+    }
+
+    /// A cell as the old GeoJSON gave it: an NSNumber, a String, or nil when empty.
+    func value(_ row: Int, _ key: String) -> Any? {
+        guard let c = byName[key], row >= 0, row < rows else { return nil }
+        switch columns[c] {
+        case .number(let values):
+            let v = values[row]
+            return v.isNaN ? nil : NSNumber(value: v)
+        case .text(let dict, let codes):
+            let k = codes[row]
+            return k == UInt32.max ? nil : dict[Int(k)]
+        }
+    }
+
+    /// Where feature `row` is in the map file.
+    func span(_ row: Int) -> (offset: UInt64, length: Int)? {
+        guard row >= 0, (row + 1) * 12 <= idx.count else { return nil }
+        return idx.withUnsafeBytes { raw in
+            (raw.loadUnaligned(fromByteOffset: row * 12, as: UInt64.self), Int(raw.loadUnaligned(fromByteOffset: row * 12 + 8, as: UInt32.self)))
+        }
+    }
+
+    /// One feature's GeoJSON geometry, read from the map file.
+    func geometry(_ row: Int) -> Any? {
+        guard let (offset, length) = span(row), let h = try? FileHandle(forReadingFrom: mapURL) else { return nil }
+        defer { try? h.close() }
+        guard (try? h.seek(toOffset: offset)) != nil, let bytes = try? h.read(upToCount: length),
+              let obj = try? JSONSerialization.jsonObject(with: bytes) as? [String: Any] else { return nil }
+        return obj["geometry"]
+    }
+
+    /// The map file with one more property on every feature: the field a layer is coloured by
+    /// (MapLibre reads it from the source). Spliced in before each feature's closing `}}`; made
+    /// once per field and kept beside the map file.
+    func mapURL(showing field: String?) -> URL? {
+        guard let field, let c = byName[field] else { return mapURL }
+        let safe = field.unicodeScalars.map { CharacterSet.alphanumerics.contains($0) ? String($0) : "_" }.joined()
+        let out = mapURL.deletingPathExtension().appendingPathExtension("by-\(safe).geojson")
+        if FileManager.default.fileExists(atPath: out.path) { return out }
+        guard let map = try? Data(contentsOf: mapURL, options: .alwaysMapped) else { return nil }
+        FileManager.default.createFile(atPath: out.path, contents: nil)
+        guard let h = try? FileHandle(forWritingTo: out) else { return nil }
+        defer { try? h.close() }
+        let key = Self.json(field)
+        var buf = Data(#"{"type":"FeatureCollection","features":["#.utf8)
+        buf.reserveCapacity(1 << 20)
+        for row in 0..<rows {
+            guard let (offset, length) = span(row), length >= 2, Int(offset) + length <= map.count else { continue }
+            if row > 0 { buf.append(0x2C) }
+            let start = Int(offset)
+            buf.append(map[start..<(start + length - 2)])
+            switch columns[c] {
+            case .number(let values) where values[row].isFinite:
+                buf.append(contentsOf: Array(",\(key):\(values[row])}}".utf8))
+            case .text(let dict, let codes) where codes[row] != UInt32.max:
+                buf.append(contentsOf: Array(",\(key):\(Self.json(dict[Int(codes[row])]))}}".utf8))
+            default:
+                buf.append(contentsOf: Array("}}".utf8))
+            }
+            if buf.count > 1 << 20 {
+                h.write(buf)
+                buf.removeAll(keepingCapacity: true)
+            }
+        }
+        buf.append(contentsOf: Array("]}".utf8))
+        h.write(buf)
+        return out
+    }
+
+    /// A JSON string literal.
+    static func json(_ s: String) -> String {
+        var out = "\""
+        for u in s.unicodeScalars {
+            switch u {
+            case "\"": out += "\\\""
+            case "\\": out += "\\\\"
+            case "\n": out += "\\n"
+            case "\r": out += "\\r"
+            case "\t": out += "\\t"
+            default:
+                if u.value < 0x20 { out += String(format: "\\u%04x", u.value) } else { out.unicodeScalars.append(u) }
+            }
+        }
+        return out + "\""
+    }
 }
 
 struct GeoBounds: Equatable {
@@ -80,6 +252,18 @@ struct GeoBounds: Equatable {
 }
 
 /// A decoded data set. Built off the main thread, then read-only.
+/// How data in a local grid was put on the map (see `placement.rs`).
+struct Placement {
+    /// The app's copy of the file, read again for another grid.
+    let file: URL
+    /// "prj", "guess" or "chosen".
+    let how: String
+    let name: String
+    /// Other grids that land it near `near`, nearest first.
+    let alternatives: [(epsg: Int, name: String)]
+    let near: CLLocationCoordinate2D?
+}
+
 final class GeoDataset: Identifiable {
     let id = UUID()
     let name: String
@@ -87,8 +271,12 @@ final class GeoDataset: Identifiable {
     let features: [GeoFeature]
     let fields: [FieldInfo]
     let bounds: GeoBounds
-    /// GeoJSON for MapLibre, each feature tagged with `_lm_i` (its index) for hit-testing.
-    let mapGeoJSON: Data
+    /// The attribute columns and the shapes on disk (nil for a map image).
+    let store: LayerStore?
+
+    /// The GeoJSON file for MapLibre: each feature's shape, its index (`_lm_i`, for taps) and only
+    /// the field the layer is coloured by (see `LayerStore.mapURL(showing:)`).
+    func mapFile(showing field: String?) -> URL? { store?.mapURL(showing: field) }
     /// Plain-language assumptions and skips from the reader (purple dot on the phone too).
     let assumptions: [String]
     /// The field used for insights ("3rd highest of 17"), if any number field exists.
@@ -106,6 +294,11 @@ final class GeoDataset: Identifiable {
     /// Where it came from, so the map can be reopened: a library item, or a file in the app.
     var libraryID: String?
     var savedPath: String?
+    /// Data that came in a local grid (metres, not longitude/latitude): how it was placed, so the
+    /// layer card can offer another grid.
+    var placement: Placement?
+    /// The layer's path inside the .zip it came from (several layers share one file).
+    var member: String?
     /// Set for map images and grids of values; they have no features.
     var raster: RasterInfo?
 
@@ -124,7 +317,7 @@ final class GeoDataset: Identifiable {
         features: [GeoFeature],
         fields: [FieldInfo],
         bounds: GeoBounds,
-        mapGeoJSON: Data,
+        store: LayerStore? = nil,
         assumptions: [String],
         primaryField: FieldInfo?,
         titleField: String?,
@@ -139,7 +332,7 @@ final class GeoDataset: Identifiable {
         self.features = features
         self.fields = fields
         self.bounds = bounds
-        self.mapGeoJSON = mapGeoJSON
+        self.store = store
         self.assumptions = assumptions
         self.primaryField = primaryField
         self.titleField = titleField
@@ -209,8 +402,15 @@ final class GeoDataset: Identifiable {
     }
 
     /// "177 countries", "1,251 cities"; "22 places" for "Lisbon trip" (not "22 lisbon trip").
+    /// Rows kept in the table that have no place on the map (blank coordinates, a 0, 0 stand-in,
+    /// a find on Mars). Their `center` is 0, 0 only as a placeholder.
+    var unlocated: Int {
+        kind == .table || raster != nil ? 0 : features.lazy.filter { !$0.bounds.isValid }.count
+    }
+
     var countPhrase: String {
-        let n = features.count
+        let missing = unlocated
+        let n = features.count - missing
         let lower = name.lowercased()
         let plainPlural = !lower.contains(" ") && lower.hasSuffix("s") && !lower.hasSuffix("ss")
         let noun: String
@@ -228,7 +428,10 @@ final class GeoDataset: Identifiable {
         if let raster {
             return raster.look == .values ? "\(raster.quantity.lowercased()) grid" : "map image"
         }
-        return "\(NumberWords.integer(n)) \(noun)"
+        // NASA's meteorites: 45,716 rows, but 13,530 have no usable place; saying 45,716 places
+        // promised dots that aren't there.
+        let more = missing > 0 ? " (\(NumberWords.integer(missing)) more without a location)" : ""
+        return "\(NumberWords.integer(n)) \(noun)\(more)"
     }
 
     func numbers(for field: FieldInfo) -> [(index: Int, value: Double)] {
@@ -328,60 +531,46 @@ enum GeoParse {
         case noFeatures
     }
 
-    /// Build a dataset from a FeatureCollection. `primary` names the insight field when known.
+    /// Build a dataset from the reader's files (see `store.rs`): columns, measures, map file.
+    /// `primary` names the insight field when known.
     static func dataset(
         name: String,
-        geojson: Any,
+        files: [String: String],
+        count: Int,
         kindHint: GeometryKind?,
         assumptions: [String],
         primary: String?,
         sourceName: String,
         credit: String?
     ) throws -> GeoDataset {
-        guard let root = geojson as? [String: Any], let rawFeatures = root["features"] as? [[String: Any]] else {
+        guard let cols = files["cols"], let map = files["map"], let idx = files["idx"], let geoPath = files["geo"],
+              let store = LayerStore(cols: URL(fileURLWithPath: cols), map: URL(fileURLWithPath: map), idx: URL(fileURLWithPath: idx)),
+              let geo = try? Data(contentsOf: URL(fileURLWithPath: geoPath), options: .alwaysMapped) else {
             throw ParseError.notGeoJSON
         }
+        let rows = min(count, store.rows, geo.count / 64)
         var features: [GeoFeature] = []
-        var tagged: [[String: Any]] = []
+        features.reserveCapacity(rows)
         var all = GeoBounds.empty
-        var counts = [GeometryKind.point: 0, .line: 0, .area: 0]
-        features.reserveCapacity(rawFeatures.count)
-        tagged.reserveCapacity(rawFeatures.count)
-
-        for raw in rawFeatures {
-            let index = features.count
-            var props = (raw["properties"] as? [String: Any]) ?? [:]
-            props.removeValue(forKey: "_lm_i")
-            let geometry = raw["geometry"] as? [String: Any]
-            let measured = GeoMeasure.measure(geometry)
-            if let kind = measured.kind { counts[kind, default: 0] += 1 }
-            all.add(measured.bounds)
-            features.append(
-                GeoFeature(
-                    index: index,
-                    properties: props,
-                    center: measured.bounds.isValid ? measured.center : CLLocationCoordinate2D(latitude: 0, longitude: 0),
-                    bounds: measured.bounds,
-                    areaKm2: measured.areaKm2,
-                    lengthKm: measured.lengthKm,
-                    raw: raw
-                )
-            )
-            var tagProps = props
-            tagProps["_lm_i"] = index
-            var t = raw
-            t["properties"] = tagProps
-            t.removeValue(forKey: "id")
-            tagged.append(t)
+        geo.withUnsafeBytes { raw in
+            func d(_ row: Int, _ k: Int) -> Double { raw.loadUnaligned(fromByteOffset: (row * 8 + k) * 8, as: Double.self) }
+            for row in 0..<rows {
+                let b = GeoBounds(minLon: d(row, 2), minLat: d(row, 3), maxLon: d(row, 4), maxLat: d(row, 5))
+                let valid = b.minLon.isFinite && b.isValid
+                if valid { all.add(b) }
+                let area = d(row, 6), length = d(row, 7)
+                features.append(GeoFeature(
+                    index: row,
+                    store: store,
+                    center: valid ? CLLocationCoordinate2D(latitude: d(row, 1), longitude: d(row, 0)) : CLLocationCoordinate2D(latitude: 0, longitude: 0),
+                    bounds: valid ? b : .empty,
+                    areaKm2: area.isNaN ? nil : area,
+                    lengthKm: length.isNaN ? nil : length
+                ))
+            }
         }
         guard !features.isEmpty else { throw ParseError.noFeatures }
-
-        let kind: GeometryKind = {
-            if let kindHint, kindHint != .table { return kindHint }
-            let best = counts.max { $0.value < $1.value }
-            guard let best, best.value > 0 else { return .table }
-            return best.key
-        }()
+        let kind: GeometryKind = kindHint.flatMap { $0 == .table ? nil : $0 } ?? .point
 
         let fields = inferFields(features)
         let primaryField: FieldInfo? = {
@@ -406,15 +595,13 @@ enum GeoParse {
         let notesField = named(["description", "notes", "note", "comment", "comments", "notes from friends"])
         let hiddenFields = plumbing(fields, features)
 
-        let collection: [String: Any] = ["type": "FeatureCollection", "features": tagged]
-        let data = try JSONSerialization.data(withJSONObject: collection)
         return GeoDataset(
             name: name,
             kind: kind,
             features: features,
             fields: fields,
             bounds: all,
-            mapGeoJSON: data,
+            store: store,
             assumptions: assumptions,
             primaryField: primaryField,
             titleField: titleField,

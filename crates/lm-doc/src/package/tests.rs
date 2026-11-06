@@ -35,6 +35,7 @@ fn profile(path: &str, kind: LayerKind, size: u64, mtime: i64, fields: &[&str]) 
         data_rev: 0,
         joins: Vec::new(),
         grid: None,
+        band_percentiles: Vec::new(),
     }
 }
 
