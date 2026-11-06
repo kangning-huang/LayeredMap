@@ -628,6 +628,18 @@ struct ContentView: View {
         sceneRun = true
         Task { @MainActor in
             print("LM_MEM at launch: \(os_proc_available_memory() / 1_048_576) MB available")
+            // LM_MEM=1: a sample every 2 s off the main thread, so a stall or a kill still shows
+            // how long it took and how close to the limit it was.
+            if ProcessInfo.processInfo.environment["LM_MEM"] != nil {
+                let start = Date()
+                Thread.detachNewThread {
+                    while true {
+                        Thread.sleep(forTimeInterval: 2)
+                        print(String(format: "LM_MEM t=%.0fs %d MB available", Date().timeIntervalSince(start), os_proc_available_memory() / 1_048_576))
+                        fflush(stdout)
+                    }
+                }
+            }
             try? await Task.sleep(nanoseconds: 1_500_000_000)
             switch scene {
             case "open": active = .open
