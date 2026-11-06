@@ -294,9 +294,7 @@ fn axis_word(token: &str) -> Option<(Axis, Family)> {
     match token {
         // "longtitude": a misspelling that ships in real tables (seen in a survey of 10,000 open-data
         // tables, 2026-11).
-        "lon" | "lng" | "long" | "longitude" | "longitud" | "longitudine" | "longtitude" | "lons" => {
-            Some((Axis::X, Family::LonLat))
-        }
+        "lon" | "lng" | "long" | "longitude" | "longitud" | "longitudine" | "longtitude" | "lons" => Some((Axis::X, Family::LonLat)),
         "lat" | "latitude" | "latitud" | "latitudine" | "lats" => Some((Axis::Y, Family::LonLat)),
         "x" | "xcoord" | "xcoordinate" | "xcoordina" | "mapx" | "xpos" | "coordx" | "utmx" | "pointx" => Some((Axis::X, Family::Xy)),
         "y" | "ycoord" | "ycoordinate" | "ycoordina" | "mapy" | "ypos" | "coordy" | "utmy" | "pointy" => Some((Axis::Y, Family::Xy)),
@@ -309,10 +307,45 @@ fn axis_word(token: &str) -> Option<(Axis, Family)> {
 /// Words that start or end like a coordinate word but aren't one (from the same survey: CDC's
 /// `colon_screen`, plat/lot numbers, Spanish `renglon`, `latino`, `loneliness`, `long_term`…).
 const NOT_COORDINATE_WORDS: &[&str] = &[
-    "colon", "plat", "flat", "splat", "renglon", "salon", "nylon", "melon", "babylon", "london", "lonely", "loneliness",
-    "latino", "latina", "latinx", "latin", "latency", "lateral", "later", "latest", "late", "latte", "lathe", "lattice",
-    "along", "belong", "oblong", "prolong", "headlong", "lifelong", "furlong", "longest", "longer", "longing", "longevity",
-    "longitudinal", "longname", "longterm", "longdesc",
+    "colon",
+    "plat",
+    "flat",
+    "splat",
+    "renglon",
+    "salon",
+    "nylon",
+    "melon",
+    "babylon",
+    "london",
+    "lonely",
+    "loneliness",
+    "latino",
+    "latina",
+    "latinx",
+    "latin",
+    "latency",
+    "lateral",
+    "later",
+    "latest",
+    "late",
+    "latte",
+    "lathe",
+    "lattice",
+    "along",
+    "belong",
+    "oblong",
+    "prolong",
+    "headlong",
+    "lifelong",
+    "furlong",
+    "longest",
+    "longer",
+    "longing",
+    "longevity",
+    "longitudinal",
+    "longname",
+    "longterm",
+    "longdesc",
 ];
 
 /// A coordinate word glued to another word: NASA's `reclat`/`reclong`, the Census's
@@ -580,10 +613,7 @@ pub fn csv_locate_delimited(headers: &[String], sample_rows: &[Vec<String>], fil
                 .iter()
                 .enumerate()
                 .max_by(|(ia, a), (ib, b)| {
-                    (close(a) && !numbered(a))
-                        .cmp(&(close(b) && !numbered(b)))
-                        .then(a.rows_in_range.cmp(&b.rows_in_range))
-                        .then(ib.cmp(ia))
+                    (close(a) && !numbered(a)).cmp(&(close(b) && !numbered(b))).then(a.rows_in_range.cmp(&b.rows_in_range)).then(ib.cmp(ia))
                 })
                 .map(|(i, _)| i)
                 .unwrap_or(0);
@@ -698,7 +728,15 @@ mod tests {
             }
         }
         // Projected-style names pair up too (their values decide what they are).
-        for (x, y) in [("x_coordinate", "y_coordinate"), ("POINT_X", "POINT_Y"), ("MapX", "MapY"), ("UTM_X", "UTM_Y"), ("XPos", "YPos"), ("X_COORDINA", "Y_COORDINA"), ("X Coordinate (State Plane)", "Y Coordinate (State Plane)")] {
+        for (x, y) in [
+            ("x_coordinate", "y_coordinate"),
+            ("POINT_X", "POINT_Y"),
+            ("MapX", "MapY"),
+            ("UTM_X", "UTM_Y"),
+            ("XPos", "YPos"),
+            ("X_COORDINA", "Y_COORDINA"),
+            ("X Coordinate (State Plane)", "Y Coordinate (State Plane)"),
+        ] {
             let headers = s(&["name", x, y]);
             assert!(matches!(csv_locate(&headers, &shanghai(20), "f.csv"), CsvLocation::Located { .. }), "{x}/{y}");
         }

@@ -11,11 +11,11 @@ pub mod archive;
 pub mod columns;
 pub mod drawable;
 mod ffi;
+pub mod netcdf;
 pub mod placement;
+pub mod raster;
 pub mod store;
 pub mod zipstream;
-pub mod netcdf;
-pub mod raster;
 
 use rustgis_data::GeometryType;
 use rustgis_data::io::{CsvOptions, read_csv_with, read_geojson, read_path, to_geojson};
@@ -53,7 +53,12 @@ pub fn open_path_envelopes_at(path: &str, near: Option<(f64, f64)>, chosen: Opti
     open_path_layers(path, near, chosen, None)
 }
 
-pub fn open_path_layers(path: &str, near: Option<(f64, f64)>, chosen: Option<u16>, out_dir: Option<&Path>) -> Result<(String, usize), String> {
+pub fn open_path_layers(
+    path: &str,
+    near: Option<(f64, f64)>,
+    chosen: Option<u16>,
+    out_dir: Option<&Path>,
+) -> Result<(String, usize), String> {
     let p = Path::new(path);
     let ext = p.extension().and_then(|e| e.to_str()).unwrap_or("").to_ascii_lowercase();
     let layers = if ext == "zip" {
@@ -113,7 +118,8 @@ fn thousands(n: usize) -> String {
 /// counts ("N rows were left out").
 fn tidy_messages(messages: &mut Vec<String>, placed: bool) {
     messages.retain(|m| {
-        !(m.contains("unsupported file type") || (m.ends_with("rows had no usable coordinates") && m.split(' ').next().is_some_and(|w| w.parse::<u64>().is_ok())))
+        !(m.contains("unsupported file type")
+            || (m.ends_with("rows had no usable coordinates") && m.split(' ').next().is_some_and(|w| w.parse::<u64>().is_ok())))
     });
     if placed {
         // The reader's "give the file's coordinate system" is answered (placed, or it was
@@ -376,7 +382,11 @@ mod tests {
         std::fs::create_dir_all(&dir).expect("dir");
         let cases: &[(&str, &str, usize)] = &[
             // The row with blank coordinates stays, without a location, as `rustgis-data` keeps any.
-            ("meteorites.csv", "name,mass (g),reclat,reclong,GeoLocation\nAachen,21,50.775000,6.083330,\"(50.775, 6.08333)\"\nX,1,,,\nAarhus,720,56.18,10.23,\"(56.18, 10.23)\"\n", 3),
+            (
+                "meteorites.csv",
+                "name,mass (g),reclat,reclong,GeoLocation\nAachen,21,50.775000,6.083330,\"(50.775, 6.08333)\"\nX,1,,,\nAarhus,720,56.18,10.23,\"(56.18, 10.23)\"\n",
+                3,
+            ),
             ("gbif.csv", "species,decimalLatitude,decimalLongitude\na,-33.9,151.2\nb,40.7,-74.0\n", 2),
             ("census.csv", "GEOID,INTPTLAT,INTPTLON\n1,+31.2,-087.6\n2,+32.0,-086.1\n", 2),
             ("spanish.csv", "nombre,latitud,longitud\na,4.6,-74.08\nb,6.25,-75.56\n", 2),
@@ -399,7 +409,8 @@ mod tests {
         assert_eq!(v["placement"]["how"], "unplaced", "nowhere to guess near: {v}");
         // NYC's own grid (NY Long Island, US feet), with the map near Manhattan: placed there.
         let file = dir.join("nyc.csv");
-        std::fs::write(&file, "id,X Coordinate (State Plane),Y Coordinate (State Plane)\n1,987000,212000\n2,990000,215000\n").expect("write");
+        std::fs::write(&file, "id,X Coordinate (State Plane),Y Coordinate (State Plane)\n1,987000,212000\n2,990000,215000\n")
+            .expect("write");
         let (out, _) = open_path_envelope_at(&file.to_string_lossy(), Some((-73.98, 40.75)), None).expect("open");
         let v: serde_json::Value = serde_json::from_str(&out).expect("json");
         assert_eq!(v["placement"]["how"], "guess", "{v}");
@@ -421,10 +432,17 @@ mod tests {
                 Ok((out, n)) => {
                     let v: serde_json::Value = serde_json::from_str(&out).unwrap_or_default();
                     let layers = v.as_array().cloned().unwrap_or_default();
-                    println!("LMIOS {path}\t{} layers, {n} features, {} JSON bytes, {:.1}s", layers.len(), out.len(), t.elapsed().as_secs_f64());
+                    println!(
+                        "LMIOS {path}\t{} layers, {n} features, {} JSON bytes, {:.1}s",
+                        layers.len(),
+                        out.len(),
+                        t.elapsed().as_secs_f64()
+                    );
                     for l in layers {
                         let feats = l["count"].as_u64().unwrap_or(0);
-                        let located = l["geojson"]["features"].as_array().map_or(-1, |a| a.iter().filter(|f| !f["geometry"].is_null()).count() as i64);
+                        let located = l["geojson"]["features"]
+                            .as_array()
+                            .map_or(-1, |a| a.iter().filter(|f| !f["geometry"].is_null()).count() as i64);
                         println!("LMIOS   {} · {} · {feats} ({located} located) · placement {}", l["name"], l["geometry"], l["placement"]);
                         for m in l["messages"].as_array().cloned().unwrap_or_default() {
                             println!("LMIOS     note: {m}");

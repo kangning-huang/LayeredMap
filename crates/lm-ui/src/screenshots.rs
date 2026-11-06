@@ -2095,7 +2095,8 @@ fn curated_sweep() {
             std::thread::sleep(std::time::Duration::from_millis(10));
         }
         h.run_steps(30);
-        let names: Vec<String> = h.state().as_ref().map(|s| s.ws.doc.layers.iter().map(|l| l.display_name.clone()).collect()).unwrap_or_default();
+        let names: Vec<String> =
+            h.state().as_ref().map(|s| s.ws.doc.layers.iter().map(|l| l.display_name.clone()).collect()).unwrap_or_default();
         match h.render() {
             Ok(img) => {
                 let f = out.join(format!("{tag}.png"));

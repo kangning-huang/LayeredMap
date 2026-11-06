@@ -89,10 +89,7 @@ mod tests {
         }
         assert_eq!(drawable(Geometry::Polygon(vec![vec![vec![c(30.0, 30.0), c(31.0, 31.0)]]])), None);
         // A bad hole goes, the area stays.
-        let holed = Geometry::Polygon(vec![vec![
-            vec![c(0.0, 0.0), c(5.0, 0.0), c(5.0, 5.0), c(0.0, 0.0)],
-            vec![c(1.0, 1.0), c(2.0, 2.0)],
-        ]]);
+        let holed = Geometry::Polygon(vec![vec![vec![c(0.0, 0.0), c(5.0, 0.0), c(5.0, 5.0), c(0.0, 0.0)], vec![c(1.0, 1.0), c(2.0, 2.0)]]]);
         match drawable(holed) {
             Some(Geometry::Polygon(p)) => assert_eq!(p[0].len(), 1),
             other => panic!("{other:?}"),

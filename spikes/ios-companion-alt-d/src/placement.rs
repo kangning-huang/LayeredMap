@@ -56,9 +56,9 @@ pub fn tidy_lonlat(ds: &mut Dataset) -> Vec<String> {
     }
     match off.as_slice() {
         [] => {}
-        [(x, y)] => messages.push(format!(
-            "1 place was left off the map: its coordinates ({x}, {y}) aren't a longitude and latitude on Earth."
-        )),
+        [(x, y)] => {
+            messages.push(format!("1 place was left off the map: its coordinates ({x}, {y}) aren't a longitude and latitude on Earth."))
+        }
         [(x, y), ..] => messages.push(format!(
             "{} places were left off the map: their coordinates (such as {x}, {y}) aren't longitudes and latitudes on Earth.",
             crate::thousands(off.len())

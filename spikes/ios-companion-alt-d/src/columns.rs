@@ -37,8 +37,7 @@ fn cell(v: &Value) -> String {
 /// Finds the records' locations in a table read without them; for one column, fills them in.
 pub fn locate(table: &mut Dataset, file_name: &str) -> Option<Located> {
     let headers: Vec<String> = table.fields.iter().map(|f| f.name.clone()).collect();
-    let rows: Vec<Vec<String>> =
-        table.features.iter().take(SAMPLE).map(|f| f.attrs.iter().map(cell).collect()).collect();
+    let rows: Vec<Vec<String>> = table.features.iter().take(SAMPLE).map(|f| f.attrs.iter().map(cell).collect()).collect();
 
     match lm_profile::csv_locate(&headers, &rows, file_name) {
         lm_profile::CsvLocation::Located { pair, .. } => return Some(Located::Columns { x: pair.x, y: pair.y }),

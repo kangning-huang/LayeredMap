@@ -43,10 +43,7 @@ pub fn entries(file: &mut File) -> Result<Vec<Entry>, String> {
     file.seek(SeekFrom::Start(len - tail_len)).map_err(|e| e.to_string())?;
     let mut tail = vec![0u8; tail_len as usize];
     file.read_exact(&mut tail).map_err(|e| e.to_string())?;
-    let eocd = (0..tail.len().saturating_sub(21))
-        .rev()
-        .find(|&i| tail.get(i..i + 4) == Some(&[0x50, 0x4B, 0x05, 0x06]))
-        .ok_or_else(bad)?;
+    let eocd = (0..tail.len().saturating_sub(21)).rev().find(|&i| tail.get(i..i + 4) == Some(&[0x50, 0x4B, 0x05, 0x06])).ok_or_else(bad)?;
     let count = u16_at(&tail, eocd + 10).ok_or_else(bad)?;
     let cd_size = u32_at(&tail, eocd + 12).ok_or_else(bad)?;
     let cd_offset = u32_at(&tail, eocd + 16).ok_or_else(bad)?;

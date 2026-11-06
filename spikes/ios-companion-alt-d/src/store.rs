@@ -316,7 +316,8 @@ mod tests {
 
     #[test]
     fn writes_spliceable_features_and_columns() {
-        let mut ds = Dataset::new("t", GeometryType::Polygon, vec![Field::new("name", FieldType::Text), Field::new("n", FieldType::Double)]);
+        let mut ds =
+            Dataset::new("t", GeometryType::Polygon, vec![Field::new("name", FieldType::Text), Field::new("n", FieldType::Double)]);
         let sq = vec![vec![Coord::new(0.0, 0.0), Coord::new(1.0, 0.0), Coord::new(1.0, 1.0), Coord::new(0.0, 1.0), Coord::new(0.0, 0.0)]];
         ds.push(Some(Geometry::Polygon(vec![sq])), vec![Value::Text("a".into()), Value::Float(2.5)]);
         ds.push(None, vec![Value::Text("a".into()), Value::Null]);
