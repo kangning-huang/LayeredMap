@@ -107,7 +107,8 @@ The App Store build runs in the App Sandbox. What that touches in NimbleMap:
 
 1. **Entitlements.** `app-sandbox`, `files.user-selected.read-write` (open and save panels,
    drag and drop, Open With), `files.bookmarks.app-scope` (recent files), `network.client`
-   (basemap tiles, the data library, the Ask box) and, for Pro, `device.audio-input` (the voice
+   (basemap tiles, the data library, the Ask box), `network.server` (sign-in's loopback
+   redirect on 127.0.0.1; App Review rejected build 77 without it) and, for Pro, `device.audio-input` (the voice
    helper, which also needs the sandbox and `inherit` entitlements in its own signature).
 2. **Shapefiles and other multi-file formats.** The sandbox grants access only to the file the
    person opened, not the `.dbf`, `.shx`, `.prj` and `.cpg` beside a `.shp`. macOS allows this
