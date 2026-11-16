@@ -5,4 +5,7 @@ ignore = [
   "RUSTSEC-2026-0368", # zip 8 via calamine only; extract() is never called on it
   "RUSTSEC-2026-0369", # zip 8 via calamine only; extract() is never called on it
   "RUSTSEC-2026-0192", # ttf-parser unmaintained; parses only the app's bundled fonts
+  "RUSTSEC-2026-0391", # zstd 0.13 via tiff 0.11.3; no 0.13.x patch (workspace zstd is 0.14.3)
+  "RUSTSEC-2026-0398", # zstd-safe 7 via tiff's zstd 0.13; patched only in >=8.2.0
+  "RUSTSEC-2026-0403", # zstd-safe 7 via tiff's zstd 0.13; patched only in >=8.2.0
 ]

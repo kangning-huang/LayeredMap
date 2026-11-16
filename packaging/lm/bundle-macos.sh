@@ -64,12 +64,22 @@ else
 fi
 echo "bundle-macos: update feed $LM_UPDATE_FEED_URL (fallback $LM_UPDATE_FEED_FALLBACK_URL)"
 features=()
+# Temporary App Review path: email + password in Settings › Account (Connect only accepts
+# username+password; the app is otherwise passwordless). Remove after review if desired.
+if [[ "$channel" == "mas" ]]; then
+  features=(--features review-password-signin)
+  echo "bundle-macos: enabling review-password-signin for MAS App Review demo sign-in"
+fi
 if [[ -n "${LM_CARGO_FEATURES:-}" ]]; then
   if [[ "$version" != *-test* ]]; then
     echo "bundle-macos: LM_CARGO_FEATURES ($LM_CARGO_FEATURES) is for test builds only, not version $version" >&2
     exit 1
   fi
-  features=(--features "$LM_CARGO_FEATURES")
+  if [[ ${#features[@]} -gt 0 ]]; then
+    features=(--features "review-password-signin,$LM_CARGO_FEATURES")
+  else
+    features=(--features "$LM_CARGO_FEATURES")
+  fi
 fi
 
 cargo build --release --locked -p layeredmap --manifest-path "$root/Cargo.toml" ${features[@]+"${features[@]}"}

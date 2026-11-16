@@ -415,6 +415,35 @@ impl Account {
         Ok(user)
     }
 
+    /// Signs in with email and password (`POST …/token?grant_type=password`). Temporary App
+    /// Review path: the shipped Settings UI that calls this is behind
+    /// `review-password-signin` (MAS builds only). The account stays passwordless for everyone
+    /// else (docs/lm/accounts-design.md).
+    pub fn sign_in_with_password(&self, region: Region, email: &str, password: &str) -> Result<User, AccountError> {
+        let rc = self.region_config(region)?;
+        let email = email.trim();
+        if !plausible_email(email) {
+            return Err(AccountError::Denied(lm_core::tn!("that doesn't look like an email address").into()));
+        }
+        if password.is_empty() {
+            return Err(AccountError::Denied(lm_core::tn!("enter the password").into()));
+        }
+        if lm_net::offline() {
+            return Err(AccountError::Offline);
+        }
+        let body = serde_json::json!({"email": email, "password": password});
+        let r = self.post(rc, &url::password_token_url(&rc.auth_url), &body)?;
+        if r.status != 200 {
+            return Err(match r.status {
+                400 | 401 | 403 | 404 | 422 => AccountError::Denied(reason(&r.body)),
+                429 => AccountError::TooManyAttempts,
+                s => AccountError::Server(s, reason(&r.body)),
+            });
+        }
+        let s = Session::from_token_response(&r.body, region, (self.clock)()).map_err(|e| AccountError::Server(200, e))?;
+        self.keep(s)
+    }
+
     /// A valid access token, refreshed first when it has less than five minutes left. A refresh
     /// the service refuses signs out here (the stored record is deleted).
     pub fn access_token(&self) -> Result<String, AccountError> {
