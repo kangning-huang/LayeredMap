@@ -115,3 +115,8 @@ codegen-units = 16
 inherits = "release"
 lto = "fat"
 codegen-units = 1
+
+[patch.crates-io]
+# winit 0.30.13 links private CGSSetWindowBackgroundBlurRadius (App Store 2.5.1).
+# Drop the FFI; set_blur is a no-op. Pin matches crates.io 0.30.13 + that one change.
+winit = { path = "vendor/winit" }

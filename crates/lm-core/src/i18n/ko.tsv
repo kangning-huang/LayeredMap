@@ -859,3 +859,8 @@ We sent a code to {address}. Type it below, or click the link in the same email 
 The email comes from {sender}, subject “{subject}”. If it isn't in your inbox, check your spam or junk folder.	보낸 사람은 {sender}, 제목은 “{subject}”입니다. 받은편지함에 없으면 스팸함을 확인하세요.
 The link has stopped working on this Mac. Type the code from the email, or send a new one.	이 Mac에서는 링크가 더 이상 작동하지 않습니다. 이메일의 코드를 입력하거나 새 이메일을 보내세요.
 The link has stopped working on this computer. Type the code from the email, or send a new one.	이 컴퓨터에서는 링크가 더 이상 작동하지 않습니다. 이메일의 코드를 입력하거나 새 이메일을 보내세요.
+App Review sign-in	App Review 로그인
+Password	비밀번호
+Sign in with email and password	이메일과 비밀번호로 로그인
+Signing in…	로그인 중…
+enter the password	비밀번호를 입력하세요

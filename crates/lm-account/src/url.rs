@@ -72,6 +72,11 @@ pub fn otp_url(auth_url: &str, redirect: &str) -> String {
     format!("{auth_url}/auth/v1/otp?redirect_to={}", encode(redirect))
 }
 
+/// Supabase's password grant (temporary App Review path; feature `review-password-signin`).
+pub fn password_token_url(auth_url: &str) -> String {
+    format!("{auth_url}/auth/v1/token?grant_type=password")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -107,6 +112,7 @@ mod tests {
             otp_url("https://abc.supabase.co", &redirect),
             format!("https://abc.supabase.co/auth/v1/otp?redirect_to={}", encode(&redirect))
         );
+        assert_eq!(password_token_url("https://abc.supabase.co"), "https://abc.supabase.co/auth/v1/token?grant_type=password");
     }
 
     #[test]
