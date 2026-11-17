@@ -8,17 +8,40 @@ import os
 /// has the Mac's memory and says yes to anything; a phone ended the app instead — mid-parse
 /// (the tornado tracks on top of earlier layers) or in MapLibre's worker (154,400 storks).
 enum MemoryRoom {
-    /// What the app holds for each feature and each attribute cell once a layer is on the map,
-    /// now that layers arrive as files (`store.rs`): a small record per feature, its cells as
-    /// typed columns, and MapLibre's own index of the shapes. First estimates, from the phone.
-    static let perFeature = 2_500.0
-    static let perCell = 10.0
+    /// What the app holds once a layer is on the map, measured on an iPhone 18 Pro (2026-11-06):
+    /// a small record per feature and its cells as typed columns (Geofabrik's Taiwan, 920,000
+    /// features, about 400 MB), plus what MapLibre takes for a line or an area (Taiwan's 530,000
+    /// took it about 1.5 GB more at the first draw). Points cost MapLibre only the tiles on
+    /// screen (`PointTiles`).
+    static let perFeature = 500.0
+    static let perDrawnShape = 3_000.0
+    static let perCell = 12.0
 
-    static func refusal(features: Int, cells: Int) -> String? {
+    /// What the reader itself needs at its peak, from the file's size, before it starts: it holds a
+    /// table whole while it reads it (NYC's street trees, a 210 MB CSV: 1.85 GB on the phone; the
+    /// white storks, 51 MB: 578 MB). A zip is read a member at a time, so it isn't judged by its
+    /// size here; its layers are checked once read.
+    static let readerPerByte = 10.0
+
+    static func readerRefusal(path: String) -> String? {
+        let available = Double(os_proc_available_memory())
+        guard available > 0 else { return nil }
+        let ext = (path as NSString).pathExtension.lowercased()
+        guard ["csv", "tsv", "txt", "geojson", "json", "kml", "gpx"].contains(ext),
+              let size = (try? FileManager.default.attributesOfItem(atPath: path)[.size] as? NSNumber)?.doubleValue
+        else { return nil }
+        let need = size * readerPerByte
+        guard need > available * 0.85 else { return nil }
+        let mb = { (b: Double) in Int(b / 1_048_576) }
+        return "This file is too big to read on this iPhone right now: reading it takes about \(mb(need)) MB and there is room for \(mb(available * 0.85)) MB. Remove a layer or two and try again, open it on the Mac, or download a smaller part (most data portals let you filter by area or date)."
+    }
+
+    /// `shapes`: the lines and areas among `features`.
+    static func refusal(features: Int, shapes: Int, cells: Int) -> String? {
         let available = Double(os_proc_available_memory())
         // 0 when unknown (a simulator): fall back on the reader's own size limits.
         guard available > 0 else { return nil }
-        let need = Double(features) * perFeature + Double(cells) * perCell
+        let need = Double(features) * perFeature + Double(shapes) * perDrawnShape + Double(cells) * perCell
         guard need > available * 0.7 else { return nil }
         let mb = { (b: Double) in Int(b / 1_048_576) }
         return "This file is too big to open on this iPhone right now: it needs about \(mb(need)) MB and there is room for \(mb(available * 0.7)) MB. Remove a layer or two and try again, open it on the Mac, or download a smaller part (most data portals let you filter by area or date)."
@@ -53,6 +76,9 @@ enum DecodeBridge {
     /// Each layer is written into `outDir` as files (see `store.rs`); the envelopes name them.
     static func openAll(path: String, outDir: URL, near: CLLocationCoordinate2D? = nil, epsg: Int? = nil) -> Result<[Envelope], DecodeError> {
         try? FileManager.default.createDirectory(at: outDir, withIntermediateDirectories: true)
+        if let refusal = MemoryRoom.readerRefusal(path: path) {
+            return .failure(DecodeError(message: refusal))
+        }
         return path.withCString { cPath in outDir.path.withCString { cDir in
             var out: UnsafeMutablePointer<CChar>?
             var count: Int = 0
@@ -72,7 +98,11 @@ enum DecodeBridge {
                 return .failure(DecodeError(message: "unreadable decoder output"))
             }
             let cells = list.reduce(0) { $0 + (($1["count"] as? NSNumber)?.intValue ?? 0) * max(1, ($1["fields"] as? NSNumber)?.intValue ?? 1) }
-            if let refusal = MemoryRoom.refusal(features: count, cells: cells) {
+            let shapes = list.reduce(0) { n, o in
+                let g = o["geometry"] as? String
+                return n + (g == "line" || g == "area" ? (o["count"] as? NSNumber)?.intValue ?? 0 : 0)
+            }
+            if let refusal = MemoryRoom.refusal(features: count, shapes: shapes, cells: cells) {
                 return .failure(DecodeError(message: refusal))
             }
             return .success(list.map { obj in

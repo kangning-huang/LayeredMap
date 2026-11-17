@@ -122,6 +122,14 @@ struct MapScreen: UIViewRepresentable {
         private var fileURLs: [UUID: URL] = [:]
         /// The field each layer's source carries (see `GeoDataset.mapGeoJSON(showing:)`).
         private var sourceField: [UUID: String?] = [:]
+        /// Big point layers, drawn tile by tile (`PointTiles`); kept so the source's data
+        /// source lives as long as the source.
+        private(set) var pointTiles: [UUID: PointTiles] = [:]
+
+        static func drawsByTile(_ ds: GeoDataset) -> Bool {
+            ds.kind == .point && ds.features.count > PointTiles.threshold
+                && ProcessInfo.processInfo.environment["LM_TILES"] != "0"
+        }
         private var lastHighlight: Data?
         private var pinAnnotation: MLNPointAnnotation?
         private var pendingCamera: CameraRequest?
@@ -149,6 +157,22 @@ struct MapScreen: UIViewRepresentable {
             if let pendingCamera {
                 self.pendingCamera = nil
                 apply(pendingCamera, on: mapView)
+            }
+            // Spike-only: LM_TOUR="lat,lon,zoom;…" flies to each stop (from 8 s, then every 5 s)
+            // and prints what the tile-by-tile point layers handed MapLibre, for screenshots.
+            if let tour = ProcessInfo.processInfo.environment["LM_TOUR"] {
+                let stops = tour.split(separator: ";").map { $0.split(separator: ",").compactMap { Double($0) } }.filter { $0.count == 3 }
+                for (n, s) in stops.enumerated() {
+                    let at = Double(ProcessInfo.processInfo.environment["LM_TOUR_AT"] ?? "") ?? 8
+                    DispatchQueue.main.asyncAfter(deadline: .now() + at + Double(n) * 5) { [weak self] in
+                        mapView.setCenter(CLLocationCoordinate2D(latitude: s[0], longitude: s[1]), zoomLevel: s[2], animated: false)
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) {
+                            let st = self?.pointTiles.values.map { "\($0.stats.tiles) tiles, at most \($0.stats.most) features in one" } ?? []
+                            print("LM_TOUR stop \(n) z\(s[2]) · \(st.joined(separator: "; ")) · \(os_proc_available_memory() / 1_048_576) MB available")
+                            fflush(stdout)
+                        }
+                    }
+                }
             }
             if ProcessInfo.processInfo.environment["LM_BENCH"] == "1" {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 4) { [weak self] in
@@ -193,6 +217,14 @@ struct MapScreen: UIViewRepresentable {
         private func dotSource(for layer: MapLayer, in style: MLNStyle) -> MLNSource {
             let id = ids(layer.id).source + "-c"
             if let s = style.source(withIdentifier: id) { return s }
+            if layer.dataset.features.count > PointTiles.threshold {
+                // Taiwan's 125,095 land-use areas as one array of dots was what ended the app.
+                let t = PointTiles(dataset: layer.dataset, field: layer.style.showBy)
+                pointTiles[layer.id] = t
+                let s = MLNComputedShapeSource(identifier: id, dataSource: t, options: [.buffer: 16, .maximumZoomLevel: 18])
+                style.addSource(s)
+                return s
+            }
             let points: [MLNPointFeature] = layer.dataset.features.compactMap { f in
                 guard f.bounds.isValid else { return nil }
                 let p = MLNPointFeature()
@@ -209,6 +241,8 @@ struct MapScreen: UIViewRepresentable {
         }
 
         func sync(_ layers: [MapLayer], on map: MLNMapView) {
+            // Spike-only: LM_NOMAP=1 leaves layers off the map, to tell its memory from the app's.
+            if ProcessInfo.processInfo.environment["LM_NOMAP"] != nil { return }
             guard styleLoaded, let style = map.style else { return }
             let order = layers.map(\.id)
             // A layer coloured by another field needs that field in its source (it holds only one).
@@ -218,6 +252,7 @@ struct MapScreen: UIViewRepresentable {
                 if let s = style.source(withIdentifier: ids(layer.id).source) { style.removeSource(s) }
                 if let s = style.source(withIdentifier: ids(layer.id).source + "-c") { style.removeSource(s) }
                 fileURLs.removeValue(forKey: layer.id)
+                pointTiles.removeValue(forKey: layer.id)
                 rebuild = true
             }
             if order != appliedOrder || rebuild {
@@ -233,6 +268,7 @@ struct MapScreen: UIViewRepresentable {
                     if let s = style.source(withIdentifier: ids(id).source) { style.removeSource(s) }
                     if let s = style.source(withIdentifier: ids(id).source + "-c") { style.removeSource(s) }
                     fileURLs.removeValue(forKey: id)
+                    pointTiles.removeValue(forKey: id)
                 }
             }
             for layer in layers {
@@ -244,7 +280,7 @@ struct MapScreen: UIViewRepresentable {
 
         private func removeLayers(_ id: UUID, from style: MLNStyle) {
             let i = ids(id)
-            for lid in [i.fill, i.line, i.circle] {
+            for lid in [i.fill, i.line, i.circle, i.circle + "-d"] {
                 if let l = style.layer(withIdentifier: lid) { style.removeLayer(l) }
             }
         }
@@ -266,6 +302,16 @@ struct MapScreen: UIViewRepresentable {
                 fileURLs[layer.id] = r.png
                 return s
             }
+            if Self.drawsByTile(layer.dataset) {
+                let t = PointTiles(dataset: layer.dataset, field: layer.style.showBy)
+                pointTiles[layer.id] = t
+                // A marker: the rebuild on a new colour field looks for one.
+                fileURLs[layer.id] = layer.dataset.mapFile(showing: nil) ?? URL(fileURLWithPath: "/")
+                sourceField[layer.id] = layer.style.showBy
+                let s = MLNComputedShapeSource(identifier: i.source, dataSource: t, options: [.buffer: 16, .maximumZoomLevel: 18])
+                style.addSource(s)
+                return s
+            }
             let url: URL
             if let u = fileURLs[layer.id] {
                 url = u
@@ -276,7 +322,21 @@ struct MapScreen: UIViewRepresentable {
                 fileURLs[layer.id] = url
                 sourceField[layer.id] = layer.style.showBy
             }
-            let s = MLNShapeSource(identifier: i.source, url: url, options: nil)
+            // A 128-point buffer (MapLibre's default) took the stork's dots from 1.3 GB to 2.6 GB
+            // on an iPhone; 32 still keeps a dot or a line whole across a tile edge.
+            // Spike-only experiments: LM_SRC="maxz=12,buffer=0,tol=1".
+            var opts: [MLNShapeSourceOption: Any] = [.buffer: 32]
+            for kv in (ProcessInfo.processInfo.environment["LM_SRC"] ?? "").split(separator: ",") {
+                let p = kv.split(separator: "=")
+                guard p.count == 2, let v = Double(p[1]) else { continue }
+                switch p[0] {
+                case "maxz": opts[.maximumZoomLevel] = v
+                case "buffer": opts[.buffer] = v
+                case "tol": opts[.simplificationTolerance] = v
+                default: break
+                }
+            }
+            let s = MLNShapeSource(identifier: i.source, url: url, options: opts)
             style.addSource(s)
             return s
         }
@@ -288,7 +348,16 @@ struct MapScreen: UIViewRepresentable {
             case .raster:
                 style.addLayer(MLNRasterStyleLayer(identifier: i.fill, source: src))
             case .point:
+                if Self.drawsByTile(layer.dataset) {
+                    // Density squares where a tile holds too many dots to draw.
+                    let d = MLNFillStyleLayer(identifier: i.fill, source: src)
+                    d.predicate = NSPredicate(mglJSONObject: ["==", ["geometry-type"], "Polygon"])
+                    style.addLayer(d)
+                }
                 let c = MLNCircleStyleLayer(identifier: i.circle, source: src)
+                if Self.drawsByTile(layer.dataset) {
+                    c.predicate = NSPredicate(mglJSONObject: ["==", ["geometry-type"], "Point"])
+                }
                 c.circleStrokeColor = NSExpression(forConstantValue: UIColor.white)
                 c.circleStrokeWidth = NSExpression(forConstantValue: 0.6)
                 style.addLayer(c)
@@ -304,13 +373,37 @@ struct MapScreen: UIViewRepresentable {
                 o.lineColor = NSExpression(forConstantValue: UIColor.white)
                 style.addLayer(o)
                 if let z = Coordinator.dotsMaxZoom(layer.dataset) {
-                    let c = MLNCircleStyleLayer(identifier: i.circle, source: dotSource(for: layer, in: style))
+                    let dots = dotSource(for: layer, in: style)
+                    if dots is MLNComputedShapeSource {
+                        // Too many dots for a tile: where the small areas are, as density.
+                        let d = MLNFillStyleLayer(identifier: i.circle + "-d", source: dots)
+                        d.predicate = NSPredicate(mglJSONObject: ["==", ["geometry-type"], "Polygon"])
+                        d.maximumZoomLevel = Float(z)
+                        style.addLayer(d)
+                    }
+                    let c = MLNCircleStyleLayer(identifier: i.circle, source: dots)
+                    if dots is MLNComputedShapeSource {
+                        c.predicate = NSPredicate(mglJSONObject: ["==", ["geometry-type"], "Point"])
+                    }
                     c.maximumZoomLevel = Float(z)
                     c.circleStrokeColor = NSExpression(forConstantValue: UIColor.white)
                     c.circleStrokeWidth = NSExpression(forConstantValue: 0.5)
                     style.addLayer(c)
                 }
             }
+        }
+
+        /// One colour, darker where more places fall in a square (log scale: 1 to about 1,000);
+        /// squares hold no field, so a colour-by shows on the dots.
+        private func paintDensity(_ d: MLNFillStyleLayer, _ layer: MapLayer) {
+            let base = layer.style.showBy == nil ? layer.style.color : 0x3B_52_8B
+            d.fillColor = NSExpression(forConstantValue: UIColor(hex: base))
+            let o = layer.style.opacity
+            d.fillOpacity = NSExpression(mglJSONObject: [
+                "interpolate", ["linear"], ["ln", ["get", PointTiles.countKey]],
+                0, 0.18 * o, 7, 0.95 * o,
+            ] as [Any])
+            d.isVisible = layer.visible
         }
 
         private func paint(_ layer: MapLayer, in style: MLNStyle) {
@@ -356,6 +449,9 @@ struct MapScreen: UIViewRepresentable {
                     12, layer.style.size * 2.2,
                 ] as [Any])
                 c.isVisible = layer.visible
+                if let d = style.layer(withIdentifier: i.fill) as? MLNFillStyleLayer {
+                    paintDensity(d, layer)
+                }
             case .line:
                 guard let l = style.layer(withIdentifier: i.line) as? MLNLineStyleLayer else { return }
                 l.lineColor = color
@@ -376,6 +472,9 @@ struct MapScreen: UIViewRepresentable {
                     c.circleOpacity = NSExpression(forConstantValue: min(1, layer.style.opacity + 0.3))
                     c.circleRadius = NSExpression(forConstantValue: 2.6)
                     c.isVisible = layer.visible
+                }
+                if let d = style.layer(withIdentifier: i.circle + "-d") as? MLNFillStyleLayer {
+                    paintDensity(d, layer)
                 }
             }
         }

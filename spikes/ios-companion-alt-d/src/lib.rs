@@ -65,7 +65,8 @@ pub fn open_path_layers(
         open_zip(p, near, chosen, out_dir)?
     } else {
         let (v, n) = open_one(p, near, chosen, out_dir.map(|d| (d, "0")))?;
-        if let Some(why) = too_big(n, cells(&v), MAX_LAYER_FEATURES, MAX_LAYER_CELLS) {
+        let (max_features, max_cells) = layer_limits(&v);
+        if let Some(why) = too_big(n, cells(&v), max_features, max_cells) {
             return Err(why);
         }
         vec![(v, n)]
@@ -74,15 +75,25 @@ pub fn open_path_layers(
     Ok((serde_json::Value::Array(layers.into_iter().map(|(v, _)| v).collect()).to_string(), n))
 }
 
-/// What a phone holds at once. Measured in the simulator (2026-11): white storks, 222,661 rows ×
-/// 32 columns, peaked at 2.7 GB; NYC's street trees, 683,788 × 45, at 4.9 GB; Geofabrik's Taiwan,
-/// 20 layers and 2.2 million shapes, at 5.1 GB. iOS ends an app well before a phone's memory is
-/// full, so beyond these the file is refused (or, from a zip, the layer left out) with a reason
-/// rather than the app vanishing mid-import.
+/// What a phone holds at once. iOS ends an app well before a phone's memory is full, so beyond
+/// these the file is refused (or, from a zip, the layer left out) with a reason rather than the
+/// app vanishing mid-import. The app checks the phone's free memory as well (`MemoryRoom`).
+///
+/// Lines and areas go to MapLibre whole: Geofabrik's Taiwan (about 530,000 of them) took an
+/// iPhone 18 Pro to 2.4 GB for a moment. Points are drawn tile by tile (`PointTiles.swift`), so
+/// they cost only what the app keeps of them: NYC's 683,788 street trees × 45 columns peaked at
+/// 1.85 GB inside this reader on the phone, and the reader's peak is what bounds a point layer.
 pub const MAX_LAYER_FEATURES: usize = 400_000;
 pub const MAX_LAYER_CELLS: usize = 12_000_000;
-pub const MAX_OPEN_FEATURES: usize = 800_000;
-pub const MAX_OPEN_CELLS: usize = 16_000_000;
+pub const MAX_POINT_FEATURES: usize = 1_000_000;
+pub const MAX_POINT_CELLS: usize = 36_000_000;
+pub const MAX_OPEN_FEATURES: usize = 1_600_000;
+pub const MAX_OPEN_CELLS: usize = 40_000_000;
+
+/// The per-layer limits for an envelope's kind of shape.
+fn layer_limits(v: &serde_json::Value) -> (usize, usize) {
+    if v["geometry"].as_str() == Some("point") { (MAX_POINT_FEATURES, MAX_POINT_CELLS) } else { (MAX_LAYER_FEATURES, MAX_LAYER_CELLS) }
+}
 
 /// Rows × columns of an envelope: what its properties cost to hold.
 fn cells(v: &serde_json::Value) -> usize {
@@ -292,7 +303,8 @@ fn open_zip(
         match opened {
             Ok((mut v, n)) => {
                 let c = cells(&v);
-                if n > MAX_LAYER_FEATURES || c > MAX_LAYER_CELLS || used.0 + n > MAX_OPEN_FEATURES || used.1 + c > MAX_OPEN_CELLS {
+                let (max_features, max_cells) = layer_limits(&v);
+                if n > max_features || c > max_cells || used.0 + n > MAX_OPEN_FEATURES || used.1 + c > MAX_OPEN_CELLS {
                     too_many.push(format!("{stem} ({})", thousands(n)));
                 } else {
                     used = (used.0 + n, used.1 + c);
