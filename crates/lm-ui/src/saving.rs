@@ -574,8 +574,15 @@ pub(crate) fn close_prompt(shell: &mut Shell, ui: &Ui, map: egui::Rect) {
     });
     let Some(a) = answer else { return };
     let now = ui.input(|i| i.time);
+    let ctx = ui.ctx().clone();
+    answer_close(shell, &ctx, a, now);
+}
+
+/// Save is 2, Don't Save is 0, Cancel is anything else. Don't Save and a finished Save both
+/// ask the window to close; Cancel leaves it open.
+fn answer_close(shell: &mut Shell, ctx: &egui::Context, choice: u8, now: f64) {
     shell.doc_file.closing = false;
-    match a {
+    match choice {
         0 => shell.doc_file.close_ok = true,
         2 => {
             shell.doc_file.close_after_save = true;
@@ -583,18 +590,23 @@ pub(crate) fn close_prompt(shell: &mut Shell, ui: &Ui, map: egui::Rect) {
         }
         _ => {}
     }
-    if a != 1 && shell.doc_file.close_ok {
-        ui.ctx().send_viewport_cmd(egui::ViewportCommand::Close);
-    }
+    // The same frame may already have cancelled the close that opened this prompt (`logic` runs
+    // before the button). That Close is not honored; later frames ask again from `close_if_saved`.
+    close_if_saved(shell, ctx);
 }
 
-/// After "Save changes?" → Save → Save As, the window closes once the save succeeded.
+/// Asks the window to close once it may: Don't Save, or "Save changes?" → Save after the file
+/// is written. Sent every frame until the process exits. The button's `Close` can share an
+/// output with `CancelClose` — `logic` already cancelled the close that opened the prompt —
+/// and that frame does not quit. Later frames ask again, with no `CancelClose`, which is how
+/// Save already closes after the file is written.
 pub(crate) fn close_if_saved(shell: &mut Shell, ctx: &egui::Context) {
     let f = &mut shell.doc_file;
-    if f.close_after_save && f.close_ok {
-        f.close_after_save = false;
-        ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+    if !f.close_ok || f.closing {
+        return;
     }
+    f.close_after_save = false;
+    ctx.send_viewport_cmd(egui::ViewportCommand::Close);
 }
 
 /// The missing-source card (Error and status copy): "Can't find heat_july.tif. It was last seen
@@ -938,6 +950,94 @@ mod tests {
         };
         assert_eq!(a.features, b.features);
         assert_eq!(back.doc, ws.doc);
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    /// Commands `close_if_saved` sends: the follow-up close, separate from the prompt's own `Close`.
+    fn follow_up_close(ctx: &egui::Context, shell: &mut Shell) -> bool {
+        let send = ctx.clone();
+        let mut output = ctx.run_ui(
+            egui::RawInput {
+                screen_rect: Some(egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(800.0, 600.0))),
+                ..Default::default()
+            },
+            |_| close_if_saved(shell, &send),
+        );
+        let close = output
+            .viewport_output
+            .get(&egui::ViewportId::ROOT)
+            .is_some_and(|v| v.commands.iter().any(|c| matches!(c, egui::ViewportCommand::Close)));
+        output.textures_delta.clear();
+        close
+    }
+
+    /// An Untitled map opened from layer files: Don't Save must quit without writing a file.
+    ///
+    /// The window close that opened "Save changes?" is cancelled in `logic` before the button
+    /// runs. A `Close` in that same output is not honored, so the next frame has to ask again.
+    /// Save already does, through `close_if_saved`, once the write finishes. Don't Save did not.
+    #[test]
+    fn dont_save_asks_to_close_again_without_writing_a_file() {
+        let ctx = egui::Context::default();
+        let mut shell = shell(&ctx);
+        let area = lm_jobs::import::drawn_area("Area 1", &[(0.0, 0.0), (1.0, 0.0), (1.0, 1.0)]).unwrap();
+        shell.ws.add_imported(vec![area], 1);
+        shell.doc_file.confirm_close = true;
+        shell.doc_file.edited = true;
+
+        assert!(!may_close(&mut shell), "unsaved layers ask before closing");
+        assert!(shell.doc_file.closing);
+        assert!(!follow_up_close(&ctx, &mut shell), "the prompt is still waiting for an answer");
+
+        // Don't Save: allow the close, write nothing. The button's own Close can share a frame
+        // with CancelClose, so the next frame has to ask again.
+        answer_close(&mut shell, &ctx, 0, 0.0);
+        assert!(shell.doc_file.path.is_none());
+        assert!(shell.file_requests.is_empty());
+        assert!(shell.doc_file.close_ok);
+        assert!(follow_up_close(&ctx, &mut shell), "the next frame must request Close");
+        // The map is still edited and still has its layers; the follow-up close is not cancelled.
+        assert!(may_close(&mut shell));
+    }
+
+    #[test]
+    fn cancel_keeps_an_unsaved_map_open() {
+        let ctx = egui::Context::default();
+        let mut shell = shell(&ctx);
+        let area = lm_jobs::import::drawn_area("Area 1", &[(0.0, 0.0), (1.0, 0.0), (1.0, 1.0)]).unwrap();
+        shell.ws.add_imported(vec![area], 1);
+        shell.doc_file.confirm_close = true;
+        shell.doc_file.edited = true;
+        assert!(!may_close(&mut shell));
+
+        answer_close(&mut shell, &ctx, 1, 0.0);
+        assert!(!shell.doc_file.close_ok);
+        assert!(!follow_up_close(&ctx, &mut shell));
+        assert!(!may_close(&mut shell), "the next close asks again");
+    }
+
+    #[test]
+    fn save_then_quit_still_closes_after_the_file_is_written() {
+        let ctx = egui::Context::default();
+        let mut shell = shell(&ctx);
+        let area = lm_jobs::import::drawn_area("Area 1", &[(0.0, 0.0), (1.0, 0.0), (1.0, 1.0)]).unwrap();
+        shell.ws.add_imported(vec![area], 1);
+        shell.doc_file.confirm_close = true;
+        shell.doc_file.edited = true;
+        assert!(!may_close(&mut shell));
+
+        // Save on an Untitled map asks where, and does not close yet.
+        answer_close(&mut shell, &ctx, 2, 0.0);
+        assert!(matches!(shell.file_requests.last(), Some(FileRequest::SaveAs { .. })));
+        assert!(!shell.doc_file.close_ok);
+        assert!(!follow_up_close(&ctx, &mut shell));
+
+        let dir = temp("close-save");
+        let path = dir.join("study.lmap");
+        save_to(&mut shell, path.clone(), 0.0);
+        assert!(path.is_file(), "{:?}", shell.notice);
+        assert!(shell.doc_file.close_ok);
+        assert!(follow_up_close(&ctx, &mut shell), "a finished save still closes");
         let _ = std::fs::remove_dir_all(dir);
     }
 }
